@@ -23,7 +23,9 @@
     "myAssigned": "My Assigned Requests",
     "completedRequests": "Completed Requests",
     "logout": "Logout",
-    "purchaseTracker": "Purchase Tracker"
+    "purchaseTracker": "Purchase Tracker",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode"
   },
   "language": {
     "english": "English",

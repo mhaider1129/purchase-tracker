@@ -2,13 +2,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCurrentUser from '../hooks/useCurrentUser';
-import { Menu, X } from 'lucide-react';
+import useDarkMode from '../hooks/useDarkMode';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useCurrentUser();
+  const [darkMode, toggleDarkMode] = useDarkMode();
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
@@ -77,7 +79,7 @@ const Navbar = () => {
 
         {/* 🔐 User Info Card */}
         <div
-          className="flex items-center gap-2 bg-white px-3 py-1 rounded shadow w-fit mt-2"
+          className="flex items-center gap-2 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded shadow w-fit mt-2"
           role="contentinfo"
         >
           <div
@@ -98,7 +100,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-gray-200 shadow-sm" role="navigation" aria-label="Main navigation">
+    <nav className="bg-gray-200 dark:bg-gray-800 dark:text-gray-100 shadow-sm" role="navigation" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
         <h1
           className="text-xl font-bold cursor-pointer"
@@ -115,9 +117,16 @@ const Navbar = () => {
           <option value="en">{t('language.english')}</option>
           <option value="ar">{t('language.arabic')}</option>
         </select>
+        <button
+          onClick={toggleDarkMode}
+          className="border rounded px-2 py-1 text-sm mr-2"
+          aria-label={darkMode ? t('navbar.lightMode') : t('navbar.darkMode')}
+        >
+          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
 
         <button
-          className="md:hidden text-gray-700"
+          className="md:hidden text-gray-700 dark:text-gray-200"
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Toggle navigation menu"
           aria-expanded={isOpen}

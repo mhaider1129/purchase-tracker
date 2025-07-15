@@ -13,11 +13,26 @@ const AllRequestsPage = () => {
   const [search, setSearch] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [status, setStatus] = useState('');
+  const [department, setDepartment] = useState('');
+  const [departments, setDepartments] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
   const limit = 10;
+
+    useEffect(() => {
+    const fetchDeps = async () => {
+      try {
+        const res = await axios.get('/api/departments');
+        setDepartments(res.data);
+      } catch (err) {
+        console.error('❌ Failed to load departments:', err);
+      }
+    };
+    fetchDeps();
+  }, []);
 
   const fetchRequests = async () => {
     try {
@@ -29,6 +44,8 @@ const AllRequestsPage = () => {
           search,
           from_date: fromDate,
           to_date: toDate,
+          status,
+          department_id: department,
           page,
           limit,
         },
@@ -70,6 +87,8 @@ const AllRequestsPage = () => {
           search,
           from_date: fromDate,
           to_date: toDate,
+          status,
+          department_id: department,
         },
         responseType: 'blob',
       });
@@ -140,6 +159,23 @@ const AllRequestsPage = () => {
           value={toDate}
           onChange={(e) => setToDate(e.target.value)}
         />
+
+                <select className="border p-2 rounded" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Approved">Approved</option>
+          <option value="Rejected">Rejected</option>
+          <option value="completed">Completed</option>
+        </select>
+
+        <select className="border p-2 rounded" value={department} onChange={(e) => setDepartment(e.target.value)}>
+          <option value="">All Departments</option>
+          {departments.map((dep) => (
+            <option key={dep.id} value={dep.id}>
+              {dep.name}
+            </option>
+          ))}
+        </select>
 
         <button
           onClick={applyFilters}

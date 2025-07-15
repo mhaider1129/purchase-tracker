@@ -16,6 +16,8 @@ const ApprovalHistory = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [department, setDepartment] = useState('');
+  const [departments, setDepartments] = useState([]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,12 +33,35 @@ const ApprovalHistory = () => {
     }
   };
 
+    // Load departments
+  useEffect(() => {
+    const fetchDeps = async () => {
+      try {
+        const res = await axios.get('/api/departments');
+        setDepartments(res.data);
+      } catch (err) {
+        console.error('❌ Failed to load departments:', err);
+      }
+    };
+    fetchDeps();
+  }, []);
+
+  // Fetch history whenever filters change
   useEffect(() => {
     const fetchHistory = async () => {
+      setLoading(true);
       try {
-        const res = await axios.get('/api/requests/approval-history');
+        const res = await axios.get('/api/requests/approval-history', {
+          params: {
+            status: statusFilter,
+            from_date: fromDate,
+            to_date: toDate,
+            department_id: department,
+          },
+        });
         setHistory(res.data);
         setFiltered(res.data);
+        setCurrentPage(1);
       } catch (err) {
         console.error('❌ Failed to fetch approval history:', err);
         setError('Failed to load approval history');
@@ -44,27 +69,9 @@ const ApprovalHistory = () => {
         setLoading(false);
       }
     };
-    fetchHistory();
-  }, []);
 
-  useEffect(() => {
-    let result = [...history];
-
-    if (statusFilter) {
-      result = result.filter((item) => item.decision === statusFilter);
-    }
-
-    if (fromDate) {
-      result = result.filter((item) => new Date(item.approved_at) >= new Date(fromDate));
-    }
-
-    if (toDate) {
-      result = result.filter((item) => new Date(item.approved_at) <= new Date(toDate));
-    }
-
-    setFiltered(result);
-    setCurrentPage(1);
-  }, [statusFilter, fromDate, toDate, history]);
+     fetchHistory();
+  }, [statusFilter, fromDate, toDate, department]);
 
   const downloadCSV = () => {
     const sorted = [...filtered].sort((a, b) => new Date(b.approved_at) - new Date(a.approved_at));
@@ -72,6 +79,7 @@ const ApprovalHistory = () => {
       sorted.map(item => ({
         'Request ID': item.request_id,
         Type: item.request_type,
+        Department: item.department_name,
         Justification: item.justification,
         Cost: item.estimated_cost,
         'Final Status': item.status,
@@ -101,6 +109,7 @@ const ApprovalHistory = () => {
     const tableData = sorted.map(item => [
       item.request_id,
       item.request_type,
+      item.department_name,
       item.justification,
       item.estimated_cost,
       item.status,
@@ -112,7 +121,7 @@ const ApprovalHistory = () => {
 
     autoTable(doc, {
       head: [[
-        'Request ID', 'Type', 'Justification', 'Cost', 'Final Status',
+        'Request ID', 'Type', 'Department', 'Justification', 'Cost', 'Final Status',
         'Your Decision', 'Comment', 'Level', 'Date'
       ]],
       body: tableData,
@@ -142,6 +151,22 @@ const ApprovalHistory = () => {
               <option value="">All</option>
               <option value="Approved">Approved</option>
               <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium">Department:</label>
+            <select
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              className="p-2 border rounded"
+            >
+              <option value="">All</option>
+              {departments.map((dep) => (
+                <option key={dep.id} value={dep.id}>
+                  {dep.name}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -204,6 +229,7 @@ const ApprovalHistory = () => {
                   <tr>
                     <th className="border p-2">Request ID</th>
                     <th className="border p-2">Type</th>
+                    <th className="border p-2">Department</th>
                     <th className="border p-2">Justification</th>
                     <th className="border p-2">Cost</th>
                     <th className="border p-2">Final Status</th>
@@ -218,6 +244,7 @@ const ApprovalHistory = () => {
                     <tr key={idx}>
                       <td className="border p-2">{item.request_id}</td>
                       <td className="border p-2">{item.request_type}</td>
+                      <td className="border p-2">{item.department_name}</td>
                       <td className="border p-2">{item.justification}</td>
                       <td className="border p-2">{item.estimated_cost}</td>
                       <td className="border p-2">{item.status}</td>

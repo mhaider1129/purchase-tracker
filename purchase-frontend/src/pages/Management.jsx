@@ -85,8 +85,15 @@ const Management = () => {
 
   const saveEdit = async (id) => {
     try {
-      await api.patch(`/api/users/${id}/assign`, editData);
-      setEditUserId(null);
+      await api.patch(`/api/users/${id}/assign`, {
+        role: editData.role,
+        department_id: editData.department_id
+          ? parseInt(editData.department_id, 10)
+          : null,
+        section_id: editData.section_id
+          ? parseInt(editData.section_id, 10)
+          : null,
+      });      setEditUserId(null);
       fetchUsers();
     } catch (err) {
       console.error('Failed to update user', err);

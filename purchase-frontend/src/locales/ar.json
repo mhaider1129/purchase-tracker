@@ -23,7 +23,9 @@
     "myAssigned": "طلباتي المسندة",
     "completedRequests": "الطلبات المكتملة",
     "logout": "تسجيل الخروج",
-    "purchaseTracker": "متتبع المشتريات"
+    "purchaseTracker": "متتبع المشتريات",
+    "darkMode": "الوضع الداكن",
+    "lightMode": "الوضع الفاتح"
   },
   "language": {
     "english": "الإنجليزية",

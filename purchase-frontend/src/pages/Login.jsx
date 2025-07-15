@@ -64,11 +64,11 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 to-white px-4">
-      <form
+    <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 to-white dark:from-gray-800 dark:to-gray-900 px-4">
+        <form
         onSubmit={handleLogin}
-        className="bg-white p-8 shadow-md rounded w-full max-w-sm border border-gray-200"
-      >
+        className="bg-white dark:bg-gray-800 p-8 shadow-md rounded w-full max-w-sm border border-gray-200 dark:border-gray-700"
+        >
         <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">{t('login.title')}</h2>
 
         {errorMsg && (
@@ -78,7 +78,7 @@ const Login = () => {
         )}
 
         <div className="mb-4">
-          <label className="block mb-1 text-gray-700">{t('login.email')}</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-300">{t('login.email')}</label>
           <input
             ref={emailInputRef}
             type="email"
@@ -90,7 +90,7 @@ const Login = () => {
         </div>
 
         <div className="mb-6">
-          <label className="block mb-1 text-gray-700">{t('login.password')}</label>
+          <label className="block mb-1 text-gray-700 dark:text-gray-300">{t('login.password')}</label>
           <input
             type="password"
             className="w-full p-2 border border-gray-300 rounded"
