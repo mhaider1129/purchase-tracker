@@ -1,0 +1,131 @@
+// src/pages/requests/RequestTypeSelector.jsx
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../../components/Navbar';
+import axios from '../../api/axios';
+
+const RequestTypeSelector = () => {
+  const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState({
+    role: '',
+    department_id: null,
+    section_id: null,
+  });
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await axios.get('/api/users/me');
+        setUserInfo({
+          role: res.data.role?.toLowerCase(),
+          department_id: res.data.department_id,
+          section_id: res.data.section_id || null,
+        });
+      } catch (err) {
+        console.error('❌ Failed to load user info:', err);
+        alert('Failed to load your user data. Please try again.');
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  const { role } = userInfo;
+
+  const buttonStyle =
+    'block w-full py-2 px-4 rounded text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2';
+
+  return (
+    <>
+      <Navbar />
+      <div className="max-w-md mx-auto p-6 text-center">
+        <h1 className="text-2xl font-bold mb-6 text-gray-800">Select Request Type</h1>
+
+        <div className="space-y-4">
+          {/* 📦 Stock Request */}
+          {['warehouse_manager', 'warehouse_keeper'].includes(role) && (
+            <button
+              onClick={() => navigate('/requests/stock')}
+              className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
+              aria-label="Stock Request"
+            >
+              Stock Request
+            </button>
+          )}
+
+          {/* 📑 Non-Stock + Medical Device */}
+          <button
+            onClick={() => navigate('/requests/non-stock')}
+            className={`${buttonStyle} bg-green-600 hover:bg-green-700 focus:ring-green-400`}
+            aria-label="Non-Stock Request"
+          >
+            Non-Stock Request
+          </button>
+
+          <button
+            onClick={() => navigate('/requests/medical-device')}
+            className={`${buttonStyle} bg-purple-600 hover:bg-purple-700 focus:ring-purple-400`}
+            aria-label="Medical Device Request"
+          >
+            Medical Device Request
+          </button>
+
+          {/* 🔎 Approval Panel & History */}
+          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager'].includes(role) && (
+            <button
+              onClick={() => navigate('/approvals')}
+              className={`${buttonStyle} bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400`}
+              aria-label="Approvals Panel"
+            >
+              Approvals Panel
+            </button>
+          )}
+
+          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'admin', 'warehousemanager'].includes(role) && (
+            <button
+              onClick={() => navigate('/approval-history')}
+              className={`${buttonStyle} bg-gray-700 hover:bg-gray-800 focus:ring-gray-400`}
+              aria-label="Approval History"
+            >
+              Approval History
+            </button>
+          )}
+
+          {/* 👤 Admin Functions */}
+          {['admin', 'scm'].includes(role) && (
+            <button
+              onClick={() => navigate('/register')}
+              className={`${buttonStyle} bg-yellow-500 hover:bg-yellow-600 mt-6 text-gray-900 focus:ring-yellow-300`}
+              aria-label="Register New User"
+            >
+              Register New User
+            </button>
+          )}
+
+          {/* 🛠 Maintenance Paths */}
+          {role === 'technician' && (
+            <button
+              onClick={() => navigate('/requests/maintenance')}
+              className={`${buttonStyle} bg-red-600 hover:bg-red-700 focus:ring-red-400`}
+              aria-label="Maintenance Request"
+            >
+              Maintenance Request
+            </button>
+          )}
+
+          {role === 'hod' && (
+            <button
+              onClick={() => navigate('/approvals/maintenance')}
+              className={`${buttonStyle} bg-orange-700 hover:bg-orange-800 focus:ring-orange-400`}
+              aria-label="Maintenance Approvals"
+            >
+              Maintenance Approvals
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default RequestTypeSelector;

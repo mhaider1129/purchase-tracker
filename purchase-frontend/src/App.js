@@ -1,0 +1,119 @@
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+import Login from './pages/Login';
+import Register from './pages/Register';
+import RequestTypeSelector from './pages/requests/RequestTypeSelector';
+import StockRequestForm from './pages/requests/StockRequestForm';
+import NonStockRequestForm from './pages/requests/NonStockRequestForm';
+import MedicalDeviceRequestForm from './pages/requests/MedicalDeviceRequestForm';
+import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
+import MaintenanceApprovalsPage from './pages/requests/MaintenanceApprovalsPage';
+
+import ApprovalsPanel from './pages/ApprovalsPanel';
+import OpenRequestsPage from './pages/OpenRequestsPage';
+import MyMaintenanceRequests from './pages/MyMaintenanceRequests';
+import MaintenanceHODApprovals from './pages/MaintenanceHODApprovals';
+import ApprovalHistory from './pages/ApprovalHistory';
+
+import AllRequestsPage from './pages/AllRequestsPage';
+import AssignedRequestsPage from './pages/AssignedRequestsPage';
+import AdminTools from './pages/AdminTools';
+import Management from './pages/Management';
+import IncompleteRequestsPage from './pages/IncompleteRequestsPage';
+import IncompleteMedicalRequestsPage from './pages/IncompleteMedicalRequestsPage';
+import IncompleteOperationalRequestsPage from './pages/IncompleteOperationalRequestsPage';
+import Dashboard from './pages/Dashboard';
+import CompletedAssignedRequestsPage from './pages/CompletedAssignedRequestsPage';
+import ClosedRequestsPage from './pages/ClosedRequestsPage';
+
+
+// ✅ Extract user role from JWT
+const getUserRole = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try {
+    const decoded = JSON.parse(atob(token.split('.')[1]));
+    return decoded.role;
+  } catch (err) {
+    console.error('❌ Token decode error:', err);
+    localStorage.removeItem('token');
+    return null;
+  }
+};
+
+// 🔒 Reusable Protected Route with Role Filtering
+const ProtectedRoute = ({ element, allowedRoles = [] }) => {
+  const token = localStorage.getItem('token');
+  if (!token) return <Navigate to="/login" replace />;
+
+  try {
+    const decoded = JSON.parse(atob(token.split('.')[1]));
+    const userRole = decoded.role;
+
+    if (allowedRoles.length && !allowedRoles.includes(userRole)) {
+      return <Navigate to="/" replace />;
+    }
+
+    return element;
+  } catch (err) {
+    console.error('❌ Invalid token:', err);
+    localStorage.removeItem('token');
+    return <Navigate to="/login" replace />;
+  }
+};
+
+function App() {
+  const isAuthenticated = !!localStorage.getItem('token');
+
+  return (
+    <Router>
+      <Routes>
+        {/* ✅ Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* ✅ General Protected Routes */}
+        <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
+        <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
+        <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
+        <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
+        <Route path="/approvals" element={<ProtectedRoute element={<ApprovalsPanel />} />} />
+        <Route path="/open-requests" element={<ProtectedRoute element={<OpenRequestsPage />} />} />
+        <Route path="/approval-history" element={<ProtectedRoute element={<ApprovalHistory />} />} />
+
+        {/* ✅ Maintenance Routes */}
+        <Route path="/requests/maintenance" element={<ProtectedRoute element={<MaintenanceRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />} />
+        <Route path="/my-maintenance-requests" element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />} />
+        <Route path="/approvals/maintenance" element={<ProtectedRoute element={<MaintenanceHODApprovals />} allowedRoles={['HOD']} />} />
+        <Route path="/maintenance-approvals" element={<ProtectedRoute element={<MaintenanceApprovalsPage />} allowedRoles={['requester']} />} />
+
+        {/* ✅ Admin / SCM Routes */}
+        <Route path="/admin-tools" element={<ProtectedRoute element={<AdminTools />} allowedRoles={['SCM', 'admin']} />} />
+        <Route path="/management" element={<ProtectedRoute element={<Management />} allowedRoles={['SCM', 'admin']} />} />
+        <Route path="/all-requests" element={<ProtectedRoute element={<AllRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
+        <Route path="/incomplete" element={<ProtectedRoute element={<IncompleteRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
+
+        {/* ✅ Procurement-Specific Routes */}
+        <Route path="/assigned-requests" element={<ProtectedRoute element={<AssignedRequestsPage />} allowedRoles={['ProcurementSupervisor', 'ProcurementSpecialist', 'SCM']} />} />
+
+        {/* ✅ Approver Views */}
+        <Route path="/incomplete/medical" element={<ProtectedRoute element={<IncompleteMedicalRequestsPage />} allowedRoles={['CMO']} />} />
+        <Route path="/incomplete/operational" element={<ProtectedRoute element={<IncompleteOperationalRequestsPage />} allowedRoles={['COO']} />} />
+
+        <Route
+  path="/completed-assigned"
+  element={<ProtectedRoute element={<CompletedAssignedRequestsPage />} allowedRoles={['ProcurementSupervisor', 'ProcurementSpecialist', 'SCM']} />}
+ />
+        <Route path="/closed-requests" element={<ProtectedRoute element={<ClosedRequestsPage />} />} />
+        {/* 🚨 Catch-All Fallback */}
+        <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
+        <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} allowedRoles={['SCM', 'admin']} />} />
+
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
