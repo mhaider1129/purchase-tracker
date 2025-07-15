@@ -2,9 +2,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 
 const Login = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +26,7 @@ const Login = () => {
     const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedEmail || !password) {
-      setErrorMsg('Email and password are required.');
+      setErrorMsg(t('login.emailPasswordRequired'));
       setLoading(false);
       return;
     }
@@ -44,24 +46,18 @@ const Login = () => {
       const user = userRes.data;
 
       if (!user || user.is_active === false) {
-        setErrorMsg('❌ Your account is inactive. Contact admin.');
+        setErrorMsg(t('login.accountInactive'));
         localStorage.removeItem('token');
         return;
       }
 
       localStorage.setItem('currentUser', JSON.stringify(user));
 
-      // ✅ Redirect based on role
-      if (['HOD', 'CMO', 'COO'].includes(user.role)) {
-        navigate('/approvals');
-      } else if (user.role === 'SCM') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      // ✅ Redirect all users to the request type selector
+      navigate('/');
     } catch (err) {
       console.error('❌ Login failed:', err);
-      setErrorMsg(err?.response?.data?.message || 'Login failed. Please check your credentials.');
+      setErrorMsg(err?.response?.data?.message || t('login.errorCredentials'));
     } finally {
       setLoading(false);
     }
@@ -73,7 +69,7 @@ const Login = () => {
         onSubmit={handleLogin}
         className="bg-white p-8 shadow-md rounded w-full max-w-sm border border-gray-200"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">Warith Procurement Login</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">{t('login.title')}</h2>
 
         {errorMsg && (
           <div className="mb-4 text-sm text-red-600 bg-red-100 px-3 py-2 rounded border border-red-200">
@@ -82,7 +78,7 @@ const Login = () => {
         )}
 
         <div className="mb-4">
-          <label className="block mb-1 text-gray-700">Email</label>
+          <label className="block mb-1 text-gray-700">{t('login.email')}</label>
           <input
             ref={emailInputRef}
             type="email"
@@ -94,7 +90,7 @@ const Login = () => {
         </div>
 
         <div className="mb-6">
-          <label className="block mb-1 text-gray-700">Password</label>
+          <label className="block mb-1 text-gray-700">{t('login.password')}</label>
           <input
             type="password"
             className="w-full p-2 border border-gray-300 rounded"
@@ -111,12 +107,12 @@ const Login = () => {
             loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
           }`}
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? t('login.loggingIn') : t('login.button')}
         </button>
       </form>
 
       <p className="mt-4 text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} Warith International Cancer Institute
+        {t('login.copyright', { year: new Date().getFullYear() })}
       </p>
     </div>
   );

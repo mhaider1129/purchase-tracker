@@ -11,15 +11,24 @@ const Management = () => {
   const [tab, setTab] = useState('users');
   const [editUserId, setEditUserId] = useState(null);
   const [editData, setEditData] = useState({ role: '', department_id: '', section_id: '' });
-  const [newRole, setNewRole] = useState('');
   const [newDept, setNewDept] = useState({ name: '', type: 'operational' });
   const [newSection, setNewSection] = useState({ department_id: '', name: '' });
 
+  // Initial fetch of all required data
   useEffect(() => {
     fetchUsers();
     fetchDepartments();
     fetchRoles();
   }, []);
+
+  
+    // Refresh data whenever a management tab is activated so the
+  // displayed lists stay in sync with the server
+  useEffect(() => {
+    if (tab === 'users') fetchUsers();
+    if (tab === 'departments') fetchDepartments();
+    if (tab === 'roles') fetchRoles();
+  }, [tab]);
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -296,37 +305,6 @@ const Management = () => {
     </div>
   );
 
-  const renderRoles = () => (
-    <div>
-      <ul className="list-disc ml-6">
-        {roles.map((r) => (
-          <li key={r.id}>{r.name}</li>
-        ))}
-      </ul>
-      <div className="mt-4">
-        <input
-          className="border p-1 mr-2"
-          placeholder="Role name"
-          value={newRole}
-          onChange={(e) => setNewRole(e.target.value)}
-        />
-        <button
-          onClick={async () => {
-            try {
-              await api.post('/api/roles', { name: newRole });
-              setNewRole('');
-              fetchRoles();
-            } catch (err) {
-              console.error('Failed to add role', err);
-            }
-          }}
-          className="px-2 py-1 bg-blue-600 text-white"
-        >
-          Add
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -346,17 +324,10 @@ const Management = () => {
           >
             Departments
           </button>
-          <button
-            onClick={() => setTab('roles')}
-            className={`px-3 py-1 rounded ${tab === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            Roles
-          </button>
         </div>
 
         {tab === 'users' && renderUsers()}
         {tab === 'departments' && renderDepartments()}
-        {tab === 'roles' && renderRoles()}
       </div>
     </>
   );

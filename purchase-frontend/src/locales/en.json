@@ -1,0 +1,32 @@
+{
+  "login": {
+    "title": "Warith Procurement Login",
+    "email": "Email",
+    "password": "Password",
+    "button": "Login",
+    "loggingIn": "Logging in...",
+    "accountInactive": "Your account is inactive. Contact admin.",
+    "emailPasswordRequired": "Email and password are required.",
+    "errorCredentials": "Login failed. Please check your credentials.",
+    "copyright": "© {{year}} Warith International Cancer Institute"
+  },
+  "navbar": {
+    "openRequests": "Open Requests",
+    "myMaintenance": "My Maintenance Requests",
+    "maintenanceApprovals": "Maintenance Approvals",
+    "closedRequests": "Closed Requests",
+    "adminTools": "Admin Tools",
+    "management": "Management",
+    "allRequests": "All Requests",
+    "viewIncomplete": "View Incomplete Requests",
+    "registerUser": "Register User",
+    "myAssigned": "My Assigned Requests",
+    "completedRequests": "Completed Requests",
+    "logout": "Logout",
+    "purchaseTracker": "Purchase Tracker"
+  },
+  "language": {
+    "english": "English",
+    "arabic": "Arabic"
+  }
+}

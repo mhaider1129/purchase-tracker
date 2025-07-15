@@ -1,22 +1,27 @@
 // src/pages/AdminTools.jsx
-
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const AdminTools = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
+  const [deactivateEmail, setDeactivateEmail] = useState('');
   const [logs, setLogs] = useState([]);
+  const [filteredLogs, setFilteredLogs] = useState([]);
   const [logLoading, setLogLoading] = useState(false);
-
-  const token = localStorage.getItem('token');
-  const API_BASE = process.env.REACT_APP_API_BASE_URL || ''; // fallback for localhost
+  const [filterKeyword, setFilterKeyword] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const logsPerPage = 10;
   const navigate = useNavigate();
 
+  // 👤 Check Access
   useEffect(() => {
+    const token = localStorage.getItem('token');
     if (!token) {
       setMessage('🔒 You must be logged in to access admin tools.');
       navigate('/login');
@@ -24,139 +29,226 @@ const AdminTools = () => {
     }
 
     try {
-      const decoded = JSON.parse(atob(token.split('.')[1]));
-      const role = decoded?.role || '';
-      if (!['admin', 'SCM'].includes(role)) {
-        alert('🚫 Access denied: Only Admin or SCM users allowed.');
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const role = payload?.role?.toLowerCase() || '';
+      if (!['admin', 'scm'].includes(role)) {
+        alert('🚫 Access denied: Only SCM or Admin can access this page.');
         navigate('/');
       }
-    } catch (err) {
-      console.error('❌ Token decode failed:', err);
+    } catch (error) {
+      console.error('❌ Token decode failed:', error);
       navigate('/login');
     }
-  }, [token, navigate]);
+  }, [navigate]);
 
+  // 🔁 Reassign Approvals
   const triggerReassignment = async () => {
     setLoading(true);
     setMessage('');
     try {
-      const res = await axios.post(`${API_BASE}/admin/reassign-approvals`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setMessage(res.data.message || '✅ Reassignment complete');
+      const res = await api.post('/admin-tools/reassign-approvals');
+      setMessage(res.data.message || '✅ Reassignment completed.');
     } catch (err) {
-      console.error('❌ Error triggering reassignment:', err);
-      setMessage('❌ Failed to trigger reassignment');
+      setMessage(err.response?.data?.error || '❌ Failed to reassign approvals.');
     } finally {
       setLoading(false);
     }
   };
 
+  // 🚫 Deactivate User
   const deactivateUser = async () => {
-    if (!email.trim()) {
-      setMessage('⚠️ Please enter a user email.');
+    if (!deactivateEmail.trim()) {
+      setMessage('⚠️ Enter user email to deactivate.');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setMessage('❌ Invalid email format.');
+    if (!emailRegex.test(deactivateEmail.trim())) {
+      setMessage('❌ Please enter a valid email address.');
       return;
     }
 
     setLoading(true);
     setMessage('');
     try {
-      const res = await axios.post(`${API_BASE}/admin/deactivate-user`, { email }, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await api.post('/admin-tools/deactivate-user', {
+        email: deactivateEmail,
       });
-      setMessage(res.data.message || '✅ User deactivated');
-      setEmail('');
+      setMessage(res.data.message || '✅ User deactivated.');
+      setDeactivateEmail('');
     } catch (err) {
-      console.error('❌ Error deactivating user:', err);
-      setMessage('❌ Failed to deactivate user');
+      setMessage(err.response?.data?.error || '❌ Failed to deactivate user.');
     } finally {
       setLoading(false);
     }
   };
 
+  // 📜 Fetch Logs
   const fetchLogs = async () => {
     setLogLoading(true);
-    setMessage('');
     try {
-      const res = await axios.get(`${API_BASE}/admin/logs`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setLogs(res.data.logs || []);
+      const res = await api.get('/admin-tools/logs');
+      const logs = res.data.logs || [];
+      setLogs(logs);
+      setFilteredLogs(logs);
+      setCurrentPage(1);
     } catch (err) {
-      console.error('❌ Error fetching logs:', err);
-      setMessage('❌ Failed to fetch logs');
+      setMessage('❌ Failed to fetch logs.');
     } finally {
       setLogLoading(false);
     }
   };
 
+  // 🔎 Filter Logs
+  useEffect(() => {
+    if (filterKeyword.trim() === '') {
+      setFilteredLogs(logs);
+    } else {
+      const filtered = logs.filter((log) =>
+        JSON.stringify(log).toLowerCase().includes(filterKeyword.toLowerCase())
+      );
+      setFilteredLogs(filtered);
+      setCurrentPage(1);
+    }
+  }, [filterKeyword, logs]);
+
+  // 📄 Export to CSV
+  const exportToCSV = () => {
+    const rows = filteredLogs.map((log) => [typeof log === 'string' ? log : JSON.stringify(log)]);
+    const csvContent = [
+      ['Log Entry'],
+      ...rows
+    ]
+      .map((e) => e.join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'system_logs.csv');
+  };
+
+  // 📄 Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('System Logs', 14, 14);
+    const rows = filteredLogs.map((log) => [typeof log === 'string' ? log : JSON.stringify(log)]);
+    doc.autoTable({
+      head: [['Log Entry']],
+      body: rows,
+      startY: 20,
+    });
+    doc.save('system_logs.pdf');
+  };
+
+  // 📄 Pagination Logic
+  const indexOfLastLog = currentPage * logsPerPage;
+  const indexOfFirstLog = indexOfLastLog - logsPerPage;
+  const currentLogs = filteredLogs.slice(indexOfFirstLog, indexOfLastLog);
+  const totalPages = Math.ceil(filteredLogs.length / logsPerPage);
+
   return (
     <>
       <Navbar />
-      <div className="p-6 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Admin Tools</h1>
+      <div className="max-w-4xl mx-auto p-6">
+        <h2 className="text-2xl font-bold mb-6">Admin Tools</h2>
 
-        {/* Reassign Approvals */}
-        <div className="mb-6">
+        {/* 🔁 Reassign Approvals */}
+        <div className="mb-8">
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
             onClick={triggerReassignment}
             disabled={loading}
+            className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
+              loading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             {loading ? 'Reassigning...' : 'Reassign Pending Approvals'}
           </button>
         </div>
 
-        {/* Deactivate User */}
-        <div className="mb-6">
-          <label className="block font-semibold mb-1">Deactivate User by Email</label>
+        {/* 🚫 Deactivate User */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold mb-2">Deactivate User</h3>
           <div className="flex gap-2">
             <input
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="p-2 border rounded flex-1"
-              placeholder="Enter user email"
+              value={deactivateEmail}
+              onChange={(e) => setDeactivateEmail(e.target.value)}
+              placeholder="User email"
+              className="flex-1 p-2 border rounded"
             />
             <button
               onClick={deactivateUser}
-              disabled={loading}
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              disabled={loading}
             >
-              {loading ? 'Processing...' : 'Deactivate'}
+              Deactivate
             </button>
           </div>
         </div>
 
-        {/* View Logs */}
+        {/* 📜 View Logs */}
         <div className="mb-6">
-          <button
-            onClick={fetchLogs}
-            className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900"
-          >
-            {logLoading ? 'Loading Logs...' : 'View System Logs'}
-          </button>
+          <h3 className="text-lg font-semibold mb-2">View System Logs</h3>
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={fetchLogs}
+              className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900"
+              disabled={logLoading}
+            >
+              {logLoading ? 'Loading Logs...' : 'Fetch Logs'}
+            </button>
+            <button onClick={exportToCSV} className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700">
+              Export CSV
+            </button>
+            <button onClick={exportToPDF} className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700">
+              Export PDF
+            </button>
+          </div>
 
-          {logs.length > 0 && (
-            <div className="mt-4 border rounded p-3 bg-gray-50 max-h-64 overflow-y-auto text-sm">
-              <ul className="space-y-1">
-                {logs.map((log, index) => (
-                  <li key={index} className="text-gray-700">
-                    🔹 {typeof log === 'string' ? log : JSON.stringify(log)}
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <input
+            type="text"
+            placeholder="Search logs..."
+            className="w-full p-2 border rounded mb-4"
+            value={filterKeyword}
+            onChange={(e) => setFilterKeyword(e.target.value)}
+          />
+
+          {currentLogs.length > 0 && (
+            <>
+              <div className="max-h-64 overflow-y-auto border p-2 bg-gray-50 rounded text-sm">
+                <ul className="space-y-1">
+                  {currentLogs.map((log, index) => (
+                    <li key={index} className="text-gray-700">
+                      🔹 {typeof log === 'string' ? log : JSON.stringify(log)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="mt-4 flex justify-between items-center">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                >
+                  ⬅️ Prev
+                </button>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
+                >
+                  Next ➡️
+                </button>
+              </div>
+            </>
           )}
         </div>
 
-        {/* Message */}
+        {/* 📢 Feedback */}
         {message && <p className="mt-4 text-blue-700 font-medium">{message}</p>}
       </div>
     </>

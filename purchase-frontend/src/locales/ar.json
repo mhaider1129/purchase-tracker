@@ -1,0 +1,32 @@
+{
+  "login": {
+    "title": "تسجيل الدخول إلى نظام المشتريات",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "button": "تسجيل الدخول",
+    "loggingIn": "جاري تسجيل الدخول...",
+    "accountInactive": "حسابك غير مفعل. يرجى التواصل مع المسؤول.",
+    "emailPasswordRequired": "البريد الإلكتروني وكلمة المرور مطلوبة.",
+    "errorCredentials": "فشل تسجيل الدخول. يرجى التحقق من البيانات.",
+    "copyright": "© {{year}} معهد وارث الدولي لعلاج السرطان"
+  },
+  "navbar": {
+    "openRequests": "الطلبات المفتوحة",
+    "myMaintenance": "طلباتي للصيانة",
+    "maintenanceApprovals": "موافقات الصيانة",
+    "closedRequests": "الطلبات المغلقة",
+    "adminTools": "أدوات المشرف",
+    "management": "الإدارة",
+    "allRequests": "كل الطلبات",
+    "viewIncomplete": "عرض الطلبات غير المكتملة",
+    "registerUser": "تسجيل مستخدم",
+    "myAssigned": "طلباتي المسندة",
+    "completedRequests": "الطلبات المكتملة",
+    "logout": "تسجيل الخروج",
+    "purchaseTracker": "متتبع المشتريات"
+  },
+  "language": {
+    "english": "الإنجليزية",
+    "arabic": "العربية"
+  }
+}

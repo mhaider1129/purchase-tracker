@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useCurrentUser from '../hooks/useCurrentUser';
 import { Menu, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const Navbar = () => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useCurrentUser();
   const [isOpen, setIsOpen] = useState(false);
@@ -34,27 +36,27 @@ const Navbar = () => {
 
     return (
       <>
-        {renderNavButton('Open Requests', '/open-requests', 'text-green-600')}
+        {renderNavButton(t('navbar.openRequests'), '/open-requests', 'text-green-600')}
 
         {user.role === 'technician' &&
-          renderNavButton('My Maintenance Requests', '/my-maintenance-requests', 'text-orange-600')}
+          renderNavButton(t('navbar.myMaintenance'), '/my-maintenance-requests', 'text-orange-600')}
 
         {user.role === 'requester' &&
-          renderNavButton('Maintenance Approvals', '/maintenance-approvals', 'text-amber-600')}
+          renderNavButton(t('navbar.maintenanceApprovals'), '/maintenance-approvals', 'text-amber-600')}
 
-        {renderNavButton('Closed Requests', '/closed-requests', 'text-gray-600')}
+        {renderNavButton(t('navbar.closedRequests'), '/closed-requests', 'text-gray-600')}
 
         {(user.role === 'admin' || user.role === 'SCM') && (
           <>
-            {renderNavButton('Admin Tools', '/admin-tools', 'text-yellow-600')}
-            {renderNavButton('Management', '/management', 'text-purple-600')}
-            {renderNavButton('All Requests', '/all-requests', 'text-indigo-600')}
+            {renderNavButton(t('navbar.adminTools'), '/admin-tools', 'text-yellow-600')}
+            {renderNavButton(t('navbar.management'), '/management', 'text-purple-600')}
+            {renderNavButton(t('navbar.allRequests'), '/all-requests', 'text-indigo-600')}
           </>
         )}
 
         {['admin', 'SCM', 'CMO', 'COO'].includes(user.role) &&
           renderNavButton(
-            'View Incomplete Requests',
+            t('navbar.viewIncomplete'),
             user.role === 'CMO'
               ? '/incomplete/medical'
               : user.role === 'COO'
@@ -64,12 +66,12 @@ const Navbar = () => {
           )}
 
         {['CEO', 'ProcurementSupervisor'].includes(user.role) &&
-          renderNavButton('Register User', '/register', 'text-blue-600')}
+          renderNavButton(t('navbar.registerUser'), '/register', 'text-blue-600')}
 
         {['ProcurementSpecialist', 'ProcurementSupervisor', 'SCM'].includes(user.role) && (
           <>
-            {renderNavButton('My Assigned Requests', '/assigned-requests', 'text-purple-600')}
-            {renderNavButton('Completed Requests', '/completed-assigned', 'text-gray-700')}
+            {renderNavButton(t('navbar.myAssigned'), '/assigned-requests', 'text-purple-600')}
+            {renderNavButton(t('navbar.completedRequests'), '/completed-assigned', 'text-gray-700')}
           </>
         )}
 
@@ -90,7 +92,7 @@ const Navbar = () => {
           </div>
         </div>
 
-        {renderNavButton('Logout', '/login', 'text-red-600')}
+        {renderNavButton(t('navbar.logout'), '/login', 'text-red-600')}
       </>
     );
   };
@@ -102,8 +104,17 @@ const Navbar = () => {
           className="text-xl font-bold cursor-pointer"
           onClick={() => navigate('/')}
         >
-          Purchase Tracker
+          {t('navbar.purchaseTracker')}
         </h1>
+
+        <select
+          value={i18n.language}
+          onChange={(e) => i18n.changeLanguage(e.target.value)}
+          className="border rounded px-2 py-1 text-sm mr-2"
+        >
+          <option value="en">{t('language.english')}</option>
+          <option value="ar">{t('language.arabic')}</option>
+        </select>
 
         <button
           className="md:hidden text-gray-700"
