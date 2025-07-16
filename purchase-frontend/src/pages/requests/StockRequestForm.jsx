@@ -10,6 +10,7 @@ const StockRequestForm = () => {
   const [selectedItems, setSelectedItems] = useState([{ item_name: '', quantity: 1, available_quantity: '' }]);
   const [justification, setJustification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState([]);
   const [sectionId, setSectionId] = useState(null);
   const navigate = useNavigate();
 
@@ -98,18 +99,21 @@ const StockRequestForm = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const payload = {
-      request_type: 'Stock',
-      justification,
-      section_id: sectionId,
-      budget_impact_month: null,
-      items: selectedItems,
-    };
+    const formData = new FormData();
+    formData.append('request_type', 'Stock');
+    formData.append('justification', justification);
+    formData.append('target_section_id', sectionId);
+    formData.append('budget_impact_month', '');
+    formData.append('items', JSON.stringify(selectedItems));
+    attachments.forEach((file) => formData.append('attachments', file));
 
     try {
       setIsSubmitting(true);
-      await api.post('/api/requests', payload);
+      await api.post('/api/requests', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       navigate('/request-submitted');
+      setAttachments([]);
     } catch (err) {
       console.error('❌ Submission error:', err);
       alert(err.response?.data?.message || '❌ Failed to submit request. Please try again.');
@@ -196,6 +200,18 @@ const StockRequestForm = () => {
             >
               + Add Another Item
             </button>
+          </div>
+
+          {/* Attachments */}
+          <div>
+            <label className="block font-semibold mb-1">Attachments</label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setAttachments(Array.from(e.target.files))}
+              className="p-2 border rounded w-full"
+              disabled={isSubmitting}
+            />
           </div>
 
           <button

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useTranslation } from 'react-i18next';
 
 const AdminTools = () => {
   const [message, setMessage] = useState('');
@@ -16,6 +17,7 @@ const AdminTools = () => {
   const [logLoading, setLogLoading] = useState(false);
   const [filterKeyword, setFilterKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const { t } = useTranslation();
   const logsPerPage = 10;
   const navigate = useNavigate();
 
@@ -23,7 +25,7 @@ const AdminTools = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      setMessage('🔒 You must be logged in to access admin tools.');
+      setMessage(t('adminTools.loginRequired'));
       navigate('/login');
       return;
     }
@@ -47,9 +49,9 @@ const AdminTools = () => {
     setMessage('');
     try {
       const res = await api.post('/admin-tools/reassign-approvals');
-      setMessage(res.data.message || '✅ Reassignment completed.');
+      setMessage(res.data.message || t('adminTools.reassignmentSuccess'));
     } catch (err) {
-      setMessage(err.response?.data?.error || '❌ Failed to reassign approvals.');
+      setMessage(err.response?.data?.error || t('adminTools.failedFetchLogs'));
     } finally {
       setLoading(false);
     }
@@ -58,13 +60,13 @@ const AdminTools = () => {
   // 🚫 Deactivate User
   const deactivateUser = async () => {
     if (!deactivateEmail.trim()) {
-      setMessage('⚠️ Enter user email to deactivate.');
+      setMessage(t('adminTools.enterEmail'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(deactivateEmail.trim())) {
-      setMessage('❌ Please enter a valid email address.');
+      setMessage(t('adminTools.failedDeactivate'));
       return;
     }
 
@@ -74,10 +76,10 @@ const AdminTools = () => {
       const res = await api.post('/admin-tools/deactivate-user', {
         email: deactivateEmail,
       });
-      setMessage(res.data.message || '✅ User deactivated.');
+      setMessage(res.data.message || t('adminTools.deactivateUserSuccess'));
       setDeactivateEmail('');
     } catch (err) {
-      setMessage(err.response?.data?.error || '❌ Failed to deactivate user.');
+      setMessage(err.response?.data?.error || t('adminTools.failedDeactivate'));
     } finally {
       setLoading(false);
     }
@@ -93,7 +95,7 @@ const AdminTools = () => {
       setFilteredLogs(logs);
       setCurrentPage(1);
     } catch (err) {
-      setMessage('❌ Failed to fetch logs.');
+      setMessage(t('adminTools.failedFetchLogs'));
     } finally {
       setLogLoading(false);
     }
@@ -149,7 +151,7 @@ const AdminTools = () => {
     <>
       <Navbar />
       <div className="max-w-4xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">Admin Tools</h2>
+        <h2 className="text-2xl font-bold mb-6">{t('adminTools.title')}</h2>
 
         {/* 🔁 Reassign Approvals */}
         <div className="mb-8">
@@ -160,19 +162,19 @@ const AdminTools = () => {
               loading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {loading ? 'Reassigning...' : 'Reassign Pending Approvals'}
+            {loading ? t('adminTools.reassigning') : t('adminTools.reassign')}
           </button>
         </div>
 
         {/* 🚫 Deactivate User */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-2">Deactivate User</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('adminTools.deactivateUser')}</h3>
           <div className="flex gap-2">
             <input
               type="email"
               value={deactivateEmail}
               onChange={(e) => setDeactivateEmail(e.target.value)}
-              placeholder="User email"
+              placeholder={t('adminTools.userEmail')}
               className="flex-1 p-2 border rounded"
             />
             <button
@@ -180,33 +182,33 @@ const AdminTools = () => {
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
               disabled={loading}
             >
-              Deactivate
+              {t('adminTools.deactivate')}
             </button>
           </div>
         </div>
 
         {/* 📜 View Logs */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">View System Logs</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('adminTools.viewLogs')}</h3>
           <div className="flex gap-2 mb-4">
             <button
               onClick={fetchLogs}
               className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900"
               disabled={logLoading}
             >
-              {logLoading ? 'Loading Logs...' : 'Fetch Logs'}
+              {logLoading ? t('adminTools.loadingLogs') : t('adminTools.fetchLogs')}
             </button>
             <button onClick={exportToCSV} className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700">
-              Export CSV
+              {t('adminTools.exportCSV')}
             </button>
             <button onClick={exportToPDF} className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700">
-              Export PDF
+              {t('adminTools.exportPDF')}
             </button>
           </div>
 
           <input
             type="text"
-            placeholder="Search logs..."
+            placeholder={t('adminTools.searchLogs')}
             className="w-full p-2 border rounded mb-4"
             value={filterKeyword}
             onChange={(e) => setFilterKeyword(e.target.value)}
@@ -231,17 +233,17 @@ const AdminTools = () => {
                   disabled={currentPage === 1}
                   className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
                 >
-                  ⬅️ Prev
+                  {t('common.prev')}
                 </button>
                 <span>
-                  Page {currentPage} of {totalPages}
+                  {t('common.pageOf', { current: currentPage, total: totalPages })}
                 </span>
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
                 >
-                  Next ➡️
+                  {t('common.next')}
                 </button>
               </div>
             </>

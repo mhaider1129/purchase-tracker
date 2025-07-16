@@ -3,8 +3,10 @@ import React, { useEffect, useState } from 'react';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
+import { useTranslation } from 'react-i18next';
 
 const MaintenanceHODApprovals = () => {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
@@ -24,7 +26,9 @@ const MaintenanceHODApprovals = () => {
   };
 
   const handleDecision = async (approvalId, decision) => {
-    const confirmed = window.confirm(`Are you sure you want to ${decision.toUpperCase()} this request?`);
+    const confirmed = window.confirm(
+      t('maintenanceHODApprovals.confirmDecision', { DECISION: decision.toUpperCase() })
+    );
     if (!confirmed) return;
 
     setProcessingId(approvalId);
@@ -32,7 +36,7 @@ const MaintenanceHODApprovals = () => {
       await axios.post(`/approvals/${approvalId}/decision`, { decision });
       fetchRequests();
     } catch (err) {
-      alert('❌ Failed to submit decision');
+      alert(t('maintenanceHODApprovals.failedDecision'));
       console.error(err);
     } finally {
       setProcessingId(null);
@@ -70,30 +74,30 @@ const MaintenanceHODApprovals = () => {
       <Navbar />
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Maintenance Requests Pending Your Approval</h2>
+          <h2 className="text-2xl font-bold">{t('maintenanceHODApprovals.title')}</h2>
           <button onClick={exportToCSV} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            Export CSV
+            {t('maintenanceHODApprovals.exportCSV')}
           </button>
         </div>
 
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('common.loading')}</p>
         ) : requests.length === 0 ? (
-          <p>No pending maintenance requests.</p>
+          <p>{t('maintenanceHODApprovals.noRequests')}</p>
         ) : (
           <div className="space-y-6">
             {paginatedRequests.map((req) => (
               <div key={req.request_id} className="border p-4 rounded shadow bg-white">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p><strong>Ref:</strong> {req.maintenance_ref_number}</p>
-                    <p><strong>Justification:</strong> {req.justification}</p>
-                    <p><strong>Budget Month:</strong> {req.budget_impact_month}</p>
-                    <p><strong>Requested By:</strong> {req.requester_name}</p>
-                    <p><strong>Submitted At:</strong> {new Date(req.created_at).toLocaleString()}</p>
+                    <p><strong>{t('maintenanceHODApprovals.ref')}:</strong> {req.maintenance_ref_number}</p>
+                    <p><strong>{t('maintenanceHODApprovals.justification')}:</strong> {req.justification}</p>
+                    <p><strong>{t('maintenanceHODApprovals.budgetMonth')}:</strong> {req.budget_impact_month}</p>
+                    <p><strong>{t('maintenanceHODApprovals.requestedBy')}:</strong> {req.requester_name}</p>
+                    <p><strong>{t('maintenanceHODApprovals.submittedAt')}:</strong> {new Date(req.created_at).toLocaleString()}</p>
                   </div>
                   <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded font-semibold">
-                    Pending HOD
+                    {t('maintenanceHODApprovals.pendingHOD')}
                   </span>
                 </div>
 
@@ -113,7 +117,7 @@ const MaintenanceHODApprovals = () => {
                       processingId === req.approval_id ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'
                     }`}
                   >
-                    {processingId === req.approval_id ? 'Processing...' : 'Approve'}
+                    {processingId === req.approval_id ? t('common.loading') : t('maintenanceHODApprovals.approve')}
                   </button>
                   <button
                     disabled={processingId === req.approval_id}
@@ -122,7 +126,7 @@ const MaintenanceHODApprovals = () => {
                       processingId === req.approval_id ? 'bg-gray-400' : 'bg-red-600 hover:bg-red-700'
                     }`}
                   >
-                    {processingId === req.approval_id ? 'Processing...' : 'Reject'}
+                    {processingId === req.approval_id ? t('common.loading') : t('maintenanceHODApprovals.reject')}
                   </button>
                 </div>
               </div>
@@ -135,17 +139,17 @@ const MaintenanceHODApprovals = () => {
                 onClick={() => setCurrentPage((prev) => prev - 1)}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
               >
-                Prev
+                {t('common.prev')}
               </button>
               <span>
-                Page {currentPage} of {totalPages}
+                {t('common.pageOf', { current: currentPage, total: totalPages })}
               </span>
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((prev) => prev + 1)}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>

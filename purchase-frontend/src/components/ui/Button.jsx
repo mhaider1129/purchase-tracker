@@ -1,5 +1,6 @@
 // src/components/ui/Button.jsx
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Button = ({
   children,
@@ -13,6 +14,7 @@ const Button = ({
   ariaLabel,
   ...props
 }) => {
+  const { t } = useTranslation();
   const baseStyles =
     'inline-flex items-center justify-center px-4 py-2 rounded font-medium transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -62,7 +64,7 @@ const Button = ({
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             ></path>
           </svg>
-          Loading...
+          {t('common.loading')}
         </span>
       ) : (
         children
@@ -72,4 +74,3 @@ const Button = ({
 };
 
 export { Button };
-

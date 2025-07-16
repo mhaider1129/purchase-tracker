@@ -3,8 +3,10 @@ import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
+import { useTranslation } from 'react-i18next';
 
 const OpenRequestsPage = () => {
+  const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [requestType, setRequestType] = useState('');
@@ -96,77 +98,77 @@ const OpenRequestsPage = () => {
       <Navbar />
       <div className="max-w-5xl mx-auto p-6">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Open Requests</h1>
+          <h1 className="text-2xl font-bold">{t('openRequests.title')}</h1>
           <button
             onClick={exportToCSV}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            Export CSV
+            {t('openRequests.exportCSV')}
           </button>
         </div>
 
         <div className="flex gap-3 mb-4">
           <select className="border p-2 rounded" value={requestType} onChange={(e) => setRequestType(e.target.value)}>
-            <option value="">All Types</option>
-            <option value="Stock">Stock</option>
-            <option value="Non-Stock">Non-Stock</option>
-            <option value="Medical Device">Medical Device</option>
+            <option value="">{t('openRequests.allTypes')}</option>
+            <option value="Stock">{t('openRequests.stock')}</option>
+            <option value="Non-Stock">{t('openRequests.nonStock')}</option>
+            <option value="Medical Device">{t('openRequests.medicalDevice')}</option>
           </select>
           <select className="border p-2 rounded" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All Statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Approved">Approved</option>
+            <option value="">{t('openRequests.allStatuses')}</option>
+            <option value="Pending">{t('openRequests.pending')}</option>
+            <option value="Approved">{t('openRequests.approved')}</option>
           </select>
           <input
             type="text"
             className="border p-2 rounded"
-            placeholder="Search items"
+            placeholder={t('openRequests.searchItems')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={handleFilter}>Apply Filters</button>
+          <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={handleFilter}>{t('openRequests.applyFilters')}</button>
         </div>
 
         {isLoading ? (
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         ) : paginated.length === 0 ? (
-          <p>No requests found.</p>
+          <p>{t('openRequests.noRequests')}</p>
         ) : (
           <div className="space-y-4">
             {paginated.map((req) => (
               <div key={req.id} className="border rounded p-4 shadow">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p><strong>ID:</strong> {req.id}</p>
-                    <p><strong>Type:</strong> {req.request_type}</p>
-                    {req.is_urgent && <p className="text-red-600 font-bold text-sm mt-1">🚨 Urgent Request</p>}
+                    <p><strong>{t('openRequests.id')}:</strong> {req.id}</p>
+                    <p><strong>{t('openRequests.type')}:</strong> {req.request_type}</p>
+                    {req.is_urgent && <p className="text-red-600 font-bold text-sm mt-1">{t('openRequests.urgent')}</p>}
                     <p>
-                      <strong>Status:</strong>{' '}
+                      <strong>{t('openRequests.status')}:</strong>{' '}
                       <span className={getStatusColor(req.status)}>{req.status}</span>
                     </p>
-                    <p><strong>Cost:</strong> {req.estimated_cost} IQD</p>
-                    <p><strong>Submitted:</strong> {new Date(req.created_at).toLocaleString()}</p>
+                    <p><strong>{t('openRequests.cost')}:</strong> {req.estimated_cost} IQD</p>
+                    <p><strong>{t('openRequests.submitted')}:</strong> {new Date(req.created_at).toLocaleString()}</p>
                   </div>
                   <button
                     className="text-blue-600 underline"
                     onClick={() => toggleExpand(req.id)}
                     disabled={loadingId === req.id}
                   >
-                    {expandedId === req.id ? 'Hide Items' : 'Show Items'}
+                    {expandedId === req.id ? t('openRequests.hideItems') : t('openRequests.showItems')}
                   </button>
                 </div>
 
                 {expandedId === req.id && (
                   <div className="mt-4 border-t pt-2">
-                    <h3 className="font-semibold mb-2">Requested Items:</h3>
+                    <h3 className="font-semibold mb-2">{t('openRequests.requestedItems')}</h3>
                     {itemsMap[req.id]?.length > 0 ? (
                       <table className="w-full text-sm border">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="border p-1">Item</th>
-                            <th className="border p-1">Qty</th>
-                            <th className="border p-1">Unit Cost</th>
-                            <th className="border p-1">Total</th>
+                            <th className="border p-1">{t('openRequests.item')}</th>
+                            <th className="border p-1">{t('openRequests.qty')}</th>
+                            <th className="border p-1">{t('openRequests.unitCost')}</th>
+                            <th className="border p-1">{t('openRequests.total')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -181,7 +183,7 @@ const OpenRequestsPage = () => {
                         </tbody>
                       </table>
                     ) : (
-                      <p className="text-sm text-gray-500">No items found for this request.</p>
+                      <p className="text-sm text-gray-500">{t('openRequests.noItemsForRequest')}</p>
                     )}
                   </div>
                 )}
@@ -195,17 +197,17 @@ const OpenRequestsPage = () => {
                 onClick={() => setCurrentPage((prev) => prev - 1)}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
               >
-                Prev
+                {t('common.prev')}
               </button>
               <span>
-                Page {currentPage} of {totalPages}
+                {t('common.pageOf', { current: currentPage, total: totalPages })}
               </span>
               <button
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage((prev) => prev + 1)}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>

@@ -8,6 +8,7 @@ const NonStockRequestForm = () => {
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   const { user, loading, error } = useCurrentUser();
   const targetDeptId = user?.department_id;
@@ -50,21 +51,24 @@ const NonStockRequestForm = () => {
       return;
     }
 
-    const payload = {
-      request_type: 'Non-Stock',
-      justification,
-      budget_impact_month: null,
-      target_department_id: targetDeptId,
-      target_section_id: targetSectionId,
-      items,
-    };
+    const formData = new FormData();
+    formData.append('request_type', 'Non-Stock');
+    formData.append('justification', justification);
+    formData.append('budget_impact_month', '');
+    formData.append('target_department_id', targetDeptId);
+    formData.append('target_section_id', targetSectionId || '');
+    formData.append('items', JSON.stringify(items));
+    attachments.forEach((file) => formData.append('attachments', file));
 
     try {
       setIsSubmitting(true);
-      await api.post('/api/requests', payload);
+      await api.post('/api/requests', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       alert('✅ Non-stock request submitted successfully!');
       setJustification('');
       setItems([getEmptyItem()]);
+      setAttachments([]);
     } catch (err) {
       console.error('❌ Submission error:', err);
       alert(err.response?.data?.message || '❌ Failed to submit request.');
@@ -180,6 +184,18 @@ const NonStockRequestForm = () => {
             >
               + Add Another Item
             </button>
+          </div>
+
+          {/* Attachments */}
+          <div>
+            <label className="block font-semibold mb-1">Attachments</label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setAttachments(Array.from(e.target.files))}
+              className="p-2 border rounded w-full"
+              disabled={isSubmitting}
+            />
           </div>
 
           {/* Submit */}

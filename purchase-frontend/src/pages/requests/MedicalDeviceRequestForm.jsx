@@ -10,6 +10,7 @@ const MedicalDeviceRequestForm = () => {
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   function getEmptyItem() {
     return {
@@ -62,21 +63,24 @@ const MedicalDeviceRequestForm = () => {
       return;
     }
 
-    const payload = {
-      request_type: 'Medical Device',
-      justification,
-      target_department_id: user.department_id,
-      target_section_id: user.section_id,
-      budget_impact_month: null,
-      items,
-    };
+    const formData = new FormData();
+    formData.append('request_type', 'Medical Device');
+    formData.append('justification', justification);
+    formData.append('target_department_id', user.department_id);
+    formData.append('target_section_id', user.section_id || '');
+    formData.append('budget_impact_month', '');
+    formData.append('items', JSON.stringify(items));
+    attachments.forEach((file) => formData.append('attachments', file));
 
     setIsSubmitting(true);
     try {
-      await api.post('/api/requests', payload);
+      await api.post('/api/requests', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       alert('✅ Medical Device request submitted successfully!');
       setJustification('');
       setItems([getEmptyItem()]);
+      setAttachments([]);
     } catch (err) {
       console.error('❌ Submission error:', err);
       alert(err.response?.data?.message || '❌ Failed to submit request.');
@@ -224,6 +228,18 @@ const MedicalDeviceRequestForm = () => {
               )}
             </div>
           ))}
+
+          {/* Actions */}
+          <div>
+            <label className="block font-semibold mb-1">Attachments</label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setAttachments(Array.from(e.target.files))}
+              className="p-2 border rounded w-full"
+              disabled={isSubmitting}
+            />
+          </div>
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">

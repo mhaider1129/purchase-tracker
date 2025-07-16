@@ -15,6 +15,7 @@ const MaintenanceRequestForm = () => {
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [attachments, setAttachments] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -69,16 +70,21 @@ const MaintenanceRequestForm = () => {
 
     setSubmitting(true);
     try {
-      await axios.post('/api/requests', {
-        request_type: 'Maintenance',
-        maintenance_ref_number: refNumber,
-        justification,
-        budget_impact_month: budgetMonth,
-        target_department_id: targetDeptId,
-        target_section_id: targetSectionId,
-        items,
+      const formData = new FormData();
+      formData.append('request_type', 'Maintenance');
+      formData.append('maintenance_ref_number', refNumber);
+      formData.append('justification', justification);
+      formData.append('budget_impact_month', budgetMonth);
+      formData.append('target_department_id', targetDeptId);
+      formData.append('target_section_id', targetSectionId);
+      formData.append('items', JSON.stringify(items));
+      attachments.forEach((file) => formData.append('attachments', file));
+
+      await axios.post('/api/requests', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       navigate('/request-submitted');
+      setAttachments([]);
     } catch (err) {
       console.error('❌ Failed to submit maintenance request:', err);
       alert('❌ Submission failed. Please try again.');
@@ -191,6 +197,17 @@ const MaintenanceRequestForm = () => {
             >
               + Add Item
             </Button>
+          </div>
+ 
+          <div>
+            <label className="block font-semibold mb-1">Attachments</label>
+            <input
+              type="file"
+              multiple
+              onChange={(e) => setAttachments(Array.from(e.target.files))}
+              className="p-2 border rounded w-full"
+              disabled={submitting}
+            />
           </div>
 
           <Button
