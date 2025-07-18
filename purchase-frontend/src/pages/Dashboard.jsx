@@ -2,8 +2,18 @@ import React, { useEffect, useState } from 'react';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  LineChart,
+  Line,
 } from 'recharts';
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
@@ -32,11 +42,12 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold text-purple-700 mb-6">📊 Dashboard Overview</h1>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-8">
           <Card title="Total Requests" value={summary.total_requests} />
           <Card title="Approved" value={summary.approved_requests} />
           <Card title="Pending" value={summary.pending_requests} />
           <Card title="Rejected" value={summary.rejected_requests} />
+          <Card title="Avg Approval Time (days)" value={summary.avg_approval_time_days.toFixed(2)} />
         </div>
 
         {/* Charts */}
@@ -71,6 +82,18 @@ const Dashboard = () => {
                 <Tooltip />
                 <Legend />
               </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Rejected Requests</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={summary.rejections_by_month}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="rejected_count" stroke="#ff4d4f" />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>

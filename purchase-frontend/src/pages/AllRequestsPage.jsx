@@ -4,6 +4,31 @@ import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
 import Navbar from '../components/Navbar';
 
+// Map roles returned by the API to human friendly step labels
+const STEP_LABELS = {
+  HOD: 'HOD Approval',
+  CMO: 'CMO Approval',
+  SCM: 'SCM Approval',
+  COO: 'COO Approval',
+  CEO: 'CEO Approval',
+  CFO: 'CFO Approval',
+  WarehouseManager: 'Warehouse Manager Approval',
+  WarehouseKeeper: 'Warehouse Keeper Approval',
+  ProcurementSupervisor: 'Procurement Supervisor Action',
+  ProcurementSpecialist: 'Procurement Specialist Action',
+};
+
+// Helper to derive a readable current step string for a request
+const getCurrentStep = (req) => {
+  if (req.status === 'Rejected') return 'Rejected';
+  if (req.status?.toLowerCase() === 'completed') return 'Completed';
+  if (req.status === 'Approved' && !req.current_approver_role) return 'Approved';
+  if (req.current_approver_role) {
+    return STEP_LABELS[req.current_approver_role] || `${req.current_approver_role} Approval`;
+  }
+  return 'Submitted';
+};
+
 const AllRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
@@ -136,6 +161,7 @@ const AllRequestsPage = () => {
           <option value="Stock">Stock</option>
           <option value="Non-Stock">Non-Stock</option>
           <option value="Medical Device">Medical Device</option>
+          <option value="IT Item">IT Item</option>
         </select>
 
         <input
@@ -219,10 +245,10 @@ const AllRequestsPage = () => {
                       : 'Not Assigned'}
                   </p>
                   <p>
-                    <strong>Current Step:</strong>{' '}
-                    {request.current_approver_role
-                      ? `${request.current_approver_role} (Level ${request.current_approval_level})`
-                      : 'Finalized'}
+                    <strong>Current Step:</strong> {getCurrentStep(request)}
+                    {request.current_approver_role && request.current_approval_level && (
+                      <> (Level {request.current_approval_level})</>
+                    )}
                   </p>
                 </div>
 

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import axios from '../../api/axios';
+import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const RequestTypeSelector = () => {
   const navigate = useNavigate();
@@ -39,7 +40,10 @@ const RequestTypeSelector = () => {
     <>
       <Navbar />
       <div className="max-w-md mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">Select Request Type</h1>
+        <h1 className="text-2xl font-bold mb-6 text-gray-800">
+          Select Request Type
+          <HelpTooltip text="Step 1: Choose the type of request you want to submit." />
+        </h1>
 
         <div className="space-y-4">
           {/* 📦 Stock Request */}
@@ -68,6 +72,14 @@ const RequestTypeSelector = () => {
             aria-label="Medical Device Request"
           >
             Medical Device Request
+          </button>
+
+          <button
+            onClick={() => navigate('/requests/it-items')}
+            className={`${buttonStyle} bg-teal-600 hover:bg-teal-700 focus:ring-teal-400`}
+            aria-label="IT Item Request"
+          >
+            IT Item Request
           </button>
 
           {/* 🔎 Approval Panel & History */}

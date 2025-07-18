@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
+import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const StockRequestForm = () => {
   const [itemsList, setItemsList] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([{ item_name: '', quantity: 1, available_quantity: '' }]);
+  const [selectedItems, setSelectedItems] = useState([{ item_name: '', quantity: 1, available_quantity: '', attachments: [] }]);
   const [justification, setJustification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
@@ -55,12 +56,16 @@ const StockRequestForm = () => {
   }, [navigate]);
 
   useEffect(() => {
-    // Replace this with real API in production
-    setItemsList([
-      { id: 1, name: 'Syringe 5ml' },
-      { id: 2, name: 'Gloves - Medium' },
-      { id: 3, name: 'Face Mask N95' },
-    ]);
+    const fetchItems = async () => {
+      try {
+        const res = await api.get('/api/stock-items');
+        setItemsList(res.data || []);
+      } catch (err) {
+        console.error('Failed to load stock items:', err);
+      }
+    };
+
+    fetchItems();
   }, []);
 
   const handleItemChange = (index, field, value) => {
@@ -69,8 +74,14 @@ const StockRequestForm = () => {
     setSelectedItems(updated);
   };
 
+  const handleItemFiles = (index, files) => {
+    const updated = [...selectedItems];
+    updated[index].attachments = Array.from(files);
+    setSelectedItems(updated);
+  };
+
   const addItem = () => {
-    setSelectedItems([...selectedItems, { item_name: '', quantity: 1, available_quantity: '' }]);
+    setSelectedItems([...selectedItems, { item_name: '', quantity: 1, available_quantity: '', attachments: [] }]);
   };
 
   const removeItem = (index) => {
@@ -104,8 +115,14 @@ const StockRequestForm = () => {
     formData.append('justification', justification);
     formData.append('target_section_id', sectionId);
     formData.append('budget_impact_month', '');
-    formData.append('items', JSON.stringify(selectedItems));
+    const itemsPayload = selectedItems.map(({ attachments, ...rest }) => rest);
+    formData.append('items', JSON.stringify(itemsPayload));
     attachments.forEach((file) => formData.append('attachments', file));
+    selectedItems.forEach((item, idx) => {
+      (item.attachments || []).forEach((file) => {
+        formData.append(`item_${idx}`, file);
+      });
+    });
 
     try {
       setIsSubmitting(true);
@@ -126,7 +143,10 @@ const StockRequestForm = () => {
     <>
       <Navbar />
       <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Stock Request Form</h1>
+        <h1 className="text-2xl font-bold mb-4">
+          Stock Request Form
+          <HelpTooltip text="Step 2: Provide details for your stock request." />
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -170,16 +190,23 @@ const StockRequestForm = () => {
   disabled={isSubmitting}
 />
 
-<input
-  type="number"
-  min={1}
-  placeholder="Requested"
-  value={item.quantity}
-  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-  className="w-28 p-2 border rounded"
-  required
-  disabled={isSubmitting}
-/>
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="Requested"
+                  value={item.quantity}
+                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                  className="w-28 p-2 border rounded"
+                  required
+                  disabled={isSubmitting}
+                />
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => handleItemFiles(index, e.target.files)}
+                  className="p-1 border rounded"
+                  disabled={isSubmitting}
+                />
                 {selectedItems.length > 1 && (
                   <button
                     type="button"
@@ -222,6 +249,7 @@ const StockRequestForm = () => {
             }`}
           >
             {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            <HelpTooltip text="Step 3: Submit the request for approval." />
           </button>
         </form>
       </div>

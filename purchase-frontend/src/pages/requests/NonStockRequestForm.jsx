@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
+import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const NonStockRequestForm = () => {
   const [justification, setJustification] = useState('');
@@ -15,12 +16,18 @@ const NonStockRequestForm = () => {
   const targetSectionId = user?.section_id;
 
   function getEmptyItem() {
-    return { item_name: '', quantity: 1, intended_use: '' };
+    return { item_name: '', quantity: 1, intended_use: '', attachments: [] };
   }
 
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     updated[index][field] = field === 'quantity' ? Number(value) || '' : value;
+    setItems(updated);
+  };
+
+  const handleItemFiles = (index, files) => {
+    const updated = [...items];
+    updated[index].attachments = Array.from(files);
     setItems(updated);
   };
 
@@ -57,8 +64,14 @@ const NonStockRequestForm = () => {
     formData.append('budget_impact_month', '');
     formData.append('target_department_id', targetDeptId);
     formData.append('target_section_id', targetSectionId || '');
-    formData.append('items', JSON.stringify(items));
+    const itemsPayload = items.map(({ attachments, ...rest }) => rest);
+    formData.append('items', JSON.stringify(itemsPayload));
     attachments.forEach((file) => formData.append('attachments', file));
+    items.forEach((item, idx) => {
+      (item.attachments || []).forEach((file) => {
+        formData.append(`item_${idx}`, file);
+      });
+    });
 
     try {
       setIsSubmitting(true);
@@ -101,7 +114,10 @@ const NonStockRequestForm = () => {
     <>
       <Navbar />
       <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Non-Stock Request Form</h1>
+        <h1 className="text-2xl font-bold mb-4">
+          Non-Stock Request Form
+          <HelpTooltip text="Step 2: Provide details for your non-stock request." />
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Department Display */}
@@ -164,6 +180,13 @@ const NonStockRequestForm = () => {
                   className="flex-1 p-2 border rounded"
                   disabled={isSubmitting}
                 />
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => handleItemFiles(index, e.target.files)}
+                  className="p-1 border rounded"
+                  disabled={isSubmitting}
+                />
                 {items.length > 1 && (
                   <button
                     type="button"
@@ -208,6 +231,7 @@ const NonStockRequestForm = () => {
               }`}
             >
               {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              <HelpTooltip text="Step 3: Submit the request for approval." />
             </button>
           </div>
         </form>

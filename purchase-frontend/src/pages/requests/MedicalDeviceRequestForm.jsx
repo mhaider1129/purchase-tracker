@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
+import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const MedicalDeviceRequestForm = () => {
   const { user, loading } = useCurrentUser();
@@ -21,6 +22,7 @@ const MedicalDeviceRequestForm = () => {
       specs: '',
       device_info: '',
       purchase_type: 'First Time',
+      attachments: []
     };
   }
 
@@ -28,6 +30,12 @@ const MedicalDeviceRequestForm = () => {
     const updated = [...items];
     updated[index][field] =
       ['quantity', 'unit_cost'].includes(field) ? Number(value) || '' : value;
+    setItems(updated);
+  };
+
+  const handleItemFiles = (index, files) => {
+    const updated = [...items];
+    updated[index].attachments = Array.from(files);
     setItems(updated);
   };
 
@@ -69,8 +77,14 @@ const MedicalDeviceRequestForm = () => {
     formData.append('target_department_id', user.department_id);
     formData.append('target_section_id', user.section_id || '');
     formData.append('budget_impact_month', '');
-    formData.append('items', JSON.stringify(items));
+    const itemsPayload = items.map(({ attachments, ...rest }) => rest);
+    formData.append('items', JSON.stringify(itemsPayload));
     attachments.forEach((file) => formData.append('attachments', file));
+        items.forEach((item, idx) => {
+      (item.attachments || []).forEach((file) => {
+        formData.append(`item_${idx}`, file);
+      });
+    });
 
     setIsSubmitting(true);
     try {
@@ -102,7 +116,10 @@ const MedicalDeviceRequestForm = () => {
     <>
       <Navbar />
       <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Medical Device Request Form</h1>
+        <h1 className="text-2xl font-bold mb-4">
+          Medical Device Request Form
+          <HelpTooltip text="Step 2: Provide details for your medical device request." />
+        </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Auto-Filled Department */}
@@ -215,6 +232,13 @@ const MedicalDeviceRequestForm = () => {
                 <option value="Replacement">Replacement</option>
                 <option value="Addition">Addition</option>
               </select>
+              <input
+                type="file"
+                multiple
+                onChange={(e) => handleItemFiles(index, e.target.files)}
+                className="p-1 border rounded"
+                disabled={isSubmitting}
+              />
 
               {items.length > 1 && (
                 <button
@@ -260,6 +284,7 @@ const MedicalDeviceRequestForm = () => {
               }`}
             >
               {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              <HelpTooltip text="Step 3: Submit the request for approval." />
             </button>
           </div>
         </form>

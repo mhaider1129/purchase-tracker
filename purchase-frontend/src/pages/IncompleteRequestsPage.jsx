@@ -120,6 +120,7 @@ const IncompleteRequestsPage = () => {
               <option value="Stock">Stock</option>
               <option value="Non-Stock">Non-Stock</option>
               <option value="Medical Device">Medical Device</option>
+              <option value="IT Item">IT Item</option>
             </select>
           </div>
 

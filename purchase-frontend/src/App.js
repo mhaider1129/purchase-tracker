@@ -8,6 +8,7 @@ import RequestTypeSelector from './pages/requests/RequestTypeSelector';
 import StockRequestForm from './pages/requests/StockRequestForm';
 import NonStockRequestForm from './pages/requests/NonStockRequestForm';
 import MedicalDeviceRequestForm from './pages/requests/MedicalDeviceRequestForm';
+import ITRequestForm from './pages/requests/ITRequestForm';
 import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
 import MaintenanceApprovalsPage from './pages/requests/MaintenanceApprovalsPage';
 
@@ -27,6 +28,8 @@ import IncompleteOperationalRequestsPage from './pages/IncompleteOperationalRequ
 import Dashboard from './pages/Dashboard';
 import CompletedAssignedRequestsPage from './pages/CompletedAssignedRequestsPage';
 import ClosedRequestsPage from './pages/ClosedRequestsPage';
+import MaintenanceStockPage from './pages/MaintenanceStockPage';
+import ProcurementPlansPage from './pages/ProcurementPlansPage';
 
 
 // ✅ Extract user role from JWT
@@ -78,6 +81,7 @@ function App() {
         <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
         <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
+        <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
         <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
         <Route path="/approvals" element={<ProtectedRoute element={<ApprovalsPanel />} />} />
         <Route path="/open-requests" element={<ProtectedRoute element={<OpenRequestsPage />} />} />
@@ -88,12 +92,14 @@ function App() {
         <Route path="/my-maintenance-requests" element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />} />
         <Route path="/approvals/maintenance" element={<ProtectedRoute element={<MaintenanceHODApprovals />} allowedRoles={['HOD']} />} />
         <Route path="/maintenance-approvals" element={<ProtectedRoute element={<MaintenanceApprovalsPage />} allowedRoles={['requester']} />} />
+        <Route path="/maintenance-stock" element={<ProtectedRoute element={<MaintenanceStockPage />} allowedRoles={['WarehouseManager', 'warehouse_manager']} />} />
 
         {/* ✅ Admin / SCM Routes */}
         <Route path="/admin-tools" element={<ProtectedRoute element={<AdminTools />} allowedRoles={['SCM', 'admin']} />} />
         <Route path="/management" element={<ProtectedRoute element={<Management />} allowedRoles={['SCM', 'admin']} />} />
         <Route path="/all-requests" element={<ProtectedRoute element={<AllRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
         <Route path="/incomplete" element={<ProtectedRoute element={<IncompleteRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
+        <Route path="/procurement-plans" element={<ProtectedRoute element={<ProcurementPlansPage />} allowedRoles={['SCM', 'admin']} />} />
 
         {/* ✅ Procurement-Specific Routes */}
         <Route path="/assigned-requests" element={<ProtectedRoute element={<AssignedRequestsPage />} allowedRoles={['ProcurementSupervisor', 'ProcurementSpecialist', 'SCM']} />} />

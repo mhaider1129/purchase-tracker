@@ -53,6 +53,7 @@ const Navbar = () => {
             {renderNavButton(t('navbar.adminTools'), '/admin-tools', 'text-yellow-600')}
             {renderNavButton(t('navbar.management'), '/management', 'text-purple-600')}
             {renderNavButton(t('navbar.allRequests'), '/all-requests', 'text-indigo-600')}
+            {renderNavButton(t('navbar.procurementPlans'), '/procurement-plans', 'text-teal-600')}
           </>
         )}
 

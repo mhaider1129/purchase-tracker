@@ -4,18 +4,20 @@ import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { Button } from '../../components/ui/Button';
+import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const MaintenanceRequestForm = () => {
   const [refNumber, setRefNumber] = useState('');
   const [justification, setJustification] = useState('');
-  const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
+  const [items, setItems] = useState([{ item_name: '', quantity: 1, attachments: [] }]);
   const [budgetMonth, setBudgetMonth] = useState('');
   const [departments, setDepartments] = useState([]);
   const [sections, setSections] = useState([]);
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [attachments, setAttachments] = useState([]);
+const [attachments, setAttachments] = useState([]);
+  const [stockItems, setStockItems] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +31,16 @@ const MaintenanceRequestForm = () => {
       }
     };
     fetchDepartments();
+
+    const fetchStock = async () => {
+      try {
+        const res = await axios.get('/api/maintenance-stock');
+        setStockItems(res.data || []);
+      } catch (err) {
+        console.error('Failed to load maintenance stock:', err);
+      }
+    };
+    fetchStock();
   }, []);
 
   useEffect(() => {
@@ -56,8 +68,14 @@ const MaintenanceRequestForm = () => {
     setItems(updated);
   };
 
+  const handleItemFiles = (index, files) => {
+    const updated = [...items];
+    updated[index].attachments = Array.from(files);
+    setItems(updated);
+  };
+
   const addItem = () => {
-    setItems([...items, { item_name: '', quantity: 1 }]);
+    setItems([...items, { item_name: '', quantity: 1, attachments: [] }]);
   };
 
   const handleSubmit = async (e) => {
@@ -77,8 +95,14 @@ const MaintenanceRequestForm = () => {
       formData.append('budget_impact_month', budgetMonth);
       formData.append('target_department_id', targetDeptId);
       formData.append('target_section_id', targetSectionId);
-      formData.append('items', JSON.stringify(items));
+      const itemsPayload = items.map(({ attachments, ...rest }) => rest);
+      formData.append('items', JSON.stringify(itemsPayload));
       attachments.forEach((file) => formData.append('attachments', file));
+      items.forEach((item, idx) => {
+        (item.attachments || []).forEach((file) => {
+          formData.append(`item_${idx}`, file);
+        });
+      });
 
       await axios.post('/api/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -97,7 +121,10 @@ const MaintenanceRequestForm = () => {
     <>
       <Navbar />
       <div className="p-6 max-w-4xl mx-auto">
-        <h2 className="text-2xl font-semibold mb-4">Maintenance Request Form</h2>
+        <h2 className="text-2xl font-semibold mb-4">
+          Maintenance Request Form
+          <HelpTooltip text="Step 2: Provide details for your maintenance request." />
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
 
           <input
@@ -163,6 +190,28 @@ const MaintenanceRequestForm = () => {
             required
           />
 
+          {stockItems.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold mb-2">Available Maintenance Stock</h4>
+              <table className="w-full text-sm border">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="border p-2 text-left">Item</th>
+                    <th className="border p-2 text-left">Qty</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stockItems.map((s) => (
+                    <tr key={s.id}>
+                      <td className="border p-2">{s.item_name}</td>
+                      <td className="border p-2">{s.quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <div>
             <h4 className="font-semibold mb-2">Requested Items</h4>
             {items.map((item, idx) => (
@@ -185,6 +234,12 @@ const MaintenanceRequestForm = () => {
                   onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                   className="w-full border p-2 rounded"
                   required
+                />
+                <input
+                  type="file"
+                  multiple
+                  onChange={(e) => handleItemFiles(idx, e.target.files)}
+                  className="p-1 border rounded mt-1"
                 />
               </div>
             ))}
@@ -216,7 +271,10 @@ const MaintenanceRequestForm = () => {
             fullWidth
             disabled={submitting}
           >
-            Submit Maintenance Request
+            <>
+              Submit Maintenance Request
+              <HelpTooltip text="Step 3: Submit the request for approval." />
+            </>
           </Button>
         </form>
       </div>
