@@ -198,7 +198,12 @@ const AssignedRequestsPage = () => {
                         <button
                           onClick={() => handleMarkAsCompleted(request.id)}
                           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                          disabled={items.some(item => !item.procurement_status)}
+                          disabled={items.some(
+                            item =>
+                              !item.procurement_status ||
+                              item.purchased_quantity === null ||
+                              item.purchased_quantity === undefined
+                          )}
                         >
                           Mark Request as Completed
                         </button>

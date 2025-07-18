@@ -9,7 +9,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 const MaintenanceRequestForm = () => {
   const [refNumber, setRefNumber] = useState('');
   const [justification, setJustification] = useState('');
-  const [items, setItems] = useState([{ item_name: '', quantity: 1, attachments: [] }]);
+  const [items, setItems] = useState([{ item_name: '', quantity: 1, specs: '', attachments: [] }]);
   const [budgetMonth, setBudgetMonth] = useState('');
   const [departments, setDepartments] = useState([]);
   const [sections, setSections] = useState([]);
@@ -75,7 +75,7 @@ const [attachments, setAttachments] = useState([]);
   };
 
   const addItem = () => {
-    setItems([...items, { item_name: '', quantity: 1, attachments: [] }]);
+    setItems([...items, { item_name: '', quantity: 1, specs: '', attachments: [] }]);
   };
 
   const handleSubmit = async (e) => {
@@ -234,6 +234,14 @@ const [attachments, setAttachments] = useState([]);
                   onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
                   className="w-full border p-2 rounded"
                   required
+                />
+                <input
+                  type="text"
+                  placeholder="Specs"
+                  aria-label={`Item ${idx + 1} Specs`}
+                  value={item.specs}
+                  onChange={(e) => handleItemChange(idx, 'specs', e.target.value)}
+                  className="w-full border p-2 rounded mt-1"
                 />
                 <input
                   type="file"

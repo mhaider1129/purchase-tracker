@@ -16,7 +16,7 @@ const NonStockRequestForm = () => {
   const targetSectionId = user?.section_id;
 
   function getEmptyItem() {
-    return { item_name: '', quantity: 1, intended_use: '', attachments: [] };
+    return { item_name: '', quantity: 1, intended_use: '', specs: '', attachments: [] };
   }
 
   const handleItemChange = (index, field, value) => {
@@ -177,6 +177,15 @@ const NonStockRequestForm = () => {
                   aria-label={`Item ${index + 1} Intended Use`}
                   value={item.intended_use}
                   onChange={(e) => handleItemChange(index, 'intended_use', e.target.value)}
+                  className="flex-1 p-2 border rounded"
+                  disabled={isSubmitting}
+                />
+                <input
+                  type="text"
+                  placeholder="Specs"
+                  aria-label={`Item ${index + 1} Specs`}
+                  value={item.specs}
+                  onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
                   className="flex-1 p-2 border rounded"
                   disabled={isSubmitting}
                 />

@@ -11,6 +11,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [unitCost, setUnitCost] = useState(item.unit_cost ?? '');
   const [costSaving, setCostSaving] = useState(false);
   const [costMessage, setCostMessage] = useState(null);
+  const [purchasedQty, setPurchasedQty] = useState(
+    item.purchased_quantity ?? item.quantity ?? ''
+  );
+  const [qtySaving, setQtySaving] = useState(false);
+  const [qtyMessage, setQtyMessage] = useState(null);
 
   const updatedAt = item.procurement_updated_at
     ? new Date(item.procurement_updated_at).toLocaleString()
@@ -33,6 +38,10 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   useEffect(() => {
     setUnitCost(item.unit_cost ?? '');
   }, [item.unit_cost]);
+
+  useEffect(() => {
+    setPurchasedQty(item.purchased_quantity ?? item.quantity ?? '');
+  }, [item.purchased_quantity, item.quantity]);
 
   const handleSave = async () => {
     if (!status) {
@@ -86,6 +95,32 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     }
   };
 
+  const handleSavePurchasedQty = async () => {
+    if (purchasedQty === '' || isNaN(purchasedQty) || Number(purchasedQty) < 0) {
+      setQtyMessage({ type: 'error', text: 'Enter valid quantity.' });
+      return;
+    }
+
+    setQtySaving(true);
+    setQtyMessage(null);
+
+    try {
+      await axios.put(`/api/requested-items/${item.id}/purchased-quantity`, {
+        purchased_quantity: Number(purchasedQty),
+      });
+      setQtyMessage({ type: 'success', text: '✅ Quantity updated.' });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      console.error('❌ Quantity update error:', err);
+      setQtyMessage({
+        type: 'error',
+        text: err.response?.data?.message || '❌ Failed to update quantity.',
+      });
+    } finally {
+      setQtySaving(false);
+    }
+  };
+
   return (
     <div className="border rounded p-4 mb-4 shadow bg-white transition-all duration-200">
       <p className="text-sm">
@@ -95,7 +130,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         <strong>Quantity:</strong> {item.quantity}
       </p>
 
-<div className="mt-3">
+      <div className="mt-3">
         <label className="block text-sm font-medium mb-1">Unit Cost</label>
         <input
           type="number"
@@ -121,6 +156,35 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             }`}
           >
             {costMessage.text}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-3">
+        <label className="block text-sm font-medium mb-1">Purchased Quantity</label>
+        <input
+          type="number"
+          min={0}
+          value={purchasedQty}
+          onChange={(e) => setPurchasedQty(e.target.value)}
+          className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
+        />
+        <button
+          onClick={handleSavePurchasedQty}
+          disabled={qtySaving}
+          className={`mt-2 px-4 py-2 rounded text-white text-sm font-semibold transition ${
+            qtySaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+          }`}
+        >
+          {qtySaving ? 'Saving...' : 'Save Qty'}
+        </button>
+        {qtyMessage && (
+          <div
+            className={`mt-1 text-sm font-medium ${
+              qtyMessage.type === 'error' ? 'text-red-600' : 'text-green-600'
+            }`}
+          >
+            {qtyMessage.text}
           </div>
         )}
       </div>

@@ -11,14 +11,12 @@ const ITRequestForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function getEmptyItem() {
-    return { item_name: '', quantity: 1, unit_cost: '', specs: '' };
+    return { item_name: '', quantity: 1, specs: '' };
   }
 
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
-    updated[index][field] = ['quantity', 'unit_cost'].includes(field)
-      ? Number(value) || ''
-      : value;
+    updated[index][field] = field === 'quantity' ? Number(value) || '' : value;
     setItems(updated);
   };
 
@@ -42,10 +40,10 @@ const ITRequestForm = () => {
     }
 
     const hasInvalidItem = items.some(
-      (item) => !item.item_name.trim() || item.quantity < 1 || item.unit_cost === ''
+      (item) => !item.item_name.trim() || item.quantity < 1
     );
     if (hasInvalidItem) {
-      alert('❌ Each item must have a valid name, quantity and unit cost.');
+      alert('❌ Each item must have a valid name and quantity.');
       return;
     }
 
@@ -142,17 +140,6 @@ const ITRequestForm = () => {
                   value={item.quantity}
                   onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                   className="w-24 p-2 border rounded"
-                  required
-                  disabled={isSubmitting}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="Unit Cost"
-                  value={item.unit_cost}
-                  onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
-                  className="w-32 p-2 border rounded"
                   required
                   disabled={isSubmitting}
                 />
