@@ -13,6 +13,7 @@
   "navbar": {
     "openRequests": "الطلبات المفتوحة",
     "myMaintenance": "طلباتي للصيانة",
+    "maintenanceStock": "مخزون الصيانة",
     "maintenanceApprovals": "موافقات الصيانة",
     "closedRequests": "الطلبات المغلقة",
     "adminTools": "أدوات المشرف",

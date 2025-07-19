@@ -13,6 +13,7 @@
   "navbar": {
     "openRequests": "Open Requests",
     "myMaintenance": "My Maintenance Requests",
+    "maintenanceStock": "Maintenance Stock",
     "maintenanceApprovals": "Maintenance Approvals",
     "closedRequests": "Closed Requests",
     "adminTools": "Admin Tools",

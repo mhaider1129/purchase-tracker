@@ -12,6 +12,7 @@ import ITRequestForm from './pages/requests/ITRequestForm';
 import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
 import MaintenanceApprovalsPage from './pages/requests/MaintenanceApprovalsPage';
 import WarehouseSupplyRequestForm from './pages/requests/WarehouseSupplyRequestForm';
+import WarehouseStockSupplyRequestPage from './pages/requests/WarehouseStockSupplyRequestPage';
 import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
 
@@ -32,6 +33,7 @@ import Dashboard from './pages/Dashboard';
 import CompletedAssignedRequestsPage from './pages/CompletedAssignedRequestsPage';
 import ClosedRequestsPage from './pages/ClosedRequestsPage';
 import MaintenanceStockPage from './pages/MaintenanceStockPage';
+import MaintenanceStockListPage from './pages/MaintenanceStockListPage';
 import ProcurementPlansPage from './pages/ProcurementPlansPage';
 
 
@@ -84,6 +86,7 @@ function App() {
         <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
         <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
         <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} allowedRoles={['requester']} />} />
+        <Route path="/requests/warehouse-stock-supply" element={<ProtectedRoute element={<WarehouseStockSupplyRequestPage />} allowedRoles={['requester']} />} />
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
         <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
         <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
@@ -96,7 +99,11 @@ function App() {
         <Route path="/my-maintenance-requests" element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />} />
         <Route path="/approvals/maintenance" element={<ProtectedRoute element={<MaintenanceHODApprovals />} allowedRoles={['HOD']} />} />
         <Route path="/maintenance-approvals" element={<ProtectedRoute element={<MaintenanceApprovalsPage />} allowedRoles={['requester']} />} />
-        <Route path="/maintenance-stock" element={<ProtectedRoute element={<MaintenanceStockPage />} allowedRoles={['WarehouseManager', 'warehouse_manager']} />} />
+        <Route
+          path="/maintenance-stock"
+          element={<ProtectedRoute element={<MaintenanceStockPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'technician']} />}
+        />
+        <Route path="/maintenance-stock-view" element={<ProtectedRoute element={<MaintenanceStockListPage />} allowedRoles={['technician']} />} />
         <Route path="/warehouse-supply-requests" element={<ProtectedRoute element={<WarehouseSupplyRequestsPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']} />} />
 
         {/* ✅ Admin / SCM Routes */}

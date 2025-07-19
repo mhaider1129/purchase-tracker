@@ -77,6 +77,16 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
+          {role === 'requester' && (
+            <button
+              onClick={() => navigate('/requests/warehouse-stock-supply')}
+              className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
+              aria-label="Warehouse Stock Supply Request"
+            >
+              Warehouse Stock Supply Request
+            </button>
+          )}
+
           {/* 📑 Non-Stock + Medical Device */}
           <button
             onClick={() => navigate('/requests/non-stock')}
