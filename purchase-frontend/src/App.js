@@ -124,9 +124,9 @@ function App() {
  />
         <Route path="/closed-requests" element={<ProtectedRoute element={<ClosedRequestsPage />} />} />
         <Route path="/warehouse-supply/:id" element={<ProtectedRoute element={<SupplyItemsPage />} allowedRoles={['warehouse_keeper']} />} />
+        <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} allowedRoles={['SCM', 'admin']} />} />
         {/* 🚨 Catch-All Fallback */}
         <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
-        <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} allowedRoles={['SCM', 'admin']} />} />
 
       </Routes>
     </Router>
