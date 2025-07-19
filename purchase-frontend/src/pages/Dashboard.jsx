@@ -20,6 +20,7 @@ const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
 
 const Dashboard = () => {
   const [summary, setSummary] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -28,11 +29,13 @@ const Dashboard = () => {
         setSummary(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch dashboard data:', err);
-      }
+        setError('Failed to load dashboard');
+     }
     };
     fetchSummary();
   }, []);
 
+  if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!summary) return <p className="p-6">Loading dashboard...</p>;
 
   return (
