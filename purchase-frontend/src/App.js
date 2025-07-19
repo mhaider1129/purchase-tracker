@@ -12,7 +12,6 @@ import ITRequestForm from './pages/requests/ITRequestForm';
 import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
 import MaintenanceApprovalsPage from './pages/requests/MaintenanceApprovalsPage';
 import WarehouseSupplyRequestForm from './pages/requests/WarehouseSupplyRequestForm';
-import WarehouseStockSupplyRequestPage from './pages/requests/WarehouseStockSupplyRequestPage';
 import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
 
@@ -85,8 +84,7 @@ function App() {
         {/* ✅ General Protected Routes */}
         <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
         <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
-        <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} allowedRoles={['requester']} />} />
-        <Route path="/requests/warehouse-stock-supply" element={<ProtectedRoute element={<WarehouseStockSupplyRequestPage />} allowedRoles={['requester']} />} />
+        <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />} />
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
         <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
         <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
