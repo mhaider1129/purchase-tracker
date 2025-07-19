@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
@@ -6,8 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const WarehouseSupplyRequestForm = () => {
-  const [stockItems, setStockItems] = useState([]);
-  const [items, setItems] = useState([{ stock_id: '', quantity: 1 }]);
+  const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
   const [justification, setJustification] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -16,17 +15,7 @@ const WarehouseSupplyRequestForm = () => {
   const targetDeptId = user?.department_id;
   const targetSectionId = user?.section_id;
 
-  useEffect(() => {
-    const fetchStock = async () => {
-      try {
-        const res = await api.get('/api/maintenance-stock');
-        setStockItems(res.data || []);
-      } catch (err) {
-        console.error('Failed to load stock items:', err);
-      }
-    };
-    fetchStock();
-  }, []);
+  // No stock lookup - items are manually entered by the user
 
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
@@ -34,7 +23,7 @@ const WarehouseSupplyRequestForm = () => {
     setItems(updated);
   };
 
-  const addItem = () => setItems([...items, { stock_id: '', quantity: 1 }]);
+  const addItem = () => setItems([...items, { item_name: '', quantity: 1 }]);
   const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
 
   const handleSubmit = async (e) => {
@@ -47,9 +36,9 @@ const WarehouseSupplyRequestForm = () => {
       alert('Your account is missing department information');
       return;
     }
-    const hasInvalid = items.some(i => !i.stock_id || i.quantity < 1);
+    const hasInvalid = items.some(i => !i.item_name.trim() || i.quantity < 1);
     if (hasInvalid) {
-      alert('Each item must have a stock item and quantity');
+      alert('Each item must have a name and quantity');
       return;
     }
 
@@ -59,7 +48,7 @@ const WarehouseSupplyRequestForm = () => {
     payload.append('target_department_id', targetDeptId);
     payload.append('target_section_id', targetSectionId || '');
     payload.append('budget_impact_month', '');
-    const mapped = items.map(it => ({ item_name: it.stock_id, quantity: it.quantity }));
+    const mapped = items.map(it => ({ item_name: it.item_name, quantity: it.quantity }));
     payload.append('items', JSON.stringify(mapped));
 
     try {
@@ -120,18 +109,15 @@ const WarehouseSupplyRequestForm = () => {
             <label className="block font-semibold mb-2">Items</label>
             {items.map((it, idx) => (
               <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
-                <select
-                  value={it.stock_id}
-                  onChange={(e) => handleItemChange(idx, 'stock_id', e.target.value)}
+                <input
+                  type="text"
+                  value={it.item_name}
+                  onChange={(e) => handleItemChange(idx, 'item_name', e.target.value)}
                   className="flex-1 p-2 border rounded"
+                  placeholder="Item name"
                   required
                   disabled={submitting}
-                >
-                  <option value="">-- Select Item --</option>
-                  {stockItems.map((s) => (
-                    <option key={s.id} value={s.item_name}>{s.item_name} (Avail: {s.quantity})</option>
-                  ))}
-                </select>
+                />
                 <input
                   type="number"
                   min={1}
