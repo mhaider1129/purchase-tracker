@@ -1,0 +1,165 @@
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axios';
+import Navbar from '../../components/Navbar';
+import useCurrentUser from '../../hooks/useCurrentUser';
+import { useNavigate } from 'react-router-dom';
+import { HelpTooltip } from '../../components/ui/HelpTooltip';
+
+const WarehouseSupplyRequestForm = () => {
+  const [stockItems, setStockItems] = useState([]);
+  const [items, setItems] = useState([{ stock_id: '', quantity: 1 }]);
+  const [justification, setJustification] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const navigate = useNavigate();
+  const { user, loading, error } = useCurrentUser();
+  const targetDeptId = user?.department_id;
+  const targetSectionId = user?.section_id;
+
+  useEffect(() => {
+    const fetchStock = async () => {
+      try {
+        const res = await api.get('/api/maintenance-stock');
+        setStockItems(res.data || []);
+      } catch (err) {
+        console.error('Failed to load stock items:', err);
+      }
+    };
+    fetchStock();
+  }, []);
+
+  const handleItemChange = (index, field, value) => {
+    const updated = [...items];
+    updated[index][field] = field === 'quantity' ? Number(value) || 0 : value;
+    setItems(updated);
+  };
+
+  const addItem = () => setItems([...items, { stock_id: '', quantity: 1 }]);
+  const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!justification.trim()) {
+      alert('Justification is required');
+      return;
+    }
+    if (!targetDeptId) {
+      alert('Your account is missing department information');
+      return;
+    }
+    const hasInvalid = items.some(i => !i.stock_id || i.quantity < 1);
+    if (hasInvalid) {
+      alert('Each item must have a stock item and quantity');
+      return;
+    }
+
+    const payload = new FormData();
+    payload.append('request_type', 'Warehouse Supply');
+    payload.append('justification', justification);
+    payload.append('target_department_id', targetDeptId);
+    payload.append('target_section_id', targetSectionId || '');
+    payload.append('budget_impact_month', '');
+    const mapped = items.map(it => ({ item_name: it.stock_id, quantity: it.quantity }));
+    payload.append('items', JSON.stringify(mapped));
+
+    try {
+      setSubmitting(true);
+      await api.post('/api/requests', payload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      navigate('/request-submitted', { state: { requestType: 'Warehouse Supply' } });
+    } catch (err) {
+      console.error('Submission failed:', err);
+      alert(err.response?.data?.message || 'Failed to submit request');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="p-6 text-center text-gray-600">Loading...</div>
+      </>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <>
+        <Navbar />
+        <div className="p-6 text-center text-red-600">Unable to load user info.</div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <div className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-4">
+          Warehouse Supply Request
+          <HelpTooltip text="Request items from warehouse stock" />
+        </h1>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block font-semibold mb-1">Justification</label>
+            <textarea
+              className="w-full p-2 border rounded"
+              rows={3}
+              value={justification}
+              onChange={(e) => setJustification(e.target.value)}
+              required
+              disabled={submitting}
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-2">Items</label>
+            {items.map((it, idx) => (
+              <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
+                <select
+                  value={it.stock_id}
+                  onChange={(e) => handleItemChange(idx, 'stock_id', e.target.value)}
+                  className="flex-1 p-2 border rounded"
+                  required
+                  disabled={submitting}
+                >
+                  <option value="">-- Select Item --</option>
+                  {stockItems.map((s) => (
+                    <option key={s.id} value={s.item_name}>{s.item_name} (Avail: {s.quantity})</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  value={it.quantity}
+                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                  className="w-24 p-2 border rounded"
+                  required
+                  disabled={submitting}
+                />
+                {items.length > 1 && (
+                  <button type="button" onClick={() => removeItem(idx)} className="text-red-600 text-lg" disabled={submitting}>✕</button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={addItem} className="text-blue-600 mt-2" disabled={submitting}>+ Add Item</button>
+          </div>
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {submitting ? 'Submitting...' : 'Submit Request'}
+          </button>
+        </form>
+      </div>
+    </>
+  );
+};
+
+export default WarehouseSupplyRequestForm;

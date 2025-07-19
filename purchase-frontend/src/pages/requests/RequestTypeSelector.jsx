@@ -57,6 +57,26 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
+          {['warehouse_manager', 'warehouse_keeper'].includes(role) && (
+            <button
+              onClick={() => navigate('/warehouse-supply-requests')}
+              className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
+              aria-label="View Warehouse Supply Requests"
+            >
+              Warehouse Supply Requests
+            </button>
+          )}
+
+          {role === 'requester' && (
+            <button
+              onClick={() => navigate('/requests/warehouse-supply')}
+              className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
+              aria-label="Warehouse Supply Request"
+            >
+              Warehouse Supply Request
+            </button>
+          )}
+
           {/* 📑 Non-Stock + Medical Device */}
           <button
             onClick={() => navigate('/requests/non-stock')}
