@@ -40,6 +40,7 @@ const WarehouseSupplyRequestsPage = () => {
               <p><strong>ID:</strong> {req.id}</p>
               <p><strong>Department:</strong> {req.department_name}</p>
               <p><strong>Section:</strong> {req.section_name || '—'}</p>
+              <p><strong>Warehouse:</strong> {req.request_domain}</p>
               <p><strong>Justification:</strong> {req.justification}</p>
               <p><strong>Submitted:</strong> {new Date(req.created_at).toLocaleString()}</p>
               <button

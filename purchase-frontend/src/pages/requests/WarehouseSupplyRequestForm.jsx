@@ -8,6 +8,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 const WarehouseSupplyRequestForm = () => {
   const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
   const [justification, setJustification] = useState('');
+  const [supplyDomain, setSupplyDomain] = useState('medical');
   const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ const WarehouseSupplyRequestForm = () => {
     payload.append('target_department_id', targetDeptId);
     payload.append('target_section_id', targetSectionId || '');
     payload.append('budget_impact_month', '');
+    payload.append('supply_domain', supplyDomain);
     const mapped = items.map(it => ({ item_name: it.item_name, quantity: it.quantity }));
     payload.append('items', JSON.stringify(mapped));
 
@@ -103,6 +105,19 @@ const WarehouseSupplyRequestForm = () => {
               required
               disabled={submitting}
             />
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Supply From</label>
+            <select
+              value={supplyDomain}
+              onChange={(e) => setSupplyDomain(e.target.value)}
+              className="p-2 border rounded"
+              disabled={submitting}
+            >
+              <option value="medical">Medical Warehouse</option>
+              <option value="operational">Operational Warehouse</option>
+            </select>
           </div>
 
           <div>
