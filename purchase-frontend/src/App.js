@@ -34,6 +34,7 @@ import ClosedRequestsPage from './pages/ClosedRequestsPage';
 import MaintenanceStockPage from './pages/MaintenanceStockPage';
 import MaintenanceStockListPage from './pages/MaintenanceStockListPage';
 import ProcurementPlansPage from './pages/ProcurementPlansPage';
+import RequestSubmittedPage from './pages/requests/RequestSubmittedPage';
 
 
 // ✅ Extract user role from JWT
@@ -90,6 +91,7 @@ function App() {
         <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
         <Route path="/approvals" element={<ProtectedRoute element={<ApprovalsPanel />} />} />
         <Route path="/open-requests" element={<ProtectedRoute element={<OpenRequestsPage />} />} />
+        <Route path="/request-submitted" element={<ProtectedRoute element={<RequestSubmittedPage />} />} />
         <Route path="/approval-history" element={<ProtectedRoute element={<ApprovalHistory />} />} />
 
         {/* ✅ Maintenance Routes */}

@@ -1,8 +1,8 @@
 // src/pages/RequestSubmittedPage.jsx
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import { Button } from '../components/ui/Button';
+import Navbar from '../../components/Navbar';
+import { Button } from '../../components/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 const RequestSubmittedPage = () => {
