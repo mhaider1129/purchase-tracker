@@ -167,18 +167,20 @@ const ApprovalsPanel = () => {
                       {itemsMap[req.request_id]?.length > 0 ? (
                         <table className="w-full text-sm border">
                           <thead>
-                            <tr className="bg-gray-100">
+                          <tr className="bg-gray-100">
                               <th className="border p-1">Item</th>
+                              <th className="border p-1">Brand</th>
                               <th className="border p-1">Qty</th>
                               <th className="border p-1">Available Qty</th>
                               <th className="border p-1">Unit Cost</th>
                               <th className="border p-1">Total</th>
-                            </tr>
+                          </tr>
                           </thead>
                           <tbody>
                             {itemsMap[req.request_id].map((item, idx) => (
                               <tr key={idx}>
                                 <td className="border p-1">{item.item_name}</td>
+                                <td className="border p-1">{item.brand || '—'}</td>
                                 <td className="border p-1">{item.quantity}</td>
                                 <td className="border p-1">{item.available_quantity ?? '—'}</td>
                                 <td className="border p-1">{item.unit_cost}</td>

@@ -10,6 +10,8 @@ const MaintenanceApprovalsPage = () => {
   const [commentsMap, setCommentsMap] = useState({});
   const [submittingId, setSubmittingId] = useState(null);
   const [error, setError] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
+  const [itemsMap, setItemsMap] = useState({});
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -55,6 +57,18 @@ const MaintenanceApprovalsPage = () => {
     }
   };
 
+  const toggleExpand = async (id) => {
+    setExpandedId(expandedId === id ? null : id);
+    if (!itemsMap[id]) {
+      try {
+        const res = await axios.get(`/api/requests/${id}/items`);
+        setItemsMap((prev) => ({ ...prev, [id]: res.data.items }));
+      } catch (err) {
+        console.error('❌ Failed to load items:', err);
+      }
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -87,6 +101,44 @@ const MaintenanceApprovalsPage = () => {
                   timeStyle: 'short',
                 })}
               </p>
+
+              <button
+                className="text-blue-600 underline text-sm mt-2"
+                onClick={() => toggleExpand(req.request_id)}
+              >
+                {expandedId === req.request_id ? 'Hide Items' : 'Show Requested Items'}
+              </button>
+
+              {expandedId === req.request_id && (
+                <div className="mt-3">
+                  {itemsMap[req.request_id]?.length > 0 ? (
+                    <table className="w-full text-sm border">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border p-1">Item</th>
+                          <th className="border p-1">Qty</th>
+                          <th className="border p-1">Available Qty</th>
+                          <th className="border p-1">Unit Cost</th>
+                          <th className="border p-1">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {itemsMap[req.request_id].map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="border p-1">{item.item_name}</td>
+                            <td className="border p-1">{item.quantity}</td>
+                            <td className="border p-1">{item.available_quantity ?? '—'}</td>
+                            <td className="border p-1">{item.unit_cost}</td>
+                            <td className="border p-1">{item.total_cost}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-sm text-gray-500">No items found for this request.</p>
+                  )}
+                </div>
+              )}
 
               <textarea
                 aria-label="Approval Comments"

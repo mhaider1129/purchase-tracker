@@ -79,7 +79,8 @@ const CompletedAssignedRequestsPage = () => {
   itemsCache[req.id].map((item) => (
     <div key={item.id} className="mb-2">
       <p>
-        🔹 <strong>{item.item_name}</strong> — Qty: {item.quantity}, Purchased:{' '}
+        🔹 <strong>{item.item_name}</strong>
+        {item.brand && <span> ({item.brand})</span>} — Qty: {item.quantity}, Purchased:{' '}
         {item.purchased_quantity ?? '—'}, Status: {item.procurement_status}
       </p>
       {item.procurement_comment && (

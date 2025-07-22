@@ -1,6 +1,6 @@
 // src/pages/requests/StockRequestForm.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
@@ -8,12 +8,26 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const StockRequestForm = () => {
   const [itemsList, setItemsList] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([{ item_name: '', quantity: 1, available_quantity: '', attachments: [] }]);
+  const [selectedItems, setSelectedItems] = useState([
+    {
+      item_name: '',
+      brand: '',
+      category: '',
+      search: '',
+      quantity: 1,
+      available_quantity: '',
+      attachments: []
+    }
+  ]);
   const [justification, setJustification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [sectionId, setSectionId] = useState(null);
   const navigate = useNavigate();
+  const categories = useMemo(
+    () => Array.from(new Set(itemsList.map((it) => it.category))).filter(Boolean),
+    [itemsList]
+  );
 
   // ✅ Validate and restrict access based on role
   const getUserRoleFromToken = (token) => {
@@ -81,7 +95,18 @@ const StockRequestForm = () => {
   };
 
   const addItem = () => {
-    setSelectedItems([...selectedItems, { item_name: '', quantity: 1, available_quantity: '', attachments: [] }]);
+    setSelectedItems([
+      ...selectedItems,
+      {
+        item_name: '',
+        brand: '',
+        category: '',
+        search: '',
+        quantity: 1,
+        available_quantity: '',
+        attachments: []
+      },
+    ]);
   };
 
   const removeItem = (index) => {
@@ -115,7 +140,9 @@ const StockRequestForm = () => {
     formData.append('justification', justification);
     formData.append('target_section_id', sectionId);
     formData.append('budget_impact_month', '');
-    const itemsPayload = selectedItems.map(({ attachments, ...rest }) => rest);
+    const itemsPayload = selectedItems.map(
+      ({ attachments, search, category, ...rest }) => rest
+    );
     formData.append('items', JSON.stringify(itemsPayload));
     attachments.forEach((file) => formData.append('attachments', file));
     selectedItems.forEach((item, idx) => {
@@ -164,31 +191,68 @@ const StockRequestForm = () => {
 
           <div>
             <label className="block font-semibold mb-2">Select Items</label>
-            {selectedItems.map((item, index) => (
-              <div key={index} className="flex gap-2 mb-2 items-center">
-                <select
-                  value={item.item_name}
-                  onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  required
-                  disabled={isSubmitting}
-                >
-                  <option value="">-- Select Item --</option>
-                  {itemsList.map((stock) => (
-                    <option key={stock.id} value={stock.name}>
-                      {stock.name}
-                    </option>
-                  ))}
-                </select>
+            {selectedItems.map((item, index) => {
+              const filtered = itemsList.filter(
+                (stock) =>
+                  (!item.category || stock.category === item.category) &&
+                  stock.name.toLowerCase().includes((item.search || '').toLowerCase())
+              );
+              return (
+                <div key={index} className="flex gap-2 mb-2 items-center flex-wrap">
+                  <select
+                    value={item.category}
+                    onChange={(e) => handleItemChange(index, 'category', e.target.value)}
+                    className="p-2 border rounded"
+                    disabled={isSubmitting}
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={item.search}
+                    onChange={(e) => handleItemChange(index, 'search', e.target.value)}
+                    className="p-2 border rounded flex-1"
+                    disabled={isSubmitting}
+                  />
+                  <select
+                    value={item.item_name}
+                    onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                    className="flex-1 p-2 border rounded"
+                    required
+                    disabled={isSubmitting}
+                  >
+                    <option value="">-- Select Item --</option>
+                    {filtered.map((stock) => (
+                      <option key={stock.id} value={stock.name}>
+                        {stock.name}
+                      </option>
+                    ))}
+                  </select>
                 <input
-  type="number"
-  min={0}
-  placeholder="Available"
-  value={item.available_quantity}
-  onChange={(e) => handleItemChange(index, 'available_quantity', e.target.value)}
-  className="w-28 p-2 border rounded"
-  disabled={isSubmitting}
-/>
+                  type="text"
+                  placeholder="Brand (optional)"
+                  value={item.brand}
+                  onChange={(e) => handleItemChange(index, 'brand', e.target.value)}
+                  className="w-36 p-2 border rounded"
+                  disabled={isSubmitting}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="Available"
+                  value={item.available_quantity}
+                  onChange={(e) =>
+                    handleItemChange(index, 'available_quantity', e.target.value)
+                  }
+                  className="w-28 p-2 border rounded"
+                  disabled={isSubmitting}
+                />
 
                 <input
                   type="number"

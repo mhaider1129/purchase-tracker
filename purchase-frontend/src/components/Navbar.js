@@ -47,7 +47,7 @@ const Navbar = () => {
           </>
         )}
 
-        {user.role === 'requester' &&
+        {['requester', 'Requester'].includes(user.role) &&
           renderNavButton(t('navbar.maintenanceApprovals'), '/maintenance-approvals', 'text-amber-600')}
 
         {renderNavButton(t('navbar.closedRequests'), '/closed-requests', 'text-gray-600')}

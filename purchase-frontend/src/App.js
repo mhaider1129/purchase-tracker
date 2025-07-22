@@ -98,7 +98,7 @@ function App() {
         <Route path="/requests/maintenance" element={<ProtectedRoute element={<MaintenanceRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />} />
         <Route path="/my-maintenance-requests" element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />} />
         <Route path="/approvals/maintenance" element={<ProtectedRoute element={<MaintenanceHODApprovals />} allowedRoles={['HOD']} />} />
-        <Route path="/maintenance-approvals" element={<ProtectedRoute element={<MaintenanceApprovalsPage />} allowedRoles={['requester']} />} />
+        <Route path="/maintenance-approvals" element={<ProtectedRoute element={<MaintenanceApprovalsPage />} allowedRoles={['requester', 'Requester']} />} />
         <Route
           path="/maintenance-stock"
           element={<ProtectedRoute element={<MaintenanceStockPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'technician']} />}

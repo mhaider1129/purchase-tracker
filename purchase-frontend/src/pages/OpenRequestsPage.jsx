@@ -167,6 +167,7 @@ const OpenRequestsPage = () => {
                         <thead>
                           <tr className="bg-gray-100">
                             <th className="border p-1">{t('openRequests.item')}</th>
+                            <th className="border p-1">Brand</th>
                             <th className="border p-1">{t('openRequests.qty')}</th>
                             <th className="border p-1">{t('openRequests.unitCost')}</th>
                             <th className="border p-1">{t('openRequests.total')}</th>
@@ -176,6 +177,7 @@ const OpenRequestsPage = () => {
                           {itemsMap[req.id].map((item, idx) => (
                             <tr key={idx}>
                               <td className="border p-1">{item.item_name}</td>
+                              <td className="border p-1">{item.brand || '—'}</td>
                               <td className="border p-1">{item.quantity}</td>
                               <td className="border p-1">{item.unit_cost}</td>
                               <td className="border p-1">{item.total_cost}</td>
