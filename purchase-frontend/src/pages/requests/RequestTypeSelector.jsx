@@ -143,7 +143,7 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
-          {role === 'hod' && (
+          {['hod', 'requester', 'cmo', 'coo', 'scm'].includes(role) && (
             <button
               onClick={() => navigate('/approvals/maintenance')}
               className={`${buttonStyle} bg-orange-700 hover:bg-orange-800 focus:ring-orange-400`}

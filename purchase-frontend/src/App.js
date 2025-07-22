@@ -10,7 +10,6 @@ import NonStockRequestForm from './pages/requests/NonStockRequestForm';
 import MedicalDeviceRequestForm from './pages/requests/MedicalDeviceRequestForm';
 import ITRequestForm from './pages/requests/ITRequestForm';
 import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
-import MaintenanceApprovalsPage from './pages/requests/MaintenanceApprovalsPage';
 import WarehouseSupplyRequestForm from './pages/requests/WarehouseSupplyRequestForm';
 import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
@@ -96,13 +95,12 @@ function App() {
         {/* ✅ Maintenance Routes */}
         <Route path="/requests/maintenance" element={<ProtectedRoute element={<MaintenanceRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />} />
         <Route path="/my-maintenance-requests" element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />} />
-        <Route path="/approvals/maintenance" element={<ProtectedRoute element={<MaintenanceHODApprovals />} allowedRoles={['HOD']} />} />
         <Route
-          path="/maintenance-approvals"
+          path="/approvals/maintenance"
           element={
             <ProtectedRoute
-              element={<MaintenanceApprovalsPage />}
-              allowedRoles={['requester', 'Requester', 'CMO', 'COO', 'SCM']}
+              element={<MaintenanceHODApprovals />}
+              allowedRoles={['HOD', 'requester', 'Requester', 'CMO', 'COO', 'SCM']}
             />
           }
         />
