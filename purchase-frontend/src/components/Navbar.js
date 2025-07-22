@@ -40,12 +40,8 @@ const Navbar = () => {
       <>
         {renderNavButton(t('navbar.openRequests'), '/open-requests', 'text-green-600')}
 
-        {user.role === 'technician' && (
-          <>
-            {renderNavButton(t('navbar.myMaintenance'), '/my-maintenance-requests', 'text-orange-600')}
-            {renderNavButton(t('navbar.maintenanceStock'), '/maintenance-stock-view', 'text-blue-600')}
-          </>
-        )}
+        {user.role === 'technician' &&
+          renderNavButton(t('navbar.myMaintenance'), '/my-maintenance-requests', 'text-orange-600')}
 
         {['requester', 'Requester'].includes(user.role) &&
           renderNavButton(t('navbar.maintenanceApprovals'), '/maintenance-approvals', 'text-amber-600')}

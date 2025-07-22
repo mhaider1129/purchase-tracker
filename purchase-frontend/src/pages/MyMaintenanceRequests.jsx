@@ -13,7 +13,7 @@ const MyMaintenanceRequests = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get('/requests/my-maintenance');
+        const res = await axios.get('/api/requests/my-maintenance');
         setRequests(res.data || []);
       } catch (err) {
         console.error('❌ Failed to fetch maintenance requests:', err);

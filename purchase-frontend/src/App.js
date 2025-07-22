@@ -32,7 +32,6 @@ import Dashboard from './pages/Dashboard';
 import CompletedAssignedRequestsPage from './pages/CompletedAssignedRequestsPage';
 import ClosedRequestsPage from './pages/ClosedRequestsPage';
 import MaintenanceStockPage from './pages/MaintenanceStockPage';
-import MaintenanceStockListPage from './pages/MaintenanceStockListPage';
 import ProcurementPlansPage from './pages/ProcurementPlansPage';
 import RequestSubmittedPage from './pages/requests/RequestSubmittedPage';
 
@@ -103,7 +102,6 @@ function App() {
           path="/maintenance-stock"
           element={<ProtectedRoute element={<MaintenanceStockPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'technician']} />}
         />
-        <Route path="/maintenance-stock-view" element={<ProtectedRoute element={<MaintenanceStockListPage />} allowedRoles={['technician']} />} />
         <Route path="/warehouse-supply-requests" element={<ProtectedRoute element={<WarehouseSupplyRequestsPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']} />} />
 
         {/* ✅ Admin / SCM Routes */}

@@ -75,7 +75,6 @@
     "noRequests": "No pending maintenance requests.",
     "ref": "Ref",
     "justification": "Justification",
-    "budgetMonth": "Budget Month",
     "requestedBy": "Requested By",
     "submittedAt": "Submitted At",
     "pendingHOD": "Pending HOD",

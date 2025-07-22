@@ -10,7 +10,6 @@ const MaintenanceRequestForm = () => {
   const [refNumber, setRefNumber] = useState('');
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([{ item_name: '', quantity: 1, specs: '', attachments: [] }]);
-  const [budgetMonth, setBudgetMonth] = useState('');
   const [departments, setDepartments] = useState([]);
   const [sections, setSections] = useState([]);
   const [targetDeptId, setTargetDeptId] = useState('');
@@ -92,7 +91,6 @@ const [attachments, setAttachments] = useState([]);
       formData.append('request_type', 'Maintenance');
       formData.append('maintenance_ref_number', refNumber);
       formData.append('justification', justification);
-      formData.append('budget_impact_month', budgetMonth);
       formData.append('target_department_id', targetDeptId);
       formData.append('target_section_id', targetSectionId);
       const itemsPayload = items.map(({ attachments, ...rest }) => rest);
@@ -181,14 +179,7 @@ const [attachments, setAttachments] = useState([]);
             required
           />
 
-          <input
-            type="month"
-            aria-label="Budget Month"
-            value={budgetMonth}
-            onChange={(e) => setBudgetMonth(e.target.value)}
-            className="border p-2 rounded"
-            required
-          />
+
 
           {stockItems.length > 0 && (
             <div className="mb-4">

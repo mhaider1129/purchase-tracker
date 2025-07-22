@@ -45,11 +45,10 @@ const MaintenanceHODApprovals = () => {
 
   const exportToCSV = () => {
     const csvRows = [
-      ['Reference', 'Justification', 'Budget Month', 'Requested By', 'Submitted At', 'Items'],
+      ['Reference', 'Justification', 'Requested By', 'Submitted At', 'Items'],
       ...requests.map((r) => [
         r.maintenance_ref_number,
         r.justification,
-        r.budget_impact_month,
         r.requester_name,
         new Date(r.created_at).toLocaleString(),
         r.items.map(i => `${i.item_name} (x${i.quantity})`).join('; ')
@@ -92,7 +91,6 @@ const MaintenanceHODApprovals = () => {
                   <div>
                     <p><strong>{t('maintenanceHODApprovals.ref')}:</strong> {req.maintenance_ref_number}</p>
                     <p><strong>{t('maintenanceHODApprovals.justification')}:</strong> {req.justification}</p>
-                    <p><strong>{t('maintenanceHODApprovals.budgetMonth')}:</strong> {req.budget_impact_month}</p>
                     <p><strong>{t('maintenanceHODApprovals.requestedBy')}:</strong> {req.requester_name}</p>
                     <p><strong>{t('maintenanceHODApprovals.submittedAt')}:</strong> {new Date(req.created_at).toLocaleString()}</p>
                   </div>

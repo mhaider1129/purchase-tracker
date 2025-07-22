@@ -92,7 +92,6 @@ const MaintenanceApprovalsPage = () => {
               <p><strong>Ref Number:</strong> {req.maintenance_ref_number}</p>
               <p><strong>Department:</strong> {req.department_name}</p>
               <p><strong>Section:</strong> {req.section_name || '—'}</p> {/* 👈 NEW LINE */}
-              <p><strong>Budget Month:</strong> {req.budget_impact_month}</p>
               <p><strong>Justification:</strong> {req.justification}</p>
               <p>
                 <strong>Created At:</strong>{' '}

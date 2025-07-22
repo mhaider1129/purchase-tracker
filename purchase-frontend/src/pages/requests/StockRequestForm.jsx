@@ -282,7 +282,8 @@ const StockRequestForm = () => {
                   </button>
                 )}
               </div>
-            ))}
+            );
+          })}
             <button
               type="button"
               onClick={addItem}
