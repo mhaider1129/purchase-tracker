@@ -9,13 +9,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [message, setMessage] = useState(null);
   const [updaterName, setUpdaterName] = useState('');
   const [unitCost, setUnitCost] = useState(item.unit_cost ?? '');
-  const [costSaving, setCostSaving] = useState(false);
-  const [costMessage, setCostMessage] = useState(null);
+  // cost and quantity will now be saved together with the status
+  // so we keep only a single saving/message state
   const [purchasedQty, setPurchasedQty] = useState(
     item.purchased_quantity ?? item.quantity ?? ''
   );
-  const [qtySaving, setQtySaving] = useState(false);
-  const [qtyMessage, setQtyMessage] = useState(null);
 
   const updatedAt = item.procurement_updated_at
     ? new Date(item.procurement_updated_at).toLocaleString()
@@ -49,14 +47,32 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       return;
     }
 
+    if (!unitCost || isNaN(unitCost) || Number(unitCost) <= 0) {
+      setMessage({ type: 'error', text: 'Enter valid cost.' });
+      return;
+    }
+
+    if (purchasedQty === '' || isNaN(purchasedQty) || Number(purchasedQty) < 0) {
+      setMessage({ type: 'error', text: 'Enter valid quantity.' });
+      return;
+    }
+
     setSaving(true);
     setMessage(null);
 
     try {
+      await axios.put(`/api/requested-items/${item.id}/cost`, {
+        unit_cost: Number(unitCost),
+      });
+
+      await axios.put(`/api/requested-items/${item.id}/purchased-quantity`, {
+        purchased_quantity: Number(purchasedQty),
+      });
+
       await axios.put(`/api/requested-items/${item.id}/procurement-status`, {
-  procurement_status: status,
-  procurement_comment: comment,
-});
+        procurement_status: status,
+        procurement_comment: comment,
+      });
 
       setMessage({ type: 'success', text: '✅ Updated successfully.' });
       if (onUpdate) onUpdate(); // Notify parent to refresh data
@@ -71,55 +87,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     }
   };
 
-  const handleSaveCost = async () => {
-    if (!unitCost || isNaN(unitCost) || Number(unitCost) <= 0) {
-      setCostMessage({ type: 'error', text: 'Enter valid cost.' });
-      return;
-    }
-
-    setCostSaving(true);
-    setCostMessage(null);
-
-    try {
-      await axios.put(`/api/requested-items/${item.id}/cost`, { unit_cost: Number(unitCost) });
-      setCostMessage({ type: 'success', text: '✅ Cost updated.' });
-      if (onUpdate) onUpdate();
-    } catch (err) {
-      console.error('❌ Cost update error:', err);
-      setCostMessage({
-        type: 'error',
-        text: err.response?.data?.message || '❌ Failed to update cost.',
-      });
-    } finally {
-      setCostSaving(false);
-    }
-  };
-
-  const handleSavePurchasedQty = async () => {
-    if (purchasedQty === '' || isNaN(purchasedQty) || Number(purchasedQty) < 0) {
-      setQtyMessage({ type: 'error', text: 'Enter valid quantity.' });
-      return;
-    }
-
-    setQtySaving(true);
-    setQtyMessage(null);
-
-    try {
-      await axios.put(`/api/requested-items/${item.id}/purchased-quantity`, {
-        purchased_quantity: Number(purchasedQty),
-      });
-      setQtyMessage({ type: 'success', text: '✅ Quantity updated.' });
-      if (onUpdate) onUpdate();
-    } catch (err) {
-      console.error('❌ Quantity update error:', err);
-      setQtyMessage({
-        type: 'error',
-        text: err.response?.data?.message || '❌ Failed to update quantity.',
-      });
-    } finally {
-      setQtySaving(false);
-    }
-  };
+  // removed individual save handlers for cost and quantity
 
   return (
     <div className="border rounded p-4 mb-4 shadow bg-white transition-all duration-200">
@@ -145,24 +113,6 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           onChange={(e) => setUnitCost(e.target.value)}
           className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
         />
-        <button
-          onClick={handleSaveCost}
-          disabled={costSaving}
-          className={`mt-2 px-4 py-2 rounded text-white text-sm font-semibold transition ${
-            costSaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {costSaving ? 'Saving...' : 'Save Cost'}
-        </button>
-        {costMessage && (
-          <div
-            className={`mt-1 text-sm font-medium ${
-              costMessage.type === 'error' ? 'text-red-600' : 'text-green-600'
-            }`}
-          >
-            {costMessage.text}
-          </div>
-        )}
       </div>
 
       <div className="mt-3">
@@ -174,24 +124,6 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           onChange={(e) => setPurchasedQty(e.target.value)}
           className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
         />
-        <button
-          onClick={handleSavePurchasedQty}
-          disabled={qtySaving}
-          className={`mt-2 px-4 py-2 rounded text-white text-sm font-semibold transition ${
-            qtySaving ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
-        >
-          {qtySaving ? 'Saving...' : 'Save Qty'}
-        </button>
-        {qtyMessage && (
-          <div
-            className={`mt-1 text-sm font-medium ${
-              qtyMessage.type === 'error' ? 'text-red-600' : 'text-green-600'
-            }`}
-          >
-            {qtyMessage.text}
-          </div>
-        )}
       </div>
       
       <div className="mt-3">
