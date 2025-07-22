@@ -33,7 +33,9 @@ const MaintenanceHODApprovals = () => {
 
     setProcessingId(approvalId);
     try {
-      await axios.post(`/api/approvals/${approvalId}/decision`, { decision });
+      await axios.patch(`/api/approvals/${approvalId}/decision`, {
+        status: decision.charAt(0).toUpperCase() + decision.slice(1),
+      });
       fetchRequests();
     } catch (err) {
       alert(t('maintenanceHODApprovals.failedDecision'));
