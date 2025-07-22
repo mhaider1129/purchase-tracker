@@ -16,7 +16,7 @@ const MaintenanceHODApprovals = () => {
 
   const fetchRequests = async () => {
     try {
-      const res = await axios.get('/requests/maintenance/pending/hod');
+      const res = await axios.get('/api/requests/pending-maintenance-approvals');
       setRequests(res.data || []);
     } catch (err) {
       console.error('❌ Failed to fetch maintenance requests', err);
@@ -33,7 +33,7 @@ const MaintenanceHODApprovals = () => {
 
     setProcessingId(approvalId);
     try {
-      await axios.post(`/approvals/${approvalId}/decision`, { decision });
+      await axios.post(`/api/approvals/${approvalId}/decision`, { decision });
       fetchRequests();
     } catch (err) {
       alert(t('maintenanceHODApprovals.failedDecision'));
