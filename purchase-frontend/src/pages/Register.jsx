@@ -179,25 +179,27 @@ const Register = () => {
             ))}
           </select>
 
-          {/* Section Selector (conditional) */}
-          {formData.department_id && (
-            <select
-              name="section_id"
-              value={formData.section_id}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            >
-              <option value="">-- Select Section --</option>
-              {departments
-                .find((dep) => dep.id === parseInt(formData.department_id))
-                ?.sections?.map((section) => (
+          {/* Section Selector (shown only if department has sections) */}
+          {(() => {
+            const selectedDep = departments.find(
+              (dep) => dep.id === parseInt(formData.department_id)
+            );
+            return selectedDep?.sections?.length ? (
+              <select
+                name="section_id"
+                value={formData.section_id}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+              >
+                <option value="">-- Select Section (optional) --</option>
+                {selectedDep.sections.map((section) => (
                   <option key={section.id} value={section.id}>
                     {section.name}
                   </option>
                 ))}
-            </select>
-          )}
+              </select>
+            ) : null;
+          })()}
 
           <button
             type="submit"
