@@ -78,6 +78,7 @@
     "requestedBy": "Requested By",
     "submittedAt": "Submitted At",
     "pendingHOD": "Pending HOD",
+    "pendingStep": "Pending {{STEP}}",
     "approve": "Approve",
     "reject": "Reject",
     "confirmDecision": "Are you sure you want to {{DECISION}} this request?",

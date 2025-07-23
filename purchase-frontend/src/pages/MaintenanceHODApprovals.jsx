@@ -4,12 +4,15 @@ import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
+import useCurrentUser from '../hooks/useCurrentUser';
 
 const MaintenanceHODApprovals = () => {
   const { t } = useTranslation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
+
+  const { user } = useCurrentUser();
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -97,7 +100,9 @@ const MaintenanceHODApprovals = () => {
                     <p><strong>{t('maintenanceHODApprovals.submittedAt')}:</strong> {new Date(req.created_at).toLocaleString()}</p>
                   </div>
                   <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded font-semibold">
-                    {t('maintenanceHODApprovals.pendingHOD')}
+                    {user
+                      ? t('maintenanceHODApprovals.pendingStep', { STEP: user.role })
+                      : t('maintenanceHODApprovals.pendingHOD')}
                   </span>
                 </div>
 

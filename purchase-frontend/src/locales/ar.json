@@ -78,6 +78,7 @@
     "requestedBy": "قدم بواسطة",
     "submittedAt": "تاريخ التقديم",
     "pendingHOD": "قيد موافقة رئيس القسم",
+    "pendingStep": "قيد موافقة {{STEP}}",
     "approve": "موافقة",
     "reject": "رفض",
     "confirmDecision": "هل أنت متأكد أنك تريد {{DECISION}} هذا الطلب؟",

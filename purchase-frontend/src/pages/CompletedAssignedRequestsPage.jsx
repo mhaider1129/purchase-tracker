@@ -8,6 +8,7 @@ const CompletedAssignedRequestsPage = () => {
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [itemsCache, setItemsCache] = useState({});
+  const [search, setSearch] = useState('');
 
   const fetchCompleted = async () => {
     setLoading(true);
