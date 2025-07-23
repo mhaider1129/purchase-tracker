@@ -110,6 +110,7 @@ const StockRequestForm = () => {
   };
 
   const removeItem = (index) => {
+    if (!window.confirm('Remove this item?')) return;
     setSelectedItems(selectedItems.filter((_, i) => i !== index));
   };
 

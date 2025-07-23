@@ -22,6 +22,7 @@ const MaintenanceStockPage = () => {
   }, [user]);
 
   const saveItem = async (item) => {
+    if (!window.confirm('Save changes to this item?')) return;
     try {
       if (item.id) {
         await api.put(`/api/maintenance-stock/${item.id}`, {

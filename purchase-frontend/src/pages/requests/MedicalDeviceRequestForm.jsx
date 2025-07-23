@@ -42,6 +42,7 @@ const MedicalDeviceRequestForm = () => {
   const addItem = () => setItems([...items, getEmptyItem()]);
   const removeItem = (index) => {
     if (items.length === 1) return;
+    if (!window.confirm('Remove this item?')) return;
     setItems(items.filter((_, i) => i !== index));
   };
 

@@ -29,6 +29,7 @@ const SupplyItemsPage = () => {
   };
 
   const handleSave = async () => {
+    if (!window.confirm('Save supplied quantities?')) return;
     const payload = { items: items.map(it => ({ item_id: it.id, supplied_quantity: Number(qtyMap[it.id]) || 0 })) };
     try {
       setSaving(true);

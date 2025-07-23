@@ -25,8 +25,11 @@ const WarehouseSupplyRequestForm = () => {
   };
 
   const addItem = () => setItems([...items, { item_name: '', quantity: 1 }]);
-  const removeItem = (idx) => setItems(items.filter((_, i) => i !== idx));
-
+  const removeItem = (idx) => {
+    if (!window.confirm('Remove this item?')) return;
+    setItems(items.filter((_, i) => i !== idx));
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!justification.trim()) {

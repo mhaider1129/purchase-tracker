@@ -8,11 +8,22 @@ const Management = () => {
   const [roles, setRoles] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingDeps, setLoadingDeps] = useState(false);
+  const [routes, setRoutes] = useState([]);
+  const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [tab, setTab] = useState('users');
   const [editUserId, setEditUserId] = useState(null);
   const [editData, setEditData] = useState({ role: '', department_id: '', section_id: '' });
   const [newDept, setNewDept] = useState({ name: '', type: 'operational' });
   const [newSection, setNewSection] = useState({ department_id: '', name: '' });
+  const [editRoutes, setEditRoutes] = useState({});
+  const [newRoute, setNewRoute] = useState({
+    request_type: '',
+    department_type: 'medical',
+    approval_level: 1,
+    role: '',
+    min_amount: 0,
+    max_amount: 0,
+  });
 
   // Initial fetch of all required data
   useEffect(() => {
@@ -28,6 +39,7 @@ const Management = () => {
     if (tab === 'users') fetchUsers();
     if (tab === 'departments') fetchDepartments();
     if (tab === 'roles') fetchRoles();
+    if (tab === 'routes') fetchRoutes();
   }, [tab]);
 
   const fetchUsers = async () => {
@@ -54,12 +66,24 @@ const Management = () => {
     }
   };
 
-    const fetchRoles = async () => {
+  const fetchRoles = async () => {
     try {
       const res = await api.get('/api/roles');
       setRoles(res.data || []);
     } catch (err) {
       console.error('Failed to load roles', err);
+    }
+  };
+
+  const fetchRoutes = async () => {
+    setLoadingRoutes(true);
+    try {
+      const res = await api.get('/api/approval-routes');
+      setRoutes(res.data || []);
+    } catch (err) {
+      console.error('Failed to load approval routes', err);
+    } finally {
+      setLoadingRoutes(false);
     }
   };
 
@@ -70,6 +94,42 @@ const Management = () => {
       fetchUsers();
     } catch(err) {
       console.error('Failed to deactivate', err);
+    }
+  };
+
+  const saveRoute = async (route) => {
+    try {
+      if (route.id) {
+        await api.put(`/api/approval-routes/${route.id}`, route);
+      } else {
+        await api.post('/api/approval-routes', route);
+        setNewRoute({
+          request_type: '',
+          department_type: 'medical',
+          approval_level: 1,
+          role: '',
+          min_amount: 0,
+          max_amount: 0,
+        });
+      }
+      fetchRoutes();
+      setEditRoutes((prev) => {
+        const copy = { ...prev };
+        if (route.id) delete copy[route.id];
+        return copy;
+      });
+    } catch (err) {
+      console.error('Failed to save approval route', err);
+    }
+  };
+
+  const deleteRoute = async (id) => {
+    if (!window.confirm('Delete this route?')) return;
+    try {
+      await api.delete(`/api/approval-routes/${id}`);
+      fetchRoutes();
+    } catch (err) {
+      console.error('Failed to delete route', err);
     }
   };
 
@@ -215,7 +275,8 @@ const Management = () => {
     </div>
   );
 
-    const addDepartment = async () => {
+  const addDepartment = async () => {
+    if (!window.confirm('Add this department?')) return;
     try {
       await api.post('/api/departments', newDept);
       setNewDept({ name: '', type: 'operational' });
@@ -226,6 +287,7 @@ const Management = () => {
   };
 
   const addSection = async () => {
+    if (!window.confirm('Add this section?')) return;
     try {
       await api.post(`/api/departments/${newSection.department_id}/sections`, { name: newSection.name });
       setNewSection({ department_id: '', name: '' });
@@ -312,7 +374,260 @@ const Management = () => {
     </div>
   );
 
+  const renderRoutes = () => (
+    <div className="overflow-x-auto">
+      {loadingRoutes ? (
+        <p>Loading routes...</p>
+      ) : (
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="bg-gray-200 text-left">
+              <th className="p-2">Type</th>
+              <th className="p-2">Dept Type</th>
+              <th className="p-2">Level</th>
+              <th className="p-2">Role</th>
+              <th className="p-2">Min</th>
+              <th className="p-2">Max</th>
+              <th className="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {routes.map((r) => {
+              const editing = editRoutes[r.id] || {};
+              const data = editing.request_type ? editing : r;
+              return (
+                <tr key={r.id} className="border-b">
+                  <td className="p-2">
+                    {editing.request_type !== undefined ? (
+                      <input
+                        className="border p-1"
+                        value={data.request_type}
+                        onChange={(e) =>
+                          setEditRoutes((prev) => ({
+                            ...prev,
+                            [r.id]: { ...data, request_type: e.target.value },
+                          }))
+                        }
+                      />
+                    ) : (
+                      r.request_type
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editing.department_type !== undefined ? (
+                      <input
+                        className="border p-1"
+                        value={data.department_type}
+                        onChange={(e) =>
+                          setEditRoutes((prev) => ({
+                            ...prev,
+                            [r.id]: { ...data, department_type: e.target.value },
+                          }))
+                        }
+                      />
+                    ) : (
+                      r.department_type
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editing.approval_level !== undefined ? (
+                      <input
+                        type="number"
+                        className="border p-1 w-16"
+                        value={data.approval_level}
+                        onChange={(e) =>
+                          setEditRoutes((prev) => ({
+                            ...prev,
+                            [r.id]: { ...data, approval_level: e.target.value },
+                          }))
+                        }
+                      />
+                    ) : (
+                      r.approval_level
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editing.role !== undefined ? (
+                      <select
+                        className="border p-1"
+                        value={data.role}
+                        onChange={(e) =>
+                          setEditRoutes((prev) => ({
+                            ...prev,
+                            [r.id]: { ...data, role: e.target.value },
+                          }))
+                        }
+                      >
+                        <option value="">--Role--</option>
+                        {roles.map((ro) => (
+                          <option key={ro.id} value={ro.name}>
+                            {ro.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      r.role
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editing.min_amount !== undefined ? (
+                      <input
+                        type="number"
+                        className="border p-1 w-20"
+                        value={data.min_amount}
+                        onChange={(e) =>
+                          setEditRoutes((prev) => ({
+                            ...prev,
+                            [r.id]: { ...data, min_amount: e.target.value },
+                          }))
+                        }
+                      />
+                    ) : (
+                      r.min_amount
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editing.max_amount !== undefined ? (
+                      <input
+                        type="number"
+                        className="border p-1 w-20"
+                        value={data.max_amount}
+                        onChange={(e) =>
+                          setEditRoutes((prev) => ({
+                            ...prev,
+                            [r.id]: { ...data, max_amount: e.target.value },
+                          }))
+                        }
+                      />
+                    ) : (
+                      r.max_amount
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editing.request_type !== undefined ? (
+                      <>
+                        <button
+                          onClick={() => saveRoute({ id: r.id, ...data })}
+                          className="text-green-600 mr-2"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() =>
+                            setEditRoutes((prev) => {
+                              const copy = { ...prev };
+                              delete copy[r.id];
+                              return copy;
+                            })
+                          }
+                          className="text-gray-600"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() =>
+                            setEditRoutes((prev) => ({ ...prev, [r.id]: r }))
+                          }
+                          className="text-blue-600 mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteRoute(r.id)}
+                          className="text-red-600"
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            <tr>
+              <td className="p-2">
+                <input
+                  className="border p-1"
+                  value={newRoute.request_type}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, request_type: e.target.value })
+                  }
+                />
+              </td>
+              <td className="p-2">
+                <input
+                  className="border p-1"
+                  value={newRoute.department_type}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, department_type: e.target.value })
+                  }
+                />
+              </td>
+              <td className="p-2">
+                <input
+                  type="number"
+                  className="border p-1 w-16"
+                  value={newRoute.approval_level}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, approval_level: e.target.value })
+                  }
+                />
+              </td>
+              <td className="p-2">
+                <select
+                  className="border p-1"
+                  value={newRoute.role}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, role: e.target.value })
+                  }
+                >
+                  <option value="">--Role--</option>
+                  {roles.map((r) => (
+                    <option key={r.id} value={r.name}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </td>
+              <td className="p-2">
+                <input
+                  type="number"
+                  className="border p-1 w-20"
+                  value={newRoute.min_amount}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, min_amount: e.target.value })
+                  }
+                />
+              </td>
+              <td className="p-2">
+                <input
+                  type="number"
+                  className="border p-1 w-20"
+                  value={newRoute.max_amount}
+                  onChange={(e) =>
+                    setNewRoute({ ...newRoute, max_amount: e.target.value })
+                  }
+                />
+              </td>
+              <td className="p-2">
+                <button
+                  onClick={() => saveRoute(newRoute)}
+                  className="bg-green-600 text-white px-2 py-1 rounded"
+                >
+                  Add
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
 
+  
   return (
     <>
       <Navbar />
@@ -331,10 +646,17 @@ const Management = () => {
           >
             Departments
           </button>
+          <button
+            onClick={() => setTab('routes')}
+            className={`px-3 py-1 rounded ${tab === 'routes' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          >
+            Approval Routes
+          </button>
         </div>
 
         {tab === 'users' && renderUsers()}
         {tab === 'departments' && renderDepartments()}
+        {tab === 'routes' && renderRoutes()}
       </div>
     </>
   );

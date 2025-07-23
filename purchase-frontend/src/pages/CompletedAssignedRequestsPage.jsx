@@ -12,7 +12,9 @@ const CompletedAssignedRequestsPage = () => {
   const fetchCompleted = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/requests/completed-assigned');
+      const res = await axios.get('/api/requests/completed-assigned', {
+        params: { search },
+      });
       setRequests(res.data.data || []);
     } catch (err) {
       console.error('❌ Failed to fetch completed requests:', err);
@@ -45,13 +47,21 @@ const CompletedAssignedRequestsPage = () => {
 
   useEffect(() => {
     fetchCompleted();
-  }, []);
+  }, [search]);
 
   return (
     <>
       <Navbar />
       <div className="p-6">
         <h1 className="text-2xl font-semibold mb-4">My Completed Requests</h1>
+
+        <input
+          type="text"
+          className="border p-2 rounded mb-4"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
         {loading ? (
           <p className="text-gray-500">Loading...</p>

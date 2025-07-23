@@ -45,6 +45,7 @@ const AdminTools = () => {
 
   // 🔁 Reassign Approvals
   const triggerReassignment = async () => {
+    if (!window.confirm('Reassign all pending approvals?')) return;
     setLoading(true);
     setMessage('');
     try {
@@ -69,6 +70,7 @@ const AdminTools = () => {
       setMessage(t('adminTools.failedDeactivate'));
       return;
     }
+    if (!window.confirm('Deactivate this user?')) return;
 
     setLoading(true);
     setMessage('');
