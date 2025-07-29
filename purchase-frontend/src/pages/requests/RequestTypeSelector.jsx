@@ -10,6 +10,7 @@ const RequestTypeSelector = () => {
   const [userInfo, setUserInfo] = useState({
     role: '',
     department_id: null,
+    department_name: '',
     section_id: null,
   });
 
@@ -20,6 +21,7 @@ const RequestTypeSelector = () => {
         setUserInfo({
           role: res.data.role?.toLowerCase(),
           department_id: res.data.department_id,
+          department_name: res.data.department_name?.toLowerCase() || '',
           section_id: res.data.section_id || null,
         });
       } catch (err) {
@@ -59,6 +61,16 @@ const RequestTypeSelector = () => {
 
           {['warehouse_manager', 'warehouse_keeper'].includes(role) && (
             <button
+              onClick={() => navigate('/warehouse-supply-templates')}
+              className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
+              aria-label="Manage Warehouse Supply Templates"
+            >
+              Warehouse Supply Templates
+            </button>
+          )}
+
+          {['warehouse_manager', 'warehouse_keeper'].includes(role) && (
+            <button
               onClick={() => navigate('/warehouse-supply-requests')}
               className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
               aria-label="View Warehouse Supply Requests"
@@ -91,6 +103,17 @@ const RequestTypeSelector = () => {
           >
             Medical Device Request
           </button>
+
+          {role === 'requester' &&
+            ['pharmacy', 'physicians'].includes(userInfo.department_name) && (
+            <button
+              onClick={() => navigate('/requests/medication')}
+              className={`${buttonStyle} bg-pink-600 hover:bg-pink-700 focus:ring-pink-400`}
+              aria-label="Medication Request"
+            >
+              Medication Request
+            </button>
+          )}
 
           <button
             onClick={() => navigate('/requests/it-items')}

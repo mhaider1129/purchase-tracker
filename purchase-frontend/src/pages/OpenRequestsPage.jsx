@@ -113,6 +113,7 @@ const OpenRequestsPage = () => {
             <option value="Stock">{t('openRequests.stock')}</option>
             <option value="Non-Stock">{t('openRequests.nonStock')}</option>
             <option value="Medical Device">{t('openRequests.medicalDevice')}</option>
+            <option value="Medication">{t('openRequests.medication')}</option>
             <option value="IT Item">{t('openRequests.itItem')}</option>
           </select>
           <select className="border p-2 rounded" value={status} onChange={(e) => setStatus(e.target.value)}>

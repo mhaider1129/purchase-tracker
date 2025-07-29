@@ -11,6 +11,7 @@ import MedicalDeviceRequestForm from './pages/requests/MedicalDeviceRequestForm'
 import ITRequestForm from './pages/requests/ITRequestForm';
 import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
 import WarehouseSupplyRequestForm from './pages/requests/WarehouseSupplyRequestForm';
+import MedicationRequestForm from './pages/requests/MedicationRequestForm';
 import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
 
@@ -33,6 +34,7 @@ import ClosedRequestsPage from './pages/ClosedRequestsPage';
 import MaintenanceStockPage from './pages/MaintenanceStockPage';
 import ProcurementPlansPage from './pages/ProcurementPlansPage';
 import RequestSubmittedPage from './pages/requests/RequestSubmittedPage';
+import WarehouseSupplyTemplatesPage from './pages/WarehouseSupplyTemplatesPage';
 
 
 // ✅ Extract user role from JWT
@@ -87,6 +89,15 @@ function App() {
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
         <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
         <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
+        <Route
+          path="/requests/medication"
+          element={
+            <ProtectedRoute
+              element={<MedicationRequestForm />}
+              allowedRoles={['requester', 'Requester']}
+            />
+          }
+        />
         <Route path="/approvals" element={<ProtectedRoute element={<ApprovalsPanel />} />} />
         <Route path="/open-requests" element={<ProtectedRoute element={<OpenRequestsPage />} />} />
         <Route path="/request-submitted" element={<ProtectedRoute element={<RequestSubmittedPage />} />} />
@@ -107,6 +118,10 @@ function App() {
         <Route
           path="/maintenance-stock"
           element={<ProtectedRoute element={<MaintenanceStockPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'technician']} />}
+        />
+        <Route
+          path="/warehouse-supply-templates"
+          element={<ProtectedRoute element={<WarehouseSupplyTemplatesPage />} allowedRoles={['WarehouseManager', 'warehouse_manager']} />}
         />
         <Route path="/warehouse-supply-requests" element={<ProtectedRoute element={<WarehouseSupplyRequestsPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']} />} />
 

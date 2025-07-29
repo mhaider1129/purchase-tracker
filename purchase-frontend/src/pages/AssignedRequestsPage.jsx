@@ -92,6 +92,11 @@ const AssignedRequestsPage = () => {
     }
   };
 
+  const handleGenerateDoc = (requestId, type) => {
+    const url = `${axios.defaults.baseURL}api/requests/${requestId}/rfx?type=${type}`;
+    window.open(url, '_blank');
+  };
+
   useEffect(() => {
     fetchAssignedRequests();
   }, []);
@@ -191,6 +196,31 @@ const AssignedRequestsPage = () => {
                         })}
                       </ul>
                     )}
+                  </div>
+
+                  {/* 📄 Generate RFP/RFI/RFQ */}
+                  <div className="mt-4">
+                    <h3 className="font-semibold mb-2">Generate Document</h3>
+                    <div className="space-x-2">
+                      <button
+                        onClick={() => handleGenerateDoc(request.id, 'rfp')}
+                        className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      >
+                        RFP
+                      </button>
+                      <button
+                        onClick={() => handleGenerateDoc(request.id, 'rfi')}
+                        className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      >
+                        RFI
+                      </button>
+                      <button
+                        onClick={() => handleGenerateDoc(request.id, 'rfq')}
+                        className="px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                      >
+                        RFQ
+                      </button>
+                    </div>
                   </div>
 
                       {/* ✅ Button to mark request as completed */}

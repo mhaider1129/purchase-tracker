@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
@@ -7,6 +7,8 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const WarehouseSupplyRequestForm = () => {
   const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
+  const [templates, setTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [justification, setJustification] = useState('');
   const [supplyDomain, setSupplyDomain] = useState('medical');
   const [submitting, setSubmitting] = useState(false);
@@ -18,10 +20,28 @@ const WarehouseSupplyRequestForm = () => {
 
   // No stock lookup - items are manually entered by the user
 
-  const handleItemChange = (index, field, value) => {
-    const updated = [...items];
-    updated[index][field] = field === 'quantity' ? Number(value) || 0 : value;
-    setItems(updated);
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await api.get('/api/warehouse-supply-templates');
+        setTemplates(res.data || []);
+      } catch (err) {
+        console.error('Failed to load templates:', err);
+      }
+    };
+    fetchTemplates();
+  }, []);
+
+  const applyTemplate = (id) => {
+    setSelectedTemplateId(id);
+    const template = templates.find((t) => t.id === parseInt(id, 10));
+    if (template) {
+      const mapped = (template.items || []).map((it) => ({
+        item_name: it.item_name || '',
+        quantity: 1,
+      }));
+      setItems(mapped.length ? mapped : items);
+    }
   };
 
   const addItem = () => setItems([...items, { item_name: '', quantity: 1 }]);
@@ -119,9 +139,26 @@ const WarehouseSupplyRequestForm = () => {
               disabled={submitting}
             >
               <option value="medical">Medical Warehouse</option>
-              <option value="operational">Operational Warehouse</option>
-            </select>
-          </div>
+          <option value="operational">Operational Warehouse</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block font-semibold mb-1">Template</label>
+        <select
+          value={selectedTemplateId}
+          onChange={(e) => applyTemplate(e.target.value)}
+          className="p-2 border rounded"
+          disabled={submitting}
+        >
+          <option value="">-- Select Template --</option>
+          {templates.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.template_name}
+            </option>
+          ))}
+        </select>
+      </div>
 
           <div>
             <label className="block font-semibold mb-2">Items</label>
