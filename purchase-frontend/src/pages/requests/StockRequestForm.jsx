@@ -29,14 +29,43 @@ const StockRequestForm = () => {
     [itemsList]
   );
 
-  const categoryLocked = useMemo(
-    () => selectedItems.some((it) => it.item_name),
+  const hasSelectedData = useMemo(
+    () =>
+      selectedItems.some(
+        (it) =>
+          it.item_name ||
+          it.brand ||
+          it.available_quantity ||
+          it.quantity !== 1 ||
+          (it.attachments && it.attachments.length)
+      ),
     [selectedItems]
   );
 
   const handleCategoryChange = (value) => {
+    if (hasSelectedData) {
+      const confirmChange = window.confirm(
+        'Changing the category will remove all selected items. Continue?'
+      );
+      if (!confirmChange) {
+        return;
+      }
+      setSelectedItems([
+        {
+          item_name: '',
+          brand: '',
+          category: value,
+          quantity: 1,
+          available_quantity: '',
+          attachments: [],
+        },
+      ]);
+    } else {
+      setSelectedItems((items) =>
+        items.map((it) => ({ ...it, category: value }))
+      );
+    }
     setCategory(value);
-    setSelectedItems((items) => items.map((it) => ({ ...it, category: value })));
   };
 
   // ✅ Validate and restrict access based on role
@@ -205,7 +234,7 @@ const StockRequestForm = () => {
               value={category}
               onChange={(e) => handleCategoryChange(e.target.value)}
               className="p-2 border rounded"
-              disabled={categoryLocked || isSubmitting}
+              disabled={isSubmitting}
             >
               <option value="">All Categories</option>
               {categories.map((cat) => (

@@ -59,7 +59,7 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
-          {['warehouse_manager', 'warehouse_keeper'].includes(role) && (
+          {['warehousemanager', 'warehouse_keeper'].includes(role) && (
             <button
               onClick={() => navigate('/warehouse-supply-templates')}
               className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
@@ -69,7 +69,7 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
-          {['warehouse_manager', 'warehouse_keeper'].includes(role) && (
+          {['warehousemanager', 'warehouse_keeper'].includes(role) && (
             <button
               onClick={() => navigate('/warehouse-supply-requests')}
               className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
