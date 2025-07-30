@@ -13,7 +13,6 @@ const StockRequestForm = () => {
       item_name: '',
       brand: '',
       category: '',
-      search: '',
       quantity: 1,
       available_quantity: '',
       attachments: []
@@ -29,6 +28,16 @@ const StockRequestForm = () => {
     () => Array.from(new Set(itemsList.map((it) => it.category))).filter(Boolean),
     [itemsList]
   );
+
+  const categoryLocked = useMemo(
+    () => selectedItems.some((it) => it.item_name),
+    [selectedItems]
+  );
+
+  const handleCategoryChange = (value) => {
+    setCategory(value);
+    setSelectedItems((items) => items.map((it) => ({ ...it, category: value })));
+  };
 
   // ✅ Validate and restrict access based on role
   const getUserRoleFromToken = (token) => {
@@ -84,13 +93,6 @@ const StockRequestForm = () => {
   }, []);
 
   const handleItemChange = (index, field, value) => {
-    if (field === 'category') {
-      setCategory(value);
-      setSelectedItems((items) =>
-        items.map((it) => ({ ...it, category: value }))
-      );
-      return;
-    }
     const updated = [...selectedItems];
     updated[index][field] = field === 'quantity' ? parseInt(value, 10) : value;
     setSelectedItems(updated);
@@ -109,7 +111,6 @@ const StockRequestForm = () => {
         item_name: '',
         brand: '',
         category,
-        search: '',
         quantity: 1,
         available_quantity: '',
         attachments: []
@@ -150,7 +151,7 @@ const StockRequestForm = () => {
     formData.append('target_section_id', sectionId);
     formData.append('budget_impact_month', '');
     const itemsPayload = selectedItems.map(
-      ({ attachments, search, category, ...rest }) => rest
+      ({ attachments, category, ...rest }) => rest
     );
     formData.append('items', JSON.stringify(itemsPayload));
     attachments.forEach((file) => formData.append('attachments', file));
@@ -199,50 +200,46 @@ const StockRequestForm = () => {
           </div>
 
           <div>
+            <label className="block font-semibold mb-1">Category</label>
+            <select
+              value={category}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              className="p-2 border rounded"
+              disabled={categoryLocked || isSubmitting}
+            >
+              <option value="">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block font-semibold mb-2">Select Items</label>
             {selectedItems.map((item, index) => {
               const filtered = itemsList.filter(
                 (stock) =>
-                  (!item.category || stock.category === item.category) &&
-                  stock.name.toLowerCase().includes((item.search || '').toLowerCase())
+                  (!category || stock.category === category) &&
+                  stock.name.toLowerCase().includes(item.item_name.toLowerCase())
               );
               return (
                 <div key={index} className="flex gap-2 mb-2 items-center flex-wrap">
-                  <select
-                    value={category}
-                    onChange={(e) => handleItemChange(index, 'category', e.target.value)}
-                    className="p-2 border rounded"
-                    disabled={isSubmitting}
-                  >
-                    <option value="">All Categories</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
                   <input
                     type="text"
-                    placeholder="Search..."
-                    value={item.search}
-                    onChange={(e) => handleItemChange(index, 'search', e.target.value)}
-                    className="p-2 border rounded flex-1"
-                    disabled={isSubmitting}
-                  />
-                  <select
+                    list={`items-${index}`}
                     value={item.item_name}
                     onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
                     className="flex-1 p-2 border rounded"
                     required
                     disabled={isSubmitting}
-                  >
-                    <option value="">-- Select Item --</option>
+                  />
+                  <datalist id={`items-${index}`}>
                     {filtered.map((stock) => (
-                      <option key={stock.id} value={stock.name}>
-                        {stock.name}
-                      </option>
+                      <option key={stock.id} value={stock.name} />
                     ))}
-                  </select>
+                  </datalist>
                 <input
                   type="text"
                   placeholder="Brand (optional)"

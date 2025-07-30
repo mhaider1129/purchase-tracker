@@ -49,7 +49,7 @@ const RequestTypeSelector = () => {
 
         <div className="space-y-4">
           {/* 📦 Stock Request */}
-          {['warehouse_manager', 'warehouse_keeper'].includes(role) && (
+          {['warehousemanager', 'warehouse_keeper'].includes(role) && (
             <button
               onClick={() => navigate('/requests/stock')}
               className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
