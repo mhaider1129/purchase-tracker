@@ -49,6 +49,13 @@ const WarehouseSupplyRequestForm = () => {
     if (!window.confirm('Remove this item?')) return;
     setItems(items.filter((_, i) => i !== idx));
   };
+
+  const handleItemChange = (index, field, value) => {
+    const updated = [...items];
+    updated[index][field] =
+      field === 'quantity' ? parseInt(value, 10) : value;
+    setItems(updated);
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();

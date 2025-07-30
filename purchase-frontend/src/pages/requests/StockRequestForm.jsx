@@ -19,6 +19,7 @@ const StockRequestForm = () => {
       attachments: []
     }
   ]);
+  const [category, setCategory] = useState('');
   const [justification, setJustification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
@@ -83,6 +84,13 @@ const StockRequestForm = () => {
   }, []);
 
   const handleItemChange = (index, field, value) => {
+    if (field === 'category') {
+      setCategory(value);
+      setSelectedItems((items) =>
+        items.map((it) => ({ ...it, category: value }))
+      );
+      return;
+    }
     const updated = [...selectedItems];
     updated[index][field] = field === 'quantity' ? parseInt(value, 10) : value;
     setSelectedItems(updated);
@@ -100,7 +108,7 @@ const StockRequestForm = () => {
       {
         item_name: '',
         brand: '',
-        category: '',
+        category,
         search: '',
         quantity: 1,
         available_quantity: '',
@@ -201,7 +209,7 @@ const StockRequestForm = () => {
               return (
                 <div key={index} className="flex gap-2 mb-2 items-center flex-wrap">
                   <select
-                    value={item.category}
+                    value={category}
                     onChange={(e) => handleItemChange(index, 'category', e.target.value)}
                     className="p-2 border rounded"
                     disabled={isSubmitting}
