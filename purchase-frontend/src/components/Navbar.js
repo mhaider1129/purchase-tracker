@@ -45,6 +45,9 @@ const Navbar = () => {
 
         {renderNavButton(t('navbar.closedRequests'), '/closed-requests', 'text-gray-600')}
 
+        {user.role === 'audit' &&
+          renderNavButton(t('navbar.auditRequests'), '/audit-requests', 'text-blue-600')}
+
         {['WarehouseManager', 'warehouse_manager', 'technician'].includes(user.role) &&
           renderNavButton(t('navbar.maintenanceStock'), '/maintenance-stock', 'text-teal-600')}
 

@@ -20,6 +20,7 @@
     "adminTools": "Admin Tools",
     "management": "Management",
     "allRequests": "All Requests",
+    "auditRequests": "Audit Requests",
     "procurementPlans": "Procurement Plans",
     "viewIncomplete": "View Incomplete Requests",
     "registerUser": "Register User",

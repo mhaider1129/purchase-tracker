@@ -61,6 +61,16 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
+          {['warehousemanager', 'warehouse_manager'].includes(role) && (
+            <button
+              onClick={() => navigate('/requests/stock-item')}
+              className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
+              aria-label="New Stock Item"
+            >
+              New Stock Item
+            </button>
+          )}
+
           {['warehousemanager', 'warehouse_manager', 'warehouse_keeper'].includes(role) && (
             <button
               onClick={() => navigate('/warehouse-supply-templates')}

@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import RequestTypeSelector from './pages/requests/RequestTypeSelector';
 import StockRequestForm from './pages/requests/StockRequestForm';
 import NonStockRequestForm from './pages/requests/NonStockRequestForm';
+import StockItemRequestForm from './pages/requests/StockItemRequestForm';
 import MedicalDeviceRequestForm from './pages/requests/MedicalDeviceRequestForm';
 import ITRequestForm from './pages/requests/ITRequestForm';
 import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
@@ -35,6 +36,7 @@ import MaintenanceStockPage from './pages/MaintenanceStockPage';
 import ProcurementPlansPage from './pages/ProcurementPlansPage';
 import RequestSubmittedPage from './pages/requests/RequestSubmittedPage';
 import WarehouseSupplyTemplatesPage from './pages/WarehouseSupplyTemplatesPage';
+import AuditRequestsPage from './pages/AuditRequestsPage';
 
 
 // ✅ Extract user role from JWT
@@ -85,6 +87,15 @@ function App() {
         {/* ✅ General Protected Routes */}
         <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
         <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
+        <Route
+          path="/requests/stock-item"
+          element={
+            <ProtectedRoute
+              element={<StockItemRequestForm />}
+              allowedRoles={['WarehouseManager', 'warehouse_manager']}
+            />
+          }
+        />
         <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />} />
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
         <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
@@ -139,11 +150,12 @@ function App() {
         <Route path="/incomplete/medical" element={<ProtectedRoute element={<IncompleteMedicalRequestsPage />} allowedRoles={['CMO']} />} />
         <Route path="/incomplete/operational" element={<ProtectedRoute element={<IncompleteOperationalRequestsPage />} allowedRoles={['COO']} />} />
 
-        <Route
+<Route
   path="/completed-assigned"
   element={<ProtectedRoute element={<CompletedAssignedRequestsPage />} allowedRoles={['ProcurementSupervisor', 'ProcurementSpecialist', 'SCM']} />}
- />
+/>
         <Route path="/closed-requests" element={<ProtectedRoute element={<ClosedRequestsPage />} />} />
+        <Route path="/audit-requests" element={<ProtectedRoute element={<AuditRequestsPage />} allowedRoles={['audit']} />} />
         <Route path="/warehouse-supply/:id" element={<ProtectedRoute element={<SupplyItemsPage />} allowedRoles={['warehouse_keeper']} />} />
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} allowedRoles={['SCM', 'admin']} />} />
         {/* 🚨 Catch-All Fallback */}

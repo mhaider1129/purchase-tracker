@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
 import Navbar from '../components/Navbar';
+import { printRequest } from '../api/requests';
 
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
@@ -159,6 +160,36 @@ const AllRequestsPage = () => {
       alert(`❌ Failed to export ${type.toUpperCase()}`);
     } finally {
       setLoadingExport(false);
+    }
+  };
+
+  const handlePrint = async (requestId) => {
+    try {
+      const data = await printRequest(requestId);
+      const { request, items, assigned_user, message } = data;
+
+      const win = window.open('', '_blank');
+      const html = `
+        <html>
+          <head><title>Request ${request.id}</title></head>
+          <body>
+            <h1>Request #${request.id}</h1>
+            <pre>${JSON.stringify(
+              { request, items, assigned_user },
+              null,
+              2
+            )}</pre>
+          </body>
+        </html>`;
+
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      win.print();
+      alert(message);
+    } catch (err) {
+      console.error('❌ Failed to print request:', err);
+      alert('❌ Failed to print request.');
     }
   };
 
