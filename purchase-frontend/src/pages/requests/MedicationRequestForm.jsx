@@ -94,11 +94,7 @@ const MedicationRequestForm = () => {
     );
   }
 
-  const allowedDepartments = ['pharmacy', 'physicians'];
-  if (
-    user.role.toLowerCase() !== 'requester' ||
-    !allowedDepartments.includes(user.department_name?.toLowerCase())
-  ) {
+  if (user.role.toLowerCase() !== 'requester' || !user.can_request_medication) {
     return (
       <>
         <Navbar />

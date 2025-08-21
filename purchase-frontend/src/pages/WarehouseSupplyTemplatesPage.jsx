@@ -80,9 +80,9 @@ const WarehouseSupplyTemplatesPage = () => {
     );
   }
 
-  const isManager = user.role === 'WarehouseManager' || user.role === 'warehouse_manager';
+  const isAuthorized = ['WarehouseManager', 'warehouse_manager', 'warehouse_keeper'].includes(user.role);
 
-  if (!isManager) {
+  if (!isAuthorized) {
     return (
       <>
         <Navbar />

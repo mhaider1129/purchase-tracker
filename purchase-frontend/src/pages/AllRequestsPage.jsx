@@ -31,7 +31,10 @@ const getCurrentStep = (req) => {
 
 const AllRequestsPage = () => {
   const [requests, setRequests] = useState([]);
-  const [expandedRequestId, setExpandedRequestId] = useState(null);
+  const [expandedAssignId, setExpandedAssignId] = useState(null);
+  const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [itemsMap, setItemsMap] = useState({});
+  const [loadingItemsId, setLoadingItemsId] = useState(null);
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState('');
   const [requestType, setRequestType] = useState('');
@@ -99,6 +102,26 @@ const AllRequestsPage = () => {
   const applyFilters = () => {
     setPage(1);
     setFiltersChanged(true);
+  };
+
+  const toggleItems = async (requestId) => {
+    if (expandedItemsId === requestId) {
+      setExpandedItemsId(null);
+      return;
+    }
+    if (!itemsMap[requestId]) {
+      try {
+        setLoadingItemsId(requestId);
+        const res = await axios.get(`/api/requests/${requestId}/items`);
+        setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
+      } catch (err) {
+        console.error(`❌ Failed to load items for request ${requestId}:`, err);
+        alert('Failed to load items');
+      } finally {
+        setLoadingItemsId(null);
+      }
+    }
+    setExpandedItemsId(requestId);
   };
 
   const handleExport = async (type) => {
@@ -253,27 +276,73 @@ const AllRequestsPage = () => {
                   </p>
                 </div>
 
-                {request.status === 'Approved' && (
+                <div className="flex flex-col items-end gap-2">
                   <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                    onClick={() =>
-                      setExpandedRequestId(expandedRequestId === request.id ? null : request.id)
-                    }
+                    className="text-blue-600 underline"
+                    onClick={() => toggleItems(request.id)}
+                    disabled={loadingItemsId === request.id}
                   >
-                    {expandedRequestId === request.id
-                      ? 'Hide'
-                      : request.assigned_user_name
-                      ? 'Reassign'
-                      : 'Assign'}                  </button>
-                )}
+                    {expandedItemsId === request.id ? 'Hide Items' : 'View Items'}
+                  </button>
+                  {request.status === 'Approved' && (
+                    <button
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      onClick={() =>
+                        setExpandedAssignId(
+                          expandedAssignId === request.id ? null : request.id
+                        )
+                      }
+                    >
+                      {expandedAssignId === request.id
+                        ? 'Hide'
+                        : request.assigned_user_name
+                        ? 'Reassign'
+                        : 'Assign'}
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {expandedRequestId === request.id && (
+              {expandedAssignId === request.id && (
                 <AssignRequestPanel
                   requestId={request.id}
-                  currentAssignee={request.assigned_user_name}                  
+                  currentAssignee={request.assigned_user_name}
                   onSuccess={fetchRequests}
                 />
+              )}
+
+              {expandedItemsId === request.id && (
+                <div className="mt-4 border-t pt-2">
+                  <h3 className="font-semibold mb-2">Requested Items</h3>
+                  {loadingItemsId === request.id ? (
+                    <p className="text-gray-500">Loading items...</p>
+                  ) : itemsMap[request.id]?.length > 0 ? (
+                    <table className="w-full text-sm border">
+                      <thead>
+                        <tr className="bg-gray-100">
+                          <th className="border p-1">Item</th>
+                          <th className="border p-1">Brand</th>
+                          <th className="border p-1">Qty</th>
+                          <th className="border p-1">Unit Cost</th>
+                          <th className="border p-1">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {itemsMap[request.id].map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="border p-1">{item.item_name}</td>
+                            <td className="border p-1">{item.brand || '—'}</td>
+                            <td className="border p-1">{item.quantity}</td>
+                            <td className="border p-1">{item.unit_cost}</td>
+                            <td className="border p-1">{item.total_cost}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-sm text-gray-500">No items found.</p>
+                  )}
+                </div>
               )}
             </div>
           ))}

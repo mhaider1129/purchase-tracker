@@ -12,7 +12,12 @@ const Management = () => {
   const [loadingRoutes, setLoadingRoutes] = useState(false);
   const [tab, setTab] = useState('users');
   const [editUserId, setEditUserId] = useState(null);
-  const [editData, setEditData] = useState({ role: '', department_id: '', section_id: '' });
+  const [editData, setEditData] = useState({
+    role: '',
+    department_id: '',
+    section_id: '',
+    can_request_medication: false,
+  });
   const [newDept, setNewDept] = useState({ name: '', type: 'operational' });
   const [newSection, setNewSection] = useState({ department_id: '', name: '' });
   const [editRoutes, setEditRoutes] = useState({});
@@ -153,6 +158,7 @@ const Management = () => {
         section_id: editData.section_id
           ? parseInt(editData.section_id, 10)
           : null,
+        can_request_medication: editData.can_request_medication,
       });      setEditUserId(null);
       fetchUsers();
     } catch (err) {
@@ -173,6 +179,7 @@ const Management = () => {
               <th className="p-2">Role</th>
               <th className="p-2">Department</th>
               <th className="p-2">Section</th>
+              <th className="p-2">Medication?</th>
               <th className="p-2">Active</th>
               <th className="p-2">Actions</th>
             </tr>
@@ -242,6 +249,24 @@ const Management = () => {
                     )
                   ) : (
                     u.section_id
+                  )}
+                </td>
+                <td className="p-2">
+                  {editUserId === u.id ? (
+                    <input
+                      type="checkbox"
+                      checked={editData.can_request_medication}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          can_request_medication: e.target.checked,
+                        })
+                      }
+                    />
+                  ) : u.can_request_medication ? (
+                    'Yes'
+                  ) : (
+                    'No'
                   )}
                 </td>
                 <td className="p-2">{u.is_active ? 'Yes' : 'No'}</td>

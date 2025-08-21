@@ -121,7 +121,7 @@ function App() {
         />
         <Route
           path="/warehouse-supply-templates"
-          element={<ProtectedRoute element={<WarehouseSupplyTemplatesPage />} allowedRoles={['WarehouseManager', 'warehouse_manager']} />}
+          element={<ProtectedRoute element={<WarehouseSupplyTemplatesPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']} />}
         />
         <Route path="/warehouse-supply-requests" element={<ProtectedRoute element={<WarehouseSupplyRequestsPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']} />} />
 

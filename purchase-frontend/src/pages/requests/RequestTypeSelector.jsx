@@ -12,6 +12,7 @@ const RequestTypeSelector = () => {
     department_id: null,
     department_name: '',
     section_id: null,
+    can_request_medication: false,
   });
 
   useEffect(() => {
@@ -23,6 +24,7 @@ const RequestTypeSelector = () => {
           department_id: res.data.department_id,
           department_name: res.data.department_name?.toLowerCase() || '',
           section_id: res.data.section_id || null,
+          can_request_medication: res.data.can_request_medication || false,
         });
       } catch (err) {
         console.error('❌ Failed to load user info:', err);
@@ -49,7 +51,7 @@ const RequestTypeSelector = () => {
 
         <div className="space-y-4">
           {/* 📦 Stock Request */}
-          {['warehousemanager', 'warehouse_keeper'].includes(role) && (
+          {['warehousemanager', 'warehouse_manager', 'warehouse_keeper'].includes(role) && (
             <button
               onClick={() => navigate('/requests/stock')}
               className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
@@ -59,7 +61,7 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
-          {['warehousemanager', 'warehouse_keeper'].includes(role) && (
+          {['warehousemanager', 'warehouse_manager', 'warehouse_keeper'].includes(role) && (
             <button
               onClick={() => navigate('/warehouse-supply-templates')}
               className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
@@ -69,13 +71,13 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
-          {['warehousemanager', 'warehouse_keeper'].includes(role) && (
+          {['warehousemanager', 'warehouse_manager', 'warehouse_keeper'].includes(role) && (
             <button
               onClick={() => navigate('/warehouse-supply-requests')}
               className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
               aria-label="View Warehouse Supply Requests"
             >
-              Warehouse Supply Requests
+              Submitted Warehouse Supply Requests
             </button>
           )}
 
@@ -104,8 +106,7 @@ const RequestTypeSelector = () => {
             Medical Device Request
           </button>
 
-          {role === 'requester' &&
-            ['pharmacy', 'physicians'].includes(userInfo.department_name) && (
+          {userInfo.can_request_medication && (
             <button
               onClick={() => navigate('/requests/medication')}
               className={`${buttonStyle} bg-pink-600 hover:bg-pink-700 focus:ring-pink-400`}
@@ -124,7 +125,7 @@ const RequestTypeSelector = () => {
           </button>
 
           {/* 🔎 Approval Panel & History */}
-          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager'].includes(role) && (
+          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager', 'warehouse_manager'].includes(role) && (
             <button
               onClick={() => navigate('/approvals')}
               className={`${buttonStyle} bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400`}
@@ -134,7 +135,7 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
-          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'admin', 'warehousemanager'].includes(role) && (
+          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'admin', 'warehousemanager', 'warehouse_manager'].includes(role) && (
             <button
               onClick={() => navigate('/approval-history')}
               className={`${buttonStyle} bg-gray-700 hover:bg-gray-800 focus:ring-gray-400`}
