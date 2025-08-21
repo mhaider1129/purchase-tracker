@@ -1,8 +1,10 @@
 // src/api/axios.js
 import axios from 'axios';
 
-// ✅ Use REACT_APP_API_BASE environment variable or fallback
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000/';
+// ✅ Use REACT_APP_API_BASE env var or fall back to current host (helpful on LAN)
+const API_BASE =
+  process.env.REACT_APP_API_BASE ||
+  `${window.location.protocol}//${window.location.hostname}:5000/`;
 
 // ✅ Create axios instance
 const api = axios.create({
