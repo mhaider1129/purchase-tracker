@@ -166,23 +166,62 @@ const AllRequestsPage = () => {
   const handlePrint = async (requestId) => {
     try {
       const data = await printRequest(requestId);
-      const { request, items, assigned_user, message } = data;
+      const { request, items, assigned_user, message, print_count } = data;
 
       const win = window.open('', '_blank');
-      const html = `
+      const rows = items
+        .map(
+          (item) => `
+              <tr>
+                <td>${item.item_name}</td>
+                <td>${item.brand || ''}</td>
+                <td>${item.quantity || ''}</td>
+                <td>${item.unit_cost || ''}</td>
+                <td>${item.total_cost || ''}</td>
+              </tr>`
+        )
+        .join('');
+
+      win.document.write(`
         <html>
-          <head><title>Request ${request.id}</title></head>
+          <head>
+            <title>Request ${request.id}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              h1 { text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+              th { background: #f5f5f5; }
+            </style>
+          </head>
           <body>
             <h1>Request #${request.id}</h1>
-            <pre>${JSON.stringify(
-              { request, items, assigned_user },
-              null,
-              2
-            )}</pre>
+            <p><strong>Print count:</strong> ${print_count}</p>
+            <p><strong>Type:</strong> ${request.request_type}</p>
+            <p><strong>Justification:</strong> ${request.justification}</p>
+            ${
+              assigned_user
+                ? `<p><strong>Assigned To:</strong> ${assigned_user.name} (${assigned_user.role})</p>`
+                : ''
+            }
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Brand</th>
+                  <th>Qty</th>
+                  <th>Unit Cost</th>
+                  <th>Total Cost</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
           </body>
-        </html>`;
+        </html>
+      `);
 
-      win.document.write(html);
       win.document.close();
       win.focus();
       win.print();
@@ -308,6 +347,12 @@ const AllRequestsPage = () => {
                 </div>
 
                 <div className="flex flex-col items-end gap-2">
+                  <button
+                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
+                    onClick={() => handlePrint(request.id)}
+                  >
+                    Print
+                  </button>
                   <button
                     className="text-blue-600 underline"
                     onClick={() => toggleItems(request.id)}
