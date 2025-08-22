@@ -177,6 +177,16 @@ const RequestTypeSelector = () => {
             </button>
           )}
 
+          {role === 'technician' && (
+            <button
+              onClick={() => navigate('/requests/maintenance-warehouse-supply')}
+              className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
+              aria-label="Maintenance Warehouse Supply Request"
+            >
+              Maintenance Warehouse Supply Request
+            </button>
+          )}
+
           {['hod', 'requester', 'cmo', 'coo', 'scm'].includes(role) && (
             <button
               onClick={() => navigate('/approvals/maintenance')}

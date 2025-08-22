@@ -88,7 +88,7 @@ const StockRequestForm = () => {
     }
 
     const role = getUserRoleFromToken(token);
-    if (!['warehouse_manager', 'warehouse_keeper'].includes(role)) {
+    if (!['warehousemanager', 'warehouse_keeper'].includes(role)) {
       alert('🚫 Access Denied: Only warehouse users can submit stock requests.');
       navigate('/');
       return;

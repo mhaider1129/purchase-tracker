@@ -12,6 +12,7 @@ import MedicalDeviceRequestForm from './pages/requests/MedicalDeviceRequestForm'
 import ITRequestForm from './pages/requests/ITRequestForm';
 import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
 import WarehouseSupplyRequestForm from './pages/requests/WarehouseSupplyRequestForm';
+import MaintenanceWarehouseSupplyRequestForm from './pages/requests/MaintenanceWarehouseSupplyRequestForm';
 import MedicationRequestForm from './pages/requests/MedicationRequestForm';
 import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
@@ -98,6 +99,10 @@ function App() {
           }
         />
         <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />} />
+        <Route
+          path="/requests/maintenance-warehouse-supply"
+          element={<ProtectedRoute element={<MaintenanceWarehouseSupplyRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />}
+        />
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
         <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
         <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
