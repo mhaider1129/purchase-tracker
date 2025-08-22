@@ -27,7 +27,7 @@ const Navbar = () => {
         navigate(path);
         setIsOpen(false);
       }}
-      className={`${color} font-medium text-left px-2 py-1 rounded-md hover:underline hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
+      className={`${color} font-semibold text-center px-3 py-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors`}
     >
       {label}
     </button>
@@ -115,38 +115,39 @@ const Navbar = () => {
           {t('navbar.purchaseTracker')}
         </h1>
 
-        <select
-          value={i18n.language}
-          onChange={(e) => i18n.changeLanguage(e.target.value)}
-          className="border rounded px-2 py-1 text-sm mr-2"
-        >
-          <option value="en">{t('language.english')}</option>
-          <option value="ar">{t('language.arabic')}</option>
-        </select>
-        <button
-          onClick={toggleDarkMode}
-          className="border rounded px-2 py-1 text-sm mr-2"
-          aria-label={darkMode ? t('navbar.lightMode') : t('navbar.darkMode')}
-        >
-          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={i18n.language}
+            onChange={(e) => i18n.changeLanguage(e.target.value)}
+            className="border rounded px-2 py-1 text-sm"
+          >
+            <option value="en">{t('language.english')}</option>
+            <option value="ar">{t('language.arabic')}</option>
+          </select>
+          <button
+            onClick={toggleDarkMode}
+            className="border rounded px-2 py-1 text-sm"
+            aria-label={darkMode ? t('navbar.lightMode') : t('navbar.darkMode')}
+          >
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
 
-        <button
-          className="md:hidden text-gray-700 dark:text-gray-200"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Toggle navigation menu"
-          aria-expanded={isOpen}
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
+          <button
+            className="md:hidden text-gray-700 dark:text-gray-200"
+            onClick={() => setIsOpen(!isOpen)}
+            aria-label="Toggle navigation menu"
+            aria-expanded={isOpen}
+          >
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center justify-center gap-4 flex-wrap">
           <NavItems />
         </div>
       </div>
 
       {isOpen && (
-        <div className="md:hidden flex flex-col gap-3 px-4 pb-4">
+        <div className="md:hidden flex flex-col items-center gap-3 px-4 pb-4">
           <NavItems />
         </div>
       )}
