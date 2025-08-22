@@ -7,15 +7,14 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const StockItemRequestForm = () => {
   const [name, setName] = useState('');
-  const [unit, setUnit] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !unit.trim()) {
-      alert('Item name and unit are required.');
+    if (!name.trim()) {
+      alert('Item name is required.');
       return;
     }
 
@@ -26,7 +25,6 @@ const StockItemRequestForm = () => {
       await api.post('/api/stock-item-requests', {
         name,
         description,
-        unit,
       });
       navigate('/request-submitted', { state: { requestType: 'Stock Item' } });
     } catch (err) {
@@ -52,17 +50,6 @@ const StockItemRequestForm = () => {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border rounded"
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-          <div>
-            <label className="block font-semibold mb-1">Unit</label>
-            <input
-              type="text"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
               className="w-full p-2 border rounded"
               required
               disabled={isSubmitting}
