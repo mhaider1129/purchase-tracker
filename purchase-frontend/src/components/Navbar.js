@@ -27,7 +27,7 @@ const Navbar = () => {
         navigate(path);
         setIsOpen(false);
       }}
-      className={`${color} font-semibold text-left`}
+      className={`${color} font-medium text-left px-2 py-1 rounded-md hover:underline hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
     >
       {label}
     </button>
@@ -54,6 +54,7 @@ const Navbar = () => {
         {(user.role === 'admin' || user.role === 'SCM') && (
           <>
             {renderNavButton(t('navbar.dashboard'), '/dashboard', 'text-cyan-600')}
+            {renderNavButton(t('navbar.lifecycleAnalytics'), '/analytics', 'text-pink-600')}
             {renderNavButton(t('navbar.adminTools'), '/admin-tools', 'text-yellow-600')}
             {renderNavButton(t('navbar.management'), '/management', 'text-purple-600')}
             {renderNavButton(t('navbar.allRequests'), '/all-requests', 'text-indigo-600')}
@@ -106,9 +107,9 @@ const Navbar = () => {
 
   return (
     <nav className="bg-gray-200 dark:bg-gray-800 dark:text-gray-100 shadow-sm" role="navigation" aria-label="Main navigation">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <h1
-          className="text-xl font-bold cursor-pointer"
+          className="text-2xl font-semibold tracking-tight cursor-pointer"
           onClick={() => navigate('/')}
         >
           {t('navbar.purchaseTracker')}

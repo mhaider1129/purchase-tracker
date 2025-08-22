@@ -30,6 +30,21 @@ const getCurrentStep = (req) => {
   return 'Submitted';
 };
 
+// Map the current step to a colorful badge
+const getStepColor = (step) => {
+  switch (step) {
+    case 'Rejected':
+      return 'bg-red-100 text-red-800';
+    case 'Completed':
+    case 'Approved':
+      return 'bg-green-100 text-green-800';
+    case 'Submitted':
+      return 'bg-gray-100 text-gray-800';
+    default:
+      return 'bg-blue-100 text-blue-800';
+  }
+};
+
 const AllRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [expandedAssignId, setExpandedAssignId] = useState(null);
@@ -325,7 +340,9 @@ const AllRequestsPage = () => {
         <p>No requests found.</p>
       ) : (
         <div className="space-y-4">
-          {requests.map((request) => (
+          {requests.map((request) => {
+            const step = getCurrentStep(request);
+            return (
             <div key={request.id} className="border rounded p-4 shadow bg-white">
               <div className="flex justify-between items-center">
                 <div>
@@ -339,7 +356,10 @@ const AllRequestsPage = () => {
                       : 'Not Assigned'}
                   </p>
                   <p>
-                    <strong>Current Step:</strong> {getCurrentStep(request)}
+                    <strong>Current Step:</strong>{' '}
+                    <span className={`px-2 py-1 rounded ${getStepColor(step)}`}>
+                      {step}
+                    </span>
                     {request.current_approver_role && request.current_approval_level && (
                       <> (Level {request.current_approval_level})</>
                     )}
@@ -421,7 +441,8 @@ const AllRequestsPage = () => {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

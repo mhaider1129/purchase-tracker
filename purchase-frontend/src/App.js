@@ -37,6 +37,7 @@ import ProcurementPlansPage from './pages/ProcurementPlansPage';
 import RequestSubmittedPage from './pages/requests/RequestSubmittedPage';
 import WarehouseSupplyTemplatesPage from './pages/WarehouseSupplyTemplatesPage';
 import AuditRequestsPage from './pages/AuditRequestsPage';
+import LifecycleAnalytics from './pages/LifecycleAnalytics';
 
 
 // ✅ Extract user role from JWT
@@ -158,6 +159,7 @@ function App() {
         <Route path="/audit-requests" element={<ProtectedRoute element={<AuditRequestsPage />} allowedRoles={['audit']} />} />
         <Route path="/warehouse-supply/:id" element={<ProtectedRoute element={<SupplyItemsPage />} allowedRoles={['warehouse_keeper']} />} />
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} allowedRoles={['SCM', 'admin']} />} />
+        <Route path="/analytics" element={<ProtectedRoute element={<LifecycleAnalytics />} allowedRoles={['SCM', 'admin']} />} />
         {/* 🚨 Catch-All Fallback */}
         <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
 
