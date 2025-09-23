@@ -41,7 +41,7 @@ const AdminTools = () => {
       console.error('❌ Token decode failed:', error);
       navigate('/login');
     }
-  }, [navigate]);
+  }, [navigate, t]);
 
   // 🔁 Reassign Approvals
   const triggerReassignment = async () => {

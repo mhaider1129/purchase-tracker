@@ -1,5 +1,5 @@
 // src/pages/CompletedAssignedRequestsPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 
@@ -10,7 +10,7 @@ const CompletedAssignedRequestsPage = () => {
   const [itemsCache, setItemsCache] = useState({});
   const [search, setSearch] = useState('');
 
-  const fetchCompleted = async () => {
+  const fetchCompleted = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get('/api/requests/completed-assigned', {
@@ -23,7 +23,7 @@ const CompletedAssignedRequestsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   const toggleItems = async (requestId) => {
     if (expandedRequestId === requestId) {
@@ -48,7 +48,7 @@ const CompletedAssignedRequestsPage = () => {
 
   useEffect(() => {
     fetchCompleted();
-  }, [search]);
+  }, [fetchCompleted]);
 
   return (
     <>

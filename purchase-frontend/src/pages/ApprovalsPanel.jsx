@@ -1,13 +1,11 @@
 //src/pages/ApprovalsPanel.js
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from '../api/axios';
-import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 
 const ApprovalsPanel = () => {
-  const { token } = useAuth();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

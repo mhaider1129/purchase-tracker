@@ -1,5 +1,5 @@
 // src/pages/AllRequestsPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
 import Navbar from '../components/Navbar';
@@ -66,7 +66,7 @@ const AllRequestsPage = () => {
   const [filtersChanged, setFiltersChanged] = useState(false);
   const limit = 10;
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchDeps = async () => {
       try {
         const res = await axios.get('/api/departments');
@@ -78,7 +78,7 @@ const AllRequestsPage = () => {
     fetchDeps();
   }, []);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     try {
       const res = await axios.get('/api/requests', {
         params: {
@@ -102,18 +102,18 @@ const AllRequestsPage = () => {
       console.error(err);
       alert('❌ Failed to fetch requests.');
     }
-  };
-
-  useEffect(() => {
-    fetchRequests();
-  }, [page]);
+  }, [department, filter, fromDate, page, requestType, search, sort, status, toDate]);
 
   useEffect(() => {
     if (filtersChanged) {
       fetchRequests();
       setFiltersChanged(false);
     }
-  }, [filtersChanged]);
+  }, [fetchRequests, filtersChanged]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const applyFilters = () => {
     setPage(1);

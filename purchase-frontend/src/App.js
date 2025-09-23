@@ -41,20 +41,6 @@ import AuditRequestsPage from './pages/AuditRequestsPage';
 import LifecycleAnalytics from './pages/LifecycleAnalytics';
 
 
-// ✅ Extract user role from JWT
-const getUserRole = () => {
-  const token = localStorage.getItem('token');
-  if (!token) return null;
-  try {
-    const decoded = JSON.parse(atob(token.split('.')[1]));
-    return decoded.role;
-  } catch (err) {
-    console.error('❌ Token decode error:', err);
-    localStorage.removeItem('token');
-    return null;
-  }
-};
-
 // 🔒 Reusable Protected Route with Role Filtering
 const ProtectedRoute = ({ element, allowedRoles = [] }) => {
   const token = localStorage.getItem('token');

@@ -1,10 +1,29 @@
 // src/api/axios.js
 import axios from 'axios';
 
-// ✅ Use REACT_APP_API_BASE env var or fall back to current host (helpful on LAN)
-const API_BASE =
-  process.env.REACT_APP_API_BASE ||
-  `${window.location.protocol}//${window.location.hostname}:5000/`;
+// ✅ Use REACT_APP_API_BASE (or legacy REACT_APP_API_BASE_URL) or fall back to current host
+const envBase =
+  process.env.REACT_APP_API_BASE ?? process.env.REACT_APP_API_BASE_URL ?? '';
+
+// 🧼 Ensure there is no trailing slash so Axios handles paths predictably
+const normalizedEnvBase = envBase.replace(/\/+$/, '');
+
+const resolveBrowserBase = () => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  const { protocol, hostname, origin } = window.location;
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+
+  if (localHosts.has(hostname)) {
+    return `${protocol}//${hostname}:5000`;
+  }
+
+  return origin;
+};
+
+const API_BASE = normalizedEnvBase || resolveBrowserBase();
 
 // ✅ Create axios instance
 const api = axios.create({
