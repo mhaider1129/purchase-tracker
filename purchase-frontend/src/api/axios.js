@@ -10,33 +10,42 @@ const normalizedEnvBase = envBase.replace(/\/+$/, '');
 
 const resolveBrowserBase = () => {
   if (typeof window === 'undefined') {
-    return '';
+    return { primary: '', fallback: '' };
   }
-
-  const { protocol, hostname } = window.location;
+  
+  const { protocol, hostname, origin } = window.location;
   const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
   const isIPAddress = /^(\d+\.){3}\d+$/.test(hostname) || hostname.includes(':');
 
   if (localHosts.has(hostname) || hostname.endsWith('.local')) {
-    return `${protocol}//${hostname}:5000`;
+    const localBackend = `${protocol}//${hostname}:5000`;
+    return { primary: localBackend, fallback: localBackend };
   }
 
   if (isIPAddress) {
-    return `${protocol}//${hostname}`;
+    const directHost = `${protocol}//${hostname}`;
+    return { primary: directHost, fallback: directHost };
   }
 
-  // If we're already on the API hostname, use it as-is.
   if (hostname.startsWith('api.')) {
-    return `${protocol}//${hostname}`;
+    const apiHost = `${protocol}//${hostname}`;
+    return { primary: apiHost, fallback: apiHost };
   }
 
-  // Otherwise try the conventional api.<domain> host before falling back to the current origin.
   const bareHostname = hostname.replace(/^www\./, '');
   const apiHostname = `api.${bareHostname}`;
-  return `${protocol}//${apiHostname}`;
+  const apiURL = `${protocol}//${apiHostname}`;
+
+  return { primary: apiURL, fallback: origin };
 };
 
-const API_BASE = normalizedEnvBase || resolveBrowserBase();
+const { primary: browserPrimary, fallback: browserFallback } = resolveBrowserBase();
+
+const API_BASE = normalizedEnvBase || browserPrimary;
+const FALLBACK_BASE =
+  normalizedEnvBase || !browserFallback || browserFallback === browserPrimary
+    ? ''
+    : browserFallback;
 
 // ✅ Create axios instance
 const api = axios.create({
