@@ -13,14 +13,27 @@ const resolveBrowserBase = () => {
     return '';
   }
 
-  const { protocol, hostname, origin } = window.location;
+  const { protocol, hostname } = window.location;
   const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
+  const isIPAddress = /^(\d+\.){3}\d+$/.test(hostname) || hostname.includes(':');
 
-  if (localHosts.has(hostname)) {
+  if (localHosts.has(hostname) || hostname.endsWith('.local')) {
     return `${protocol}//${hostname}:5000`;
   }
 
-  return origin;
+  if (isIPAddress) {
+    return `${protocol}//${hostname}`;
+  }
+
+  // If we're already on the API hostname, use it as-is.
+  if (hostname.startsWith('api.')) {
+    return `${protocol}//${hostname}`;
+  }
+
+  // Otherwise try the conventional api.<domain> host before falling back to the current origin.
+  const bareHostname = hostname.replace(/^www\./, '');
+  const apiHostname = `api.${bareHostname}`;
+  return `${protocol}//${apiHostname}`;
 };
 
 const API_BASE = normalizedEnvBase || resolveBrowserBase();
