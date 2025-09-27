@@ -39,13 +39,9 @@ const resolveBrowserBase = () => {
   return { primary: apiURL, fallback: origin };
 };
 
-const { primary: browserPrimary, fallback: browserFallback } = resolveBrowserBase();
+const { primary: browserPrimary } = resolveBrowserBase();
 
 const API_BASE = normalizedEnvBase || browserPrimary;
-const FALLBACK_BASE =
-  normalizedEnvBase || !browserFallback || browserFallback === browserPrimary
-    ? ''
-    : browserFallback;
 
 // ✅ Create axios instance
 const api = axios.create({
