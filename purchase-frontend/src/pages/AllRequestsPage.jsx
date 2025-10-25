@@ -4,6 +4,8 @@ import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
 import Navbar from '../components/Navbar';
 import { printRequest } from '../api/requests';
+import ApprovalTimeline from '../components/ApprovalTimeline';
+import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
@@ -65,6 +67,13 @@ const AllRequestsPage = () => {
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
   const limit = 10;
+  const {
+    expandedApprovalsId,
+    approvalsMap,
+    loadingApprovalsId,
+    toggleApprovals,
+    resetApprovals,
+  } = useApprovalTimeline();
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -96,13 +105,14 @@ const AllRequestsPage = () => {
       });
 
       setRequests(res?.data?.data || []);
+      resetApprovals();
       const total = res?.data?.total || 0;
       setTotalPages(Math.ceil(total / limit));
     } catch (err) {
       console.error(err);
       alert('❌ Failed to fetch requests.');
     }
-  }, [department, filter, fromDate, page, requestType, search, sort, status, toDate]);
+  }, [department, filter, fromDate, page, requestType, resetApprovals, search, sort, status, toDate]);
 
   useEffect(() => {
     if (filtersChanged) {
@@ -380,6 +390,13 @@ const AllRequestsPage = () => {
                   >
                     {expandedItemsId === request.id ? 'Hide Items' : 'View Items'}
                   </button>
+                  <button
+                    className="text-blue-600 underline"
+                    onClick={() => toggleApprovals(request.id)}
+                    disabled={loadingApprovalsId === request.id}
+                  >
+                    {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
+                  </button>
                   {request.status === 'Approved' && (
                     <button
                       className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -438,6 +455,15 @@ const AllRequestsPage = () => {
                   ) : (
                     <p className="text-sm text-gray-500">No items found.</p>
                   )}
+                </div>
+              )}
+
+              {expandedApprovalsId === request.id && (
+                <div className="mt-4 border-t pt-2">
+                  <ApprovalTimeline
+                    approvals={approvalsMap[request.id]}
+                    isLoading={loadingApprovalsId === request.id}
+                  />
                 </div>
               )}
             </div>

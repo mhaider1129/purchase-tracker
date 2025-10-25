@@ -40,7 +40,18 @@
     "loading": "Loading...",
     "prev": "Prev",
     "next": "Next",
-    "pageOf": "Page {{current}} of {{total}}"
+    "pageOf": "Page {{current}} of {{total}}",
+    "viewApprovals": "View Approvals",
+    "hideApprovals": "Hide Approvals",
+    "approvalTimeline": "Approval Timeline",
+    "loadingApprovals": "Loading approvals...",
+    "noApprovals": "No approvals recorded yet.",
+    "approvalLevel": "Level",
+    "approver": "Approver",
+    "approverRole": "Role",
+    "approvalDecision": "Decision",
+    "approvalComment": "Comment",
+    "approvalDate": "Date"
   },
   "openRequests": {
     "title": "My Open Requests",
@@ -55,6 +66,8 @@
     "allStatuses": "All Statuses",
     "pending": "Pending",
     "approved": "Approved",
+    "fromDate": "From date",
+    "toDate": "To date",
     "searchItems": "Search items",
     "applyFilters": "Apply Filters",
     "noRequests": "No requests found.",
@@ -71,7 +84,6 @@
     "brand": "Brand",
     "qty": "Qty",
     "unitCost": "Unit Cost",
-    "total": "Total",
     "noItemsForRequest": "No items found for this request.",
     "currentStage": "Current Approval Stage",
     "awaitingStep": "Awaiting {{step}}",
@@ -83,6 +95,7 @@
     "title": "My Closed Requests",
     "searchPlaceholder": "Search...",
     "exportCSV": "Export CSV",
+    "total": "Total",
     "csvFileName": "My_Closed_Requests",
     "loading": "Loading...",
     "noRequests": "No closed requests found.",
@@ -134,6 +147,104 @@
     "pending": "Your request has been submitted and is now pending approval.",
     "viewOpen": "View My Open Requests",
     "backHome": "Back to Home",
-    "submitAnother": "Submit Another Request"
+    "submitAnother": "Submit Another Request",
+    "detailsHeading": "Submission Summary",
+    "requestIdLabel": "Request ID",
+    "estimatedCostLabel": "Estimated Cost",
+    "attachmentsUploadedLabel": "Attachments Uploaded",
+    "nextApproverLabel": "Next Approver",
+    "pendingStepLabel": "Pending Approval Level",
+    "levelLabel": "Level {{level}}",
+    "statusMessageLabel": "Status Message",
+    "duplicateWarning": "⚠️ This request may duplicate an earlier submission this month. Procurement has been notified.",
+    "missingSummary": "We couldn't load the submission summary. Please check your open requests for details.",
+    "notAvailable": "Not available",
+    "noPendingApprover": "No further approvals are required at this time.",
+    "pendingAssignment": "Pending assignment",
+    "attachmentsCount": "{{count}} file(s) uploaded"
+  },
+  "closedRequests": {
+    "title": "My Closed Requests",
+    "exportCSV": "Export CSV",
+    "cards": {
+      "total": "Total"
+    },
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search by ID, type, status, assignee or justification",
+    "filters": {
+      "type": "Request type",
+      "status": "Status",
+      "sort": "Sort",
+      "clear": "Clear filters",
+      "allTypes": "All request types",
+      "allStatuses": "All statuses"
+    },
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first"
+    },
+    "table": {
+      "id": "ID",
+      "type": "Type",
+      "status": "Status",
+      "assigned": "Assigned to",
+      "submitted": "Submitted",
+      "updated": "Last updated",
+      "justification": "Justification"
+    },
+    "loading": "Loading closed requests...",
+    "emptyState": "No closed requests match your filters.",
+    "errorLoading": "Failed to load closed requests. Please try again.",
+    "notAvailable": "Not available",
+    "csvFileName": "closed_requests",
+    "statuses": {
+      "completed": "Completed",
+      "rejected": "Rejected"
+    }
+      },
+  "closedRequests": {
+    "title": "Closed Requests",
+    "exportCSV": "Export CSV",
+    "cards": {
+      "total": "Total Requests"
+    },
+    "statuses": {
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "approved": "Approved",
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "cancelled": "Cancelled",
+      "on_hold": "On Hold"
+    },
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search by type, justification, status, assignee, or ID",
+    "filters": {
+      "type": "Request Type",
+      "status": "Status",
+      "sort": "Sort By",
+      "clear": "Clear Filters",
+      "allTypes": "All Types",
+      "allStatuses": "All Statuses"
+    },
+    "sort": {
+      "newest": "Newest first",
+      "oldest": "Oldest first"
+    },
+    "table": {
+      "id": "ID",
+      "type": "Type",
+      "status": "Status",
+      "assigned": "Assigned To",
+      "submitted": "Submitted",
+      "updated": "Updated",
+      "justification": "Justification",
+      "approvals": "Approvals"
+    },
+    "notAvailable": "Not available",
+    "errorLoading": "Failed to load closed requests.",
+    "loading": "Loading closed requests...",
+    "emptyState": "No closed requests match your filters.",
+    "csvFileName": "closed_requests"
   }
 }

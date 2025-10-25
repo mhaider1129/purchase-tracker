@@ -5,6 +5,7 @@ import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const StockRequestForm = () => {
   const [itemsList, setItemsList] = useState([]);
@@ -192,14 +193,17 @@ const StockRequestForm = () => {
 
     try {
       setIsSubmitting(true);
-      await api.post('/api/requests', formData, {
+      const res = await api.post('/api/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      navigate('/request-submitted');
-      setAttachments([]);
+      const state = buildRequestSubmissionState('Stock', res.data);
+      navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Submission error:', err);
-      alert(err.response?.data?.message || '❌ Failed to submit request. Please try again.');
+      alert(
+        err.response?.data?.message ||
+          '❌ Failed to submit request. Please try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }

@@ -14,6 +14,7 @@ import {
   Legend,
   LineChart,
   Line,
+  CartesianGrid,
 } from 'recharts';
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
@@ -32,7 +33,7 @@ const Dashboard = () => {
       } catch (err) {
         console.error('❌ Failed to fetch dashboard data:', err);
         setError('Failed to load dashboard');
-     }
+      }
     };
     fetchSummary();
   }, []);
@@ -74,6 +75,11 @@ const Dashboard = () => {
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!summary) return <p className="p-6">Loading dashboard...</p>;
 
+  const pendingTrend = summary.pending_vs_completed_trend || [];
+  const oldestPending = summary.oldest_pending_requests || [];
+  const completionRate = Number(summary.completion_rate || 0);
+  const avgPendingAge = Number(summary.avg_pending_age_days || 0);
+
   return (
     <>
       <Navbar />
@@ -81,12 +87,18 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold text-purple-700 mb-6">📊 Dashboard Overview</h1>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card title="Total Requests" value={summary.total_requests} />
           <Card title="Approved" value={summary.approved_requests} />
           <Card title="Pending" value={summary.pending_requests} />
+          <Card title="Completed" value={summary.completed_requests} />
           <Card title="Rejected" value={summary.rejected_requests} />
-          <Card title="Avg Approval Time (days)" value={summary.avg_approval_time_days.toFixed(2)} />
+          <Card title="Completion Rate" value={`${completionRate.toFixed(1)}%`} />
+          <Card
+            title="Avg Approval Time (days)"
+            value={summary.avg_approval_time_days.toFixed(2)}
+          />
+          <Card title="Avg Pending Age (days)" value={avgPendingAge.toFixed(1)} />
         </div>
 
         {/* Charts */}
@@ -134,6 +146,21 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </div>
 
+          <div className="md:col-span-2">
+            <h2 className="text-lg font-semibold mb-2">Pending vs Completed Trend</h2>
+            <ResponsiveContainer width="100%" height={320}>
+              <LineChart data={pendingTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="pending_count" stroke="#ffbb28" name="Pending" />
+                <Line type="monotone" dataKey="completed_count" stroke="#00C49F" name="Completed" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+
           <div>
             <h2 className="text-lg font-semibold mb-2">Top Requesting Departments</h2>
             <ResponsiveContainer width="100%" height={300}>
@@ -165,6 +192,27 @@ const Dashboard = () => {
                 <Line type="monotone" dataKey="rejected_count" stroke="#ff4d4f" />
               </LineChart>
             </ResponsiveContainer>
+          </div>
+
+          <div className="md:col-span-2">
+            <h2 className="text-lg font-semibold mb-2">Oldest Pending Requests</h2>
+            <div className="bg-white shadow rounded p-4">
+              {oldestPending.length ? (
+                <ul className="space-y-3">
+                  {oldestPending.map((request) => (
+                    <li key={request.id} className="border-b last:border-b-0 pb-3 last:pb-0">
+                      <p className="text-sm font-semibold text-gray-700">
+                        Request #{request.id} • {request.department}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">{request.justification}</p>
+                      <p className="text-xs text-gray-400">Waiting {request.age_days.toFixed(1)} days</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500">No pending backlog 🎉</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

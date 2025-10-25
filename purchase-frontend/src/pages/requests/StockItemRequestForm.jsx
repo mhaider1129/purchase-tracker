@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const StockItemRequestForm = () => {
   const [name, setName] = useState('');
@@ -22,11 +23,12 @@ const StockItemRequestForm = () => {
 
     try {
       setIsSubmitting(true);
-      await api.post('/api/stock-item-requests', {
+      const res = await api.post('/api/stock-item-requests', {
         name,
         description,
       });
-      navigate('/request-submitted', { state: { requestType: 'Stock Item' } });
+      const state = buildRequestSubmissionState('Stock Item', res.data);
+      navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Failed to submit stock item request:', err);
       alert(err.response?.data?.message || 'Failed to submit request.');

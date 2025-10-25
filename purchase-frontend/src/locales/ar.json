@@ -35,12 +35,23 @@
   "language": {
     "english": "الإنجليزية",
     "arabic": "العربية"
-      },
+  },
   "common": {
     "loading": "جاري التحميل...",
     "prev": "السابق",
     "next": "التالي",
-    "pageOf": "صفحة {{current}} من {{total}}"
+    "pageOf": "صفحة {{current}} من {{total}}",
+    "viewApprovals": "عرض الموافقات",
+    "hideApprovals": "إخفاء الموافقات",
+    "approvalTimeline": "سجل الموافقات",
+    "loadingApprovals": "جاري تحميل الموافقات...",
+    "noApprovals": "لا توجد موافقات مسجلة بعد.",
+    "approvalLevel": "المستوى",
+    "approver": "المعتمد",
+    "approverRole": "الدور",
+    "approvalDecision": "القرار",
+    "approvalComment": "التعليق",
+    "approvalDate": "التاريخ"
   },
   "openRequests": {
     "title": "طلباتي المفتوحة",
@@ -55,6 +66,8 @@
     "allStatuses": "جميع الحالات",
     "pending": "قيد الانتظار",
     "approved": "موافق",
+    "fromDate": "من تاريخ",
+    "toDate": "إلى تاريخ",
     "searchItems": "البحث في العناصر",
     "applyFilters": "تطبيق المرشحات",
     "noRequests": "لا توجد طلبات.",
@@ -62,7 +75,7 @@
     "type": "النوع",
     "status": "الحالة",
     "cost": "التكلفة",
-    "submitted": "تم التقديم في",
+    "submitted": "تم التقديم",
     "urgent": "\ud83d\udea8 طلب عاجل",
     "hideItems": "إخفاء العناصر",
     "showItems": "عرض العناصر",
@@ -129,6 +142,104 @@
     "pending": "تم تقديم طلبك وهو قيد المراجعة الآن.",
     "viewOpen": "عرض طلباتي المفتوحة",
     "backHome": "العودة إلى الصفحة الرئيسية",
-    "submitAnother": "تقديم طلب آخر"
+    "submitAnother": "تقديم طلب آخر",
+    "detailsHeading": "ملخص الإرسال",
+    "requestIdLabel": "معرف الطلب",
+    "estimatedCostLabel": "التكلفة التقديرية",
+    "attachmentsUploadedLabel": "المرفقات المرفوعة",
+    "nextApproverLabel": "الموافق التالي",
+    "pendingStepLabel": "مستوى الموافقة التالي",
+    "levelLabel": "المستوى {{level}}",
+    "statusMessageLabel": "رسالة الحالة",
+    "duplicateWarning": "⚠️ قد يكون هذا الطلب مكرراً لتقديم سابق هذا الشهر. تم إخطار قسم المشتريات.",
+    "missingSummary": "تعذر تحميل ملخص الإرسال. يرجى مراجعة طلباتك المفتوحة للاطلاع على التفاصيل.",
+    "notAvailable": "غير متوفر",
+    "noPendingApprover": "لا توجد موافقات إضافية مطلوبة حالياً.",
+    "pendingAssignment": "في انتظار التعيين",
+    "attachmentsCount": "تم رفع {{count}} ملف/ملفات"
+  },
+  "closedRequests": {
+    "title": "طلباتي المغلقة",
+    "exportCSV": "تصدير CSV",
+    "cards": {
+      "total": "الإجمالي"
+    },
+    "searchLabel": "بحث",
+    "searchPlaceholder": "ابحث بواسطة المعرف أو النوع أو الحالة أو المكلف أو المبرر",
+    "filters": {
+      "type": "نوع الطلب",
+      "status": "الحالة",
+      "sort": "الترتيب",
+      "clear": "إعادة التعيين",
+      "allTypes": "جميع أنواع الطلبات",
+      "allStatuses": "جميع الحالات"
+    },
+    "sort": {
+      "newest": "الأحدث أولاً",
+      "oldest": "الأقدم أولاً"
+    },
+    "table": {
+      "id": "المعرف",
+      "type": "النوع",
+      "status": "الحالة",
+      "assigned": "المسند إلى",
+      "submitted": "تاريخ التقديم",
+      "updated": "آخر تحديث",
+      "justification": "المبرر"
+    },
+    "loading": "جاري تحميل الطلبات المغلقة...",
+    "emptyState": "لا توجد طلبات مغلقة تطابق عوامل التصفية.",
+    "errorLoading": "فشل تحميل الطلبات المغلقة. يرجى المحاولة مرة أخرى.",
+    "notAvailable": "غير متوفر",
+    "csvFileName": "closed_requests",
+    "statuses": {
+      "completed": "مكتمل",
+      "rejected": "مرفوض"
+    }
+      },
+  "closedRequests": {
+    "title": "الطلبات المغلقة",
+    "exportCSV": "تصدير CSV",
+    "cards": {
+      "total": "إجمالي الطلبات"
+    },
+    "statuses": {
+      "completed": "مكتمل",
+      "rejected": "مرفوض",
+      "approved": "موافق عليه",
+      "pending": "قيد الانتظار",
+      "in_progress": "قيد المعالجة",
+      "cancelled": "ملغى",
+      "on_hold": "معلق"
+    },
+    "searchLabel": "بحث",
+    "searchPlaceholder": "ابحث حسب النوع أو المبرر أو الحالة أو المسؤول أو رقم الطلب",
+    "filters": {
+      "type": "نوع الطلب",
+      "status": "الحالة",
+      "sort": "ترتيب حسب",
+      "clear": "إعادة تعيين المرشحات",
+      "allTypes": "جميع الأنواع",
+      "allStatuses": "جميع الحالات"
+    },
+    "sort": {
+      "newest": "الأحدث أولاً",
+      "oldest": "الأقدم أولاً"
+    },
+    "table": {
+      "id": "المعرف",
+      "type": "النوع",
+      "status": "الحالة",
+      "assigned": "المسؤول",
+      "submitted": "تاريخ التقديم",
+      "updated": "تاريخ التحديث",
+      "justification": "المبرر",
+      "approvals": "سجل الموافقات"
+    },
+    "notAvailable": "غير متوفر",
+    "errorLoading": "فشل تحميل الطلبات المغلقة.",
+    "loading": "جارٍ تحميل الطلبات المغلقة...",
+    "emptyState": "لا توجد طلبات مغلقة مطابقة للمرشحات.",
+    "csvFileName": "الطلبات_المغلقة"
   }
 }

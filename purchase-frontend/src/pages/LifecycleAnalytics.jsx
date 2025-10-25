@@ -17,6 +17,11 @@ const Card = ({ title, value }) => (
   </div>
 );
 
+const formatDays = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric.toFixed(2) : 'N/A';
+};
+
 const LifecycleAnalytics = () => {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -49,7 +54,11 @@ const LifecycleAnalytics = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card
             title="Avg Approval Time (days)"
-            value={data.avg_approval_time_days.toFixed(2)}
+            value={formatDays(data.avg_approval_time_days)}
+          />
+          <Card
+            title="Avg PR to PO Cycle (days)"
+            value={formatDays(data.avg_pr_to_po_cycle_days)}
           />
           <Card title="Bottleneck Stage" value={bottleneckLabel} />
         </div>

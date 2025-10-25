@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const MaintenanceWarehouseSupplyRequestForm = () => {
   const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
@@ -113,10 +114,11 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
 
     try {
       setSubmitting(true);
-      await api.post('/api/requests', payload, {
+      const res = await api.post('/api/requests', payload, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      navigate('/request-submitted', { state: { requestType: 'Warehouse Supply' } });
+      const state = buildRequestSubmissionState('Warehouse Supply', res.data);
+      navigate('/request-submitted', { state });
     } catch (err) {
       console.error('Submission failed:', err);
       alert(err.response?.data?.message || 'Failed to submit request');

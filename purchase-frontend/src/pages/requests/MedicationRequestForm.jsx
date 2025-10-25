@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const MedicationRequestForm = () => {
   const [justification, setJustification] = useState('');
@@ -13,6 +15,7 @@ const MedicationRequestForm = () => {
   const { user, loading, error } = useCurrentUser();
   const targetDeptId = user?.department_id;
   const targetSectionId = user?.section_id;
+  const navigate = useNavigate();
 
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
@@ -59,13 +62,11 @@ const MedicationRequestForm = () => {
 
     try {
       setIsSubmitting(true);
-      await api.post('/api/requests', formData, {
+      const res = await api.post('/api/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      alert('✅ Medication request submitted successfully!');
-      setJustification('');
-      setItems([{ item_name: '', dosage: '', quantity: 1 }]);
-      setAttachments([]);
+      const state = buildRequestSubmissionState('Medication', res.data);
+      navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Submission error:', err);
       alert(err.response?.data?.message || '❌ Failed to submit request.');

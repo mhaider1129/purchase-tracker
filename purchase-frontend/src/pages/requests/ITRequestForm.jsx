@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const ITRequestForm = () => {
   const { user, loading, error } = useCurrentUser();
@@ -9,6 +11,7 @@ const ITRequestForm = () => {
   const [items, setItems] = useState([getEmptyItem()]);
   const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   function getEmptyItem() {
     return { item_name: '', quantity: 1, specs: '' };
@@ -59,13 +62,11 @@ const ITRequestForm = () => {
 
     try {
       setIsSubmitting(true);
-      await api.post('/api/requests', formData, {
+      const res = await api.post('/api/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      alert('✅ IT item request submitted successfully!');
-      setJustification('');
-      setItems([getEmptyItem()]);
-      setAttachments([]);
+      const state = buildRequestSubmissionState('IT Item', res.data);
+      navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Submission error:', err);
       alert(err.response?.data?.message || '❌ Failed to submit request.');

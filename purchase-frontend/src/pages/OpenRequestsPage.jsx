@@ -1,9 +1,11 @@
 // src/pages/OpenRequestsPage.jsx
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
+import ApprovalTimeline from '../components/ApprovalTimeline';
+import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 const ROLE_LABELS = {
   HOD: 'HOD Approval',
@@ -27,7 +29,15 @@ const OpenRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [requestType, setRequestType] = useState('');
-  const [status, setStatus] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({
+    requestType: '',
+    status: '',
+    fromDate: '',
+    toDate: '',
+  });
   const [expandedId, setExpandedId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingId, setLoadingId] = useState(null);
@@ -35,16 +45,47 @@ const OpenRequestsPage = () => {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const {
+    expandedApprovalsId,
+    approvalsMap,
+    loadingApprovalsId,
+    toggleApprovals,
+    resetApprovals,
+  } = useApprovalTimeline();
+  const timelineLabels = useMemo(
+    () => ({
+      title: t('common.approvalTimeline'),
+      loading: t('common.loadingApprovals'),
+      empty: t('common.noApprovals'),
+      columns: {
+        level: t('common.approvalLevel'),
+        approver: t('common.approver'),
+        role: t('common.approverRole'),
+        decision: t('common.approvalDecision'),
+        comment: t('common.approvalComment'),
+        date: t('common.approvalDate'),
+      },
+    }),
+    [t]
+  );
 
   useEffect(() => {
     const fetchOpenRequests = async () => {
+      setIsLoading(true);
       try {
-        const res = await api.get('/api/requests/my', { params: { search } });
+        const params = { search };
+        if (appliedFilters.requestType) params.requestType = appliedFilters.requestType;
+        if (appliedFilters.status) params.status = appliedFilters.status;
+        if (appliedFilters.fromDate) params.from_date = appliedFilters.fromDate;
+        if (appliedFilters.toDate) params.to_date = appliedFilters.toDate;
+
+        const res = await api.get('/api/requests/my', { params });
         const open = res.data.filter(
-          (r) => !['completed', 'rejected'].includes(r.status.toLowerCase())
+          (r) => !['completed', 'rejected'].includes((r.status || '').toLowerCase())
         );
         setRequests(open);
         setFiltered(open);
+        resetApprovals();
       } catch (err) {
         console.error('❌ Failed to load requests:', err);
       } finally {
@@ -53,14 +94,63 @@ const OpenRequestsPage = () => {
     };
 
     fetchOpenRequests();
-  }, [search]);
+  }, [resetApprovals, search, appliedFilters]);
 
-  const handleFilter = () => {
+  useEffect(() => {
     let data = [...requests];
-    if (requestType) data = data.filter((r) => r.request_type === requestType);
-    if (status) data = data.filter((r) => r.status === status);
+
+    if (requestType) {
+      const normalizedType = requestType.toLowerCase();
+      data = data.filter((r) => (r.request_type || '').toLowerCase() === normalizedType);
+    }
+
+    if (statusFilter) {
+      const normalizedStatus = statusFilter.toLowerCase();
+      data = data.filter((r) => (r.status || '').toLowerCase() === normalizedStatus);
+    }
+
     setFiltered(data);
     setCurrentPage(1);
+  }, [requestType, statusFilter, requests]);
+
+  const handleFilter = () => {
+    setAppliedFilters({
+      requestType,
+      status: statusFilter,
+      fromDate,
+      toDate,
+    });
+    setCurrentPage(1);
+  };
+
+  const statusSummary = useMemo(() => {
+    const base = {
+      submitted: 0,
+      pending: 0,
+      approved: 0,
+      other: 0,
+    };
+
+    requests.forEach((req) => {
+      const key = (req.status || '').toLowerCase();
+      if (['submitted', 'pending', 'approved'].includes(key)) {
+        base[key] += 1;
+      } else {
+        base.other += 1;
+      }
+    });
+
+    return {
+      total: requests.length,
+      ...base,
+    };
+  }, [requests]);
+
+  const handleStatusCardClick = (value) => {
+    if (value === 'total') {
+      return;
+    }
+    setStatusFilter((prev) => (prev === value ? '' : value));
   };
 
   const exportToCSV = () => {
@@ -98,8 +188,8 @@ const OpenRequestsPage = () => {
     setExpandedId(requestId);
   };
 
-  const getStatusColor = (status = '') => {
-    switch (status.toLowerCase()) {
+  const getStatusColor = (value = '') => {
+    switch (value.toLowerCase()) {
       case 'approved': return 'text-green-600';
       case 'rejected': return 'text-red-600';
       case 'pending': return 'text-yellow-600';
@@ -116,7 +206,7 @@ const OpenRequestsPage = () => {
   const getCurrentStage = (req) => {
     const normalizedStatus = req.status?.toLowerCase();
 
-    if (!req.status) return t('openRequests.stageUnknown');
+    if (!req.status) return tr('stageUnknown');
 
     if (['approved', 'rejected', 'completed'].includes(normalizedStatus)) {
       return t('openRequests.stageFinalized', { status: req.status });
@@ -124,17 +214,17 @@ const OpenRequestsPage = () => {
 
     if (req.current_approver_role) {
       const step = getRoleLabel(req.current_approver_role);
-      return t('openRequests.awaitingStep', { step });
+      return tr('awaitingStep', { step });
     }
 
     if (req.current_approval_level) {
-      return t('openRequests.awaitingLevelOnly', { level: req.current_approval_level });
+      return tr('awaitingLevelOnly', { level: req.current_approval_level });
     }
 
-    return t('openRequests.stageUnknown');
+    return tr('stageUnknown');
   };
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
@@ -151,75 +241,139 @@ const OpenRequestsPage = () => {
           </button>
         </div>
 
-        <div className="flex gap-3 mb-4">
-          <select className="border p-2 rounded" value={requestType} onChange={(e) => setRequestType(e.target.value)}>
-            <option value="">{t('openRequests.allTypes')}</option>
-            <option value="Stock">{t('openRequests.stock')}</option>
-            <option value="Non-Stock">{t('openRequests.nonStock')}</option>
-            <option value="Medical Device">{t('openRequests.medicalDevice')}</option>
-            <option value="Medication">{t('openRequests.medication')}</option>
-            <option value="IT Item">{t('openRequests.itItem')}</option>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+          {[
+            { label: tr('total'), value: 'total', count: statusSummary.total },
+            { label: tr('submitted'), value: 'submitted', count: statusSummary.submitted },
+            { label: tr('pending'), value: 'pending', count: statusSummary.pending },
+            { label: tr('approved'), value: 'approved', count: statusSummary.approved },
+          ].map(({ label, value, count }) => (
+            <button
+              key={value}
+              onClick={() => handleStatusCardClick(value)}
+              className={`border rounded-lg p-4 text-left shadow-sm transition-colors ${
+                value !== 'total' && statusFilter === value
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 bg-white'
+              } ${value === 'total' ? 'cursor-default' : 'hover:border-blue-400'}`}
+              type="button"
+              disabled={value === 'total'}
+            >
+              <p className="text-sm text-gray-500 uppercase tracking-wide">{label}</p>
+              <p className="mt-1 text-2xl font-semibold">{count}</p>
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-3 md:flex-row mb-4">
+          <select
+            className="border p-2 rounded"
+            value={requestType}
+            onChange={(e) => setRequestType(e.target.value)}
+          >
+            <option value="">{tr('allTypes')}</option>
+            <option value="Stock">{tr('stock')}</option>
+            <option value="Non-Stock">{tr('nonStock')}</option>
+            <option value="Medical Device">{tr('medicalDevice')}</option>
+            <option value="Medication">{tr('medication')}</option>
+            <option value="IT Item">{tr('itItem')}</option>
           </select>
-          <select className="border p-2 rounded" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">{t('openRequests.allStatuses')}</option>
-            <option value="Pending">{t('openRequests.pending')}</option>
-            <option value="Approved">{t('openRequests.approved')}</option>
+          <select
+            className="border p-2 rounded"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">{tr('allStatuses')}</option>
+            <option value="submitted">{tr('submitted')}</option>
+            <option value="pending">{tr('pending')}</option>
+            <option value="approved">{tr('approved')}</option>
           </select>
+          <input
+            type="date"
+            className="border p-2 rounded"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            aria-label={tr('fromDate')}
+            title={tr('fromDate')}
+          />
+          <input
+            type="date"
+            className="border p-2 rounded"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            aria-label={tr('toDate')}
+            title={tr('toDate')}
+          />
           <input
             type="text"
             className="border p-2 rounded"
-            placeholder={t('openRequests.searchItems')}
+            placeholder={tr('searchItems')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={handleFilter}>{t('openRequests.applyFilters')}</button>
+          <button
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={handleFilter}
+            type="button"
+          >
+            {tr('applyFilters')}
+          </button>
         </div>
 
         {isLoading ? (
           <p className="text-gray-600">{t('common.loading')}</p>
         ) : paginated.length === 0 ? (
-          <p>{t('openRequests.noRequests')}</p>
+          <p>{tr('noRequests')}</p>
         ) : (
           <div className="space-y-4">
             {paginated.map((req) => (
               <div key={req.id} className="border rounded p-4 shadow">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-4">
                   <div>
-                    <p><strong>{t('openRequests.id')}:</strong> {req.id}</p>
-                    <p><strong>{t('openRequests.type')}:</strong> {req.request_type}</p>
-                    {req.is_urgent && <p className="text-red-600 font-bold text-sm mt-1">{t('openRequests.urgent')}</p>}
+                    <p><strong>{tr('id')}:</strong> {req.id}</p>
+                    <p><strong>{tr('type')}:</strong> {req.request_type}</p>
+                    {req.is_urgent && <p className="text-red-600 font-bold text-sm mt-1">{tr('urgent')}</p>}
                     <p>
-                      <strong>{t('openRequests.status')}:</strong>{' '}
+                      <strong>{tr('status')}:</strong>{' '}
                       <span className={getStatusColor(req.status)}>{req.status}</span>
                     </p>
                     <p>
-                      <strong>{t('openRequests.currentStage')}:</strong>{' '}
+                      <strong>{tr('currentStage')}:</strong>{' '}
                       <span>{getCurrentStage(req)}</span>
                     </p>
-                    <p><strong>{t('openRequests.cost')}:</strong> {req.estimated_cost} IQD</p>
-                    <p><strong>{t('openRequests.submitted')}:</strong> {new Date(req.created_at).toLocaleString()}</p>
+                    <p><strong>{tr('cost')}:</strong> {req.estimated_cost} IQD</p>
+                    <p><strong>{tr('submitted')}:</strong> {new Date(req.created_at).toLocaleString()}</p>
                   </div>
-                  <button
-                    className="text-blue-600 underline"
-                    onClick={() => toggleExpand(req.id)}
-                    disabled={loadingId === req.id}
-                  >
-                    {expandedId === req.id ? t('openRequests.hideItems') : t('openRequests.showItems')}
-                  </button>
+                  <div className="flex flex-col items-end gap-2">
+                    <button
+                      className="text-blue-600 underline"
+                      onClick={() => toggleExpand(req.id)}
+                      disabled={loadingId === req.id}
+                    >
+                      {expandedId === req.id ? t('openRequests.hideItems') : t('openRequests.showItems')}
+                    </button>
+                    <button
+                      className="text-blue-600 underline"
+                      onClick={() => toggleApprovals(req.id)}
+                      disabled={loadingApprovalsId === req.id}
+                    >
+                      {expandedApprovalsId === req.id ? t('common.hideApprovals') : t('common.viewApprovals')}
+                    </button>
+                  </div>
                 </div>
 
                 {expandedId === req.id && (
                   <div className="mt-4 border-t pt-2">
-                    <h3 className="font-semibold mb-2">{t('openRequests.requestedItems')}</h3>
+                    <h3 className="font-semibold mb-2">{tr('requestedItems')}</h3>
                     {itemsMap[req.id]?.length > 0 ? (
                       <table className="w-full text-sm border">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="border p-1">{t('openRequests.item')}</th>
+                            <th className="border p-1">{tr('item')}</th>
                             <th className="border p-1">Brand</th>
-                            <th className="border p-1">{t('openRequests.qty')}</th>
-                            <th className="border p-1">{t('openRequests.unitCost')}</th>
-                            <th className="border p-1">{t('openRequests.total')}</th>
+                            <th className="border p-1">{tr('qty')}</th>
+                            <th className="border p-1">{tr('unitCost')}</th>
+                            <th className="border p-1">{tr('total')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -235,8 +389,18 @@ const OpenRequestsPage = () => {
                         </tbody>
                       </table>
                     ) : (
-                      <p className="text-sm text-gray-500">{t('openRequests.noItemsForRequest')}</p>
+                      <p className="text-sm text-gray-500">{tr('noItemsForRequest')}</p>
                     )}
+                  </div>
+                )}
+
+                {expandedApprovalsId === req.id && (
+                  <div className="mt-4 border-t pt-2">
+                    <ApprovalTimeline
+                      approvals={approvalsMap[req.id]}
+                      isLoading={loadingApprovalsId === req.id}
+                      labels={timelineLabels}
+                    />
                   </div>
                 )}
               </div>
@@ -246,8 +410,9 @@ const OpenRequestsPage = () => {
             <div className="flex justify-center items-center gap-4 mt-6 text-sm">
               <button
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage((prev) => prev - 1)}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                type="button"
               >
                 {t('common.prev')}
               </button>
@@ -256,8 +421,9 @@ const OpenRequestsPage = () => {
               </span>
               <button
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((prev) => prev + 1)}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                type="button"
               >
                 {t('common.next')}
               </button>

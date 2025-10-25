@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel';
 import Navbar from '../components/Navbar';
+import ApprovalTimeline from '../components/ApprovalTimeline';
+import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 const createEmptyGroups = () => ({
   purchased: [],
@@ -133,7 +135,15 @@ const AssignedRequestsPage = () => {
   const [autoTotals, setAutoTotals] = useState({});
   const [attachments, setAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
-
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
+  const {
+    expandedApprovalsId,
+    approvalsMap,
+    loadingApprovalsId,
+    toggleApprovals,
+    resetApprovals,
+  } = useApprovalTimeline();
+  
   const fetchAssignedRequests = async () => {
     setLoading(true);
     try {
@@ -156,6 +166,7 @@ const AssignedRequestsPage = () => {
       });
 
       setRequestCosts(costMap);
+      resetApprovals();
       setAutoTotals(autoMap);
     } catch (err) {
       console.error('❌ Failed to fetch assigned requests:', err);
@@ -245,14 +256,68 @@ const AssignedRequestsPage = () => {
     }
   };
 
-  const handleGenerateDoc = (requestId, type) => {
-    const url = `${axios.defaults.baseURL}api/requests/${requestId}/rfx?type=${type}`;
-    window.open(url, '_blank');
+  const handleGenerateDoc = async (requestId, type) => {
+    try {
+      const response = await axios.get(`/api/requests/${requestId}/rfx`, {
+        params: { type },
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/pdf',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${type.toUpperCase()}_${requestId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error(`❌ Error generating ${type.toUpperCase()} document for request ${requestId}:`, err);
+      alert('Failed to generate document.');
+    }
+  };
+
+  const handleDownloadAttachment = async (attachment) => {
+    const filename = attachment.file_path.split(/[/\\]/).pop();
+    if (!filename) {
+      alert('Attachment file is missing.');
+      return;
+    }
+
+    setDownloadingAttachmentId(attachment.id);
+    try {
+      const response = await axios.get(
+        `/api/attachments/download/${encodeURIComponent(filename)}`,
+        {
+          responseType: 'blob',
+        }
+      );
+
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/octet-stream',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = attachment.file_name || filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error(`❌ Error downloading attachment ${attachment.id}:`, err);
+      alert('Failed to download attachment. Please try again.');
+    } finally {
+      setDownloadingAttachmentId(null);
+    }
   };
 
   useEffect(() => {
     fetchAssignedRequests();
-  }, []);
+  }, [resetApprovals]);
 
   const toggleExpand = (requestId) => {
     const isExpanded = expandedRequestId === requestId;
@@ -325,14 +390,32 @@ const AssignedRequestsPage = () => {
                     )}
                   </div>
 
+                <div className="flex flex-col items-end gap-2">
                   <button
                     onClick={() => toggleExpand(request.id)}
-                    className="self-start bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                   >
-                    {expandedRequestId === request.id ? 'Hide Details' : 'View Details'}
+                    {expandedRequestId === request.id ? 'Hide Items' : 'View Items'}
+                  </button>
+                  <button
+                    className="text-blue-600 underline"
+                    onClick={() => toggleApprovals(request.id)}
+                    disabled={loadingApprovalsId === request.id}
+                  >
+                    {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
                   </button>
                 </div>
+                </div>
 
+              {expandedApprovalsId === request.id && (
+                <div className="mt-4 border-t pt-2">
+                  <ApprovalTimeline
+                    approvals={approvalsMap[request.id]}
+                    isLoading={loadingApprovalsId === request.id}
+                  />
+                </div>
+              )}
+              
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <SummaryBadge label="Total Items" value={summary.total_items ?? 0} />
                   <SummaryBadge label="Purchased" value={summary.purchased_count ?? 0} tone="success" />
@@ -438,12 +521,16 @@ const AssignedRequestsPage = () => {
                         <ul className="list-disc pl-5 text-blue-600">
                           {attachments.map((att) => {
                             const filename = att.file_path.split(/[\\/]/).pop();
-                            const url = `${axios.defaults.baseURL}api/attachments/download/${encodeURIComponent(filename)}`;
                             return (
                               <li key={att.id}>
-                                <a href={url} className="underline" target="_blank" rel="noopener noreferrer">
-                                  {att.file_name}
-                                </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDownloadAttachment(att)}
+                                className="underline text-left text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                disabled={downloadingAttachmentId === att.id}
+                              >
+                                {downloadingAttachmentId === att.id ? 'Downloading…' : att.file_name}
+                              </button>
                               </li>
                             );
                           })}

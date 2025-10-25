@@ -144,6 +144,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           <strong>Brand:</strong> {item.brand}
         </p>
       )}
+      {item.specs && (
+        <p className="text-sm">
+          <strong>Specs:</strong> {item.specs}
+        </p>
+      )}
       <p className="text-sm">
         <strong>Quantity:</strong> {item.quantity}
       </p>

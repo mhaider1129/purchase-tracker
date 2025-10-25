@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { Button } from '../../components/ui/Button';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const MaintenanceRequestForm = () => {
   const [refNumber, setRefNumber] = useState('');
@@ -102,11 +103,11 @@ const [attachments, setAttachments] = useState([]);
         });
       });
 
-      await axios.post('/api/requests', formData, {
+      const res = await axios.post('/api/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      navigate('/request-submitted');
-      setAttachments([]);
+      const state = buildRequestSubmissionState('Maintenance', res.data);
+      navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Failed to submit maintenance request:', err);
       alert('❌ Submission failed. Please try again.');

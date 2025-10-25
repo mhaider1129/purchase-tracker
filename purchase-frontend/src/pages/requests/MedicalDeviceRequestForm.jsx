@@ -1,12 +1,15 @@
 // src/pages/requests/MedicalDeviceRequestForm.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const MedicalDeviceRequestForm = () => {
   const { user, loading } = useCurrentUser();
+  const navigate = useNavigate();
 
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
@@ -89,13 +92,11 @@ const MedicalDeviceRequestForm = () => {
 
     setIsSubmitting(true);
     try {
-      await api.post('/api/requests', formData, {
+      const res = await api.post('/api/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      alert('✅ Medical Device request submitted successfully!');
-      setJustification('');
-      setItems([getEmptyItem()]);
-      setAttachments([]);
+      const state = buildRequestSubmissionState('Medical Device', res.data);
+      navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Submission error:', err);
       alert(err.response?.data?.message || '❌ Failed to submit request.');
