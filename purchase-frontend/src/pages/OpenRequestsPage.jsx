@@ -1,12 +1,29 @@
 // src/pages/OpenRequestsPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 
+const ROLE_LABELS = {
+  HOD: 'HOD Approval',
+  CMO: 'CMO Approval',
+  SCM: 'SCM Approval',
+  COO: 'COO Approval',
+  CEO: 'CEO Approval',
+  CFO: 'CFO Approval',
+  WarehouseManager: 'Warehouse Manager Approval',
+  WarehouseKeeper: 'Warehouse Keeper Approval',
+  ProcurementSupervisor: 'Procurement Supervisor Action',
+  ProcurementSpecialist: 'Procurement Specialist Action',
+};
+
 const OpenRequestsPage = () => {
   const { t } = useTranslation();
+  const tr = useCallback(
+    (key) => t(`openRequests.${key}`),
+    [t]
+  );
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [requestType, setRequestType] = useState('');
@@ -59,7 +76,7 @@ const OpenRequestsPage = () => {
     ];
     const csv = rows.map((row) => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'Open_Requests.csv');
+    saveAs(blob, 'My_Open_Requests.csv');
   };
 
   const toggleExpand = async (requestId) => {
@@ -81,13 +98,40 @@ const OpenRequestsPage = () => {
     setExpandedId(requestId);
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status = '') => {
     switch (status.toLowerCase()) {
       case 'approved': return 'text-green-600';
       case 'rejected': return 'text-red-600';
       case 'pending': return 'text-yellow-600';
       default: return 'text-gray-600';
     }
+  };
+
+  const getRoleLabel = (role) => {
+    if (!role) return '';
+    if (ROLE_LABELS[role]) return ROLE_LABELS[role];
+    return role.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
+  };
+
+  const getCurrentStage = (req) => {
+    const normalizedStatus = req.status?.toLowerCase();
+
+    if (!req.status) return t('openRequests.stageUnknown');
+
+    if (['approved', 'rejected', 'completed'].includes(normalizedStatus)) {
+      return t('openRequests.stageFinalized', { status: req.status });
+    }
+
+    if (req.current_approver_role) {
+      const step = getRoleLabel(req.current_approver_role);
+      return t('openRequests.awaitingStep', { step });
+    }
+
+    if (req.current_approval_level) {
+      return t('openRequests.awaitingLevelOnly', { level: req.current_approval_level });
+    }
+
+    return t('openRequests.stageUnknown');
   };
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage);
@@ -147,6 +191,10 @@ const OpenRequestsPage = () => {
                     <p>
                       <strong>{t('openRequests.status')}:</strong>{' '}
                       <span className={getStatusColor(req.status)}>{req.status}</span>
+                    </p>
+                    <p>
+                      <strong>{t('openRequests.currentStage')}:</strong>{' '}
+                      <span>{getCurrentStage(req)}</span>
                     </p>
                     <p><strong>{t('openRequests.cost')}:</strong> {req.estimated_cost} IQD</p>
                     <p><strong>{t('openRequests.submitted')}:</strong> {new Date(req.created_at).toLocaleString()}</p>

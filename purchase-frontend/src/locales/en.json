@@ -11,11 +11,11 @@
     "copyright": "© {{year}} Warith International Cancer Institute"
   },
   "navbar": {
-    "openRequests": "Open Requests",
+    "openRequests": "My Open Requests",
     "myMaintenance": "My Maintenance Requests",
     "maintenanceStock": "Maintenance Stock",
     "maintenanceApprovals": "Maintenance Approvals",
-    "closedRequests": "Closed Requests",
+    "closedRequests": "My Closed Requests",
     "dashboard": "Dashboard",
     "adminTools": "Admin Tools",
     "management": "Management",
@@ -43,14 +43,15 @@
     "pageOf": "Page {{current}} of {{total}}"
   },
   "openRequests": {
-    "title": "Open Requests",
+    "title": "My Open Requests",
     "exportCSV": "Export CSV",
+    "csvFileName": "My_Open_Requests",
     "allTypes": "All Types",
     "stock": "Stock",
     "nonStock": "Non-Stock",
-      "medicalDevice": "Medical Device",
-      "medication": "Medication",
-      "itItem": "IT Item",
+    "medicalDevice": "Medical Device",
+    "medication": "Medication",
+    "itItem": "IT Item",
     "allStatuses": "All Statuses",
     "pending": "Pending",
     "approved": "Approved",
@@ -67,10 +68,29 @@
     "showItems": "Show Items",
     "requestedItems": "Requested Items:",
     "item": "Item",
+    "brand": "Brand",
     "qty": "Qty",
     "unitCost": "Unit Cost",
     "total": "Total",
-    "noItemsForRequest": "No items found for this request."
+    "noItemsForRequest": "No items found for this request.",
+    "currentStage": "Current Approval Stage",
+    "awaitingStep": "Awaiting {{step}}",
+    "awaitingLevelOnly": "Awaiting Level {{level}} Approval",
+    "stageFinalized": "{{status}}",
+    "stageUnknown": "Routing in progress"
+    },
+  "closedRequests": {
+    "title": "My Closed Requests",
+    "searchPlaceholder": "Search...",
+    "exportCSV": "Export CSV",
+    "csvFileName": "My_Closed_Requests",
+    "loading": "Loading...",
+    "noRequests": "No closed requests found.",
+    "id": "ID",
+    "type": "Type",
+    "status": "Status",
+    "updated": "Updated At",
+    "errorLoading": "Error loading closed requests."
   },
   "maintenanceHODApprovals": {
     "title": "Maintenance Requests Pending Your Approval",
@@ -112,7 +132,7 @@
   "requestSubmitted": {
     "title": "{{type}} Request Submitted Successfully!",
     "pending": "Your request has been submitted and is now pending approval.",
-    "viewOpen": "View Open Requests",
+    "viewOpen": "View My Open Requests",
     "backHome": "Back to Home",
     "submitAnother": "Submit Another Request"
   }

@@ -1,5 +1,5 @@
 // src/components/ProcurementItemStatusPanel.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from '../api/axios';
 
 const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
@@ -9,8 +9,6 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [message, setMessage] = useState(null);
   const [updaterName, setUpdaterName] = useState('');
   const [unitCost, setUnitCost] = useState(item.unit_cost ?? '');
-  // cost and quantity will now be saved together with the status
-  // so we keep only a single saving/message state
   const [purchasedQty, setPurchasedQty] = useState(
     item.purchased_quantity ?? item.quantity ?? ''
   );
@@ -41,20 +39,67 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     setPurchasedQty(item.purchased_quantity ?? item.quantity ?? '');
   }, [item.purchased_quantity, item.quantity]);
 
+  useEffect(() => {
+    setStatus(item.procurement_status || '');
+    setComment(item.procurement_comment || '');
+  }, [item.procurement_status, item.procurement_comment]);
+
+  const totalCost = useMemo(() => {
+    const qty = Number(purchasedQty || 0);
+    const cost = Number(unitCost || 0);
+    if (Number.isNaN(qty) || Number.isNaN(cost)) return 0;
+    return Number((qty * cost).toFixed(2));
+  }, [purchasedQty, unitCost]);
+
+  const statusOptions = useMemo(
+    () => [
+      { value: 'pending', label: 'Pending Purchase' },
+      { value: 'purchased', label: 'Purchased' },
+      { value: 'not_procured', label: 'Not Procured' },
+    ],
+    []
+  );
+
+  const statusStyles = useMemo(
+    () => ({
+      pending: 'bg-amber-100 text-amber-700 border border-amber-200',
+      purchased: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      not_procured: 'bg-rose-100 text-rose-700 border border-rose-200',
+      completed: 'bg-emerald-100 text-emerald-700 border border-emerald-200',
+      canceled: 'bg-rose-100 text-rose-700 border border-rose-200',
+    }),
+    []
+  );
+
   const handleSave = async () => {
     if (!status) {
       setMessage({ type: 'error', text: 'Please select a status.' });
       return;
     }
 
-    if (!unitCost || isNaN(unitCost) || Number(unitCost) <= 0) {
-      setMessage({ type: 'error', text: 'Enter valid cost.' });
+    const numericUnitCost = Number(unitCost);
+    const numericQty = Number(purchasedQty);
+
+    if (Number.isNaN(numericUnitCost) || numericUnitCost < 0) {
+      setMessage({ type: 'error', text: 'Enter a valid unit cost (zero or above).' });
       return;
     }
 
-    if (purchasedQty === '' || isNaN(purchasedQty) || Number(purchasedQty) < 0) {
-      setMessage({ type: 'error', text: 'Enter valid quantity.' });
+    if (Number.isNaN(numericQty) || numericQty < 0) {
+      setMessage({ type: 'error', text: 'Enter a valid purchased quantity (zero or above).' });
       return;
+    }
+
+    if (status === 'purchased') {
+      if (numericUnitCost <= 0) {
+        setMessage({ type: 'error', text: 'Purchased items require a unit cost greater than zero.' });
+        return;
+      }
+
+      if (numericQty <= 0) {
+        setMessage({ type: 'error', text: 'Purchased items require a purchased quantity greater than zero.' });
+        return;
+      }
     }
 
     setSaving(true);
@@ -62,11 +107,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
     try {
       await axios.put(`/api/requested-items/${item.id}/cost`, {
-        unit_cost: Number(unitCost),
+        unit_cost: numericUnitCost,
       });
 
       await axios.put(`/api/requested-items/${item.id}/purchased-quantity`, {
-        purchased_quantity: Number(purchasedQty),
+        purchased_quantity: numericQty,
       });
 
       await axios.put(`/api/requested-items/${item.id}/procurement-status`, {
@@ -127,17 +172,29 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       </div>
       
       <div className="mt-3">
-        <label className="block text-sm font-medium mb-1">Procurement Status</label>
+        <div className="flex items-center justify-between">
+          <label className="block text-sm font-medium">Procurement Status</label>
+          {status && (
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${
+                statusStyles[status] || 'bg-gray-100 text-gray-700 border border-gray-200'
+              }`}
+            >
+              {status.replace('_', ' ')}
+            </span>
+          )}
+        </div>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
+          className="mt-1 border border-gray-300 rounded px-3 py-2 w-full text-sm"
         >
           <option value="">-- Select Status --</option>
-          <option value="pending">Pending</option>
-          <option value="purchased">Purchased</option>
-          <option value="completed">Completed</option>
-          <option value="canceled">Canceled</option>
+          {statusOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -149,6 +206,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           rows={3}
           className="border border-gray-300 rounded px-3 py-2 w-full text-sm resize-none"
         />
+      </div>
+
+      <div className="mt-3 text-sm text-gray-600">
+        <span className="font-medium">Line Total:</span>{' '}
+        {Number.isNaN(totalCost)
+          ? '—'
+          : totalCost.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
       </div>
 
       <button

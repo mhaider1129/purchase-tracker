@@ -11,11 +11,11 @@
     "copyright": "© {{year}} معهد وارث الدولي لعلاج السرطان"
   },
   "navbar": {
-    "openRequests": "الطلبات المفتوحة",
+    "openRequests": "طلباتي المفتوحة",
     "myMaintenance": "طلباتي للصيانة",
     "maintenanceStock": "مخزون الصيانة",
     "maintenanceApprovals": "موافقات الصيانة",
-    "closedRequests": "الطلبات المغلقة",
+    "closedRequests": "طلباتي المغلقة",
     "dashboard": "لوحة المعلومات",
     "adminTools": "أدوات المشرف",
     "management": "الإدارة",
@@ -43,14 +43,15 @@
     "pageOf": "صفحة {{current}} من {{total}}"
   },
   "openRequests": {
-    "title": "الطلبات المفتوحة",
+    "title": "طلباتي المفتوحة",
     "exportCSV": "تصدير CSV",
+    "csvFileName": "طلباتي_المفتوحة",
     "allTypes": "جميع الأنواع",
     "stock": "مخزوني",
     "nonStock": "غير مخزوني",
-      "medicalDevice": "جهاز طبي",
-      "medication": "دواء",
-      "itItem": "عنصر تقنية المعلومات",
+    "medicalDevice": "جهاز طبي",
+    "medication": "دواء",
+    "itItem": "عنصر تقنية المعلومات",
     "allStatuses": "جميع الحالات",
     "pending": "قيد الانتظار",
     "approved": "موافق",
@@ -67,10 +68,24 @@
     "showItems": "عرض العناصر",
     "requestedItems": "العناصر المطلوبة:",
     "item": "العنصر",
+    "brand": "العلامة التجارية",
     "qty": "الكمية",
     "unitCost": "تكلفة الوحدة",
     "total": "الإجمالي",
     "noItemsForRequest": "لم يتم العثور على عناصر لهذا الطلب."
+  },
+  "closedRequests": {
+    "title": "طلباتي المغلقة",
+    "searchPlaceholder": "بحث...",
+    "exportCSV": "تصدير CSV",
+    "csvFileName": "طلباتي_المغلقة",
+    "loading": "جاري التحميل...",
+    "noRequests": "لا توجد طلبات مغلقة.",
+    "id": "المعرف",
+    "type": "النوع",
+    "status": "الحالة",
+    "updated": "تم التحديث في",
+    "errorLoading": "حدث خطأ أثناء تحميل الطلبات المغلقة."
   },
   "maintenanceHODApprovals": {
     "title": "طلبات الصيانة بانتظار موافقتك",
@@ -112,7 +127,7 @@
   "requestSubmitted": {
     "title": "تم تقديم طلب {{type}} بنجاح!",
     "pending": "تم تقديم طلبك وهو قيد المراجعة الآن.",
-    "viewOpen": "عرض الطلبات المفتوحة",
+    "viewOpen": "عرض طلباتي المفتوحة",
     "backHome": "العودة إلى الصفحة الرئيسية",
     "submitAnother": "تقديم طلب آخر"
   }

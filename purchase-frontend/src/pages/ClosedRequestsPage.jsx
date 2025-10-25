@@ -1,10 +1,16 @@
-//src/pages/ClosedRequestsPage.jsx
-import React, { useEffect, useState } from 'react';
+// src/pages/ClosedRequestsPage.jsx
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
+import { useTranslation } from 'react-i18next';
 
 const ClosedRequestsPage = () => {
+  const { t } = useTranslation();
+  const tr = useMemo(
+    () => (key) => t(`closedRequests.${key}`),
+    [t]
+  );
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
@@ -12,7 +18,7 @@ const ClosedRequestsPage = () => {
 
   const exportCSV = (data) => {
     const rows = [
-      ['ID', 'Type', 'Status', 'Updated At'],
+      [tr('id'), tr('type'), tr('status'), tr('updated')],
       ...data.map((r) => [
         r.id,
         r.request_type,
@@ -22,7 +28,7 @@ const ClosedRequestsPage = () => {
     ];
     const csv = rows.map((row) => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'Closed_Requests.csv');
+    saveAs(blob, `${tr('csvFileName')}.csv`);
   };
 
   useEffect(() => {
@@ -34,7 +40,7 @@ const ClosedRequestsPage = () => {
         setFiltered(res.data);
       } catch (err) {
         console.error('Failed to fetch closed requests:', err);
-        alert('Error loading closed requests.');
+        alert(tr('errorLoading'));
       } finally {
         setLoading(false);
       }
@@ -62,12 +68,12 @@ const ClosedRequestsPage = () => {
     <>
       <Navbar />
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-4">Closed Requests</h1>
+        <h1 className="text-2xl font-semibold mb-4">{tr('title')}</h1>
         <div className="flex gap-4 mb-4">
           <input
             type="text"
             className="border p-2 rounded"
-            placeholder="Search..."
+            placeholder={tr('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -75,22 +81,22 @@ const ClosedRequestsPage = () => {
             onClick={() => exportCSV(filtered)}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            Export CSV
+            {tr('exportCSV')}
           </button>
         </div>
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <p className="text-gray-500">{tr('loading')}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-gray-500">No closed requests found.</p>
+          <p className="text-gray-500">{tr('noRequests')}</p>
         ) : (
           <div className="overflow-x-auto border rounded">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="p-2 border">ID</th>
-                  <th className="p-2 border">Type</th>
-                  <th className="p-2 border">Status</th>
-                  <th className="p-2 border">Updated At</th>
+                  <th className="p-2 border">{tr('id')}</th>
+                  <th className="p-2 border">{tr('type')}</th>
+                  <th className="p-2 border">{tr('status')}</th>
+                  <th className="p-2 border">{tr('updated')}</th>
                 </tr>
               </thead>
               <tbody>
