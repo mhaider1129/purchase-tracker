@@ -23,7 +23,7 @@ const ROLE_LABELS = {
 const OpenRequestsPage = () => {
   const { t } = useTranslation();
   const tr = useCallback(
-    (key) => t(`openRequests.${key}`),
+    (key, options) => t(`openRequests.${key}`, options),
     [t]
   );
   const [requests, setRequests] = useState([]);

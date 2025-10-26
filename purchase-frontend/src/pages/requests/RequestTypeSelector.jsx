@@ -1,9 +1,146 @@
 // src/pages/requests/RequestTypeSelector.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import axios from '../../api/axios';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+
+const BASE_BUTTON_STYLE =
+  'block w-full py-2 px-4 rounded text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm';
+
+const ACTION_GROUPS = [
+  {
+    title: 'Warehouse Operations',
+    description: 'Stock control tasks available to warehouse staff.',
+    actions: [
+      {
+        label: 'Stock Request',
+        path: '/requests/stock',
+        roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
+        ariaLabel: 'Stock Request',
+        buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
+      },
+      {
+        label: 'New Stock Item',
+        path: '/requests/stock-item',
+        roles: ['warehousemanager', 'warehouse_manager'],
+        ariaLabel: 'New Stock Item',
+        buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
+      },
+      {
+        label: 'Warehouse Supply Templates',
+        path: '/warehouse-supply-templates',
+        roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
+        ariaLabel: 'Manage Warehouse Supply Templates',
+        buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
+      },
+      {
+        label: 'Submitted Warehouse Supply Requests',
+        path: '/warehouse-supply-requests',
+        roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
+        ariaLabel: 'View Warehouse Supply Requests',
+        buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
+      },
+    ],
+  },
+  {
+    title: 'Create a Request',
+    description: 'Start a new procurement request for your department.',
+    actions: [
+      {
+        label: 'Warehouse Supply Request',
+        path: '/requests/warehouse-supply',
+        ariaLabel: 'Warehouse Supply Request',
+        buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
+      },
+      {
+        label: 'Non-Stock Request',
+        path: '/requests/non-stock',
+        ariaLabel: 'Non-Stock Request',
+        buttonClassName: 'bg-green-600 hover:bg-green-700 focus:ring-green-400',
+      },
+      {
+        label: 'Medical Device Request',
+        path: '/requests/medical-device',
+        ariaLabel: 'Medical Device Request',
+        buttonClassName: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-400',
+      },
+      {
+        label: 'Medication Request',
+        path: '/requests/medication',
+        ariaLabel: 'Medication Request',
+        buttonClassName: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-400',
+        predicate: ({ can_request_medication }) => Boolean(can_request_medication),
+      },
+      {
+        label: 'IT Item Request',
+        path: '/requests/it-items',
+        ariaLabel: 'IT Item Request',
+        buttonClassName: 'bg-teal-600 hover:bg-teal-700 focus:ring-teal-400',
+      },
+    ],
+  },
+  {
+    title: 'Maintenance',
+    description: 'Maintenance submissions and follow-up.',
+    actions: [
+      {
+        label: 'Maintenance Request',
+        path: '/requests/maintenance',
+        roles: ['technician'],
+        ariaLabel: 'Maintenance Request',
+        buttonClassName: 'bg-red-600 hover:bg-red-700 focus:ring-red-400',
+      },
+      {
+        label: 'Maintenance Warehouse Supply Request',
+        path: '/requests/maintenance-warehouse-supply',
+        roles: ['technician'],
+        ariaLabel: 'Maintenance Warehouse Supply Request',
+        buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
+      },
+      {
+        label: 'Maintenance Approvals',
+        path: '/approvals/maintenance',
+        roles: ['hod', 'requester', 'cmo', 'coo', 'scm'],
+        ariaLabel: 'Maintenance Approvals',
+        buttonClassName: 'bg-orange-700 hover:bg-orange-800 focus:ring-orange-400',
+      },
+    ],
+  },
+  {
+    title: 'Approvals & History',
+    description: 'Review and approve pending requests or revisit historical submissions.',
+    actions: [
+      {
+        label: 'Approvals Panel',
+        path: '/approvals',
+        roles: ['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager', 'warehouse_manager'],
+        ariaLabel: 'Approvals Panel',
+        buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
+      },
+      {
+        label: 'Approval History',
+        path: '/approval-history',
+        roles: ['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'admin', 'warehousemanager', 'warehouse_manager'],
+        ariaLabel: 'Approval History',
+        buttonClassName: 'bg-gray-700 hover:bg-gray-800 focus:ring-gray-400',
+      },
+    ],
+  },
+  {
+    title: 'Administration',
+    description: 'Tools reserved for administrators.',
+    actions: [
+      {
+        label: 'Register New User',
+        path: '/register',
+        roles: ['admin', 'scm'],
+        ariaLabel: 'Register New User',
+        buttonClassName: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-300 text-gray-900',
+      },
+    ],
+  },
+];
 
 const RequestTypeSelector = () => {
   const navigate = useNavigate();
@@ -14,188 +151,137 @@ const RequestTypeSelector = () => {
     section_id: null,
     can_request_medication: false,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchUserInfo = useCallback(async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const res = await axios.get('/api/users/me');
+      setUserInfo({
+        role: res.data.role?.toLowerCase() || '',
+        department_id: res.data.department_id ?? null,
+        department_name: res.data.department_name?.toLowerCase() || '',
+        section_id: res.data.section_id ?? null,
+        can_request_medication: Boolean(res.data.can_request_medication),
+      });
+    } catch (err) {
+      console.error('❌ Failed to load user info:', err);
+      setError('We could not load your user details. Please retry.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
+    let isSubscribed = true;
+
+    const loadUserInfo = async () => {
       try {
-        const res = await axios.get('/api/users/me');
-        setUserInfo({
-          role: res.data.role?.toLowerCase(),
-          department_id: res.data.department_id,
-          department_name: res.data.department_name?.toLowerCase() || '',
-          section_id: res.data.section_id || null,
-          can_request_medication: res.data.can_request_medication || false,
-        });
+        await fetchUserInfo();
       } catch (err) {
-        console.error('❌ Failed to load user info:', err);
-        alert('Failed to load your user data. Please try again.');
+        if (isSubscribed) {
+          console.error('❌ Failed to fetch user info on mount:', err);
+        }
       }
     };
 
-    fetchUserInfo();
-  }, []);
+    loadUserInfo();
 
-  const { role } = userInfo;
+    return () => {
+      isSubscribed = false;
+    };
+  }, [fetchUserInfo]);
 
-  const buttonStyle =
-    'block w-full py-2 px-4 rounded text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const visibleGroups = useMemo(() => {
+    return ACTION_GROUPS.map((group) => ({
+      ...group,
+      actions: group.actions.filter((action) => {
+        const matchesRole = !action.roles || action.roles.includes(userInfo.role);
+        const passesPredicate = action.predicate ? action.predicate(userInfo) : true;
+        return matchesRole && passesPredicate;
+      }),
+    })).filter((group) => group.actions.length > 0);
+  }, [userInfo]);
+
+  const handleNavigate = (path) => {
+    navigate(path);
+  };
 
   return (
     <>
       <Navbar />
-      <div className="max-w-md mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold mb-6 text-gray-800">
-          Select Request Type
-          <HelpTooltip text="Step 1: Choose the type of request you want to submit." />
-        </h1>
+      <div className="max-w-3xl mx-auto p-6">
+        <header className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Select Request Type
+            <HelpTooltip text="Step 1: Choose the type of request you want to submit." />
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Explore the available actions below. Your access is based on your assigned role
+            and permissions.
+          </p>
+        </header>
 
-        <div className="space-y-4">
-          {/* 📦 Stock Request */}
-          {['warehousemanager', 'warehouse_manager', 'warehouse_keeper'].includes(role) && (
-            <button
-              onClick={() => navigate('/requests/stock')}
-              className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
-              aria-label="Stock Request"
-            >
-              Stock Request
-            </button>
-          )}
+        {isLoading && (
+          <div className="text-center text-gray-500" role="status" aria-live="polite">
+            Loading your access options...
+          </div>
+        )}
 
-          {['warehousemanager', 'warehouse_manager'].includes(role) && (
-            <button
-              onClick={() => navigate('/requests/stock-item')}
-              className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
-              aria-label="New Stock Item"
-            >
-              New Stock Item
-            </button>
-          )}
-
-          {['warehousemanager', 'warehouse_manager', 'warehouse_keeper'].includes(role) && (
-            <button
-              onClick={() => navigate('/warehouse-supply-templates')}
-              className={`${buttonStyle} bg-blue-600 hover:bg-blue-700 focus:ring-blue-400`}
-              aria-label="Manage Warehouse Supply Templates"
-            >
-              Warehouse Supply Templates
-            </button>
-          )}
-
-          {['warehousemanager', 'warehouse_manager', 'warehouse_keeper'].includes(role) && (
-            <button
-              onClick={() => navigate('/warehouse-supply-requests')}
-              className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
-              aria-label="View Warehouse Supply Requests"
-            >
-              Submitted Warehouse Supply Requests
-            </button>
-          )}
-
-          <button
-            onClick={() => navigate('/requests/warehouse-supply')}
-            className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
-            aria-label="Warehouse Supply Request"
+        {!isLoading && error && (
+          <div
+            className="mb-6 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+            role="alert"
           >
-            Warehouse Supply Request
-          </button>
-
-          {/* 📑 Non-Stock + Medical Device */}
-          <button
-            onClick={() => navigate('/requests/non-stock')}
-            className={`${buttonStyle} bg-green-600 hover:bg-green-700 focus:ring-green-400`}
-            aria-label="Non-Stock Request"
-          >
-            Non-Stock Request
-          </button>
-
-          <button
-            onClick={() => navigate('/requests/medical-device')}
-            className={`${buttonStyle} bg-purple-600 hover:bg-purple-700 focus:ring-purple-400`}
-            aria-label="Medical Device Request"
-          >
-            Medical Device Request
-          </button>
-
-          {userInfo.can_request_medication && (
+            <p className="font-semibold">Unable to load user information.</p>
+            <p className="mt-1">{error}</p>
             <button
-              onClick={() => navigate('/requests/medication')}
-              className={`${buttonStyle} bg-pink-600 hover:bg-pink-700 focus:ring-pink-400`}
-              aria-label="Medication Request"
+              type="button"
+              onClick={fetchUserInfo}
+              className="mt-3 inline-flex items-center rounded bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
             >
-              Medication Request
+              Retry
             </button>
-          )}
+          </div>
+        )}
 
-          <button
-            onClick={() => navigate('/requests/it-items')}
-            className={`${buttonStyle} bg-teal-600 hover:bg-teal-700 focus:ring-teal-400`}
-            aria-label="IT Item Request"
-          >
-            IT Item Request
-          </button>
+        {!isLoading && !error && visibleGroups.length === 0 && (
+          <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+            No available actions were found for your role. Please contact an administrator if you
+            believe this is an error.
+          </div>
+        )}
 
-          {/* 🔎 Approval Panel & History */}
-          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager', 'warehouse_manager'].includes(role) && (
-            <button
-              onClick={() => navigate('/approvals')}
-              className={`${buttonStyle} bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400`}
-              aria-label="Approvals Panel"
-            >
-              Approvals Panel
-            </button>
-          )}
-
-          {['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'admin', 'warehousemanager', 'warehouse_manager'].includes(role) && (
-            <button
-              onClick={() => navigate('/approval-history')}
-              className={`${buttonStyle} bg-gray-700 hover:bg-gray-800 focus:ring-gray-400`}
-              aria-label="Approval History"
-            >
-              Approval History
-            </button>
-          )}
-
-          {/* 👤 Admin Functions */}
-          {['admin', 'scm'].includes(role) && (
-            <button
-              onClick={() => navigate('/register')}
-              className={`${buttonStyle} bg-yellow-500 hover:bg-yellow-600 mt-6 text-gray-900 focus:ring-yellow-300`}
-              aria-label="Register New User"
-            >
-              Register New User
-            </button>
-          )}
-
-          {/* 🛠 Maintenance Paths */}
-          {role === 'technician' && (
-            <button
-              onClick={() => navigate('/requests/maintenance')}
-              className={`${buttonStyle} bg-red-600 hover:bg-red-700 focus:ring-red-400`}
-              aria-label="Maintenance Request"
-            >
-              Maintenance Request
-            </button>
-          )}
-
-          {role === 'technician' && (
-            <button
-              onClick={() => navigate('/requests/maintenance-warehouse-supply')}
-              className={`${buttonStyle} bg-blue-500 hover:bg-blue-600 focus:ring-blue-300`}
-              aria-label="Maintenance Warehouse Supply Request"
-            >
-              Maintenance Warehouse Supply Request
-            </button>
-          )}
-
-          {['hod', 'requester', 'cmo', 'coo', 'scm'].includes(role) && (
-            <button
-              onClick={() => navigate('/approvals/maintenance')}
-              className={`${buttonStyle} bg-orange-700 hover:bg-orange-800 focus:ring-orange-400`}
-              aria-label="Maintenance Approvals"
-            >
-              Maintenance Approvals
-            </button>
-          )}
+        <div className="space-y-8">
+          {visibleGroups.map((group) => (
+            <section key={group.title} aria-labelledby={`${group.title.replace(/\s+/g, '-')}-heading`}>
+              <div className="mb-3 text-left">
+                <h2
+                  id={`${group.title.replace(/\s+/g, '-')}-heading`}
+                  className="text-lg font-semibold text-gray-800"
+                >
+                  {group.title}
+                </h2>
+                <p className="text-sm text-gray-600">{group.description}</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {group.actions.map((action) => (
+                  <button
+                    key={action.path}
+                    type="button"
+                    onClick={() => handleNavigate(action.path)}
+                    className={`${BASE_BUTTON_STYLE} ${action.buttonClassName}`}
+                    aria-label={action.ariaLabel}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
       </div>
     </>
