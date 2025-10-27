@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RequestAccount from './pages/RequestAccount';
 import RequestTypeSelector from './pages/requests/RequestTypeSelector';
 import StockRequestForm from './pages/requests/StockRequestForm';
 import NonStockRequestForm from './pages/requests/NonStockRequestForm';
@@ -27,6 +28,7 @@ import AllRequestsPage from './pages/AllRequestsPage';
 import AssignedRequestsPage from './pages/AssignedRequestsPage';
 import AdminTools from './pages/AdminTools';
 import Management from './pages/Management';
+import ChangePassword from './pages/ChangePassword';
 import IncompleteRequestsPage from './pages/IncompleteRequestsPage';
 import IncompleteMedicalRequestsPage from './pages/IncompleteMedicalRequestsPage';
 import IncompleteOperationalRequestsPage from './pages/IncompleteOperationalRequestsPage';
@@ -70,6 +72,7 @@ function App() {
       <Routes>
         {/* ✅ Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/request-account" element={<RequestAccount />} />
         <Route path="/register" element={<Register />} />
 
         {/* ✅ General Protected Routes */}
@@ -151,6 +154,7 @@ function App() {
         <Route path="/warehouse-supply/:id" element={<ProtectedRoute element={<SupplyItemsPage />} allowedRoles={['warehouse_keeper']} />} />
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} allowedRoles={['SCM', 'admin']} />} />
         <Route path="/analytics" element={<ProtectedRoute element={<LifecycleAnalytics />} allowedRoles={['SCM', 'admin']} />} />
+        <Route path="/change-password" element={<ProtectedRoute element={<ChangePassword />} />} />
         {/* 🚨 Catch-All Fallback */}
         <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
 

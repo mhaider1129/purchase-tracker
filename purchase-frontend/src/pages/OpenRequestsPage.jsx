@@ -155,10 +155,11 @@ const OpenRequestsPage = () => {
 
   const exportToCSV = () => {
     const rows = [
-      ['ID', 'Type', 'Status', 'Cost', 'Submitted'],
+      ['ID', 'Type', 'Project', 'Status', 'Cost', 'Submitted'],
       ...filtered.map((r) => [
         r.id,
         r.request_type,
+        r.project_name || '',
         r.status,
         r.estimated_cost,
         new Date(r.created_at).toLocaleString(),
@@ -332,6 +333,7 @@ const OpenRequestsPage = () => {
                   <div>
                     <p><strong>{tr('id')}:</strong> {req.id}</p>
                     <p><strong>{tr('type')}:</strong> {req.request_type}</p>
+                    <p><strong>{tr('project')}:</strong> {req.project_name || '—'}</p>
                     {req.is_urgent && <p className="text-red-600 font-bold text-sm mt-1">{tr('urgent')}</p>}
                     <p>
                       <strong>{tr('status')}:</strong>{' '}

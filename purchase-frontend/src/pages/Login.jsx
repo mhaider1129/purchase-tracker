@@ -1,7 +1,7 @@
 // src/pages/Login.js
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 
@@ -111,7 +111,14 @@ const Login = () => {
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-gray-500">
+      <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+        {t('login.requestAccessPrompt')}{' '}
+        <Link to="/request-account" className="text-blue-600 hover:underline dark:text-blue-400">
+          {t('login.requestAccessLink')}
+        </Link>
+      </p>
+
+      <p className="mt-2 text-sm text-gray-500">
         {t('login.copyright', { year: new Date().getFullYear() })}
       </p>
     </div>

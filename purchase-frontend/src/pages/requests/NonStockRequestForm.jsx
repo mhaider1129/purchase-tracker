@@ -6,12 +6,14 @@ import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import ProjectSelector from '../../components/projects/ProjectSelector';
 
 const NonStockRequestForm = () => {
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  const [projectId, setProjectId] = useState('');
   const [itemErrors, setItemErrors] = useState([{}]);
   const [requestAttachmentsError, setRequestAttachmentsError] = useState('');
   const [departmentLimitError, setDepartmentLimitError] = useState('');
@@ -27,7 +29,7 @@ const NonStockRequestForm = () => {
   );
   const MAX_ATTACHMENT_SIZE_MB = 20;
   const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
-  const MAX_ITEMS_PER_REQUEST = 10;
+  const MAX_ITEMS_PER_REQUEST = 50;
 
   useEffect(() => {
     setItemErrors((prev) => {
@@ -198,6 +200,7 @@ const NonStockRequestForm = () => {
     formData.append('request_type', 'Non-Stock');
     formData.append('justification', justification);
     formData.append('budget_impact_month', '');
+    formData.append('project_id', projectId || '');
     formData.append('target_department_id', targetDeptId);
     formData.append('target_section_id', targetSectionId || '');
     const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
@@ -283,6 +286,13 @@ const NonStockRequestForm = () => {
               disabled={isSubmitting}
             />
           </div>
+
+          <ProjectSelector
+            value={projectId}
+            onChange={setProjectId}
+            disabled={isSubmitting}
+            user={user}
+          />
 
           {/* Items List */}
           <div>

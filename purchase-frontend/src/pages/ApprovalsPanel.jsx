@@ -17,6 +17,8 @@ const ApprovalsPanel = () => {
   const [selectedDecision, setSelectedDecision] = useState('');
   const [comments, setComments] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
+  const [itemDecisions, setItemDecisions] = useState({});
+  const [savingItems, setSavingItems] = useState({});
 
   const { user } = useCurrentUser();
   const canMarkUrgent = ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role);
@@ -43,15 +45,124 @@ const ApprovalsPanel = () => {
     if (!itemsMap[requestId]) {
       try {
         const res = await axios.get(`/api/requests/${requestId}/items`);
-        setItemsMap(prev => ({ ...prev, [requestId]: res.data.items }));
+        const fetchedItems = Array.isArray(res.data?.items) ? res.data.items : [];
+        setItemsMap((prev) => ({ ...prev, [requestId]: fetchedItems }));
+        setItemDecisions((prev) => ({
+          ...prev,
+          [requestId]: fetchedItems.reduce((acc, item) => {
+            if (!item?.id) return acc;
+            acc[item.id] = {
+              status: item.approval_status || 'Pending',
+              comments: item.approval_comments || '',
+            };
+            return acc;
+          }, {}),
+        }));
       } catch (err) {
         console.error('❌ Failed to load items:', err);
       }
     }
   };
 
+  const handleItemStatusChange = (requestId, itemId, status) => {
+    setItemDecisions((prev) => ({
+      ...prev,
+      [requestId]: {
+        ...(prev[requestId] || {}),
+        [itemId]: {
+          status,
+          comments: prev[requestId]?.[itemId]?.comments || '',
+        },
+      },
+    }));
+  };
+
+  const handleItemCommentChange = (requestId, itemId, commentsValue) => {
+    setItemDecisions((prev) => ({
+      ...prev,
+      [requestId]: {
+        ...(prev[requestId] || {}),
+        [itemId]: {
+          status: prev[requestId]?.[itemId]?.status || 'Pending',
+          comments: commentsValue,
+        },
+      },
+    }));
+  };
+
+  const saveItemDecisions = async (requestId, approvalId) => {
+    const decisionsForRequest = itemDecisions[requestId] || {};
+    const payloadItems = Object.entries(decisionsForRequest)
+      .map(([itemId, decision]) => ({
+        item_id: Number(itemId),
+        status: decision?.status || 'Pending',
+        comments: decision?.comments || '',
+      }))
+      .filter((item) => !Number.isNaN(item.item_id));
+
+    if (payloadItems.length === 0) {
+      alert('Please record at least one item decision before saving.');
+      return;
+    }
+
+    setSavingItems((prev) => ({ ...prev, [requestId]: true }));
+
+    try {
+      const res = await axios.patch(`/api/approvals/${approvalId}/items`, { items: payloadItems });
+
+      if (Array.isArray(res.data?.updatedItems)) {
+        setItemsMap((prev) => {
+          const currentItems = prev[requestId] || [];
+          const updatedItemMap = res.data.updatedItems.reduce((acc, item) => {
+            acc[item.id] = item;
+            return acc;
+          }, {});
+
+          const mergedItems = currentItems.map((item) => {
+            const updated = updatedItemMap[item.id];
+            if (!updated) return item;
+            return {
+              ...item,
+              approval_status: updated.approval_status,
+              approval_comments: updated.approval_comments,
+              approved_at: updated.approved_at,
+            };
+          });
+
+          return { ...prev, [requestId]: mergedItems };
+        });
+
+        setItemDecisions((prev) => {
+          const existing = { ...(prev[requestId] || {}) };
+          res.data.updatedItems.forEach((item) => {
+            existing[item.id] = {
+              status: item.approval_status || 'Pending',
+              comments: item.approval_comments || '',
+            };
+          });
+
+          return { ...prev, [requestId]: existing };
+        });
+      }
+
+      if (res.data?.summary) {
+        const { approved, rejected, pending } = res.data.summary;
+        alert(`Item decisions saved. Approved: ${approved}, Rejected: ${rejected}, Pending: ${pending}`);
+      } else {
+        alert('Item decisions saved successfully.');
+      }
+    } catch (err) {
+      console.error('❌ Failed to save item decisions:', err);
+      alert('Failed to save item decisions. Please try again.');
+    } finally {
+      setSavingItems((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
   const submitDecision = async () => {
-    const confirmed = window.confirm(`Are you sure you want to ${selectedDecision.toLowerCase()} Request #${selectedRequestId}?`);
+    const confirmed = window.confirm(
+      `Are you sure you want to ${selectedDecision.toLowerCase()} Request #${selectedRequestId}?`
+    );
     if (!confirmed) return;
 
     try {
@@ -61,7 +172,7 @@ const ApprovalsPanel = () => {
         is_urgent: canMarkUrgent ? isUrgent : false,
       });
 
-      setRequests(prev => prev.filter(r => r.approval_id !== selectedApprovalId));
+      setRequests((prev) => prev.filter((r) => r.approval_id !== selectedApprovalId));
       resetCommentModal();
     } catch (err) {
       console.error('❌ Action failed:', err);
@@ -70,17 +181,19 @@ const ApprovalsPanel = () => {
   };
 
   const reassignToDepartmentRequester = async (requestId, approvalId) => {
-    const confirmed = window.confirm(`Assign Maintenance Request #${requestId} to a designated requester in your department?`);
+    const confirmed = window.confirm(
+      `Assign Maintenance Request #${requestId} to a designated requester in your department?`
+    );
     if (!confirmed) return;
 
     try {
       await axios.put(`/api/requests/maintenance/reassign-to-requester`, {
         request_id: requestId,
-        approval_id: approvalId
+        approval_id: approvalId,
       });
 
       alert(`✅ Request #${requestId} has been reassigned to a department requester.`);
-      fetchApprovals(); // reload list
+      fetchApprovals();
     } catch (err) {
       console.error('❌ Reassignment failed:', err);
       alert('Failed to assign request to department requester.');
@@ -127,15 +240,28 @@ const ApprovalsPanel = () => {
           <div className="space-y-4">
             {requests.map((req) => {
               const tag = getCostLabel(req.estimated_cost);
+              const canEditItems = req.request_type !== 'Warehouse Supply';
 
               return (
                 <div key={req.approval_id} className="border rounded-lg p-4 shadow-sm">
-                  <p><strong>Request ID:</strong> {req.request_id}</p>
-                  <p><strong>Type:</strong> {req.request_type}</p>
-                  <p><strong>Justification:</strong> {req.justification}</p>
-                  <p><strong>Department:</strong> {req.department_name || '—'}</p>
-                  <p><strong>Section:</strong> {req.section_name || '—'}</p>
-                  <p><strong>Estimated Cost:</strong> {req.estimated_cost.toLocaleString()} IQD</p>
+                  <p>
+                    <strong>Request ID:</strong> {req.request_id}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> {req.request_type}
+                  </p>
+                  <p>
+                    <strong>Justification:</strong> {req.justification}
+                  </p>
+                  <p>
+                    <strong>Department:</strong> {req.department_name || '—'}
+                  </p>
+                  <p>
+                    <strong>Section:</strong> {req.section_name || '—'}
+                  </p>
+                  <p>
+                    <strong>Estimated Cost:</strong> {req.estimated_cost.toLocaleString()} IQD
+                  </p>
                   <p className={`inline-block mt-1 text-xs text-white px-2 py-1 rounded ${tag.color}`}>
                     {tag.label}
                   </p>
@@ -163,32 +289,86 @@ const ApprovalsPanel = () => {
                   {expandedId === req.request_id && (
                     <div className="mt-3">
                       {itemsMap[req.request_id]?.length > 0 ? (
-                        <table className="w-full text-sm border">
-                          <thead>
-                          <tr className="bg-gray-100">
-                              <th className="border p-1">Item</th>
-                              <th className="border p-1">Brand</th>
-                              <th className="border p-1">Specs</th>
-                              <th className="border p-1">Qty</th>
-                              <th className="border p-1">Available Qty</th>
-                              <th className="border p-1">Unit Cost</th>
-                              <th className="border p-1">Total</th>
-                          </tr>
-                          </thead>
-                          <tbody>
-                            {itemsMap[req.request_id].map((item, idx) => (
-                              <tr key={idx}>
-                                <td className="border p-1">{item.item_name}</td>
-                                <td className="border p-1">{item.brand || '—'}</td>
-                                <td className="border p-1">{item.specs || '—'}</td>
-                                <td className="border p-1">{item.quantity}</td>
-                                <td className="border p-1">{item.available_quantity ?? '—'}</td>
-                                <td className="border p-1">{item.unit_cost}</td>
-                                <td className="border p-1">{item.total_cost}</td>
+                        <>
+                          <table className="w-full text-sm border">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="border p-1">Item</th>
+                                <th className="border p-1">Brand</th>
+                                <th className="border p-1">Specs</th>
+                                <th className="border p-1">Qty</th>
+                                <th className="border p-1">Available Qty</th>
+                                <th className="border p-1">Unit Cost</th>
+                                <th className="border p-1">Total</th>
+                                <th className="border p-1">Decision</th>
+                                <th className="border p-1">Comments</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {itemsMap[req.request_id].map((item) => {
+                                const decision = itemDecisions[req.request_id]?.[item.id] || {
+                                  status: item.approval_status || 'Pending',
+                                  comments: item.approval_comments || '',
+                                };
+
+                                return (
+                                  <tr key={item.id || item.item_name}>
+                                    <td className="border p-1">{item.item_name}</td>
+                                    <td className="border p-1">{item.brand || '—'}</td>
+                                    <td className="border p-1">{item.specs || '—'}</td>
+                                    <td className="border p-1">{item.quantity}</td>
+                                    <td className="border p-1">{item.available_quantity ?? '—'}</td>
+                                    <td className="border p-1">{item.unit_cost}</td>
+                                    <td className="border p-1">{item.total_cost}</td>
+                                    <td className="border p-1">
+                                      {canEditItems ? (
+                                        <select
+                                          className="w-full border rounded px-1 py-1 text-sm"
+                                          value={decision.status || 'Pending'}
+                                          onChange={(e) =>
+                                            handleItemStatusChange(req.request_id, item.id, e.target.value)
+                                          }
+                                        >
+                                          <option value="Pending">Pending</option>
+                                          <option value="Approved">Approved</option>
+                                          <option value="Rejected">Rejected</option>
+                                        </select>
+                                      ) : (
+                                        <span>{decision.status || 'Pending'}</span>
+                                      )}
+                                    </td>
+                                    <td className="border p-1">
+                                      {canEditItems ? (
+                                        <textarea
+                                          className="w-full border rounded px-1 py-1 text-sm"
+                                          rows={2}
+                                          value={decision.comments || ''}
+                                          onChange={(e) =>
+                                            handleItemCommentChange(req.request_id, item.id, e.target.value)
+                                          }
+                                          placeholder="Optional comments"
+                                        />
+                                      ) : (
+                                        <span>{decision.comments || '—'}</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                          {canEditItems && (
+                            <div className="mt-2 flex justify-end">
+                              <Button
+                                variant="secondary"
+                                onClick={() => saveItemDecisions(req.request_id, req.approval_id)}
+                                isLoading={!!savingItems[req.request_id]}
+                              >
+                                Save Item Decisions
+                              </Button>
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <p className="text-sm text-gray-500">No items found for this request.</p>
                       )}
@@ -197,15 +377,22 @@ const ApprovalsPanel = () => {
 
                   <div className="mt-4 flex gap-3">
                     {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
-                      <Button onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}>
+                      <Button
+                        onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}
+                      >
                         Assign to Department Requester
                       </Button>
                     ) : (
                       <>
-                        <Button onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}>
+                        <Button
+                          onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
+                        >
                           Approve
                         </Button>
-                        <Button variant="destructive" onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}>
+                        <Button
+                          variant="destructive"
+                          onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
+                        >
                           Reject
                         </Button>
                       </>
@@ -218,7 +405,6 @@ const ApprovalsPanel = () => {
         )}
       </div>
 
-      {/* 💬 Comment Modal */}
       {showCommentBox && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-lg p-6 shadow-lg w-[90%] max-w-md">
@@ -247,7 +433,9 @@ const ApprovalsPanel = () => {
             )}
             <div className="mt-4 flex justify-end gap-3">
               <Button onClick={submitDecision}>Submit</Button>
-              <Button variant="ghost" onClick={resetCommentModal}>Cancel</Button>
+              <Button variant="ghost" onClick={resetCommentModal}>
+                Cancel
+              </Button>
             </div>
           </div>
         </div>

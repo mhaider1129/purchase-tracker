@@ -381,6 +381,9 @@ const AssignedRequestsPage = () => {
                       <strong className="text-gray-700">Type:</strong> {request.request_type}
                     </p>
                     <p className="text-sm text-gray-500">
+                      <strong className="text-gray-700">Project:</strong> {request.project_name || '—'}
+                    </p>
+                    <p className="text-sm text-gray-500">
                       <strong className="text-gray-700">Justification:</strong> {request.justification}
                     </p>
                     {request.requester_name && (

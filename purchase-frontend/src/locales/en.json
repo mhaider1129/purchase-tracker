@@ -8,7 +8,33 @@
     "accountInactive": "Your account is inactive. Contact admin.",
     "emailPasswordRequired": "Email and password are required.",
     "errorCredentials": "Login failed. Please check your credentials.",
+    "requestAccessPrompt": "Don't have an account?",
+    "requestAccessLink": "Request access",
     "copyright": "© {{year}} Warith International Cancer Institute"
+  },
+  "requestAccount": {
+    "title": "Request Access",
+    "subtitle": "Fill in your details and the Supply Chain Manager will review your request.",
+    "name": "Full Name",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "department": "Department",
+    "section": "Section",
+    "selectDepartment": "Select a department",
+    "selectSectionOptional": "Select a section (optional)",
+    "loading": "Loading departments...",
+    "submitButton": "Submit Request",
+    "submitting": "Submitting...",
+    "requiredFields": "Please complete all required fields.",
+    "passwordMismatch": "Passwords do not match.",
+    "departmentRequired": "Please choose a department.",
+    "sectionInvalid": "Section selection is invalid.",
+    "successMessage": "Your account request has been submitted. You will be notified once it is reviewed.",
+    "failureMessage": "Failed to submit your request. Please try again later.",
+    "loadDepartmentsError": "We could not load the departments list. Please try again later.",
+    "backToLogin": "Already have access?",
+    "loginLink": "Back to login"
   },
   "navbar": {
     "openRequests": "My Open Requests",
@@ -27,6 +53,7 @@
     "registerUser": "Register User",
     "myAssigned": "My Assigned Requests",
     "completedRequests": "Completed Requests",
+    "changePassword": "Change Password",
     "logout": "Logout",
     "purchaseTracker": "Purchase Tracker",
     "darkMode": "Dark Mode",
@@ -35,6 +62,22 @@
   "language": {
     "english": "English",
     "arabic": "Arabic"
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "save": "Update password",
+    "saving": "Updating...",
+    "success": "Password updated successfully.",
+    "error": "Unable to update password. Please try again.",
+    "requirements": "Passwords must be at least 8 characters and different from your current password.",
+    "validation": {
+      "required": "All password fields are required.",
+      "length": "New password must be at least 8 characters.",
+      "match": "New password and confirmation must match."
+    }
   },
   "common": {
     "loading": "Loading...",
@@ -138,9 +181,12 @@
     "logEntry": "Log Entry",
     "loginRequired": "You must be logged in to access admin tools.",
     "reassignmentSuccess": "Reassignment completed.",
+    "failedReassign": "Failed to trigger reassignment.",
     "deactivateUserSuccess": "User deactivated.",
     "failedDeactivate": "Failed to deactivate user.",
-    "failedFetchLogs": "Failed to fetch logs."
+    "failedFetchLogs": "Failed to fetch logs.",
+    "reassignmentSummary": "Reassigned: {{reassigned}}, Auto-approved: {{autoApproved}}, Failed: {{failed}}.",
+    "noLogsFound": "No logs found for the selected filters."
   },
   "requestSubmitted": {
     "title": "{{type}} Request Submitted Successfully!",

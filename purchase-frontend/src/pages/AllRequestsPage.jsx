@@ -223,6 +223,7 @@ const AllRequestsPage = () => {
             <h1>Request #${request.id}</h1>
             <p><strong>Print count:</strong> ${print_count}</p>
             <p><strong>Type:</strong> ${request.request_type}</p>
+            ${request.project_name ? `<p><strong>Project:</strong> ${request.project_name}</p>` : ''}
             <p><strong>Justification:</strong> ${request.justification}</p>
             ${
               assigned_user
@@ -358,6 +359,9 @@ const AllRequestsPage = () => {
                 <div>
                   <p><strong>ID:</strong> {request.id}</p>
                   <p><strong>Type:</strong> {request.request_type}</p>
+                  <p>
+                    <strong>Project:</strong> {request.project_name || '—'}
+                  </p>
                   <p><strong>Justification:</strong> {request.justification}</p>
                   <p>
                     <strong>Assigned To:</strong>{' '}

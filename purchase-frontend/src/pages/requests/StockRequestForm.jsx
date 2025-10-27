@@ -6,6 +6,7 @@ import Navbar from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import ProjectSelector from '../../components/projects/ProjectSelector';
 
 const StockRequestForm = () => {
   const [itemsList, setItemsList] = useState([]);
@@ -24,6 +25,8 @@ const StockRequestForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [sectionId, setSectionId] = useState(null);
+  const [projectId, setProjectId] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
   const categories = useMemo(
     () => Array.from(new Set(itemsList.map((it) => it.category))).filter(Boolean),
@@ -100,6 +103,7 @@ const StockRequestForm = () => {
       try {
         const res = await api.get('/api/users/me');
         setSectionId(res.data.section_id);
+        setCurrentUser(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch user details:', err);
         alert('Unable to load your section. Please try again.');
@@ -180,6 +184,7 @@ const StockRequestForm = () => {
     formData.append('justification', justification);
     formData.append('target_section_id', sectionId);
     formData.append('budget_impact_month', '');
+    formData.append('project_id', projectId);
     const itemsPayload = selectedItems.map(
       ({ attachments, category, ...rest }) => rest
     );

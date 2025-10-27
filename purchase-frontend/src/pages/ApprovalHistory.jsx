@@ -80,6 +80,7 @@ const ApprovalHistory = () => {
         'Request ID': item.request_id,
         Type: item.request_type,
         Department: item.department_name,
+        Project: item.project_name || '—',
         Justification: item.justification,
         Cost: item.estimated_cost,
         'Final Status': item.status,
@@ -110,6 +111,7 @@ const ApprovalHistory = () => {
       item.request_id,
       item.request_type,
       item.department_name,
+      item.project_name || '—',
       item.justification,
       item.estimated_cost,
       item.status,
@@ -121,7 +123,7 @@ const ApprovalHistory = () => {
 
     autoTable(doc, {
       head: [[
-        'Request ID', 'Type', 'Department', 'Justification', 'Cost', 'Final Status',
+        'Request ID', 'Type', 'Department', 'Project', 'Justification', 'Cost', 'Final Status',
         'Your Decision', 'Comment', 'Level', 'Date'
       ]],
       body: tableData,
@@ -230,6 +232,7 @@ const ApprovalHistory = () => {
                     <th className="border p-2">Request ID</th>
                     <th className="border p-2">Type</th>
                     <th className="border p-2">Department</th>
+                    <th className="border p-2">Project</th>
                     <th className="border p-2">Justification</th>
                     <th className="border p-2">Cost</th>
                     <th className="border p-2">Final Status</th>
@@ -245,6 +248,7 @@ const ApprovalHistory = () => {
                       <td className="border p-2">{item.request_id}</td>
                       <td className="border p-2">{item.request_type}</td>
                       <td className="border p-2">{item.department_name}</td>
+                      <td className="border p-2">{item.project_name || '—'}</td>
                       <td className="border p-2">{item.justification}</td>
                       <td className="border p-2">{item.estimated_cost}</td>
                       <td className="border p-2">{item.status}</td>

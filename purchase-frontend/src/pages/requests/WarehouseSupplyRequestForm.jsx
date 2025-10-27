@@ -5,6 +5,7 @@ import useCurrentUser from '../../hooks/useCurrentUser';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import ProjectSelector from '../../components/projects/ProjectSelector';
 
 const WarehouseSupplyRequestForm = () => {
   const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
@@ -13,6 +14,7 @@ const WarehouseSupplyRequestForm = () => {
   const [justification, setJustification] = useState('');
   const [supplyDomain, setSupplyDomain] = useState('medical');
   const [submitting, setSubmitting] = useState(false);
+  const [projectId, setProjectId] = useState('');
 
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
@@ -81,6 +83,7 @@ const WarehouseSupplyRequestForm = () => {
     payload.append('target_section_id', targetSectionId || '');
     payload.append('budget_impact_month', '');
     payload.append('supply_domain', supplyDomain);
+    payload.append('project_id', projectId || '');
     const mapped = items.map(it => ({ item_name: it.item_name, quantity: it.quantity }));
     payload.append('items', JSON.stringify(mapped));
 

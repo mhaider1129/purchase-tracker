@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
+import ProjectSelector from '../../components/projects/ProjectSelector';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const ITRequestForm = () => {
@@ -11,6 +12,7 @@ const ITRequestForm = () => {
   const [items, setItems] = useState([getEmptyItem()]);
   const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projectId, setProjectId] = useState('');
   const navigate = useNavigate();
 
   function getEmptyItem() {
@@ -58,6 +60,7 @@ const ITRequestForm = () => {
     formData.append('target_section_id', user.section_id || '');
     formData.append('budget_impact_month', '');
     formData.append('items', JSON.stringify(items));
+    formData.append('project_id', projectId || '');
     attachments.forEach((f) => formData.append('attachments', f));
 
     try {
@@ -122,6 +125,13 @@ const ITRequestForm = () => {
               disabled={isSubmitting}
             />
           </div>
+
+          <ProjectSelector
+            value={projectId}
+            onChange={setProjectId}
+            disabled={isSubmitting}
+            user={user}
+          />
           <div>
             <label className="block font-semibold mb-2">Items</label>
             {items.map((item, index) => (

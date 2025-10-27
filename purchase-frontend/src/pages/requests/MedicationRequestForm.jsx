@@ -5,12 +5,14 @@ import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import ProjectSelector from '../../components/projects/ProjectSelector';
 
 const MedicationRequestForm = () => {
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([{ item_name: '', dosage: '', quantity: 1 }]);
   const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [projectId, setProjectId] = useState('');
 
   const { user, loading, error } = useCurrentUser();
   const targetDeptId = user?.department_id;
@@ -58,6 +60,7 @@ const MedicationRequestForm = () => {
     formData.append('target_department_id', targetDeptId);
     formData.append('target_section_id', targetSectionId || '');
     formData.append('items', JSON.stringify(items));
+    formData.append('project_id', projectId);
     attachments.forEach((file) => formData.append('attachments', file));
 
     try {
@@ -95,7 +98,7 @@ const MedicationRequestForm = () => {
     );
   }
 
-  if (user.role.toLowerCase() !== 'requester' || !user.can_request_medication) {
+  if (!user.can_request_medication) {
     return (
       <>
         <Navbar />
@@ -136,6 +139,13 @@ const MedicationRequestForm = () => {
               disabled={isSubmitting}
             />
           </div>
+
+          <ProjectSelector
+            value={projectId}
+            onChange={setProjectId}
+            disabled={isSubmitting}
+            user={user}
+          />
           <div>
             <label className="block font-semibold mb-2">Medications</label>
             {items.map((item, index) => (

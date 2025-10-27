@@ -1,23 +1,30 @@
 // src/pages/requests/MaintenanceRequestForm.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { Button } from '../../components/ui/Button';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import ProjectSelector from '../../components/projects/ProjectSelector';
+import useCurrentUser from '../../hooks/useCurrentUser';
+
+const createEmptyItem = () => ({ item_name: '', quantity: 1, specs: '', attachments: [] });
 
 const MaintenanceRequestForm = () => {
   const [refNumber, setRefNumber] = useState('');
   const [justification, setJustification] = useState('');
-  const [items, setItems] = useState([{ item_name: '', quantity: 1, specs: '', attachments: [] }]);
+  const [items, setItems] = useState(() => [createEmptyItem()]);
   const [departments, setDepartments] = useState([]);
   const [sections, setSections] = useState([]);
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
-const [attachments, setAttachments] = useState([]);
+  const [attachments, setAttachments] = useState([]);
+  const [formError, setFormError] = useState('');
+  const [projectId, setProjectId] = useState('');
   const [stockItems, setStockItems] = useState([]);
+  const { user: currentUser } = useCurrentUser();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,7 +34,7 @@ const [attachments, setAttachments] = useState([]);
         setDepartments(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch departments:', err);
-        alert('Failed to load departments. Please refresh the page.');
+        setFormError('Failed to load departments. Please refresh the page.');
       }
     };
     fetchDepartments();
@@ -55,39 +62,83 @@ const [attachments, setAttachments] = useState([]);
         setSections(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch sections:', err);
-        alert('Failed to load sections. Please try again.');
+        setFormError('Failed to load sections. Please try again.');
         setSections([]);
       }
     };
     fetchSections();
   }, [targetDeptId]);
 
-  const handleItemChange = (index, field, value) => {
-    const updated = [...items];
-    updated[index][field] = value;
-    setItems(updated);
-  };
+  const handleItemChange = useCallback((index, field, value) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  }, []);
 
-  const handleItemFiles = (index, files) => {
-    const updated = [...items];
-    updated[index].attachments = Array.from(files);
-    setItems(updated);
-  };
+  const handleItemFiles = useCallback((index, files) => {
+    setItems((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        attachments: Array.from(files),
+      };
+      return updated;
+    });
+  }, []);
 
-  const addItem = () => {
-    setItems([...items, { item_name: '', quantity: 1, specs: '', attachments: [] }]);
-  };
+  const addItem = useCallback(() => {
+    setItems((prev) => [...prev, createEmptyItem()]);
+  }, []);
+
+  const removeItem = useCallback((index) => {
+    setItems((prev) => prev.filter((_, idx) => idx !== index));
+  }, []);
+
+  const resetFormError = () => setFormError('');
+
+  const validateItems = useCallback(() => {
+    if (!items.length) {
+      return 'Add at least one item to request maintenance.';
+    }
+
+    for (let i = 0; i < items.length; i += 1) {
+      const { item_name, quantity } = items[i];
+      if (!item_name.trim()) {
+        return `Item ${i + 1} is missing a name.`;
+      }
+      const parsedQuantity = Number(quantity);
+      if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+        return `Item ${i + 1} must have a quantity greater than zero.`;
+      }
+    }
+
+    return '';
+  }, [items]);
+
+  const isFormValid = useMemo(() => {
+    if (!refNumber.trim() || !targetDeptId || !justification.trim()) {
+      return false;
+    }
+    if (sections.length > 0 && !targetSectionId) {
+      return false;
+    }
+    return validateItems() === '';
+  }, [justification, refNumber, sections.length, targetDeptId, targetSectionId, validateItems]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (items.some((item) => !item.item_name || item.quantity <= 0)) {
-      alert('⚠️ Please fill in all item fields with valid values.');
+    const validationMessage = validateItems();
+    if (validationMessage) {
+      setFormError(validationMessage);
       return;
     }
 
     setSubmitting(true);
     try {
+      resetFormError();
       const formData = new FormData();
       formData.append('request_type', 'Maintenance');
       formData.append('maintenance_ref_number', refNumber);
@@ -97,6 +148,9 @@ const [attachments, setAttachments] = useState([]);
       const itemsPayload = items.map(({ attachments, ...rest }) => rest);
       formData.append('items', JSON.stringify(itemsPayload));
       attachments.forEach((file) => formData.append('attachments', file));
+      if (projectId) {
+        formData.append('project_id', projectId);
+      }
       items.forEach((item, idx) => {
         (item.attachments || []).forEach((file) => {
           formData.append(`item_${idx}`, file);
@@ -110,7 +164,7 @@ const [attachments, setAttachments] = useState([]);
       navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Failed to submit maintenance request:', err);
-      alert('❌ Submission failed. Please try again.');
+      setFormError('❌ Submission failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -125,6 +179,11 @@ const [attachments, setAttachments] = useState([]);
           <HelpTooltip text="Step 2: Provide details for your maintenance request." />
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {formError && (
+            <div className="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700" role="alert">
+              {formError}
+            </div>
+          )}
 
           <input
             type="text"
@@ -136,8 +195,8 @@ const [attachments, setAttachments] = useState([]);
             required
           />
 
-          <select
-            aria-label="Target Department"
+            <select
+              aria-label="Target Department"
             value={targetDeptId}
             onChange={(e) => {
               setTargetDeptId(e.target.value);
@@ -152,24 +211,24 @@ const [attachments, setAttachments] = useState([]);
                 {dept.name}
               </option>
             ))}
-          </select>
-
-          {sections.length > 0 && (
-            <select
-              aria-label="Target Section"
-              value={targetSectionId}
-              onChange={(e) => setTargetSectionId(e.target.value)}
-              className="w-full border p-2 rounded"
-              required
-            >
-              <option value="">Select Section</option>
-              {sections.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.name}
-                </option>
-              ))}
             </select>
-          )}
+
+            {sections.length > 0 && (
+              <select
+                aria-label="Target Section"
+                value={targetSectionId}
+                onChange={(e) => setTargetSectionId(e.target.value)}
+                className="w-full border p-2 rounded"
+                required
+              >
+                <option value="">Select Section</option>
+                {sections.map((section) => (
+                  <option key={section.id} value={section.id}>
+                    {section.name}
+                  </option>
+                ))}
+              </select>
+            )}
 
           <textarea
             aria-label="Justification"
@@ -178,6 +237,13 @@ const [attachments, setAttachments] = useState([]);
             onChange={(e) => setJustification(e.target.value)}
             className="w-full border p-2 rounded"
             required
+          />
+
+          <ProjectSelector
+            value={projectId}
+            onChange={setProjectId}
+            disabled={submitting}
+            user={currentUser}
           />
 
 
@@ -223,7 +289,7 @@ const [attachments, setAttachments] = useState([]);
                   aria-label={`Item ${idx + 1} Quantity`}
                   value={item.quantity}
                   min={1}
-                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value ? Number(e.target.value) : '')}
                   className="w-full border p-2 rounded"
                   required
                 />
@@ -241,6 +307,16 @@ const [attachments, setAttachments] = useState([]);
                   onChange={(e) => handleItemFiles(idx, e.target.files)}
                   className="p-1 border rounded mt-1"
                 />
+                {items.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="mt-2 text-red-600 hover:text-red-700"
+                    onClick={() => removeItem(idx)}
+                  >
+                    Remove Item
+                  </Button>
+                )}
               </div>
             ))}
 
@@ -261,7 +337,7 @@ const [attachments, setAttachments] = useState([]);
               multiple
               onChange={(e) => setAttachments(Array.from(e.target.files))}
               className="p-2 border rounded w-full"
-              disabled={submitting}
+              disabled={submitting || !isFormValid}
             />
           </div>
 

@@ -6,6 +6,7 @@ import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import ProjectSelector from '../../components/projects/ProjectSelector';
 
 const MedicalDeviceRequestForm = () => {
   const { user, loading } = useCurrentUser();
@@ -15,6 +16,7 @@ const MedicalDeviceRequestForm = () => {
   const [items, setItems] = useState([getEmptyItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
+  const [projectId, setProjectId] = useState('');
 
   function getEmptyItem() {
     return {
@@ -81,6 +83,7 @@ const MedicalDeviceRequestForm = () => {
     formData.append('target_department_id', user.department_id);
     formData.append('target_section_id', user.section_id || '');
     formData.append('budget_impact_month', '');
+    formData.append('project_id', projectId);
     const itemsPayload = items.map(({ attachments, ...rest }) => rest);
     formData.append('items', JSON.stringify(itemsPayload));
     attachments.forEach((file) => formData.append('attachments', file));

@@ -82,6 +82,8 @@ const Navbar = () => {
           </>
         )}
 
+        {renderNavButton(t('navbar.changePassword'), '/change-password', 'text-blue-600')}
+
         {/* 🔐 User Info Card */}
         <div
           className="flex items-center gap-2 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded shadow w-fit mt-2"

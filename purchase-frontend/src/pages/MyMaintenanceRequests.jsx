@@ -41,10 +41,11 @@ const MyMaintenanceRequests = () => {
 
   const exportToCSV = () => {
     const csvRows = [
-      ['ID', 'Justification', 'Reference #', 'Status', 'Submitted At'],
+      ['ID', 'Justification', 'Project', 'Reference #', 'Status', 'Submitted At'],
       ...requests.map((r) => [
         r.id,
         r.justification,
+        r.project_name || '',
         r.maintenance_ref_number || '-',
         r.status,
         new Date(r.created_at).toLocaleString(),
@@ -84,6 +85,7 @@ const MyMaintenanceRequests = () => {
                 <tr>
                   <th className="border px-3 py-2 text-left">ID</th>
                   <th className="border px-3 py-2 text-left">Justification</th>
+                  <th className="border px-3 py-2 text-left">Project</th>
                   <th className="border px-3 py-2 text-left">Ref #</th>
                   <th className="border px-3 py-2 text-left">Status</th>
                   <th className="border px-3 py-2 text-left">Submitted</th>
@@ -94,6 +96,7 @@ const MyMaintenanceRequests = () => {
                   <tr key={r.id}>
                     <td className="border px-3 py-2">{r.id}</td>
                     <td className="border px-3 py-2">{r.justification}</td>
+                    <td className="border px-3 py-2">{r.project_name || '—'}</td>
                     <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
                     <td className="border px-3 py-2">
                       <span className={getStatusBadge(r.status)}>{r.status}</span>

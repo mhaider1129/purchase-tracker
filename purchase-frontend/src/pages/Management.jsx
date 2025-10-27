@@ -10,6 +10,8 @@ const Management = () => {
   const [loadingDeps, setLoadingDeps] = useState(false);
   const [routes, setRoutes] = useState([]);
   const [loadingRoutes, setLoadingRoutes] = useState(false);
+  const [accountRequests, setAccountRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
   const [tab, setTab] = useState('users');
   const [editUserId, setEditUserId] = useState(null);
   const [editData, setEditData] = useState({
@@ -45,6 +47,7 @@ const Management = () => {
     if (tab === 'departments') fetchDepartments();
     if (tab === 'roles') fetchRoles();
     if (tab === 'routes') fetchRoutes();
+    if (tab === 'accountRequests') fetchAccountRequests();
   }, [tab]);
 
   const fetchUsers = async () => {
@@ -89,6 +92,18 @@ const Management = () => {
       console.error('Failed to load approval routes', err);
     } finally {
       setLoadingRoutes(false);
+    }
+  };
+
+  const fetchAccountRequests = async () => {
+    setLoadingRequests(true);
+    try {
+      const res = await api.get('/auth/register-requests');
+      setAccountRequests(res.data?.requests || []);
+    } catch (err) {
+      console.error('Failed to load account requests', err);
+    } finally {
+      setLoadingRequests(false);
     }
   };
 
@@ -138,6 +153,29 @@ const Management = () => {
     }
   };
 
+  const approveAccountRequest = async (id) => {
+    if (!window.confirm('Approve this account request?')) return;
+    try {
+      await api.post(`/auth/register-requests/${id}/approve`);
+      fetchAccountRequests();
+      fetchUsers();
+    } catch (err) {
+      console.error('Failed to approve account request', err);
+      alert(err.response?.data?.message || 'Failed to approve request');
+    }
+  };
+
+  const rejectAccountRequest = async (id) => {
+    if (!window.confirm('Reject this account request?')) return;
+    const reason = window.prompt('Reason for rejection (optional):', '') || '';
+    try {
+      await api.post(`/auth/register-requests/${id}/reject`, { reason: reason.trim() || undefined });
+      fetchAccountRequests();
+    } catch (err) {
+      console.error('Failed to reject account request', err);
+      alert(err.response?.data?.message || 'Failed to reject request');
+    }
+  };
 
   const startEdit = (user) => {
     setEditUserId(user.id);
@@ -294,6 +332,75 @@ const Management = () => {
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+
+  const renderAccountRequests = () => (
+    <div className="overflow-x-auto">
+      {loadingRequests ? (
+        <p>Loading account requests...</p>
+      ) : accountRequests.length === 0 ? (
+        <p>No account requests found.</p>
+      ) : (
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="bg-gray-200 text-left">
+              <th className="p-2">Name</th>
+              <th className="p-2">Email</th>
+              <th className="p-2">Department</th>
+              <th className="p-2">Section</th>
+              <th className="p-2">Status</th>
+              <th className="p-2">Submitted</th>
+              <th className="p-2">Reviewer</th>
+              <th className="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accountRequests.map((req) => {
+              const createdAt = req.created_at ? new Date(req.created_at) : null;
+              const reviewedAt = req.reviewed_at ? new Date(req.reviewed_at) : null;
+              return (
+                <tr key={req.id} className="border-b">
+                  <td className="p-2">{req.name}</td>
+                  <td className="p-2">{req.email}</td>
+                  <td className="p-2">{req.department_name || req.department_id}</td>
+                  <td className="p-2">{req.section_name || '-'}</td>
+                  <td className="p-2 capitalize">{req.status}</td>
+                  <td className="p-2">
+                    {createdAt ? createdAt.toLocaleString() : '-'}
+                    {req.status !== 'pending' && reviewedAt ? (
+                      <div className="text-xs text-gray-500">Reviewed: {reviewedAt.toLocaleString()}</div>
+                    ) : null}
+                  </td>
+                  <td className="p-2">{req.reviewer_name || '-'}</td>
+                  <td className="p-2">
+                    {req.status === 'pending' ? (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => approveAccountRequest(req.id)}
+                          className="bg-green-600 text-white px-2 py-1 rounded"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => rejectAccountRequest(req.id)}
+                          className="bg-red-600 text-white px-2 py-1 rounded"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-gray-600">
+                        {req.rejection_reason ? `Reason: ${req.rejection_reason}` : 'Processed'}
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
@@ -666,6 +773,12 @@ const Management = () => {
             Users
           </button>
           <button
+            onClick={() => setTab('accountRequests')}
+            className={`px-3 py-1 rounded ${tab === 'accountRequests' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+          >
+            Account Requests
+          </button>
+          <button
             onClick={() => setTab('departments')}
             className={`px-3 py-1 rounded ${tab === 'departments' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
           >
@@ -680,6 +793,7 @@ const Management = () => {
         </div>
 
         {tab === 'users' && renderUsers()}
+        {tab === 'accountRequests' && renderAccountRequests()}
         {tab === 'departments' && renderDepartments()}
         {tab === 'routes' && renderRoutes()}
       </div>

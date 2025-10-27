@@ -11,10 +11,11 @@ const AuditRequestsPage = () => {
 
   const exportCSV = (data) => {
     const rows = [
-      ['ID', 'Type', 'Status', 'Approval Timestamp'],
+      ['ID', 'Type', 'Project', 'Status', 'Approval Timestamp'],
       ...data.map((r) => [
         r.id,
         r.request_type,
+        r.project_name || '',
         r.status,
         r.approval_timestamp ? new Date(r.approval_timestamp).toLocaleString() : '',
       ]),
@@ -89,6 +90,7 @@ const AuditRequestsPage = () => {
                 <tr>
                   <th className="p-2 border">ID</th>
                   <th className="p-2 border">Type</th>
+                  <th className="p-2 border">Project</th>
                   <th className="p-2 border">Status</th>
                   <th className="p-2 border">Approval Timestamp</th>
                 </tr>
@@ -98,6 +100,7 @@ const AuditRequestsPage = () => {
                   <tr key={req.id}>
                     <td className="p-2 border">{req.id}</td>
                     <td className="p-2 border">{req.request_type}</td>
+                    <td className="p-2 border">{req.project_name || '—'}</td>
                     <td className="p-2 border">{req.status}</td>
                     <td className="p-2 border">
                       {req.approval_timestamp

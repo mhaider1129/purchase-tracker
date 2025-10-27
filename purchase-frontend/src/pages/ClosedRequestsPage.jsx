@@ -164,6 +164,7 @@ const ClosedRequestsPage = () => {
           req.justification,
           req.status,
           req.assigned_user_name,
+          req.project_name,
           req.id,
         ]
           .filter((value) => value !== undefined && value !== null)
@@ -193,6 +194,7 @@ const ClosedRequestsPage = () => {
       [
         tr('table.id'),
         tr('table.type'),
+        tr('table.project'),
         tr('table.status'),
         tr('table.assigned'),
         tr('table.updated'),
@@ -200,6 +202,7 @@ const ClosedRequestsPage = () => {
       ...sorted.map((req) => [
         req.id,
         req.request_type,
+        req.project_name || tr('notAvailable'),
         req.status,
         req.assigned_user_name || tr('notAvailable'),
         formatDate(req.updated_at || req.created_at, normalizedLocale),
@@ -372,6 +375,9 @@ const ClosedRequestsPage = () => {
                       {tr('table.type')}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      {tr('table.project')}
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       {tr('table.status')}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
@@ -407,6 +413,9 @@ const ClosedRequestsPage = () => {
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             {req.request_type || tr('notAvailable')}
                           </td>
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                            {req.project_name || tr('notAvailable')}
+                          </td>
                           <td className="px-4 py-3">
                             <span
                               className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${mapStatusColor(
@@ -438,7 +447,7 @@ const ClosedRequestsPage = () => {
                         </tr>
                         {expandedApprovalsId === req.id && (
                           <tr>
-                            <td colSpan={7} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={8} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <ApprovalTimeline
                                 approvals={approvalsMap[req.id]}
                                 isLoading={loadingApprovalsId === req.id}
@@ -478,6 +487,9 @@ const ClosedRequestsPage = () => {
                         <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {req.request_type || tr('notAvailable')}
                         </h2>
+                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                          {tr('table.project')}: {req.project_name || tr('notAvailable')}
+                        </p>
                       </div>
                       <span
                         className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${mapStatusColor(

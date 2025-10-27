@@ -15,8 +15,10 @@ const AdminTools = () => {
   const [logs, setLogs] = useState([]);
   const [filteredLogs, setFilteredLogs] = useState([]);
   const [logLoading, setLogLoading] = useState(false);
+  const [hasFetchedLogs, setHasFetchedLogs] = useState(false);
   const [filterKeyword, setFilterKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [reassignStats, setReassignStats] = useState(null);
   const { t } = useTranslation();
   const logsPerPage = 10;
   const navigate = useNavigate();
@@ -50,9 +52,15 @@ const AdminTools = () => {
     setMessage('');
     try {
       const res = await api.post('/admin-tools/reassign-approvals');
-      setMessage(res.data.message || t('adminTools.reassignmentSuccess'));
+      setMessage(res.data?.message || t('adminTools.reassignmentSuccess'));
+      setReassignStats(res.data?.data || null);
     } catch (err) {
-      setMessage(err.response?.data?.error || t('adminTools.failedFetchLogs'));
+      setMessage(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          t('adminTools.failedReassign')
+      );
+      setReassignStats(null);
     } finally {
       setLoading(false);
     }
@@ -78,10 +86,14 @@ const AdminTools = () => {
       const res = await api.post('/admin-tools/deactivate-user', {
         email: deactivateEmail,
       });
-      setMessage(res.data.message || t('adminTools.deactivateUserSuccess'));
+      setMessage(res.data?.message || t('adminTools.deactivateUserSuccess'));
       setDeactivateEmail('');
     } catch (err) {
-      setMessage(err.response?.data?.error || t('adminTools.failedDeactivate'));
+      setMessage(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          t('adminTools.failedDeactivate')
+      );
     } finally {
       setLoading(false);
     }
@@ -90,12 +102,14 @@ const AdminTools = () => {
   // 📜 Fetch Logs
   const fetchLogs = async () => {
     setLogLoading(true);
+    setHasFetchedLogs(false);
     try {
       const res = await api.get('/admin-tools/logs');
       const logs = res.data.logs || [];
       setLogs(logs);
       setFilteredLogs(logs);
       setCurrentPage(1);
+      setHasFetchedLogs(true);
     } catch (err) {
       setMessage(t('adminTools.failedFetchLogs'));
     } finally {
@@ -166,6 +180,15 @@ const AdminTools = () => {
           >
             {loading ? t('adminTools.reassigning') : t('adminTools.reassign')}
           </button>
+          {reassignStats && (
+            <div className="mt-3 p-3 border border-blue-200 bg-blue-50 rounded text-sm text-blue-900">
+              {t('adminTools.reassignmentSummary', {
+                reassigned: reassignStats.reassigned ?? 0,
+                autoApproved: reassignStats.autoApproved ?? 0,
+                failed: reassignStats.failed ?? 0,
+              })}
+            </div>
+          )}
         </div>
 
         {/* 🚫 Deactivate User */}
@@ -216,7 +239,11 @@ const AdminTools = () => {
             onChange={(e) => setFilterKeyword(e.target.value)}
           />
 
-          {currentLogs.length > 0 && (
+          {logLoading && (
+            <p className="text-sm text-gray-600">{t('adminTools.loadingLogs')}</p>
+          )}
+
+          {!logLoading && currentLogs.length > 0 && (
             <>
               <div className="max-h-64 overflow-y-auto border p-2 bg-gray-50 rounded text-sm">
                 <ul className="space-y-1">
@@ -249,6 +276,10 @@ const AdminTools = () => {
                 </button>
               </div>
             </>
+          )}
+
+          {!logLoading && hasFetchedLogs && filteredLogs.length === 0 && (
+            <p className="text-sm text-gray-600 italic">{t('adminTools.noLogsFound')}</p>
           )}
         </div>
 
