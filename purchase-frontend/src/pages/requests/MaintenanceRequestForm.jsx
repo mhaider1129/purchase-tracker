@@ -19,6 +19,7 @@ const MaintenanceRequestForm = () => {
   const [sections, setSections] = useState([]);
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
+  const [temporaryRequesterName, setTemporaryRequesterName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [formError, setFormError] = useState('');
@@ -118,7 +119,12 @@ const MaintenanceRequestForm = () => {
   }, [items]);
 
   const isFormValid = useMemo(() => {
-    if (!refNumber.trim() || !targetDeptId || !justification.trim()) {
+    if (
+      !refNumber.trim() ||
+      !targetDeptId ||
+      !justification.trim() ||
+      !temporaryRequesterName.trim()
+    ) {
       return false;
     }
     if (sections.length > 0 && !targetSectionId) {
@@ -145,6 +151,7 @@ const MaintenanceRequestForm = () => {
       formData.append('justification', justification);
       formData.append('target_department_id', targetDeptId);
       formData.append('target_section_id', targetSectionId);
+      formData.append('temporary_requester_name', temporaryRequesterName);
       const itemsPayload = items.map(({ attachments, ...rest }) => rest);
       formData.append('items', JSON.stringify(itemsPayload));
       attachments.forEach((file) => formData.append('attachments', file));
@@ -235,6 +242,16 @@ const MaintenanceRequestForm = () => {
             placeholder="Justification"
             value={justification}
             onChange={(e) => setJustification(e.target.value)}
+            className="w-full border p-2 rounded"
+            required
+          />
+
+          <input
+            type="text"
+            aria-label="Department Requester Name"
+            placeholder="Department Requester Name"
+            value={temporaryRequesterName}
+            onChange={(e) => setTemporaryRequesterName(e.target.value)}
             className="w-full border p-2 rounded"
             required
           />

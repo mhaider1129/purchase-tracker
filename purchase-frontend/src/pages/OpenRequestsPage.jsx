@@ -1,30 +1,36 @@
 // src/pages/OpenRequestsPage.jsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
-
-const ROLE_LABELS = {
-  HOD: 'HOD Approval',
-  CMO: 'CMO Approval',
-  SCM: 'SCM Approval',
-  COO: 'COO Approval',
-  CEO: 'CEO Approval',
-  CFO: 'CFO Approval',
-  WarehouseManager: 'Warehouse Manager Approval',
-  WarehouseKeeper: 'Warehouse Keeper Approval',
-  ProcurementSupervisor: 'Procurement Supervisor Action',
-  ProcurementSpecialist: 'Procurement Specialist Action',
-};
+import usePageTranslation from '../utils/usePageTranslation';
 
 const OpenRequestsPage = () => {
   const { t } = useTranslation();
-  const tr = useCallback(
-    (key, options) => t(`openRequests.${key}`, options),
-    [t]
+  const tr = usePageTranslation('openRequests');
+  const roleLabels = useMemo(
+    () => ({
+      HOD: tr('roleLabels.hod', 'HOD Approval'),
+      CMO: tr('roleLabels.cmo', 'CMO Approval'),
+      SCM: tr('roleLabels.scm', 'SCM Approval'),
+      COO: tr('roleLabels.coo', 'COO Approval'),
+      CEO: tr('roleLabels.ceo', 'CEO Approval'),
+      CFO: tr('roleLabels.cfo', 'CFO Approval'),
+      WarehouseManager: tr('roleLabels.warehouseManager', 'Warehouse Manager Approval'),
+      WarehouseKeeper: tr('roleLabels.warehouseKeeper', 'Warehouse Keeper Approval'),
+      ProcurementSupervisor: tr(
+        'roleLabels.procurementSupervisor',
+        'Procurement Supervisor Action'
+      ),
+      ProcurementSpecialist: tr(
+        'roleLabels.procurementSpecialist',
+        'Procurement Specialist Action'
+      ),
+    }),
+    [tr]
   );
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -155,7 +161,14 @@ const OpenRequestsPage = () => {
 
   const exportToCSV = () => {
     const rows = [
-      ['ID', 'Type', 'Project', 'Status', 'Cost', 'Submitted'],
+      [
+        tr('csvHeaders.id', 'ID'),
+        tr('csvHeaders.type', 'Type'),
+        tr('csvHeaders.project', 'Project'),
+        tr('csvHeaders.status', 'Status'),
+        tr('csvHeaders.cost', 'Cost'),
+        tr('csvHeaders.submitted', 'Submitted'),
+      ],
       ...filtered.map((r) => [
         r.id,
         r.request_type,
@@ -167,7 +180,8 @@ const OpenRequestsPage = () => {
     ];
     const csv = rows.map((row) => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'My_Open_Requests.csv');
+    const fileName = `${tr('csvFileName', 'My_Open_Requests')}.csv`;
+    saveAs(blob, fileName);
   };
 
   const toggleExpand = async (requestId) => {
@@ -200,14 +214,14 @@ const OpenRequestsPage = () => {
 
   const getRoleLabel = (role) => {
     if (!role) return '';
-    if (ROLE_LABELS[role]) return ROLE_LABELS[role];
+    if (roleLabels[role]) return roleLabels[role];
     return role.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
   };
 
   const getCurrentStage = (req) => {
     const normalizedStatus = req.status?.toLowerCase();
 
-    if (!req.status) return tr('stageUnknown');
+    if (!req.status) return tr('stageUnknown', 'Status unavailable');
 
     if (['approved', 'rejected', 'completed'].includes(normalizedStatus)) {
       return t('openRequests.stageFinalized', { status: req.status });
@@ -215,14 +229,18 @@ const OpenRequestsPage = () => {
 
     if (req.current_approver_role) {
       const step = getRoleLabel(req.current_approver_role);
-      return tr('awaitingStep', { step });
+      return tr('awaitingStep', 'Awaiting {{step}}', { step });
     }
 
     if (req.current_approval_level) {
-      return tr('awaitingLevelOnly', { level: req.current_approval_level });
+      return tr(
+        'awaitingLevelOnly',
+        'Awaiting approval level {{level}}',
+        { level: req.current_approval_level }
+      );
     }
 
-    return tr('stageUnknown');
+    return tr('stageUnknown', 'Status unavailable');
   };
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
@@ -343,7 +361,10 @@ const OpenRequestsPage = () => {
                       <strong>{tr('currentStage')}:</strong>{' '}
                       <span>{getCurrentStage(req)}</span>
                     </p>
-                    <p><strong>{tr('cost')}:</strong> {req.estimated_cost} IQD</p>
+                    <p>
+                      <strong>{tr('cost')}:</strong> {req.estimated_cost}{' '}
+                      {tr('currency', 'IQD')}
+                    </p>
                     <p><strong>{tr('submitted')}:</strong> {new Date(req.created_at).toLocaleString()}</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -372,7 +393,7 @@ const OpenRequestsPage = () => {
                         <thead>
                           <tr className="bg-gray-100">
                             <th className="border p-1">{tr('item')}</th>
-                            <th className="border p-1">Brand</th>
+                            <th className="border p-1">{tr('brand', 'Brand')}</th>
                             <th className="border p-1">{tr('qty')}</th>
                             <th className="border p-1">{tr('unitCost')}</th>
                             <th className="border p-1">{tr('total')}</th>

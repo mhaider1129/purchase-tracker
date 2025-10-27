@@ -16,10 +16,12 @@ import {
   Line,
   CartesianGrid,
 } from 'recharts';
+import usePageTranslation from '../utils/usePageTranslation';
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
 
 const Dashboard = () => {
+  const translate = usePageTranslation('dashboard');
   const [summary, setSummary] = useState(null);
   const [departmentSpending, setDepartmentSpending] = useState([]);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -32,7 +34,9 @@ const Dashboard = () => {
         setSummary(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch dashboard data:', err);
-        setError('Failed to load dashboard');
+        setError(
+          translate('failedToLoad', { defaultValue: 'Failed to load dashboard' })
+        );
       }
     };
     fetchSummary();
@@ -73,7 +77,12 @@ const Dashboard = () => {
   }, [departmentSpending]);
 
   if (error) return <p className="p-6 text-red-600">{error}</p>;
-  if (!summary) return <p className="p-6">Loading dashboard...</p>;
+  if (!summary)
+    return (
+      <p className="p-6">
+        {translate('loadingDashboard', { defaultValue: 'Loading dashboard...' })}
+      </p>
+    );
 
   const pendingTrend = summary.pending_vs_completed_trend || [];
   const oldestPending = summary.oldest_pending_requests || [];
@@ -84,27 +93,40 @@ const Dashboard = () => {
     <>
       <Navbar />
       <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-2xl font-bold text-purple-700 mb-6">📊 Dashboard Overview</h1>
+        <h1 className="text-2xl font-bold text-purple-700 mb-6">
+          {translate('overviewTitle', { defaultValue: '📊 Dashboard Overview' })}
+        </h1>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card title="Total Requests" value={summary.total_requests} />
-          <Card title="Approved" value={summary.approved_requests} />
-          <Card title="Pending" value={summary.pending_requests} />
-          <Card title="Completed" value={summary.completed_requests} />
-          <Card title="Rejected" value={summary.rejected_requests} />
-          <Card title="Completion Rate" value={`${completionRate.toFixed(1)}%`} />
           <Card
-            title="Avg Approval Time (days)"
+            title={translate('totalRequests', { defaultValue: 'Total Requests' })}
+            value={summary.total_requests}
+          />
+          <Card title={translate('approved', { defaultValue: 'Approved' })} value={summary.approved_requests} />
+          <Card title={translate('pending', { defaultValue: 'Pending' })} value={summary.pending_requests} />
+          <Card title={translate('completed', { defaultValue: 'Completed' })} value={summary.completed_requests} />
+          <Card title={translate('rejected', { defaultValue: 'Rejected' })} value={summary.rejected_requests} />
+          <Card
+            title={translate('completionRate', { defaultValue: 'Completion Rate' })}
+            value={`${completionRate.toFixed(1)}%`}
+          />
+          <Card
+            title={translate('avgApprovalTime', { defaultValue: 'Avg Approval Time (days)' })}
             value={summary.avg_approval_time_days.toFixed(2)}
           />
-          <Card title="Avg Pending Age (days)" value={avgPendingAge.toFixed(1)} />
+          <Card
+            title={translate('avgPendingAge', { defaultValue: 'Avg Pending Age (days)' })}
+            value={avgPendingAge.toFixed(1)}
+          />
         </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h2 className="text-lg font-semibold mb-2">Monthly Spending</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              {translate('monthlySpending', { defaultValue: 'Monthly Spending' })}
+            </h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={summary.spending_by_month}>
                 <XAxis dataKey="month" />
@@ -117,7 +139,9 @@ const Dashboard = () => {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold">Department Spending</h2>
+              <h2 className="text-lg font-semibold">
+                {translate('departmentSpending', { defaultValue: 'Department Spending' })}
+              </h2>
               <select
                 value={year}
                 onChange={(e) => setYear(parseInt(e.target.value, 10))}
@@ -147,7 +171,9 @@ const Dashboard = () => {
           </div>
 
           <div className="md:col-span-2">
-            <h2 className="text-lg font-semibold mb-2">Pending vs Completed Trend</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              {translate('pendingVsCompleted', { defaultValue: 'Pending vs Completed Trend' })}
+            </h2>
             <ResponsiveContainer width="100%" height={320}>
               <LineChart data={pendingTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -155,14 +181,26 @@ const Dashboard = () => {
                 <YAxis allowDecimals={false} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="pending_count" stroke="#ffbb28" name="Pending" />
-                <Line type="monotone" dataKey="completed_count" stroke="#00C49F" name="Completed" />
+                <Line
+                  type="monotone"
+                  dataKey="pending_count"
+                  stroke="#ffbb28"
+                  name={translate('pending', { defaultValue: 'Pending' })}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="completed_count"
+                  stroke="#00C49F"
+                  name={translate('completed', { defaultValue: 'Completed' })}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-2">Top Requesting Departments</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              {translate('topDepartments', { defaultValue: 'Top Requesting Departments' })}
+            </h2>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -183,7 +221,9 @@ const Dashboard = () => {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-2">Rejected Requests</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              {translate('rejectedRequests', { defaultValue: 'Rejected Requests' })}
+            </h2>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={summary.rejections_by_month}>
                 <XAxis dataKey="month" />
@@ -195,22 +235,35 @@ const Dashboard = () => {
           </div>
 
           <div className="md:col-span-2">
-            <h2 className="text-lg font-semibold mb-2">Oldest Pending Requests</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              {translate('oldestPending', { defaultValue: 'Oldest Pending Requests' })}
+            </h2>
             <div className="bg-white shadow rounded p-4">
               {oldestPending.length ? (
                 <ul className="space-y-3">
                   {oldestPending.map((request) => (
                     <li key={request.id} className="border-b last:border-b-0 pb-3 last:pb-0">
                       <p className="text-sm font-semibold text-gray-700">
-                        Request #{request.id} • {request.department}
+                        {translate('requestWithDepartment', {
+                          defaultValue: 'Request #{{id}} • {{department}}',
+                          id: request.id,
+                          department: request.department,
+                        })}
                       </p>
                       <p className="text-sm text-gray-500 truncate">{request.justification}</p>
-                      <p className="text-xs text-gray-400">Waiting {request.age_days.toFixed(1)} days</p>
+                      <p className="text-xs text-gray-400">
+                        {translate('waitingDays', {
+                          defaultValue: 'Waiting {{days}} days',
+                          days: request.age_days.toFixed(1),
+                        })}
+                      </p>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-sm text-gray-500">No pending backlog 🎉</p>
+                <p className="text-sm text-gray-500">
+                  {translate('noPendingBacklog', { defaultValue: 'No pending backlog 🎉' })}
+                </p>
               )}
             </div>
           </div>

@@ -7,6 +7,7 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useTranslation } from 'react-i18next';
+import usePageTranslation from '../utils/usePageTranslation';
 
 const AdminTools = () => {
   const [message, setMessage] = useState('');
@@ -20,6 +21,7 @@ const AdminTools = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [reassignStats, setReassignStats] = useState(null);
   const { t } = useTranslation();
+  const tr = usePageTranslation('adminTools');
   const logsPerPage = 10;
   const navigate = useNavigate();
 
@@ -27,7 +29,7 @@ const AdminTools = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      setMessage(t('adminTools.loginRequired'));
+      setMessage(tr('loginRequired', 'You must be logged in to access admin tools.'));
       navigate('/login');
       return;
     }
@@ -36,7 +38,9 @@ const AdminTools = () => {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const role = payload?.role?.toLowerCase() || '';
       if (!['admin', 'scm'].includes(role)) {
-        alert('🚫 Access denied: Only SCM or Admin can access this page.');
+        alert(
+          tr('accessDenied', '🚫 Access denied: Only SCM or Admin can access this page.')
+        );
         navigate('/');
       }
     } catch (error) {
@@ -47,18 +51,18 @@ const AdminTools = () => {
 
   // 🔁 Reassign Approvals
   const triggerReassignment = async () => {
-    if (!window.confirm('Reassign all pending approvals?')) return;
+    if (!window.confirm(tr('confirmReassign', 'Reassign all pending approvals?'))) return;
     setLoading(true);
     setMessage('');
     try {
       const res = await api.post('/api/admin-tools/reassign-approvals');
-      setMessage(res.data?.message || t('adminTools.reassignmentSuccess'));
+      setMessage(res.data?.message || tr('reassignmentSuccess', 'Reassignment completed.'));
       setReassignStats(res.data?.data || null);
     } catch (err) {
       setMessage(
         err.response?.data?.error ||
           err.response?.data?.message ||
-          t('adminTools.failedReassign')
+          tr('failedReassign', 'Failed to trigger reassignment.')
       );
       setReassignStats(null);
     } finally {
@@ -69,16 +73,16 @@ const AdminTools = () => {
   // 🚫 Deactivate User
   const deactivateUser = async () => {
     if (!deactivateEmail.trim()) {
-      setMessage(t('adminTools.enterEmail'));
+      setMessage(tr('enterEmail', 'Enter user email to deactivate.'));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(deactivateEmail.trim())) {
-      setMessage(t('adminTools.failedDeactivate'));
+      setMessage(tr('failedDeactivate', 'Failed to deactivate user.'));
       return;
     }
-    if (!window.confirm('Deactivate this user?')) return;
+    if (!window.confirm(tr('confirmDeactivate', 'Deactivate this user?'))) return;
 
     setLoading(true);
     setMessage('');
@@ -86,13 +90,13 @@ const AdminTools = () => {
       const res = await api.post('/api/admin-tools/deactivate-user', {
         email: deactivateEmail,
       });
-      setMessage(res.data?.message || t('adminTools.deactivateUserSuccess'));
+      setMessage(res.data?.message || tr('deactivateUserSuccess', 'User deactivated.'));
       setDeactivateEmail('');
     } catch (err) {
       setMessage(
         err.response?.data?.error ||
           err.response?.data?.message ||
-          t('adminTools.failedDeactivate')
+          tr('failedDeactivate', 'Failed to deactivate user.')
       );
     } finally {
       setLoading(false);
@@ -111,7 +115,7 @@ const AdminTools = () => {
       setCurrentPage(1);
       setHasFetchedLogs(true);
     } catch (err) {
-      setMessage(t('adminTools.failedFetchLogs'));
+      setMessage(tr('failedFetchLogs', 'Failed to fetch logs.'));
     } finally {
       setLogLoading(false);
     }
@@ -134,27 +138,27 @@ const AdminTools = () => {
   const exportToCSV = () => {
     const rows = filteredLogs.map((log) => [typeof log === 'string' ? log : JSON.stringify(log)]);
     const csvContent = [
-      ['Log Entry'],
-      ...rows
+      [tr('logEntry', 'Log Entry')],
+      ...rows,
     ]
       .map((e) => e.join(','))
       .join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'system_logs.csv');
+    saveAs(blob, `${tr('systemLogsFile', 'system_logs')}.csv`);
   };
 
   // 📄 Export to PDF
   const exportToPDF = () => {
     const doc = new jsPDF();
-    doc.text('System Logs', 14, 14);
+    doc.text(tr('systemLogsTitle', 'System Logs'), 14, 14);
     const rows = filteredLogs.map((log) => [typeof log === 'string' ? log : JSON.stringify(log)]);
     doc.autoTable({
-      head: [['Log Entry']],
+      head: [[tr('logEntry', 'Log Entry')]],
       body: rows,
       startY: 20,
     });
-    doc.save('system_logs.pdf');
+    doc.save(`${tr('systemLogsFile', 'system_logs')}.pdf`);
   };
 
   // 📄 Pagination Logic
@@ -167,7 +171,7 @@ const AdminTools = () => {
     <>
       <Navbar />
       <div className="max-w-4xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">{t('adminTools.title')}</h2>
+        <h2 className="text-2xl font-bold mb-6">{tr('title', 'Admin Tools')}</h2>
 
         {/* 🔁 Reassign Approvals */}
         <div className="mb-8">
@@ -178,11 +182,11 @@ const AdminTools = () => {
               loading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {loading ? t('adminTools.reassigning') : t('adminTools.reassign')}
+            {loading ? tr('reassigning', 'Reassigning...') : tr('reassign', 'Reassign Approvals')}
           </button>
           {reassignStats && (
             <div className="mt-3 p-3 border border-blue-200 bg-blue-50 rounded text-sm text-blue-900">
-              {t('adminTools.reassignmentSummary', {
+              {tr('reassignmentSummary', 'Reassigned: {{reassigned}}, Auto-approved: {{autoApproved}}, Failed: {{failed}}.', {
                 reassigned: reassignStats.reassigned ?? 0,
                 autoApproved: reassignStats.autoApproved ?? 0,
                 failed: reassignStats.failed ?? 0,
@@ -193,13 +197,13 @@ const AdminTools = () => {
 
         {/* 🚫 Deactivate User */}
         <div className="mb-8">
-          <h3 className="text-lg font-semibold mb-2">{t('adminTools.deactivateUser')}</h3>
+          <h3 className="text-lg font-semibold mb-2">{tr('deactivateUser', 'Deactivate User')}</h3>
           <div className="flex gap-2">
             <input
               type="email"
               value={deactivateEmail}
               onChange={(e) => setDeactivateEmail(e.target.value)}
-              placeholder={t('adminTools.userEmail')}
+              placeholder={tr('userEmail', 'User email')}
               className="flex-1 p-2 border rounded"
             />
             <button
@@ -207,40 +211,40 @@ const AdminTools = () => {
               className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
               disabled={loading}
             >
-              {t('adminTools.deactivate')}
+              {tr('deactivate', 'Deactivate')}
             </button>
           </div>
         </div>
 
         {/* 📜 View Logs */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">{t('adminTools.viewLogs')}</h3>
+          <h3 className="text-lg font-semibold mb-2">{tr('viewLogs', 'View System Logs')}</h3>
           <div className="flex gap-2 mb-4">
             <button
               onClick={fetchLogs}
               className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-900"
               disabled={logLoading}
             >
-              {logLoading ? t('adminTools.loadingLogs') : t('adminTools.fetchLogs')}
+              {logLoading ? tr('loadingLogs', 'Loading Logs...') : tr('fetchLogs', 'Fetch Logs')}
             </button>
             <button onClick={exportToCSV} className="bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700">
-              {t('adminTools.exportCSV')}
+              {tr('exportCSV', 'Export CSV')}
             </button>
             <button onClick={exportToPDF} className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700">
-              {t('adminTools.exportPDF')}
+              {tr('exportPDF', 'Export PDF')}
             </button>
           </div>
 
           <input
             type="text"
-            placeholder={t('adminTools.searchLogs')}
+            placeholder={tr('searchLogs', 'Search logs...')}
             className="w-full p-2 border rounded mb-4"
             value={filterKeyword}
             onChange={(e) => setFilterKeyword(e.target.value)}
           />
 
           {logLoading && (
-            <p className="text-sm text-gray-600">{t('adminTools.loadingLogs')}</p>
+            <p className="text-sm text-gray-600">{tr('loadingLogs', 'Loading Logs...')}</p>
           )}
 
           {!logLoading && currentLogs.length > 0 && (
@@ -279,7 +283,7 @@ const AdminTools = () => {
           )}
 
           {!logLoading && hasFetchedLogs && filteredLogs.length === 0 && (
-            <p className="text-sm text-gray-600 italic">{t('adminTools.noLogsFound')}</p>
+            <p className="text-sm text-gray-600 italic">{tr('noLogsFound', 'No logs found for the selected filters.')}</p>
           )}
         </div>
 

@@ -270,6 +270,7 @@ export const buildRequestSubmissionState = (
         pickValue([
           'submitted_by',
           'submittedBy',
+          'temporary_requester_name',
           'requester_name',
           'requesterName',
         ]) ?? null,
