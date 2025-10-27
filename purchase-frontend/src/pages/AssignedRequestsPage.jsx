@@ -281,20 +281,21 @@ const AssignedRequestsPage = () => {
   };
 
   const handleDownloadAttachment = async (attachment) => {
-    const filename = attachment.file_path.split(/[/\\]/).pop();
-    if (!filename) {
+    const storedPath = attachment.file_path || '';
+    const filename = storedPath.split(/[\\/]/).pop();
+    const downloadEndpoint =
+      attachment.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
+
+    if (!downloadEndpoint) {
       alert('Attachment file is missing.');
       return;
     }
 
     setDownloadingAttachmentId(attachment.id);
     try {
-      const response = await axios.get(
-        `/api/attachments/download/${encodeURIComponent(filename)}`,
-        {
-          responseType: 'blob',
-        }
-      );
+      const response = await axios.get(downloadEndpoint, {
+        responseType: 'blob',
+      });
 
       const blob = new Blob([response.data], {
         type: response.headers['content-type'] || 'application/octet-stream',
@@ -302,7 +303,7 @@ const AssignedRequestsPage = () => {
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
-      link.download = attachment.file_name || filename;
+      link.download = attachment.file_name || filename || 'attachment';
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -523,17 +524,17 @@ const AssignedRequestsPage = () => {
                       ) : (
                         <ul className="list-disc pl-5 text-blue-600">
                           {attachments.map((att) => {
-                            const filename = att.file_path.split(/[\\/]/).pop();
+                            const filename = att.file_name || att.file_path.split(/[\\/]/).pop();
                             return (
                               <li key={att.id}>
-                              <button
-                                type="button"
-                                onClick={() => handleDownloadAttachment(att)}
-                                className="underline text-left text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                                disabled={downloadingAttachmentId === att.id}
-                              >
-                                {downloadingAttachmentId === att.id ? 'Downloading…' : att.file_name}
-                              </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownloadAttachment(att)}
+                                  className="underline text-left text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                                  disabled={downloadingAttachmentId === att.id}
+                                >
+                                  {downloadingAttachmentId === att.id ? 'Downloading…' : filename}
+                                </button>
                               </li>
                             );
                           })}
