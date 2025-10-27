@@ -1,5 +1,6 @@
 // src/pages/requests/MaintenanceRequestForm.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
@@ -12,6 +13,12 @@ import useCurrentUser from '../../hooks/useCurrentUser';
 const createEmptyItem = () => ({ item_name: '', quantity: 1, specs: '', attachments: [] });
 
 const MaintenanceRequestForm = () => {
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, options) => t(`maintenanceRequestPage.${key}`, options),
+    [t]
+  );
+
   const [refNumber, setRefNumber] = useState('');
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState(() => [createEmptyItem()]);
@@ -35,7 +42,7 @@ const MaintenanceRequestForm = () => {
         setDepartments(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch departments:', err);
-        setFormError('Failed to load departments. Please refresh the page.');
+        setFormError(tr('errors.loadDepartments'));
       }
     };
     fetchDepartments();
@@ -49,7 +56,7 @@ const MaintenanceRequestForm = () => {
       }
     };
     fetchStock();
-  }, []);
+  }, [tr]);
 
   useEffect(() => {
     const fetchSections = async () => {
@@ -63,12 +70,12 @@ const MaintenanceRequestForm = () => {
         setSections(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch sections:', err);
-        setFormError('Failed to load sections. Please try again.');
+        setFormError(tr('errors.loadSections'));
         setSections([]);
       }
     };
     fetchSections();
-  }, [targetDeptId]);
+  }, [targetDeptId, tr]);
 
   const handleItemChange = useCallback((index, field, value) => {
     setItems((prev) => {
@@ -93,30 +100,33 @@ const MaintenanceRequestForm = () => {
     setItems((prev) => [...prev, createEmptyItem()]);
   }, []);
 
-  const removeItem = useCallback((index) => {
-    setItems((prev) => prev.filter((_, idx) => idx !== index));
-  }, []);
+  const removeItem = useCallback(
+    (index) => {
+      setItems((prev) => prev.filter((_, idx) => idx !== index));
+    },
+    []
+  );
 
   const resetFormError = () => setFormError('');
 
   const validateItems = useCallback(() => {
     if (!items.length) {
-      return 'Add at least one item to request maintenance.';
+      return tr('errors.addItem');
     }
 
     for (let i = 0; i < items.length; i += 1) {
-      const { item_name, quantity } = items[i];
-      if (!item_name.trim()) {
-        return `Item ${i + 1} is missing a name.`;
+      const { item_name: itemName, quantity } = items[i];
+      if (!itemName.trim()) {
+        return tr('errors.itemNameMissing', { number: i + 1 });
       }
       const parsedQuantity = Number(quantity);
       if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
-        return `Item ${i + 1} must have a quantity greater than zero.`;
+        return tr('errors.itemQuantityInvalid', { number: i + 1 });
       }
     }
 
     return '';
-  }, [items]);
+  }, [items, tr]);
 
   const isFormValid = useMemo(() => {
     if (
@@ -131,7 +141,7 @@ const MaintenanceRequestForm = () => {
       return false;
     }
     return validateItems() === '';
-  }, [justification, refNumber, sections.length, targetDeptId, targetSectionId, validateItems]);
+  }, [justification, refNumber, sections.length, targetDeptId, targetSectionId, temporaryRequesterName, validateItems]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -152,7 +162,7 @@ const MaintenanceRequestForm = () => {
       formData.append('target_department_id', targetDeptId);
       formData.append('target_section_id', targetSectionId);
       formData.append('temporary_requester_name', temporaryRequesterName);
-      const itemsPayload = items.map(({ attachments, ...rest }) => rest);
+      const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
       formData.append('items', JSON.stringify(itemsPayload));
       attachments.forEach((file) => formData.append('attachments', file));
       if (projectId) {
@@ -171,19 +181,25 @@ const MaintenanceRequestForm = () => {
       navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Failed to submit maintenance request:', err);
-      setFormError('❌ Submission failed. Please try again.');
+      setFormError(tr('errors.submitFailed'));
     } finally {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (formError) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [formError]);
 
   return (
     <>
       <Navbar />
       <div className="p-6 max-w-4xl mx-auto">
         <h2 className="text-2xl font-semibold mb-4">
-          Maintenance Request Form
-          <HelpTooltip text="Step 2: Provide details for your maintenance request." />
+          {t('pageTitles.maintenanceRequestForm')}
+          <HelpTooltip text={tr('tooltips.stepTwo')} />
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
@@ -194,52 +210,52 @@ const MaintenanceRequestForm = () => {
 
           <input
             type="text"
-            aria-label="Maintenance Reference Number"
-            placeholder="Maintenance Ref Number"
+            aria-label={tr('fields.referenceAria')}
+            placeholder={tr('fields.referencePlaceholder')}
             value={refNumber}
             onChange={(e) => setRefNumber(e.target.value)}
             className="w-full border p-2 rounded"
             required
           />
 
-            <select
-              aria-label="Target Department"
+          <select
+            aria-label={tr('fields.targetDepartmentAria')}
             value={targetDeptId}
             onChange={(e) => {
               setTargetDeptId(e.target.value);
-              setTargetSectionId(''); // Reset section on dept change
+              setTargetSectionId('');
             }}
             className="w-full border p-2 rounded"
             required
           >
-            <option value="">Select Target Department</option>
+            <option value="">{tr('fields.selectDepartment')}</option>
             {departments.map((dept) => (
               <option key={dept.id} value={dept.id}>
                 {dept.name}
               </option>
             ))}
-            </select>
+          </select>
 
-            {sections.length > 0 && (
-              <select
-                aria-label="Target Section"
-                value={targetSectionId}
-                onChange={(e) => setTargetSectionId(e.target.value)}
-                className="w-full border p-2 rounded"
-                required
-              >
-                <option value="">Select Section</option>
-                {sections.map((section) => (
-                  <option key={section.id} value={section.id}>
-                    {section.name}
-                  </option>
-                ))}
-              </select>
-            )}
+          {sections.length > 0 && (
+            <select
+              aria-label={tr('fields.targetSectionAria')}
+              value={targetSectionId}
+              onChange={(e) => setTargetSectionId(e.target.value)}
+              className="w-full border p-2 rounded"
+              required
+            >
+              <option value="">{tr('fields.selectSection')}</option>
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+          )}
 
           <textarea
-            aria-label="Justification"
-            placeholder="Justification"
+            aria-label={tr('fields.justificationAria')}
+            placeholder={tr('fields.justificationPlaceholder')}
             value={justification}
             onChange={(e) => setJustification(e.target.value)}
             className="w-full border p-2 rounded"
@@ -248,8 +264,8 @@ const MaintenanceRequestForm = () => {
 
           <input
             type="text"
-            aria-label="Department Requester Name"
-            placeholder="Department Requester Name"
+            aria-label={tr('fields.requesterNameAria')}
+            placeholder={tr('fields.requesterNamePlaceholder')}
             value={temporaryRequesterName}
             onChange={(e) => setTemporaryRequesterName(e.target.value)}
             className="w-full border p-2 rounded"
@@ -263,16 +279,14 @@ const MaintenanceRequestForm = () => {
             user={currentUser}
           />
 
-
-
           {stockItems.length > 0 && (
             <div className="mb-4">
-              <h4 className="font-semibold mb-2">Available Maintenance Stock</h4>
+              <h4 className="font-semibold mb-2">{tr('stock.heading')}</h4>
               <table className="w-full text-sm border">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border p-2 text-left">Item</th>
-                    <th className="border p-2 text-left">Qty</th>
+                    <th className="border p-2 text-left">{tr('stock.item')}</th>
+                    <th className="border p-2 text-left">{tr('stock.quantity')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -288,13 +302,13 @@ const MaintenanceRequestForm = () => {
           )}
 
           <div>
-            <h4 className="font-semibold mb-2">Requested Items</h4>
+            <h4 className="font-semibold mb-2">{tr('items.heading')}</h4>
             {items.map((item, idx) => (
               <div key={idx} className="border p-3 rounded mb-2 bg-gray-50">
                 <input
                   type="text"
-                  placeholder="Item Name"
-                  aria-label={`Item ${idx + 1} Name`}
+                  placeholder={tr('items.itemNamePlaceholder')}
+                  aria-label={t('maintenanceRequestPage.items.nameAria', { index: idx + 1 })}
                   value={item.item_name}
                   onChange={(e) => handleItemChange(idx, 'item_name', e.target.value)}
                   className="w-full mb-2 border p-2 rounded"
@@ -302,18 +316,20 @@ const MaintenanceRequestForm = () => {
                 />
                 <input
                   type="number"
-                  placeholder="Qty"
-                  aria-label={`Item ${idx + 1} Quantity`}
+                  placeholder={tr('items.quantityPlaceholder')}
+                  aria-label={t('maintenanceRequestPage.items.quantityAria', { index: idx + 1 })}
                   value={item.quantity}
                   min={1}
-                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) =>
+                    handleItemChange(idx, 'quantity', e.target.value ? Number(e.target.value) : '')
+                  }
                   className="w-full border p-2 rounded"
                   required
                 />
                 <input
                   type="text"
-                  placeholder="Specs"
-                  aria-label={`Item ${idx + 1} Specs`}
+                  placeholder={tr('items.specsPlaceholder')}
+                  aria-label={t('maintenanceRequestPage.items.specsAria', { index: idx + 1 })}
                   value={item.specs}
                   onChange={(e) => handleItemChange(idx, 'specs', e.target.value)}
                   className="w-full border p-2 rounded mt-1"
@@ -331,7 +347,7 @@ const MaintenanceRequestForm = () => {
                     className="mt-2 text-red-600 hover:text-red-700"
                     onClick={() => removeItem(idx)}
                   >
-                    Remove Item
+                    {tr('items.remove')}
                   </Button>
                 )}
               </div>
@@ -343,12 +359,12 @@ const MaintenanceRequestForm = () => {
               variant="secondary"
               className="mt-2"
             >
-              + Add Item
+              {tr('items.add')}
             </Button>
           </div>
- 
+
           <div>
-            <label className="block font-semibold mb-1">Attachments</label>
+            <label className="block font-semibold mb-1">{tr('attachments.label')}</label>
             <input
               type="file"
               multiple
@@ -365,8 +381,8 @@ const MaintenanceRequestForm = () => {
             disabled={submitting}
           >
             <>
-              Submit Maintenance Request
-              <HelpTooltip text="Step 3: Submit the request for approval." />
+              {tr('submit.label')}
+              <HelpTooltip text={tr('tooltips.stepThree')} />
             </>
           </Button>
         </form>

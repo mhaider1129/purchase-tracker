@@ -1,5 +1,5 @@
 //src/pages/ApprovalsPanel.js
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from '../api/axios';
 import { Button } from '../components/ui/Button';
 import Navbar from '../components/Navbar';
@@ -19,6 +19,10 @@ const ApprovalsPanel = () => {
   const [isUrgent, setIsUrgent] = useState(false);
   const [itemDecisions, setItemDecisions] = useState({});
   const [savingItems, setSavingItems] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [urgencyFilter, setUrgencyFilter] = useState('all');
+  const [sortOption, setSortOption] = useState('newest');
 
   const { user } = useCurrentUser();
   const canMarkUrgent = ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role);
@@ -225,6 +229,117 @@ const ApprovalsPanel = () => {
     return { label: '⬤ Low Cost', color: 'bg-green-500' };
   };
 
+  const summary = useMemo(() => {
+    if (!Array.isArray(requests) || requests.length === 0) {
+      return {
+        total: 0,
+        urgent: 0,
+        estimatedTotal: 0,
+        byType: {},
+      };
+    }
+
+    return requests.reduce(
+      (acc, req) => {
+        acc.total += 1;
+        if (req?.is_urgent) acc.urgent += 1;
+
+        const estimated = Number(req?.estimated_cost) || 0;
+        acc.estimatedTotal += estimated;
+
+        if (req?.request_type) {
+          const typeKey = req.request_type;
+          acc.byType[typeKey] = (acc.byType[typeKey] || 0) + 1;
+        }
+
+        return acc;
+      },
+      { total: 0, urgent: 0, estimatedTotal: 0, byType: {} },
+    );
+  }, [requests]);
+
+  const availableRequestTypes = useMemo(() => {
+    const typeSet = new Set();
+    requests.forEach((req) => {
+      if (req?.request_type) typeSet.add(req.request_type);
+    });
+    return Array.from(typeSet).sort();
+  }, [requests]);
+
+  const getDateSortableValue = (request) => {
+    const sourceDate =
+      request?.updated_at ||
+      request?.submitted_at ||
+      request?.created_at ||
+      request?.requested_at ||
+      request?.request_date;
+    if (!sourceDate) return 0;
+    const parsed = new Date(sourceDate).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const filteredRequests = useMemo(() => {
+    let result = Array.isArray(requests) ? [...requests] : [];
+
+    if (searchTerm.trim()) {
+      const lowered = searchTerm.trim().toLowerCase();
+      result = result.filter((req) => {
+        const idMatch = String(req?.request_id || '')
+          .toLowerCase()
+          .includes(lowered);
+        const justificationMatch = (req?.justification || '')
+          .toLowerCase()
+          .includes(lowered);
+        const departmentMatch = (req?.department_name || '')
+          .toLowerCase()
+          .includes(lowered);
+        const sectionMatch = (req?.section_name || '')
+          .toLowerCase()
+          .includes(lowered);
+
+        return idMatch || justificationMatch || departmentMatch || sectionMatch;
+      });
+    }
+
+    if (typeFilter !== 'all') {
+      result = result.filter((req) => req?.request_type === typeFilter);
+    }
+
+    if (urgencyFilter === 'urgent') {
+      result = result.filter((req) => req?.is_urgent);
+    } else if (urgencyFilter === 'non-urgent') {
+      result = result.filter((req) => !req?.is_urgent);
+    }
+
+    const sorter = {
+      newest: (a, b) => getDateSortableValue(b) - getDateSortableValue(a),
+      oldest: (a, b) => getDateSortableValue(a) - getDateSortableValue(b),
+      costHigh: (a, b) => (Number(b?.estimated_cost) || 0) - (Number(a?.estimated_cost) || 0),
+      costLow: (a, b) => (Number(a?.estimated_cost) || 0) - (Number(b?.estimated_cost) || 0),
+    };
+
+    const sortFn = sorter[sortOption] || sorter.newest;
+    result.sort(sortFn);
+
+    return result;
+  }, [requests, searchTerm, typeFilter, urgencyFilter, sortOption]);
+
+  const hasActiveFilters = useMemo(() => {
+    return (
+      Boolean(searchTerm.trim()) ||
+      typeFilter !== 'all' ||
+      urgencyFilter !== 'all' ||
+      sortOption !== 'newest'
+    );
+  }, [searchTerm, typeFilter, urgencyFilter, sortOption]);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setTypeFilter('all');
+    setUrgencyFilter('all');
+    setSortOption('newest');
+  };
+
   if (loading) return <div className="p-6">Loading approvals...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
@@ -237,171 +352,298 @@ const ApprovalsPanel = () => {
         {requests.length === 0 ? (
           <p>No pending approvals.</p>
         ) : (
-          <div className="space-y-4">
-            {requests.map((req) => {
-              const tag = getCostLabel(req.estimated_cost);
-              const canEditItems = req.request_type !== 'Warehouse Supply';
+          <>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-6">
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <p className="text-sm text-gray-500">Total Pending</p>
+                <p className="text-2xl font-semibold">{summary.total}</p>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <p className="text-sm text-gray-500">Marked Urgent</p>
+                <p className="text-2xl font-semibold text-red-600">{summary.urgent}</p>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <p className="text-sm text-gray-500">Total Estimated Value</p>
+                <p className="text-2xl font-semibold">
+                  {summary.estimatedTotal.toLocaleString()} IQD
+                </p>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <p className="text-sm text-gray-500">Requests by Type</p>
+                {Object.keys(summary.byType).length === 0 ? (
+                  <p className="text-sm text-gray-600 mt-1">No type data</p>
+                ) : (
+                  <ul className="text-sm text-gray-700 space-y-1 mt-1">
+                    {Object.entries(summary.byType).map(([type, count]) => (
+                      <li key={type} className="flex justify-between">
+                        <span>{type}</span>
+                        <span className="font-medium">{count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
 
-              return (
-                <div key={req.approval_id} className="border rounded-lg p-4 shadow-sm">
-                  <p>
-                    <strong>Request ID:</strong> {req.request_id}
-                  </p>
-                  <p>
-                    <strong>Type:</strong> {req.request_type}
-                  </p>
-                  <p>
-                    <strong>Justification:</strong> {req.justification}
-                  </p>
-                  <p>
-                    <strong>Department:</strong> {req.department_name || '—'}
-                  </p>
-                  <p>
-                    <strong>Section:</strong> {req.section_name || '—'}
-                  </p>
-                  <p>
-                    <strong>Estimated Cost:</strong> {req.estimated_cost.toLocaleString()} IQD
-                  </p>
-                  <p className={`inline-block mt-1 text-xs text-white px-2 py-1 rounded ${tag.color}`}>
-                    {tag.label}
-                  </p>
-
-                  {req.is_urgent && (
-                    <span className="inline-block ml-2 text-xs text-white px-2 py-1 rounded bg-red-600 font-bold">
-                      Urgent
-                    </span>
-                  )}
-
-                  {req.updated_by && (
-                    <p className="text-sm text-gray-500 mt-2">
-                      Last Updated by <strong>{req.updated_by}</strong> on{' '}
-                      {req.updated_at ? new Date(req.updated_at).toLocaleString('en-GB') : '—'}
-                    </p>
-                  )}
-
-                  <button
-                    className="text-blue-600 underline text-sm mt-2"
-                    onClick={() => toggleExpand(req.request_id)}
-                  >
-                    {expandedId === req.request_id ? 'Hide Items' : 'Show Requested Items'}
-                  </button>
-
-                  {expandedId === req.request_id && (
-                    <div className="mt-3">
-                      {itemsMap[req.request_id]?.length > 0 ? (
-                        <>
-                          <table className="w-full text-sm border">
-                            <thead>
-                              <tr className="bg-gray-100">
-                                <th className="border p-1">Item</th>
-                                <th className="border p-1">Brand</th>
-                                <th className="border p-1">Specs</th>
-                                <th className="border p-1">Qty</th>
-                                <th className="border p-1">Available Qty</th>
-                                <th className="border p-1">Unit Cost</th>
-                                <th className="border p-1">Total</th>
-                                <th className="border p-1">Decision</th>
-                                <th className="border p-1">Comments</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {itemsMap[req.request_id].map((item) => {
-                                const decision = itemDecisions[req.request_id]?.[item.id] || {
-                                  status: item.approval_status || 'Pending',
-                                  comments: item.approval_comments || '',
-                                };
-
-                                return (
-                                  <tr key={item.id || item.item_name}>
-                                    <td className="border p-1">{item.item_name}</td>
-                                    <td className="border p-1">{item.brand || '—'}</td>
-                                    <td className="border p-1">{item.specs || '—'}</td>
-                                    <td className="border p-1">{item.quantity}</td>
-                                    <td className="border p-1">{item.available_quantity ?? '—'}</td>
-                                    <td className="border p-1">{item.unit_cost}</td>
-                                    <td className="border p-1">{item.total_cost}</td>
-                                    <td className="border p-1">
-                                      {canEditItems ? (
-                                        <select
-                                          className="w-full border rounded px-1 py-1 text-sm"
-                                          value={decision.status || 'Pending'}
-                                          onChange={(e) =>
-                                            handleItemStatusChange(req.request_id, item.id, e.target.value)
-                                          }
-                                        >
-                                          <option value="Pending">Pending</option>
-                                          <option value="Approved">Approved</option>
-                                          <option value="Rejected">Rejected</option>
-                                        </select>
-                                      ) : (
-                                        <span>{decision.status || 'Pending'}</span>
-                                      )}
-                                    </td>
-                                    <td className="border p-1">
-                                      {canEditItems ? (
-                                        <textarea
-                                          className="w-full border rounded px-1 py-1 text-sm"
-                                          rows={2}
-                                          value={decision.comments || ''}
-                                          onChange={(e) =>
-                                            handleItemCommentChange(req.request_id, item.id, e.target.value)
-                                          }
-                                          placeholder="Optional comments"
-                                        />
-                                      ) : (
-                                        <span>{decision.comments || '—'}</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                          {canEditItems && (
-                            <div className="mt-2 flex justify-end">
-                              <Button
-                                variant="secondary"
-                                onClick={() => saveItemDecisions(req.request_id, req.approval_id)}
-                                isLoading={!!savingItems[req.request_id]}
-                              >
-                                Save Item Decisions
-                              </Button>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-sm text-gray-500">No items found for this request.</p>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="mt-4 flex gap-3">
-                    {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
-                      <Button
-                        onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}
-                      >
-                        Assign to Department Requester
-                      </Button>
-                    ) : (
-                      <>
-                        <Button
-                          onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
-                        >
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                  </div>
+            <div className="bg-white border rounded-lg p-4 shadow-sm mb-6">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-search">
+                    Search
+                  </label>
+                  <input
+                    id="approval-search"
+                    type="search"
+                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+                    placeholder="Search by ID, justification, department or section"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </div>
-              );
-            })}
-          </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-type-filter">
+                    Request Type
+                  </label>
+                  <select
+                    id="approval-type-filter"
+                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                  >
+                    <option value="all">All types</option>
+                    {availableRequestTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-urgency-filter">
+                    Urgency
+                  </label>
+                  <select
+                    id="approval-urgency-filter"
+                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+                    value={urgencyFilter}
+                    onChange={(e) => setUrgencyFilter(e.target.value)}
+                  >
+                    <option value="all">All</option>
+                    <option value="urgent">Urgent only</option>
+                    <option value="non-urgent">Non-urgent</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-sort">
+                    Sort by
+                  </label>
+                  <select
+                    id="approval-sort"
+                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value)}
+                  >
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="costHigh">Cost: high to low</option>
+                    <option value="costLow">Cost: low to high</option>
+                  </select>
+                </div>
+              </div>
+
+              {hasActiveFilters && (
+                <div className="flex justify-end mt-4">
+                  <Button variant="secondary" onClick={clearFilters}>
+                    Reset filters
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              {filteredRequests.length === 0 ? (
+                <div className="border rounded-lg p-6 text-center text-gray-500">
+                  <p>No pending approvals match the selected filters.</p>
+                  {hasActiveFilters && (
+                    <button
+                      className="mt-2 text-blue-600 underline text-sm"
+                      onClick={clearFilters}
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              ) : (
+                filteredRequests.map((req) => {
+                  const estimatedCostValue = Number(req.estimated_cost) || 0;
+                  const tag = getCostLabel(estimatedCostValue);
+                  const canEditItems = req.request_type !== 'Warehouse Supply';
+
+                  return (
+                    <div key={req.approval_id} className="border rounded-lg p-4 shadow-sm">
+                      <p>
+                        <strong>Request ID:</strong> {req.request_id}
+                      </p>
+                      <p>
+                        <strong>Type:</strong> {req.request_type}
+                      </p>
+                      <p>
+                        <strong>Justification:</strong> {req.justification}
+                      </p>
+                      <p>
+                        <strong>Department:</strong> {req.department_name || '—'}
+                      </p>
+                      <p>
+                        <strong>Section:</strong> {req.section_name || '—'}
+                      </p>
+                      <p>
+                        <strong>Estimated Cost:</strong> {estimatedCostValue.toLocaleString()} IQD
+                      </p>
+                      <p className={`inline-block mt-1 text-xs text-white px-2 py-1 rounded ${tag.color}`}>
+                        {tag.label}
+                      </p>
+
+                      {req.is_urgent && (
+                        <span className="inline-block ml-2 text-xs text-white px-2 py-1 rounded bg-red-600 font-bold">
+                          Urgent
+                        </span>
+                      )}
+
+                      {req.updated_by && (
+                        <p className="text-sm text-gray-500 mt-2">
+                          Last Updated by <strong>{req.updated_by}</strong> on{' '}
+                          {req.updated_at ? new Date(req.updated_at).toLocaleString('en-GB') : '—'}
+                        </p>
+                      )}
+
+                      <button
+                        className="text-blue-600 underline text-sm mt-2"
+                        onClick={() => toggleExpand(req.request_id)}
+                      >
+                        {expandedId === req.request_id ? 'Hide Items' : 'Show Requested Items'}
+                      </button>
+
+                      {expandedId === req.request_id && (
+                        <div className="mt-3">
+                          {itemsMap[req.request_id]?.length > 0 ? (
+                            <>
+                              <table className="w-full text-sm border">
+                                <thead>
+                                  <tr className="bg-gray-100">
+                                    <th className="border p-1">Item</th>
+                                    <th className="border p-1">Brand</th>
+                                    <th className="border p-1">Specs</th>
+                                    <th className="border p-1">Qty</th>
+                                    <th className="border p-1">Available Qty</th>
+                                    <th className="border p-1">Unit Cost</th>
+                                    <th className="border p-1">Total</th>
+                                    <th className="border p-1">Decision</th>
+                                    <th className="border p-1">Comments</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {itemsMap[req.request_id].map((item) => {
+                                    const decision = itemDecisions[req.request_id]?.[item.id] || {
+                                      status: item.approval_status || 'Pending',
+                                      comments: item.approval_comments || '',
+                                    };
+
+                                    return (
+                                      <tr key={item.id || item.item_name}>
+                                        <td className="border p-1">{item.item_name}</td>
+                                        <td className="border p-1">{item.brand || '—'}</td>
+                                        <td className="border p-1">{item.specs || '—'}</td>
+                                        <td className="border p-1">{item.quantity}</td>
+                                        <td className="border p-1">{item.available_quantity ?? '—'}</td>
+                                        <td className="border p-1">{item.unit_cost}</td>
+                                        <td className="border p-1">{item.total_cost}</td>
+                                        <td className="border p-1">
+                                          {canEditItems ? (
+                                            <select
+                                              className="w-full border rounded px-1 py-1 text-sm"
+                                              value={decision.status || 'Pending'}
+                                              onChange={(e) =>
+                                                handleItemStatusChange(req.request_id, item.id, e.target.value)
+                                              }
+                                            >
+                                              <option value="Pending">Pending</option>
+                                              <option value="Approved">Approved</option>
+                                              <option value="Rejected">Rejected</option>
+                                            </select>
+                                          ) : (
+                                            <span>{decision.status || 'Pending'}</span>
+                                          )}
+                                        </td>
+                                        <td className="border p-1">
+                                          {canEditItems ? (
+                                            <textarea
+                                              className="w-full border rounded px-1 py-1 text-sm"
+                                              rows={2}
+                                              value={decision.comments || ''}
+                                              onChange={(e) =>
+                                                handleItemCommentChange(req.request_id, item.id, e.target.value)
+                                              }
+                                              placeholder="Optional comments"
+                                            />
+                                          ) : (
+                                            <span>{decision.comments || '—'}</span>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                              {canEditItems && (
+                                <div className="mt-2 flex justify-end">
+                                  <Button
+                                    variant="secondary"
+                                    onClick={() => saveItemDecisions(req.request_id, req.approval_id)}
+                                    isLoading={!!savingItems[req.request_id]}
+                                  >
+                                    Save Item Decisions
+                                  </Button>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-sm text-gray-500">No items found for this request.</p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="mt-4 flex gap-3">
+                        {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
+                          <Button
+                            onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}
+                          >
+                            Assign to Department Requester
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </>
         )}
       </div>
 

@@ -67,6 +67,16 @@
     "closeMenu": "Close menu",
     "selectLanguage": "Select language"
   },
+  "pageTitles": {
+    "nonStockRequestForm": "Non-Stock Request Form",
+    "maintenanceRequestForm": "Maintenance Request Form",
+    "requestTypeSelector": "Request Type Selector",
+    "itRequest": "IT Request",
+    "auditRequests": "Audit Requests Page",
+    "myMaintenanceRequests": "My Maintenance Requests",
+    "maintenanceStock": "Maintenance Stock",
+    "custodyApprovals": "Custody Approvals"
+  },
   "language": {
     "english": "English",
     "arabic": "Arabic"
@@ -103,6 +113,509 @@
     "approvalDecision": "Decision",
     "approvalComment": "Comment",
     "approvalDate": "Date"
+  },
+  "nonStockRequestPage": {
+    "loadingUser": "Loading user information...",
+    "loadUserError": "❌ Unable to load user info. Please log in again or contact admin.",
+    "confirmRemoveItem": "Remove this item?",
+    "confirmSubmit": "Submit this non-stock request?",
+    "tooltips": {
+      "stepTwo": "Step 2: Provide details for your non-stock request.",
+      "stepThree": "Step 3: Submit the request for approval."
+    },
+    "alerts": {
+      "justificationRequired": "❌ Justification is required.",
+      "departmentMissing": "❌ Your account is missing department.",
+      "submitFailed": "❌ Failed to submit request."
+    },
+    "errors": {
+      "departmentLimit": "Your department can request up to {{max}} items per submission. Please start a second request for additional needs.",
+      "unsupportedFile": "Unsupported file type ({{ext}}). Allowed: {{allowed}}.",
+      "fileTooLarge": "{{name}} exceeds the {{max}}MB size limit.",
+      "itemNameRequired": "Item name is required.",
+      "quantityRequired": "Quantity must be at least 1.",
+      "intendedUseRequired": "Intended use is needed so approvers understand the requirement.",
+      "specsRequired": "Please include specifications or key requirements."
+    },
+    "fields": {
+      "departmentLabel": "Your Department",
+      "sectionLabel": "Your Section",
+      "sectionFallback": "N/A",
+      "justificationLabel": "Justification",
+      "justificationPlaceholder": "Explain the need for these non-stock items...",
+      "itemsLabel": "Items",
+      "itemsHint": "Provide detailed specs and intended use for faster approvals. Your department can include up to {{max}} line items per request.",
+      "itemNamePlaceholder": "Item Name",
+      "itemNameAria": "Item {{index}} Name",
+      "unitCostPlaceholder": "Unit Cost",
+      "unitCostAria": "Item {{index}} Unit Cost",
+      "brandPlaceholder": "Brand (optional)",
+      "brandAria": "Item {{index}} Brand",
+      "availableQuantityPlaceholder": "Available Qty (optional)",
+      "availableQuantityAria": "Item {{index}} Available Quantity",
+      "quantityAria": "Item {{index}} Quantity",
+      "intendedUsePlaceholder": "Intended Use",
+      "intendedUseAria": "Item {{index}} Intended Use",
+      "specsPlaceholder": "Specs",
+      "specsAria": "Item {{index}} Specs",
+      "itemAttachmentsHint": "Accepted: {{allowed}} • Max {{max}}MB per file",
+      "additionalAttachmentsLabel": "Additional Attachments",
+      "additionalAttachmentsHint": "Accepted: {{allowed}} • Max {{max}}MB per file"
+    },
+    "buttons": {
+      "addItem": "+ Add Another Item",
+      "submit": "Submit Request",
+      "submitting": "Submitting..."
+    }
+  },
+  "maintenanceRequestPage": {
+    "tooltips": {
+      "stepTwo": "Step 2: Provide details for your maintenance request.",
+      "stepThree": "Step 3: Submit the request for approval."
+    },
+    "errors": {
+      "loadDepartments": "Failed to load departments. Please refresh the page.",
+      "loadSections": "Failed to load sections. Please try again.",
+      "addItem": "Add at least one item to request maintenance.",
+      "itemNameMissing": "Item {{number}} is missing a name.",
+      "itemQuantityInvalid": "Item {{number}} must have a quantity greater than zero.",
+      "submitFailed": "❌ Submission failed. Please try again."
+    },
+    "fields": {
+      "referenceAria": "Maintenance Reference Number",
+      "referencePlaceholder": "Maintenance Ref Number",
+      "targetDepartmentAria": "Target Department",
+      "selectDepartment": "Select Target Department",
+      "targetSectionAria": "Target Section",
+      "selectSection": "Select Section",
+      "justificationAria": "Justification",
+      "justificationPlaceholder": "Justification",
+      "requesterNameAria": "Department Requester Name",
+      "requesterNamePlaceholder": "Department Requester Name"
+    },
+    "stock": {
+      "heading": "Available Maintenance Stock",
+      "item": "Item",
+      "quantity": "Qty"
+    },
+    "items": {
+      "heading": "Requested Items",
+      "itemNamePlaceholder": "Item Name",
+      "quantityPlaceholder": "Quantity",
+      "specsPlaceholder": "Specs",
+      "remove": "Remove Item",
+      "add": "+ Add Item",
+      "nameAria": "Item {{index}} Name",
+      "quantityAria": "Item {{index}} Quantity",
+      "specsAria": "Item {{index}} Specs"
+    },
+    "attachments": {
+      "label": "Attachments"
+    },
+    "submit": {
+      "label": "Submit Maintenance Request"
+    }
+  },
+  "itRequestFormPage": {
+    "confirmRemoveItem": "Remove this item?",
+    "errors": {
+      "maxAttachments": "You can upload up to {{count}} attachments.",
+      "attachmentTooLarge": "Each attachment must be {{max}}MB or smaller.",
+      "justificationRequired": "Justification is required.",
+      "departmentMissing": "❌ Your account is missing department.",
+      "invalidItems": "Each item must have a valid name and quantity.",
+      "submitFailed": "❌ Failed to submit request."
+    },
+    "loadingForm": "Loading form...",
+    "loadUserError": "❌ Unable to load user info. Please log in again.",
+    "tooltips": {
+      "formIntro": "Provide justification and detailed specs for the IT items you need."
+    },
+    "overview": {
+      "heading": "Request Overview",
+      "itemsPrepared": "Items prepared",
+      "totalQuantity": "Total quantity",
+      "estimatedCost": "Estimated cost",
+      "costValue": "IQD{{value}}",
+      "priority": "Priority"
+    },
+    "requester": {
+      "heading": "Requester Details",
+      "department": "Your Department",
+      "section": "Your Section",
+      "sectionFallback": "N/A",
+      "priorityLabel": "Priority",
+      "preferredDate": "Preferred Delivery Date",
+      "deploymentLabel": "Deployment Location (optional)",
+      "deploymentPlaceholder": "Specify where the IT items will be used"
+    },
+    "justification": {
+      "heading": "Justification",
+      "label": "Business Justification",
+      "placeholder": "Explain why these IT items are needed...",
+      "characterCount": "{{count}} characters",
+      "additionalContext": "Additional Context (optional)",
+      "additionalPlaceholder": "Share vendor preferences, asset tags to be replaced, or any other notes"
+    },
+    "items": {
+      "heading": "Items",
+      "subtitle": "Provide as much detail as possible for each item.",
+      "itemLabel": "Item {{number}}",
+      "duplicate": "Duplicate",
+      "remove": "Remove",
+      "fields": {
+        "name": "Item Name",
+        "namePlaceholder": "e.g., 14\" Laptop",
+        "quantity": "Quantity",
+        "quantityPlaceholder": "1",
+        "unitCost": "Estimated Unit Cost (IQD)",
+        "unitCostPlaceholder": "e.g., 45000",
+        "specs": "Specs / Notes",
+        "specsPlaceholder": "Processor, RAM, storage, accessories, etc."
+      },
+      "addAnother": "+ Add Another Item"
+    },
+    "attachments": {
+      "heading": "Attachments",
+      "description": "Attach supporting documents such as quotations or screenshots. Accepted up to {{count}} files, {{max}}MB each.",
+      "sizeLabel": "{{size}} MB",
+      "remove": "Remove"
+    },
+    "metadata": {
+      "priority": "Priority: {{value}}",
+      "preferredDelivery": "Preferred Delivery: {{value}}",
+      "deploymentLocation": "Deployment Location: {{value}}",
+      "additionalNotes": "Additional Notes: {{value}}",
+      "separator": "--- Additional Details ---"
+    },
+    "priority": {
+      "options": {
+        "normal": "Normal",
+        "high": "High",
+        "critical": "Critical"
+      }
+    },
+    "submit": {
+      "label": "Submit Request",
+      "submitting": "Submitting..."
+    }
+  },
+  "requestTypeSelector": {
+    "tooltips": {
+      "stepOne": "Step 1: Choose the type of request you want to submit."
+    },
+    "intro": "Explore the available actions below. Your access is based on your assigned role and permissions.",
+    "loading": "Loading your access options...",
+    "errors": {
+      "loadUser": "We could not load your user details. Please retry.",
+      "heading": "Unable to load user information."
+    },
+    "actions": {
+      "retry": "Retry",
+      "stockRequest": {
+        "label": "Stock Request",
+        "aria": "Stock Request"
+      },
+      "newStockItem": {
+        "label": "New Stock Item",
+        "aria": "New Stock Item"
+      },
+      "warehouseTemplates": {
+        "label": "Warehouse Supply Templates",
+        "aria": "Manage Warehouse Supply Templates"
+      },
+      "issueCustody": {
+        "label": "Issue Custody Record",
+        "aria": "Issue custody record to staff or departments"
+      },
+      "submittedSupply": {
+        "label": "Submitted Warehouse Supply Requests",
+        "aria": "View Warehouse Supply Requests"
+      },
+      "warehouseSupply": {
+        "label": "Warehouse Supply Request",
+        "aria": "Warehouse Supply Request"
+      },
+      "nonStock": {
+        "label": "Non-Stock Request",
+        "aria": "Non-Stock Request"
+      },
+      "medicalDevice": {
+        "label": "Medical Device Request",
+        "aria": "Medical Device Request"
+      },
+      "medication": {
+        "label": "Medication Request",
+        "aria": "Medication Request"
+      },
+      "itRequest": {
+        "label": "IT Item Request",
+        "aria": "IT Item Request"
+      },
+      "maintenanceRequest": {
+        "label": "Maintenance Request",
+        "aria": "Maintenance Request"
+      },
+      "maintenanceSupply": {
+        "label": "Maintenance Warehouse Supply Request",
+        "aria": "Maintenance Warehouse Supply Request"
+      },
+      "maintenanceApprovals": {
+        "label": "Maintenance Approvals",
+        "aria": "Maintenance Approvals"
+      },
+      "approvalsPanel": {
+        "label": "Approvals Panel",
+        "aria": "Approvals Panel"
+      },
+      "custodyApprovals": {
+        "label": "Custody Approvals",
+        "aria": "Custody approvals awaiting your action"
+      },
+      "approvalHistory": {
+        "label": "Approval History",
+        "aria": "Approval History"
+      },
+      "registerUser": {
+        "label": "Register New User",
+        "aria": "Register New User"
+      }
+    },
+    "emptyState": "No available actions were found for your role. Please contact an administrator if you believe this is an error.",
+    "groups": {
+      "warehouse": {
+        "title": "Warehouse Operations",
+        "description": "Stock control tasks available to warehouse staff."
+      },
+      "create": {
+        "title": "Create a Request",
+        "description": "Start a new procurement request for your department."
+      },
+      "maintenance": {
+        "title": "Maintenance",
+        "description": "Maintenance submissions and follow-up."
+      },
+      "approvals": {
+        "title": "Approvals & History",
+        "description": "Review and approve pending requests or revisit historical submissions."
+      },
+      "admin": {
+        "title": "Administration",
+        "description": "Tools reserved for administrators."
+      }
+    }
+  },
+  "auditRequestsPage": {
+    "export": {
+      "headers": [
+        "ID",
+        "Type",
+        "Project",
+        "Justification",
+        "Status",
+        "Approval Timestamp"
+      ],
+      "fileName": "Audit_Requests.csv"
+    },
+    "errors": {
+      "loadFailed": "Failed to load audit requests."
+    },
+    "actions": {
+      "resetFilters": "Reset Filters",
+      "exportCsv": "Export CSV"
+    },
+    "stats": {
+      "total": "Total Requests",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by ID, project, justification...",
+      "status": {
+        "all": "All Statuses",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "type": {
+        "all": "All Request Types"
+      },
+      "typeOptions": {
+        "it": "IT Item",
+        "stock": "Stock",
+        "nonStock": "Non-Stock"
+      },
+      "from": "From",
+      "to": "To"
+    },
+    "loading": "Loading...",
+    "emptyState": "No requests found.",
+    "table": {
+      "id": "ID",
+      "type": "Type",
+      "project": "Project",
+      "justification": "Justification",
+      "status": "Status",
+      "timestamp": "Approval Timestamp",
+      "notAvailable": "—"
+    },
+    "statuses": {
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
+  },
+  "myMaintenanceRequestsPage": {
+    "errors": {
+      "loadFailed": "We could not load your maintenance requests. Please try again later."
+    },
+    "intro": "Track the status of your submitted maintenance requests and export them for reporting.",
+    "actions": {
+      "exportCsv": "Export CSV"
+    },
+    "loading": "Loading maintenance requests...",
+    "empty": {
+      "noRequests": "No maintenance requests found.",
+      "prompt": "Submit a new maintenance request to see it listed here."
+    },
+    "summary": {
+      "total": "Total"
+    },
+    "statuses": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected",
+      "submitted": "Submitted",
+      "completed": "Completed"
+    },
+    "export": {
+      "headers": [
+        "ID",
+        "Justification",
+        "Project",
+        "Reference #",
+        "Status",
+        "Submitted At"
+      ],
+      "filePrefix": "My_Maintenance_Requests"
+    },
+    "filters": {
+      "searchLabel": "Search",
+      "searchPlaceholder": "Search justification, project, or reference",
+      "statusLabel": "Status",
+      "statusOptions": {
+        "all": "All"
+      },
+      "from": "From",
+      "to": "To",
+      "sortLabel": "Sort",
+      "sortOptions": {
+        "desc": "Newest first",
+        "asc": "Oldest first"
+      },
+      "reset": "Reset filters"
+    },
+    "table": {
+      "id": "ID",
+      "justification": "Justification",
+      "project": "Project",
+      "reference": "Ref #",
+      "status": "Status",
+      "submitted": "Submitted",
+      "notAvailable": "—"
+    },
+    "pagination": {
+      "rowsPerPage": "Rows per page:",
+      "prev": "Prev",
+      "next": "Next",
+      "pageOf": "Page {{current}} of {{total}}",
+      "showingRange": "Showing {{start}}-{{end}} of {{total}} requests"
+    }
+  },
+  "maintenanceStockPage": {
+    "errors": {
+      "loadFailed": "Failed to load maintenance stock.",
+      "nameRequired": "Item name is required.",
+      "negativeQuantity": "Quantity cannot be negative.",
+      "saveFailed": "Failed to save item."
+    },
+    "confirmSave": "Save changes to this item?",
+    "success": {
+      "saved": "Stock item saved successfully."
+    },
+    "loading": "Loading...",
+    "intro": "Track current maintenance inventory and adjust quantities as needed.",
+    "filters": {
+      "searchPlaceholder": "Search items",
+      "sortName": "Sort A-Z",
+      "sortQuantity": "Sort Qty"
+    },
+    "summary": {
+      "visibleItems": "Visible Items:",
+      "totalQuantity": "Total Quantity:"
+    },
+    "table": {
+      "item": "Item",
+      "quantity": "Quantity",
+      "actions": "Actions"
+    },
+    "emptyState": "No items match your filters.",
+    "warnings": {
+      "lowStock": "Low stock warning"
+    },
+    "actions": {
+      "save": "Save",
+      "add": "Add"
+    },
+    "newItem": {
+      "namePlaceholder": "New item"
+    }
+  },
+  "custodyApprovalsPage": {
+    "errors": {
+      "loadFailed": "Failed to load custody approvals.",
+      "decisionFailed": "Failed to submit decision."
+    },
+    "success": {
+      "decision": "Custody record {{decision}} successfully."
+    },
+    "loading": "Loading custody approvals...",
+    "actions": {
+      "refresh": "Refresh",
+      "approve": "Approve",
+      "reject": "Reject",
+      "approving": "Approving...",
+      "rejecting": "Rejecting..."
+    },
+    "emptyState": "No custody approvals pending your action.",
+    "decisions": {
+      "confirm": {
+        "approved": "approve",
+        "rejected": "reject"
+      },
+      "past": {
+        "approved": "approved",
+        "rejected": "rejected"
+      }
+    },
+    "confirmDecision": "Are you sure you want to {{decision}} custody record #{{id}}?",
+    "roles": {
+      "hod": "Head of Department",
+      "custodian": "Custodian"
+    },
+    "fields": {
+      "custodyType": "Custody Type: {{type}}",
+      "code": "Code: {{code}}",
+      "issuedBy": "Issued by: {{name}}",
+      "unknown": "Unknown",
+      "createdOn": "Created on: {{date}}",
+      "awaitingAction": "Awaiting your action as {{role}}",
+      "quantity": "Quantity:",
+      "department": "Department:",
+      "notSpecified": "Not specified",
+      "custodian": "Custodian:",
+      "departmentCustody": "Department custody",
+      "hod": "HOD:",
+      "notAssigned": "Not assigned"
+    }
   },
   "dashboard": {
     "failedToLoad": "Failed to load dashboard",

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Navbar from '../../components/Navbar';
 import {
   getPendingCustodyApprovals,
@@ -7,6 +8,8 @@ import {
 import { Button } from '../../components/ui/Button';
 
 const CustodyApprovals = () => {
+  const { t } = useTranslation();
+  const tr = (key, options) => t(`custodyApprovalsPage.${key}`, options);
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,7 +24,7 @@ const CustodyApprovals = () => {
       setRecords(data);
     } catch (err) {
       console.error('❌ Failed to fetch custody approvals:', err);
-      setError('Failed to load custody approvals.');
+      setError(tr('errors.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -33,7 +36,7 @@ const CustodyApprovals = () => {
 
   const handleDecision = async (recordId, decision) => {
     const confirmation = window.confirm(
-      `Are you sure you want to ${decision} custody record #${recordId}?`,
+      tr('confirmDecision', { decision: tr(`decisions.confirm.${decision}`), id: recordId })
     );
     if (!confirmation) return;
 
@@ -43,10 +46,13 @@ const CustodyApprovals = () => {
     try {
       await submitCustodyDecision(recordId, decision);
       setRecords((prev) => prev.filter((record) => record.id !== recordId));
-      setBanner({ type: 'success', message: `Custody record ${decision} successfully.` });
+      setBanner({
+        type: 'success',
+        message: tr('success.decision', { decision: tr(`decisions.past.${decision}`) }),
+      });
     } catch (err) {
       console.error('❌ Failed to update custody record:', err);
-      const message = err.response?.data?.message || 'Failed to submit decision.';
+      const message = err.response?.data?.message || tr('errors.decisionFailed');
       setBanner({ type: 'error', message });
     } finally {
       setActionState({ id: null, decision: null });
@@ -55,18 +61,21 @@ const CustodyApprovals = () => {
 
   const renderEmptyState = () => (
     <div className="text-center text-gray-500 py-10 border border-dashed rounded">
-      No custody approvals pending your action.
+      {tr('emptyState')}
     </div>
   );
+
+  const getActingRoleLabel = (role) =>
+    role === 'hod' ? tr('roles.hod') : tr('roles.custodian');
 
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
       <div className="max-w-5xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-semibold">Custody Approvals</h1>
+          <h1 className="text-2xl font-semibold">{t('pageTitles.custodyApprovals')}</h1>
           <Button variant="secondary" onClick={loadRecords} disabled={isLoading}>
-            Refresh
+            {tr('actions.refresh')}
           </Button>
         </div>
 
@@ -85,53 +94,55 @@ const CustodyApprovals = () => {
         {error && <div className="text-red-600 mb-4">{error}</div>}
 
         {isLoading ? (
-          <div className="text-gray-500">Loading custody approvals...</div>
+          <div className="text-gray-500">{tr('loading')}</div>
         ) : records.length === 0 ? (
           renderEmptyState()
         ) : (
           <div className="space-y-4">
             {records.map((record) => {
-              const actingRole = record.pending_role === 'hod' ? 'Head of Department' : 'Custodian';
+              const actingRole = getActingRoleLabel(record.pending_role);
               return (
                 <div key={record.id} className="bg-white shadow rounded-lg p-5 border">
                   <div className="flex flex-wrap justify-between gap-4">
                     <div>
                       <h2 className="text-lg font-semibold">{record.item_name}</h2>
                       <p className="text-sm text-gray-500">
-                        Custody Type: {record.custody_type}
+                        {tr('fields.custodyType', { type: record.custody_type })}
                       </p>
                       {record.custody_code && (
-                        <p className="text-sm text-gray-500">Code: {record.custody_code}</p>
+                        <p className="text-sm text-gray-500">{tr('fields.code', { code: record.custody_code })}</p>
                       )}
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-500">
-                        Issued by: {record.issued_by_name || 'Unknown'}
+                        {tr('fields.issuedBy', { name: record.issued_by_name || tr('fields.unknown') })}
                       </p>
                       <p className="text-sm text-gray-500">
-                        Created on: {new Date(record.created_at).toLocaleString()}
+                        {tr('fields.createdOn', {
+                          date: new Date(record.created_at).toLocaleString(),
+                        })}
                       </p>
                       <p className="text-sm font-medium text-indigo-600">
-                        Awaiting your action as {actingRole}
+                        {tr('fields.awaitingAction', { role: actingRole })}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-sm text-gray-600">
                     <div>
-                      <span className="font-semibold">Quantity:</span> {record.quantity}
+                      <span className="font-semibold">{tr('fields.quantity')}</span> {record.quantity}
                     </div>
                     <div>
-                      <span className="font-semibold">Department:</span>{' '}
-                      {record.custodian_department_name || 'Not specified'}
+                      <span className="font-semibold">{tr('fields.department')}</span>{' '}
+                      {record.custodian_department_name || tr('fields.notSpecified')}
                     </div>
                     <div>
-                      <span className="font-semibold">Custodian:</span>{' '}
-                      {record.custodian_name || 'Department custody'}
+                      <span className="font-semibold">{tr('fields.custodian')}</span>{' '}
+                      {record.custodian_name || tr('fields.departmentCustody')}
                     </div>
                     <div>
-                      <span className="font-semibold">HOD:</span>{' '}
-                      {record.hod_name || 'Not assigned'}
+                      <span className="font-semibold">{tr('fields.hod')}</span>{' '}
+                      {record.hod_name || tr('fields.notAssigned')}
                     </div>
                   </div>
 
@@ -147,8 +158,8 @@ const CustodyApprovals = () => {
                       disabled={actionState.id === record.id}
                     >
                       {actionState.id === record.id && actionState.decision === 'approved'
-                        ? 'Approving...'
-                        : 'Approve'}
+                        ? tr('actions.approving')
+                        : tr('actions.approve')}
                     </Button>
                     <Button
                       variant="destructive"
@@ -156,8 +167,8 @@ const CustodyApprovals = () => {
                       disabled={actionState.id === record.id}
                     >
                       {actionState.id === record.id && actionState.decision === 'rejected'
-                        ? 'Rejecting...'
-                        : 'Reject'}
+                        ? tr('actions.rejecting')
+                        : tr('actions.reject')}
                     </Button>
                   </div>
                 </div>

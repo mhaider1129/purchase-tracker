@@ -1,4 +1,5 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
@@ -11,6 +12,12 @@ const MAX_ATTACHMENTS = 5;
 const MAX_ATTACHMENT_SIZE_MB = 10;
 
 const ITRequestForm = () => {
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, options) => t(`itRequestFormPage.${key}`, options),
+    [t]
+  );
+
   const { user, loading, error } = useCurrentUser();
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
@@ -50,7 +57,7 @@ const ITRequestForm = () => {
   const addItem = () => setItems([...items, getEmptyItem()]);
   const removeItem = (index) => {
     if (items.length === 1) return;
-    if (!window.confirm('Remove this item?')) return;
+    if (!window.confirm(tr('confirmRemoveItem'))) return;
     setItems(items.filter((_, i) => i !== index));
   };
 
@@ -98,13 +105,13 @@ const ITRequestForm = () => {
 
     files.forEach((file) => {
       if (nextAttachments.length >= MAX_ATTACHMENTS) {
-        nextError = `You can upload up to ${MAX_ATTACHMENTS} attachments.`;
+        nextError = tr('errors.maxAttachments', { count: MAX_ATTACHMENTS });
         return;
       }
 
       const sizeInMb = file.size / (1024 * 1024);
       if (sizeInMb > MAX_ATTACHMENT_SIZE_MB) {
-        nextError = `Each attachment must be ${MAX_ATTACHMENT_SIZE_MB}MB or smaller.`;
+        nextError = tr('errors.attachmentTooLarge', { max: MAX_ATTACHMENT_SIZE_MB });
         return;
       }
 
@@ -135,11 +142,11 @@ const ITRequestForm = () => {
     const nextErrors = {};
 
     if (!justification.trim()) {
-      nextErrors.justification = 'Justification is required.';
+      nextErrors.justification = tr('errors.justificationRequired');
     }
 
     if (!user?.department_id) {
-      alert('❌ Your account is missing department.');
+      alert(tr('errors.departmentMissing'));
       return;
     }
 
@@ -147,7 +154,7 @@ const ITRequestForm = () => {
       (item) => !item.item_name.trim() || Number(item.quantity) < 1
     );
     if (hasInvalidItem) {
-      nextErrors.items = 'Each item must have a valid name and quantity.';
+      nextErrors.items = tr('errors.invalidItems');
     }
 
     if (Object.keys(nextErrors).length) {
@@ -159,14 +166,16 @@ const ITRequestForm = () => {
 
     const formData = new FormData();
     formData.append('request_type', 'IT Item');
+    const priorityKey = priority.toLowerCase();
+    const priorityLabel = tr(`priority.options.${priorityKey}`);
     const metadataLines = [
-      `Priority: ${priority}`,
-      preferredDeliveryDate ? `Preferred Delivery: ${preferredDeliveryDate}` : null,
-      deploymentLocation ? `Deployment Location: ${deploymentLocation}` : null,
-      additionalNotes ? `Additional Notes: ${additionalNotes}` : null,
+      tr('metadata.priority', { value: priorityLabel }),
+      preferredDeliveryDate ? tr('metadata.preferredDelivery', { value: preferredDeliveryDate }) : null,
+      deploymentLocation ? tr('metadata.deploymentLocation', { value: deploymentLocation }) : null,
+      additionalNotes ? tr('metadata.additionalNotes', { value: additionalNotes }) : null,
     ].filter(Boolean);
     const composedJustification = metadataLines.length
-      ? `${justification.trim()}\n\n--- Additional Details ---\n${metadataLines.join('\n')}`
+      ? `${justification.trim()}\n\n${tr('metadata.separator')}\n${metadataLines.join('\n')}`
       : justification.trim();
     formData.append('justification', composedJustification);
     formData.append('target_department_id', user.department_id);
@@ -189,7 +198,7 @@ const ITRequestForm = () => {
       navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Submission error:', err);
-      alert(err.response?.data?.message || '❌ Failed to submit request.');
+      alert(err.response?.data?.message || tr('errors.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -199,7 +208,7 @@ const ITRequestForm = () => {
     return (
       <>
         <Navbar />
-        <div className="p-6">Loading form...</div>
+        <div className="p-6">{tr('loadingForm')}</div>
       </>
     );
   }
@@ -208,9 +217,7 @@ const ITRequestForm = () => {
     return (
       <>
         <Navbar />
-        <div className="p-6 text-red-600 text-center">
-          ❌ Unable to load user info. Please log in again.
-        </div>
+        <div className="p-6 text-red-600 text-center">{tr('loadUserError')}</div>
       </>
     );
   }
@@ -220,63 +227,68 @@ const ITRequestForm = () => {
       <Navbar />
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold">IT Item Request Form</h1>
-          <HelpTooltip text="Provide justification and detailed specs for the IT items you need." />
+          <h1 className="text-3xl font-bold">{t('pageTitles.itRequest')}</h1>
+          <HelpTooltip text={tr('tooltips.formIntro')} />
         </div>
 
         <section className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-2 text-blue-800">Request Overview</h2>
+          <h2 className="text-lg font-semibold mb-2 text-blue-800">{tr('overview.heading')}</h2>
           <dl className="grid grid-cols-1 gap-y-2 sm:grid-cols-2 sm:gap-4 text-sm">
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-blue-900">Items prepared</dt>
+              <dt className="text-blue-900">{tr('overview.itemsPrepared')}</dt>
               <dd className="font-semibold text-blue-900">
                 {filledItemCount}/{items.length}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-blue-900">Total quantity</dt>
+              <dt className="text-blue-900">{tr('overview.totalQuantity')}</dt>
               <dd className="font-semibold text-blue-900">{totalQuantity}</dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-blue-900">Estimated cost</dt>
+              <dt className="text-blue-900">{tr('overview.estimatedCost')}</dt>
               <dd className="font-semibold text-blue-900">
-                IQD{estimatedTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {tr('overview.costValue', {
+                  value: estimatedTotalCost.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }),
+                })}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-3">
-              <dt className="text-blue-900">Priority</dt>
-              <dd className="font-semibold text-blue-900">{priority}</dd>
+              <dt className="text-blue-900">{tr('overview.priority')}</dt>
+              <dd className="font-semibold text-blue-900">{tr(`priority.options.${priority.toLowerCase()}`)}</dd>
             </div>
           </dl>
         </section>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">Requester Details</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{tr('requester.heading')}</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block font-semibold mb-1 text-gray-700">Your Department</label>
+                <label className="block font-semibold mb-1 text-gray-700">{tr('requester.department')}</label>
                 <p className="p-2 border rounded bg-gray-100">{user.department_name}</p>
               </div>
               <div>
-                <label className="block font-semibold mb-1 text-gray-700">Your Section</label>
-                <p className="p-2 border rounded bg-gray-100">{user.section_name || 'N/A'}</p>
+                <label className="block font-semibold mb-1 text-gray-700">{tr('requester.section')}</label>
+                <p className="p-2 border rounded bg-gray-100">{user.section_name || tr('requester.sectionFallback')}</p>
               </div>
               <div>
-                <label className="block font-semibold mb-1 text-gray-700">Priority</label>
+                <label className="block font-semibold mb-1 text-gray-700">{tr('requester.priorityLabel')}</label>
                 <select
                   className="w-full p-2 border rounded"
                   value={priority}
                   onChange={(e) => setPriority(e.target.value)}
                   disabled={isSubmitting}
                 >
-                  <option value="Normal">Normal</option>
-                  <option value="High">High</option>
-                  <option value="Critical">Critical</option>
+                  <option value="Normal">{tr('priority.options.normal')}</option>
+                  <option value="High">{tr('priority.options.high')}</option>
+                  <option value="Critical">{tr('priority.options.critical')}</option>
                 </select>
               </div>
               <div>
-                <label className="block font-semibold mb-1 text-gray-700">Preferred Delivery Date</label>
+                <label className="block font-semibold mb-1 text-gray-700">{tr('requester.preferredDate')}</label>
                 <input
                   type="date"
                   className="w-full p-2 border rounded"
@@ -287,11 +299,11 @@ const ITRequestForm = () => {
               </div>
             </div>
             <div>
-              <label className="block font-semibold mb-1 text-gray-700">Deployment Location (optional)</label>
+              <label className="block font-semibold mb-1 text-gray-700">{tr('requester.deploymentLabel')}</label>
               <input
                 type="text"
                 className="w-full p-2 border rounded"
-                placeholder="Specify where the IT items will be used"
+                placeholder={tr('requester.deploymentPlaceholder')}
                 value={deploymentLocation}
                 onChange={(e) => setDeploymentLocation(e.target.value)}
                 disabled={isSubmitting}
@@ -300,10 +312,10 @@ const ITRequestForm = () => {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-800">Justification</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{tr('justification.heading')}</h2>
             <div>
               <label className="block font-semibold mb-1 text-gray-700" htmlFor="justification">
-                Business Justification
+                {tr('justification.label')}
               </label>
               <textarea
                 id="justification"
@@ -313,12 +325,12 @@ const ITRequestForm = () => {
                 rows={4}
                 value={justification}
                 onChange={(e) => setJustification(e.target.value)}
-                placeholder="Explain why these IT items are needed..."
+                placeholder={tr('justification.placeholder')}
                 required
                 disabled={isSubmitting}
               />
               <div className="mt-1 flex justify-between text-sm text-gray-500">
-                <span>{justification.length} characters</span>
+                <span>{tr('justification.characterCount', { count: justification.length })}</span>
                 {formErrors.justification && (
                   <span className="text-red-600">{formErrors.justification}</span>
                 )}
@@ -326,7 +338,7 @@ const ITRequestForm = () => {
             </div>
             <div>
               <label className="block font-semibold mb-1 text-gray-700" htmlFor="additional-notes">
-                Additional Context (optional)
+                {tr('justification.additionalContext')}
               </label>
               <textarea
                 id="additional-notes"
@@ -334,7 +346,7 @@ const ITRequestForm = () => {
                 rows={3}
                 value={additionalNotes}
                 onChange={(e) => setAdditionalNotes(e.target.value)}
-                placeholder="Share vendor preferences, asset tags to be replaced, or any other notes"
+                placeholder={tr('justification.additionalPlaceholder')}
                 disabled={isSubmitting}
               />
             </div>
@@ -349,8 +361,8 @@ const ITRequestForm = () => {
 
           <section className="space-y-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-gray-800">Items</h2>
-              <span className="text-sm text-gray-500">Provide as much detail as possible for each item.</span>
+              <h2 className="text-xl font-semibold text-gray-800">{tr('items.heading')}</h2>
+              <span className="text-sm text-gray-500">{tr('items.subtitle')}</span>
             </div>
             {formErrors.items && (
               <p className="text-sm text-red-600">{formErrors.items}</p>
@@ -363,8 +375,14 @@ const ITRequestForm = () => {
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-gray-600">
-                      <span className="font-semibold text-gray-700">Item {index + 1}</span>
-                      {item.item_name && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{item.item_name}</span>}
+                      <span className="font-semibold text-gray-700">
+                        {tr('items.itemLabel', { number: index + 1 })}
+                      </span>
+                      {item.item_name && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                          {item.item_name}
+                        </span>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -373,7 +391,7 @@ const ITRequestForm = () => {
                         className="text-sm text-blue-600 hover:underline disabled:text-blue-300"
                         disabled={isSubmitting}
                       >
-                        Duplicate
+                        {tr('items.duplicate')}
                       </button>
                       {items.length > 1 && (
                         <button
@@ -382,17 +400,19 @@ const ITRequestForm = () => {
                           className="text-sm text-red-600 hover:underline disabled:text-red-300"
                           disabled={isSubmitting}
                         >
-                          Remove
+                          {tr('items.remove')}
                         </button>
                       )}
                     </div>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
                     <div className="space-y-1">
-                      <label className="block text-sm font-semibold text-gray-700">Item Name</label>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        {tr('items.fields.name')}
+                      </label>
                       <input
                         type="text"
-                        placeholder={'e.g., 14" Laptop'}
+                        placeholder={tr('items.fields.namePlaceholder')}
                         value={item.item_name}
                         onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-300"
@@ -401,11 +421,13 @@ const ITRequestForm = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-sm font-semibold text-gray-700">Quantity</label>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        {tr('items.fields.quantity')}
+                      </label>
                       <input
                         type="number"
                         min={1}
-                        placeholder="1"
+                        placeholder={tr('items.fields.quantityPlaceholder')}
                         value={item.quantity}
                         onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-300"
@@ -414,12 +436,14 @@ const ITRequestForm = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-sm font-semibold text-gray-700">Estimated Unit Cost (IQD)</label>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        {tr('items.fields.unitCost')}
+                      </label>
                       <input
                         type="number"
                         min={0}
                         step="0.01"
-                        placeholder="e.g., 45000"
+                        placeholder={tr('items.fields.unitCostPlaceholder')}
                         value={item.unit_cost}
                         onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-300"
@@ -427,10 +451,12 @@ const ITRequestForm = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="block text-sm font-semibold text-gray-700">Specs / Notes</label>
+                      <label className="block text-sm font-semibold text-gray-700">
+                        {tr('items.fields.specs')}
+                      </label>
                       <input
                         type="text"
-                        placeholder="Processor, RAM, storage, accessories, etc."
+                        placeholder={tr('items.fields.specsPlaceholder')}
                         value={item.specs}
                         onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
                         className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-300"
@@ -448,15 +474,18 @@ const ITRequestForm = () => {
                 className="text-blue-600 font-semibold hover:underline disabled:text-blue-300"
                 disabled={isSubmitting}
               >
-                + Add Another Item
+                {tr('items.addAnother')}
               </button>
             </div>
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-xl font-semibold text-gray-800">Attachments</h2>
+            <h2 className="text-xl font-semibold text-gray-800">{tr('attachments.heading')}</h2>
             <p className="text-sm text-gray-500">
-              Attach supporting documents such as quotations or screenshots. Accepted up to {MAX_ATTACHMENTS} files, {MAX_ATTACHMENT_SIZE_MB}MB each.
+              {tr('attachments.description', {
+                count: MAX_ATTACHMENTS,
+                max: MAX_ATTACHMENT_SIZE_MB,
+              })}
             </p>
             <input
               ref={fileInputRef}
@@ -477,7 +506,9 @@ const ITRequestForm = () => {
                     <div className="flex flex-col">
                       <span className="font-medium text-gray-700">{file.name}</span>
                       <span className="text-xs text-gray-500">
-                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+                        {tr('attachments.sizeLabel', {
+                          size: (file.size / (1024 * 1024)).toFixed(2),
+                        })}
                       </span>
                     </div>
                     <button
@@ -486,7 +517,7 @@ const ITRequestForm = () => {
                       className="text-sm text-red-600 hover:underline disabled:text-red-300"
                       disabled={isSubmitting}
                     >
-                      Remove
+                      {tr('attachments.remove')}
                     </button>
                   </li>
                 ))}
@@ -500,7 +531,7 @@ const ITRequestForm = () => {
               disabled={isSubmitting}
               className={`bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              {isSubmitting ? tr('submit.submitting') : tr('submit.label')}
             </button>
           </div>
         </form>

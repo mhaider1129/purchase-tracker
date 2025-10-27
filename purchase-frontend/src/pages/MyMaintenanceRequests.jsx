@@ -1,10 +1,13 @@
 // src/pages/MyMaintenanceRequests.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 
 const MyMaintenanceRequests = () => {
+  const { t } = useTranslation();
+  const tr = (key, options) => t(`myMaintenanceRequestsPage.${key}`, options);
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,18 +32,20 @@ const MyMaintenanceRequests = () => {
         setRequests(sorted);
       } catch (err) {
         console.error('❌ Failed to fetch maintenance requests:', err);
-        setError('We could not load your maintenance requests. Please try again later.');
+        setError(tr('errors.loadFailed'));
       } finally {
         setLoading(false);
       }
     };
 
     fetchRequests();
-  }, []);
+  }, [tr]);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [itemsPerPage, statusFilter, searchTerm, startDate, endDate, sortDirection]);
+
+  const statusLabels = tr('statuses', { returnObjects: true });
 
   const getStatusBadge = (status = '') => {
     const base = 'px-2 py-1 text-xs font-semibold rounded';
@@ -61,8 +66,9 @@ const MyMaintenanceRequests = () => {
   };
 
   const exportToCSV = () => {
+    const headers = tr('export.headers', { returnObjects: true });
     const csvRows = [
-      ['ID', 'Justification', 'Project', 'Reference #', 'Status', 'Submitted At'],
+      headers,
       ...filteredRequests.map((r) => [
         r.id,
         r.justification,
@@ -75,13 +81,13 @@ const MyMaintenanceRequests = () => {
 
     const csvContent = csvRows.map((row) => row.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, `My_Maintenance_Requests_${new Date().toISOString().split('T')[0]}.csv`);
+    saveAs(blob, `${tr('export.filePrefix')}_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   const filteredRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    const filtered = requests
+    const filteredList = requests
       .filter((request) => {
         if (statusFilter === 'all') return true;
         return request.status?.toLowerCase() === statusFilter.toLowerCase();
@@ -111,7 +117,7 @@ const MyMaintenanceRequests = () => {
         return true;
       });
 
-    const sorted = [...filtered].sort((a, b) => {
+    const sorted = [...filteredList].sort((a, b) => {
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
       if (sortDirection === 'asc') {
@@ -154,16 +160,14 @@ const MyMaintenanceRequests = () => {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">My Maintenance Requests</h1>
-            <p className="text-sm text-gray-600">
-              Track the status of your submitted maintenance requests and export them for reporting.
-            </p>
+            <h1 className="text-2xl font-bold">{t('pageTitles.myMaintenanceRequests')}</h1>
+            <p className="text-sm text-gray-600">{tr('intro')}</p>
           </div>
           <button
             onClick={exportToCSV}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
           >
-            Export CSV
+            {tr('actions.exportCsv')}
           </button>
         </div>
 
@@ -195,38 +199,38 @@ const MyMaintenanceRequests = () => {
                 d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
               ></path>
             </svg>
-            Loading maintenance requests...
+            {tr('loading')}
           </div>
         ) : requests.length === 0 ? (
           <div className="rounded border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-600">
-            <p className="font-medium">No maintenance requests found.</p>
-            <p className="text-sm">Submit a new maintenance request to see it listed here.</p>
+            <p className="font-medium">{tr('empty.noRequests')}</p>
+            <p className="text-sm">{tr('empty.prompt')}</p>
           </div>
         ) : (
           <>
             <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6 mb-6">
               <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-gray-500">Total</p>
+                <p className="text-xs uppercase tracking-wide text-gray-500">{tr('summary.total')}</p>
                 <p className="mt-1 text-2xl font-semibold">{statusSummary.total || 0}</p>
               </div>
               <div className="rounded-lg border border-green-200 bg-green-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-green-700">Approved</p>
+                <p className="text-xs uppercase tracking-wide text-green-700">{statusLabels.approved}</p>
                 <p className="mt-1 text-xl font-semibold text-green-800">{statusSummary.approved || 0}</p>
               </div>
               <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-yellow-700">Pending</p>
+                <p className="text-xs uppercase tracking-wide text-yellow-700">{statusLabels.pending}</p>
                 <p className="mt-1 text-xl font-semibold text-yellow-800">{statusSummary.pending || 0}</p>
               </div>
               <div className="rounded-lg border border-red-200 bg-red-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-red-700">Rejected</p>
+                <p className="text-xs uppercase tracking-wide text-red-700">{statusLabels.rejected}</p>
                 <p className="mt-1 text-xl font-semibold text-red-800">{statusSummary.rejected || 0}</p>
               </div>
               <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-blue-700">Submitted</p>
+                <p className="text-xs uppercase tracking-wide text-blue-700">{statusLabels.submitted}</p>
                 <p className="mt-1 text-xl font-semibold text-blue-800">{statusSummary.submitted || 0}</p>
               </div>
               <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-indigo-700">Completed</p>
+                <p className="text-xs uppercase tracking-wide text-indigo-700">{statusLabels.completed}</p>
                 <p className="mt-1 text-xl font-semibold text-indigo-800">{statusSummary.completed || 0}</p>
               </div>
             </div>
@@ -234,20 +238,20 @@ const MyMaintenanceRequests = () => {
             <div className="mb-6 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-5">
               <div className="md:col-span-2">
                 <label htmlFor="search" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
-                  Search
+                  {tr('filters.searchLabel')}
                 </label>
                 <input
                   id="search"
                   type="text"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search justification, project, or reference"
+                  placeholder={tr('filters.searchPlaceholder')}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
                 />
               </div>
               <div>
                 <label htmlFor="status" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
-                  Status
+                  {tr('filters.statusLabel')}
                 </label>
                 <select
                   id="status"
@@ -255,17 +259,17 @@ const MyMaintenanceRequests = () => {
                   onChange={(event) => setStatusFilter(event.target.value)}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
                 >
-                  <option value="all">All</option>
-                  <option value="pending">Pending</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="approved">Approved</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="all">{tr('filters.statusOptions.all')}</option>
+                  <option value="pending">{statusLabels.pending}</option>
+                  <option value="submitted">{statusLabels.submitted}</option>
+                  <option value="approved">{statusLabels.approved}</option>
+                  <option value="completed">{statusLabels.completed}</option>
+                  <option value="rejected">{statusLabels.rejected}</option>
                 </select>
               </div>
               <div>
                 <label htmlFor="start-date" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
-                  From
+                  {tr('filters.from')}
                 </label>
                 <input
                   id="start-date"
@@ -277,7 +281,7 @@ const MyMaintenanceRequests = () => {
               </div>
               <div>
                 <label htmlFor="end-date" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
-                  To
+                  {tr('filters.to')}
                 </label>
                 <input
                   id="end-date"
@@ -289,7 +293,7 @@ const MyMaintenanceRequests = () => {
               </div>
               <div>
                 <label htmlFor="sort" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
-                  Sort
+                  {tr('filters.sortLabel')}
                 </label>
                 <select
                   id="sort"
@@ -297,8 +301,8 @@ const MyMaintenanceRequests = () => {
                   onChange={(event) => setSortDirection(event.target.value)}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
                 >
-                  <option value="desc">Newest first</option>
-                  <option value="asc">Oldest first</option>
+                  <option value="desc">{tr('filters.sortOptions.desc')}</option>
+                  <option value="asc">{tr('filters.sortOptions.asc')}</option>
                 </select>
               </div>
               <div className="md:col-span-5 flex justify-end">
@@ -306,7 +310,7 @@ const MyMaintenanceRequests = () => {
                   onClick={resetFilters}
                   className="text-sm font-medium text-blue-600 hover:underline"
                 >
-                  Reset filters
+                  {tr('filters.reset')}
                 </button>
               </div>
             </div>
@@ -314,12 +318,12 @@ const MyMaintenanceRequests = () => {
             <table className="w-full border text-sm mb-4">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="border px-3 py-2 text-left">ID</th>
-                  <th className="border px-3 py-2 text-left">Justification</th>
-                  <th className="border px-3 py-2 text-left">Project</th>
-                  <th className="border px-3 py-2 text-left">Ref #</th>
-                  <th className="border px-3 py-2 text-left">Status</th>
-                  <th className="border px-3 py-2 text-left">Submitted</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.id')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.justification')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.project')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.reference')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.status')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.submitted')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -327,10 +331,10 @@ const MyMaintenanceRequests = () => {
                   <tr key={r.id} className="odd:bg-white even:bg-gray-50">
                     <td className="border px-3 py-2">{r.id}</td>
                     <td className="border px-3 py-2">{r.justification}</td>
-                    <td className="border px-3 py-2">{r.project_name || '—'}</td>
+                    <td className="border px-3 py-2">{r.project_name || tr('table.notAvailable')}</td>
                     <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
                     <td className="border px-3 py-2">
-                      <span className={getStatusBadge(r.status)}>{r.status}</span>
+                      <span className={getStatusBadge(r.status)}>{statusLabels[r.status?.toLowerCase()] || r.status}</span>
                     </td>
                     <td className="border px-3 py-2">
                       {new Date(r.created_at).toLocaleString()}
@@ -342,7 +346,7 @@ const MyMaintenanceRequests = () => {
 
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
               <div className="flex items-center gap-2 text-sm">
-                <span>Rows per page:</span>
+                <span>{tr('pagination.rowsPerPage')}</span>
                 <select
                   value={itemsPerPage}
                   onChange={(event) => setItemsPerPage(Number(event.target.value))}
@@ -362,25 +366,27 @@ const MyMaintenanceRequests = () => {
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
                 >
-                  Prev
+                  {tr('pagination.prev')}
                 </button>
                 <span>
-                  Page {currentPage} of {totalPages}
+                  {tr('pagination.pageOf', { current: currentPage, total: totalPages })}
                 </span>
                 <button
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
                 >
-                  Next
+                  {tr('pagination.next')}
                 </button>
               </div>
             </div>
 
             <p className="mt-3 text-xs text-gray-500">
-              Showing {(currentPage - 1) * itemsPerPage + 1} -{' '}
-              {Math.min(currentPage * itemsPerPage, filteredRequests.length)} of {filteredRequests.length}{' '}
-              requests
+              {tr('pagination.showingRange', {
+                start: (currentPage - 1) * itemsPerPage + 1,
+                end: Math.min(currentPage * itemsPerPage, filteredRequests.length),
+                total: filteredRequests.length,
+              })}
             </p>
           </>
         )}

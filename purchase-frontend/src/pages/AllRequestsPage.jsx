@@ -194,63 +194,374 @@ const AllRequestsPage = () => {
       const { request, items, assigned_user, message, print_count } = data;
 
       const win = window.open('', '_blank');
-      const rows = items
+      if (!win) {
+        alert('Please enable popups to print the request.');
+        return;
+      }
+
+      const escapeHtml = (unsafe) => {
+        if (unsafe === null || unsafe === undefined) return '';
+        return String(unsafe)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      };
+
+      const formatValue = (value) => {
+        if (value === null || value === undefined || value === '') return '—';
+        if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+        return escapeHtml(value);
+      };
+
+      const formatDate = (value) => {
+        if (!value) return '—';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString());
+      };
+
+      const formatAmount = (value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return formatValue(value);
+        return escapeHtml(
+          numeric.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })
+        );
+      };
+
+      const now = escapeHtml(new Date().toLocaleString());
+      const requesterName = request.requester_name
+        ? `${request.requester_name}${request.requester_role ? ` (${request.requester_role})` : ''}`
+        : request.temporary_requester_name;
+
+      const detailFields = [
+        { label: 'Request ID', value: request.id },
+        { label: 'Status', value: request.status },
+        { label: 'Request Type', value: request.request_type },
+        { label: 'Request Domain', value: request.request_domain },
+        { label: 'Created On', value: formatDate(request.created_at) },
+        { label: 'Needed By', value: formatDate(request.needed_by) },
+        { label: 'Estimated Cost', value: formatAmount(request.estimated_cost) },
+        { label: 'Maintenance Ref #', value: request.maintenance_ref_number },
+        { label: 'Project', value: request.project_name },
+        { label: 'Department', value: request.department_name },
+        { label: 'Section', value: request.section_name },
+        { label: 'Requester', value: requesterName },
+        {
+          label: 'Assigned To',
+          value: assigned_user
+            ? `${assigned_user.name}${assigned_user.role ? ` (${assigned_user.role})` : ''}`
+            : null,
+        },
+        { label: 'Print Count', value: print_count },
+        { label: 'Last Updated', value: formatDate(request.updated_at) },
+      ]
+        .map(({ label, value }) => ({ label, value: formatValue(value) }))
+        .filter(({ value }) => value && value !== '—');
+
+      const detailGrid = detailFields
         .map(
-          (item) => `
-              <tr>
-                <td>${item.item_name}</td>
-                <td>${item.brand || ''}</td>
-                <td>${item.quantity || ''}</td>
-                <td>${item.unit_cost || ''}</td>
-                <td>${item.total_cost || ''}</td>
-              </tr>`
+          ({ label, value }) => `
+            <div class="detail-item">
+              <span class="detail-label">${escapeHtml(label)}</span>
+              <span class="detail-value">${value}</span>
+            </div>`
         )
         .join('');
 
-      win.document.write(`
-        <html>
+      const totalCost = items.reduce((sum, item) => {
+        const value = Number(item.total_cost);
+        return Number.isFinite(value) ? sum + value : sum;
+      }, 0);
+
+      const itemRows = items
+        .map((item, index) => {
+          const specsNote = item.specs ? `<div class="item-note"><strong>Specs:</strong> ${formatValue(item.specs)}</div>` : '';
+          const approvalNote =
+            item.approval_status || item.approval_comments
+              ? `<div class="item-note"><strong>Approval:</strong> ${formatValue(item.approval_status)}${
+                  item.approval_comments ? ` – ${formatValue(item.approval_comments)}` : ''
+                }</div>`
+              : '';
+
+          return `
+            <tr>
+              <td>${index + 1}</td>
+              <td>
+                <div class="item-name">${formatValue(item.item_name)}</div>
+                ${specsNote || approvalNote ? `<div class="item-notes">${specsNote}${approvalNote}</div>` : ''}
+              </td>
+              <td>${formatValue(item.brand)}</td>
+              <td class="numeric">${formatValue(item.quantity)}</td>
+              <td class="numeric">${formatValue(item.purchased_quantity)}</td>
+              <td class="numeric">${formatAmount(item.unit_cost)}</td>
+              <td class="numeric">${formatAmount(item.total_cost)}</td>
+            </tr>`;
+        })
+        .join('');
+
+      const justification = request.justification
+        ? `<section class="section">
+            <h2>Justification</h2>
+            <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
+          </section>`
+        : '';
+
+      const body = `
+        <!DOCTYPE html>
+        <html lang="en">
           <head>
-            <title>Request ${request.id}</title>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Request ${escapeHtml(request.id)}</title>
             <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              h1 { text-align: center; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-              th { background: #f5f5f5; }
+              :root {
+                color-scheme: light;
+              }
+              @page {
+                size: A4;
+                margin: 20mm;
+              }
+              body {
+                font-family: 'Segoe UI', Arial, sans-serif;
+                color: #1f2937;
+                margin: 0;
+                padding: 32px;
+                background: #f9fafb;
+              }
+              .page {
+                background: #ffffff;
+                border-radius: 12px;
+                padding: 32px;
+                box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+              }
+              header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 24px;
+                border-bottom: 3px solid #2563eb;
+                padding-bottom: 16px;
+                margin-bottom: 24px;
+              }
+              header h1 {
+                margin: 0;
+                font-size: 28px;
+                color: #111827;
+              }
+              header p {
+                margin: 4px 0 0;
+                color: #4b5563;
+              }
+              .print-badge {
+                background: #2563eb;
+                color: #ffffff;
+                padding: 8px 16px;
+                border-radius: 999px;
+                font-weight: 600;
+                font-size: 14px;
+                align-self: center;
+              }
+              .details-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 16px;
+                margin-bottom: 24px;
+              }
+              .detail-item {
+                background: #f3f4f6;
+                border-radius: 10px;
+                padding: 12px 16px;
+                border: 1px solid #e5e7eb;
+              }
+              .detail-label {
+                display: block;
+                font-size: 12px;
+                letter-spacing: 0.06em;
+                color: #6b7280;
+                text-transform: uppercase;
+                margin-bottom: 4px;
+              }
+              .detail-value {
+                font-weight: 600;
+                font-size: 15px;
+                color: #111827;
+                word-break: break-word;
+              }
+              .section {
+                margin-bottom: 24px;
+              }
+              .section h2 {
+                font-size: 18px;
+                margin-bottom: 12px;
+                color: #1d4ed8;
+                border-bottom: 1px solid #c7d2fe;
+                padding-bottom: 6px;
+              }
+              .items-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+                background: #ffffff;
+                overflow: hidden;
+                border-radius: 12px;
+                border: 1px solid #e5e7eb;
+              }
+              .items-table thead {
+                background: linear-gradient(120deg, #1d4ed8, #2563eb);
+                color: #ffffff;
+              }
+              .items-table th,
+              .items-table td {
+                padding: 12px;
+                border-bottom: 1px solid #e5e7eb;
+                vertical-align: top;
+              }
+              .items-table th {
+                font-weight: 600;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+                font-size: 12px;
+              }
+              .items-table tbody tr:nth-child(even) {
+                background: #f9fafb;
+              }
+              .item-name {
+                font-weight: 600;
+                color: #111827;
+              }
+              .item-notes {
+                margin-top: 6px;
+                color: #4b5563;
+                font-size: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+              }
+              .item-note strong {
+                color: #1f2937;
+              }
+              .numeric {
+                text-align: right;
+                white-space: nowrap;
+              }
+              .totals-row td {
+                font-weight: 700;
+                font-size: 15px;
+                color: #111827;
+                background: #eef2ff;
+              }
+              .signature-blocks {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 24px;
+                margin-top: 32px;
+              }
+              .signature {
+                border-top: 1px solid #9ca3af;
+                padding-top: 12px;
+                text-align: center;
+                font-size: 12px;
+                color: #6b7280;
+              }
+              footer {
+                margin-top: 32px;
+                font-size: 12px;
+                color: #6b7280;
+                text-align: right;
+              }
+              @media print {
+                body {
+                  padding: 0;
+                  background: #ffffff;
+                }
+                .page {
+                  box-shadow: none;
+                  border-radius: 0;
+                  padding: 0;
+                }
+                header {
+                  margin-bottom: 16px;
+                }
+                .detail-item {
+                  background: transparent;
+                }
+                .items-table {
+                  border: 1px solid #d1d5db;
+                }
+                .items-table tbody tr:nth-child(even) {
+                  background: #ffffff;
+                }
+              }
             </style>
           </head>
           <body>
-            <h1>Request #${request.id}</h1>
-            <p><strong>Print count:</strong> ${print_count}</p>
-            <p><strong>Type:</strong> ${request.request_type}</p>
-            ${request.project_name ? `<p><strong>Project:</strong> ${request.project_name}</p>` : ''}
-            <p><strong>Justification:</strong> ${request.justification}</p>
-            ${
-              assigned_user
-                ? `<p><strong>Assigned To:</strong> ${assigned_user.name} (${assigned_user.role})</p>`
-                : ''
-            }
-            <table>
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Brand</th>
-                  <th>Qty</th>
-                  <th>Unit Cost</th>
-                  <th>Total Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${rows}
-              </tbody>
-            </table>
+            <div class="page">
+              <header>
+                <div>
+                  <h1>Purchase Request Summary</h1>
+                  <p>Generated on ${now}</p>
+                </div>
+                <span class="print-badge">Print Count: ${formatValue(print_count)}</span>
+              </header>
+
+              <section class="section">
+                <h2>Request Details</h2>
+                <div class="details-grid">
+                  ${detailGrid}
+                </div>
+              </section>
+
+              ${justification}
+
+              <section class="section">
+                <h2>Requested Items</h2>
+                <table class="items-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Item</th>
+                      <th>Brand</th>
+                      <th>Qty</th>
+                      <th>Purchased Qty</th>
+                      <th>Unit Cost</th>
+                      <th>Total Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemRows || '<tr><td colspan="7" style="text-align:center; padding: 24px;">No line items recorded.</td></tr>'}
+                    <tr class="totals-row">
+                      <td colspan="6">Grand Total</td>
+                      <td class="numeric">${formatAmount(totalCost)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+
+              <section class="signature-blocks">
+                <div class="signature">Prepared By</div>
+                <div class="signature">Reviewed By</div>
+                <div class="signature">Approved By</div>
+              </section>
+
+              <footer>
+                Request ID ${escapeHtml(request.id)} • ${now}
+              </footer>
+            </div>
           </body>
         </html>
-      `);
+      `;
 
+      win.document.write(body);
       win.document.close();
-      win.focus();
-      win.print();
+      win.onload = () => {
+        win.focus();
+        win.print();
+      };
+
       alert(message);
     } catch (err) {
       console.error('❌ Failed to print request:', err);

@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 
 const MaintenanceStockPage = () => {
+  const { t } = useTranslation();
+  const tr = (key, options) => t(`maintenanceStockPage.${key}`, options);
   const { user, loading } = useCurrentUser();
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState({ item_name: '', quantity: 0 });
@@ -18,7 +21,7 @@ const MaintenanceStockPage = () => {
       setStatus({ type: 'idle', message: '' });
     } catch (err) {
       console.error('Failed to load maintenance stock:', err);
-      setStatus({ type: 'error', message: 'Failed to load maintenance stock.' });
+      setStatus({ type: 'error', message: tr('errors.loadFailed') });
     }
   };
 
@@ -36,7 +39,7 @@ const MaintenanceStockPage = () => {
 
   const saveItem = async (item) => {
     if (!item.item_name?.trim()) {
-      setStatus({ type: 'error', message: 'Item name is required.' });
+      setStatus({ type: 'error', message: tr('errors.nameRequired') });
       return;
     }
 
@@ -45,11 +48,11 @@ const MaintenanceStockPage = () => {
       : Number(item.quantity);
 
     if (parsedQuantity < 0) {
-      setStatus({ type: 'error', message: 'Quantity cannot be negative.' });
+      setStatus({ type: 'error', message: tr('errors.negativeQuantity') });
       return;
     }
 
-    if (!window.confirm('Save changes to this item?')) return;
+    if (!window.confirm(tr('confirmSave'))) return;
 
     try {
       if (item.id) {
@@ -65,10 +68,10 @@ const MaintenanceStockPage = () => {
         setNewItem({ item_name: '', quantity: 0 });
       }
       fetchStock();
-      setStatus({ type: 'success', message: 'Stock item saved successfully.' });
+      setStatus({ type: 'success', message: tr('success.saved') });
     } catch (err) {
       console.error('Failed to save stock item:', err);
-      setStatus({ type: 'error', message: 'Failed to save item.' });
+      setStatus({ type: 'error', message: tr('errors.saveFailed') });
     }
   };
 
@@ -121,7 +124,7 @@ const MaintenanceStockPage = () => {
     return (
       <>
         <Navbar />
-        <div className="p-6 text-gray-600">Loading...</div>
+        <div className="p-6 text-gray-600">{tr('loading')}</div>
       </>
     );
   }
@@ -135,16 +138,14 @@ const MaintenanceStockPage = () => {
       <div className="max-w-4xl mx-auto p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Maintenance Stock</h1>
-            <p className="text-sm text-gray-600">
-              Track current maintenance inventory and adjust quantities as needed.
-            </p>
+            <h1 className="text-2xl font-bold">{t('pageTitles.maintenanceStock')}</h1>
+            <p className="text-sm text-gray-600">{tr('intro')}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="search"
               className="border rounded px-3 py-2 text-sm"
-              placeholder="Search items"
+              placeholder={tr('filters.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -156,7 +157,7 @@ const MaintenanceStockPage = () => {
                   sortConfig.key === 'item_name' ? 'bg-blue-600 text-white' : 'bg-white'
                 }`}
               >
-                Sort A-Z
+                {tr('filters.sortName')}
               </button>
               <button
                 type="button"
@@ -165,7 +166,7 @@ const MaintenanceStockPage = () => {
                   sortConfig.key === 'quantity' ? 'bg-blue-600 text-white' : 'bg-white'
                 }`}
               >
-                Sort Qty
+                {tr('filters.sortQuantity')}
               </button>
             </div>
           </div>
@@ -185,26 +186,26 @@ const MaintenanceStockPage = () => {
 
         <div className="flex flex-wrap gap-4 text-sm text-gray-700">
           <div className="px-3 py-2 bg-gray-100 rounded">
-            <span className="font-semibold">Visible Items:</span> {totals.items}
+            <span className="font-semibold">{tr('summary.visibleItems')}</span> {totals.items}
           </div>
           <div className="px-3 py-2 bg-gray-100 rounded">
-            <span className="font-semibold">Total Quantity:</span> {totals.totalQuantity}
+            <span className="font-semibold">{tr('summary.totalQuantity')}</span> {totals.totalQuantity}
           </div>
         </div>
 
         <table className="w-full text-sm border rounded overflow-hidden">
           <thead className="bg-gray-100">
             <tr>
-              <th className="border p-2 text-left">Item</th>
-              <th className="border p-2 text-left">Quantity</th>
-              <th className="border p-2 text-left">Actions</th>
+              <th className="border p-2 text-left">{tr('table.item')}</th>
+              <th className="border p-2 text-left">{tr('table.quantity')}</th>
+              <th className="border p-2 text-left">{tr('table.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {visibleItems.length === 0 && (
               <tr>
                 <td colSpan={3} className="border p-4 text-center text-gray-500">
-                  No items match your filters.
+                  {tr('emptyState')}
                 </td>
               </tr>
             )}
@@ -213,7 +214,7 @@ const MaintenanceStockPage = () => {
                 <td className="border p-2 align-top">
                   <div className="font-medium text-gray-900">{it.item_name}</div>
                   {Number(it.quantity) <= 5 && (
-                    <p className="text-xs text-red-600">Low stock warning</p>
+                    <p className="text-xs text-red-600">{tr('warnings.lowStock')}</p>
                   )}
                 </td>
                 <td className="border p-2">
@@ -240,7 +241,7 @@ const MaintenanceStockPage = () => {
                       className="px-3 py-1 bg-blue-600 text-white rounded shadow-sm hover:bg-blue-700"
                       onClick={() => saveItem(it)}
                     >
-                      Save
+                      {tr('actions.save')}
                     </button>
                   )}
                 </td>
@@ -251,7 +252,7 @@ const MaintenanceStockPage = () => {
                 <td className="border p-2">
                   <input
                     className="w-full p-1 border rounded"
-                    placeholder="New item"
+                    placeholder={tr('newItem.namePlaceholder')}
                     value={newItem.item_name}
                     onChange={(e) =>
                       setNewItem({ ...newItem, item_name: e.target.value })
@@ -277,7 +278,7 @@ const MaintenanceStockPage = () => {
                     onClick={() => saveItem(newItem)}
                     disabled={!newItem.item_name?.trim()}
                   >
-                    Add
+                    {tr('actions.add')}
                   </button>
                 </td>
               </tr>

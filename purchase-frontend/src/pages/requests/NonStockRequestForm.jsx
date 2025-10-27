@@ -1,6 +1,7 @@
 // src/pages/requests/NonStockRequestForm.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
 import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
@@ -9,6 +10,12 @@ import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 
 const NonStockRequestForm = () => {
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, options) => t(`nonStockRequestPage.${key}`, options),
+    [t]
+  );
+
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,14 +38,6 @@ const NonStockRequestForm = () => {
   const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
   const MAX_ITEMS_PER_REQUEST = 50;
 
-  useEffect(() => {
-    setItemErrors((prev) => {
-      if (items.length === prev.length) return prev;
-      const next = items.map((_, idx) => prev[idx] || {});
-      return next;
-    });
-  }, [items]);
-
   function getEmptyItem() {
     return {
       item_name: '',
@@ -52,19 +51,49 @@ const NonStockRequestForm = () => {
     };
   }
 
-    const validateFiles = (files) => {
+  useEffect(() => {
+    setItemErrors((prev) => {
+      if (items.length === prev.length) return prev;
+      const next = items.map((_, idx) => prev[idx] || {});
+      return next;
+    });
+  }, [items]);
+
+  const departmentLimitMessage = useMemo(
+    () =>
+      tr('errors.departmentLimit', {
+        max: MAX_ITEMS_PER_REQUEST,
+      }),
+    [tr]
+  );
+
+  useEffect(() => {
+    if (departmentLimitError) {
+      setDepartmentLimitError(departmentLimitMessage);
+    }
+  }, [departmentLimitError, departmentLimitMessage]);
+
+  const validateFiles = (files) => {
     const errors = [];
     const validFiles = [];
+    const allowedList = allowedExtensions.join(', ');
 
     files.forEach((file) => {
       const ext = `.${file.name.split('.').pop()?.toLowerCase() || ''}`;
       if (!allowedExtensions.includes(ext)) {
-        errors.push(`Unsupported file type (${ext}). Allowed: ${allowedExtensions.join(', ')}`);
+        errors.push(
+          tr('errors.unsupportedFile', { ext, allowed: allowedList })
+        );
         return;
       }
 
       if (file.size > MAX_ATTACHMENT_SIZE_BYTES) {
-        errors.push(`${file.name} exceeds the ${MAX_ATTACHMENT_SIZE_MB}MB size limit.`);
+        errors.push(
+          tr('errors.fileTooLarge', {
+            name: file.name,
+            max: MAX_ATTACHMENT_SIZE_MB,
+          })
+        );
         return;
       }
 
@@ -84,7 +113,7 @@ const NonStockRequestForm = () => {
       updated[index][field] = value;
     }
     setItems(updated);
-  
+
     setItemErrors((prev) => {
       const next = [...prev];
       const cleaned = { ...next[index] };
@@ -96,7 +125,7 @@ const NonStockRequestForm = () => {
 
   const handleItemFiles = (index, files) => {
     const incomingFiles = Array.from(files || []);
-    const { validFiles, error } = validateFiles(incomingFiles);
+    const { validFiles, error: attachmentError } = validateFiles(incomingFiles);
 
     const updated = [...items];
     updated[index].attachments = validFiles;
@@ -104,16 +133,14 @@ const NonStockRequestForm = () => {
 
     setItemErrors((prev) => {
       const next = [...prev];
-      next[index] = { ...next[index], attachments: error };
+      next[index] = { ...next[index], attachments: attachmentError };
       return next;
     });
   };
 
   const addItem = () => {
     if (items.length >= MAX_ITEMS_PER_REQUEST) {
-      setDepartmentLimitError(
-        `Your department can request up to ${MAX_ITEMS_PER_REQUEST} items per submission. Please start a second request for additional needs.`
-      );
+      setDepartmentLimitError(departmentLimitMessage);
       return;
     }
     setDepartmentLimitError('');
@@ -122,7 +149,7 @@ const NonStockRequestForm = () => {
 
   const removeItem = (index) => {
     if (items.length === 1) return;
-    if (!window.confirm('Remove this item?')) return;
+    if (!window.confirm(tr('confirmRemoveItem'))) return;
     setItems(items.filter((_, i) => i !== index));
     setItemErrors((prev) => prev.filter((_, i) => i !== index));
   };
@@ -132,21 +159,21 @@ const NonStockRequestForm = () => {
     const nextErrors = items.map((item) => {
       const errs = {};
       if (!item.item_name.trim()) {
-        errs.item_name = 'Item name is required.';
+        errs.item_name = tr('errors.itemNameRequired');
       }
       if (!item.quantity || Number(item.quantity) < 1) {
-        errs.quantity = 'Quantity must be at least 1.';
+        errs.quantity = tr('errors.quantityRequired');
       }
       if (!item.intended_use.trim()) {
-        errs.intended_use = 'Intended use is needed so approvers understand the requirement.';
+        errs.intended_use = tr('errors.intendedUseRequired');
       }
       if (!item.specs.trim()) {
-        errs.specs = 'Please include specifications or key requirements.';
+        errs.specs = tr('errors.specsRequired');
       }
 
-      const { error } = validateFiles(item.attachments || []);
-      if (error) {
-        errs.attachments = error;
+      const { error: attachmentError } = validateFiles(item.attachments || []);
+      if (attachmentError) {
+        errs.attachments = attachmentError;
       }
 
       if (Object.keys(errs).length > 0) {
@@ -159,9 +186,7 @@ const NonStockRequestForm = () => {
     setItemErrors(nextErrors);
 
     if (items.length > MAX_ITEMS_PER_REQUEST) {
-      setDepartmentLimitError(
-        `Your department can request up to ${MAX_ITEMS_PER_REQUEST} items per submission. Please start a second request for additional needs.`
-      );
+      setDepartmentLimitError(departmentLimitMessage);
       hasErrors = true;
     } else {
       setDepartmentLimitError('');
@@ -182,12 +207,12 @@ const NonStockRequestForm = () => {
     e.preventDefault();
 
     if (!justification.trim()) {
-      alert('❌ Justification is required.');
+      alert(tr('alerts.justificationRequired'));
       return;
     }
 
     if (!targetDeptId) {
-      alert('❌ Your account is missing department.');
+      alert(tr('alerts.departmentMissing'));
       return;
     }
 
@@ -212,7 +237,7 @@ const NonStockRequestForm = () => {
       });
     });
 
-    if (!window.confirm('Submit this non-stock request?')) return;
+    if (!window.confirm(tr('confirmSubmit'))) return;
 
     try {
       setIsSubmitting(true);
@@ -225,7 +250,7 @@ const NonStockRequestForm = () => {
       setItemErrors([{}]);
     } catch (err) {
       console.error('❌ Submission error:', err);
-      alert(err.response?.data?.message || '❌ Failed to submit request.');
+      alert(err.response?.data?.message || tr('alerts.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -235,7 +260,7 @@ const NonStockRequestForm = () => {
     return (
       <>
         <Navbar />
-        <div className="p-6 text-gray-600 text-center">Loading user information...</div>
+        <div className="p-6 text-gray-600 text-center">{tr('loadingUser')}</div>
       </>
     );
   }
@@ -244,9 +269,7 @@ const NonStockRequestForm = () => {
     return (
       <>
         <Navbar />
-        <div className="p-6 text-red-600 text-center">
-          ❌ Unable to load user info. Please log in again or contact admin.
-        </div>
+        <div className="p-6 text-red-600 text-center">{tr('loadUserError')}</div>
       </>
     );
   }
@@ -256,32 +279,29 @@ const NonStockRequestForm = () => {
       <Navbar />
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
-          Non-Stock Request Form
-          <HelpTooltip text="Step 2: Provide details for your non-stock request." />
+          {t('pageTitles.nonStockRequestForm')}
+          <HelpTooltip text={tr('tooltips.stepTwo')} />
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Department Display */}
           <div>
-            <label className="block font-semibold mb-1">Your Department</label>
+            <label className="block font-semibold mb-1">{tr('fields.departmentLabel')}</label>
             <p className="p-2 border rounded bg-gray-100">{user.department_name}</p>
           </div>
 
-          {/* Section Display */}
           <div>
-            <label className="block font-semibold mb-1">Your Section</label>
-            <p className="p-2 border rounded bg-gray-100">{user.section_name || 'N/A'}</p>
+            <label className="block font-semibold mb-1">{tr('fields.sectionLabel')}</label>
+            <p className="p-2 border rounded bg-gray-100">{user.section_name || tr('fields.sectionFallback')}</p>
           </div>
 
-          {/* Justification */}
           <div>
-            <label className="block font-semibold mb-1">Justification</label>
+            <label className="block font-semibold mb-1">{tr('fields.justificationLabel')}</label>
             <textarea
               className="w-full p-2 border rounded"
               rows={3}
               value={justification}
               onChange={(e) => setJustification(e.target.value)}
-              placeholder="Explain the need for these non-stock items..."
+              placeholder={tr('fields.justificationPlaceholder')}
               required
               disabled={isSubmitting}
             />
@@ -294,11 +314,10 @@ const NonStockRequestForm = () => {
             user={user}
           />
 
-          {/* Items List */}
           <div>
-            <label className="block font-semibold mb-2">Items</label>
+            <label className="block font-semibold mb-2">{tr('fields.itemsLabel')}</label>
             <p className="text-sm text-gray-500 mb-2">
-              Provide detailed specs and intended use for faster approvals. Your department can include up to {MAX_ITEMS_PER_REQUEST} line items per request.
+              {t('nonStockRequestPage.fields.itemsHint', { max: MAX_ITEMS_PER_REQUEST })}
             </p>
             {departmentLimitError && (
               <p className="text-sm text-red-600 mb-2">{departmentLimitError}</p>
@@ -307,8 +326,8 @@ const NonStockRequestForm = () => {
               <div key={index} className="flex gap-2 mb-2 flex-wrap w-full">
                 <input
                   type="text"
-                  placeholder="Item Name"
-                  aria-label={`Item ${index + 1} Name`}
+                  placeholder={tr('fields.itemNamePlaceholder')}
+                  aria-label={t('nonStockRequestPage.fields.itemNameAria', { index: index + 1 })}
                   value={item.item_name}
                   onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
                   className="flex-1 p-2 border rounded"
@@ -322,8 +341,8 @@ const NonStockRequestForm = () => {
                   type="number"
                   min={0}
                   step="0.01"
-                  placeholder="Unit Cost"
-                  aria-label={`Item ${index + 1} Unit Cost`}
+                  placeholder={tr('fields.unitCostPlaceholder')}
+                  aria-label={t('nonStockRequestPage.fields.unitCostAria', { index: index + 1 })}
                   value={item.unit_cost}
                   onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                   className="w-32 p-2 border rounded"
@@ -332,8 +351,8 @@ const NonStockRequestForm = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Brand (optional)"
-                  aria-label={`Item ${index + 1} Brand`}
+                  placeholder={tr('fields.brandPlaceholder')}
+                  aria-label={t('nonStockRequestPage.fields.brandAria', { index: index + 1 })}
                   value={item.brand}
                   onChange={(e) => handleItemChange(index, 'brand', e.target.value)}
                   className="flex-1 p-2 border rounded"
@@ -342,8 +361,8 @@ const NonStockRequestForm = () => {
                 <input
                   type="number"
                   min={0}
-                  placeholder="Available Qty (optional)"
-                  aria-label={`Item ${index + 1} Available Quantity`}
+                  placeholder={tr('fields.availableQuantityPlaceholder')}
+                  aria-label={t('nonStockRequestPage.fields.availableQuantityAria', { index: index + 1 })}
                   value={item.available_quantity}
                   onChange={(e) =>
                     handleItemChange(index, 'available_quantity', e.target.value)
@@ -354,7 +373,7 @@ const NonStockRequestForm = () => {
                 <input
                   type="number"
                   min={1}
-                  aria-label={`Item ${index + 1} Quantity`}
+                  aria-label={t('nonStockRequestPage.fields.quantityAria', { index: index + 1 })}
                   value={item.quantity}
                   onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
                   className="w-24 p-2 border rounded"
@@ -366,8 +385,8 @@ const NonStockRequestForm = () => {
                 )}
                 <input
                   type="text"
-                  placeholder="Intended Use"
-                  aria-label={`Item ${index + 1} Intended Use`}
+                  placeholder={tr('fields.intendedUsePlaceholder')}
+                  aria-label={t('nonStockRequestPage.fields.intendedUseAria', { index: index + 1 })}
                   value={item.intended_use}
                   onChange={(e) => handleItemChange(index, 'intended_use', e.target.value)}
                   className="flex-1 p-2 border rounded"
@@ -378,8 +397,8 @@ const NonStockRequestForm = () => {
                 )}
                 <input
                   type="text"
-                  placeholder="Specs"
-                  aria-label={`Item ${index + 1} Specs`}
+                  placeholder={tr('fields.specsPlaceholder')}
+                  aria-label={t('nonStockRequestPage.fields.specsAria', { index: index + 1 })}
                   value={item.specs}
                   onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
                   className="flex-1 p-2 border rounded"
@@ -396,7 +415,10 @@ const NonStockRequestForm = () => {
                   disabled={isSubmitting}
                 />
                 <p className="text-xs text-gray-500 w-full">
-                  Accepted: {allowedExtensions.join(', ')} • Max {MAX_ATTACHMENT_SIZE_MB}MB per file
+                  {t('nonStockRequestPage.fields.itemAttachmentsHint', {
+                    allowed: allowedExtensions.join(', '),
+                    max: MAX_ATTACHMENT_SIZE_MB,
+                  })}
                 </p>
                 {itemErrors[index]?.attachments && (
                   <p className="text-sm text-red-600 w-full">{itemErrors[index].attachments}</p>
@@ -419,34 +441,35 @@ const NonStockRequestForm = () => {
               className="text-blue-600 mt-2 font-semibold"
               disabled={isSubmitting}
             >
-              + Add Another Item
+              {tr('buttons.addItem')}
             </button>
           </div>
 
-          {/* Attachments */}
           <div>
-            <label className="block font-semibold mb-1">Additional Attachments</label>
+            <label className="block font-semibold mb-1">{tr('fields.additionalAttachmentsLabel')}</label>
             <input
               type="file"
               multiple
               onChange={(e) => {
                 const incoming = Array.from(e.target.files || []);
-                const { validFiles, error } = validateFiles(incoming);
+                const { validFiles, error: attachmentsError } = validateFiles(incoming);
                 setAttachments(validFiles);
-                setRequestAttachmentsError(error);
+                setRequestAttachmentsError(attachmentsError);
               }}
               className="p-2 border rounded w-full"
               disabled={isSubmitting}
             />
             <p className="text-xs text-gray-500">
-              Accepted: {allowedExtensions.join(', ')} • Max {MAX_ATTACHMENT_SIZE_MB}MB per file
+              {t('nonStockRequestPage.fields.additionalAttachmentsHint', {
+                allowed: allowedExtensions.join(', '),
+                max: MAX_ATTACHMENT_SIZE_MB,
+              })}
             </p>
             {requestAttachmentsError && (
               <p className="text-sm text-red-600">{requestAttachmentsError}</p>
             )}
           </div>
 
-          {/* Submit */}
           <div className="flex justify-end">
             <button
               type="submit"
@@ -455,8 +478,8 @@ const NonStockRequestForm = () => {
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
-              <HelpTooltip text="Step 3: Submit the request for approval." />
+              {isSubmitting ? tr('buttons.submitting') : tr('buttons.submit')}
+              <HelpTooltip text={tr('tooltips.stepThree')} />
             </button>
           </div>
         </form>

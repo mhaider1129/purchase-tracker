@@ -67,6 +67,16 @@
     "closeMenu": "إغلاق القائمة",
     "selectLanguage": "اختر اللغة"
   },
+  "pageTitles": {
+    "nonStockRequestForm": "نموذج طلب غير مخزوني",
+    "maintenanceRequestForm": "نموذج طلب صيانة",
+    "requestTypeSelector": "محدد نوع الطلب",
+    "itRequest": "طلب تقنية المعلومات",
+    "auditRequests": "صفحة طلبات التدقيق",
+    "myMaintenanceRequests": "طلباتي للصيانة",
+    "maintenanceStock": "مخزون الصيانة",
+    "custodyApprovals": "موافقات العهدة"
+  },
   "language": {
     "english": "الإنجليزية",
     "arabic": "العربية"
@@ -103,6 +113,509 @@
     "approvalDecision": "القرار",
     "approvalComment": "التعليق",
     "approvalDate": "التاريخ"
+  },
+  "nonStockRequestPage": {
+    "loadingUser": "جاري تحميل معلومات المستخدم...",
+    "loadUserError": "❌ تعذر تحميل معلومات المستخدم. يرجى تسجيل الدخول مرة أخرى أو التواصل مع المسؤول.",
+    "confirmRemoveItem": "هل تريد إزالة هذا الصنف؟",
+    "confirmSubmit": "هل ترغب في إرسال طلب المواد غير المخزونة؟",
+    "tooltips": {
+      "stepTwo": "الخطوة 2: أدخل تفاصيل طلب المواد غير المخزونة.",
+      "stepThree": "الخطوة 3: أرسل الطلب للموافقة."
+    },
+    "alerts": {
+      "justificationRequired": "❌ يجب إدخال مبرر.",
+      "departmentMissing": "❌ لا يحتوي حسابك على قسم محدد.",
+      "submitFailed": "❌ فشل إرسال الطلب."
+    },
+    "errors": {
+      "departmentLimit": "يمكن لقسمك طلب ما يصل إلى {{max}} صنفًا لكل تقديم. يرجى إنشاء طلب آخر للاحتياجات الإضافية.",
+      "unsupportedFile": "نوع الملف {{ext}} غير مدعوم. الأنواع المسموح بها: {{allowed}}.",
+      "fileTooLarge": "{{name}} يتجاوز الحد الأقصى للحجم البالغ {{max}} م.ب.",
+      "itemNameRequired": "اسم الصنف مطلوب.",
+      "quantityRequired": "يجب أن يكون العدد أكبر من أو يساوي 1.",
+      "intendedUseRequired": "يجب توضيح الاستخدام المقصود حتى يفهم المعتمدون الحاجة.",
+      "specsRequired": "يرجى إدخال المواصفات أو المتطلبات الرئيسية."
+    },
+    "fields": {
+      "departmentLabel": "القسم الخاص بك",
+      "sectionLabel": "الشعبة الخاصة بك",
+      "sectionFallback": "غير متوفر",
+      "justificationLabel": "المبرر",
+      "justificationPlaceholder": "اشرح الحاجة إلى هذه المواد غير المخزونة...",
+      "itemsLabel": "الأصناف",
+      "itemsHint": "قدّم المواصفات والاستخدام المقصود لتسريع الموافقات. يمكن لقسمك تضمين ما يصل إلى {{max}} بندًا في الطلب.",
+      "itemNamePlaceholder": "اسم الصنف",
+      "itemNameAria": "اسم الصنف {{index}}",
+      "unitCostPlaceholder": "التكلفة للوحدة",
+      "unitCostAria": "تكلفة الوحدة للصنف {{index}}",
+      "brandPlaceholder": "العلامة التجارية (اختياري)",
+      "brandAria": "العلامة التجارية للصنف {{index}}",
+      "availableQuantityPlaceholder": "الكمية المتاحة (اختياري)",
+      "availableQuantityAria": "الكمية المتاحة للصنف {{index}}",
+      "quantityAria": "عدد الصنف {{index}}",
+      "intendedUsePlaceholder": "الاستخدام المقصود",
+      "intendedUseAria": "الاستخدام المقصود للصنف {{index}}",
+      "specsPlaceholder": "المواصفات",
+      "specsAria": "مواصفات الصنف {{index}}",
+      "itemAttachmentsHint": "الملفات المسموح بها: {{allowed}} • الحد الأقصى {{max}} م.ب لكل ملف",
+      "additionalAttachmentsLabel": "مرفقات إضافية",
+      "additionalAttachmentsHint": "الملفات المسموح بها: {{allowed}} • الحد الأقصى {{max}} م.ب لكل ملف"
+    },
+    "buttons": {
+      "addItem": "+ إضافة صنف آخر",
+      "submit": "إرسال الطلب",
+      "submitting": "جارٍ الإرسال..."
+    }
+  },
+  "maintenanceRequestPage": {
+    "tooltips": {
+      "stepTwo": "الخطوة 2: أدخل تفاصيل طلب الصيانة.",
+      "stepThree": "الخطوة 3: أرسل الطلب للموافقة."
+    },
+    "errors": {
+      "loadDepartments": "تعذر تحميل الأقسام. يرجى إعادة تحميل الصفحة.",
+      "loadSections": "تعذر تحميل الشعب. حاول مرة أخرى.",
+      "addItem": "أضف صنفًا واحدًا على الأقل لطلب الصيانة.",
+      "itemNameMissing": "الصنف {{number}} لا يحتوي على اسم.",
+      "itemQuantityInvalid": "يجب أن يكون عدد الصنف {{number}} أكبر من صفر.",
+      "submitFailed": "❌ فشل الإرسال. حاول مرة أخرى."
+    },
+    "fields": {
+      "referenceAria": "رقم مرجع الصيانة",
+      "referencePlaceholder": "رقم مرجع الصيانة",
+      "targetDepartmentAria": "القسم المستهدف",
+      "selectDepartment": "اختر القسم المستهدف",
+      "targetSectionAria": "الشعبة المستهدفة",
+      "selectSection": "اختر الشعبة",
+      "justificationAria": "المبرر",
+      "justificationPlaceholder": "المبرر",
+      "requesterNameAria": "اسم مقدم الطلب من القسم",
+      "requesterNamePlaceholder": "اسم مقدم الطلب من القسم"
+    },
+    "stock": {
+      "heading": "المخزون المتاح للصيانة",
+      "item": "الصنف",
+      "quantity": "الكمية"
+    },
+    "items": {
+      "heading": "الأصناف المطلوبة",
+      "itemNamePlaceholder": "اسم الصنف",
+      "quantityPlaceholder": "الكمية",
+      "specsPlaceholder": "المواصفات",
+      "remove": "إزالة الصنف",
+      "add": "+ إضافة صنف",
+      "nameAria": "اسم الصنف {{index}}",
+      "quantityAria": "كمية الصنف {{index}}",
+      "specsAria": "مواصفات الصنف {{index}}"
+    },
+    "attachments": {
+      "label": "المرفقات"
+    },
+    "submit": {
+      "label": "إرسال طلب الصيانة"
+    }
+  },
+  "itRequestFormPage": {
+    "confirmRemoveItem": "هل تريد إزالة هذا الصنف؟",
+    "errors": {
+      "maxAttachments": "يمكنك تحميل ما يصل إلى {{count}} مرفقًا.",
+      "attachmentTooLarge": "يجب ألا يتجاوز كل مرفق {{max}} م.ب.",
+      "justificationRequired": "يجب إدخال المبرر.",
+      "departmentMissing": "❌ لا يحتوي حسابك على قسم محدد.",
+      "invalidItems": "يجب أن يحتوي كل صنف على اسم وعدد صالح.",
+      "submitFailed": "❌ فشل إرسال الطلب."
+    },
+    "loadingForm": "جاري تحميل النموذج...",
+    "loadUserError": "❌ تعذر تحميل معلومات المستخدم. يرجى تسجيل الدخول مرة أخرى.",
+    "tooltips": {
+      "formIntro": "قدّم المبرر والمواصفات التفصيلية للأصناف التقنية المطلوبة."
+    },
+    "overview": {
+      "heading": "نظرة عامة على الطلب",
+      "itemsPrepared": "الأصناف المجهزة",
+      "totalQuantity": "إجمالي الكمية",
+      "estimatedCost": "التكلفة التقديرية",
+      "costValue": "دينار {{value}}",
+      "priority": "الأولوية"
+    },
+    "requester": {
+      "heading": "بيانات مقدم الطلب",
+      "department": "القسم الخاص بك",
+      "section": "الشعبة الخاصة بك",
+      "sectionFallback": "غير متوفر",
+      "priorityLabel": "الأولوية",
+      "preferredDate": "تاريخ التسليم المفضل",
+      "deploymentLabel": "موقع الاستخدام (اختياري)",
+      "deploymentPlaceholder": "حدد مكان استخدام الأصناف التقنية"
+    },
+    "justification": {
+      "heading": "المبرر",
+      "label": "مبرر العمل",
+      "placeholder": "اشرح سبب الحاجة إلى هذه الأصناف التقنية...",
+      "characterCount": "{{count}} حرفًا",
+      "additionalContext": "معلومات إضافية (اختياري)",
+      "additionalPlaceholder": "شارك تفضيلات الموردين أو أرقام الأصول المطلوب استبدالها أو أي ملاحظات أخرى"
+    },
+    "items": {
+      "heading": "الأصناف",
+      "subtitle": "قدّم أكبر قدر ممكن من التفاصيل لكل صنف.",
+      "itemLabel": "الصنف {{number}}",
+      "duplicate": "تكرار",
+      "remove": "إزالة",
+      "fields": {
+        "name": "اسم الصنف",
+        "namePlaceholder": "مثال: حاسوب محمول 14\"",
+        "quantity": "الكمية",
+        "quantityPlaceholder": "1",
+        "unitCost": "التكلفة التقديرية للوحدة (دينار)",
+        "unitCostPlaceholder": "مثال: 45000",
+        "specs": "المواصفات / الملاحظات",
+        "specsPlaceholder": "المعالج، الذاكرة، التخزين، الملحقات، إلخ."
+      },
+      "addAnother": "+ إضافة صنف آخر"
+    },
+    "attachments": {
+      "heading": "المرفقات",
+      "description": "أرفق المستندات الداعمة مثل عروض الأسعار أو لقطات الشاشة. يقبل حتى {{count}} ملفات، كل منها {{max}} م.ب.",
+      "sizeLabel": "{{size}} م.ب",
+      "remove": "إزالة"
+    },
+    "metadata": {
+      "priority": "الأولوية: {{value}}",
+      "preferredDelivery": "التسليم المفضل: {{value}}",
+      "deploymentLocation": "موقع الاستخدام: {{value}}",
+      "additionalNotes": "ملاحظات إضافية: {{value}}",
+      "separator": "--- تفاصيل إضافية ---"
+    },
+    "priority": {
+      "options": {
+        "normal": "عادية",
+        "high": "مرتفعة",
+        "critical": "حرجة"
+      }
+    },
+    "submit": {
+      "label": "إرسال الطلب",
+      "submitting": "جارٍ الإرسال..."
+    }
+  },
+  "requestTypeSelector": {
+    "tooltips": {
+      "stepOne": "الخطوة 1: اختر نوع الطلب الذي ترغب في تقديمه."
+    },
+    "intro": "استعرض الإجراءات المتاحة أدناه. يعتمد وصولك على الدور والصلاحيات المخصصة لك.",
+    "loading": "جاري تحميل خيارات الوصول الخاصة بك...",
+    "errors": {
+      "loadUser": "تعذر تحميل بيانات المستخدم. يرجى إعادة المحاولة.",
+      "heading": "تعذر تحميل معلومات المستخدم."
+    },
+    "actions": {
+      "retry": "إعادة المحاولة",
+      "stockRequest": {
+        "label": "طلب مواد مخزونية",
+        "aria": "طلب مواد مخزونية"
+      },
+      "newStockItem": {
+        "label": "إضافة صنف مخزون جديد",
+        "aria": "إضافة صنف مخزون جديد"
+      },
+      "warehouseTemplates": {
+        "label": "قوالب توريد المستودع",
+        "aria": "إدارة قوالب توريد المستودع"
+      },
+      "issueCustody": {
+        "label": "إصدار عهدة",
+        "aria": "إصدار عهدة للموظفين أو الأقسام"
+      },
+      "submittedSupply": {
+        "label": "طلبات التوريد المرسلة",
+        "aria": "عرض طلبات توريد المستودع"
+      },
+      "warehouseSupply": {
+        "label": "طلب توريد المستودع",
+        "aria": "طلب توريد المستودع"
+      },
+      "nonStock": {
+        "label": "طلب مواد غير مخزونة",
+        "aria": "طلب مواد غير مخزونة"
+      },
+      "medicalDevice": {
+        "label": "طلب أجهزة طبية",
+        "aria": "طلب أجهزة طبية"
+      },
+      "medication": {
+        "label": "طلب أدوية",
+        "aria": "طلب أدوية"
+      },
+      "itRequest": {
+        "label": "طلب أصناف تقنية",
+        "aria": "طلب أصناف تقنية"
+      },
+      "maintenanceRequest": {
+        "label": "طلب صيانة",
+        "aria": "طلب صيانة"
+      },
+      "maintenanceSupply": {
+        "label": "طلب توريد صيانة",
+        "aria": "طلب توريد صيانة"
+      },
+      "maintenanceApprovals": {
+        "label": "موافقات الصيانة",
+        "aria": "موافقات الصيانة"
+      },
+      "approvalsPanel": {
+        "label": "لوحة الموافقات",
+        "aria": "لوحة الموافقات"
+      },
+      "custodyApprovals": {
+        "label": "موافقات العهدة",
+        "aria": "موافقات العهدة بانتظار إجراءك"
+      },
+      "approvalHistory": {
+        "label": "سجل الموافقات",
+        "aria": "سجل الموافقات"
+      },
+      "registerUser": {
+        "label": "تسجيل مستخدم جديد",
+        "aria": "تسجيل مستخدم جديد"
+      }
+    },
+    "emptyState": "لا توجد إجراءات متاحة لدورك. يرجى التواصل مع المسؤول إذا كنت ترى أن هذا خطأ.",
+    "groups": {
+      "warehouse": {
+        "title": "عمليات المستودع",
+        "description": "مهام ضبط المخزون المتاحة لفريق المستودع."
+      },
+      "create": {
+        "title": "إنشاء طلب",
+        "description": "ابدأ طلب شراء جديد لقسمك."
+      },
+      "maintenance": {
+        "title": "الصيانة",
+        "description": "تقديم طلبات الصيانة والمتابعة."
+      },
+      "approvals": {
+        "title": "الموافقات والسجل",
+        "description": "راجع الطلبات المعلقة أو تصفح الطلبات السابقة."
+      },
+      "admin": {
+        "title": "الإدارة",
+        "description": "أدوات مخصصة للمسؤولين."
+      }
+    }
+  },
+  "auditRequestsPage": {
+    "export": {
+      "headers": [
+        "المعرف",
+        "النوع",
+        "المشروع",
+        "المبرر",
+        "الحالة",
+        "وقت الموافقة"
+      ],
+      "fileName": "طلبات_التدقيق.csv"
+    },
+    "errors": {
+      "loadFailed": "تعذر تحميل طلبات التدقيق."
+    },
+    "actions": {
+      "resetFilters": "إعادة تعيين المرشحات",
+      "exportCsv": "تصدير CSV"
+    },
+    "stats": {
+      "total": "إجمالي الطلبات",
+      "approved": "الموافق عليها",
+      "rejected": "المرفوضة"
+    },
+    "filters": {
+      "searchPlaceholder": "ابحث بالمعرف أو المشروع أو المبرر...",
+      "status": {
+        "all": "جميع الحالات",
+        "approved": "موافق عليه",
+        "rejected": "مرفوض"
+      },
+      "type": {
+        "all": "جميع أنواع الطلبات"
+      },
+      "typeOptions": {
+        "it": "مواد تقنية",
+        "stock": "مخزون",
+        "nonStock": "غير مخزون"
+      },
+      "from": "من",
+      "to": "إلى"
+    },
+    "loading": "جاري التحميل...",
+    "emptyState": "لا توجد طلبات.",
+    "table": {
+      "id": "المعرف",
+      "type": "النوع",
+      "project": "المشروع",
+      "justification": "المبرر",
+      "status": "الحالة",
+      "timestamp": "وقت الموافقة",
+      "notAvailable": "—"
+    },
+    "statuses": {
+      "approved": "موافق عليه",
+      "rejected": "مرفوض"
+    }
+  },
+  "myMaintenanceRequestsPage": {
+    "errors": {
+      "loadFailed": "تعذر تحميل طلبات الصيانة الخاصة بك. يرجى المحاولة لاحقًا."
+    },
+    "intro": "تابع حالة طلبات الصيانة المقدمة وقم بتصديرها لأغراض التقارير.",
+    "actions": {
+      "exportCsv": "تصدير CSV"
+    },
+    "loading": "جاري تحميل طلبات الصيانة...",
+    "empty": {
+      "noRequests": "لا توجد طلبات صيانة.",
+      "prompt": "قدّم طلب صيانة جديدًا ليظهر هنا."
+    },
+    "summary": {
+      "total": "الإجمالي"
+    },
+    "statuses": {
+      "approved": "موافق عليه",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض",
+      "submitted": "مُقدَّم",
+      "completed": "مكتمل"
+    },
+    "export": {
+      "headers": [
+        "المعرف",
+        "المبرر",
+        "المشروع",
+        "المرجع",
+        "الحالة",
+        "تاريخ التقديم"
+      ],
+      "filePrefix": "طلبات_الصيانة_الخاصة_بي"
+    },
+    "filters": {
+      "searchLabel": "بحث",
+      "searchPlaceholder": "ابحث بالمبرر أو المشروع أو المرجع",
+      "statusLabel": "الحالة",
+      "statusOptions": {
+        "all": "الكل"
+      },
+      "from": "من",
+      "to": "إلى",
+      "sortLabel": "ترتيب",
+      "sortOptions": {
+        "desc": "الأحدث أولاً",
+        "asc": "الأقدم أولاً"
+      },
+      "reset": "إعادة التعيين"
+    },
+    "table": {
+      "id": "المعرف",
+      "justification": "المبرر",
+      "project": "المشروع",
+      "reference": "المرجع",
+      "status": "الحالة",
+      "submitted": "تاريخ التقديم",
+      "notAvailable": "—"
+    },
+    "pagination": {
+      "rowsPerPage": "عدد الصفوف في الصفحة:",
+      "prev": "السابق",
+      "next": "التالي",
+      "pageOf": "الصفحة {{current}} من {{total}}",
+      "showingRange": "يتم عرض {{start}}-{{end}} من أصل {{total}} طلبًا"
+    }
+  },
+  "maintenanceStockPage": {
+    "errors": {
+      "loadFailed": "تعذر تحميل مخزون الصيانة.",
+      "nameRequired": "اسم الصنف مطلوب.",
+      "negativeQuantity": "لا يمكن أن تكون الكمية سالبة.",
+      "saveFailed": "تعذر حفظ الصنف."
+    },
+    "confirmSave": "هل تريد حفظ التعديلات على هذا الصنف؟",
+    "success": {
+      "saved": "تم حفظ الصنف بنجاح."
+    },
+    "loading": "جاري التحميل...",
+    "intro": "تابع مخزون الصيانة الحالي وعدل الكميات حسب الحاجة.",
+    "filters": {
+      "searchPlaceholder": "ابحث عن الأصناف",
+      "sortName": "ترتيب أبجدي",
+      "sortQuantity": "ترتيب حسب الكمية"
+    },
+    "summary": {
+      "visibleItems": "الأصناف المعروضة:",
+      "totalQuantity": "إجمالي الكمية:"
+    },
+    "table": {
+      "item": "الصنف",
+      "quantity": "الكمية",
+      "actions": "الإجراءات"
+    },
+    "emptyState": "لا توجد أصناف تطابق المرشحات.",
+    "warnings": {
+      "lowStock": "تحذير: مخزون منخفض"
+    },
+    "actions": {
+      "save": "حفظ",
+      "add": "إضافة"
+    },
+    "newItem": {
+      "namePlaceholder": "صنف جديد"
+    }
+  },
+  "custodyApprovalsPage": {
+    "errors": {
+      "loadFailed": "تعذر تحميل طلبات العهدة للموافقة.",
+      "decisionFailed": "تعذر إرسال القرار."
+    },
+    "success": {
+      "decision": "تم {{decision}} سجل العهدة بنجاح."
+    },
+    "loading": "جاري تحميل طلبات العهدة...",
+    "actions": {
+      "refresh": "تحديث",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "approving": "جاري الموافقة...",
+      "rejecting": "جاري الرفض..."
+    },
+    "emptyState": "لا توجد طلبات عهدة بانتظار إجراءك.",
+    "decisions": {
+      "confirm": {
+        "approved": "الموافقة على",
+        "rejected": "رفض"
+      },
+      "past": {
+        "approved": "الموافقة على",
+        "rejected": "رفض"
+      }
+    },
+    "confirmDecision": "هل أنت متأكد أنك تريد {{decision}} سجل العهدة رقم {{id}}؟",
+    "roles": {
+      "hod": "رئيس القسم",
+      "custodian": "أمين العهدة"
+    },
+    "fields": {
+      "custodyType": "نوع العهدة: {{type}}",
+      "code": "الرمز: {{code}}",
+      "issuedBy": "أصدره: {{name}}",
+      "unknown": "غير معروف",
+      "createdOn": "تاريخ الإنشاء: {{date}}",
+      "awaitingAction": "بانتظار إجراءك بصفتك {{role}}",
+      "quantity": "الكمية:",
+      "department": "القسم:",
+      "notSpecified": "غير محدد",
+      "custodian": "المستلم:",
+      "departmentCustody": "عهدة القسم",
+      "hod": "رئيس القسم:",
+      "notAssigned": "غير معين"
+    }
   },
   "dashboard": {
     "failedToLoad": "تعذر تحميل لوحة المعلومات",

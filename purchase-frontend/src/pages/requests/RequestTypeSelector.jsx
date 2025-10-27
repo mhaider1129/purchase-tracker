@@ -1,5 +1,6 @@
 // src/pages/requests/RequestTypeSelector.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import axios from '../../api/axios';
@@ -10,32 +11,33 @@ const BASE_BUTTON_STYLE =
 
 const ACTION_GROUPS = [
   {
-    title: 'Warehouse Operations',
-    description: 'Stock control tasks available to warehouse staff.',
+    titleKey: 'requestTypeSelector.groups.warehouse.title',
+    descriptionKey: 'requestTypeSelector.groups.warehouse.description',
     actions: [
       {
-        label: 'Stock Request',
+        labelKey: 'requestTypeSelector.actions.stockRequest.label',
+        ariaLabelKey: 'requestTypeSelector.actions.stockRequest.aria',
         path: '/requests/stock',
         roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
-        ariaLabel: 'Stock Request',
         buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
       },
       {
-        label: 'New Stock Item',
+        labelKey: 'requestTypeSelector.actions.newStockItem.label',
+        ariaLabelKey: 'requestTypeSelector.actions.newStockItem.aria',
         path: '/requests/stock-item',
         roles: ['warehousemanager', 'warehouse_manager'],
-        ariaLabel: 'New Stock Item',
         buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
       },
       {
-        label: 'Warehouse Supply Templates',
+        labelKey: 'requestTypeSelector.actions.warehouseTemplates.label',
+        ariaLabelKey: 'requestTypeSelector.actions.warehouseTemplates.aria',
         path: '/warehouse-supply-templates',
         roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
-        ariaLabel: 'Manage Warehouse Supply Templates',
         buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
       },
       {
-        label: 'Issue Custody Record',
+        labelKey: 'requestTypeSelector.actions.issueCustody.label',
+        ariaLabelKey: 'requestTypeSelector.actions.issueCustody.aria',
         path: '/custody/issue',
         roles: [
           'warehousemanager',
@@ -45,117 +47,116 @@ const ACTION_GROUPS = [
           'scm',
           'admin',
         ],
-        ariaLabel: 'Issue custody record to staff or departments',
         buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
       },
       {
-        label: 'Submitted Warehouse Supply Requests',
+        labelKey: 'requestTypeSelector.actions.submittedSupply.label',
+        ariaLabelKey: 'requestTypeSelector.actions.submittedSupply.aria',
         path: '/warehouse-supply-requests',
         roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
-        ariaLabel: 'View Warehouse Supply Requests',
         buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
       },
     ],
   },
   {
-    title: 'Create a Request',
-    description: 'Start a new procurement request for your department.',
+    titleKey: 'requestTypeSelector.groups.create.title',
+    descriptionKey: 'requestTypeSelector.groups.create.description',
     actions: [
       {
-        label: 'Warehouse Supply Request',
+        labelKey: 'requestTypeSelector.actions.warehouseSupply.label',
+        ariaLabelKey: 'requestTypeSelector.actions.warehouseSupply.aria',
         path: '/requests/warehouse-supply',
-        ariaLabel: 'Warehouse Supply Request',
         buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
       },
       {
-        label: 'Non-Stock Request',
+        labelKey: 'requestTypeSelector.actions.nonStock.label',
+        ariaLabelKey: 'requestTypeSelector.actions.nonStock.aria',
         path: '/requests/non-stock',
-        ariaLabel: 'Non-Stock Request',
         buttonClassName: 'bg-green-600 hover:bg-green-700 focus:ring-green-400',
       },
       {
-        label: 'Medical Device Request',
+        labelKey: 'requestTypeSelector.actions.medicalDevice.label',
+        ariaLabelKey: 'requestTypeSelector.actions.medicalDevice.aria',
         path: '/requests/medical-device',
-        ariaLabel: 'Medical Device Request',
         buttonClassName: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-400',
       },
       {
-        label: 'Medication Request',
+        labelKey: 'requestTypeSelector.actions.medication.label',
+        ariaLabelKey: 'requestTypeSelector.actions.medication.aria',
         path: '/requests/medication',
-        ariaLabel: 'Medication Request',
         buttonClassName: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-400',
         predicate: ({ can_request_medication }) => Boolean(can_request_medication),
       },
       {
-        label: 'IT Item Request',
+        labelKey: 'requestTypeSelector.actions.itRequest.label',
+        ariaLabelKey: 'requestTypeSelector.actions.itRequest.aria',
         path: '/requests/it-items',
-        ariaLabel: 'IT Item Request',
         buttonClassName: 'bg-teal-600 hover:bg-teal-700 focus:ring-teal-400',
       },
     ],
   },
   {
-    title: 'Maintenance',
-    description: 'Maintenance submissions and follow-up.',
+    titleKey: 'requestTypeSelector.groups.maintenance.title',
+    descriptionKey: 'requestTypeSelector.groups.maintenance.description',
     actions: [
       {
-        label: 'Maintenance Request',
+        labelKey: 'requestTypeSelector.actions.maintenanceRequest.label',
+        ariaLabelKey: 'requestTypeSelector.actions.maintenanceRequest.aria',
         path: '/requests/maintenance',
         roles: ['technician'],
-        ariaLabel: 'Maintenance Request',
         buttonClassName: 'bg-red-600 hover:bg-red-700 focus:ring-red-400',
       },
       {
-        label: 'Maintenance Warehouse Supply Request',
+        labelKey: 'requestTypeSelector.actions.maintenanceSupply.label',
+        ariaLabelKey: 'requestTypeSelector.actions.maintenanceSupply.aria',
         path: '/requests/maintenance-warehouse-supply',
         roles: ['technician'],
-        ariaLabel: 'Maintenance Warehouse Supply Request',
         buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
       },
       {
-        label: 'Maintenance Approvals',
+        labelKey: 'requestTypeSelector.actions.maintenanceApprovals.label',
+        ariaLabelKey: 'requestTypeSelector.actions.maintenanceApprovals.aria',
         path: '/approvals/maintenance',
         roles: ['hod', 'requester', 'cmo', 'coo', 'scm'],
-        ariaLabel: 'Maintenance Approvals',
         buttonClassName: 'bg-orange-700 hover:bg-orange-800 focus:ring-orange-400',
       },
     ],
   },
   {
-    title: 'Approvals & History',
-    description: 'Review and approve pending requests or revisit historical submissions.',
+    titleKey: 'requestTypeSelector.groups.approvals.title',
+    descriptionKey: 'requestTypeSelector.groups.approvals.description',
     actions: [
       {
-        label: 'Approvals Panel',
+        labelKey: 'requestTypeSelector.actions.approvalsPanel.label',
+        ariaLabelKey: 'requestTypeSelector.actions.approvalsPanel.aria',
         path: '/approvals',
         roles: ['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager', 'warehouse_manager'],
-        ariaLabel: 'Approvals Panel',
         buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
       },
       {
-        label: 'Custody Approvals',
+        labelKey: 'requestTypeSelector.actions.custodyApprovals.label',
+        ariaLabelKey: 'requestTypeSelector.actions.custodyApprovals.aria',
         path: '/custody/approvals',
-        ariaLabel: 'Custody approvals awaiting your action',
         buttonClassName: 'bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-300',
       },
       {
-        label: 'Approval History',
+        labelKey: 'requestTypeSelector.actions.approvalHistory.label',
+        ariaLabelKey: 'requestTypeSelector.actions.approvalHistory.aria',
         path: '/approval-history',
         roles: ['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'admin', 'warehousemanager', 'warehouse_manager'],
-        ariaLabel: 'Approval History',
         buttonClassName: 'bg-gray-700 hover:bg-gray-800 focus:ring-gray-400',
       },
     ],
   },
   {
-    title: 'Administration',
-    description: 'Tools reserved for administrators.',
+    titleKey: 'requestTypeSelector.groups.admin.title',
+    descriptionKey: 'requestTypeSelector.groups.admin.description',
     actions: [
       {
-        label: 'Register New User',
+        labelKey: 'requestTypeSelector.actions.registerUser.label',
+        ariaLabelKey: 'requestTypeSelector.actions.registerUser.aria',
         path: '/register',
         roles: ['admin', 'scm'],
-        ariaLabel: 'Register New User',
         buttonClassName: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-300 text-gray-900',
       },
     ],
@@ -163,6 +164,11 @@ const ACTION_GROUPS = [
 ];
 
 const RequestTypeSelector = () => {
+  const { t } = useTranslation();
+  const tr = useCallback(
+    (key, options) => t(`requestTypeSelector.${key}`, options),
+    [t]
+  );
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
     role: '',
@@ -189,11 +195,11 @@ const RequestTypeSelector = () => {
       });
     } catch (err) {
       console.error('❌ Failed to load user info:', err);
-      setError('We could not load your user details. Please retry.');
+      setError(tr('errors.loadUser'));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [tr]);
 
   useEffect(() => {
     let isSubscribed = true;
@@ -236,18 +242,15 @@ const RequestTypeSelector = () => {
       <div className="max-w-3xl mx-auto p-6">
         <header className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-800">
-            Select Request Type
-            <HelpTooltip text="Step 1: Choose the type of request you want to submit." />
+            {t('pageTitles.requestTypeSelector')}
+            <HelpTooltip text={tr('tooltips.stepOne')} />
           </h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Explore the available actions below. Your access is based on your assigned role
-            and permissions.
-          </p>
+          <p className="mt-2 text-sm text-gray-600">{tr('intro')}</p>
         </header>
 
         {isLoading && (
           <div className="text-center text-gray-500" role="status" aria-live="polite">
-            Loading your access options...
+            {tr('loading')}
           </div>
         )}
 
@@ -256,36 +259,35 @@ const RequestTypeSelector = () => {
             className="mb-6 rounded border border-red-200 bg-red-50 p-4 text-sm text-red-700"
             role="alert"
           >
-            <p className="font-semibold">Unable to load user information.</p>
+            <p className="font-semibold">{tr('errors.heading')}</p>
             <p className="mt-1">{error}</p>
             <button
               type="button"
               onClick={fetchUserInfo}
               className="mt-3 inline-flex items-center rounded bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
             >
-              Retry
+              {tr('actions.retry')}
             </button>
           </div>
         )}
 
         {!isLoading && !error && visibleGroups.length === 0 && (
           <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-            No available actions were found for your role. Please contact an administrator if you
-            believe this is an error.
+            {tr('emptyState')}
           </div>
         )}
 
         <div className="space-y-8">
           {visibleGroups.map((group) => (
-            <section key={group.title} aria-labelledby={`${group.title.replace(/\s+/g, '-')}-heading`}>
+            <section key={group.titleKey} aria-labelledby={`${group.titleKey.replace(/\./g, '-')}-heading`}>
               <div className="mb-3 text-left">
                 <h2
-                  id={`${group.title.replace(/\s+/g, '-')}-heading`}
+                  id={`${group.titleKey.replace(/\./g, '-')}-heading`}
                   className="text-lg font-semibold text-gray-800"
                 >
-                  {group.title}
+                  {t(group.titleKey)}
                 </h2>
-                <p className="text-sm text-gray-600">{group.description}</p>
+                <p className="text-sm text-gray-600">{t(group.descriptionKey)}</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {group.actions.map((action) => (
@@ -294,9 +296,9 @@ const RequestTypeSelector = () => {
                     type="button"
                     onClick={() => handleNavigate(action.path)}
                     className={`${BASE_BUTTON_STYLE} ${action.buttonClassName}`}
-                    aria-label={action.ariaLabel}
+                    aria-label={t(action.ariaLabelKey)}
                   >
-                    {action.label}
+                    {t(action.labelKey)}
                   </button>
                 ))}
               </div>
