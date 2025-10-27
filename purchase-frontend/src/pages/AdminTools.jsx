@@ -51,7 +51,7 @@ const AdminTools = () => {
     setLoading(true);
     setMessage('');
     try {
-      const res = await api.post('/admin-tools/reassign-approvals');
+      const res = await api.post('/api/admin-tools/reassign-approvals');
       setMessage(res.data?.message || t('adminTools.reassignmentSuccess'));
       setReassignStats(res.data?.data || null);
     } catch (err) {
@@ -83,7 +83,7 @@ const AdminTools = () => {
     setLoading(true);
     setMessage('');
     try {
-      const res = await api.post('/admin-tools/deactivate-user', {
+      const res = await api.post('/api/admin-tools/deactivate-user', {
         email: deactivateEmail,
       });
       setMessage(res.data?.message || t('adminTools.deactivateUserSuccess'));
@@ -104,7 +104,7 @@ const AdminTools = () => {
     setLogLoading(true);
     setHasFetchedLogs(false);
     try {
-      const res = await api.get('/admin-tools/logs');
+      const res = await api.get('/api/admin-tools/logs');
       const logs = res.data.logs || [];
       setLogs(logs);
       setFilteredLogs(logs);

@@ -12,6 +12,7 @@ const Register = () => {
     role: 'requester',
     department_id: '',
     section_id: '', // 🆕 Added section_id
+    employee_id: '',
   });
 
   const [departments, setDepartments] = useState([]);
@@ -69,7 +70,20 @@ const Register = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await api.post('/auth/register', formData, {
+      const payload = {
+        ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        employee_id: formData.employee_id.trim(),
+      };
+
+      if (!payload.employee_id) {
+        setMessage('❌ Employee ID is required');
+        setLoading(false);
+        return;
+      }
+
+      await api.post('/auth/register', payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -111,6 +125,16 @@ const Register = () => {
             name="email"
             placeholder="Email"
             value={formData.email}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
+          />
+
+          <input
+            type="text"
+            name="employee_id"
+            placeholder="Employee ID"
+            value={formData.employee_id}
             onChange={handleChange}
             className="w-full p-2 border rounded"
             required

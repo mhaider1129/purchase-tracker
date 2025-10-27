@@ -10,6 +10,7 @@ const defaultForm = {
   confirmPassword: '',
   department_id: '',
   section_id: '',
+  employee_id: '',
 };
 
 const RequestAccount = () => {
@@ -68,6 +69,11 @@ const RequestAccount = () => {
       return;
     }
 
+    if (!form.employee_id.trim()) {
+      setMessage({ type: 'error', text: t('requestAccount.employeeIdRequired') });
+      return;
+    }
+
     if (form.password !== form.confirmPassword) {
       setMessage({ type: 'error', text: t('requestAccount.passwordMismatch') });
       return;
@@ -94,6 +100,7 @@ const RequestAccount = () => {
         password: form.password,
         department_id: departmentId,
         section_id: sectionId,
+        employee_id: form.employee_id.trim(),
       });
 
       setMessage({ type: 'success', text: t('requestAccount.successMessage') });
@@ -162,6 +169,20 @@ const RequestAccount = () => {
             type="email"
             name="email"
             value={form.email}
+            onChange={handleChange}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 dark:bg-gray-900"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+            {t('requestAccount.employeeId')}
+          </label>
+          <input
+            type="text"
+            name="employee_id"
+            value={form.employee_id}
             onChange={handleChange}
             className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 dark:bg-gray-900"
             required

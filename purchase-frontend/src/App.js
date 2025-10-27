@@ -17,6 +17,8 @@ import MaintenanceWarehouseSupplyRequestForm from './pages/requests/MaintenanceW
 import MedicationRequestForm from './pages/requests/MedicationRequestForm';
 import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
+import CustodyIssueForm from './pages/custody/CustodyIssueForm';
+import CustodyApprovals from './pages/custody/CustodyApprovals';
 
 import ApprovalsPanel from './pages/ApprovalsPanel';
 import OpenRequestsPage from './pages/OpenRequestsPage';
@@ -92,6 +94,24 @@ function App() {
           path="/requests/maintenance-warehouse-supply"
           element={<ProtectedRoute element={<MaintenanceWarehouseSupplyRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />}
         />
+        <Route
+          path="/custody/issue"
+          element={
+            <ProtectedRoute
+              element={<CustodyIssueForm />}
+              allowedRoles={[
+                'warehouse_keeper',
+                'WarehouseKeeper',
+                'warehousekeeper',
+                'warehousemanager',
+                'WarehouseManager',
+                'SCM',
+                'admin',
+              ]}
+            />
+          }
+        />
+        <Route path="/custody/approvals" element={<ProtectedRoute element={<CustodyApprovals />} />} />
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
         <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
         <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />

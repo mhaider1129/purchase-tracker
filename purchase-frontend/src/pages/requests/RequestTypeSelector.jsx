@@ -35,6 +35,20 @@ const ACTION_GROUPS = [
         buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
       },
       {
+        label: 'Issue Custody Record',
+        path: '/custody/issue',
+        roles: [
+          'warehousemanager',
+          'warehouse_manager',
+          'warehousekeeper',
+          'warehouse_keeper',
+          'scm',
+          'admin',
+        ],
+        ariaLabel: 'Issue custody record to staff or departments',
+        buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
+      },
+      {
         label: 'Submitted Warehouse Supply Requests',
         path: '/warehouse-supply-requests',
         roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
@@ -117,6 +131,12 @@ const ACTION_GROUPS = [
         roles: ['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager', 'warehouse_manager'],
         ariaLabel: 'Approvals Panel',
         buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
+      },
+      {
+        label: 'Custody Approvals',
+        path: '/custody/approvals',
+        ariaLabel: 'Custody approvals awaiting your action',
+        buttonClassName: 'bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-300',
       },
       {
         label: 'Approval History',
