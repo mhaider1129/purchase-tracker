@@ -5,6 +5,19 @@ import { Button } from '../components/ui/Button';
 import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 
+const STATUS_HIGHLIGHTS = {
+  Approved: 'bg-green-50',
+  Rejected: 'bg-red-50',
+  Pending: '',
+};
+
+const FEEDBACK_TEXT_STYLES = {
+  success: 'text-green-600',
+  error: 'text-red-600',
+  warning: 'text-amber-600',
+  info: 'text-slate-600',
+};
+
 const ApprovalsPanel = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +32,8 @@ const ApprovalsPanel = () => {
   const [isUrgent, setIsUrgent] = useState(false);
   const [itemDecisions, setItemDecisions] = useState({});
   const [savingItems, setSavingItems] = useState({});
+  const [itemSummaries, setItemSummaries] = useState({});
+  const [itemFeedback, setItemFeedback] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
@@ -44,6 +59,26 @@ const ApprovalsPanel = () => {
     fetchApprovals();
   }, [fetchApprovals]);
 
+  const getItemSummaryFromItems = useCallback((items) => {
+    const summary = { approved: 0, rejected: 0, pending: 0 };
+    if (!Array.isArray(items)) {
+      return summary;
+    }
+
+    items.forEach((item) => {
+      const normalized = String(item?.approval_status || 'Pending').toLowerCase();
+      if (normalized === 'approved') {
+        summary.approved += 1;
+      } else if (normalized === 'rejected') {
+        summary.rejected += 1;
+      } else {
+        summary.pending += 1;
+      }
+    });
+
+    return summary;
+  }, []);
+
   const toggleExpand = async (requestId) => {
     setExpandedId(expandedId === requestId ? null : requestId);
     if (!itemsMap[requestId]) {
@@ -61,6 +96,10 @@ const ApprovalsPanel = () => {
             };
             return acc;
           }, {}),
+        }));
+        setItemSummaries((prev) => ({
+          ...prev,
+          [requestId]: getItemSummaryFromItems(fetchedItems),
         }));
       } catch (err) {
         console.error('❌ Failed to load items:', err);
@@ -105,7 +144,13 @@ const ApprovalsPanel = () => {
       .filter((item) => !Number.isNaN(item.item_id));
 
     if (payloadItems.length === 0) {
-      alert('Please record at least one item decision before saving.');
+      setItemFeedback((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'warning',
+          message: 'Please record at least one item decision before saving.',
+        },
+      }));
       return;
     }
 
@@ -113,28 +158,31 @@ const ApprovalsPanel = () => {
 
     try {
       const res = await axios.patch(`/api/approvals/${approvalId}/items`, { items: payloadItems });
+      const currentItems = itemsMap[requestId] || [];
+      let mergedItems = currentItems;
 
       if (Array.isArray(res.data?.updatedItems)) {
-        setItemsMap((prev) => {
-          const currentItems = prev[requestId] || [];
-          const updatedItemMap = res.data.updatedItems.reduce((acc, item) => {
-            acc[item.id] = item;
-            return acc;
-          }, {});
+        const updatedItemMap = res.data.updatedItems.reduce((acc, item) => {
+          acc[item.id] = item;
+          return acc;
+        }, {});
 
-          const mergedItems = currentItems.map((item) => {
-            const updated = updatedItemMap[item.id];
-            if (!updated) return item;
-            return {
-              ...item,
-              approval_status: updated.approval_status,
-              approval_comments: updated.approval_comments,
-              approved_at: updated.approved_at,
-            };
-          });
-
-          return { ...prev, [requestId]: mergedItems };
+        mergedItems = currentItems.map((item) => {
+          const updated = updatedItemMap[item.id];
+          if (!updated) return item;
+          return {
+            ...item,
+            approval_status: updated.approval_status,
+            approval_comments: updated.approval_comments,
+            approved_at: updated.approved_at,
+            approved_by: updated.approved_by,
+          };
         });
+
+        setItemsMap((prev) => ({
+          ...prev,
+          [requestId]: mergedItems,
+        }));
 
         setItemDecisions((prev) => {
           const existing = { ...(prev[requestId] || {}) };
@@ -149,15 +197,28 @@ const ApprovalsPanel = () => {
         });
       }
 
-      if (res.data?.summary) {
-        const { approved, rejected, pending } = res.data.summary;
-        alert(`Item decisions saved. Approved: ${approved}, Rejected: ${rejected}, Pending: ${pending}`);
-      } else {
-        alert('Item decisions saved successfully.');
-      }
+      const summary = res.data?.summary || getItemSummaryFromItems(mergedItems);
+      setItemSummaries((prev) => ({
+        ...prev,
+        [requestId]: summary,
+      }));
+
+      setItemFeedback((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'success',
+          message: `Item decisions saved. Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.`,
+        },
+      }));
     } catch (err) {
       console.error('❌ Failed to save item decisions:', err);
-      alert('Failed to save item decisions. Please try again.');
+      setItemFeedback((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'error',
+          message: 'Failed to save item decisions. Please try again.',
+        },
+      }));
     } finally {
       setSavingItems((prev) => ({ ...prev, [requestId]: false }));
     }
@@ -481,6 +542,8 @@ const ApprovalsPanel = () => {
                   const estimatedCostValue = Number(req.estimated_cost) || 0;
                   const tag = getCostLabel(estimatedCostValue);
                   const canEditItems = req.request_type !== 'Warehouse Supply';
+                  const requestSummary = itemSummaries[req.request_id];
+                  const feedback = itemFeedback[req.request_id];
 
                   return (
                     <div key={req.approval_id} className="border rounded-lg p-4 shadow-sm">
@@ -530,6 +593,19 @@ const ApprovalsPanel = () => {
                         <div className="mt-3">
                           {itemsMap[req.request_id]?.length > 0 ? (
                             <>
+                              {requestSummary && (
+                                <div className="mb-3 flex flex-wrap gap-2 text-xs">
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 font-medium text-green-700">
+                                    Approved: {requestSummary.approved}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 font-medium text-red-600">
+                                    Rejected: {requestSummary.rejected}
+                                  </span>
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                                    Pending: {requestSummary.pending}
+                                  </span>
+                                </div>
+                              )}
                               <table className="w-full text-sm border">
                                 <thead>
                                   <tr className="bg-gray-100">
@@ -550,9 +626,13 @@ const ApprovalsPanel = () => {
                                       status: item.approval_status || 'Pending',
                                       comments: item.approval_comments || '',
                                     };
+                                    const normalizedStatus = typeof decision.status === 'string'
+                                      ? `${decision.status.charAt(0).toUpperCase()}${decision.status.slice(1).toLowerCase()}`
+                                      : 'Pending';
+                                    const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || '';
 
                                     return (
-                                      <tr key={item.id || item.item_name}>
+                                      <tr key={item.id || item.item_name} className={`${rowHighlight} border-b last:border-b-0`}>
                                         <td className="border p-1">{item.item_name}</td>
                                         <td className="border p-1">{item.brand || '—'}</td>
                                         <td className="border p-1">{item.specs || '—'}</td>
@@ -607,6 +687,15 @@ const ApprovalsPanel = () => {
                                     Save Item Decisions
                                   </Button>
                                 </div>
+                              )}
+                              {feedback?.message && (
+                                <p
+                                  className={`mt-2 text-sm ${
+                                    FEEDBACK_TEXT_STYLES[feedback.type] || FEEDBACK_TEXT_STYLES.info
+                                  }`}
+                                >
+                                  {feedback.message}
+                                </p>
                               )}
                             </>
                           ) : (
