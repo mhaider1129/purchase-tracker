@@ -12,6 +12,46 @@
     "requestAccessLink": "Request access",
     "copyright": "© {{year}} Warith International Cancer Institute"
   },
+  "register": {
+    "title": "Register New User",
+    "fields": {
+      "fullName": "Full Name",
+      "email": "Email",
+      "employeeId": "Employee ID",
+      "password": "Password",
+      "selectDepartment": "-- Select Department --",
+      "selectSectionOptional": "-- Select Section (optional) --"
+    },
+    "actions": {
+      "showPassword": "Show Password",
+      "register": "Register",
+      "registering": "Registering..."
+    },
+    "alerts": {
+      "loginRequired": "🔒 You must be logged in to access this page.",
+      "accessDenied": "⛔ Access denied. Only SCM or Procurement Supervisor can register users.",
+      "invalidToken": "❌ Invalid token. Please login again.",
+      "success": "✅ User registered successfully!"
+    },
+    "messages": {
+      "employeeIdRequired": "❌ Employee ID is required.",
+      "userExists": "❌ User already exists.",
+      "genericError": "❌ Failed to register user."
+    },
+    "roles": {
+      "requester": "Requester",
+      "hod": "HOD",
+      "cmo": "CMO",
+      "coo": "COO",
+      "cfo": "CFO",
+      "ceo": "CEO",
+      "cpo": "CPO",
+      "procurementSupervisor": "Procurement Supervisor",
+      "procurementSpecialist": "Procurement Specialist",
+      "warehouseManager": "Warehouse Manager",
+      "warehouseKeeper": "Warehouse Keeper"
+    }
+  },
   "requestAccount": {
     "title": "Request Access",
     "subtitle": "Fill in your details and the Supply Chain Manager will review your request.",

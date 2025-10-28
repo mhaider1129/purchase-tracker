@@ -38,6 +38,10 @@ const ApprovalsPanel = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
   const [sortOption, setSortOption] = useState('newest');
+  const [attachmentsMap, setAttachmentsMap] = useState({});
+  const [attachmentLoadingMap, setAttachmentLoadingMap] = useState({});
+  const [attachmentErrorMap, setAttachmentErrorMap] = useState({});
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
 
   const { user } = useCurrentUser();
   const canMarkUrgent = ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role);
@@ -58,6 +62,26 @@ const ApprovalsPanel = () => {
   useEffect(() => {
     fetchApprovals();
   }, [fetchApprovals]);
+
+  const fetchAttachmentsForRequest = useCallback(async (requestId) => {
+    setAttachmentLoadingMap((prev) => ({ ...prev, [requestId]: true }));
+    setAttachmentErrorMap((prev) => ({ ...prev, [requestId]: null }));
+
+    try {
+      const res = await axios.get(`/api/attachments/${requestId}`);
+      const attachments = Array.isArray(res.data) ? res.data : [];
+      setAttachmentsMap((prev) => ({ ...prev, [requestId]: attachments }));
+    } catch (err) {
+      console.error(`❌ Failed to fetch attachments for request ${requestId}:`, err);
+      setAttachmentErrorMap((prev) => ({
+        ...prev,
+        [requestId]: 'Failed to load attachments.',
+      }));
+      setAttachmentsMap((prev) => ({ ...prev, [requestId]: [] }));
+    } finally {
+      setAttachmentLoadingMap((prev) => ({ ...prev, [requestId]: false }));
+    }
+  }, []);
 
   const getItemSummaryFromItems = useCallback((items) => {
     const summary = { approved: 0, rejected: 0, pending: 0 };
@@ -80,7 +104,13 @@ const ApprovalsPanel = () => {
   }, []);
 
   const toggleExpand = async (requestId) => {
-    setExpandedId(expandedId === requestId ? null : requestId);
+    const isSameRequest = expandedId === requestId;
+    const nextExpandedId = isSameRequest ? null : requestId;
+    setExpandedId(nextExpandedId);
+
+    if (isSameRequest) {
+      return;
+    }
     if (!itemsMap[requestId]) {
       try {
         const res = await axios.get(`/api/requests/${requestId}/items`);
@@ -105,6 +135,13 @@ const ApprovalsPanel = () => {
         console.error('❌ Failed to load items:', err);
       }
     }
+
+    if (
+      !Object.prototype.hasOwnProperty.call(attachmentsMap, requestId) ||
+      attachmentErrorMap[requestId]
+    ) {
+      fetchAttachmentsForRequest(requestId);
+    }
   };
 
   const handleItemStatusChange = (requestId, itemId, status) => {
@@ -120,6 +157,42 @@ const ApprovalsPanel = () => {
     }));
   };
 
+  const handleDownloadAttachment = useCallback(async (attachment) => {
+    const storedPath = attachment?.file_path || '';
+    const filename = storedPath.split(/[\\/]/).pop();
+    const downloadEndpoint =
+      attachment?.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
+
+    if (!downloadEndpoint) {
+      alert('Attachment file is missing.');
+      return;
+    }
+
+    setDownloadingAttachmentId(attachment.id);
+    try {
+      const response = await axios.get(downloadEndpoint, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/octet-stream',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = attachment.file_name || filename || 'attachment';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error(`❌ Error downloading attachment ${attachment?.id}:`, err);
+      alert('Failed to download attachment. Please try again.');
+    } finally {
+      setDownloadingAttachmentId(null);
+    }
+  }, []);
+
   const handleItemCommentChange = (requestId, itemId, commentsValue) => {
     setItemDecisions((prev) => ({
       ...prev,
@@ -132,7 +205,6 @@ const ApprovalsPanel = () => {
       },
     }));
   };
-
   const saveItemDecisions = async (requestId, approvalId) => {
     const decisionsForRequest = itemDecisions[requestId] || {};
     const payloadItems = Object.entries(decisionsForRequest)
@@ -544,6 +616,9 @@ const ApprovalsPanel = () => {
                   const canEditItems = req.request_type !== 'Warehouse Supply';
                   const requestSummary = itemSummaries[req.request_id];
                   const feedback = itemFeedback[req.request_id];
+                  const attachments = attachmentsMap[req.request_id] || [];
+                  const attachmentsLoading = attachmentLoadingMap[req.request_id];
+                  const attachmentsError = attachmentErrorMap[req.request_id];
 
                   return (
                     <div key={req.approval_id} className="border rounded-lg p-4 shadow-sm">
@@ -591,6 +666,46 @@ const ApprovalsPanel = () => {
 
                       {expandedId === req.request_id && (
                         <div className="mt-3">
+                          <div className="mb-4">
+                            <h4 className="font-semibold text-sm text-slate-800">Attachments</h4>
+                            {attachmentsLoading ? (
+                              <p className="text-sm text-gray-500 mt-1">Loading attachments...</p>
+                            ) : attachmentsError ? (
+                              <p className="text-sm text-red-600 mt-1">{attachmentsError}</p>
+                            ) : attachments.length === 0 ? (
+                              <p className="text-sm text-gray-500 mt-1">No attachments uploaded.</p>
+                            ) : (
+                              <ul className="mt-1 space-y-1 text-sm text-slate-700">
+                                {attachments.map((att) => {
+                                  const filename = att.file_name || (att.file_path || '').split(/[\\/]/).pop();
+                                  const viewUrl = att.file_url || null;
+                                  return (
+                                    <li key={att.id} className="flex flex-wrap items-center gap-3">
+                                      <span className="break-all">{filename}</span>
+                                      {viewUrl && (
+                                        <a
+                                          href={viewUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-blue-600 underline hover:text-blue-800"
+                                        >
+                                          View
+                                        </a>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDownloadAttachment(att)}
+                                        className="text-blue-600 underline hover:text-blue-800 disabled:opacity-50"
+                                        disabled={downloadingAttachmentId === att.id}
+                                      >
+                                        {downloadingAttachmentId === att.id ? 'Downloading…' : 'Download'}
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+                          </div>
                           {itemsMap[req.request_id]?.length > 0 ? (
                             <>
                               {requestSummary && (

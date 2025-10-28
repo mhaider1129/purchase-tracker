@@ -12,6 +12,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [purchasedQty, setPurchasedQty] = useState(
     item.purchased_quantity ?? item.quantity ?? ''
   );
+  const [attachments, setAttachments] = useState([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
+  const [attachmentsError, setAttachmentsError] = useState('');
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
+  const itemId = item?.id;
 
   const updatedAt = item.procurement_updated_at
     ? new Date(item.procurement_updated_at).toLocaleString()
@@ -44,10 +49,81 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     setComment(item.procurement_comment || '');
   }, [item.procurement_status, item.procurement_comment]);
 
+  useEffect(() => {
+    const fetchItemAttachments = async () => {
+      if (!itemId) {
+        setAttachments([]);
+        return;
+      }
+
+      setLoadingAttachments(true);
+      setAttachmentsError('');
+
+      try {
+        const res = await axios.get(`/api/attachments/item/${itemId}`);
+        setAttachments(res.data || []);
+      } catch (err) {
+        console.error(`❌ Error fetching attachments for item ${itemId}:`, err);
+        setAttachments([]);
+        setAttachmentsError('Failed to load attachments.');
+      } finally {
+        setLoadingAttachments(false);
+      }
+    };
+
+    fetchItemAttachments();
+  }, [itemId]);
+
+  const handleDownloadAttachment = async (attachment) => {
+    const filename = attachment.file_path?.split(/[/\\]/).pop();
+    if (!filename) {
+      alert('Attachment file is missing.');
+      return;
+    }
+
+    setDownloadingAttachmentId(attachment.id);
+
+    try {
+      const response = await axios.get(
+        `/api/attachments/download/${encodeURIComponent(filename)}`,
+        {
+          responseType: 'blob',
+        }
+      );
+
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'] || 'application/octet-stream',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = attachment.file_name || filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error(`❌ Error downloading attachment ${attachment.id}:`, err);
+      alert('Failed to download attachment. Please try again.');
+    } finally {
+      setDownloadingAttachmentId(null);
+    }
+  };
+
   const totalCost = useMemo(() => {
-    const qty = Number(purchasedQty || 0);
-    const cost = Number(unitCost || 0);
-    if (Number.isNaN(qty) || Number.isNaN(cost)) return 0;
+    const hasUnitCost = unitCost !== '' && unitCost !== null && unitCost !== undefined;
+    const qty = Number(purchasedQty ?? 0);
+    if (Number.isNaN(qty)) return null;
+
+    if (!hasUnitCost) {
+      return null;
+    }
+
+    const cost = Number(unitCost);
+    if (Number.isNaN(cost)) {
+      return null;
+    }
+
     return Number((qty * cost).toFixed(2));
   }, [purchasedQty, unitCost]);
 
@@ -77,10 +153,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       return;
     }
 
-    const numericUnitCost = Number(unitCost);
+    const hasUnitCost = unitCost !== '' && unitCost !== null && unitCost !== undefined;
+    const numericUnitCost = hasUnitCost ? Number(unitCost) : null;
     const numericQty = Number(purchasedQty);
 
-    if (Number.isNaN(numericUnitCost) || numericUnitCost < 0) {
+    if (hasUnitCost && (Number.isNaN(numericUnitCost) || numericUnitCost < 0)) {
       setMessage({ type: 'error', text: 'Enter a valid unit cost (zero or above).' });
       return;
     }
@@ -91,11 +168,6 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     }
 
     if (status === 'purchased') {
-      if (numericUnitCost <= 0) {
-        setMessage({ type: 'error', text: 'Purchased items require a unit cost greater than zero.' });
-        return;
-      }
-
       if (numericQty <= 0) {
         setMessage({ type: 'error', text: 'Purchased items require a purchased quantity greater than zero.' });
         return;
@@ -106,9 +178,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     setMessage(null);
 
     try {
-      await axios.put(`/api/requested-items/${item.id}/cost`, {
-        unit_cost: numericUnitCost,
-      });
+      if (hasUnitCost) {
+        await axios.put(`/api/requested-items/${item.id}/cost`, {
+          unit_cost: numericUnitCost,
+        });
+      }
 
       await axios.put(`/api/requested-items/${item.id}/purchased-quantity`, {
         purchased_quantity: numericQty,
@@ -215,7 +289,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
       <div className="mt-3 text-sm text-gray-600">
         <span className="font-medium">Line Total:</span>{' '}
-        {Number.isNaN(totalCost)
+        {totalCost === null
           ? '—'
           : totalCost.toLocaleString(undefined, {
               minimumFractionDigits: 2,
@@ -248,6 +322,37 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           Last updated by {updaterName || 'Unknown'} at {updatedAt || 'Unknown time'}
         </div>
       )}
+
+      <div className="mt-4">
+        <h4 className="text-sm font-semibold text-gray-700">Item Attachments</h4>
+        {loadingAttachments ? (
+          <p className="text-xs text-gray-500">Loading attachments...</p>
+        ) : attachmentsError ? (
+          <p className="text-xs text-red-600">{attachmentsError}</p>
+        ) : attachments.length === 0 ? (
+          <p className="text-xs text-gray-500">No attachments uploaded for this item.</p>
+        ) : (
+          <ul className="mt-2 space-y-1 text-sm">
+            {attachments.map((attachment) => {
+              const filename = attachment.file_path?.split(/[\\/]/).pop();
+              return (
+                <li key={attachment.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadAttachment(attachment)}
+                    className="underline text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                    disabled={downloadingAttachmentId === attachment.id}
+                  >
+                    {downloadingAttachmentId === attachment.id
+                      ? 'Downloading…'
+                      : attachment.file_name || filename || 'Attachment'}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };

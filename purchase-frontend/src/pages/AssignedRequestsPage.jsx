@@ -237,8 +237,8 @@ const AssignedRequestsPage = () => {
     const rawValue = requestCosts[requestId];
     const cost = Number(rawValue);
 
-    if (Number.isNaN(cost) || cost < 0) {
-      alert('Enter valid total cost.');
+    if (Number.isNaN(cost) || cost <= 0) {
+      alert('Enter a total cost greater than zero.');
       return;
     }
 
@@ -333,10 +333,18 @@ const AssignedRequestsPage = () => {
     }
   };
 
-  const canMarkCurrentRequestComplete = useMemo(() => {
-    if (!items.length) return false;
+  const completionState = useMemo(() => {
+    if (!items.length || expandedRequestId === null) {
+      return { canComplete: false, missingCost: items.length > 0, incompleteItems: true };
+    }
 
-    return items.every((item) => {
+    const currentRequest = requests.find((req) => req.id === expandedRequestId);
+    const savedCost = currentRequest?.estimated_cost;
+    const numericSavedCost =
+      savedCost !== undefined && savedCost !== null ? Number(savedCost) : NaN;
+    const hasRecordedCost = !Number.isNaN(numericSavedCost) && numericSavedCost > 0;
+
+    const itemsComplete = items.every((item) => {
       const status = (item.procurement_status || '').toLowerCase();
       const qty = item.purchased_quantity;
 
@@ -354,7 +362,13 @@ const AssignedRequestsPage = () => {
 
       return false;
     });
-  }, [items]);
+
+    return {
+      canComplete: hasRecordedCost && itemsComplete,
+      missingCost: !hasRecordedCost,
+      incompleteItems: !itemsComplete,
+    };
+  }, [expandedRequestId, items, requests]);
   
   return (
     <>
@@ -561,18 +575,25 @@ const AssignedRequestsPage = () => {
                       <button
                         onClick={() => handleMarkAsCompleted(request.id)}
                         className={`px-4 py-2 rounded text-white transition ${
-                          canMarkCurrentRequestComplete
+                          completionState.canComplete
                             ? 'bg-green-600 hover:bg-green-700'
                             : 'bg-gray-300 cursor-not-allowed'
                         }`}
-                        disabled={!canMarkCurrentRequestComplete}
+                        disabled={!completionState.canComplete}
                       >
                         Mark Request as Completed
                       </button>
-                      {!canMarkCurrentRequestComplete && items.length > 0 && (
-                        <p className="mt-2 text-xs text-rose-600">
-                          All items must be marked as purchased or unable to procure with recorded quantities before completing the request.
-                        </p>
+                      {!completionState.canComplete && items.length > 0 && (
+                        <div className="mt-2 text-xs text-rose-600 space-y-1">
+                          {completionState.missingCost && (
+                            <p>Record and save the total cost of this request before completing it.</p>
+                          )}
+                          {completionState.incompleteItems && (
+                            <p>
+                              All items must be marked as purchased or unable to procure with recorded quantities before completing the request.
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

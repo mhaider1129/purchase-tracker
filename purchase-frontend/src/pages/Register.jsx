@@ -1,10 +1,12 @@
 // src/pages/Register.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 
 const Register = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,7 +27,7 @@ const Register = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('🔒 You must be logged in to access this page.');
+      alert(t('register.alerts.loginRequired'));
       return navigate('/login');
     }
 
@@ -33,11 +35,11 @@ const Register = () => {
       const decoded = JSON.parse(atob(token.split('.')[1]));
       const allowedRoles = ['SCM', 'ProcurementSupervisor'];
       if (!allowedRoles.includes(decoded.role)) {
-        alert('⛔ Access denied. Only SCM or ProcurementSupervisor can register users.');
+        alert(t('register.alerts.accessDenied'));
         return navigate('/');
       }
     } catch (err) {
-      alert('❌ Invalid token. Please login again.');
+      alert(t('register.alerts.invalidToken'));
       localStorage.removeItem('token');
       return navigate('/login');
     }
@@ -78,7 +80,7 @@ const Register = () => {
       };
 
       if (!payload.employee_id) {
-        setMessage('❌ Employee ID is required');
+        setMessage(t('register.messages.employeeIdRequired'));
         setLoading(false);
         return;
       }
@@ -87,14 +89,14 @@ const Register = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      alert('✅ User registered successfully!');
+      alert(t('register.alerts.success'));
       navigate('/admin/users'); // Optional: Adjust destination
     } catch (err) {
       console.error('❌ Registration error:', err);
       if (err.response?.status === 409) {
-        setMessage('❌ User already exists');
+        setMessage(t('register.messages.userExists'));
       } else {
-        setMessage('❌ Failed to register user');
+        setMessage(t('register.messages.genericError'));
       }
     } finally {
       setLoading(false);
@@ -105,7 +107,7 @@ const Register = () => {
     <>
       <Navbar />
       <div className="max-w-md mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Register New User</h1>
+        <h1 className="text-2xl font-bold mb-4">{t('register.title')}</h1>
 
         {message && <p className="mb-4 text-sm text-red-600">{message}</p>}
 
@@ -113,7 +115,7 @@ const Register = () => {
           <input
             type="text"
             name="name"
-            placeholder="Full Name"
+            placeholder={t('register.fields.fullName')}
             value={formData.name}
             onChange={handleChange}
             className="w-full p-2 border rounded"
@@ -123,7 +125,7 @@ const Register = () => {
           <input
             type="email"
             name="email"
-            placeholder="Email"
+            placeholder={t('register.fields.email')}
             value={formData.email}
             onChange={handleChange}
             className="w-full p-2 border rounded"
@@ -133,7 +135,7 @@ const Register = () => {
           <input
             type="text"
             name="employee_id"
-            placeholder="Employee ID"
+            placeholder={t('register.fields.employeeId')}
             value={formData.employee_id}
             onChange={handleChange}
             className="w-full p-2 border rounded"
@@ -144,7 +146,7 @@ const Register = () => {
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
-              placeholder="Password"
+              placeholder={t('register.fields.password')}
               value={formData.password}
               onChange={handleChange}
               className="w-full p-2 border rounded"
@@ -157,7 +159,7 @@ const Register = () => {
                 checked={showPassword}
                 onChange={() => setShowPassword(!showPassword)}
               />
-              Show Password
+              {t('register.actions.showPassword')}
             </label>
           </div>
 
@@ -168,17 +170,17 @@ const Register = () => {
             className="w-full p-2 border rounded"
             required
           >
-            <option value="requester">Requester</option>
-            <option value="HOD">HOD</option>
-            <option value="CMO">CMO</option>
-            <option value="COO">COO</option>
-            <option value="CFO">CFO</option>
-            <option value="CEO">CEO</option>
-            <option value="CPO">CPO</option>
-            <option value="ProcurementSupervisor">ProcurementSupervisor</option>
-            <option value="Procurement Specialist">Procurement Specialist</option>
-            <option value="WarehouseManager">Warehouse Manager</option>
-            <option value="warehouse_keeper">Warehouse Keeper</option>
+            <option value="requester">{t('register.roles.requester')}</option>
+            <option value="HOD">{t('register.roles.hod')}</option>
+            <option value="CMO">{t('register.roles.cmo')}</option>
+            <option value="COO">{t('register.roles.coo')}</option>
+            <option value="CFO">{t('register.roles.cfo')}</option>
+            <option value="CEO">{t('register.roles.ceo')}</option>
+            <option value="CPO">{t('register.roles.cpo')}</option>
+            <option value="ProcurementSupervisor">{t('register.roles.procurementSupervisor')}</option>
+            <option value="Procurement Specialist">{t('register.roles.procurementSpecialist')}</option>
+            <option value="WarehouseManager">{t('register.roles.warehouseManager')}</option>
+            <option value="warehouse_keeper">{t('register.roles.warehouseKeeper')}</option>
           </select>
 
           {/* Department Selector */}
@@ -195,7 +197,7 @@ const Register = () => {
             className="w-full p-2 border rounded"
             required
           >
-            <option value="">-- Select Department --</option>
+            <option value="">{t('register.fields.selectDepartment')}</option>
             {departments.map((dep) => (
               <option key={dep.id} value={dep.id}>
                 {dep.name}
@@ -215,7 +217,7 @@ const Register = () => {
                 onChange={handleChange}
                 className="w-full p-2 border rounded"
               >
-                <option value="">-- Select Section (optional) --</option>
+                <option value="">{t('register.fields.selectSectionOptional')}</option>
                 {selectedDep.sections.map((section) => (
                   <option key={section.id} value={section.id}>
                     {section.name}
@@ -232,7 +234,7 @@ const Register = () => {
               loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? t('register.actions.registering') : t('register.actions.register')}
           </button>
         </form>
       </div>
