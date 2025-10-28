@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ChangePassword from './ChangePassword';
 import '../i18n';
 
@@ -14,8 +15,20 @@ describe('ChangePassword page', () => {
     mockedChangePassword.mockReset();
   });
 
+  const renderPage = () => render(
+    <MemoryRouter>
+      <ChangePassword />
+    </MemoryRouter>,
+  );
+
+  it('provides a navigation link back to the main page', () => {
+    renderPage();
+
+    expect(screen.getByRole('link', { name: /return to main page/i })).toBeInTheDocument();
+  });
+
   it('shows validation message when form is submitted empty', async () => {
-    render(<ChangePassword />);
+    renderPage();
 
     const submitButton = screen.getByRole('button', { name: /update password/i });
     fireEvent.click(submitButton);
@@ -26,7 +39,7 @@ describe('ChangePassword page', () => {
 
   it('submits valid payload and shows success message', async () => {
     mockedChangePassword.mockResolvedValue({ message: 'Password updated successfully' });
-    render(<ChangePassword />);
+    renderPage();
 
     fireEvent.change(screen.getByLabelText(/current password/i), { target: { value: 'oldPassword123' } });
     fireEvent.change(screen.getByLabelText(/new password/i), { target: { value: 'newPassword123' } });

@@ -130,6 +130,7 @@
     "saving": "Updating...",
     "success": "Password updated successfully.",
     "error": "Unable to update password. Please try again.",
+    "backToHome": "Return to main page",
     "requirements": "Passwords must be at least 8 characters and different from your current password.",
     "validation": {
       "required": "All password fields are required.",
@@ -138,6 +139,7 @@
     }
   },
   "common": {
+    "language": "Language",
     "loading": "Loading...",
     "prev": "Prev",
     "next": "Next",

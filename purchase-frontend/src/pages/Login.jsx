@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const Login = () => {
   const { t } = useTranslation();
@@ -65,7 +66,8 @@ const Login = () => {
 
   return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 to-white dark:from-gray-800 dark:to-gray-900 px-4">
-        <form
+      <LanguageSwitcher className="self-end mb-4" />
+      <form
         onSubmit={handleLogin}
         className="bg-white dark:bg-gray-800 p-8 shadow-md rounded w-full max-w-sm border border-gray-200 dark:border-gray-700"
         >

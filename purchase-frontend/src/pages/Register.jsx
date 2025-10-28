@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 const Register = () => {
   const { t } = useTranslation();
@@ -107,6 +108,9 @@ const Register = () => {
     <>
       <Navbar />
       <div className="max-w-md mx-auto p-6">
+        <div className="flex justify-end mb-4">
+          <LanguageSwitcher />
+        </div>
         <h1 className="text-2xl font-bold mb-4">{t('register.title')}</h1>
 
         {message && <p className="mb-4 text-sm text-red-600">{message}</p>}

@@ -1,5 +1,6 @@
 // src/pages/ChangePassword.jsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { changePassword } from '../api/auth';
 
@@ -62,9 +63,18 @@ const ChangePassword = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
-          {t('changePassword.title')}
-        </h1>
+        <div className="mb-6 space-y-3">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded dark:text-blue-400 dark:hover:text-blue-300 dark:focus:ring-offset-gray-800"
+          >
+            {t('changePassword.backToHome')}
+          </Link>
+
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+            {t('changePassword.title')}
+          </h1>
+        </div>
 
         {status.type && (
           <div
