@@ -45,6 +45,33 @@ const ApprovalsPanel = () => {
 
   const { user } = useCurrentUser();
   const canMarkUrgent = ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role);
+  const normalizedUserId = useMemo(
+    () => (user?.id != null ? String(user.id) : null),
+    [user?.id],
+  );
+
+  const isItemLockedForUser = useCallback(
+    (item) => {
+      if (!item) return false;
+
+      const status = String(item?.approval_status || 'Pending').toLowerCase();
+      if (status !== 'rejected') {
+        return false;
+      }
+
+      const approvedBy =
+        item?.approved_by != null ? String(item.approved_by) : null;
+
+      if (!approvedBy) {
+        // If we do not know who rejected the item, treat it as locked so later approvers
+        // cannot override it without visibility.
+        return true;
+      }
+
+      return approvedBy !== (normalizedUserId ?? '');
+    },
+    [normalizedUserId],
+  );
 
   const fetchApprovals = useCallback(async () => {
     setLoading(true);
@@ -145,6 +172,20 @@ const ApprovalsPanel = () => {
   };
 
   const handleItemStatusChange = (requestId, itemId, status) => {
+    const currentItems = itemsMap[requestId] || [];
+    const targetItem = currentItems.find((it) => it.id === itemId);
+
+    if (targetItem && isItemLockedForUser(targetItem)) {
+      setItemFeedback((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'warning',
+          message: 'Items rejected by a previous approver cannot be changed.',
+        },
+      }));
+      return;
+    }
+
     setItemDecisions((prev) => ({
       ...prev,
       [requestId]: {
@@ -194,6 +235,20 @@ const ApprovalsPanel = () => {
   }, []);
 
   const handleItemCommentChange = (requestId, itemId, commentsValue) => {
+    const currentItems = itemsMap[requestId] || [];
+    const targetItem = currentItems.find((it) => it.id === itemId);
+
+    if (targetItem && isItemLockedForUser(targetItem)) {
+      setItemFeedback((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'warning',
+          message: 'Items rejected by a previous approver cannot be changed.',
+        },
+      }));
+      return;
+    }
+
     setItemDecisions((prev) => ({
       ...prev,
       [requestId]: {
@@ -275,13 +330,48 @@ const ApprovalsPanel = () => {
         [requestId]: summary,
       }));
 
-      setItemFeedback((prev) => ({
-        ...prev,
-        [requestId]: {
-          type: 'success',
-          message: `Item decisions saved. Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.`,
-        },
-      }));
+      const lockedFromResponse = Array.isArray(res.data?.lockedItems)
+        ? res.data.lockedItems
+        : [];
+
+      if (lockedFromResponse.length > 0) {
+        const lockedIds = new Set(lockedFromResponse.map((item) => item.id));
+
+        setItemDecisions((prev) => {
+          const existing = { ...(prev[requestId] || {}) };
+          currentItems.forEach((item) => {
+            if (lockedIds.has(item.id)) {
+              existing[item.id] = {
+                status: item.approval_status || 'Pending',
+                comments: item.approval_comments || '',
+              };
+            }
+          });
+          return { ...prev, [requestId]: existing };
+        });
+
+        const baseSummaryMessage = ` Current totals — Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.`;
+        const lockedMessage =
+          lockedFromResponse.length === 1
+            ? '1 item was rejected by a previous approver and could not be updated.'
+            : `${lockedFromResponse.length} items were rejected by previous approvers and could not be updated.`;
+
+        setItemFeedback((prev) => ({
+          ...prev,
+          [requestId]: {
+            type: 'warning',
+            message: `${lockedMessage}${baseSummaryMessage}`,
+          },
+        }));
+      } else {
+        setItemFeedback((prev) => ({
+          ...prev,
+          [requestId]: {
+            type: 'success',
+            message: `Item decisions saved. Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.`,
+          },
+        }));
+      }
     } catch (err) {
       console.error('❌ Failed to save item decisions:', err);
       setItemFeedback((prev) => ({
@@ -745,6 +835,7 @@ const ApprovalsPanel = () => {
                                       ? `${decision.status.charAt(0).toUpperCase()}${decision.status.slice(1).toLowerCase()}`
                                       : 'Pending';
                                     const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || '';
+                                    const decisionLocked = canEditItems && isItemLockedForUser(item);
 
                                     return (
                                       <tr key={item.id || item.item_name} className={`${rowHighlight} border-b last:border-b-0`}>
@@ -763,6 +854,7 @@ const ApprovalsPanel = () => {
                                               onChange={(e) =>
                                                 handleItemStatusChange(req.request_id, item.id, e.target.value)
                                               }
+                                              disabled={decisionLocked}
                                             >
                                               <option value="Pending">Pending</option>
                                               <option value="Approved">Approved</option>
@@ -782,9 +874,15 @@ const ApprovalsPanel = () => {
                                                 handleItemCommentChange(req.request_id, item.id, e.target.value)
                                               }
                                               placeholder="Optional comments"
+                                              disabled={decisionLocked}
                                             />
                                           ) : (
                                             <span>{decision.comments || '—'}</span>
+                                          )}
+                                          {decisionLocked && (
+                                            <p className="mt-1 text-xs font-medium text-amber-600">
+                                              Rejected by a previous approver — only they can update this item.
+                                            </p>
                                           )}
                                         </td>
                                       </tr>
