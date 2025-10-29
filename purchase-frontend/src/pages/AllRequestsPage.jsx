@@ -17,7 +17,6 @@ const STEP_LABELS = {
   CFO: 'CFO Approval',
   WarehouseManager: 'Warehouse Manager Approval',
   WarehouseKeeper: 'Warehouse Keeper Approval',
-  ProcurementSupervisor: 'Procurement Supervisor Action',
   ProcurementSpecialist: 'Procurement Specialist Action',
 };
 

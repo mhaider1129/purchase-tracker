@@ -159,7 +159,7 @@ function App() {
         <Route path="/procurement-plans" element={<ProtectedRoute element={<ProcurementPlansPage />} allowedRoles={['SCM', 'admin']} />} />
 
         {/* ✅ Procurement-Specific Routes */}
-        <Route path="/assigned-requests" element={<ProtectedRoute element={<AssignedRequestsPage />} allowedRoles={['ProcurementSupervisor', 'ProcurementSpecialist', 'SCM']} />} />
+        <Route path="/assigned-requests" element={<ProtectedRoute element={<AssignedRequestsPage />} allowedRoles={['ProcurementSpecialist', 'SCM']} />} />
 
         {/* ✅ Approver Views */}
         <Route path="/incomplete/medical" element={<ProtectedRoute element={<IncompleteMedicalRequestsPage />} allowedRoles={['CMO']} />} />
@@ -167,7 +167,7 @@ function App() {
 
 <Route
   path="/completed-assigned"
-  element={<ProtectedRoute element={<CompletedAssignedRequestsPage />} allowedRoles={['ProcurementSupervisor', 'ProcurementSpecialist', 'SCM']} />}
+      element={<ProtectedRoute element={<CompletedAssignedRequestsPage />} allowedRoles={['ProcurementSpecialist', 'SCM']} />}
 />
         <Route path="/closed-requests" element={<ProtectedRoute element={<ClosedRequestsPage />} />} />
         <Route path="/audit-requests" element={<ProtectedRoute element={<AuditRequestsPage />} allowedRoles={['audit']} />} />

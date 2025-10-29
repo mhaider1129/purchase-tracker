@@ -34,7 +34,7 @@ const Register = () => {
 
     try {
       const decoded = JSON.parse(atob(token.split('.')[1]));
-      const allowedRoles = ['SCM', 'ProcurementSupervisor'];
+      const allowedRoles = ['SCM'];
       if (!allowedRoles.includes(decoded.role)) {
         alert(t('register.alerts.accessDenied'));
         return navigate('/');
@@ -181,8 +181,7 @@ const Register = () => {
             <option value="CFO">{t('register.roles.cfo')}</option>
             <option value="CEO">{t('register.roles.ceo')}</option>
             <option value="CPO">{t('register.roles.cpo')}</option>
-            <option value="ProcurementSupervisor">{t('register.roles.procurementSupervisor')}</option>
-            <option value="Procurement Specialist">{t('register.roles.procurementSpecialist')}</option>
+            <option value="ProcurementSpecialist">{t('register.roles.procurementSpecialist')}</option>
             <option value="WarehouseManager">{t('register.roles.warehouseManager')}</option>
             <option value="warehouse_keeper">{t('register.roles.warehouseKeeper')}</option>
           </select>

@@ -103,10 +103,10 @@ const Navbar = () => {
             'text-orange-600'
           )}
 
-        {['CEO', 'ProcurementSupervisor'].includes(user.role) &&
+        {user.role === 'CEO' &&
           renderNavButton(t('navbar.registerUser'), '/register', 'text-blue-600')}
 
-        {['ProcurementSpecialist', 'ProcurementSupervisor', 'SCM'].includes(user.role) && (
+        {['ProcurementSpecialist', 'SCM'].includes(user.role) && (
           <>
             {renderNavButton(t('navbar.myAssigned'), '/assigned-requests', 'text-purple-600')}
             {renderNavButton(t('navbar.completedRequests'), '/completed-assigned', 'text-gray-700')}

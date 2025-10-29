@@ -21,10 +21,6 @@ const OpenRequestsPage = () => {
       CFO: tr('roleLabels.cfo', 'CFO Approval'),
       WarehouseManager: tr('roleLabels.warehouseManager', 'Warehouse Manager Approval'),
       WarehouseKeeper: tr('roleLabels.warehouseKeeper', 'Warehouse Keeper Approval'),
-      ProcurementSupervisor: tr(
-        'roleLabels.procurementSupervisor',
-        'Procurement Supervisor Action'
-      ),
       ProcurementSpecialist: tr(
         'roleLabels.procurementSpecialist',
         'Procurement Specialist Action'

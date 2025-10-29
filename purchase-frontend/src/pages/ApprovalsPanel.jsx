@@ -42,6 +42,9 @@ const ApprovalsPanel = () => {
   const [attachmentLoadingMap, setAttachmentLoadingMap] = useState({});
   const [attachmentErrorMap, setAttachmentErrorMap] = useState({});
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
+  const [estimatedCost, setEstimatedCost] = useState('');
+  const [estimatedCostError, setEstimatedCostError] = useState('');
+  const [estimatedCostDrafts, setEstimatedCostDrafts] = useState({});
 
   const { user } = useCurrentUser();
   const canMarkUrgent = ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role);
@@ -89,6 +92,36 @@ const ApprovalsPanel = () => {
   useEffect(() => {
     fetchApprovals();
   }, [fetchApprovals]);
+
+  useEffect(() => {
+    if (!Array.isArray(requests) || requests.length === 0) {
+      return;
+    }
+
+    setEstimatedCostDrafts((prev) => {
+      let updated = prev;
+      requests.forEach((req) => {
+        if (req?.request_id == null) return;
+        if (Object.prototype.hasOwnProperty.call(prev, req.request_id)) return;
+
+        const initial =
+          req?.estimated_cost !== undefined && req?.estimated_cost !== null && req.estimated_cost !== ''
+            ? String(req.estimated_cost)
+            : '';
+
+        if (initial === '' && prev[req.request_id] === '') {
+          return;
+        }
+
+        if (updated === prev) {
+          updated = { ...prev };
+        }
+        updated[req.request_id] = initial;
+      });
+
+      return updated;
+    });
+  }, [requests]);
 
   const fetchAttachmentsForRequest = useCallback(async (requestId) => {
     setAttachmentLoadingMap((prev) => ({ ...prev, [requestId]: true }));
@@ -387,19 +420,53 @@ const ApprovalsPanel = () => {
   };
 
   const submitDecision = async () => {
+    if (user?.role === 'SCM') {
+      const trimmedCost = estimatedCost.trim();
+      if (trimmedCost !== '') {
+        const normalized = Number(trimmedCost.replace(/,/g, ''));
+        if (Number.isNaN(normalized) || normalized <= 0) {
+          setEstimatedCostError('Enter a positive number for the estimated cost or leave it blank.');
+          return;
+        }
+      }
+      setEstimatedCostError('');
+    }
+
     const confirmed = window.confirm(
       `Are you sure you want to ${selectedDecision.toLowerCase()} Request #${selectedRequestId}?`
     );
     if (!confirmed) return;
 
     try {
-      await axios.put(`/api/requests/approval/${selectedApprovalId}`, {
+      const payload = {
         status: selectedDecision,
         comments,
         is_urgent: canMarkUrgent ? isUrgent : false,
+      };
+
+      if (user?.role === 'SCM') {
+        const trimmedCost = estimatedCost.trim();
+        if (trimmedCost !== '') {
+          const normalized = Number(trimmedCost.replace(/,/g, ''));
+          payload.estimated_cost = Number.isNaN(normalized) ? undefined : normalized;
+        }
+      }
+
+      await axios.put(`/api/requests/approval/${selectedApprovalId}`, {
+        ...payload,
       });
 
       setRequests((prev) => prev.filter((r) => r.approval_id !== selectedApprovalId));
+      if (selectedRequestId != null) {
+        setEstimatedCostDrafts((prev) => {
+          if (!Object.prototype.hasOwnProperty.call(prev, selectedRequestId)) {
+            return prev;
+          }
+          const next = { ...prev };
+          delete next[selectedRequestId];
+          return next;
+        });
+      }
       resetCommentModal();
     } catch (err) {
       console.error('❌ Action failed:', err);
@@ -433,6 +500,18 @@ const ApprovalsPanel = () => {
     setSelectedDecision(decision);
     setComments('');
     setIsUrgent(false);
+    const draftCost = estimatedCostDrafts[requestId];
+    if (draftCost !== undefined) {
+      setEstimatedCost(draftCost);
+    } else {
+      const request = requests.find((r) => r.approval_id === approvalId);
+      if (request?.estimated_cost != null && request.estimated_cost !== '') {
+        setEstimatedCost(String(request.estimated_cost));
+      } else {
+        setEstimatedCost('');
+      }
+    }
+    setEstimatedCostError('');
     setShowCommentBox(true);
   };
 
@@ -443,6 +522,29 @@ const ApprovalsPanel = () => {
     setSelectedDecision('');
     setComments('');
     setIsUrgent(false);
+    setEstimatedCost('');
+    setEstimatedCostError('');
+  };
+
+  const handleEstimatedCostDraftChange = (requestId, value) => {
+    setEstimatedCostDrafts((prev) => ({
+      ...prev,
+      [requestId]: value,
+    }));
+
+    if (requestId === selectedRequestId) {
+      setEstimatedCost(value);
+    }
+  };
+
+  const handleModalEstimatedCostChange = (value) => {
+    setEstimatedCost(value);
+    if (selectedRequestId != null) {
+      setEstimatedCostDrafts((prev) => ({
+        ...prev,
+        [selectedRequestId]: value,
+      }));
+    }
   };
 
   const getCostLabel = (cost) => {
@@ -730,6 +832,28 @@ const ApprovalsPanel = () => {
                       <p>
                         <strong>Estimated Cost:</strong> {estimatedCostValue.toLocaleString()} IQD
                       </p>
+                      {user?.role === 'SCM' && (
+                        <div className="mt-3 rounded border border-blue-200 bg-blue-50 p-3">
+                          <label
+                            htmlFor={`scm-estimated-cost-${req.request_id}`}
+                            className="block text-sm font-medium text-blue-900"
+                          >
+                            Update Estimated Cost (IQD)
+                          </label>
+                          <input
+                            id={`scm-estimated-cost-${req.request_id}`}
+                            type="text"
+                            inputMode="decimal"
+                            className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder="Add an estimated total before approving"
+                            value={estimatedCostDrafts[req.request_id] ?? ''}
+                            onChange={(e) => handleEstimatedCostDraftChange(req.request_id, e.target.value)}
+                          />
+                          <p className="mt-1 text-xs text-blue-800">
+                            This amount will be confirmed when you approve or reject the request. Leave blank to keep the existing value.
+                          </p>
+                        </div>
+                      )}
                       <p className={`inline-block mt-1 text-xs text-white px-2 py-1 rounded ${tag.color}`}>
                         {tag.label}
                       </p>
@@ -950,37 +1074,62 @@ const ApprovalsPanel = () => {
       </div>
 
       {showCommentBox && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg p-6 shadow-lg w-[90%] max-w-md">
-            <h2 className="text-lg font-semibold mb-2">
-              {selectedDecision === 'Approved' ? 'Approve' : 'Reject'} Request #{selectedRequestId}
-            </h2>
-            <textarea
-              className="w-full h-28 border rounded p-2 text-sm"
-              placeholder="Enter optional comments..."
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-            />
-            {canMarkUrgent && (
-              <div className="mt-3 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="urgent"
-                  checked={isUrgent}
-                  onChange={(e) => setIsUrgent(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="urgent" className="text-sm font-medium">
-                  Mark this request as <span className="text-red-600 font-semibold">Urgent</span>
-                </label>
-              </div>
-            )}
-            <div className="mt-4 flex justify-end gap-3">
-              <Button onClick={submitDecision}>Submit</Button>
-              <Button variant="ghost" onClick={resetCommentModal}>
-                Cancel
-              </Button>
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div className="bg-white rounded-lg p-6 shadow-lg w-[90%] max-w-md">
+          <h2 className="text-lg font-semibold mb-2">
+            {selectedDecision === 'Approved' ? 'Approve' : 'Reject'} Request #{selectedRequestId}
+          </h2>
+          <textarea
+            className="w-full h-28 border rounded p-2 text-sm"
+            placeholder="Enter optional comments..."
+            value={comments}
+            onChange={(e) => setComments(e.target.value)}
+          />
+          {user?.role === 'SCM' && (
+            <div className="mt-3">
+              <label htmlFor="estimated-cost" className="block text-sm font-medium text-gray-700">
+                Estimated Cost (IQD)
+              </label>
+              <input
+                id="estimated-cost"
+                type="text"
+                inputMode="decimal"
+                className={`mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  estimatedCostError ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Enter a number or leave blank"
+                value={estimatedCost}
+                onChange={(e) => handleModalEstimatedCostChange(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Provide an updated estimate so downstream approvers can see the projected cost. Leave blank to keep the current
+                value.
+              </p>
+              {estimatedCostError && (
+                <p className="mt-1 text-xs text-red-600">{estimatedCostError}</p>
+              )}
             </div>
+          )}
+          {canMarkUrgent && (
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="urgent"
+                checked={isUrgent}
+                onChange={(e) => setIsUrgent(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="urgent" className="text-sm font-medium">
+                Mark this request as <span className="text-red-600 font-semibold">Urgent</span>
+              </label>
+            </div>
+          )}
+          <div className="mt-4 flex justify-end gap-3">
+            <Button onClick={submitDecision}>Submit</Button>
+            <Button variant="ghost" onClick={resetCommentModal}>
+              Cancel
+            </Button>
+          </div>
           </div>
         </div>
       )}

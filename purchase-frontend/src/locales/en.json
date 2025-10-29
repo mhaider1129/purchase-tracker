@@ -29,7 +29,7 @@
     },
     "alerts": {
       "loginRequired": "🔒 You must be logged in to access this page.",
-      "accessDenied": "⛔ Access denied. Only SCM or Procurement Supervisor can register users.",
+      "accessDenied": "⛔ Access denied. Only SCM can register users.",
       "invalidToken": "❌ Invalid token. Please login again.",
       "success": "✅ User registered successfully!"
     },
@@ -46,7 +46,6 @@
       "cfo": "CFO",
       "ceo": "CEO",
       "cpo": "CPO",
-      "procurementSupervisor": "Procurement Supervisor",
       "procurementSpecialist": "Procurement Specialist",
       "warehouseManager": "Warehouse Manager",
       "warehouseKeeper": "Warehouse Keeper"
@@ -743,7 +742,6 @@
       "cfo": "CFO Approval",
       "warehouseManager": "Warehouse Manager Approval",
       "warehouseKeeper": "Warehouse Keeper Approval",
-      "procurementSupervisor": "Procurement Supervisor Action",
       "procurementSpecialist": "Procurement Specialist Action"
     }
   },
