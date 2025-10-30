@@ -198,12 +198,28 @@
       "intendedUseAria": "الاستخدام المقصود للصنف {{index}}",
       "specsPlaceholder": "المواصفات",
       "specsAria": "مواصفات الصنف {{index}}",
+      "specTemplatePlaceholder": "إدراج قالب...",
+      "specTemplateHelp": "سيتم إضافة القوالب إلى النص الحالي حتى لا تفقد ملاحظاتك.",
+      "specTemplateGeneral": "شراء عام",
+      "specTemplateGeneralBody": "العلامة/الموديل:\nالميزات الرئيسية:\nدرجة الجودة المطلوبة:\nمتطلبات التسليم أو التركيب:",
+      "specTemplateIT": "معدات تقنية",
+      "specTemplateITBody": "المعالج:\nالذاكرة:\nالتخزين:\nنظام التشغيل:\nالملحقات المطلوبة:",
+      "specTemplateMedical": "مستلزم طبي",
+      "specTemplateMedicalBody": "الاستخدام المقصود للمريض:\nمعيار التعقيم أو السلامة:\nالحجم/السعة:\nالتوافق أو الملحقات:",
+      "specsHelpTitle": "ما الذي يتوقعه المعتمدون في المواصفات",
+      "specsHelpList": "اذكر العلامة أو الموديل إن وجد|شارك مؤشرات الأداء أو السعة المطلوبة|حدد أي معايير التزام أو سلامة|أضف متطلبات التسليم أو التركيب أو الضمان",
+      "specsHelpFooter": "اكتمال المواصفات يقلل الأسئلة ويُسرع الموافقات.",
       "itemAttachmentsHint": "الملفات المسموح بها: {{allowed}} • الحد الأقصى {{max}} م.ب لكل ملف",
+      "selectedItemAttachments": "مرفقات الصنف",
       "additionalAttachmentsLabel": "مرفقات إضافية",
-      "additionalAttachmentsHint": "الملفات المسموح بها: {{allowed}} • الحد الأقصى {{max}} م.ب لكل ملف"
+      "additionalAttachmentsHint": "الملفات المسموح بها: {{allowed}} • الحد الأقصى {{max}} م.ب لكل ملف",
+      "selectedRequestAttachments": "مرفقات الطلب"
     },
     "buttons": {
       "addItem": "+ إضافة صنف آخر",
+      "duplicateItem": "تكرار السطر",
+      "removeItem": "حذف السطر",
+      "removeAttachment": "إزالة",
       "submit": "إرسال الطلب",
       "submitting": "جارٍ الإرسال..."
     }

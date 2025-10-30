@@ -125,7 +125,7 @@ const IncompleteRequestsPage = () => {
     if (!Number.isFinite(numericValue)) return '—';
     return numericValue.toLocaleString('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'IQD',
       minimumFractionDigits: 0,
     });
   };

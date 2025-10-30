@@ -139,20 +139,27 @@ const ProcurementPlansPage = () => {
                 })
               : '—';
 
+            const downloadUrl = plan.download_url || (plan.file_path ? `/${plan.file_path}` : '#');
+            const canDownload = Boolean(plan.download_url || plan.file_path);
+
             return (
               <tr key={plan.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 text-sm font-medium text-gray-800">{plan.plan_year}</td>
                 <td className="px-4 py-3 text-sm text-gray-700">{plan.file_name}</td>
                 <td className="px-4 py-3 text-sm text-gray-600">{uploadedOn}</td>
                 <td className="px-4 py-3 text-sm">
-                  <a
-                    href={`/${plan.file_path}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-700 font-semibold"
-                  >
-                    View
-                  </a>
+                  {canDownload ? (
+                    <a
+                      href={downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-700 font-semibold"
+                    >
+                      View
+                    </a>
+                  ) : (
+                    <span className="text-gray-400">Unavailable</span>
+                  )}
                 </td>
               </tr>
             );
@@ -218,101 +225,76 @@ const ProcurementPlansPage = () => {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="plan-year-filter">
+                  Filter plans by year
+                </label>
+                <select
+                  id="plan-year-filter"
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">All years</option>
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="plan-search">
+                  Search plans
+                </label>
+                <input
+                  id="plan-search"
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Search by file name or year"
+                />
+              </div>
               <button
                 type="submit"
+                className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 disabled={loading}
-                className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
               >
                 {loading ? 'Uploading…' : 'Upload plan'}
               </button>
+              {renderStatusMessage() && (
+                <div
+                  role="status"
+                  className={`rounded border px-3 py-2 text-sm ${
+                    statusType === 'info'
+                      ? 'border-blue-200 bg-blue-50 text-blue-700'
+                      : statusType === 'success'
+                      ? 'border-green-200 bg-green-50 text-green-700'
+                      : statusType === 'error'
+                      ? 'border-red-200 bg-red-50 text-red-600'
+                      : 'border-gray-200 bg-gray-50 text-gray-600'
+                  }`}
+                >
+                  {renderStatusMessage()}
+                </div>
+              )}
             </form>
           </div>
 
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">Plan overview</h2>
-            <dl className="mt-4 space-y-3 text-sm text-gray-700">
-              <div className="flex items-center justify-between">
-                <dt>Total plans</dt>
-                <dd className="font-semibold text-gray-900">{plans.length}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt>Most recent year</dt>
-                <dd className="font-semibold text-gray-900">
-                  {availableYears.length > 0 ? availableYears[0] : '—'}
-                </dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt>Oldest year</dt>
-                <dd className="font-semibold text-gray-900">
-                  {availableYears.length > 0 ? availableYears[availableYears.length - 1] : '—'}
-                </dd>
-              </div>
-            </dl>
-            <div className="mt-4 text-xs text-gray-500">
-              Keep procurement plans up to date to streamline audits and ensure upcoming requests
-              align with budget allocations.
+            <h2 className="text-lg font-semibold text-gray-900">Plans on record</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Browse previously uploaded procurement plans.
+            </p>
+            <div className="mt-4 space-y-4">
+              {isFetching ? (
+                <p className="text-sm text-gray-500">Loading procurement plans…</p>
+              ) : (
+                planTable
+              )}
             </div>
           </div>
-        </section>
-
-        {renderStatusMessage() && (
-          <div
-            className={`rounded border px-4 py-3 text-sm ${
-              statusType === 'success'
-                ? 'border-green-200 bg-green-50 text-green-800'
-                : statusType === 'error'
-                ? 'border-red-200 bg-red-50 text-red-700'
-                : 'border-blue-200 bg-blue-50 text-blue-800'
-            }`}
-            role="status"
-            aria-live="polite"
-          >
-            {renderStatusMessage()}
-          </div>
-        )}
-
-        <section className="space-y-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Existing plans</h2>
-              <p className="text-sm text-gray-600">Browse previously uploaded procurement plans.</p>
-            </div>
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <label className="flex flex-col text-sm font-medium text-gray-700">
-                Filter by year
-                <select
-                  value={filterYear}
-                  onChange={(e) => setFilterYear(e.target.value)}
-                  className="mt-1 rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="all">All years</option>
-                  {availableYears.map((planYear) => (
-                    <option key={planYear} value={planYear}>
-                      {planYear}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flex flex-col text-sm font-medium text-gray-700">
-                Search
-                <input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by year or file name"
-                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </label>
-            </div>
-          </div>
-
-          {isFetching ? (
-            <div className="rounded border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
-              Loading procurement plans…
-            </div>
-          ) : (
-            planTable
-          )}
         </section>
       </div>
     </>

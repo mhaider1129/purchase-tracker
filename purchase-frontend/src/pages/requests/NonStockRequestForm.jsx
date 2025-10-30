@@ -38,6 +38,49 @@ const NonStockRequestForm = () => {
   const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
   const MAX_ITEMS_PER_REQUEST = 50;
 
+  const specTemplates = useMemo(
+    () => [
+      {
+        id: 'general',
+        label: tr('fields.specTemplateGeneral'),
+        template: tr('fields.specTemplateGeneralBody'),
+      },
+      {
+        id: 'it',
+        label: tr('fields.specTemplateIT'),
+        template: tr('fields.specTemplateITBody'),
+      },
+      {
+        id: 'medical',
+        label: tr('fields.specTemplateMedical'),
+        template: tr('fields.specTemplateMedicalBody'),
+      },
+    ],
+    [tr]
+  );
+
+  const specGuidanceItems = useMemo(() => {
+    const raw = tr('fields.specsHelpList');
+    if (!raw) return [];
+    return raw
+      .split('|')
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }, [tr]);
+
+  const formatFileSize = useCallback((bytes) => {
+    if (!Number.isFinite(bytes)) return '';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let size = bytes;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex += 1;
+    }
+    const decimals = size < 10 && unitIndex > 0 ? 1 : 0;
+    return `${size.toFixed(decimals)} ${units[unitIndex]}`;
+  }, []);
+
   function getEmptyItem() {
     return {
       item_name: '',
@@ -127,13 +170,46 @@ const NonStockRequestForm = () => {
     const incomingFiles = Array.from(files || []);
     const { validFiles, error: attachmentError } = validateFiles(incomingFiles);
 
-    const updated = [...items];
-    updated[index].attachments = validFiles;
-    setItems(updated);
+    setItems((prevItems) => {
+      const next = [...prevItems];
+      const existing = next[index]?.attachments || [];
+      next[index] = {
+        ...next[index],
+        attachments: [...existing, ...validFiles],
+      };
+      return next;
+    });
 
     setItemErrors((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], attachments: attachmentError };
+      return next;
+    });
+  };
+
+  const handleRemoveItemAttachment = (itemIndex, attachmentIndex) => {
+    setItems((prevItems) => {
+      const next = [...prevItems];
+      const attachments = [...(next[itemIndex]?.attachments || [])];
+      attachments.splice(attachmentIndex, 1);
+      next[itemIndex] = {
+        ...next[itemIndex],
+        attachments,
+      };
+
+      const { error: attachmentError } = validateFiles(attachments);
+      setItemErrors((prevErrors) => {
+        const nextErrors = [...prevErrors];
+        const updatedErrors = { ...(nextErrors[itemIndex] || {}) };
+        if (attachmentError) {
+          updatedErrors.attachments = attachmentError;
+        } else {
+          delete updatedErrors.attachments;
+        }
+        nextErrors[itemIndex] = updatedErrors;
+        return nextErrors;
+      });
+
       return next;
     });
   };
@@ -144,14 +220,72 @@ const NonStockRequestForm = () => {
       return;
     }
     setDepartmentLimitError('');
-    setItems([...items, getEmptyItem()]);
+    setItems((prev) => [...prev, getEmptyItem()]);
+  };
+
+  const duplicateItem = (index) => {
+    if (items.length >= MAX_ITEMS_PER_REQUEST) {
+      setDepartmentLimitError(departmentLimitMessage);
+      return;
+    }
+
+    setDepartmentLimitError('');
+    setItems((prevItems) => {
+      const next = [...prevItems];
+      const source = next[index];
+      const duplicate = {
+        ...source,
+        attachments: [],
+      };
+      next.splice(index + 1, 0, duplicate);
+      return next;
+    });
   };
 
   const removeItem = (index) => {
     if (items.length === 1) return;
     if (!window.confirm(tr('confirmRemoveItem'))) return;
-    setItems(items.filter((_, i) => i !== index));
+    setItems((prev) => prev.filter((_, i) => i !== index));
     setItemErrors((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSpecTemplate = (index, templateText) => {
+    if (!templateText) return;
+    setItems((prevItems) => {
+      const next = [...prevItems];
+      const currentSpecs = next[index]?.specs || '';
+      const appended = currentSpecs
+        ? `${currentSpecs.trimEnd()}
+
+${templateText}`
+        : templateText;
+      next[index] = { ...next[index], specs: appended };
+      return next;
+    });
+
+    setItemErrors((prev) => {
+      const next = [...prev];
+      const cleaned = { ...(next[index] || {}) };
+      delete cleaned.specs;
+      next[index] = cleaned;
+      return next;
+    });
+  };
+
+  const handleRemoveRequestAttachment = (attachmentIndex) => {
+    setAttachments((prev) => {
+      const next = prev.filter((_, idx) => idx !== attachmentIndex);
+      const { error } = validateFiles(next);
+      setRequestAttachmentsError(error);
+      return next;
+    });
+  };
+
+  const handleAdditionalAttachments = (files) => {
+    const incoming = Array.from(files || []);
+    const { validFiles, error: attachmentsError } = validateFiles(incoming);
+    setAttachments((prev) => [...prev, ...validFiles]);
+    setRequestAttachmentsError(attachmentsError);
   };
 
   const validateItems = () => {
@@ -322,117 +456,214 @@ const NonStockRequestForm = () => {
             {departmentLimitError && (
               <p className="text-sm text-red-600 mb-2">{departmentLimitError}</p>
             )}
+            {specGuidanceItems.length > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 mb-4">
+                <p className="font-semibold mb-2">{tr('fields.specsHelpTitle')}</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {specGuidanceItems.map((helpText, idx) => (
+                    <li key={`${helpText}-${idx}`}>{helpText}</li>
+                  ))}
+                </ul>
+                <p className="text-xs text-blue-800 mt-2">{tr('fields.specsHelpFooter')}</p>
+              </div>
+            )}
             {items.map((item, index) => (
-              <div key={index} className="flex gap-2 mb-2 flex-wrap w-full">
-                <input
-                  type="text"
-                  placeholder={tr('fields.itemNamePlaceholder')}
-                  aria-label={t('nonStockRequestPage.fields.itemNameAria', { index: index + 1 })}
-                  value={item.item_name}
-                  onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  required
-                  disabled={isSubmitting}
-                />
-                {itemErrors[index]?.item_name && (
-                  <p className="text-sm text-red-600 w-full">{itemErrors[index].item_name}</p>
-                )}
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder={tr('fields.unitCostPlaceholder')}
-                  aria-label={t('nonStockRequestPage.fields.unitCostAria', { index: index + 1 })}
-                  value={item.unit_cost}
-                  onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
-                  className="w-32 p-2 border rounded"
-                  required
-                  disabled={isSubmitting}
-                />
-                <input
-                  type="text"
-                  placeholder={tr('fields.brandPlaceholder')}
-                  aria-label={t('nonStockRequestPage.fields.brandAria', { index: index + 1 })}
-                  value={item.brand}
-                  onChange={(e) => handleItemChange(index, 'brand', e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  disabled={isSubmitting}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  placeholder={tr('fields.availableQuantityPlaceholder')}
-                  aria-label={t('nonStockRequestPage.fields.availableQuantityAria', { index: index + 1 })}
-                  value={item.available_quantity}
-                  onChange={(e) =>
-                    handleItemChange(index, 'available_quantity', e.target.value)
-                  }
-                  className="w-40 p-2 border rounded"
-                  disabled={isSubmitting}
-                />
-                <input
-                  type="number"
-                  min={1}
-                  aria-label={t('nonStockRequestPage.fields.quantityAria', { index: index + 1 })}
-                  value={item.quantity}
-                  onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                  className="w-24 p-2 border rounded"
-                  required
-                  disabled={isSubmitting}
-                />
-                {itemErrors[index]?.quantity && (
-                  <p className="text-sm text-red-600 w-full">{itemErrors[index].quantity}</p>
-                )}
-                <input
-                  type="text"
-                  placeholder={tr('fields.intendedUsePlaceholder')}
-                  aria-label={t('nonStockRequestPage.fields.intendedUseAria', { index: index + 1 })}
-                  value={item.intended_use}
-                  onChange={(e) => handleItemChange(index, 'intended_use', e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  disabled={isSubmitting}
-                />
-                {itemErrors[index]?.intended_use && (
-                  <p className="text-sm text-red-600 w-full">{itemErrors[index].intended_use}</p>
-                )}
-                <input
-                  type="text"
-                  placeholder={tr('fields.specsPlaceholder')}
-                  aria-label={t('nonStockRequestPage.fields.specsAria', { index: index + 1 })}
-                  value={item.specs}
-                  onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  disabled={isSubmitting}
-                />
-                {itemErrors[index]?.specs && (
-                  <p className="text-sm text-red-600 w-full">{itemErrors[index].specs}</p>
-                )}
-                <input
-                  type="file"
-                  multiple
-                  onChange={(e) => handleItemFiles(index, e.target.files)}
-                  className="p-1 border rounded"
-                  disabled={isSubmitting}
-                />
-                <p className="text-xs text-gray-500 w-full">
-                  {t('nonStockRequestPage.fields.itemAttachmentsHint', {
-                    allowed: allowedExtensions.join(', '),
-                    max: MAX_ATTACHMENT_SIZE_MB,
-                  })}
-                </p>
-                {itemErrors[index]?.attachments && (
-                  <p className="text-sm text-red-600 w-full">{itemErrors[index].attachments}</p>
-                )}
-                {items.length > 1 && (
+              <div
+                key={index}
+                className="w-full border border-gray-200 rounded-lg p-4 mb-4 bg-white shadow-sm"
+              >
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex-1 min-w-[200px]">
+                    <input
+                      type="text"
+                      placeholder={tr('fields.itemNamePlaceholder')}
+                      aria-label={t('nonStockRequestPage.fields.itemNameAria', { index: index + 1 })}
+                      value={item.item_name}
+                      onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                      className="w-full p-2 border rounded"
+                      required
+                      disabled={isSubmitting}
+                    />
+                    {itemErrors[index]?.item_name && (
+                      <p className="text-sm text-red-600 mt-1">{itemErrors[index].item_name}</p>
+                    )}
+                  </div>
+                  <div className="w-32">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder={tr('fields.unitCostPlaceholder')}
+                      aria-label={t('nonStockRequestPage.fields.unitCostAria', { index: index + 1 })}
+                      value={item.unit_cost}
+                      onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
+                      className="w-full p-2 border rounded"
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <input
+                      type="text"
+                      placeholder={tr('fields.brandPlaceholder')}
+                      aria-label={t('nonStockRequestPage.fields.brandAria', { index: index + 1 })}
+                      value={item.brand}
+                      onChange={(e) => handleItemChange(index, 'brand', e.target.value)}
+                      className="w-full p-2 border rounded"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className="w-40 min-w-[160px]">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder={tr('fields.availableQuantityPlaceholder')}
+                      aria-label={t('nonStockRequestPage.fields.availableQuantityAria', { index: index + 1 })}
+                      value={item.available_quantity}
+                      onChange={(e) =>
+                        handleItemChange(index, 'available_quantity', e.target.value)
+                      }
+                      className="w-full p-2 border rounded"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className="w-24">
+                    <input
+                      type="number"
+                      min={1}
+                      aria-label={t('nonStockRequestPage.fields.quantityAria', { index: index + 1 })}
+                      value={item.quantity}
+                      onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                      className="w-full p-2 border rounded"
+                      required
+                      disabled={isSubmitting}
+                    />
+                    {itemErrors[index]?.quantity && (
+                      <p className="text-sm text-red-600 mt-1">{itemErrors[index].quantity}</p>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <input
+                      type="text"
+                      placeholder={tr('fields.intendedUsePlaceholder')}
+                      aria-label={t('nonStockRequestPage.fields.intendedUseAria', { index: index + 1 })}
+                      value={item.intended_use}
+                      onChange={(e) => handleItemChange(index, 'intended_use', e.target.value)}
+                      className="w-full p-2 border rounded"
+                      disabled={isSubmitting}
+                    />
+                    {itemErrors[index]?.intended_use && (
+                      <p className="text-sm text-red-600 mt-1">{itemErrors[index].intended_use}</p>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-[220px]">
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input
+                        type="text"
+                        placeholder={tr('fields.specsPlaceholder')}
+                        aria-label={t('nonStockRequestPage.fields.specsAria', { index: index + 1 })}
+                        value={item.specs}
+                        onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
+                        className="flex-1 p-2 border rounded"
+                        disabled={isSubmitting}
+                      />
+                      <select
+                        className="sm:w-48 p-2 border rounded bg-white"
+                        onChange={(e) => {
+                          const selectedTemplate = specTemplates.find(
+                            (template) => template.id === e.target.value
+                          );
+                          if (selectedTemplate) {
+                            handleSpecTemplate(index, selectedTemplate.template);
+                          }
+                          e.target.value = '';
+                        }}
+                        defaultValue=""
+                        disabled={isSubmitting || specTemplates.length === 0}
+                      >
+                        <option value="">{tr('fields.specTemplatePlaceholder')}</option>
+                        {specTemplates.map((template) => (
+                          <option key={template.id} value={template.id}>
+                            {template.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {itemErrors[index]?.specs && (
+                      <p className="text-sm text-red-600 mt-1">{itemErrors[index].specs}</p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1">{tr('fields.specTemplateHelp')}</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <input
+                    type="file"
+                    multiple
+                    onChange={(e) => {
+                      handleItemFiles(index, e.target.files);
+                      e.target.value = '';
+                    }}
+                    className="p-1 border rounded"
+                    disabled={isSubmitting}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {t('nonStockRequestPage.fields.itemAttachmentsHint', {
+                      allowed: allowedExtensions.join(', '),
+                      max: MAX_ATTACHMENT_SIZE_MB,
+                    })}
+                  </p>
+                  {itemErrors[index]?.attachments && (
+                    <p className="text-sm text-red-600 mt-1">{itemErrors[index].attachments}</p>
+                  )}
+                  {item.attachments?.length > 0 && (
+                    <div className="mt-2 bg-gray-50 border rounded p-2 text-sm">
+                      <p className="font-semibold text-gray-700">
+                        {tr('fields.selectedItemAttachments')}
+                      </p>
+                      <ul className="mt-1 space-y-1">
+                        {item.attachments.map((file, fileIdx) => (
+                          <li
+                            key={`${file.name}-${fileIdx}`}
+                            className="flex items-center gap-2"
+                          >
+                            <span className="flex-1 truncate">{file.name}</span>
+                            <span className="text-gray-500 text-xs whitespace-nowrap">
+                              {formatFileSize(file.size)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItemAttachment(index, fileIdx)}
+                              className="text-xs text-red-600 hover:underline"
+                              disabled={isSubmitting}
+                            >
+                              {tr('buttons.removeAttachment')}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
                   <button
                     type="button"
-                    onClick={() => removeItem(index)}
-                    className="text-red-600 text-lg"
+                    onClick={() => duplicateItem(index)}
+                    className="text-sm text-blue-600 hover:underline"
                     disabled={isSubmitting}
                   >
-                    ✕
+                    {tr('buttons.duplicateItem')}
                   </button>
-                )}
+                  {items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="text-sm text-red-600 hover:underline"
+                      disabled={isSubmitting}
+                    >
+                      {tr('buttons.removeItem')}
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
             <button
@@ -451,10 +682,8 @@ const NonStockRequestForm = () => {
               type="file"
               multiple
               onChange={(e) => {
-                const incoming = Array.from(e.target.files || []);
-                const { validFiles, error: attachmentsError } = validateFiles(incoming);
-                setAttachments(validFiles);
-                setRequestAttachmentsError(attachmentsError);
+                handleAdditionalAttachments(e.target.files);
+                e.target.value = '';
               }}
               className="p-2 border rounded w-full"
               disabled={isSubmitting}
@@ -467,6 +696,31 @@ const NonStockRequestForm = () => {
             </p>
             {requestAttachmentsError && (
               <p className="text-sm text-red-600">{requestAttachmentsError}</p>
+            )}
+            {attachments.length > 0 && (
+              <div className="mt-2 bg-gray-50 border rounded p-2 text-sm">
+                <p className="font-semibold text-gray-700">
+                  {tr('fields.selectedRequestAttachments')}
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {attachments.map((file, idx) => (
+                    <li key={`${file.name}-${idx}`} className="flex items-center gap-2">
+                      <span className="flex-1 truncate">{file.name}</span>
+                      <span className="text-gray-500 text-xs whitespace-nowrap">
+                        {formatFileSize(file.size)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveRequestAttachment(idx)}
+                        className="text-xs text-red-600 hover:underline"
+                        disabled={isSubmitting}
+                      >
+                        {tr('buttons.removeAttachment')}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
 

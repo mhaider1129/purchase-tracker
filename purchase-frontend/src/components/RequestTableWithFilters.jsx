@@ -25,7 +25,7 @@ const RequestTableWithFilters = ({ requests }) => {
             const formattedCost = req.estimated_cost
               ? req.estimated_cost.toLocaleString('en-US', {
                   style: 'currency',
-                  currency: 'USD',
+                  currency: 'IQD',
                   minimumFractionDigits: 0,
                 })
               : '—';

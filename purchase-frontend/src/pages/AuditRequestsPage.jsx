@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
+import ApprovalTimeline from '../components/ApprovalTimeline';
+import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 const AuditRequestsPage = () => {
   const [requests, setRequests] = useState([]);
@@ -12,6 +14,16 @@ const AuditRequestsPage = () => {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [loading, setLoading] = useState(false);
+  const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [itemsMap, setItemsMap] = useState({});
+  const [loadingItemsId, setLoadingItemsId] = useState(null);
+  const {
+    expandedApprovalsId,
+    approvalsMap,
+    loadingApprovalsId,
+    toggleApprovals,
+    resetApprovals,
+  } = useApprovalTimeline();
 
   const stats = useMemo(() => {
     const totals = requests.reduce(
@@ -60,6 +72,10 @@ const AuditRequestsPage = () => {
         const res = await axios.get('/api/requests/audit/approved-rejected');
         setRequests(res.data);
         setFiltered(res.data);
+        resetApprovals();
+        setExpandedItemsId(null);
+        setItemsMap({});
+        setLoadingItemsId(null);
       } catch (err) {
         console.error('Failed to fetch audit requests:', err);
         alert('Failed to load audit requests.');
@@ -68,7 +84,29 @@ const AuditRequestsPage = () => {
       }
     };
     fetchRequests();
-  }, []);
+  }, [resetApprovals]);
+
+  const toggleItems = async (requestId) => {
+    if (expandedItemsId === requestId) {
+      setExpandedItemsId(null);
+      return;
+    }
+
+    if (!itemsMap[requestId]) {
+      try {
+        setLoadingItemsId(requestId);
+        const res = await axios.get(`/api/requests/${requestId}/items`);
+        setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
+      } catch (err) {
+        console.error(`❌ Failed to load items for request ${requestId}:`, err);
+        alert('Failed to load items');
+      } finally {
+        setLoadingItemsId(null);
+      }
+    }
+
+    setExpandedItemsId(requestId);
+  };
 
   useEffect(() => {
     const term = search.trim().toLowerCase();
@@ -218,26 +256,103 @@ const AuditRequestsPage = () => {
                   <th className="p-2 border">Justification</th>
                   <th className="p-2 border">Status</th>
                   <th className="p-2 border">Approval Timestamp</th>
+                  <th className="p-2 border">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((req) => (
-                  <tr key={req.id}>
-                    <td className="p-2 border">{req.id}</td>
-                    <td className="p-2 border">{req.request_type}</td>
-                    <td className="p-2 border">{req.project_name || '—'}</td>
-                    <td className="p-2 border max-w-xs">
-                      <span className="block truncate" title={req.justification}>
-                        {req.justification || '—'}
-                      </span>
-                    </td>
-                    <td className="p-2 border">{renderStatusBadge(req.status)}</td>
-                    <td className="p-2 border">
-                      {req.approval_timestamp
-                        ? new Date(req.approval_timestamp).toLocaleString()
-                        : ''}
-                    </td>
-                  </tr>
+                  <React.Fragment key={req.id}>
+                    <tr>
+                      <td className="p-2 border">{req.id}</td>
+                      <td className="p-2 border">{req.request_type}</td>
+                      <td className="p-2 border">{req.project_name || '—'}</td>
+                      <td className="p-2 border max-w-xs">
+                        <span className="block truncate" title={req.justification}>
+                          {req.justification || '—'}
+                        </span>
+                      </td>
+                      <td className="p-2 border">{renderStatusBadge(req.status)}</td>
+                      <td className="p-2 border">
+                        {req.approval_timestamp
+                          ? new Date(req.approval_timestamp).toLocaleString()
+                          : ''}
+                      </td>
+                      <td className="p-2 border">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            className="text-blue-600 underline"
+                            onClick={() => toggleItems(req.id)}
+                            disabled={loadingItemsId === req.id}
+                          >
+                            {loadingItemsId === req.id
+                              ? 'Loading...'
+                              : expandedItemsId === req.id
+                              ? 'Hide Items'
+                              : 'View Items'}
+                          </button>
+                          <button
+                            className="text-blue-600 underline"
+                            onClick={() => toggleApprovals(req.id)}
+                            disabled={loadingApprovalsId === req.id}
+                          >
+                            {loadingApprovalsId === req.id
+                              ? 'Loading...'
+                              : expandedApprovalsId === req.id
+                              ? 'Hide Approvals'
+                              : 'View Approvals'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedItemsId === req.id && (
+                      <tr>
+                        <td colSpan={7} className="p-4 bg-gray-50 border-t">
+                          <h3 className="font-semibold mb-2">Requested Items</h3>
+                          {loadingItemsId === req.id ? (
+                            <p className="text-gray-500">Loading items...</p>
+                          ) : itemsMap[req.id]?.length > 0 ? (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm border">
+                                <thead>
+                                  <tr className="bg-gray-100">
+                                    <th className="border p-1">Item</th>
+                                    <th className="border p-1">Brand</th>
+                                    <th className="border p-1">Qty</th>
+                                    <th className="border p-1">Unit Cost</th>
+                                    <th className="border p-1">Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {itemsMap[req.id].map((item, idx) => (
+                                    <tr key={idx}>
+                                      <td className="border p-1">{item.item_name}</td>
+                                      <td className="border p-1">{item.brand || '—'}</td>
+                                      <td className="border p-1">{item.quantity}</td>
+                                      <td className="border p-1">{item.unit_cost}</td>
+                                      <td className="border p-1">{item.total_cost}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500">No items found.</p>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    {expandedApprovalsId === req.id && (
+                      <tr>
+                        <td colSpan={7} className="p-4 bg-gray-50 border-t">
+                          <h3 className="font-semibold mb-2">Approval Timeline</h3>
+                          <ApprovalTimeline
+                            approvals={approvalsMap[req.id]}
+                            isLoading={loadingApprovalsId === req.id}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

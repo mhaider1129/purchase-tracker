@@ -199,12 +199,28 @@
       "intendedUseAria": "Item {{index}} Intended Use",
       "specsPlaceholder": "Specs",
       "specsAria": "Item {{index}} Specs",
+      "specTemplatePlaceholder": "Insert template...",
+      "specTemplateHelp": "Templates append to the existing text so you can keep any custom notes.",
+      "specTemplateGeneral": "General purchase",
+      "specTemplateGeneralBody": "Brand/Model:\nKey features:\nRequired quality/grade:\nDelivery or installation expectations:",
+      "specTemplateIT": "IT equipment",
+      "specTemplateITBody": "Processor:\nMemory:\nStorage:\nOperating system:\nPeripherals or accessories:",
+      "specTemplateMedical": "Medical supply",
+      "specTemplateMedicalBody": "Intended patient use:\nSterility or safety standard:\nSize/capacity:\nCompatibility or accessories:",
+      "specsHelpTitle": "What approvers expect in specs",
+      "specsHelpList": "Name the brand or model if known|Share measurable performance or capacity targets|Call out any compliance, safety, or quality standards|Include delivery, installation, or warranty expectations",
+      "specsHelpFooter": "Complete specs reduce back-and-forth and speed up approvals.",
       "itemAttachmentsHint": "Accepted: {{allowed}} • Max {{max}}MB per file",
+      "selectedItemAttachments": "Item attachments",
       "additionalAttachmentsLabel": "Additional Attachments",
-      "additionalAttachmentsHint": "Accepted: {{allowed}} • Max {{max}}MB per file"
+      "additionalAttachmentsHint": "Accepted: {{allowed}} • Max {{max}}MB per file",
+      "selectedRequestAttachments": "Request attachments"
     },
     "buttons": {
       "addItem": "+ Add Another Item",
+      "duplicateItem": "Duplicate line",
+      "removeItem": "Remove line",
+      "removeAttachment": "Remove",
       "submit": "Submit Request",
       "submitting": "Submitting..."
     }
