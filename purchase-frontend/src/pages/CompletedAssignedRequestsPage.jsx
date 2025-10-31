@@ -249,83 +249,98 @@ const CompletedAssignedRequestsPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredRequests.map((req) => (
-              <article
-                key={req.id}
-                className="bg-white border border-gray-100 rounded-lg shadow-sm p-5 transition hover:border-blue-200"
-              >
-                <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h3 className="text-xl font-semibold text-gray-900">Request #{req.id}</h3>
-                      {req.request_type && (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-sm font-medium">
-                          {req.request_type}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Completed {formatDateTime(req.completed_at)}
-                    </p>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    <p>
-                      <span className="font-medium text-gray-700">Submitted by:</span>{' '}
-                      {req.requester_name}
-                      {req.requester_role && <span className="text-gray-400"> • {req.requester_role}</span>}
-                    </p>
-                  </div>
-                </header>
-
-                {req.justification && (
-                  <p className="mt-4 text-gray-700">
-                    <span className="font-medium text-gray-900">Justification:</span> {req.justification}
-                  </p>
-                )}
-
-                <footer className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => toggleItems(req.id)}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+            {filteredRequests.map((req) => {
+              const isUrgent = Boolean(req?.is_urgent);
+              const articleClasses = [
+                'bg-white border border-gray-100 rounded-lg shadow-sm p-5 transition hover:border-blue-200',
+                isUrgent ? 'border-red-300 hover:border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+                return (
+                  <article
+                    key={req.id}
+                    className={articleClasses}
                   >
-                    <span>{expandedRequestId === req.id ? 'Hide Items' : 'View Items'}</span>
-                    <span aria-hidden="true">{expandedRequestId === req.id ? '▲' : '▼'}</span>
-                  </button>
+                    <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <h3 className="text-xl font-semibold text-gray-900">Request #{req.id}</h3>
+                          {req.request_type && (
+                            <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-sm font-medium">
+                              {req.request_type}
+                            </span>
+                          )}
+                          {isUrgent && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                              <span className="block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
+                              Urgent
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Completed {formatDateTime(req.completed_at)}
+                        </p>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        <p>
+                          <span className="font-medium text-gray-700">Submitted by:</span>{' '}
+                          {req.requester_name}
+                          {req.requester_role && <span className="text-gray-400"> • {req.requester_role}</span>}
+                        </p>
+                      </div>
+                    </header>
 
-                  {expandedRequestId === req.id && (
-                    <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
-                      {itemsCache[req.id]?.length > 0 ? (
-                        itemsCache[req.id].map((item) => (
-                          <div
-                            key={item.id}
-                            className="rounded-md border border-gray-100 bg-gray-50 p-3"
-                          >
-                            <p className="text-sm font-semibold text-gray-800">
-                              {item.item_name}
-                              {item.brand && <span className="text-gray-500"> ({item.brand})</span>}
-                            </p>
-                            <p className="text-sm text-gray-600 mt-1">
-                              <span className="font-medium text-gray-700">Requested:</span> {item.quantity}
-                              <span className="mx-2 text-gray-400">•</span>
-                              <span className="font-medium text-gray-700">Purchased:</span>{' '}
-                              {item.purchased_quantity ?? '—'}
-                              <span className="mx-2 text-gray-400">•</span>
-                              <span className="font-medium text-gray-700">Status:</span> {item.procurement_status || '—'}
-                            </p>
-                            {item.procurement_comment && (
-                              <p className="text-sm text-gray-500 italic mt-2">{item.procurement_comment}</p>
-                            )}
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-500">No items found.</p>
+                    {req.justification && (
+                      <p className="mt-4 text-gray-700">
+                        <span className="font-medium text-gray-900">Justification:</span> {req.justification}
+                      </p>
+                    )}
+
+                    <footer className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => toggleItems(req.id)}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                      >
+                        <span>{expandedRequestId === req.id ? 'Hide Items' : 'View Items'}</span>
+                        <span aria-hidden="true">{expandedRequestId === req.id ? '▲' : '▼'}</span>
+                      </button>
+
+                      {expandedRequestId === req.id && (
+                        <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
+                          {itemsCache[req.id]?.length > 0 ? (
+                            itemsCache[req.id].map((item) => (
+                              <div
+                                key={item.id}
+                                className="rounded-md border border-gray-100 bg-gray-50 p-3"
+                              >
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {item.item_name}
+                                  {item.brand && <span className="text-gray-500"> ({item.brand})</span>}
+                                </p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  <span className="font-medium text-gray-700">Requested:</span> {item.quantity}
+                                  <span className="mx-2 text-gray-400">•</span>
+                                  <span className="font-medium text-gray-700">Purchased:</span>{' '}
+                                  {item.purchased_quantity ?? '—'}
+                                  <span className="mx-2 text-gray-400">•</span>
+                                  <span className="font-medium text-gray-700">Status:</span> {item.procurement_status || '—'}
+                                </p>
+                                {item.procurement_comment && (
+                                  <p className="text-sm text-gray-500 italic mt-2">{item.procurement_comment}</p>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500">No items found.</p>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                </footer>
-              </article>
-            ))}
+                    </footer>
+                  </article>
+                );
+              })}
           </div>
         )}
       </div>

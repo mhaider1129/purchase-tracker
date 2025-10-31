@@ -385,13 +385,26 @@ const AssignedRequestsPage = () => {
           requests.map((request) => {
             const summary = request.status_summary || {};
             const autoTotal = autoTotals[request.id] ?? summary.calculated_total_cost ?? null;
+            const isUrgent = Boolean(request?.is_urgent);
+            const containerClasses = [
+              'mb-6 border rounded-lg p-5 bg-white shadow-sm transition',
+              isUrgent ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
             return (
-              <div key={request.id} className="mb-6 border rounded-lg p-5 bg-white shadow-sm">
+              <div key={request.id} className={containerClasses}>
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      <strong className="text-gray-700">Request ID:</strong> {request.id}
-                    </p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-700">Request ID: {request.id}</p>
+                      {isUrgent && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                          <span className="block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
+                          Urgent
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">
                       <strong className="text-gray-700">Type:</strong> {request.request_type}
                     </p>
@@ -408,21 +421,21 @@ const AssignedRequestsPage = () => {
                     )}
                   </div>
 
-                <div className="flex flex-col items-end gap-2">
-                  <button
-                    onClick={() => toggleExpand(request.id)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                  >
-                    {expandedRequestId === request.id ? 'Hide Items' : 'View Items'}
-                  </button>
-                  <button
-                    className="text-blue-600 underline"
-                    onClick={() => toggleApprovals(request.id)}
-                    disabled={loadingApprovalsId === request.id}
-                  >
-                    {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
-                  </button>
-                </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        onClick={() => toggleExpand(request.id)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                      >
+                        {expandedRequestId === request.id ? 'Hide Items' : 'View Items'}
+                      </button>
+                      <button
+                        className="text-blue-600 underline"
+                        onClick={() => toggleApprovals(request.id)}
+                        disabled={loadingApprovalsId === request.id}
+                      >
+                        {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
+                      </button>
+                    </div>
                 </div>
 
               {expandedApprovalsId === request.id && (

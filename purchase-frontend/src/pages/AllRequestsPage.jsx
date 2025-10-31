@@ -663,101 +663,116 @@ const AllRequestsPage = () => {
         <div className="space-y-4">
           {requests.map((request) => {
             const step = getCurrentStep(request);
+            const isUrgent = Boolean(request?.is_urgent);
+            const cardClasses = [
+              'border rounded p-4 shadow bg-white transition',
+              isUrgent ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
+            ]
+              .filter(Boolean)
+              .join(' ');
             return (
-            <div key={request.id} className="border rounded p-4 shadow bg-white">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p><strong>ID:</strong> {request.id}</p>
-                  <p><strong>Type:</strong> {request.request_type}</p>
-                  <p>
-                    <strong>Project:</strong> {request.project_name || '—'}
-                  </p>
-                  <p><strong>Justification:</strong> {request.justification}</p>
-                  <p>
-                    <strong>Assigned To:</strong>{' '}
-                    {request.assigned_user_name
-                      ? `${request.assigned_user_name} (${request.assigned_user_role})`
-                      : 'Not Assigned'}
-                  </p>
-                  <p>
-                    <strong>Current Step:</strong>{' '}
-                    <span className={`px-2 py-1 rounded ${getStepColor(step)}`}>
-                      {step}
-                    </span>
-                    {request.current_approver_role && request.current_approval_level && (
-                      <> (Level {request.current_approval_level})</>
-                    )}
-                  </p>
-                </div>
+              <div key={request.id} className={cardClasses}>
+                <div className="flex justify-between items-start gap-4 flex-wrap">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <p className="font-semibold text-gray-800">ID: {request.id}</p>
+                      {isUrgent && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                          <span className="block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
+                          Urgent
+                        </span>
+                      )}
+                    </div>
+                    <p><strong>Type:</strong> {request.request_type}</p>
+                    <p>
+                      <strong>Project:</strong> {request.project_name || '—'}
+                    </p>
+                    <p><strong>Justification:</strong> {request.justification}</p>
+                    <p>
+                      <strong>Assigned To:</strong>{' '}
+                      {request.assigned_user_name
+                        ? `${request.assigned_user_name} (${request.assigned_user_role})`
+                        : 'Not Assigned'}
+                    </p>
+                    <p>
+                      <strong>Current Step:</strong>{' '}
+                      <span className={`px-2 py-1 rounded ${getStepColor(step)}`}>
+                        {step}
+                      </span>
+                      {request.current_approver_role && request.current_approval_level && (
+                        <> (Level {request.current_approval_level})</>
+                      )}
+                    </p>
+                  </div>
 
-                <div className="flex flex-col items-end gap-2">
-                  <button
-                    className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
-                    onClick={() => handlePrint(request.id)}
-                  >
-                    Print
-                  </button>
-                  <button
-                    className="text-blue-600 underline"
-                    onClick={() => toggleItems(request.id)}
-                    disabled={loadingItemsId === request.id}
-                  >
-                    {expandedItemsId === request.id ? 'Hide Items' : 'View Items'}
-                  </button>
-                  <button
-                    className="text-blue-600 underline"
-                    onClick={() => toggleApprovals(request.id)}
-                    disabled={loadingApprovalsId === request.id}
-                  >
-                    {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
-                  </button>
-                  {request.status === 'Approved' && (
+                  <div className="flex flex-col items-end gap-2">
                     <button
-                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                      onClick={() =>
-                        setExpandedAssignId(
-                          expandedAssignId === request.id ? null : request.id
-                        )
-                      }
+                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
+                      onClick={() => handlePrint(request.id)}
                     >
-                      {expandedAssignId === request.id
-                        ? 'Hide'
-                        : request.assigned_user_name
-                        ? 'Reassign'
-                        : 'Assign'}
+                      Print
                     </button>
-                  )}
+                    <button
+                      className="text-blue-600 underline"
+                      onClick={() => toggleItems(request.id)}
+                      disabled={loadingItemsId === request.id}
+                    >
+                      {expandedItemsId === request.id ? 'Hide Items' : 'View Items'}
+                    </button>
+                    <button
+                      className="text-blue-600 underline"
+                      onClick={() => toggleApprovals(request.id)}
+                      disabled={loadingApprovalsId === request.id}
+                    >
+                      {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
+                    </button>
+                    {request.status === 'Approved' && (
+                      <button
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                        onClick={() =>
+                          setExpandedAssignId(
+                            expandedAssignId === request.id ? null : request.id
+                          )
+                        }
+                      >
+                        {expandedAssignId === request.id
+                          ? 'Hide'
+                          : request.assigned_user_name
+                          ? 'Reassign'
+                          : 'Assign'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {expandedAssignId === request.id && (
-                <AssignRequestPanel
-                  requestId={request.id}
-                  currentAssignee={request.assigned_user_name}
-                  onSuccess={fetchRequests}
-                />
-              )}
+                {expandedAssignId === request.id && (
+                  <AssignRequestPanel
+                    requestId={request.id}
+                    currentAssignee={request.assigned_user_name}
+                    onSuccess={fetchRequests}
+                  />
+                )}
 
-              {expandedItemsId === request.id && (
-                <div className="mt-4 border-t pt-2">
-                  <h3 className="font-semibold mb-2">Requested Items</h3>
-                  {loadingItemsId === request.id ? (
-                    <p className="text-gray-500">Loading items...</p>
-                  ) : itemsMap[request.id]?.length > 0 ? (
-                    <table className="w-full text-sm border">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="border p-1">Item</th>
-                          <th className="border p-1">Brand</th>
-                          <th className="border p-1">Qty</th>
-                          <th className="border p-1">Unit Cost</th>
-                          <th className="border p-1">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {itemsMap[request.id].map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="border p-1">{item.item_name}</td>
+                {expandedItemsId === request.id && (
+                  <div className="mt-4 border-t pt-2">
+                    <h3 className="font-semibold mb-2">Requested Items</h3>
+                    {loadingItemsId === request.id ? (
+                      <p className="text-gray-500">Loading items...</p>
+                    ) : itemsMap[request.id]?.length > 0 ? (
+                      <table className="w-full text-sm border">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border p-1">Item</th>
+                            <th className="border p-1">Brand</th>
+                            <th className="border p-1">Qty</th>
+                            <th className="border p-1">Unit Cost</th>
+                            <th className="border p-1">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {itemsMap[request.id].map((item, idx) => (
+                            <tr key={idx}>
+                              <td className="border p-1">{item.item_name}</td>
                             <td className="border p-1">{item.brand || '—'}</td>
                             <td className="border p-1">{item.quantity}</td>
                             <td className="border p-1">{item.unit_cost}</td>

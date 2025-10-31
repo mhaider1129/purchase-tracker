@@ -499,12 +499,12 @@ const ApprovalsPanel = () => {
     setSelectedRequestId(requestId);
     setSelectedDecision(decision);
     setComments('');
-    setIsUrgent(false);
+    const request = requests.find((r) => r.approval_id === approvalId);
+    setIsUrgent(Boolean(request?.is_urgent));
     const draftCost = estimatedCostDrafts[requestId];
     if (draftCost !== undefined) {
       setEstimatedCost(draftCost);
     } else {
-      const request = requests.find((r) => r.approval_id === approvalId);
       if (request?.estimated_cost != null && request.estimated_cost !== '') {
         setEstimatedCost(String(request.estimated_cost));
       } else {
@@ -811,9 +811,19 @@ const ApprovalsPanel = () => {
                   const attachments = attachmentsMap[req.request_id] || [];
                   const attachmentsLoading = attachmentLoadingMap[req.request_id];
                   const attachmentsError = attachmentErrorMap[req.request_id];
+                  const isUrgentRequest = Boolean(req.is_urgent);
+                  const cardClassName = `border rounded-lg p-4 shadow-sm ${
+                    isUrgentRequest ? 'border-red-500 bg-red-50/60 ring-1 ring-red-200' : 'border-gray-200'
+                  }`;
 
                   return (
-                    <div key={req.approval_id} className="border rounded-lg p-4 shadow-sm">
+                    <div key={req.approval_id} className={cardClassName}>
+                      {isUrgentRequest && (
+                        <div className="mb-3 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                          <span className="uppercase tracking-wide">Urgent</span>
+                          <span className="font-normal normal-case">Requires immediate attention</span>
+                        </div>
+                      )}
                       <p>
                         <strong>Request ID:</strong> {req.request_id}
                       </p>
@@ -857,12 +867,6 @@ const ApprovalsPanel = () => {
                       <p className={`inline-block mt-1 text-xs text-white px-2 py-1 rounded ${tag.color}`}>
                         {tag.label}
                       </p>
-
-                      {req.is_urgent && (
-                        <span className="inline-block ml-2 text-xs text-white px-2 py-1 rounded bg-red-600 font-bold">
-                          Urgent
-                        </span>
-                      )}
 
                       {req.updated_by && (
                         <p className="text-sm text-gray-500 mt-2">
