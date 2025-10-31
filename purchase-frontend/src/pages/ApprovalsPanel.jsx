@@ -646,7 +646,18 @@ const ApprovalsPanel = () => {
     const sortFn = sorter[sortOption] || sorter.newest;
     result.sort(sortFn);
 
-    return result;
+    const urgentRequests = [];
+    const nonUrgentRequests = [];
+
+    result.forEach((req) => {
+      if (req?.is_urgent) {
+        urgentRequests.push(req);
+      } else {
+        nonUrgentRequests.push(req);
+      }
+    });
+
+    return [...urgentRequests, ...nonUrgentRequests];
   }, [requests, searchTerm, typeFilter, urgencyFilter, sortOption]);
 
   const hasActiveFilters = useMemo(() => {

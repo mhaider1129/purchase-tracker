@@ -12,9 +12,13 @@ const defaultLabels = {
     comment: 'Comment',
     date: 'Date',
   },
+  urgentBadge: {
+    title: 'Urgent',
+    description: 'Requires immediate attention',
+  },
 };
 
-const ApprovalTimeline = ({ approvals, isLoading, labels = {} }) => {
+const ApprovalTimeline = ({ approvals, isLoading, labels = {}, isUrgent = false, formatDate }) => {
   const mergedLabels = {
     ...defaultLabels,
     ...labels,
@@ -22,11 +26,36 @@ const ApprovalTimeline = ({ approvals, isLoading, labels = {} }) => {
       ...defaultLabels.columns,
       ...(labels.columns || {}),
     },
+    urgentBadge: {
+      ...defaultLabels.urgentBadge,
+      ...(labels.urgentBadge || {}),
+    },
+  };
+
+  const formatApprovalDate = (value) => {
+    if (!value) return '—';
+    if (typeof formatDate === 'function') {
+      return formatDate(value);
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '—';
+    return parsed.toLocaleString('en-GB');
   };
 
   return (
     <div>
       <h3 className="font-semibold mb-2">{mergedLabels.title}</h3>
+      {isUrgent && (
+        <div className="mb-3 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <span className="font-semibold uppercase tracking-wide">
+            {mergedLabels.urgentBadge.title}
+          </span>
+          {mergedLabels.urgentBadge.description && (
+            <span className="font-normal normal-case">{mergedLabels.urgentBadge.description}</span>
+          )}
+        </div>
+      )}
       {isLoading ? (
         <p className="text-gray-500">{mergedLabels.loading}</p>
       ) : !approvals || approvals.length === 0 ? (
@@ -52,11 +81,7 @@ const ApprovalTimeline = ({ approvals, isLoading, labels = {} }) => {
                   <td className="border p-1">{approval.role || '—'}</td>
                   <td className="border p-1">{approval.status || '—'}</td>
                   <td className="border p-1">{approval.comments || '—'}</td>
-                  <td className="border p-1">
-                    {approval.approved_at
-                      ? new Date(approval.approved_at).toLocaleString('en-GB')
-                      : '—'}
-                  </td>
+                  <td className="border p-1">{formatApprovalDate(approval.approved_at)}</td>
                 </tr>
               ))}
             </tbody>

@@ -103,7 +103,19 @@ const AllRequestsPage = () => {
         },
       });
 
-      setRequests(res?.data?.data || []);
+      const fetchedRequests = Array.isArray(res?.data?.data) ? [...res.data.data] : [];
+      const urgentRequests = [];
+      const nonUrgentRequests = [];
+
+      fetchedRequests.forEach((req) => {
+        if (req?.is_urgent) {
+          urgentRequests.push(req);
+        } else {
+          nonUrgentRequests.push(req);
+        }
+      });
+
+      setRequests([...urgentRequests, ...nonUrgentRequests]);
       resetApprovals();
       const total = res?.data?.total || 0;
       setTotalPages(Math.ceil(total / limit));
@@ -792,6 +804,7 @@ const AllRequestsPage = () => {
                   <ApprovalTimeline
                     approvals={approvalsMap[request.id]}
                     isLoading={loadingApprovalsId === request.id}
+                    isUrgent={Boolean(request?.is_urgent)}
                   />
                 </div>
               )}

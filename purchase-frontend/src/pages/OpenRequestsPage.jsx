@@ -419,6 +419,7 @@ const OpenRequestsPage = () => {
                       approvals={approvalsMap[req.id]}
                       isLoading={loadingApprovalsId === req.id}
                       labels={timelineLabels}
+                      isUrgent={Boolean(req?.is_urgent)}
                     />
                   </div>
                 )}

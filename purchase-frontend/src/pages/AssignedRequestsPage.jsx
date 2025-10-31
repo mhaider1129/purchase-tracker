@@ -443,6 +443,7 @@ const AssignedRequestsPage = () => {
                   <ApprovalTimeline
                     approvals={approvalsMap[request.id]}
                     isLoading={loadingApprovalsId === request.id}
+                    isUrgent={Boolean(request?.is_urgent)}
                   />
                 </div>
               )}

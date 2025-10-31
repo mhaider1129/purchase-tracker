@@ -348,6 +348,7 @@ const AuditRequestsPage = () => {
                           <ApprovalTimeline
                             approvals={approvalsMap[req.id]}
                             isLoading={loadingApprovalsId === req.id}
+                            isUrgent={Boolean(req?.is_urgent)}
                           />
                         </td>
                       </tr>

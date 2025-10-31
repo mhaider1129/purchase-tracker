@@ -452,6 +452,7 @@ const ClosedRequestsPage = () => {
                                 approvals={approvalsMap[req.id]}
                                 isLoading={loadingApprovalsId === req.id}
                                 labels={timelineLabels}
+                                isUrgent={Boolean(req?.is_urgent)}
                                 formatDate={(value) => formatDate(value, normalizedLocale)}
                               />
                             </td>
@@ -541,6 +542,7 @@ const ClosedRequestsPage = () => {
                           approvals={approvalsMap[req.id]}
                           isLoading={loadingApprovalsId === req.id}
                           labels={timelineLabels}
+                          isUrgent={Boolean(req?.is_urgent)}
                           formatDate={(value) => formatDate(value, normalizedLocale)}
                         />
                       </div>
