@@ -104,7 +104,13 @@
     "toggleMenu": "Toggle navigation menu",
     "navigation": "Navigation",
     "closeMenu": "Close menu",
-    "selectLanguage": "Select language"
+    "closeMenu": "Close menu",
+    "selectLanguage": "Select language",
+    "notifications": "Notifications",
+    "noNotifications": "You're all caught up!",
+    "clearAll": "Clear all",
+    "openNotifications": "Open notifications",
+    "dismissNotification": "Dismiss notification"
   },
   "pageTitles": {
     "nonStockRequestForm": "Non-Stock Request Form",

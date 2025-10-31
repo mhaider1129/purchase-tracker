@@ -5,6 +5,7 @@ import useCurrentUser from '../hooks/useCurrentUser';
 import useDarkMode from '../hooks/useDarkMode';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import NotificationBell from './ui/NotificationBell';
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -163,6 +164,7 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center justify-center gap-3 flex-wrap">
             <NavItems />
           </div>
+          <NotificationBell />
           <div className="flex items-center gap-2 bg-white/70 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-full px-2 py-1 backdrop-blur">
             <select
               value={i18n.language}

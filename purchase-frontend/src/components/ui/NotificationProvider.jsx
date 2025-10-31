@@ -63,6 +63,14 @@ export const NotificationProvider = ({ children, timeout = 5000 }) => {
     }
   }, []);
 
+  const clearAllNotifications = useCallback(() => {
+    setNotifications([]);
+    timers.current.forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+    timers.current.clear();
+  }, []);
+
   const notify = useCallback(
     ({ message, title, type = 'info', duration }) => {
       if (!message) {
@@ -88,8 +96,10 @@ export const NotificationProvider = ({ children, timeout = 5000 }) => {
     () => ({
       notify,
       remove: removeNotification,
+      clearAll: clearAllNotifications,
+      notifications,
     }),
-    [notify, removeNotification],
+    [notify, removeNotification, clearAllNotifications, notifications],
   );
 
   return (

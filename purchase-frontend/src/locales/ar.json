@@ -104,7 +104,12 @@
     "toggleMenu": "تبديل قائمة التنقل",
     "navigation": "التنقل",
     "closeMenu": "إغلاق القائمة",
-    "selectLanguage": "اختر اللغة"
+    "selectLanguage": "اختر اللغة",
+    "notifications": "الإشعارات",
+    "noNotifications": "لا توجد إشعارات حالياً",
+    "clearAll": "مسح الكل",
+    "openNotifications": "عرض الإشعارات",
+    "dismissNotification": "إغلاق الإشعار"
   },
   "pageTitles": {
     "nonStockRequestForm": "نموذج طلب غير مخزوني",
