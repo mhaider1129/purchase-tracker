@@ -91,11 +91,13 @@
     "auditRequests": "طلبات التدقيق",
     "procurementPlans": "خطط المشتريات",
     "contracts": "العقود",
+    "supplierEvaluations": "تقييمات الموردين",
     "viewIncomplete": "عرض الطلبات غير المكتملة",
     "registerUser": "تسجيل مستخدم",
     "myAssigned": "طلباتي المسندة",
     "completedRequests": "الطلبات المكتملة",
     "custodyIssue": "إصدار عهدة",
+    "custodyIssued": "العهد المصدرة",
     "custodyApprovals": "موافقات العهدة",
     "itemRecalls": "استدعاء الأصناف",
     "changePassword": "تغيير كلمة المرور",
@@ -121,7 +123,11 @@
     "auditRequests": "صفحة طلبات التدقيق",
     "myMaintenanceRequests": "طلباتي للصيانة",
     "maintenanceStock": "مخزون الصيانة",
-    "custodyApprovals": "موافقات العهدة"
+    "custodyApprovals": "موافقات العهدة",
+    "custodyIssued": "العهد المصدرة"
+  },
+  "maintenanceHODApprovals": {
+    "title": "مركز قرارات رئيس قسم الصيانة"
   },
   "language": {
     "english": "الإنجليزية",
@@ -390,6 +396,10 @@
       "issueCustody": {
         "label": "إصدار عهدة",
         "aria": "إصدار عهدة للموظفين أو الأقسام"
+      },
+      "issuedCustodies": {
+        "label": "العهد المصدرة",
+        "aria": "مراجعة العهد التي تم إصدارها سابقاً"
       },
       "submittedSupply": {
         "label": "طلبات التوريد المرسلة",
@@ -725,6 +735,7 @@
         "rejected": "رفض"
       },
       "past": {
+
         "approved": "الموافقة على",
         "rejected": "رفض"
       }
@@ -748,6 +759,52 @@
       "departmentCustody": "عهدة القسم",
       "hod": "رئيس القسم:",
       "notAssigned": "غير معين"
+    }
+  },
+  "custodyIssuedPage": {
+    "errors": {
+      "loadFailed": "تعذر تحميل العهد المصدرة."
+    },
+    "actions": {
+      "refresh": "تحديث"
+    },
+    "loading": "جاري تحميل العهد المصدرة...",
+    "lastUpdated": "آخر تحديث {{time}}",
+    "filters": {
+      "searchPlaceholder": "ابحث حسب الصنف أو المستلم أو القسم أو الرمز",
+      "searchLabel": "البحث في العهد المصدرة",
+      "status": {
+        "label": "الحالة:",
+        "all": "الكل",
+        "pending": "قيد الانتظار",
+        "approved": "موافق",
+        "rejected": "مرفوض"
+      }
+    },
+    "emptyState": "لا توجد سجلات عهدة صادرة حتى الآن.",
+    "emptyStateFiltered": "لا توجد سجلات عهدة مطابقة لمرشحاتك.",
+    "statusLabels": {
+      "pending": "قيد الانتظار",
+      "approved": "موافق",
+      "rejected": "مرفوض",
+      "notrequired": "غير مطلوب",
+      "unknown": "غير معروف"
+    },
+    "fields": {
+      "custodyType": "نوع العهدة: {{type}}",
+      "code": "الرمز: {{code}}",
+      "issuedBy": "أصدره: {{name}}",
+      "unknown": "غير معروف",
+      "createdOn": "تاريخ الإنشاء: {{date}}",
+      "quantity": "الكمية:",
+      "custodian": "المستلم:",
+      "department": "القسم:",
+      "hod": "رئيس القسم:",
+      "departmentCustody": "عهدة القسم",
+      "notSpecified": "غير محدد",
+      "notAssigned": "غير معين",
+      "custodianApproval": "موافقة المستلم",
+      "hodApproval": "موافقة رئيس القسم"
     }
   },
   "dashboard": {

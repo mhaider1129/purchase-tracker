@@ -19,6 +19,7 @@ import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
 import CustodyIssueForm from './pages/custody/CustodyIssueForm';
 import CustodyApprovals from './pages/custody/CustodyApprovals';
+import CustodyIssuedList from './pages/custody/CustodyIssuedList';
 import ItemRecallsPage from './pages/ItemRecallsPage';
 
 import ApprovalsPanel from './pages/ApprovalsPanel';
@@ -45,6 +46,7 @@ import WarehouseSupplyTemplatesPage from './pages/WarehouseSupplyTemplatesPage';
 import AuditRequestsPage from './pages/AuditRequestsPage';
 import LifecycleAnalytics from './pages/LifecycleAnalytics';
 import ContractsPage from './pages/ContractsPage';
+import SupplierEvaluationsPage from './pages/SupplierEvaluationsPage';
 
 
 // 🔒 Reusable Protected Route with Role Filtering
@@ -114,6 +116,23 @@ function App() {
             />
           }
         />
+        <Route
+          path="/custody/issued"
+          element={
+            <ProtectedRoute
+              element={<CustodyIssuedList />}
+              allowedRoles={[
+                'warehouse_keeper',
+                'WarehouseKeeper',
+                'warehousekeeper',
+                'warehousemanager',
+                'WarehouseManager',
+                'SCM',
+                'admin',
+              ]}
+            />
+          }
+        />
         <Route path="/custody/approvals" element={<ProtectedRoute element={<CustodyApprovals />} />} />
         <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
         <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
@@ -163,6 +182,15 @@ function App() {
         <Route
           path="/contracts"
           element={<ProtectedRoute element={<ContractsPage />} allowedRoles={['SCM', 'admin', 'ProcurementSpecialist']} />}
+        />
+        <Route
+          path="/supplier-evaluations"
+          element={
+            <ProtectedRoute
+              element={<SupplierEvaluationsPage />}
+              allowedRoles={['admin', 'SCM', 'ProcurementSpecialist', 'ProcurementManager']}
+            />
+          }
         />
 
         {/* ✅ Procurement-Specific Routes */}

@@ -1,5 +1,5 @@
 //src/pages/ApprovalHistory.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import Papa from 'papaparse';
@@ -18,6 +18,7 @@ const ApprovalHistory = () => {
   const [toDate, setToDate] = useState('');
   const [department, setDepartment] = useState('');
   const [departments, setDepartments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,6 +47,73 @@ const ApprovalHistory = () => {
     fetchDeps();
   }, []);
 
+  const applySearch = (items, term) => {
+    if (!term.trim()) return items;
+
+    const lowered = term.toLowerCase();
+    return items.filter((item) =>
+      [
+        item.request_id,
+        item.request_type,
+        item.department_name,
+        item.project_name,
+        item.justification,
+        item.status,
+        item.decision,
+        item.comments,
+      ]
+        .filter(Boolean)
+        .some((value) => value.toString().toLowerCase().includes(lowered))
+    );
+  };
+
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined || value === '') return '—';
+    const numberValue = Number(value);
+    if (Number.isNaN(numberValue)) return value;
+
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 2,
+    }).format(numberValue);
+  };
+
+  const statusVariant = {
+    Approved: 'text-green-700 bg-green-100 border-green-200',
+    Rejected: 'text-red-700 bg-red-100 border-red-200',
+    Pending: 'text-yellow-700 bg-yellow-100 border-yellow-200',
+  };
+
+  const resetFilters = () => {
+    setStatusFilter('');
+    setFromDate('');
+    setToDate('');
+    setDepartment('');
+    setSearchTerm('');
+  };
+
+  const summary = useMemo(() => {
+    const base = {
+      total: filtered.length,
+      approved: 0,
+      rejected: 0,
+      pending: 0,
+      spend: 0,
+    };
+
+    return filtered.reduce((acc, item) => {
+      if (item.decision === 'Approved') acc.approved += 1;
+      if (item.decision === 'Rejected') acc.rejected += 1;
+      if (item.status === 'Pending' || item.decision === 'Pending') acc.pending += 1;
+      const cost = Number(item.estimated_cost);
+      if (!Number.isNaN(cost)) {
+        acc.spend += cost;
+      }
+      return acc;
+    }, base);
+  }, [filtered]);
+
   // Fetch history whenever filters change
   useEffect(() => {
     const fetchHistory = async () => {
@@ -60,7 +128,7 @@ const ApprovalHistory = () => {
           },
         });
         setHistory(res.data);
-        setFiltered(res.data);
+        setFiltered(applySearch(res.data, searchTerm));
         setCurrentPage(1);
       } catch (err) {
         console.error('❌ Failed to fetch approval history:', err);
@@ -72,6 +140,11 @@ const ApprovalHistory = () => {
 
      fetchHistory();
   }, [statusFilter, fromDate, toDate, department]);
+
+  useEffect(() => {
+    setFiltered(applySearch(history, searchTerm));
+    setCurrentPage(1);
+  }, [history, searchTerm]);
 
   const downloadCSV = () => {
     const sorted = [...filtered].sort((a, b) => new Date(b.approved_at) - new Date(a.approved_at));
@@ -143,8 +216,18 @@ const ApprovalHistory = () => {
 
         {/* 🔍 Filters */}
         <div className="flex flex-wrap gap-4 items-end mb-6">
+          <div className="flex-1 min-w-[220px]">
+            <label className="block text-sm font-medium mb-1">Search</label>
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by request ID, department, justification..."
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <div>
-            <label className="block text-sm font-medium">Filter by Status:</label>
+            <label className="block text-sm font-medium mb-1">Filter by Status:</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -157,7 +240,7 @@ const ApprovalHistory = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Department:</label>
+            <label className="block text-sm font-medium mb-1">Department:</label>
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
@@ -173,7 +256,7 @@ const ApprovalHistory = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">From Date:</label>
+            <label className="block text-sm font-medium mb-1">From Date:</label>
             <input
               type="date"
               value={fromDate}
@@ -183,7 +266,7 @@ const ApprovalHistory = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">To Date:</label>
+            <label className="block text-sm font-medium mb-1">To Date:</label>
             <input
               type="date"
               value={toDate}
@@ -191,10 +274,17 @@ const ApprovalHistory = () => {
               className="p-2 border rounded"
             />
           </div>
+
+          <button
+            onClick={resetFilters}
+            className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+          >
+            Reset
+          </button>
         </div>
 
         {/* 📁 Export Buttons */}
-        <div className="flex gap-4 mb-4">
+        <div className="flex flex-wrap gap-3 mb-4">
           <button
             onClick={downloadCSV}
             title="Export to CSV"
@@ -209,12 +299,36 @@ const ApprovalHistory = () => {
           >
             Download PDF
           </button>
+          <div className="ml-auto flex items-center text-sm text-gray-500">
+            <span>
+              Showing {filtered.length} of {history.length} approvals
+            </span>
+          </div>
         </div>
 
         {/* 📊 Stats */}
-        <p className="text-sm text-gray-600 mb-2">
-          Showing {filtered.length} of {history.length} approvals
-        </p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 mb-6">
+          <div className="p-4 border rounded-lg bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Total Decisions</p>
+            <p className="text-2xl font-semibold text-gray-900">{summary.total}</p>
+          </div>
+          <div className="p-4 border rounded-lg bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Approved</p>
+            <p className="text-2xl font-semibold text-green-600">{summary.approved}</p>
+          </div>
+          <div className="p-4 border rounded-lg bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Rejected</p>
+            <p className="text-2xl font-semibold text-red-600">{summary.rejected}</p>
+          </div>
+          <div className="p-4 border rounded-lg bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Pending</p>
+            <p className="text-2xl font-semibold text-yellow-600">{summary.pending}</p>
+          </div>
+          <div className="p-4 border rounded-lg bg-white shadow-sm">
+            <p className="text-sm text-gray-500">Estimated Spend</p>
+            <p className="text-2xl font-semibold text-gray-900">{formatCurrency(summary.spend)}</p>
+          </div>
+        </div>
 
         {/* 📋 Table */}
         {loading ? (
@@ -225,39 +339,63 @@ const ApprovalHistory = () => {
           <p>No approvals found.</p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="min-w-full border text-sm">
-                <thead className="bg-gray-100">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-left uppercase tracking-wide text-xs text-gray-500">
                   <tr>
-                    <th className="border p-2">Request ID</th>
-                    <th className="border p-2">Type</th>
-                    <th className="border p-2">Department</th>
-                    <th className="border p-2">Project</th>
-                    <th className="border p-2">Justification</th>
-                    <th className="border p-2">Cost</th>
-                    <th className="border p-2">Final Status</th>
-                    <th className="border p-2">Your Decision</th>
-                    <th className="border p-2">Your Comment</th>
-                    <th className="border p-2">Level</th>
-                    <th className="border p-2">Date</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Request ID</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Type</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Department</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Project</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Justification</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Cost</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Final Status</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Your Decision</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Your Comment</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Level</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedItems.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="border p-2">{item.request_id}</td>
-                      <td className="border p-2">{item.request_type}</td>
-                      <td className="border p-2">{item.department_name}</td>
-                      <td className="border p-2">{item.project_name || '—'}</td>
-                      <td className="border p-2">{item.justification}</td>
-                      <td className="border p-2">{item.estimated_cost}</td>
-                      <td className="border p-2">{item.status}</td>
-                      <td className={`border p-2 ${item.decision === 'Approved' ? 'text-green-600' : 'text-red-600'}`}>
-                        {item.decision}
+                    <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
+                      <td className="border-r p-2 align-top text-gray-900 font-medium">{item.request_id}</td>
+                      <td className="border-r p-2 align-top text-gray-700">{item.request_type}</td>
+                      <td className="border-r p-2 align-top text-gray-700">{item.department_name}</td>
+                      <td className="border-r p-2 align-top text-gray-700">{item.project_name || '—'}</td>
+                      <td className="border-r p-2 align-top text-gray-600 max-w-xs">
+                        <p className="whitespace-pre-wrap leading-snug">{item.justification}</p>
                       </td>
-                      <td className="border p-2">{item.comments || '—'}</td>
-                      <td className="border p-2">{item.approval_level || '—'}</td>
-                      <td className="border p-2">
+                      <td className="border-r p-2 align-top text-gray-700">{formatCurrency(item.estimated_cost)}</td>
+                      <td className="border-r p-2 align-top">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                            statusVariant[item.status] || 'text-blue-700 bg-blue-100 border-blue-200'
+                          }`}
+                        >
+                          {item.status || '—'}
+                        </span>
+                      </td>
+                      <td className="border-r p-2 align-top">
+                        <span
+                          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                            statusVariant[item.decision] || 'text-gray-700 bg-gray-100 border-gray-200'
+                          }`}
+                        >
+                          {item.decision || '—'}
+                        </span>
+                      </td>
+                      <td className="border-r p-2 align-top text-gray-600">
+                        {item.comments ? (
+                          <span className="block truncate max-w-[180px]" title={item.comments}>
+                            {item.comments}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="border-r p-2 align-top text-gray-600">{item.approval_level || '—'}</td>
+                      <td className="p-2 align-top text-gray-600">
                         {item.approved_at
                           ? new Date(item.approved_at).toLocaleString('en-GB', {
                               day: '2-digit',

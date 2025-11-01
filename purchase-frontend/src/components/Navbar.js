@@ -57,6 +57,12 @@ const Navbar = () => {
     if (!user) return null;
 
     const normalizedRole = user.role?.toLowerCase?.();
+    const canManageSupplierEvaluations = [
+      'admin',
+      'scm',
+      'procurementspecialist',
+      'procurementmanager',
+    ].includes(normalizedRole);
     const showItemRecallLink =
       Boolean(user.department_id) ||
       [
@@ -91,6 +97,17 @@ const Navbar = () => {
         ].includes(user.role) &&
           renderNavButton(t('navbar.custodyIssue'), '/custody/issue', 'text-indigo-600')}
 
+        {[
+          'WarehouseManager',
+          'warehouse_manager',
+          'WarehouseKeeper',
+          'warehouse_keeper',
+          'warehousekeeper',
+          'SCM',
+          'admin',
+        ].includes(user.role) &&
+          renderNavButton(t('navbar.custodyIssued'), '/custody/issued', 'text-indigo-500')}
+
         {['WarehouseManager', 'warehouse_manager', 'technician'].includes(user.role) &&
           renderNavButton(t('navbar.maintenanceStock'), '/maintenance-stock', 'text-teal-600')}
 
@@ -107,6 +124,13 @@ const Navbar = () => {
 
         {['SCM', 'admin', 'ProcurementSpecialist'].includes(user.role) &&
           renderNavButton(t('navbar.contracts'), '/contracts', 'text-emerald-600')}
+
+        {canManageSupplierEvaluations &&
+          renderNavButton(
+            t('navbar.supplierEvaluations'),
+            '/supplier-evaluations',
+            'text-emerald-700'
+          )}
 
         {['admin', 'SCM', 'CMO', 'COO'].includes(user.role) &&
           renderNavButton(

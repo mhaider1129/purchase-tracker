@@ -50,6 +50,20 @@ const ACTION_GROUPS = [
         buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
       },
       {
+        labelKey: 'requestTypeSelector.actions.issuedCustodies.label',
+        ariaLabelKey: 'requestTypeSelector.actions.issuedCustodies.aria',
+        path: '/custody/issued',
+        roles: [
+          'warehousemanager',
+          'warehouse_manager',
+          'warehousekeeper',
+          'warehouse_keeper',
+          'scm',
+          'admin',
+        ],
+        buttonClassName: 'bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-300',
+      },
+      {
         labelKey: 'requestTypeSelector.actions.submittedSupply.label',
         ariaLabelKey: 'requestTypeSelector.actions.submittedSupply.aria',
         path: '/warehouse-supply-requests',
@@ -91,7 +105,8 @@ const ACTION_GROUPS = [
         ariaLabelKey: 'requestTypeSelector.actions.medication.aria',
         path: '/requests/medication',
         buttonClassName: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-400',
-        predicate: ({ can_request_medication }) => Boolean(can_request_medication),
+        predicate: ({ can_request_medication, role }) =>
+          Boolean(can_request_medication) || role === 'scm',
       },
       {
         labelKey: 'requestTypeSelector.actions.itRequest.label',

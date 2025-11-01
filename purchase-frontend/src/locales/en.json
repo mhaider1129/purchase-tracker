@@ -91,11 +91,13 @@
     "auditRequests": "Audit Requests",
     "procurementPlans": "Procurement Plans",
     "contracts": "Contracts",
+    "supplierEvaluations": "Supplier Evaluations",
     "viewIncomplete": "View Incomplete Requests",
     "registerUser": "Register User",
     "myAssigned": "My Assigned Requests",
     "completedRequests": "Completed Requests",
     "custodyIssue": "Issue Custody",
+    "custodyIssued": "Issued Custodies",
     "custodyApprovals": "Custody Approvals",
     "itemRecalls": "Item Recalls",
     "changePassword": "Change Password",
@@ -121,7 +123,11 @@
     "auditRequests": "Audit Requests Page",
     "myMaintenanceRequests": "My Maintenance Requests",
     "maintenanceStock": "Maintenance Stock",
-    "custodyApprovals": "Custody Approvals"
+    "custodyApprovals": "Custody Approvals",
+    "custodyIssued": "Issued Custodies"
+  },
+    "maintenanceHODApprovals": {
+    "title": "Maintenance HOD Decision Center"
   },
   "language": {
     "english": "English",
@@ -391,6 +397,10 @@
       "issueCustody": {
         "label": "Issue Custody Record",
         "aria": "Issue custody record to staff or departments"
+      },
+      "issuedCustodies": {
+        "label": "Issued Custody Records",
+        "aria": "Review previously issued custody records"
       },
       "submittedSupply": {
         "label": "Submitted Warehouse Supply Requests",
@@ -749,6 +759,52 @@
       "departmentCustody": "Department custody",
       "hod": "HOD:",
       "notAssigned": "Not assigned"
+    }
+  },
+  "custodyIssuedPage": {
+    "errors": {
+      "loadFailed": "Failed to load issued custodies."
+    },
+    "actions": {
+      "refresh": "Refresh"
+    },
+    "loading": "Loading issued custodies...",
+    "lastUpdated": "Last updated {{time}}",
+    "filters": {
+      "searchPlaceholder": "Search by item, custodian, department or code",
+      "searchLabel": "Search issued custodies",
+      "status": {
+        "label": "Status:",
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
+    },
+    "emptyState": "No custody records have been issued yet.",
+    "emptyStateFiltered": "No custody records match your filters.",
+    "statusLabels": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "notrequired": "Not Required",
+      "unknown": "Unknown"
+    },
+    "fields": {
+      "custodyType": "Custody Type: {{type}}",
+      "code": "Code: {{code}}",
+      "issuedBy": "Issued by: {{name}}",
+      "unknown": "Unknown",
+      "createdOn": "Created on: {{date}}",
+      "quantity": "Quantity:",
+      "custodian": "Custodian:",
+      "department": "Department:",
+      "hod": "HOD:",
+      "departmentCustody": "Department custody",
+      "notSpecified": "Not specified",
+      "notAssigned": "Not assigned",
+      "custodianApproval": "Custodian Approval",
+      "hodApproval": "HOD Approval"
     }
   },
   "dashboard": {

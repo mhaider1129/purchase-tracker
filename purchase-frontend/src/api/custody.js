@@ -21,3 +21,8 @@ export const submitCustodyDecision = async (id, decision) => {
   const { data } = await api.patch(`/api/custody/${id}/decision`, { decision });
   return data;
 };
+
+export const getIssuedCustodies = async () => {
+  const { data } = await api.get('/api/custody/issued');
+  return data;
+};
