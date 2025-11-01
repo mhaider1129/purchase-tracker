@@ -56,6 +56,18 @@ const Navbar = () => {
   const NavItems = () => {
     if (!user) return null;
 
+    const normalizedRole = user.role?.toLowerCase?.();
+    const showItemRecallLink =
+      Boolean(user.department_id) ||
+      [
+        'warehousemanager',
+        'warehouse_manager',
+        'warehousekeeper',
+        'warehouse_keeper',
+        'scm',
+        'admin',
+      ].includes(normalizedRole);
+
     return (
       <>
         {renderNavButton(t('navbar.openRequests'), '/open-requests', 'text-green-600')}
@@ -93,6 +105,9 @@ const Navbar = () => {
           </>
         )}
 
+        {['SCM', 'admin', 'ProcurementSpecialist'].includes(user.role) &&
+          renderNavButton(t('navbar.contracts'), '/contracts', 'text-emerald-600')}
+
         {['admin', 'SCM', 'CMO', 'COO'].includes(user.role) &&
           renderNavButton(
             t('navbar.viewIncomplete'),
@@ -114,7 +129,8 @@ const Navbar = () => {
           </>
         )}
 
-        {renderNavButton(t('navbar.custodyApprovals'), '/custody/approvals', 'text-indigo-600')}
+        {showItemRecallLink &&
+          renderNavButton(t('navbar.itemRecalls'), '/item-recalls', 'text-amber-600')}
 
         {renderNavButton(t('navbar.changePassword'), '/change-password', 'text-blue-600')}
 

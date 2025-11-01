@@ -90,12 +90,14 @@
     "lifecycleAnalytics": "Lifecycle Analytics",
     "auditRequests": "Audit Requests",
     "procurementPlans": "Procurement Plans",
+    "contracts": "Contracts",
     "viewIncomplete": "View Incomplete Requests",
     "registerUser": "Register User",
     "myAssigned": "My Assigned Requests",
     "completedRequests": "Completed Requests",
     "custodyIssue": "Issue Custody",
     "custodyApprovals": "Custody Approvals",
+    "itemRecalls": "Item Recalls",
     "changePassword": "Change Password",
     "logout": "Logout",
     "purchaseTracker": "Purchase Tracker",
@@ -394,6 +396,10 @@
         "label": "Submitted Warehouse Supply Requests",
         "aria": "View Warehouse Supply Requests"
       },
+      "itemRecalls": {
+        "label": "Item Recalls",
+        "aria": "Open the item recall workspace"
+      },
       "warehouseSupply": {
         "label": "Warehouse Supply Request",
         "aria": "Warehouse Supply Request"
@@ -464,6 +470,72 @@
       "admin": {
         "title": "Administration",
         "description": "Tools reserved for administrators."
+      }
+    }
+  },
+  "itemRecalls": {
+    "title": "Item Recall Workspace",
+    "subtitle": "Coordinate recall requests between departments, warehouse, and procurement.",
+    "loading": "Loading your recall tools...",
+    "errors": {
+      "generic": "We could not process your request. Please try again.",
+      "recallIdRequired": "Please enter the recall ID before escalating.",
+      "invalidRecallId": "Recall ID must be a positive number."
+    },
+    "actions": {
+      "reset": "Reset",
+      "submitting": "Submitting...",
+      "submitDepartment": "Submit to Warehouse",
+      "submitWarehouse": "Notify Procurement",
+      "escalate": "Escalate Existing Recall"
+    },
+    "department": {
+      "title": "Department recall request",
+      "description": "Use this form to alert the warehouse about items that should be recalled.",
+      "success": "Recall request for {{item}} has been sent to the warehouse."
+    },
+    "warehouse": {
+      "title": "Warehouse to procurement",
+      "description": "Share critical issues directly with procurement so suppliers can be contacted immediately.",
+      "success": "Procurement has been notified about the recall for {{item}}."
+    },
+    "escalation": {
+      "title": "Escalate an existing department recall",
+      "description": "Escalate a previously submitted department recall when supplier follow-up is required.",
+      "success": "Procurement escalation recorded for {{item}}."
+    },
+    "fields": {
+      "itemId": {
+        "label": "Stock Item ID",
+        "placeholder": "e.g. 1024",
+        "help": "Optional. The warehouse will validate the ID if provided."
+      },
+      "itemName": {
+        "label": "Item name",
+        "placeholder": "Enter the item name"
+      },
+      "quantity": {
+        "label": "Quantity affected",
+        "placeholder": "Number of items"
+      },
+      "reason": {
+        "label": "Reason for recall",
+        "placeholder": "Explain the recall reason"
+      },
+      "notes": {
+        "label": "Additional notes",
+        "placeholder": "Provide any supporting context (optional)"
+      },
+      "warehouseNotes": {
+        "label": "Warehouse notes for procurement",
+        "placeholder": "Share handling details or supplier context",
+        "help": "Include batch numbers, supplier names, or other investigation details.",
+        "escalationPlaceholder": "Add any new information for procurement (optional)",
+        "escalationHelp": "Helpful when adding follow-up instructions for procurement."
+      },
+      "recallId": {
+        "label": "Existing recall ID",
+        "placeholder": "Enter the recall request ID"
       }
     }
   },

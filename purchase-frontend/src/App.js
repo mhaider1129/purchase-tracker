@@ -19,6 +19,7 @@ import SupplyItemsPage from './pages/requests/SupplyItemsPage';
 import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
 import CustodyIssueForm from './pages/custody/CustodyIssueForm';
 import CustodyApprovals from './pages/custody/CustodyApprovals';
+import ItemRecallsPage from './pages/ItemRecallsPage';
 
 import ApprovalsPanel from './pages/ApprovalsPanel';
 import OpenRequestsPage from './pages/OpenRequestsPage';
@@ -43,6 +44,7 @@ import RequestSubmittedPage from './pages/requests/RequestSubmittedPage';
 import WarehouseSupplyTemplatesPage from './pages/WarehouseSupplyTemplatesPage';
 import AuditRequestsPage from './pages/AuditRequestsPage';
 import LifecycleAnalytics from './pages/LifecycleAnalytics';
+import ContractsPage from './pages/ContractsPage';
 
 
 // 🔒 Reusable Protected Route with Role Filtering
@@ -90,6 +92,7 @@ function App() {
           }
         />
         <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />} />
+        <Route path="/item-recalls" element={<ProtectedRoute element={<ItemRecallsPage />} />} />
         <Route
           path="/requests/maintenance-warehouse-supply"
           element={<ProtectedRoute element={<MaintenanceWarehouseSupplyRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />}
@@ -157,6 +160,10 @@ function App() {
         <Route path="/all-requests" element={<ProtectedRoute element={<AllRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
         <Route path="/incomplete" element={<ProtectedRoute element={<IncompleteRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
         <Route path="/procurement-plans" element={<ProtectedRoute element={<ProcurementPlansPage />} allowedRoles={['SCM', 'admin']} />} />
+        <Route
+          path="/contracts"
+          element={<ProtectedRoute element={<ContractsPage />} allowedRoles={['SCM', 'admin', 'ProcurementSpecialist']} />}
+        />
 
         {/* ✅ Procurement-Specific Routes */}
         <Route path="/assigned-requests" element={<ProtectedRoute element={<AssignedRequestsPage />} allowedRoles={['ProcurementSpecialist', 'SCM']} />} />

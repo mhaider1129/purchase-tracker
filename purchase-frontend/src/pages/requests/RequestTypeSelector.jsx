@@ -56,6 +56,12 @@ const ACTION_GROUPS = [
         roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
         buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
       },
+      {
+        labelKey: 'requestTypeSelector.actions.itemRecalls.label',
+        ariaLabelKey: 'requestTypeSelector.actions.itemRecalls.aria',
+        path: '/item-recalls',
+        buttonClassName: 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-400',
+      },
     ],
   },
   {
