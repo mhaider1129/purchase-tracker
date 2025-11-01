@@ -857,5 +857,222 @@
     "loading": "جاري تحميل الطلبات المغلقة...",
     "emptyState": "لا توجد طلبات مغلقة مطابقة للمرشحات.",
     "csvFileName": "الطلبات_المغلقة"
+  },
+  "assignedRequests": {
+    "title": "الطلبات المسندة",
+    "loading": "جاري تحميل الطلبات المسندة...",
+    "empty": "لا توجد طلبات مسندة إليك.",
+    "confirm": {
+      "markComplete": "هل أنت متأكد أنك تريد وسم هذا الطلب كمكتمل؟",
+      "bulkPurchase": "سيتم نسخ الكمية المطلوبة إلى كمية الشراء ووضع علامة مشتَرَى على كل عنصر. هل ترغب بالمتابعة؟"
+    },
+    "alerts": {
+      "loadFailed": "تعذر تحميل الطلبات المسندة.",
+      "itemsLoadFailed": "تعذر تحميل عناصر الطلب.",
+      "markCompletedSuccess": "✅ تم وسم الطلب كمكتمل.",
+      "markCompletedFailed": "❌ تعذر وسم الطلب كمكتمل.",
+      "invalidCost": "أدخل إجمالي تكلفة أكبر من الصفر.",
+      "costUpdated": "تم تحديث إجمالي التكلفة.",
+      "costUpdateFailed": "تعذر تحديث إجمالي التكلفة.",
+      "generateDocumentFailed": "تعذر إنشاء المستند.",
+      "attachmentMissing": "ملف المرفق غير موجود.",
+      "attachmentDownloadFailed": "تعذر تنزيل المرفق. حاول مرة أخرى.",
+      "noItemsForBulkUpdate": "لا توجد عناصر متاحة لتحديثها في هذا الطلب.",
+      "invalidBulkItems": "يجب أن تحتوي العناصر على كمية مطلوبة أكبر من الصفر لاستخدام التعبئة التلقائية.",
+      "bulkPurchaseSuccess": "تم وضع علامة مشتَرَى على جميع العناصر باستخدام الكميات المطلوبة.",
+      "bulkPurchaseFailed": "تعذر تحديث جميع العناصر. قد لا تكون بعض العناصر قد تم تحديثها."
+    },
+    "summary": {
+      "totalItems": "إجمالي العناصر",
+      "purchased": "مشتراة",
+      "pending": "قيد الشراء",
+      "notProcured": "تعذر شراؤها",
+      "autoCalculated": "الإجمالي المحسوب من العناصر:"
+    },
+    "requestCard": {
+      "requestId": "رقم الطلب",
+      "urgent": "عاجل",
+      "type": "النوع",
+      "project": "المشروع",
+      "justification": "التبرير",
+      "requester": "مقدّم الطلب",
+      "viewItems": "عرض العناصر",
+      "hideItems": "إخفاء العناصر"
+    },
+    "items": {
+      "loading": "جاري تحميل العناصر...",
+      "empty": "لا توجد عناصر لهذا الطلب.",
+      "bulkFill": {
+        "title": "تعبئة الكميات المشتراة تلقائياً",
+        "description": "ينسخ كل كمية مطلوبة إلى حقل الكمية المشتراة ويضع علامة مشتراة على العنصر.",
+        "updating": "جاري تحديث العناصر...",
+        "cta": "وضع علامة مشتراة للجميع"
+      }
+    },
+    "sections": {
+      "count": "{{count}} عنصر",
+      "count_plural": "{{count}} عناصر",
+      "purchased": {
+        "title": "عناصر تم شراؤها",
+        "description": "عناصر تم شراؤها بنجاح.",
+        "empty": "لم يتم وسم أي عنصر كمشتَرٍ بعد."
+      },
+      "pending": {
+        "title": "عناصر قيد الشراء",
+        "description": "عناصر ما زالت بانتظار إجراءات الشراء.",
+        "empty": "لا توجد عناصر قيد الشراء حالياً."
+      },
+      "notProcured": {
+        "title": "تعذر شراؤها",
+        "description": "عناصر تعذر توفيرها أو تم إلغاؤها.",
+        "empty": "لا توجد عناصر موسومة كمتعذر شراؤها."
+      },
+      "other": {
+        "title": "تحديثات أخرى",
+        "description": "عناصر تم تحديثها بحالة مختلفة.",
+        "empty": "لا توجد تحديثات إضافية للعناصر."
+      }
+    },
+    "cost": {
+      "recordedLabel": "إجمالي التكلفة المسجل",
+      "suggestedLabel": "الإجمالي المقترح:",
+      "useSuggested": "استخدام القيمة المقترحة",
+      "saveButton": "حفظ إجمالي التكلفة"
+    },
+    "attachments": {
+      "title": "المرفقات",
+      "loading": "جاري تحميل المرفقات...",
+      "empty": "لا توجد مرفقات.",
+      "downloading": "جاري التنزيل..."
+    },
+    "documents": {
+      "title": "إنشاء مستند"
+    },
+    "completion": {
+      "markComplete": "وضع علامة مكتمل على الطلب",
+      "missingCost": "سجّل واحفظ إجمالي تكلفة هذا الطلب قبل إكماله.",
+      "incompleteItems": "يجب وضع علامة مشتراة أو تعذر الشراء لجميع العناصر مع تسجيل الكميات قبل إكمال الطلب."
+    }
+  },
+  "auditRequests": {
+    "title": "طلبات التدقيق",
+    "actions": {
+      "reset": "إعادة تعيين المرشحات",
+      "exportCsv": "تصدير CSV"
+    },
+    "stats": {
+      "total": "إجمالي الطلبات",
+      "approved": "موافق",
+      "rejected": "مرفوض"
+    },
+    "filters": {
+      "status": {
+        "all": "جميع الحالات",
+        "approved": "موافق",
+        "rejected": "مرفوض"
+      },
+      "type": {
+        "all": "جميع أنواع الطلبات",
+        "itItem": "عنصر تقنية معلومات",
+        "stock": "مخزوني",
+        "nonStock": "غير مخزوني"
+      },
+      "searchPlaceholder": "ابحث بالرقم أو المشروع أو التبرير...",
+      "from": "من",
+      "to": "إلى"
+    },
+    "table": {
+      "headers": {
+        "id": "الرقم",
+        "type": "النوع",
+        "project": "المشروع",
+        "justification": "التبرير",
+        "status": "الحالة",
+        "approvalTimestamp": "وقت الاعتماد",
+        "actions": "إجراءات"
+      },
+      "actions": {
+        "viewItems": "عرض العناصر",
+        "hideItems": "إخفاء العناصر"
+      },
+      "empty": "لا توجد طلبات."
+    },
+    "items": {
+      "title": "العناصر المطلوبة",
+      "loading": "جاري تحميل العناصر...",
+      "headers": {
+        "item": "العنصر",
+        "brand": "العلامة التجارية",
+        "quantity": "الكمية",
+        "unitCost": "تكلفة الوحدة",
+        "total": "الإجمالي"
+      },
+      "empty": "لا توجد عناصر."
+    },
+    "alerts": {
+      "loadFailed": "تعذر تحميل طلبات التدقيق.",
+      "itemsLoadFailed": "تعذر تحميل العناصر."
+    },
+    "export": {
+      "fileName": "Audit_Requests.csv"
+    },
+    "statuses": {
+      "approved": "موافق",
+      "rejected": "مرفوض",
+      "unknown": "غير معروف"
+    }
+  },
+  "warehouseSupplyRequests": {
+    "title": "طلبات تزويد المستودع",
+    "subtitle": "راجع الطلبات المعتمدة وسجل العناصر التي تم تزويدها.",
+    "actions": {
+      "refresh": "تحديث",
+      "clearFilters": "مسح المرشحات"
+    },
+    "summary": {
+      "total": "إجمالي الطلبات"
+    },
+    "filters": {
+      "title": "المرشحات",
+      "searchLabel": "بحث",
+      "searchPlaceholder": "ابحث بالرقم أو القسم أو الشعبة أو التبرير",
+      "department": "القسم",
+      "section": "الشعبة",
+      "status": "الحالة",
+      "from": "من",
+      "to": "إلى",
+      "allOption": "الكل"
+    },
+    "list": {
+      "loading": "جاري تحميل الطلبات...",
+      "empty": "لا توجد طلبات تزويد مستودع مطابقة للمرشحات المختارة."
+    },
+    "requestCard": {
+      "requestId": "رقم الطلب",
+      "department": "القسم",
+      "section": "الشعبة",
+      "submitted": "التقديم",
+      "status": "الحالة",
+      "justification": "التبرير",
+      "noJustification": "لا يوجد تبرير.",
+      "recordSupplied": "تسجيل العناصر المزوّدة",
+      "viewItems": "عرض العناصر المطلوبة",
+      "hideItems": "إخفاء العناصر المطلوبة"
+    },
+    "items": {
+      "loading": "جاري تحميل العناصر المطلوبة...",
+      "requestedQuantity": "الكمية المطلوبة: {{quantity}}",
+      "empty": "لا توجد عناصر مطلوبة."
+    },
+    "alerts": {
+      "loadFailed": "تعذر تحميل طلبات تزويد المستودع. حاول مرة أخرى.",
+      "itemsLoadFailed": "تعذر تحميل العناصر المطلوبة. حاول مرة أخرى لاحقاً."
+    },
+    "statuses": {
+      "approved": "موافق",
+      "pending": "قيد الانتظار",
+      "rejected": "مرفوض",
+      "unknown": "غير معروف"
+    }
   }
 }

@@ -1,11 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import usePageTranslation from '../utils/usePageTranslation';
 
 const AuditRequestsPage = () => {
+  const { t } = useTranslation();
+  const tr = usePageTranslation('auditRequests');
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
@@ -24,6 +28,41 @@ const AuditRequestsPage = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+  const statusOptions = useMemo(
+    () => [
+      { value: 'all', label: tr('filters.status.all', 'All Statuses') },
+      { value: 'approved', label: tr('filters.status.approved', 'Approved') },
+      { value: 'rejected', label: tr('filters.status.rejected', 'Rejected') },
+    ],
+    [tr],
+  );
+  const typeOptions = useMemo(
+    () => [
+      { value: 'all', label: tr('filters.type.all', 'All Request Types') },
+      { value: 'it item', label: tr('filters.type.itItem', 'IT Item') },
+      { value: 'stock', label: tr('filters.type.stock', 'Stock') },
+      { value: 'non-stock', label: tr('filters.type.nonStock', 'Non-Stock') },
+    ],
+    [tr],
+  );
+  const tableHeaders = useMemo(
+    () => [
+      tr('table.headers.id', 'ID'),
+      tr('table.headers.type', 'Type'),
+      tr('table.headers.project', 'Project'),
+      tr('table.headers.justification', 'Justification'),
+      tr('table.headers.status', 'Status'),
+      tr('table.headers.approvalTimestamp', 'Approval Timestamp'),
+      tr('table.headers.actions', 'Actions'),
+    ],
+    [tr],
+  );
+  const csvHeaders = useMemo(
+    () =>
+      tableHeaders.slice(0, 6),
+    [tableHeaders],
+  );
+  const exportFileName = tr('export.fileName', 'Audit_Requests.csv');
 
   const stats = useMemo(() => {
     const totals = requests.reduce(
@@ -48,21 +87,28 @@ const AuditRequestsPage = () => {
     setToDate('');
   };
 
+  const getStatusLabel = (status) => {
+    if (!status) {
+      return tr('statuses.unknown', 'Unknown');
+    }
+    return tr(`statuses.${status.toLowerCase()}`, status);
+  };
+
   const exportCSV = (data) => {
     const rows = [
-      ['ID', 'Type', 'Project', 'Justification', 'Status', 'Approval Timestamp'],
+      csvHeaders,
       ...data.map((r) => [
         r.id,
         r.request_type,
         r.project_name || '',
         r.justification || '',
-        r.status,
+        getStatusLabel(r.status),
         r.approval_timestamp ? new Date(r.approval_timestamp).toLocaleString() : '',
       ]),
     ];
     const csv = rows.map((row) => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    saveAs(blob, 'Audit_Requests.csv');
+    saveAs(blob, exportFileName);
   };
 
   useEffect(() => {
@@ -78,7 +124,7 @@ const AuditRequestsPage = () => {
         setLoadingItemsId(null);
       } catch (err) {
         console.error('Failed to fetch audit requests:', err);
-        alert('Failed to load audit requests.');
+        alert(tr('alerts.loadFailed', 'Failed to load audit requests.'));
       } finally {
         setLoading(false);
       }
@@ -99,7 +145,7 @@ const AuditRequestsPage = () => {
         setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
       } catch (err) {
         console.error(`❌ Failed to load items for request ${requestId}:`, err);
-        alert('Failed to load items');
+        alert(tr('alerts.itemsLoadFailed', 'Failed to load items.'));
       } finally {
         setLoadingItemsId(null);
       }
@@ -129,6 +175,7 @@ const AuditRequestsPage = () => {
         typeFilter === 'all' || r.request_type?.toLowerCase() === typeFilter;
       if (!matchesType) return false;
 
+
       if (!fromDate && !toDate) return true;
 
       const approvalDate = r.approval_timestamp ? new Date(r.approval_timestamp) : null;
@@ -154,10 +201,11 @@ const AuditRequestsPage = () => {
         : normalized === 'rejected'
         ? 'bg-red-100 text-red-700'
         : 'bg-gray-100 text-gray-700';
+    const label = getStatusLabel(status);
 
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles}`}>
-        {status}
+        {label}
       </span>
     );
   };
@@ -167,34 +215,34 @@ const AuditRequestsPage = () => {
       <Navbar />
       <div className="p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <h1 className="text-2xl font-semibold">Audit Requests</h1>
+          <h1 className="text-2xl font-semibold">{tr('title', 'Audit Requests')}</h1>
           <div className="flex gap-2">
             <button
               onClick={resetFilters}
               className="border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50"
             >
-              Reset Filters
+              {tr('actions.reset', 'Reset Filters')}
             </button>
             <button
               onClick={() => exportCSV(filtered)}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
-              Export CSV
+              {tr('actions.exportCsv', 'Export CSV')}
             </button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="border rounded-lg p-4 bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Total Requests</p>
+            <p className="text-sm text-gray-500">{tr('stats.total', 'Total Requests')}</p>
             <p className="text-2xl font-semibold">{stats.total}</p>
           </div>
           <div className="border rounded-lg p-4 bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Approved</p>
+            <p className="text-sm text-gray-500">{tr('stats.approved', 'Approved')}</p>
             <p className="text-2xl font-semibold text-green-600">{stats.approved}</p>
           </div>
           <div className="border rounded-lg p-4 bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Rejected</p>
+            <p className="text-sm text-gray-500">{tr('stats.rejected', 'Rejected')}</p>
             <p className="text-2xl font-semibold text-red-600">{stats.rejected}</p>
           </div>
         </div>
@@ -203,7 +251,7 @@ const AuditRequestsPage = () => {
           <input
             type="text"
             className="border p-2 rounded"
-            placeholder="Search by ID, project, justification..."
+            placeholder={tr('filters.searchPlaceholder', 'Search by ID, project, justification...')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -212,51 +260,52 @@ const AuditRequestsPage = () => {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All Statuses</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+            {statusOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
           <select
             className="border p-2 rounded"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
           >
-            <option value="all">All Request Types</option>
-            <option value="it item">IT Item</option>
-            <option value="stock">Stock</option>
-            <option value="non-stock">Non-Stock</option>
+            {typeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
           <input
             type="date"
             className="border p-2 rounded"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
-            placeholder="From"
+            aria-label={tr('filters.from', 'From')}
           />
           <input
             type="date"
             className="border p-2 rounded"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
-            placeholder="To"
+            aria-label={tr('filters.to', 'To')}
           />
         </div>
         {loading ? (
-          <p className="text-gray-500">Loading...</p>
+          <p className="text-gray-500">{t('common.loading')}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-gray-500">No requests found.</p>
+          <p className="text-gray-500">{tr('table.empty', 'No requests found.')}</p>
         ) : (
           <div className="overflow-x-auto border rounded">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="p-2 border">ID</th>
-                  <th className="p-2 border">Type</th>
-                  <th className="p-2 border">Project</th>
-                  <th className="p-2 border">Justification</th>
-                  <th className="p-2 border">Status</th>
-                  <th className="p-2 border">Approval Timestamp</th>
-                  <th className="p-2 border">Actions</th>
+                  {tableHeaders.map((header, index) => (
+                    <th key={index} className="p-2 border">
+                      {header}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -285,10 +334,10 @@ const AuditRequestsPage = () => {
                             disabled={loadingItemsId === req.id}
                           >
                             {loadingItemsId === req.id
-                              ? 'Loading...'
+                              ? t('common.loading')
                               : expandedItemsId === req.id
-                              ? 'Hide Items'
-                              : 'View Items'}
+                              ? tr('table.actions.hideItems', 'Hide Items')
+                              : tr('table.actions.viewItems', 'View Items')}
                           </button>
                           <button
                             className="text-blue-600 underline"
@@ -296,10 +345,10 @@ const AuditRequestsPage = () => {
                             disabled={loadingApprovalsId === req.id}
                           >
                             {loadingApprovalsId === req.id
-                              ? 'Loading...'
+                              ? t('common.loading')
                               : expandedApprovalsId === req.id
-                              ? 'Hide Approvals'
-                              : 'View Approvals'}
+                              ? t('common.hideApprovals')
+                              : t('common.viewApprovals')}
                           </button>
                         </div>
                       </td>
@@ -307,19 +356,19 @@ const AuditRequestsPage = () => {
                     {expandedItemsId === req.id && (
                       <tr>
                         <td colSpan={7} className="p-4 bg-gray-50 border-t">
-                          <h3 className="font-semibold mb-2">Requested Items</h3>
+                          <h3 className="font-semibold mb-2">{tr('items.title', 'Requested Items')}</h3>
                           {loadingItemsId === req.id ? (
-                            <p className="text-gray-500">Loading items...</p>
+                            <p className="text-gray-500">{tr('items.loading', 'Loading items...')}</p>
                           ) : itemsMap[req.id]?.length > 0 ? (
                             <div className="overflow-x-auto">
                               <table className="w-full text-sm border">
                                 <thead>
                                   <tr className="bg-gray-100">
-                                    <th className="border p-1">Item</th>
-                                    <th className="border p-1">Brand</th>
-                                    <th className="border p-1">Qty</th>
-                                    <th className="border p-1">Unit Cost</th>
-                                    <th className="border p-1">Total</th>
+                                    <th className="border p-1">{tr('items.headers.item', 'Item')}</th>
+                                    <th className="border p-1">{tr('items.headers.brand', 'Brand')}</th>
+                                    <th className="border p-1">{tr('items.headers.quantity', 'Qty')}</th>
+                                    <th className="border p-1">{tr('items.headers.unitCost', 'Unit Cost')}</th>
+                                    <th className="border p-1">{tr('items.headers.total', 'Total')}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -336,7 +385,7 @@ const AuditRequestsPage = () => {
                               </table>
                             </div>
                           ) : (
-                            <p className="text-sm text-gray-500">No items found.</p>
+                            <p className="text-sm text-gray-500">{tr('items.empty', 'No items found.')}</p>
                           )}
                         </td>
                       </tr>
@@ -344,7 +393,7 @@ const AuditRequestsPage = () => {
                     {expandedApprovalsId === req.id && (
                       <tr>
                         <td colSpan={7} className="p-4 bg-gray-50 border-t">
-                          <h3 className="font-semibold mb-2">Approval Timeline</h3>
+                          <h3 className="font-semibold mb-2">{t('common.approvalTimeline')}</h3>
                           <ApprovalTimeline
                             approvals={approvalsMap[req.id]}
                             isLoading={loadingApprovalsId === req.id}

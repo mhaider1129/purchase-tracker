@@ -1,10 +1,12 @@
 // src/pages/AssignedRequestsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel';
 import Navbar from '../components/Navbar';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import usePageTranslation from '../utils/usePageTranslation';
 
 const createEmptyGroups = () => ({
   purchased: [],
@@ -96,35 +98,77 @@ const SummaryBadge = ({ label, value, tone = 'default' }) => (
 const ITEM_SECTION_CONFIG = [
   {
     key: 'purchased',
-    title: 'Purchased Items',
-    description: 'Items that have been successfully procured.',
     tone: 'success',
-    empty: 'No items have been marked as purchased yet.',
+    titleKey: 'sections.purchased.title',
+    descriptionKey: 'sections.purchased.description',
+    emptyKey: 'sections.purchased.empty',
+    defaults: {
+      title: 'Purchased Items',
+      description: 'Items that have been successfully procured.',
+      empty: 'No items have been marked as purchased yet.',
+    },
   },
   {
     key: 'pending',
-    title: 'Pending Purchase',
-    description: 'Items still awaiting procurement action.',
     tone: 'warning',
-    empty: 'No items are currently pending purchase.',
+    titleKey: 'sections.pending.title',
+    descriptionKey: 'sections.pending.description',
+    emptyKey: 'sections.pending.empty',
+    defaults: {
+      title: 'Pending Purchase',
+      description: 'Items still awaiting procurement action.',
+      empty: 'No items are currently pending purchase.',
+    },
   },
   {
     key: 'notProcured',
-    title: 'Unable to Procure',
-    description: 'Items that could not be sourced or were canceled.',
     tone: 'danger',
-    empty: 'No items are marked as unable to procure.',
+    titleKey: 'sections.notProcured.title',
+    descriptionKey: 'sections.notProcured.description',
+    emptyKey: 'sections.notProcured.empty',
+    defaults: {
+      title: 'Unable to Procure',
+      description: 'Items that could not be sourced or were canceled.',
+      empty: 'No items are marked as unable to procure.',
+    },
   },
   {
     key: 'other',
-    title: 'Other Updates',
-    description: 'Items that have been updated with a different status.',
     tone: 'default',
-    empty: 'There are no additional item updates.',
+    titleKey: 'sections.other.title',
+    descriptionKey: 'sections.other.description',
+    emptyKey: 'sections.other.empty',
+    defaults: {
+      title: 'Other Updates',
+      description: 'Items that have been updated with a different status.',
+      empty: 'There are no additional item updates.',
+    },
   },
 ];
 
 const AssignedRequestsPage = () => {
+  const { t } = useTranslation();
+  const tr = usePageTranslation('assignedRequests');
+  const itemSections = useMemo(
+    () =>
+      ITEM_SECTION_CONFIG.map((section) => ({
+        ...section,
+        title: tr(section.titleKey, section.defaults.title),
+        description: tr(section.descriptionKey, section.defaults.description),
+        empty: tr(section.emptyKey, section.defaults.empty),
+      })),
+    [tr],
+  );
+  const summaryLabels = useMemo(
+    () => ({
+      total: tr('summary.totalItems', 'Total Items'),
+      purchased: tr('summary.purchased', 'Purchased'),
+      pending: tr('summary.pending', 'Pending'),
+      notProcured: tr('summary.notProcured', 'Not Procured'),
+    }),
+    [tr],
+  );
+
   const [requests, setRequests] = useState([]);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [items, setItems] = useState([]);
@@ -195,7 +239,7 @@ const AssignedRequestsPage = () => {
       setAutoTotals((prev) => ({ ...prev, [requestId]: summary.calculated_total_cost }));
     } catch (err) {
       console.error(`❌ Error fetching items for request ${requestId}:`, err);
-      alert('Failed to load request items');
+      alert(tr('alerts.itemsLoadFailed', 'Failed to load request items'));
       setGroupedItems(createEmptyGroups());
     } finally {
       setLoadingItems(false);
@@ -215,18 +259,24 @@ const AssignedRequestsPage = () => {
   };
 
   const handleMarkAsCompleted = async (requestId) => {
-    if (!window.confirm('Are you sure you want to mark this request as completed?')) return;
+    if (
+      !window.confirm(
+        tr('confirm.markComplete', 'Are you sure you want to mark this request as completed?'),
+      )
+    ) {
+      return;
+    }
 
     try {
       await axios.patch(`/api/requests/${requestId}/mark-completed`);
-      alert('✅ Request marked as completed.');
+      alert(tr('alerts.markCompletedSuccess', '✅ Request marked as completed.'));
       setExpandedRequestId(null);
       setItems([]);
       setGroupedItems(createEmptyGroups());
       fetchAssignedRequests();
     } catch (err) {
       console.error('❌ Error marking request as completed:', err);
-      alert('❌ Failed to mark request as completed.');
+      alert(tr('alerts.markCompletedFailed', '❌ Failed to mark request as completed.'));
     }
   };
 
@@ -239,13 +289,13 @@ const AssignedRequestsPage = () => {
     const cost = Number(rawValue);
 
     if (Number.isNaN(cost) || cost <= 0) {
-      alert('Enter a total cost greater than zero.');
+      alert(tr('alerts.invalidCost', 'Enter a total cost greater than zero.'));
       return;
     }
 
     try {
       await axios.put(`/api/requests/${requestId}/cost`, { estimated_cost: cost });
-      alert('Total cost updated.');
+      alert(tr('alerts.costUpdated', 'Total cost updated.'));
       setRequests((prev) =>
         prev.map((req) =>
           req.id === requestId ? { ...req, estimated_cost: cost } : req,
@@ -253,7 +303,7 @@ const AssignedRequestsPage = () => {
       );
     } catch (err) {
       console.error('❌ Error updating cost:', err);
-      alert('Failed to update total cost.');
+      alert(tr('alerts.costUpdateFailed', 'Failed to update total cost.'));
     }
   };
 
@@ -277,7 +327,7 @@ const AssignedRequestsPage = () => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error(`❌ Error generating ${type.toUpperCase()} document for request ${requestId}:`, err);
-      alert('Failed to generate document.');
+      alert(tr('alerts.generateDocumentFailed', 'Failed to generate document.'));
     }
   };
 
@@ -288,7 +338,7 @@ const AssignedRequestsPage = () => {
       attachment.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
 
     if (!downloadEndpoint) {
-      alert('Attachment file is missing.');
+      alert(tr('alerts.attachmentMissing', 'Attachment file is missing.'));
       return;
     }
 
@@ -311,7 +361,7 @@ const AssignedRequestsPage = () => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error(`❌ Error downloading attachment ${attachment.id}:`, err);
-      alert('Failed to download attachment. Please try again.');
+      alert(tr('alerts.attachmentDownloadFailed', 'Failed to download attachment. Please try again.'));
     } finally {
       setDownloadingAttachmentId(null);
     }
@@ -323,7 +373,7 @@ const AssignedRequestsPage = () => {
     }
 
     if (!items.length) {
-      alert('No items available to update for this request.');
+      alert(tr('alerts.noItemsForBulkUpdate', 'No items available to update for this request.'));
       return;
     }
 
@@ -333,12 +383,20 @@ const AssignedRequestsPage = () => {
     });
 
     if (updatableItems.length === 0) {
-      alert('Items must have a requested quantity greater than zero to be auto-filled.');
+      alert(
+        tr(
+          'alerts.invalidBulkItems',
+          'Items must have a requested quantity greater than zero to be auto-filled.',
+        ),
+      );
       return;
     }
 
     const shouldProceed = window.confirm(
-      'This will copy the requested quantity into the purchased quantity and mark every item as purchased. Continue?',
+      tr(
+        'confirm.bulkPurchase',
+        'This will copy the requested quantity into the purchased quantity and mark every item as purchased. Continue?',
+      ),
     );
 
     if (!shouldProceed) {
@@ -361,10 +419,20 @@ const AssignedRequestsPage = () => {
       }
 
       await fetchItems(requestId);
-      alert('All items were marked as purchased using their requested quantities.');
+      alert(
+        tr(
+          'alerts.bulkPurchaseSuccess',
+          'All items were marked as purchased using their requested quantities.',
+        ),
+      );
     } catch (err) {
       console.error('❌ Error performing bulk purchase update:', err);
-      alert('Failed to update all items. Some items may not have been updated.');
+      alert(
+        tr(
+          'alerts.bulkPurchaseFailed',
+          'Failed to update all items. Some items may not have been updated.',
+        ),
+      );
     } finally {
       setBulkUpdatingRequestId(null);
     }
@@ -429,12 +497,12 @@ const AssignedRequestsPage = () => {
       <Navbar />
 
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-4">Assigned Requests</h1>
+        <h1 className="text-2xl font-semibold mb-4">{tr('title', 'Assigned Requests')}</h1>
 
         {loading ? (
-          <p className="text-gray-600">Loading assigned requests...</p>
+          <p className="text-gray-600">{tr('loading', 'Loading assigned requests...')}</p>
         ) : requests.length === 0 ? (
-          <p>No requests assigned to you.</p>
+          <p>{tr('empty', 'No requests assigned to you.')}</p>
         ) : (
           requests.map((request) => {
             const summary = request.status_summary || {};
@@ -451,45 +519,54 @@ const AssignedRequestsPage = () => {
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-gray-700">Request ID: {request.id}</p>
+                      <p className="text-sm font-semibold text-gray-700">
+                        {tr('requestCard.requestId', 'Request ID')}: {request.id}
+                      </p>
                       {isUrgent && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
                           <span className="block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
-                          Urgent
+                          {tr('requestCard.urgent', 'Urgent')}
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-gray-500">
-                      <strong className="text-gray-700">Type:</strong> {request.request_type}
+                      <strong className="text-gray-700">{tr('requestCard.type', 'Type')}:</strong> {request.request_type}
                     </p>
                     <p className="text-sm text-gray-500">
-                      <strong className="text-gray-700">Project:</strong> {request.project_name || '—'}
+                      <strong className="text-gray-700">{tr('requestCard.project', 'Project')}:</strong>{' '}
+                      {request.project_name || '—'}
                     </p>
                     <p className="text-sm text-gray-500">
-                      <strong className="text-gray-700">Justification:</strong> {request.justification}
+                      <strong className="text-gray-700">{tr('requestCard.justification', 'Justification')}:</strong>{' '}
+                      {request.justification}
                     </p>
                     {request.requester_name && (
                       <p className="text-sm text-gray-500">
-                        <strong className="text-gray-700">Requester:</strong> {request.requester_name} ({request.requester_role})
+                        <strong className="text-gray-700">{tr('requestCard.requester', 'Requester')}:</strong>{' '}
+                        {request.requester_name} ({request.requester_role})
                       </p>
                     )}
                   </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <button
-                        onClick={() => toggleExpand(request.id)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                      >
-                        {expandedRequestId === request.id ? 'Hide Items' : 'View Items'}
-                      </button>
-                      <button
-                        className="text-blue-600 underline"
-                        onClick={() => toggleApprovals(request.id)}
-                        disabled={loadingApprovalsId === request.id}
-                      >
-                        {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
-                      </button>
-                    </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <button
+                      onClick={() => toggleExpand(request.id)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                    >
+                      {expandedRequestId === request.id
+                        ? tr('requestCard.hideItems', 'Hide Items')
+                        : tr('requestCard.viewItems', 'View Items')}
+                    </button>
+                    <button
+                      className="text-blue-600 underline"
+                      onClick={() => toggleApprovals(request.id)}
+                      disabled={loadingApprovalsId === request.id}
+                    >
+                      {expandedApprovalsId === request.id
+                        ? t('common.hideApprovals')
+                        : t('common.viewApprovals')}
+                    </button>
+                  </div>
                 </div>
 
               {expandedApprovalsId === request.id && (
@@ -503,15 +580,28 @@ const AssignedRequestsPage = () => {
               )}
               
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <SummaryBadge label="Total Items" value={summary.total_items ?? 0} />
-                  <SummaryBadge label="Purchased" value={summary.purchased_count ?? 0} tone="success" />
-                  <SummaryBadge label="Pending" value={summary.pending_count ?? 0} tone="warning" />
-                  <SummaryBadge label="Not Procured" value={summary.not_procured_count ?? 0} tone="danger" />
+                  <SummaryBadge label={summaryLabels.total} value={summary.total_items ?? 0} />
+                  <SummaryBadge
+                    label={summaryLabels.purchased}
+                    value={summary.purchased_count ?? 0}
+                    tone="success"
+                  />
+                  <SummaryBadge
+                    label={summaryLabels.pending}
+                    value={summary.pending_count ?? 0}
+                    tone="warning"
+                  />
+                  <SummaryBadge
+                    label={summaryLabels.notProcured}
+                    value={summary.not_procured_count ?? 0}
+                    tone="danger"
+                  />
                 </div>
 
                 {autoTotal !== null && (
                   <p className="mt-2 text-xs text-gray-500">
-                    Auto-calculated total from items: <strong>{formatAmount(autoTotal)}</strong>
+                    {tr('summary.autoCalculated', 'Auto-calculated total from items:')}{' '}
+                    <strong>{formatAmount(autoTotal)}</strong>
                   </p>
                 )}
 
@@ -521,7 +611,7 @@ const AssignedRequestsPage = () => {
                       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                         <div className="flex-1">
                           <label className="block text-sm font-medium mb-1 text-slate-700">
-                            Total Cost Recorded
+                            {tr('cost.recordedLabel', 'Total Cost Recorded')}
                           </label>
                           <input
                             type="number"
@@ -534,14 +624,15 @@ const AssignedRequestsPage = () => {
                           {autoTotal !== null && (
                             <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
                               <span>
-                                Suggested total: <strong>{formatAmount(autoTotal)}</strong>
+                                {tr('cost.suggestedLabel', 'Suggested total:')}{' '}
+                                <strong>{formatAmount(autoTotal)}</strong>
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleCostChange(request.id, autoTotal)}
                                 className="text-blue-600 hover:text-blue-500"
                               >
-                                Use suggested value
+                                {tr('cost.useSuggested', 'Use suggested value')}
                               </button>
                             </div>
                           )}
@@ -550,25 +641,28 @@ const AssignedRequestsPage = () => {
                           onClick={() => handleSaveTotalCost(request.id)}
                           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                         >
-                          Save Total Cost
+                          {tr('cost.saveButton', 'Save Total Cost')}
                         </button>
                       </div>
                     </div>
 
                     {loadingItems ? (
-                      <p className="text-gray-500">Loading items...</p>
+                      <p className="text-gray-500">{tr('items.loading', 'Loading items...')}</p>
                     ) : items.length === 0 ? (
-                      <p className="text-gray-500">No items found for this request.</p>
+                      <p className="text-gray-500">{tr('items.empty', 'No items found for this request.')}</p>
                     ) : (
                       <>
                         <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
                           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
                               <h3 className="text-sm font-semibold text-emerald-900">
-                                Auto-fill purchased quantities
+                                {tr('items.bulkFill.title', 'Auto-fill purchased quantities')}
                               </h3>
                               <p className="text-sm text-emerald-800">
-                                Copies each requested quantity into the purchased quantity field and marks the item as purchased.
+                                {tr(
+                                  'items.bulkFill.description',
+                                  'Copies each requested quantity into the purchased quantity field and marks the item as purchased.',
+                                )}
                               </p>
                             </div>
                             <button
@@ -582,12 +676,12 @@ const AssignedRequestsPage = () => {
                               }`}
                             >
                               {bulkUpdatingRequestId === request.id
-                                ? 'Updating items…'
-                                : 'Mark all as purchased'}
+                                ? tr('items.bulkFill.updating', 'Updating items…')
+                                : tr('items.bulkFill.cta', 'Mark all as purchased')}
                             </button>
                           </div>
                         </div>
-                        {ITEM_SECTION_CONFIG.map(({ key, title, description, tone, empty }) => {
+                        {itemSections.map(({ key, title, description, tone, empty }) => {
                           const sectionItems = groupedItems[key] || [];
                           if (key === 'other' && sectionItems.length === 0) {
                             return null;
@@ -605,7 +699,7 @@ const AssignedRequestsPage = () => {
                                     summaryToneClasses[tone] || summaryToneClasses.default
                                   }`}
                                 >
-                                  {sectionItems.length} item{sectionItems.length === 1 ? '' : 's'}
+                                  {tr('sections.count', '{{count}} item', { count: sectionItems.length })}
                                 </span>
                               </div>
                               {sectionItems.length === 0 ? (
@@ -626,11 +720,11 @@ const AssignedRequestsPage = () => {
                     )}
 
                     <div className="mt-6">
-                      <h3 className="font-semibold mb-2">Attachments</h3>
+                      <h3 className="font-semibold mb-2">{tr('attachments.title', 'Attachments')}</h3>
                       {loadingAttachments ? (
-                        <p className="text-gray-500">Loading attachments...</p>
+                        <p className="text-gray-500">{tr('attachments.loading', 'Loading attachments...')}</p>
                       ) : attachments.length === 0 ? (
-                        <p className="text-gray-500">No attachments found.</p>
+                        <p className="text-gray-500">{tr('attachments.empty', 'No attachments found.')}</p>
                       ) : (
                         <ul className="list-disc pl-5 text-blue-600">
                           {attachments.map((att) => {
@@ -643,7 +737,9 @@ const AssignedRequestsPage = () => {
                                   className="underline text-left text-blue-600 hover:text-blue-800 disabled:opacity-50"
                                   disabled={downloadingAttachmentId === att.id}
                                 >
-                                  {downloadingAttachmentId === att.id ? 'Downloading…' : filename}
+                                  {downloadingAttachmentId === att.id
+                                    ? tr('attachments.downloading', 'Downloading…')
+                                    : filename}
                                 </button>
                               </li>
                             );
@@ -653,7 +749,7 @@ const AssignedRequestsPage = () => {
                     </div>
 
                     <div className="mt-6 border-t border-slate-200 pt-6">
-                      <h3 className="font-semibold mb-3">Generate Document</h3>
+                      <h3 className="font-semibold mb-3">{tr('documents.title', 'Generate Document')}</h3>
                       <div className="flex flex-wrap gap-3">
                         {['rfp', 'rfi', 'rfq'].map((type) => (
                           <button
@@ -677,16 +773,24 @@ const AssignedRequestsPage = () => {
                         }`}
                         disabled={!completionState.canComplete}
                       >
-                        Mark Request as Completed
+                        {tr('completion.markComplete', 'Mark Request as Completed')}
                       </button>
                       {!completionState.canComplete && items.length > 0 && (
                         <div className="mt-2 text-xs text-rose-600 space-y-1">
                           {completionState.missingCost && (
-                            <p>Record and save the total cost of this request before completing it.</p>
+                            <p>
+                              {tr(
+                                'completion.missingCost',
+                                'Record and save the total cost of this request before completing it.',
+                              )}
+                            </p>
                           )}
                           {completionState.incompleteItems && (
                             <p>
-                              All items must be marked as purchased or unable to procure with recorded quantities before completing the request.
+                              {tr(
+                                'completion.incompleteItems',
+                                'All items must be marked as purchased or unable to procure with recorded quantities before completing the request.',
+                              )}
                             </p>
                           )}
                         </div>

@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
+import usePageTranslation from '../utils/usePageTranslation';
 
 const statusClasses = {
   approved: 'bg-green-100 text-green-700',
@@ -19,6 +21,8 @@ const formatDateTime = (value) => {
 };
 
 const WarehouseSupplyRequestsPage = () => {
+  const { t } = useTranslation();
+  const tr = usePageTranslation('warehouseSupplyRequests');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,6 +39,12 @@ const WarehouseSupplyRequestsPage = () => {
   const [itemsError, setItemsError] = useState({});
   const [itemsLoadingId, setItemsLoadingId] = useState(null);
   const navigate = useNavigate();
+  const getStatusLabel = (status) => {
+    if (!status) {
+      return tr('statuses.unknown', 'Unknown');
+    }
+    return tr(`statuses.${status.toLowerCase()}`, status);
+  };
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -44,7 +54,9 @@ const WarehouseSupplyRequestsPage = () => {
       setRequests(res.data || []);
     } catch (err) {
       console.error('Failed to load requests:', err);
-      setError('Failed to load warehouse supply requests. Please try again.');
+      setError(
+        tr('alerts.loadFailed', 'Failed to load warehouse supply requests. Please try again.'),
+      );
     } finally {
       setLoading(false);
     }
@@ -173,7 +185,10 @@ const WarehouseSupplyRequestsPage = () => {
         console.error('Failed to load requested items:', err);
         setItemsError((prev) => ({
           ...prev,
-          [requestId]: 'Failed to load requested items. Please try again later.',
+          [requestId]: tr(
+            'alerts.itemsLoadFailed',
+            'Failed to load requested items. Please try again later.',
+          ),
         }));
       } finally {
         setItemsLoadingId(null);
@@ -185,14 +200,18 @@ const WarehouseSupplyRequestsPage = () => {
 
   const renderStatusBadge = (status) => {
     if (!status) {
-      return <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">Unknown</span>;
+      return (
+        <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+          {tr('statuses.unknown', 'Unknown')}
+        </span>
+      );
     }
 
     const key = status.toLowerCase();
     const badgeClass = statusClasses[key] || 'bg-gray-100 text-gray-600';
     return (
       <span className={`px-2 py-1 text-xs font-medium rounded-full ${badgeClass}`}>
-        {status}
+        {getStatusLabel(status)}
       </span>
     );
   };
@@ -203,8 +222,8 @@ const WarehouseSupplyRequestsPage = () => {
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Warehouse Supply Requests</h1>
-            <p className="text-gray-600">Review approved warehouse requests and record supplied items.</p>
+            <h1 className="text-3xl font-bold">{tr('title', 'Warehouse Supply Requests')}</h1>
+            <p className="text-gray-600">{tr('subtitle', 'Review approved warehouse requests and record supplied items.')}</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -212,14 +231,14 @@ const WarehouseSupplyRequestsPage = () => {
               onClick={fetchRequests}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Refresh
+              {tr('actions.refresh', 'Refresh')}
             </button>
             <button
               type="button"
               onClick={clearFilters}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
             >
-              Clear Filters
+              {tr('actions.clearFilters', 'Clear Filters')}
             </button>
           </div>
         </div>
@@ -228,40 +247,47 @@ const WarehouseSupplyRequestsPage = () => {
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded border bg-white p-4 shadow-sm">
-            <p className="text-sm text-gray-500">Total Requests</p>
+            <p className="text-sm text-gray-500">{tr('summary.total', 'Total Requests')}</p>
             <p className="mt-1 text-2xl font-semibold">{summary.total}</p>
           </div>
           {Object.entries(summary.byStatus).map(([status, count]) => (
             <div key={status} className="rounded border bg-white p-4 shadow-sm">
-              <p className="text-sm text-gray-500">{status}</p>
+              <p className="text-sm text-gray-500">{getStatusLabel(status)}</p>
               <p className="mt-1 text-2xl font-semibold">{count}</p>
             </div>
           ))}
         </section>
 
         <section className="rounded border bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">Filters</h2>
+          <h2 className="text-lg font-semibold">{tr('filters.title', 'Filters')}</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700" htmlFor="search">Search</label>
+              <label className="text-sm font-medium text-gray-700" htmlFor="search">
+                {tr('filters.searchLabel', 'Search')}
+              </label>
               <input
                 id="search"
                 type="text"
-                placeholder="Search by ID, department, section or justification"
+                placeholder={tr(
+                  'filters.searchPlaceholder',
+                  'Search by ID, department, section or justification',
+                )}
                 value={filters.search}
                 onChange={handleFilterChange('search')}
                 className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700" htmlFor="department">Department</label>
+              <label className="text-sm font-medium text-gray-700" htmlFor="department">
+                {tr('filters.department', 'Department')}
+              </label>
               <select
                 id="department"
                 value={filters.department}
                 onChange={handleFilterChange('department')}
                 className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
               >
-                <option value="all">All</option>
+                <option value="all">{tr('filters.allOption', 'All')}</option>
                 {departments.map((dept) => (
                   <option key={dept} value={dept}>
                     {dept}
@@ -270,14 +296,16 @@ const WarehouseSupplyRequestsPage = () => {
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700" htmlFor="section">Section</label>
+              <label className="text-sm font-medium text-gray-700" htmlFor="section">
+                {tr('filters.section', 'Section')}
+              </label>
               <select
                 id="section"
                 value={filters.section}
                 onChange={handleFilterChange('section')}
                 className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
               >
-                <option value="all">All</option>
+                <option value="all">{tr('filters.allOption', 'All')}</option>
                 {sections.map((section) => (
                   <option key={section} value={section}>
                     {section}
@@ -286,23 +314,27 @@ const WarehouseSupplyRequestsPage = () => {
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700" htmlFor="status">Status</label>
+              <label className="text-sm font-medium text-gray-700" htmlFor="status">
+                {tr('filters.status', 'Status')}
+              </label>
               <select
                 id="status"
                 value={filters.status}
                 onChange={handleFilterChange('status')}
                 className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
               >
-                <option value="all">All</option>
+                <option value="all">{tr('filters.allOption', 'All')}</option>
                 {statuses.map((status) => (
                   <option key={status} value={status}>
-                    {status}
+                    {getStatusLabel(status)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700" htmlFor="fromDate">From</label>
+              <label className="text-sm font-medium text-gray-700" htmlFor="fromDate">
+                {tr('filters.from', 'From')}
+              </label>
               <input
                 id="fromDate"
                 type="date"
@@ -312,7 +344,9 @@ const WarehouseSupplyRequestsPage = () => {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium text-gray-700" htmlFor="toDate">To</label>
+              <label className="text-sm font-medium text-gray-700" htmlFor="toDate">
+                {tr('filters.to', 'To')}
+              </label>
               <input
                 id="toDate"
                 type="date"
@@ -326,39 +360,44 @@ const WarehouseSupplyRequestsPage = () => {
 
         <section className="space-y-4">
           {loading ? (
-            <p className="text-gray-600">Loading requests…</p>
+            <p className="text-gray-600">{tr('list.loading', 'Loading requests…')}</p>
           ) : filteredRequests.length === 0 ? (
             <p className="rounded border border-gray-200 bg-white p-6 text-center text-gray-600">
-              No warehouse supply requests match the selected filters.
+              {tr('list.empty', 'No warehouse supply requests match the selected filters.')}
             </p>
           ) : (
             filteredRequests.map((req) => (
               <article key={req.id} className="rounded border border-gray-200 bg-white p-5 shadow-sm">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm text-gray-500">Request ID</p>
+                    <p className="text-sm text-gray-500">{tr('requestCard.requestId', 'Request ID')}</p>
                     <p className="text-xl font-semibold">{req.id}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                     <div>
-                      <span className="font-medium text-gray-700">Department:</span> {req.department_name || '—'}
+                      <span className="font-medium text-gray-700">{tr('requestCard.department', 'Department')}:</span>{' '}
+                      {req.department_name || '—'}
                     </div>
                     <div>
-                      <span className="font-medium text-gray-700">Section:</span> {req.section_name || '—'}
+                      <span className="font-medium text-gray-700">{tr('requestCard.section', 'Section')}:</span>{' '}
+                      {req.section_name || '—'}
                     </div>
                     <div>
-                      <span className="font-medium text-gray-700">Submitted:</span> {formatDateTime(req.created_at)}
+                      <span className="font-medium text-gray-700">{tr('requestCard.submitted', 'Submitted')}:</span>{' '}
+                      {formatDateTime(req.created_at)}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-700">Status:</span>
+                      <span className="font-medium text-gray-700">{tr('requestCard.status', 'Status')}:</span>
                       {renderStatusBadge(req.status)}
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-4 rounded bg-gray-50 p-4 text-sm text-gray-700">
-                  <p className="font-medium text-gray-900">Justification</p>
-                  <p className="mt-1 whitespace-pre-line">{req.justification || 'No justification provided.'}</p>
+                  <p className="font-medium text-gray-900">{tr('requestCard.justification', 'Justification')}</p>
+                  <p className="mt-1 whitespace-pre-line">
+                    {req.justification || tr('requestCard.noJustification', 'No justification provided.')}
+                  </p>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -367,21 +406,23 @@ const WarehouseSupplyRequestsPage = () => {
                     onClick={() => navigate(`/warehouse-supply/${req.id}`)}
                     className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                   >
-                    Record Supplied Items
+                    {tr('requestCard.recordSupplied', 'Record Supplied Items')}
                   </button>
                   <button
                     type="button"
                     onClick={() => toggleItems(req.id)}
                     className="rounded border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
                   >
-                    {expandedRequestId === req.id ? 'Hide Requested Items' : 'View Requested Items'}
+                    {expandedRequestId === req.id
+                      ? tr('requestCard.hideItems', 'Hide Requested Items')
+                      : tr('requestCard.viewItems', 'View Requested Items')}
                   </button>
                 </div>
 
                 {expandedRequestId === req.id && (
                   <div className="mt-4 rounded border border-gray-200 bg-gray-50 p-4">
                     {itemsLoadingId === req.id ? (
-                      <p className="text-sm text-gray-600">Loading requested items…</p>
+                      <p className="text-sm text-gray-600">{tr('items.loading', 'Loading requested items…')}</p>
                     ) : itemsError[req.id] ? (
                       <p className="text-sm text-red-600">{itemsError[req.id]}</p>
                     ) : itemsCache[req.id] && itemsCache[req.id].length > 0 ? (
@@ -389,12 +430,16 @@ const WarehouseSupplyRequestsPage = () => {
                         {itemsCache[req.id].map((item) => (
                           <li key={item.item_id || item.id} className="flex items-center justify-between rounded bg-white px-3 py-2 shadow">
                             <span className="font-medium text-gray-900">{item.item_name}</span>
-                            <span className="text-gray-600">Requested: {item.quantity}</span>
+                            <span className="text-gray-600">
+                              {tr('items.requestedQuantity', 'Requested: {{quantity}}', {
+                                quantity: item.quantity,
+                              })}
+                            </span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-sm text-gray-600">No requested items available.</p>
+                      <p className="text-sm text-gray-600">{tr('items.empty', 'No requested items available.')}</p>
                     )}
                   </div>
                 )}
