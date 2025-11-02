@@ -1,5 +1,17 @@
 //src/pages/ApprovalsPanel.js
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import {
+  AlertTriangle,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Loader2,
+  PackageCheck,
+  RefreshCcw,
+  Search,
+  SlidersHorizontal,
+} from 'lucide-react';
 import axios from '../api/axios';
 import { Button } from '../components/ui/Button';
 import Navbar from '../components/Navbar';
@@ -45,6 +57,13 @@ const ApprovalsPanel = () => {
   const [estimatedCost, setEstimatedCost] = useState('');
   const [estimatedCostError, setEstimatedCostError] = useState('');
   const [estimatedCostDrafts, setEstimatedCostDrafts] = useState({});
+
+  const formatDateTime = useCallback((value) => {
+    if (!value) return '—';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '—';
+    return parsed.toLocaleString('en-GB', { hour12: false });
+  }, []);
 
   const { user } = useCurrentUser();
   const canMarkUrgent = ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role);
@@ -676,144 +695,182 @@ const ApprovalsPanel = () => {
     setSortOption('newest');
   };
 
-  if (loading) return <div className="p-6">Loading approvals...</div>;
-  if (error) return <div className="p-6 text-red-500">{error}</div>;
-
   return (
-    <div>
+    <>
       <Navbar />
-      <div className="p-6 max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-4">Pending Approvals</h1>
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-900">Pending Approvals</h1>
+            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+              Review and process all outstanding approval requests from your departments.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={fetchApprovals} variant="secondary" aria-label="Refresh approvals list">
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-600" aria-hidden />
+              ) : (
+                <RefreshCcw className="mr-2 h-4 w-4 text-slate-600" aria-hidden />
+              )}
+              Refresh
+            </Button>
+          </div>
+        </div>
 
-        {requests.length === 0 ? (
-          <p>No pending approvals.</p>
-        ) : (
-          <>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-6">
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
-                <p className="text-sm text-gray-500">Total Pending</p>
-                <p className="text-2xl font-semibold">{summary.total}</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Total Pending</p>
+                <p className="text-2xl font-semibold text-slate-900">{summary.total}</p>
               </div>
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
-                <p className="text-sm text-gray-500">Marked Urgent</p>
-                <p className="text-2xl font-semibold text-red-600">{summary.urgent}</p>
+              <PackageCheck className="h-8 w-8 text-blue-600" aria-hidden />
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Marked Urgent</p>
+                <p className="text-2xl font-semibold text-slate-900">{summary.urgent}</p>
               </div>
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
-                <p className="text-sm text-gray-500">Total Estimated Value</p>
-                <p className="text-2xl font-semibold">
+              <AlertTriangle className="h-8 w-8 text-red-500" aria-hidden />
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Total Estimated Value</p>
+                <p className="text-2xl font-semibold text-slate-900">
                   {summary.estimatedTotal.toLocaleString()} IQD
                 </p>
               </div>
-              <div className="bg-white border rounded-lg p-4 shadow-sm">
-                <p className="text-sm text-gray-500">Requests by Type</p>
+              <FileText className="h-8 w-8 text-purple-500" aria-hidden />
+            </div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500">Requests by Type</p>
                 {Object.keys(summary.byType).length === 0 ? (
-                  <p className="text-sm text-gray-600 mt-1">No type data</p>
+                  <p className="mt-1 text-sm text-slate-500">No type data</p>
                 ) : (
-                  <ul className="text-sm text-gray-700 space-y-1 mt-1">
+                  <ul className="mt-2 space-y-1 text-sm text-slate-700">
                     {Object.entries(summary.byType).map(([type, count]) => (
-                      <li key={type} className="flex justify-between">
+                      <li key={type} className="flex items-center justify-between">
                         <span>{type}</span>
-                        <span className="font-medium">{count}</span>
+                        <span className="font-semibold text-slate-900">{count}</span>
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
+              <Building2 className="h-8 w-8 text-emerald-600" aria-hidden />
             </div>
+          </div>
+        </div>
 
-            <div className="bg-white border rounded-lg p-4 shadow-sm mb-6">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-search">
-                    Search
-                  </label>
-                  <input
-                    id="approval-search"
-                    type="search"
-                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-                    placeholder="Search by ID, justification, department or section"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-1 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+              <Search className="h-4 w-4 text-slate-500" aria-hidden />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search by ID, justification, department or section"
+                className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
+              />
+            </div>
+            <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-3 xl:grid-cols-4">
+              <label className="flex flex-col text-sm text-slate-600">
+                <span className="mb-1 flex items-center gap-1 font-medium">
+                  <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+                  Request Type
+                </span>
+                <select
+                  value={typeFilter}
+                  onChange={(event) => setTypeFilter(event.target.value)}
+                  className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All types</option>
+                  {availableRequestTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col text-sm text-slate-600">
+                <span className="mb-1 flex items-center gap-1 font-medium">
+                  <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+                  Urgency
+                </span>
+                <select
+                  value={urgencyFilter}
+                  onChange={(event) => setUrgencyFilter(event.target.value)}
+                  className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All</option>
+                  <option value="urgent">Urgent only</option>
+                  <option value="non-urgent">Non-urgent</option>
+                </select>
+              </label>
+              <label className="flex flex-col text-sm text-slate-600">
+                <span className="mb-1 flex items-center gap-1 font-medium">
+                  <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden />
+                  Sort by
+                </span>
+                <select
+                  value={sortOption}
+                  onChange={(event) => setSortOption(event.target.value)}
+                  className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="costHigh">Cost: high to low</option>
+                  <option value="costLow">Cost: low to high</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <div className="mt-4 flex justify-end">
+              <Button variant="secondary" onClick={clearFilters}>
+                Reset filters
+              </Button>
+            </div>
+          )}
+        </div>
 
-                <div className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-type-filter">
-                    Request Type
-                  </label>
-                  <select
-                    id="approval-type-filter"
-                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-                    value={typeFilter}
-                    onChange={(e) => setTypeFilter(e.target.value)}
-                  >
-                    <option value="all">All types</option>
-                    {availableRequestTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-urgency-filter">
-                    Urgency
-                  </label>
-                  <select
-                    id="approval-urgency-filter"
-                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-                    value={urgencyFilter}
-                    onChange={(e) => setUrgencyFilter(e.target.value)}
-                  >
-                    <option value="all">All</option>
-                    <option value="urgent">Urgent only</option>
-                    <option value="non-urgent">Non-urgent</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col">
-                  <label className="text-sm font-medium text-gray-600 mb-1" htmlFor="approval-sort">
-                    Sort by
-                  </label>
-                  <select
-                    id="approval-sort"
-                    className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring focus:ring-blue-200"
-                    value={sortOption}
-                    onChange={(e) => setSortOption(e.target.value)}
-                  >
-                    <option value="newest">Newest first</option>
-                    <option value="oldest">Oldest first</option>
-                    <option value="costHigh">Cost: high to low</option>
-                    <option value="costLow">Cost: low to high</option>
-                  </select>
-                </div>
-              </div>
-
+        <div className="mt-6">
+          {loading ? (
+            <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white py-16">
+              <Loader2 className="mr-3 h-6 w-6 animate-spin text-blue-600" aria-hidden />
+              <span className="text-sm text-slate-600">Loading approvals...</span>
+            </div>
+          ) : error ? (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">{error}</div>
+          ) : requests.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+              No pending approvals.
+            </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+              <p>No pending approvals match the selected filters.</p>
               {hasActiveFilters && (
-                <div className="flex justify-end mt-4">
-                  <Button variant="secondary" onClick={clearFilters}>
-                    Reset filters
-                  </Button>
-                </div>
+                <button
+                  type="button"
+                  className="mt-2 text-sm font-medium text-blue-600 underline"
+                  onClick={clearFilters}
+                >
+                  Clear filters
+                </button>
               )}
             </div>
-
-            <div className="space-y-4">
-              {filteredRequests.length === 0 ? (
-                <div className="border rounded-lg p-6 text-center text-gray-500">
-                  <p>No pending approvals match the selected filters.</p>
-                  {hasActiveFilters && (
-                    <button
-                      className="mt-2 text-blue-600 underline text-sm"
-                      onClick={clearFilters}
-                    >
-                      Clear filters
-                    </button>
-                  )}
-                </div>
-              ) : (
-                filteredRequests.map((req) => {
+          ) : (
+            <div className="space-y-5">
+              {filteredRequests.map((req) => {
                   const estimatedCostValue = Number(req.estimated_cost) || 0;
                   const tag = getCostLabel(estimatedCostValue);
                   const canEditItems = req.request_type !== 'Warehouse Supply';
@@ -823,332 +880,370 @@ const ApprovalsPanel = () => {
                   const attachmentsLoading = attachmentLoadingMap[req.request_id];
                   const attachmentsError = attachmentErrorMap[req.request_id];
                   const isUrgentRequest = Boolean(req.is_urgent);
-                  const cardClassName = `border rounded-lg p-4 shadow-sm ${
-                    isUrgentRequest ? 'border-red-500 bg-red-50/60 ring-1 ring-red-200' : 'border-gray-200'
-                  }`;
+                  const isExpanded = expandedId === req.request_id;
 
                   return (
-                    <div key={req.approval_id} className={cardClassName}>
-                      {isUrgentRequest && (
-                        <div className="mb-3 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
-                          <span className="uppercase tracking-wide">Urgent</span>
-                          <span className="font-normal normal-case">Requires immediate attention</span>
-                        </div>
-                      )}
-                      <p>
-                        <strong>Request ID:</strong> {req.request_id}
-                      </p>
-                      <p>
-                        <strong>Type:</strong> {req.request_type}
-                      </p>
-                      <p>
-                        <strong>Justification:</strong> {req.justification}
-                      </p>
-                      <p>
-                        <strong>Department:</strong> {req.department_name || '—'}
-                      </p>
-                      <p>
-                        <strong>Section:</strong> {req.section_name || '—'}
-                      </p>
-                      <p>
-                        <strong>Estimated Cost:</strong> {estimatedCostValue.toLocaleString()} IQD
-                      </p>
-                      {user?.role === 'SCM' && (
-                        <div className="mt-3 rounded border border-blue-200 bg-blue-50 p-3">
-                          <label
-                            htmlFor={`scm-estimated-cost-${req.request_id}`}
-                            className="block text-sm font-medium text-blue-900"
-                          >
-                            Update Estimated Cost (IQD)
-                          </label>
-                          <input
-                            id={`scm-estimated-cost-${req.request_id}`}
-                            type="text"
-                            inputMode="decimal"
-                            className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                            placeholder="Add an estimated total before approving"
-                            value={estimatedCostDrafts[req.request_id] ?? ''}
-                            onChange={(e) => handleEstimatedCostDraftChange(req.request_id, e.target.value)}
-                          />
-                          <p className="mt-1 text-xs text-blue-800">
-                            This amount will be confirmed when you approve or reject the request. Leave blank to keep the existing value.
-                          </p>
-                        </div>
-                      )}
-                      <p className={`inline-block mt-1 text-xs text-white px-2 py-1 rounded ${tag.color}`}>
-                        {tag.label}
-                      </p>
-
-                      {req.updated_by && (
-                        <p className="text-sm text-gray-500 mt-2">
-                          Last Updated by <strong>{req.updated_by}</strong> on{' '}
-                          {req.updated_at ? new Date(req.updated_at).toLocaleString('en-GB') : '—'}
-                        </p>
-                      )}
-
+                    <div key={req.approval_id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
                       <button
-                        className="text-blue-600 underline text-sm mt-2"
+                        type="button"
                         onClick={() => toggleExpand(req.request_id)}
+                        className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
-                        {expandedId === req.request_id ? 'Hide Items' : 'Show Requested Items'}
-                      </button>
-
-                      {expandedId === req.request_id && (
-                        <div className="mt-3">
-                          <div className="mb-4">
-                            <h4 className="font-semibold text-sm text-slate-800">Attachments</h4>
-                            {attachmentsLoading ? (
-                              <p className="text-sm text-gray-500 mt-1">Loading attachments...</p>
-                            ) : attachmentsError ? (
-                              <p className="text-sm text-red-600 mt-1">{attachmentsError}</p>
-                            ) : attachments.length === 0 ? (
-                              <p className="text-sm text-gray-500 mt-1">No attachments uploaded.</p>
-                            ) : (
-                              <ul className="mt-1 space-y-1 text-sm text-slate-700">
-                                {attachments.map((att) => {
-                                  const filename = att.file_name || (att.file_path || '').split(/[\\/]/).pop();
-                                  const viewUrl = att.file_url || null;
-                                  return (
-                                    <li key={att.id} className="flex flex-wrap items-center gap-3">
-                                      <span className="break-all">{filename}</span>
-                                      {viewUrl && (
-                                        <a
-                                          href={viewUrl}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-blue-600 underline hover:text-blue-800"
-                                        >
-                                          View
-                                        </a>
-                                      )}
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDownloadAttachment(att)}
-                                        className="text-blue-600 underline hover:text-blue-800 disabled:opacity-50"
-                                        disabled={downloadingAttachmentId === att.id}
-                                      >
-                                        {downloadingAttachmentId === att.id ? 'Downloading…' : 'Download'}
-                                      </button>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
+                        <div className="flex flex-1 flex-col gap-1">
+                          <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
+                            <span>Request #</span>
+                            <span className="font-semibold text-slate-800">{req.request_id}</span>
+                            {req.request_type && (
+                              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600">
+                                {req.request_type}
+                              </span>
+                            )}
+                            {req.department_name && (
+                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
+                                {req.department_name}
+                              </span>
+                            )}
+                            {req.section_name && (
+                              <span className="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-600">
+                                {req.section_name}
+                              </span>
+                            )}
+                            {isUrgentRequest && (
+                              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                                Urgent
+                              </span>
                             )}
                           </div>
-                          {itemsMap[req.request_id]?.length > 0 ? (
-                            <>
-                              {requestSummary && (
-                                <div className="mb-3 flex flex-wrap gap-2 text-xs">
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 font-medium text-green-700">
-                                    Approved: {requestSummary.approved}
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 font-medium text-red-600">
-                                    Rejected: {requestSummary.rejected}
-                                  </span>
-                                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
-                                    Pending: {requestSummary.pending}
-                                  </span>
-                                </div>
-                              )}
-                              <table className="w-full text-sm border">
-                                <thead>
-                                  <tr className="bg-gray-100">
-                                    <th className="border p-1">Item</th>
-                                    <th className="border p-1">Brand</th>
-                                    <th className="border p-1">Specs</th>
-                                    <th className="border p-1">Qty</th>
-                                    <th className="border p-1">Available Qty</th>
-                                    <th className="border p-1">Unit Cost</th>
-                                    <th className="border p-1">Total</th>
-                                    <th className="border p-1">Decision</th>
-                                    <th className="border p-1">Comments</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {itemsMap[req.request_id].map((item) => {
-                                    const decision = itemDecisions[req.request_id]?.[item.id] || {
-                                      status: item.approval_status || 'Pending',
-                                      comments: item.approval_comments || '',
-                                    };
-                                    const normalizedStatus = typeof decision.status === 'string'
-                                      ? `${decision.status.charAt(0).toUpperCase()}${decision.status.slice(1).toLowerCase()}`
-                                      : 'Pending';
-                                    const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || '';
-                                    const decisionLocked = canEditItems && isItemLockedForUser(item);
-
-                                    return (
-                                      <tr key={item.id || item.item_name} className={`${rowHighlight} border-b last:border-b-0`}>
-                                        <td className="border p-1">{item.item_name}</td>
-                                        <td className="border p-1">{item.brand || '—'}</td>
-                                        <td className="border p-1">{item.specs || '—'}</td>
-                                        <td className="border p-1">{item.quantity}</td>
-                                        <td className="border p-1">{item.available_quantity ?? '—'}</td>
-                                        <td className="border p-1">{item.unit_cost}</td>
-                                        <td className="border p-1">{item.total_cost}</td>
-                                        <td className="border p-1">
-                                          {canEditItems ? (
-                                            <select
-                                              className="w-full border rounded px-1 py-1 text-sm"
-                                              value={decision.status || 'Pending'}
-                                              onChange={(e) =>
-                                                handleItemStatusChange(req.request_id, item.id, e.target.value)
-                                              }
-                                              disabled={decisionLocked}
-                                            >
-                                              <option value="Pending">Pending</option>
-                                              <option value="Approved">Approved</option>
-                                              <option value="Rejected">Rejected</option>
-                                            </select>
-                                          ) : (
-                                            <span>{decision.status || 'Pending'}</span>
-                                          )}
-                                        </td>
-                                        <td className="border p-1">
-                                          {canEditItems ? (
-                                            <textarea
-                                              className="w-full border rounded px-1 py-1 text-sm"
-                                              rows={2}
-                                              value={decision.comments || ''}
-                                              onChange={(e) =>
-                                                handleItemCommentChange(req.request_id, item.id, e.target.value)
-                                              }
-                                              placeholder="Optional comments"
-                                              disabled={decisionLocked}
-                                            />
-                                          ) : (
-                                            <span>{decision.comments || '—'}</span>
-                                          )}
-                                          {decisionLocked && (
-                                            <p className="mt-1 text-xs font-medium text-amber-600">
-                                              Rejected by a previous approver — only they can update this item.
-                                            </p>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                              {canEditItems && (
-                                <div className="mt-2 flex justify-end">
-                                  <Button
-                                    variant="secondary"
-                                    onClick={() => saveItemDecisions(req.request_id, req.approval_id)}
-                                    isLoading={!!savingItems[req.request_id]}
-                                  >
-                                    Save Item Decisions
-                                  </Button>
-                                </div>
-                              )}
-                              {feedback?.message && (
-                                <p
-                                  className={`mt-2 text-sm ${
-                                    FEEDBACK_TEXT_STYLES[feedback.type] || FEEDBACK_TEXT_STYLES.info
-                                  }`}
-                                >
-                                  {feedback.message}
-                                </p>
-                              )}
-                            </>
-                          ) : (
-                            <p className="text-sm text-gray-500">No items found for this request.</p>
+                          <p className="text-base font-semibold text-slate-900">
+                            {req.justification || 'No justification provided.'}
+                          </p>
+                          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                            <span>Requester: {req.requester_name || '—'}</span>
+                            <span>Submitted: {formatDateTime(req.created_at || req.request_date)}</span>
+                            <span>Estimated Cost: {estimatedCostValue.toLocaleString()} IQD</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white ${tag.color}`}>
+                                {tag.label}
+                              </span>
+                            </span>
+                          </div>
+                          {req.updated_by && (
+                            <p className="text-xs text-slate-500">
+                              Last updated by <span className="font-medium text-slate-700">{req.updated_by}</span> on {formatDateTime(req.updated_at)}
+                            </p>
                           )}
                         </div>
-                      )}
+                        <div className="flex items-center text-slate-500">
+                          {isExpanded ? (
+                            <ChevronUp className="h-5 w-5" aria-hidden />
+                          ) : (
+                            <ChevronDown className="h-5 w-5" aria-hidden />
+                          )}
+                        </div>
+                      </button>
 
-                      <div className="mt-4 flex gap-3">
-                        {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
-                          <Button
-                            onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}
-                          >
-                            Assign to Department Requester
-                          </Button>
-                        ) : (
-                          <>
-                            <Button
-                              onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
-                            >
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                      {isExpanded && (
+                        <div className="border-t border-slate-100 px-5 py-4">
+                          <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
+                            <div className="space-y-4">
+                              {user?.role === 'SCM' && (
+                                <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
+                                  <label
+                                    htmlFor={`scm-estimated-cost-${req.request_id}`}
+                                    className="block text-sm font-medium text-blue-900"
+                                  >
+                                    Update Estimated Cost (IQD)
+                                  </label>
+                                  <input
+                                    id={`scm-estimated-cost-${req.request_id}`}
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                                    placeholder="Add an estimated total before approving"
+                                    value={estimatedCostDrafts[req.request_id] ?? ''}
+                                    onChange={(event) => handleEstimatedCostDraftChange(req.request_id, event.target.value)}
+                                  />
+                                  <p className="mt-1 text-xs text-blue-800">
+                                    This amount will be confirmed when you approve or reject the request. Leave blank to keep the existing value.
+                                  </p>
+                                </div>
+                              )}
+
+                              <div>
+                                <h4 className="text-sm font-semibold text-slate-800">Attachments</h4>
+                                {attachmentsLoading ? (
+                                  <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
+                                    <Loader2 className="h-4 w-4 animate-spin text-blue-600" aria-hidden />
+                                    <span>Loading attachments…</span>
+                                  </div>
+                                ) : attachmentsError ? (
+                                  <p className="mt-2 text-sm text-red-600">{attachmentsError}</p>
+                                ) : attachments.length === 0 ? (
+                                  <p className="mt-2 text-sm text-slate-500">No attachments uploaded.</p>
+                                ) : (
+                                  <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                                    {attachments.map((att) => {
+                                      const filename = att.file_name || (att.file_path || '').split(/[\\/]/).pop();
+                                      const viewUrl = att.file_url || null;
+                                      return (
+                                        <li key={att.id} className="flex flex-wrap items-center gap-3">
+                                          <span className="break-all">{filename}</span>
+                                          {viewUrl && (
+                                            <a
+                                              href={viewUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-blue-600 underline hover:text-blue-800"
+                                            >
+                                              View
+                                            </a>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => handleDownloadAttachment(att)}
+                                            className="text-blue-600 underline hover:text-blue-800 disabled:opacity-50"
+                                            disabled={downloadingAttachmentId === att.id}
+                                          >
+                                            {downloadingAttachmentId === att.id ? 'Downloading…' : 'Download'}
+                                          </button>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                              </div>
+
+                              <div>
+                                <h4 className="text-sm font-semibold text-slate-800">Requested Items</h4>
+                                {itemsMap[req.request_id]?.length > 0 ? (
+                                  <div className="mt-2 space-y-3">
+                                    {requestSummary && (
+                                      <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                                          Approved: {requestSummary.approved}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+                                          Rejected: {requestSummary.rejected}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+                                          Pending: {requestSummary.pending}
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div className="overflow-x-auto rounded border border-slate-200">
+                                      <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                        <thead className="bg-slate-50">
+                                          <tr>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Item</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Brand</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Specs</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Qty</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Available Qty</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Unit Cost</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Total</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Decision</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600">Comments</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                          {itemsMap[req.request_id].map((item) => {
+                                            const decision = itemDecisions[req.request_id]?.[item.id] || {
+                                              status: item.approval_status || 'Pending',
+                                              comments: item.approval_comments || '',
+                                            };
+                                            const normalizedStatus = typeof decision.status === 'string'
+                                              ? `${decision.status.charAt(0).toUpperCase()}${decision.status.slice(1).toLowerCase()}`
+                                              : 'Pending';
+                                            const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || '';
+                                            const decisionLocked = canEditItems && isItemLockedForUser(item);
+
+                                            return (
+                                              <tr key={item.id || item.item_name} className={`${rowHighlight} transition-colors`}>
+                                                <td className="px-3 py-3 text-slate-800">
+                                                  <div className="font-medium">{item.item_name}</div>
+                                                  {(item.brand || item.specs) && (
+                                                    <div className="mt-1 text-xs text-slate-500">
+                                                      {item.brand && <span className="mr-2">{item.brand}</span>}
+                                                      {item.specs && <span>{item.specs}</span>}
+                                                    </div>
+                                                  )}
+                                                </td>
+                                                <td className="px-3 py-3 text-slate-600">{item.brand || '—'}</td>
+                                                <td className="px-3 py-3 text-slate-600">{item.specs || '—'}</td>
+                                                <td className="px-3 py-3 text-slate-600">{item.quantity}</td>
+                                                <td className="px-3 py-3 text-slate-600">{item.available_quantity ?? '—'}</td>
+                                                <td className="px-3 py-3 text-slate-600">{item.unit_cost}</td>
+                                                <td className="px-3 py-3 text-slate-600">{item.total_cost}</td>
+                                                <td className="px-3 py-3 text-slate-600">
+                                                  {canEditItems ? (
+                                                    <select
+                                                      className="w-full rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                      value={decision.status || 'Pending'}
+                                                      onChange={(event) =>
+                                                        handleItemStatusChange(req.request_id, item.id, event.target.value)
+                                                      }
+                                                      disabled={decisionLocked}
+                                                    >
+                                                      <option value="Pending">Pending</option>
+                                                      <option value="Approved">Approved</option>
+                                                      <option value="Rejected">Rejected</option>
+                                                    </select>
+                                                  ) : (
+                                                    <span>{decision.status || 'Pending'}</span>
+                                                  )}
+                                                </td>
+                                                <td className="px-3 py-3 text-slate-600">
+                                                  {canEditItems ? (
+                                                    <textarea
+                                                      className="mt-0 w-full rounded-md border border-slate-200 px-2 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                      rows={3}
+                                                      placeholder="Optional comments"
+                                                      value={decision.comments || ''}
+                                                      onChange={(event) =>
+                                                        handleItemCommentChange(req.request_id, item.id, event.target.value)
+                                                      }
+                                                      disabled={decisionLocked}
+                                                    />
+                                                  ) : (
+                                                    <span>{decision.comments || '—'}</span>
+                                                  )}
+                                                  {decisionLocked && (
+                                                    <p className="mt-1 text-xs font-medium text-amber-600">
+                                                      Rejected by a previous approver — only they can update this item.
+                                                    </p>
+                                                  )}
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                    {canEditItems && (
+                                      <div className="flex justify-end">
+                                        <Button
+                                          variant="secondary"
+                                          onClick={() => saveItemDecisions(req.request_id, req.approval_id)}
+                                          isLoading={!!savingItems[req.request_id]}
+                                        >
+                                          Save Item Decisions
+                                        </Button>
+                                      </div>
+                                    )}
+                                    {feedback?.message && (
+                                      <p
+                                        className={`text-sm ${
+                                          FEEDBACK_TEXT_STYLES[feedback.type] || FEEDBACK_TEXT_STYLES.info
+                                        }`}
+                                      >
+                                        {feedback.message}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="mt-2 text-sm text-slate-500">No items found for this request.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="space-y-4">
+                              {isUrgentRequest && (
+                                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                                  Requires immediate attention
+                                </div>
+                              )}
+                              <div className="space-y-3">
+                                {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
+                                  <Button onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}>
+                                    Assign to Department Requester
+                                  </Button>
+                                ) : (
+                                  <>
+                                    <Button onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}>
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
+                                    >
+                                      Reject
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
-                })
-              )}
+                })}
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
       {showCommentBox && (
-      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-        <div className="bg-white rounded-lg p-6 shadow-lg w-[90%] max-w-md">
-          <h2 className="text-lg font-semibold mb-2">
-            {selectedDecision === 'Approved' ? 'Approve' : 'Reject'} Request #{selectedRequestId}
-          </h2>
-          <textarea
-            className="w-full h-28 border rounded p-2 text-sm"
-            placeholder="Enter optional comments..."
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-          />
-          {user?.role === 'SCM' && (
-            <div className="mt-3">
-              <label htmlFor="estimated-cost" className="block text-sm font-medium text-gray-700">
-                Estimated Cost (IQD)
-              </label>
-              <input
-                id="estimated-cost"
-                type="text"
-                inputMode="decimal"
-                className={`mt-1 w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  estimatedCostError ? 'border-red-500' : 'border-gray-300'
-                }`}
-                placeholder="Enter a number or leave blank"
-                value={estimatedCost}
-                onChange={(e) => handleModalEstimatedCostChange(e.target.value)}
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Provide an updated estimate so downstream approvers can see the projected cost. Leave blank to keep the current
-                value.
-              </p>
-              {estimatedCostError && (
-                <p className="mt-1 text-xs text-red-600">{estimatedCostError}</p>
-              )}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold">
+              {selectedDecision === 'Approved' ? 'Approve' : 'Reject'} Request #{selectedRequestId}
+            </h2>
+            <textarea
+              className="mt-3 h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter optional comments..."
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+            />
+            {user?.role === 'SCM' && (
+              <div className="mt-3">
+                <label htmlFor="estimated-cost" className="block text-sm font-medium text-slate-700">
+                  Estimated Cost (IQD)
+                </label>
+                <input
+                  id="estimated-cost"
+                  type="text"
+                  inputMode="decimal"
+                  className={`mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    estimatedCostError ? 'border-red-500' : 'border-slate-300'
+                  }`}
+                  placeholder="Enter a number or leave blank"
+                  value={estimatedCost}
+                  onChange={(e) => handleModalEstimatedCostChange(e.target.value)}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Provide an updated estimate so downstream approvers can see the projected cost. Leave blank to keep the current
+                  value.
+                </p>
+                {estimatedCostError && (
+                  <p className="mt-1 text-xs text-red-600">{estimatedCostError}</p>
+                )}
+              </div>
+            )}
+            {canMarkUrgent && (
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="urgent"
+                  checked={isUrgent}
+                  onChange={(e) => setIsUrgent(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="urgent" className="text-sm font-medium">
+                  Mark this request as <span className="font-semibold text-red-600">Urgent</span>
+                </label>
+              </div>
+            )}
+            <div className="mt-4 flex justify-end gap-3">
+              <Button onClick={submitDecision}>Submit</Button>
+              <Button variant="ghost" onClick={resetCommentModal}>
+                Cancel
+              </Button>
             </div>
-          )}
-          {canMarkUrgent && (
-            <div className="mt-3 flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="urgent"
-                checked={isUrgent}
-                onChange={(e) => setIsUrgent(e.target.checked)}
-                className="w-4 h-4"
-              />
-              <label htmlFor="urgent" className="text-sm font-medium">
-                Mark this request as <span className="text-red-600 font-semibold">Urgent</span>
-              </label>
-            </div>
-          )}
-          <div className="mt-4 flex justify-end gap-3">
-            <Button onClick={submitDecision}>Submit</Button>
-            <Button variant="ghost" onClick={resetCommentModal}>
-              Cancel
-            </Button>
-          </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
