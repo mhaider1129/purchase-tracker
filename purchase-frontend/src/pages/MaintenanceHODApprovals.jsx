@@ -22,6 +22,20 @@ import { Button } from '../components/ui/Button';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 const ITEMS_PER_PAGE = 8;
+const ITEM_STATUS_OPTIONS = ['Pending', 'Approved', 'Rejected'];
+
+const FEEDBACK_TONE_CLASSES = {
+  success: 'text-emerald-600',
+  error: 'text-rose-600',
+  warning: 'text-amber-600',
+  info: 'text-slate-600',
+};
+
+const ITEM_ROW_HIGHLIGHTS = {
+  Approved: 'bg-emerald-50',
+  Rejected: 'bg-rose-50',
+  Pending: '',
+};
 
 const MaintenanceHODApprovals = () => {
   const { t, i18n } = useTranslation();
@@ -43,6 +57,11 @@ const MaintenanceHODApprovals = () => {
   const [attachmentsMap, setAttachmentsMap] = useState({});
   const [attachmentLoadingMap, setAttachmentLoadingMap] = useState({});
   const [attachmentErrorMap, setAttachmentErrorMap] = useState({});
+  const [itemDecisions, setItemDecisions] = useState({});
+  const [itemSummaries, setItemSummaries] = useState({});
+  const [itemFeedbackMap, setItemFeedbackMap] = useState({});
+  const [savingItemsMap, setSavingItemsMap] = useState({});
+  const [urgentSelections, setUrgentSelections] = useState({});
 
   const {
     approvalsMap,
@@ -51,6 +70,38 @@ const MaintenanceHODApprovals = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+
+  const itemStatusLabels = useMemo(
+    () => ({
+      Pending: t('maintenanceHODApprovals.itemStatus.pending'),
+      Approved: t('maintenanceHODApprovals.itemStatus.approved'),
+      Rejected: t('maintenanceHODApprovals.itemStatus.rejected'),
+    }),
+    [t],
+  );
+
+  const buildSummaryFromItems = useCallback((items = [], overrides = {}) => {
+    const summary = { approved: 0, rejected: 0, pending: 0 };
+    if (!Array.isArray(items)) {
+      return summary;
+    }
+
+    items.forEach((item) => {
+      const override = overrides[item?.id] || {};
+      const status = override.status || item?.approval_status || 'Pending';
+      const normalized = String(status).trim().toLowerCase();
+
+      if (normalized === 'approved') {
+        summary.approved += 1;
+      } else if (normalized === 'rejected') {
+        summary.rejected += 1;
+      } else {
+        summary.pending += 1;
+      }
+    });
+
+    return summary;
+  }, []);
 
   const formatDate = useCallback(
     (value) => {
@@ -75,6 +126,36 @@ const MaintenanceHODApprovals = () => {
         items: Array.isArray(req.items) ? req.items : [],
       }));
       setRequests(normalized);
+
+      const nextDecisions = {};
+      const nextSummaries = {};
+      const nextUrgent = {};
+
+      normalized.forEach((req) => {
+        const decisionsByItem = {};
+        req.items.forEach((item) => {
+          if (item?.id == null) {
+            return;
+          }
+          decisionsByItem[item.id] = {
+            status: item?.approval_status || 'Pending',
+            comments: item?.approval_comments || '',
+          };
+        });
+
+        if (Object.keys(decisionsByItem).length > 0) {
+          nextDecisions[req.request_id] = decisionsByItem;
+        }
+
+        nextSummaries[req.request_id] = buildSummaryFromItems(req.items, decisionsByItem);
+        nextUrgent[req.request_id] = Boolean(req.is_urgent);
+      });
+
+      setItemDecisions(nextDecisions);
+      setItemSummaries(nextSummaries);
+      setItemFeedbackMap({});
+      setSavingItemsMap({});
+      setUrgentSelections(nextUrgent);
       setAttachmentsMap({});
       setAttachmentLoadingMap({});
       setAttachmentErrorMap({});
@@ -85,7 +166,7 @@ const MaintenanceHODApprovals = () => {
     } finally {
       setLoading(false);
     }
-  }, [resetApprovals, t]);
+  }, [buildSummaryFromItems, resetApprovals, t]);
 
   useEffect(() => {
     fetchRequests();
@@ -225,6 +306,201 @@ const MaintenanceHODApprovals = () => {
     setDecisionDrafts((prev) => ({ ...prev, [requestId]: value }));
   };
 
+  const handleItemStatusChange = (requestId, itemId, status) => {
+    if (!requestId || itemId == null) {
+      return;
+    }
+
+    const request = requests.find((req) => req.request_id === requestId);
+    if (!request) {
+      return;
+    }
+
+    setItemFeedbackMap((prev) => ({ ...prev, [requestId]: null }));
+
+    const previousDecisions = itemDecisions[requestId] || {};
+    const nextDecisions = {
+      ...previousDecisions,
+      [itemId]: {
+        status: status || 'Pending',
+        comments: previousDecisions[itemId]?.comments || '',
+      },
+    };
+
+    setItemDecisions((prev) => ({ ...prev, [requestId]: nextDecisions }));
+    setItemSummaries((prev) => ({
+      ...prev,
+      [requestId]: buildSummaryFromItems(request.items, nextDecisions),
+    }));
+  };
+
+  const handleItemCommentChange = (requestId, itemId, value) => {
+    if (!requestId || itemId == null) {
+      return;
+    }
+
+    const request = requests.find((req) => req.request_id === requestId);
+    if (!request) {
+      return;
+    }
+
+    setItemFeedbackMap((prev) => ({ ...prev, [requestId]: null }));
+
+    const previousDecisions = itemDecisions[requestId] || {};
+    const nextDecisions = {
+      ...previousDecisions,
+      [itemId]: {
+        status: previousDecisions[itemId]?.status || 'Pending',
+        comments: value,
+      },
+    };
+
+    setItemDecisions((prev) => ({ ...prev, [requestId]: nextDecisions }));
+    setItemSummaries((prev) => ({
+      ...prev,
+      [requestId]: buildSummaryFromItems(request.items, nextDecisions),
+    }));
+  };
+
+  const saveItemDecisions = async (request) => {
+    if (!request) {
+      return;
+    }
+
+    const requestId = request.request_id;
+    const approvalId = request.approval_id;
+    const decisionsForRequest = itemDecisions[requestId] || {};
+
+    const payloadItems = Object.entries(decisionsForRequest)
+      .map(([itemId, decision]) => ({
+        item_id: Number(itemId),
+        status: decision?.status || 'Pending',
+        comments: decision?.comments || '',
+      }))
+      .filter((item) => Number.isInteger(item.item_id));
+
+    if (payloadItems.length === 0) {
+      setItemFeedbackMap((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'warning',
+          message: t('maintenanceHODApprovals.itemActions.noneSelected'),
+        },
+      }));
+      return;
+    }
+
+    setSavingItemsMap((prev) => ({ ...prev, [requestId]: true }));
+    setItemFeedbackMap((prev) => ({ ...prev, [requestId]: null }));
+
+    try {
+      const res = await axios.patch(`/api/approvals/${approvalId}/items`, { items: payloadItems });
+      const currentItems = Array.isArray(request.items) ? request.items : [];
+      let mergedItems = currentItems;
+
+      if (Array.isArray(res.data?.updatedItems) && res.data.updatedItems.length > 0) {
+        const updatedMap = res.data.updatedItems.reduce((acc, item) => {
+          if (item?.id != null) {
+            acc[item.id] = item;
+          }
+          return acc;
+        }, {});
+
+        mergedItems = currentItems.map((item) => {
+          const updated = updatedMap[item.id];
+          if (!updated) return item;
+          return {
+            ...item,
+            approval_status: updated.approval_status,
+            approval_comments: updated.approval_comments,
+            approved_at: updated.approved_at,
+            approved_by: updated.approved_by,
+          };
+        });
+      }
+
+      const nextDecisions = mergedItems.reduce((acc, item) => {
+        if (item?.id == null) {
+          return acc;
+        }
+        acc[item.id] = {
+          status: item?.approval_status || 'Pending',
+          comments: item?.approval_comments || '',
+        };
+        return acc;
+      }, {});
+
+      const summaryFromResponse = res.data?.summary;
+      const nextSummary = summaryFromResponse
+        ? {
+            approved: Number(summaryFromResponse.approved || 0),
+            rejected: Number(summaryFromResponse.rejected || 0),
+            pending: Number(summaryFromResponse.pending || 0),
+          }
+        : buildSummaryFromItems(mergedItems, nextDecisions);
+
+      setItemDecisions((prev) => ({ ...prev, [requestId]: nextDecisions }));
+      setItemSummaries((prev) => ({ ...prev, [requestId]: nextSummary }));
+      setRequests((prev) =>
+        prev.map((entry) =>
+          entry.request_id === requestId
+            ? {
+                ...entry,
+                items: mergedItems,
+              }
+            : entry,
+        ),
+      );
+
+      const lockedItems = Array.isArray(res.data?.lockedItems) ? res.data.lockedItems : [];
+
+      if (lockedItems.length > 0) {
+        setItemFeedbackMap((prev) => ({
+          ...prev,
+          [requestId]: {
+            type: 'warning',
+            message: t('maintenanceHODApprovals.itemActions.locked', {
+              count: lockedItems.length,
+              approved: nextSummary.approved,
+              rejected: nextSummary.rejected,
+              pending: nextSummary.pending,
+            }),
+          },
+        }));
+      } else {
+        setItemFeedbackMap((prev) => ({
+          ...prev,
+          [requestId]: {
+            type: 'success',
+            message: t('maintenanceHODApprovals.itemActions.success', {
+              approved: nextSummary.approved,
+              rejected: nextSummary.rejected,
+              pending: nextSummary.pending,
+            }),
+          },
+        }));
+      }
+    } catch (err) {
+      console.error('❌ Failed to save item decisions:', err);
+      setItemFeedbackMap((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'error',
+          message: t('maintenanceHODApprovals.itemActions.error'),
+        },
+      }));
+    } finally {
+      setSavingItemsMap((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
+  const handleUrgentToggle = (requestId, value) => {
+    setUrgentSelections((prev) => ({
+      ...prev,
+      [requestId]: value,
+    }));
+  };
+
   const handleDecision = useCallback(
     async (request, decision) => {
       if (!request) return;
@@ -252,6 +528,7 @@ const MaintenanceHODApprovals = () => {
         await axios.patch(`/api/approvals/${request.approval_id}/decision`, {
           status: normalizedDecision,
           comments: comments.trim() === '' ? undefined : comments.trim(),
+          is_urgent: urgentSelections[request.request_id] ?? Boolean(request.is_urgent),
         });
         setFeedback({
           type: 'success',
@@ -269,6 +546,11 @@ const MaintenanceHODApprovals = () => {
           delete next[request.request_id];
           return next;
         });
+        setUrgentSelections((prev) => {
+          const next = { ...prev };
+          delete next[request.request_id];
+          return next;
+        });
         fetchRequests();
       } catch (err) {
         console.error('❌ Failed to submit decision', err);
@@ -281,7 +563,7 @@ const MaintenanceHODApprovals = () => {
         setProcessingDecision(null);
       }
     },
-    [decisionDrafts, fetchRequests, t],
+    [decisionDrafts, fetchRequests, t, urgentSelections],
   );
 
   const loadAttachments = useCallback(
@@ -588,6 +870,10 @@ const MaintenanceHODApprovals = () => {
                 const attachmentsError = attachmentErrorMap[request.request_id];
                 const commentDraft = decisionDrafts[request.request_id] || '';
                 const isProcessing = processingId === request.approval_id;
+                const requestSummary = itemSummaries[request.request_id];
+                const itemFeedback = itemFeedbackMap[request.request_id];
+                const isSavingItems = Boolean(savingItemsMap[request.request_id]);
+                const decisionsForRequest = itemDecisions[request.request_id] || {};
 
                 return (
                   <div key={request.request_id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -608,6 +894,11 @@ const MaintenanceHODApprovals = () => {
                           {request.section_name && (
                             <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
                               {request.section_name}
+                            </span>
+                          )}
+                          {(urgentSelections[request.request_id] ?? Boolean(request.is_urgent)) && (
+                            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                              {t('maintenanceHODApprovals.flags.urgentBadge')}
                             </span>
                           )}
                         </div>
@@ -653,27 +944,158 @@ const MaintenanceHODApprovals = () => {
                                   {t('maintenanceHODApprovals.labels.noItems')}
                                 </p>
                               ) : (
-                                <div className="mt-2 overflow-x-auto rounded border border-slate-200">
-                                  <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                    <thead className="bg-slate-50">
-                                      <tr>
-                                        <th className="px-3 py-2 text-left font-medium text-slate-600">
-                                          {t('maintenanceHODApprovals.itemsColumns.name')}
-                                        </th>
-                                        <th className="px-3 py-2 text-left font-medium text-slate-600">
-                                          {t('maintenanceHODApprovals.itemsColumns.quantity')}
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                      {request.items.map((item, index) => (
-                                        <tr key={`${request.request_id}-${index}`}>
-                                          <td className="px-3 py-2 text-slate-800">{item.item_name || '—'}</td>
-                                          <td className="px-3 py-2 text-slate-600">{item.quantity ?? '—'}</td>
+                                <div className="mt-2 space-y-3">
+                                  {requestSummary && (
+                                    <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                                        {t('maintenanceHODApprovals.itemSummary.approved', {
+                                          count: requestSummary.approved ?? 0,
+                                        })}
+                                      </span>
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+                                        {t('maintenanceHODApprovals.itemSummary.rejected', {
+                                          count: requestSummary.rejected ?? 0,
+                                        })}
+                                      </span>
+                                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+                                        {t('maintenanceHODApprovals.itemSummary.pending', {
+                                          count: requestSummary.pending ?? 0,
+                                        })}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <div className="overflow-x-auto rounded border border-slate-200">
+                                    <table className="min-w-full divide-y divide-slate-200 text-sm">
+                                      <thead className="bg-slate-50">
+                                        <tr>
+                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                            {t('maintenanceHODApprovals.itemsColumns.name')}
+                                          </th>
+                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                            {t('maintenanceHODApprovals.itemsColumns.quantity')}
+                                          </th>
+                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                            {t('maintenanceHODApprovals.itemsColumns.status')}
+                                          </th>
+                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                            {t('maintenanceHODApprovals.itemsColumns.comments')}
+                                          </th>
                                         </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100">
+                                        {request.items.map((item) => {
+                                          const decision = decisionsForRequest[item.id] || {
+                                            status: item?.approval_status || 'Pending',
+                                            comments: item?.approval_comments || '',
+                                          };
+                                          const normalizedStatus =
+                                            ITEM_STATUS_OPTIONS.includes(decision.status)
+                                              ? decision.status
+                                              : 'Pending';
+                                          const rowHighlight = ITEM_ROW_HIGHLIGHTS[normalizedStatus] || '';
+                                          const selectId = `item-${request.request_id}-${item.id}-status`;
+                                          const commentId = `item-${request.request_id}-${item.id}-comment`;
+
+                                          return (
+                                            <tr
+                                              key={item.id || `${request.request_id}-${item.item_name}`}
+                                              className={`${rowHighlight} transition-colors`}
+                                            >
+                                              <td className="px-3 py-3 text-slate-800">
+                                                <div className="font-medium">{item.item_name || '—'}</div>
+                                                {(item.brand || item.specs) && (
+                                                  <div className="mt-1 text-xs text-slate-500">
+                                                    {item.brand && <span className="mr-2">{item.brand}</span>}
+                                                    {item.specs && <span>{item.specs}</span>}
+                                                  </div>
+                                                )}
+                                              </td>
+                                              <td className="px-3 py-3 text-slate-600">
+                                                <div>{item.quantity ?? '—'}</div>
+                                                {item.available_quantity != null && (
+                                                  <div className="text-xs text-slate-500">
+                                                    {t('maintenanceHODApprovals.itemsColumns.availableQuantity', {
+                                                      count: item.available_quantity,
+                                                    })}
+                                                  </div>
+                                                )}
+                                              </td>
+                                              <td className="px-3 py-3 text-slate-600">
+                                                <label htmlFor={selectId} className="sr-only">
+                                                  {t('maintenanceHODApprovals.itemsColumns.status')}
+                                                </label>
+                                                <select
+                                                  id={selectId}
+                                                  className="w-full rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                  value={normalizedStatus}
+                                                  onChange={(event) =>
+                                                    handleItemStatusChange(
+                                                      request.request_id,
+                                                      item.id,
+                                                      event.target.value,
+                                                    )
+                                                  }
+                                                  disabled={isSavingItems}
+                                                >
+                                                  {ITEM_STATUS_OPTIONS.map((option) => (
+                                                    <option key={option} value={option}>
+                                                      {itemStatusLabels[option] || option}
+                                                    </option>
+                                                  ))}
+                                                </select>
+                                              </td>
+                                              <td className="px-3 py-3 text-slate-600">
+                                                <label htmlFor={commentId} className="sr-only">
+                                                  {t('maintenanceHODApprovals.itemsColumns.comments')}
+                                                </label>
+                                                <textarea
+                                                  id={commentId}
+                                                  className="mt-0 w-full rounded-md border border-slate-200 px-2 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                  rows={3}
+                                                  placeholder={t(
+                                                    'maintenanceHODApprovals.itemsColumns.commentsPlaceholder',
+                                                  )}
+                                                  value={decision.comments || ''}
+                                                  onChange={(event) =>
+                                                    handleItemCommentChange(
+                                                      request.request_id,
+                                                      item.id,
+                                                      event.target.value,
+                                                    )
+                                                  }
+                                                  disabled={isSavingItems}
+                                                />
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    {itemFeedback?.message && (
+                                      <p
+                                        className={`text-sm ${
+                                          FEEDBACK_TONE_CLASSES[itemFeedback.type] ||
+                                          FEEDBACK_TONE_CLASSES.info
+                                        }`}
+                                      >
+                                        {itemFeedback.message}
+                                      </p>
+                                    )}
+                                    <div className="flex justify-end">
+                                      <Button
+                                        variant="secondary"
+                                        onClick={() => saveItemDecisions(request)}
+                                        isLoading={isSavingItems}
+                                        aria-label={t('maintenanceHODApprovals.itemActions.saveAria', {
+                                          reference: request.maintenance_ref_number,
+                                        })}
+                                      >
+                                        {t('maintenanceHODApprovals.itemActions.save')}
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -765,6 +1187,29 @@ const MaintenanceHODApprovals = () => {
                               />
                               <p className="mt-1 text-xs text-slate-500">
                                 {t('maintenanceHODApprovals.actions.commentHint')}
+                              </p>
+                              <div className="mt-3 flex items-center gap-2">
+                                <input
+                                  id={`urgent-flag-${request.request_id}`}
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border-slate-300 text-amber-600 focus:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-60"
+                                  checked={Boolean(
+                                    urgentSelections[request.request_id] ?? request.is_urgent,
+                                  )}
+                                  onChange={(event) =>
+                                    handleUrgentToggle(request.request_id, event.target.checked)
+                                  }
+                                  disabled={Boolean(request.is_urgent)}
+                                />
+                                <label
+                                  htmlFor={`urgent-flag-${request.request_id}`}
+                                  className="text-sm font-medium text-amber-700"
+                                >
+                                  {t('maintenanceHODApprovals.flags.urgentLabel')}
+                                </label>
+                              </div>
+                              <p className="mt-1 text-xs text-amber-600">
+                                {t('maintenanceHODApprovals.flags.urgentHelper')}
                               </p>
                             </div>
 

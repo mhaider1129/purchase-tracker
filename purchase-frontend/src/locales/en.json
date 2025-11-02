@@ -170,7 +170,34 @@
       },
       "itemsColumns": {
         "name": "Item name",
-        "quantity": "Quantity"
+        "quantity": "Quantity",
+        "status": "Decision",
+        "comments": "Reviewer notes",
+        "commentsPlaceholder": "Optional context for this item…",
+        "availableQuantity": "Available: {{count}}"
+      },
+      "itemStatus": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "itemSummary": {
+        "approved": "Approved: {{count}}",
+        "rejected": "Rejected: {{count}}",
+        "pending": "Pending: {{count}}"
+      },
+      "itemActions": {
+        "save": "Save item decisions",
+        "saveAria": "Save item decisions for maintenance request {{reference}}",
+        "noneSelected": "Record at least one item decision before saving.",
+        "success": "Item decisions saved. Approved: {{approved}}, Rejected: {{rejected}}, Pending: {{pending}}.",
+        "locked": "{{count}} item(s) were rejected by previous approvers and could not be updated. Approved: {{approved}}, Rejected: {{rejected}}, Pending: {{pending}}.",
+        "error": "Failed to save item decisions. Please try again."
+      },
+      "flags": {
+        "urgentLabel": "Mark this request as urgent",
+        "urgentHelper": "Urgent requests are highlighted for downstream teams.",
+        "urgentBadge": "Urgent"
       },
       "attachments": {
         "title": "Request attachments",

@@ -1,5 +1,5 @@
 // src/components/Navbar.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useDarkMode from '../hooks/useDarkMode';
@@ -15,6 +15,7 @@ const Navbar = () => {
   const [darkMode, toggleDarkMode] = useDarkMode();
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState(null);
+  const hoverTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -25,6 +26,33 @@ const Navbar = () => {
   useEffect(() => {
     setOpenGroup(null);
   }, [location.pathname]);
+
+  useEffect(
+    () => () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  const handleGroupMouseEnter = (groupId) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setOpenGroup(groupId);
+  };
+
+  const handleGroupMouseLeave = (groupId) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setOpenGroup((current) => (current === groupId ? null : current));
+      hoverTimeoutRef.current = null;
+    }, 150);
+  };
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -264,17 +292,16 @@ const Navbar = () => {
             <div
               key={group.id}
               className="relative"
-              onMouseLeave={() => {
-                setOpenGroup((current) => (current === group.id ? null : current));
-              }}
+              onMouseEnter={() => handleGroupMouseEnter(group.id)}
+              onMouseLeave={() => handleGroupMouseLeave(group.id)}
             >
               <button
                 type="button"
                 onClick={() =>
                   setOpenGroup((current) => (current === group.id ? null : group.id))
                 }
-                onMouseEnter={() => setOpenGroup(group.id)}
-                onFocus={() => setOpenGroup(group.id)}
+                onMouseEnter={() => handleGroupMouseEnter(group.id)}
+                onFocus={() => handleGroupMouseEnter(group.id)}
                 className="flex items-center gap-1 rounded-md bg-white/70 px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-800"
                 aria-haspopup="true"
                 aria-expanded={openGroup === group.id}
@@ -293,6 +320,8 @@ const Navbar = () => {
                     ? 'visible translate-y-0 opacity-100'
                     : 'invisible -translate-y-1 opacity-0'
                 }`}
+                onMouseEnter={() => handleGroupMouseEnter(group.id)}
+                onMouseLeave={() => handleGroupMouseLeave(group.id)}
               >
                 <div className="flex flex-col gap-1">
                   {group.items.map((item) => (

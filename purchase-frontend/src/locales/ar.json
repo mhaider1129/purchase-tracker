@@ -170,7 +170,34 @@
     },
     "itemsColumns": {
       "name": "اسم العنصر",
-      "quantity": "الكمية"
+      "quantity": "الكمية",
+      "status": "القرار",
+      "comments": "ملاحظات المراجع",
+      "commentsPlaceholder": "ملاحظات اختيارية حول هذا العنصر…",
+      "availableQuantity": "المتوفر: {{count}}"
+    },
+    "itemStatus": {
+      "pending": "قيد المراجعة",
+      "approved": "مقبول",
+      "rejected": "مرفوض"
+    },
+    "itemSummary": {
+      "approved": "مقبول: {{count}}",
+      "rejected": "مرفوض: {{count}}",
+      "pending": "قيد المراجعة: {{count}}"
+    },
+    "itemActions": {
+      "save": "حفظ قرارات العناصر",
+      "saveAria": "حفظ قرارات العناصر لطلب الصيانة {{reference}}",
+      "noneSelected": "سجّل قراراً واحداً على الأقل قبل الحفظ.",
+      "success": "تم حفظ قرارات العناصر. المقبول: {{approved}}، المرفوض: {{rejected}}، قيد المراجعة: {{pending}}.",
+      "locked": "{{count}} من العناصر مرفوضة من قبل معتمدين سابقين ولا يمكن تعديلها. المقبول: {{approved}}، المرفوض: {{rejected}}، قيد المراجعة: {{pending}}.",
+      "error": "تعذر حفظ قرارات العناصر. حاول مرة أخرى."
+    },
+    "flags": {
+      "urgentLabel": "وضع علامة عاجل على هذا الطلب",
+      "urgentHelper": "يتم تمييز الطلبات العاجلة للأقسام اللاحقة.",
+      "urgentBadge": "عاجل"
     },
     "attachments": {
       "title": "مرفقات الطلب",
