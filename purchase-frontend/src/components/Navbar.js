@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useDarkMode from '../hooks/useDarkMode';
-import { Menu, X, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import NotificationBell from './ui/NotificationBell';
 
@@ -14,12 +14,32 @@ const Navbar = () => {
   const { user } = useCurrentUser();
   const [darkMode, toggleDarkMode] = useDarkMode();
   const [isOpen, setIsOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       setIsOpen(false);
     }
+  }, [location.pathname, isOpen]);
+
+  useEffect(() => {
+    setOpenGroup(null);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setOpenGroup(null);
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -29,7 +49,7 @@ const Navbar = () => {
   const getInitials = (name) =>
     name?.split(' ').map((n) => n[0]).join('').toUpperCase();
 
-  const renderNavButton = (label, path, color = 'text-black') => {
+  const renderNavButton = (label, path, color = 'text-black', extraClasses = '') => {
     const isActive =
       location.pathname === path ||
       (path !== '/' && location.pathname.startsWith(`${path}/`));
@@ -45,7 +65,7 @@ const Navbar = () => {
       <button
         type="button"
         onClick={() => navigate(path)}
-        className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
+        className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses} ${extraClasses}`}
         aria-current={isActive ? 'page' : undefined}
       >
         {label}
@@ -53,16 +73,17 @@ const Navbar = () => {
     );
   };
 
-  const NavItems = () => {
+  const NavItems = ({ variant = 'desktop' }) => {
     if (!user) return null;
 
-    const normalizedRole = user.role?.toLowerCase?.();
+    const normalizedRole = user.role?.toLowerCase?.() ?? '';
     const canManageSupplierEvaluations = [
       'admin',
       'scm',
       'procurementspecialist',
       'procurementmanager',
     ].includes(normalizedRole);
+
     const showItemRecallLink =
       Boolean(user.department_id) ||
       [
@@ -74,126 +95,256 @@ const Navbar = () => {
         'admin',
       ].includes(normalizedRole);
 
-    return (
-      <>
-        {renderNavButton(t('navbar.openRequests'), '/open-requests', 'text-green-600')}
+    const isWarehouseRole = [
+      'warehousemanager',
+      'warehouse_manager',
+      'warehousekeeper',
+      'warehouse_keeper',
+      'scm',
+      'admin',
+    ].includes(normalizedRole);
+    const isAdminOrScm = ['admin', 'scm'].includes(normalizedRole);
+    const isProcurementSpecialist = normalizedRole === 'procurementspecialist';
 
-        {user.role === 'technician' &&
-          renderNavButton(t('navbar.myMaintenance'), '/my-maintenance-requests', 'text-orange-600')}
+    const createItem = (condition, label, path, color) =>
+      condition ? { label, path, color } : null;
 
-        {renderNavButton(t('navbar.closedRequests'), '/closed-requests', 'text-gray-600')}
-
-        {user.role === 'audit' &&
-          renderNavButton(t('navbar.auditRequests'), '/audit-requests', 'text-blue-600')}
-
-        {[
-          'WarehouseManager',
-          'warehouse_manager',
-          'WarehouseKeeper',
-          'warehouse_keeper',
-          'warehousekeeper',
-          'SCM',
-          'admin',
-        ].includes(user.role) &&
-          renderNavButton(t('navbar.custodyIssue'), '/custody/issue', 'text-indigo-600')}
-
-        {[
-          'WarehouseManager',
-          'warehouse_manager',
-          'WarehouseKeeper',
-          'warehouse_keeper',
-          'warehousekeeper',
-          'SCM',
-          'admin',
-        ].includes(user.role) &&
-          renderNavButton(t('navbar.custodyIssued'), '/custody/issued', 'text-indigo-500')}
-
-        {['WarehouseManager', 'warehouse_manager', 'technician'].includes(user.role) &&
-          renderNavButton(t('navbar.maintenanceStock'), '/maintenance-stock', 'text-teal-600')}
-
-        {(user.role === 'admin' || user.role === 'SCM') && (
-          <>
-            {renderNavButton(t('navbar.dashboard'), '/dashboard', 'text-cyan-600')}
-            {renderNavButton(t('navbar.lifecycleAnalytics'), '/analytics', 'text-pink-600')}
-            {renderNavButton(t('navbar.adminTools'), '/admin-tools', 'text-yellow-600')}
-            {renderNavButton(t('navbar.management'), '/management', 'text-purple-600')}
-            {renderNavButton(t('navbar.allRequests'), '/all-requests', 'text-indigo-600')}
-            {renderNavButton(t('navbar.procurementPlans'), '/procurement-plans', 'text-teal-600')}
-          </>
-        )}
-
-        {['SCM', 'admin', 'ProcurementSpecialist'].includes(user.role) &&
-          renderNavButton(t('navbar.contracts'), '/contracts', 'text-emerald-600')}
-
-        {canManageSupplierEvaluations &&
-          renderNavButton(
+    const navGroups = [
+      {
+        id: 'requests',
+        label: t('navbar.groups.requests'),
+        items: [
+          createItem(true, t('navbar.openRequests'), '/open-requests', 'text-green-600'),
+          createItem(
+            normalizedRole === 'technician',
+            t('navbar.myMaintenance'),
+            '/my-maintenance-requests',
+            'text-orange-600'
+          ),
+          createItem(true, t('navbar.closedRequests'), '/closed-requests', 'text-gray-600'),
+          createItem(isAdminOrScm, t('navbar.allRequests'), '/all-requests', 'text-indigo-600'),
+          createItem(
+            isAdminOrScm,
+            t('navbar.procurementPlans'),
+            '/procurement-plans',
+            'text-teal-600'
+          ),
+          createItem(
+            isProcurementSpecialist || normalizedRole === 'scm',
+            t('navbar.myAssigned'),
+            '/assigned-requests',
+            'text-purple-600'
+          ),
+          createItem(
+            isProcurementSpecialist || normalizedRole === 'scm',
+            t('navbar.completedRequests'),
+            '/completed-assigned',
+            'text-gray-700'
+          ),
+        ].filter(Boolean),
+      },
+      {
+        id: 'operations',
+        label: t('navbar.groups.operations'),
+        items: [
+          createItem(
+            isWarehouseRole,
+            t('navbar.custodyIssue'),
+            '/custody/issue',
+            'text-indigo-600'
+          ),
+          createItem(
+            isWarehouseRole,
+            t('navbar.custodyIssued'),
+            '/custody/issued',
+            'text-indigo-500'
+          ),
+          createItem(
+            ['warehousemanager', 'warehouse_manager', 'technician'].includes(normalizedRole),
+            t('navbar.maintenanceStock'),
+            '/maintenance-stock',
+            'text-teal-600'
+          ),
+          createItem(showItemRecallLink, t('navbar.itemRecalls'), '/item-recalls', 'text-amber-600'),
+          createItem(
+            normalizedRole === 'audit',
+            t('navbar.auditRequests'),
+            '/audit-requests',
+            'text-blue-600'
+          ),
+        ].filter(Boolean),
+      },
+      {
+        id: 'insights',
+        label: t('navbar.groups.insights'),
+        items: [
+          createItem(isAdminOrScm, t('navbar.dashboard'), '/dashboard', 'text-cyan-600'),
+          createItem(
+            isAdminOrScm,
+            t('navbar.lifecycleAnalytics'),
+            '/analytics',
+            'text-pink-600'
+          ),
+          createItem(isAdminOrScm, t('navbar.adminTools'), '/admin-tools', 'text-yellow-600'),
+          createItem(isAdminOrScm, t('navbar.management'), '/management', 'text-purple-600'),
+        ].filter(Boolean),
+      },
+      {
+        id: 'governance',
+        label: t('navbar.groups.governance'),
+        items: [
+          createItem(
+            canManageSupplierEvaluations,
             t('navbar.supplierEvaluations'),
             '/supplier-evaluations',
             'text-emerald-700'
-          )}
-
-        {['admin', 'SCM', 'CMO', 'COO'].includes(user.role) &&
-          renderNavButton(
+          ),
+          createItem(
+            ['admin', 'scm', 'cmo', 'coo'].includes(normalizedRole),
             t('navbar.viewIncomplete'),
-            user.role === 'CMO'
+            normalizedRole === 'cmo'
               ? '/incomplete/medical'
-              : user.role === 'COO'
+              : normalizedRole === 'coo'
               ? '/incomplete/operational'
               : '/incomplete',
             'text-orange-600'
-          )}
+          ),
+          createItem(
+            ['scm', 'admin', 'procurementspecialist'].includes(normalizedRole),
+            t('navbar.contracts'),
+            '/contracts',
+            'text-emerald-600'
+          ),
+          createItem(
+            normalizedRole === 'ceo',
+            t('navbar.registerUser'),
+            '/register',
+            'text-blue-600'
+          ),
+        ].filter(Boolean),
+      },
+      {
+        id: 'account',
+        label: t('navbar.groups.account'),
+        items: [createItem(true, t('navbar.changePassword'), '/change-password', 'text-blue-600')],
+      },
+    ].filter((group) => group.items.length > 0);
 
-        {user.role === 'CEO' &&
-          renderNavButton(t('navbar.registerUser'), '/register', 'text-blue-600')}
-
-        {['ProcurementSpecialist', 'SCM'].includes(user.role) && (
-          <>
-            {renderNavButton(t('navbar.myAssigned'), '/assigned-requests', 'text-purple-600')}
-            {renderNavButton(t('navbar.completedRequests'), '/completed-assigned', 'text-gray-700')}
-          </>
-        )}
-
-        {showItemRecallLink &&
-          renderNavButton(t('navbar.itemRecalls'), '/item-recalls', 'text-amber-600')}
-
-        {renderNavButton(t('navbar.changePassword'), '/change-password', 'text-blue-600')}
-
+    const renderProfileCard = () => (
+      <div
+        className="mt-2 flex w-fit items-center gap-2 rounded bg-white/80 px-3 py-1 text-gray-700 shadow dark:bg-gray-700 dark:text-gray-100 lg:mt-0"
+        role="contentinfo"
+      >
         <div
-          className="flex items-center gap-2 bg-white/80 dark:bg-gray-700 dark:text-gray-100 px-3 py-1 rounded shadow w-fit mt-2"
-          role="contentinfo"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-sm font-bold text-white"
+          title={user.name}
         >
-          <div
-            className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white flex items-center justify-center font-bold text-sm"
-            title={user.name}
-          >
-            {getInitials(user.name)}
-          </div>
-          <div className="text-sm text-gray-700 dark:text-gray-200 font-medium leading-tight">
-            {user.name}
-            <div className="text-xs text-gray-500 dark:text-gray-400 italic">({user.role})</div>
-          </div>
+          {getInitials(user.name)}
         </div>
+        <div className="leading-tight">
+          <div className="text-sm font-medium text-gray-700 dark:text-gray-200">{user.name}</div>
+          <div className="text-xs italic text-gray-500 dark:text-gray-400">({user.role})</div>
+        </div>
+      </div>
+    );
 
-        <button
-          onClick={handleLogout}
-          className="text-red-600 dark:text-red-400 font-semibold text-center px-3 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-        >
-          {t('navbar.logout')}
-        </button>
+    const renderLogoutButton = () => (
+      <button
+        onClick={handleLogout}
+        className="text-red-600 transition-colors hover:bg-gray-200 dark:text-red-400 dark:hover:bg-gray-700 rounded px-3 py-2 font-semibold text-center"
+      >
+        {t('navbar.logout')}
+      </button>
+    );
+
+    if (variant === 'desktop') {
+      return (
+        <>
+          {navGroups.map((group) => (
+            <div
+              key={group.id}
+              className="relative"
+              onMouseLeave={() => {
+                setOpenGroup((current) => (current === group.id ? null : current));
+              }}
+            >
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenGroup((current) => (current === group.id ? null : group.id))
+                }
+                onMouseEnter={() => setOpenGroup(group.id)}
+                onFocus={() => setOpenGroup(group.id)}
+                className="flex items-center gap-1 rounded-md bg-white/70 px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-800"
+                aria-haspopup="true"
+                aria-expanded={openGroup === group.id}
+              >
+                {group.label}
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform ${openGroup === group.id ? 'rotate-180' : 'rotate-0'}`}
+                  aria-hidden="true"
+                />
+              </button>
+              <div
+                role="menu"
+                className={`absolute left-0 top-full z-20 mt-2 w-64 rounded-md border border-gray-200 bg-white/95 p-2 shadow-lg transition-all dark:border-gray-700 dark:bg-gray-900/95 ${
+                  openGroup === group.id
+                    ? 'visible translate-y-0 opacity-100'
+                    : 'invisible -translate-y-1 opacity-0'
+                }`}
+              >
+                <div className="flex flex-col gap-1">
+                  {group.items.map((item) => (
+                    <div key={item.path}>
+                      {renderNavButton(item.label, item.path, item.color, 'w-full text-left')}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+          {renderProfileCard()}
+          {renderLogoutButton()}
+        </>
+      );
+    }
+
+    return (
+      <>
+        {navGroups.map((group) => (
+          <div
+            key={group.id}
+            className="flex flex-col gap-2 rounded-md border border-gray-200/70 bg-white/80 p-3 dark:border-gray-700/70 dark:bg-gray-800/80"
+          >
+            <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {group.label}
+            </span>
+            <div className="flex flex-col gap-1">
+              {group.items.map((item) => (
+                <div key={item.path}>
+                  {renderNavButton(item.label, item.path, item.color, 'w-full text-left')}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {renderProfileCard()}
+        {renderLogoutButton()}
       </>
     );
   };
 
   return (
     <nav
-      className="sticky top-0 z-50 bg-gray-100/90 dark:bg-gray-900/90 dark:text-gray-100 backdrop-blur border-b border-gray-200 dark:border-gray-800 shadow-sm"
+      className="sticky top-0 z-50 border-b border-gray-200 bg-gray-100/90 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100"
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="w-full px-4 py-3 md:py-4 flex justify-between items-center">
+      <div className="flex w-full items-center justify-between px-4 py-3 md:py-4">
         <div className="flex items-center gap-3">
           <h1
-            className="text-xl md:text-2xl font-semibold tracking-tight cursor-pointer text-blue-700 dark:text-blue-300"
+            className="cursor-pointer text-xl font-semibold tracking-tight text-blue-700 dark:text-blue-300 md:text-2xl"
             onClick={() => navigate('/')}
           >
             {t('navbar.purchaseTracker')}
@@ -201,15 +352,15 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="hidden lg:flex items-center justify-center gap-3 flex-wrap">
-            <NavItems />
+          <div className="hidden flex-wrap items-center justify-center gap-3 lg:flex">
+            <NavItems variant="desktop" />
           </div>
           <NotificationBell />
-          <div className="flex items-center gap-2 bg-white/70 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 rounded-full px-2 py-1 backdrop-blur">
+          <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white/70 px-2 py-1 backdrop-blur dark:border-gray-700 dark:bg-gray-800/80">
             <select
               value={i18n.language}
               onChange={(e) => i18n.changeLanguage(e.target.value)}
-              className="bg-transparent text-sm text-gray-700 dark:text-gray-200 focus:outline-none"
+              className="bg-transparent text-sm text-gray-700 focus:outline-none dark:text-gray-200"
               aria-label={t('navbar.selectLanguage')}
             >
               <option value="en">{t('language.english')}</option>
@@ -219,7 +370,7 @@ const Navbar = () => {
             <button
               type="button"
               onClick={toggleDarkMode}
-              className="text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+              className="text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-300"
               aria-label={darkMode ? t('navbar.lightMode') : t('navbar.darkMode')}
             >
               {darkMode ? <Sun size={18} /> : <Moon size={18} />}
@@ -227,7 +378,7 @@ const Navbar = () => {
           </div>
 
           <button
-            className="lg:hidden inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-700 p-2 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition"
+            className="inline-flex items-center justify-center rounded-md border border-gray-300 p-2 text-gray-700 transition hover:bg-gray-200 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800 lg:hidden"
             onClick={() => setIsOpen(!isOpen)}
             aria-label={t('navbar.toggleMenu')}
             aria-expanded={isOpen}
@@ -239,21 +390,21 @@ const Navbar = () => {
       </div>
 
       {isOpen && (
-        <div className="lg:hidden flex flex-col gap-3 px-4 pb-4 pt-2 bg-white/95 dark:bg-gray-900/95 border-t border-gray-200 dark:border-gray-800 shadow-inner">
+        <div className="flex flex-col gap-3 border-t border-gray-200 bg-white/95 px-4 pb-4 pt-2 shadow-inner dark:border-gray-800 dark:bg-gray-900/95 lg:hidden">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
+            <span className="text-sm font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
               {t('navbar.navigation')}
             </span>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-xs text-blue-600 dark:text-blue-300 font-medium"
+              className="text-xs font-medium text-blue-600 dark:text-blue-300"
             >
               {t('navbar.closeMenu')}
             </button>
           </div>
           <div className="flex flex-col gap-2">
-            <NavItems />
+            <NavItems variant="mobile" />
           </div>
         </div>
       )}

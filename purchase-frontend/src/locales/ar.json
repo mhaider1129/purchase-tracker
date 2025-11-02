@@ -109,6 +109,13 @@
     "navigation": "التنقل",
     "closeMenu": "إغلاق القائمة",
     "selectLanguage": "اختر اللغة",
+    "groups": {
+      "requests": "الطلبات",
+      "operations": "العمليات",
+      "insights": "التحليلات",
+      "governance": "الحوكمة",
+      "account": "الحساب"
+    },
     "notifications": "الإشعارات",
     "noNotifications": "لا توجد إشعارات حالياً",
     "clearAll": "مسح الكل",
@@ -127,7 +134,89 @@
     "custodyIssued": "العهد المصدرة"
   },
   "maintenanceHODApprovals": {
-    "title": "مركز قرارات رئيس قسم الصيانة"
+    "title": "مركز موافقات الصيانة",
+    "subtitle": "راجع طلبات الصيانة، وتحقق من ملاءمتها للإدارة، وسجل قراراتك مع التوضيح.",
+    "summary": {
+      "pendingLabel": "طلبات بانتظار القرار",
+      "departmentsLabel": "عدد الإدارات المعنية",
+      "sectionsLabel": "عدد الأقسام الممثلة",
+      "projectsLabel": "عدد المشاريع المذكورة"
+    },
+    "filters": {
+      "searchPlaceholder": "ابحث بالمرجع أو مقدم الطلب أو المبرر أو العناصر…",
+      "departmentLabel": "الإدارة",
+      "allDepartments": "جميع الإدارات",
+      "sectionLabel": "القسم",
+      "allSections": "جميع الأقسام",
+      "projectLabel": "المشروع",
+      "allProjects": "جميع المشاريع",
+      "sortLabel": "ترتيب حسب",
+      "sortNewest": "الأحدث أولاً",
+      "sortOldest": "الأقدم أولاً",
+      "sortReference": "المرجع (أ-ي)",
+      "reset": "إعادة تعيين المرشحات",
+      "resetAria": "إعادة تعيين جميع مرشحات موافقات الصيانة"
+    },
+    "labels": {
+      "referencePrefix": "المرجع",
+      "noJustification": "لا يوجد مبرر مضاف",
+      "requester": "مقدم الطلب: {{name}}",
+      "submittedAt": "تاريخ الإرسال: {{date}}",
+      "itemsCount": "عدد العناصر: {{count}}",
+      "project": "المشروع: {{project}}",
+      "itemsHeading": "العناصر المطلوبة",
+      "noItems": "لم يتم تضمين عناصر في هذا الطلب.",
+      "notApplicable": "غير متوفر"
+    },
+    "itemsColumns": {
+      "name": "اسم العنصر",
+      "quantity": "الكمية"
+    },
+    "attachments": {
+      "title": "مرفقات الطلب",
+      "refresh": "تحديث المرفقات",
+      "loading": "جاري تحميل المرفقات...",
+      "empty": "لا توجد مرفقات لهذا الطلب.",
+      "download": "تحميل",
+      "loadError": "تعذر تحميل المرفقات. حاول مرة أخرى."
+    },
+    "actions": {
+      "refresh": "تحديث",
+      "refreshAria": "تحديث طلبات الصيانة المعلقة",
+      "export": "تصدير",
+      "exportAria": "تصدير الموافقات المصفاة إلى ملف CSV",
+      "confirmApprove": "هل تريد اعتماد طلب الصيانة {{reference}}؟",
+      "confirmReject": "هل تريد رفض طلب الصيانة {{reference}}؟",
+      "commentLabel": "ملاحظات القرار",
+      "commentPlaceholder": "أضف ملاحظات اختيارية للمستخدم أو الفرق اللاحقة...",
+      "commentHint": "سيتم تسجيل الملاحظات في سجل الطلب وتساعد على توضيح القرار.",
+      "approve": "اعتماد الطلب",
+      "reject": "رفض الطلب",
+      "approveAria": "اعتماد طلب الصيانة {{reference}}",
+      "rejectAria": "رفض طلب الصيانة {{reference}}"
+    },
+    "feedback": {
+      "approved": "تم اعتماد الطلب {{reference}} بنجاح.",
+      "rejected": "تم رفض الطلب {{reference}} بنجاح.",
+      "failedDecision": "تعذر تسجيل قرارك. حاول مرة أخرى."
+    },
+    "export": {
+      "fileName": "موافقات_الصيانة",
+      "columns": {
+        "reference": "المرجع",
+        "department": "الإدارة",
+        "section": "القسم",
+        "justification": "المبرر",
+        "requester": "مقدم الطلب",
+        "project": "المشروع",
+        "submittedAt": "تاريخ الإرسال",
+        "items": "العناصر"
+      }
+    },
+    "errors": {
+      "loadFailed": "تعذر تحميل طلبات الصيانة المعلقة."
+    },
+    "emptyState": "لا توجد طلبات صيانة مطابقة للمرشحات الحالية."
   },
   "language": {
     "english": "الإنجليزية",
@@ -663,6 +752,7 @@
       "reference": "المرجع",
       "status": "الحالة",
       "submitted": "تاريخ التقديم",
+      "approvals": "الموافقات",
       "notAvailable": "—"
     },
     "pagination": {

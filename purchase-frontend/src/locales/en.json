@@ -109,6 +109,13 @@
     "navigation": "Navigation",
     "closeMenu": "Close menu",
     "selectLanguage": "Select language",
+    "groups": {
+      "requests": "Requests",
+      "operations": "Operations",
+      "insights": "Insights & Analytics",
+      "governance": "Governance",
+      "account": "Account"
+    },
     "notifications": "Notifications",
     "noNotifications": "You're all caught up!",
     "clearAll": "Clear all",
@@ -127,8 +134,90 @@
     "custodyIssued": "Issued Custodies"
   },
     "maintenanceHODApprovals": {
-    "title": "Maintenance HOD Decision Center"
-  },
+      "title": "Maintenance Approval Center",
+      "subtitle": "Review maintenance requisitions, confirm departmental alignment, and provide approval decisions with clear context.",
+      "summary": {
+        "pendingLabel": "Pending decisions",
+        "departmentsLabel": "Departments involved",
+        "sectionsLabel": "Sections represented",
+        "projectsLabel": "Projects referenced"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by reference, requester, justification, or item…",
+        "departmentLabel": "Department",
+        "allDepartments": "All departments",
+        "sectionLabel": "Section",
+        "allSections": "All sections",
+        "projectLabel": "Project",
+        "allProjects": "All projects",
+        "sortLabel": "Sort by",
+        "sortNewest": "Newest first",
+        "sortOldest": "Oldest first",
+        "sortReference": "Reference (A–Z)",
+        "reset": "Reset filters",
+        "resetAria": "Reset all maintenance approval filters"
+      },
+      "labels": {
+        "referencePrefix": "Reference",
+        "noJustification": "No justification provided",
+        "requester": "Requested by {{name}}",
+        "submittedAt": "Submitted on {{date}}",
+        "itemsCount": "Items: {{count}}",
+        "project": "Project: {{project}}",
+        "itemsHeading": "Requested items",
+        "noItems": "No items were included with this submission.",
+        "notApplicable": "N/A"
+      },
+      "itemsColumns": {
+        "name": "Item name",
+        "quantity": "Quantity"
+      },
+      "attachments": {
+        "title": "Request attachments",
+        "refresh": "Reload attachments",
+        "loading": "Loading attachments…",
+        "empty": "No attachments uploaded for this request.",
+        "download": "Download",
+        "loadError": "Unable to load attachments. Please try again."
+      },
+      "actions": {
+        "refresh": "Refresh",
+        "refreshAria": "Refresh pending maintenance requests",
+        "export": "Export",
+        "exportAria": "Export the filtered maintenance approvals to CSV",
+        "confirmApprove": "Approve maintenance request {{reference}}?",
+        "confirmReject": "Reject maintenance request {{reference}}?",
+        "commentLabel": "Decision notes",
+        "commentPlaceholder": "Add optional notes for the requester or downstream teams…",
+        "commentHint": "Comments are recorded in the request log and help downstream stakeholders understand your decision.",
+        "approve": "Approve request",
+        "reject": "Reject request",
+        "approveAria": "Approve maintenance request {{reference}}",
+        "rejectAria": "Reject maintenance request {{reference}}"
+      },
+      "feedback": {
+        "approved": "Request {{reference}} approved successfully.",
+        "rejected": "Request {{reference}} rejected successfully.",
+        "failedDecision": "Unable to record your decision. Please try again."
+      },
+      "export": {
+        "fileName": "Maintenance_Approvals",
+        "columns": {
+          "reference": "Reference",
+          "department": "Department",
+          "section": "Section",
+          "justification": "Justification",
+          "requester": "Requested By",
+          "project": "Project",
+          "submittedAt": "Submitted At",
+          "items": "Items"
+        }
+      },
+      "errors": {
+        "loadFailed": "Failed to load pending maintenance requests."
+      },
+      "emptyState": "No maintenance approvals match the current filters."
+    },
   "language": {
     "english": "English",
     "arabic": "Arabic"
@@ -664,6 +753,7 @@
       "reference": "Ref #",
       "status": "Status",
       "submitted": "Submitted",
+      "approvals": "Approvals",
       "notAvailable": "—"
     },
     "pagination": {

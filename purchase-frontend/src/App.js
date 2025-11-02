@@ -142,7 +142,7 @@ function App() {
           element={
             <ProtectedRoute
               element={<MedicationRequestForm />}
-              allowedRoles={['requester', 'Requester']}
+              allowedRoles={['requester', 'Requester', 'HOD', 'CMO', 'SCM']}
             />
           }
         />

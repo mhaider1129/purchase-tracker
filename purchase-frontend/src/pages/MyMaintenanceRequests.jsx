@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
+import ApprovalTimeline from '../components/ApprovalTimeline';
+import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
@@ -18,6 +20,29 @@ const MyMaintenanceRequests = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortDirection, setSortDirection] = useState('desc');
+  const {
+    expandedApprovalsId,
+    approvalsMap,
+    loadingApprovalsId,
+    toggleApprovals,
+    resetApprovals,
+  } = useApprovalTimeline();
+  const timelineLabels = useMemo(
+    () => ({
+      title: t('common.approvalTimeline'),
+      loading: t('common.loadingApprovals'),
+      empty: t('common.noApprovals'),
+      columns: {
+        level: t('common.approvalLevel'),
+        approver: t('common.approver'),
+        role: t('common.approverRole'),
+        decision: t('common.approvalDecision'),
+        comment: t('common.approvalComment'),
+        date: t('common.approvalDate'),
+      },
+    }),
+    [t],
+  );
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -30,6 +55,7 @@ const MyMaintenanceRequests = () => {
           return dateB - dateA;
         });
         setRequests(sorted);
+        resetApprovals();
       } catch (err) {
         console.error('❌ Failed to fetch maintenance requests:', err);
         setError(tr('errors.loadFailed'));
@@ -39,7 +65,7 @@ const MyMaintenanceRequests = () => {
     };
 
     fetchRequests();
-  }, [tr]);
+  }, [tr, resetApprovals]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -128,6 +154,15 @@ const MyMaintenanceRequests = () => {
 
     return sorted;
   }, [requests, statusFilter, searchTerm, startDate, endDate, sortDirection]);
+
+  useEffect(() => {
+    if (
+      expandedApprovalsId &&
+      !filteredRequests.some((request) => request.id === expandedApprovalsId)
+    ) {
+      resetApprovals();
+    }
+  }, [expandedApprovalsId, filteredRequests, resetApprovals]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
   const paginated = filteredRequests.slice(
@@ -324,22 +359,48 @@ const MyMaintenanceRequests = () => {
                   <th className="border px-3 py-2 text-left">{tr('table.reference')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.status')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.submitted')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.approvals')}</th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.map((r) => (
-                  <tr key={r.id} className="odd:bg-white even:bg-gray-50">
-                    <td className="border px-3 py-2">{r.id}</td>
-                    <td className="border px-3 py-2">{r.justification}</td>
-                    <td className="border px-3 py-2">{r.project_name || tr('table.notAvailable')}</td>
-                    <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
-                    <td className="border px-3 py-2">
-                      <span className={getStatusBadge(r.status)}>{statusLabels[r.status?.toLowerCase()] || r.status}</span>
-                    </td>
-                    <td className="border px-3 py-2">
-                      {new Date(r.created_at).toLocaleString()}
-                    </td>
-                  </tr>
+                  <React.Fragment key={r.id}>
+                    <tr className="odd:bg-white even:bg-gray-50">
+                      <td className="border px-3 py-2">{r.id}</td>
+                      <td className="border px-3 py-2">{r.justification}</td>
+                      <td className="border px-3 py-2">{r.project_name || tr('table.notAvailable')}</td>
+                      <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
+                      <td className="border px-3 py-2">
+                        <span className={getStatusBadge(r.status)}>{statusLabels[r.status?.toLowerCase()] || r.status}</span>
+                      </td>
+                      <td className="border px-3 py-2">
+                        {new Date(r.created_at).toLocaleString()}
+                      </td>
+                      <td className="border px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleApprovals(r.id)}
+                          className="text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          {expandedApprovalsId === r.id
+                            ? t('common.hideApprovals')
+                            : t('common.viewApprovals')}
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedApprovalsId === r.id && (
+                      <tr>
+                        <td colSpan={7} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <ApprovalTimeline
+                            approvals={approvalsMap[r.id]}
+                            isLoading={loadingApprovalsId === r.id}
+                            labels={timelineLabels}
+                            isUrgent={Boolean(r?.is_urgent)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
