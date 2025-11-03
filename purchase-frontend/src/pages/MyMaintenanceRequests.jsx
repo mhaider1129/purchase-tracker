@@ -156,10 +156,15 @@ const MyMaintenanceRequests = () => {
   }, [requests, statusFilter, searchTerm, startDate, endDate, sortDirection]);
 
   useEffect(() => {
-    if (
-      expandedApprovalsId &&
-      !filteredRequests.some((request) => request.id === expandedApprovalsId)
-    ) {
+    if (!expandedApprovalsId) {
+      return;
+    }
+
+    const hasExpandedRequest = filteredRequests.some(
+      (request) => String(request.id) === String(expandedApprovalsId),
+    );
+
+    if (!hasExpandedRequest) {
       resetApprovals();
     }
   }, [expandedApprovalsId, filteredRequests, resetApprovals]);
@@ -363,45 +368,49 @@ const MyMaintenanceRequests = () => {
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((r) => (
-                  <React.Fragment key={r.id}>
-                    <tr className="odd:bg-white even:bg-gray-50">
-                      <td className="border px-3 py-2">{r.id}</td>
-                      <td className="border px-3 py-2">{r.justification}</td>
-                      <td className="border px-3 py-2">{r.project_name || tr('table.notAvailable')}</td>
-                      <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
-                      <td className="border px-3 py-2">
-                        <span className={getStatusBadge(r.status)}>{statusLabels[r.status?.toLowerCase()] || r.status}</span>
-                      </td>
-                      <td className="border px-3 py-2">
-                        {new Date(r.created_at).toLocaleString()}
-                      </td>
-                      <td className="border px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleApprovals(r.id)}
-                          className="text-blue-600 hover:text-blue-800 font-medium"
-                        >
-                          {expandedApprovalsId === r.id
-                            ? t('common.hideApprovals')
-                            : t('common.viewApprovals')}
-                        </button>
-                      </td>
-                    </tr>
-                    {expandedApprovalsId === r.id && (
-                      <tr>
-                        <td colSpan={7} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
-                          <ApprovalTimeline
-                            approvals={approvalsMap[r.id]}
-                            isLoading={loadingApprovalsId === r.id}
-                            labels={timelineLabels}
-                            isUrgent={Boolean(r?.is_urgent)}
-                          />
+                {paginated.map((r) => {
+                  const isExpanded = String(expandedApprovalsId) === String(r.id);
+
+                  return (
+                    <React.Fragment key={r.id}>
+                      <tr className="odd:bg-white even:bg-gray-50">
+                        <td className="border px-3 py-2">{r.id}</td>
+                        <td className="border px-3 py-2">{r.justification}</td>
+                        <td className="border px-3 py-2">{r.project_name || tr('table.notAvailable')}</td>
+                        <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
+                        <td className="border px-3 py-2">
+                          <span className={getStatusBadge(r.status)}>{statusLabels[r.status?.toLowerCase()] || r.status}</span>
+                        </td>
+                        <td className="border px-3 py-2">
+                          {new Date(r.created_at).toLocaleString()}
+                        </td>
+                        <td className="border px-3 py-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleApprovals(r.id)}
+                            className="text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            {isExpanded
+                              ? t('common.hideApprovals')
+                              : t('common.viewApprovals')}
+                          </button>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                ))}
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={7} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                            <ApprovalTimeline
+                              approvals={approvalsMap[r.id]}
+                              isLoading={loadingApprovalsId === r.id}
+                              labels={timelineLabels}
+                              isUrgent={Boolean(r?.is_urgent)}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
 

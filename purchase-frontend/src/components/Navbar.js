@@ -15,6 +15,7 @@ const Navbar = () => {
   const [darkMode, toggleDarkMode] = useDarkMode();
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState(null);
+  const [isTouchInteraction, setIsTouchInteraction] = useState(false);
   const hoverTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -36,6 +37,18 @@ const Navbar = () => {
     []
   );
 
+  useEffect(() => {
+    const handlePointerDown = (event) => {
+      setIsTouchInteraction(event.pointerType === 'touch');
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, []);
+
   const handleGroupMouseEnter = (groupId) => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -45,6 +58,10 @@ const Navbar = () => {
   };
 
   const handleGroupMouseLeave = (groupId) => {
+    if (isTouchInteraction) {
+      return;
+    }
+
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
