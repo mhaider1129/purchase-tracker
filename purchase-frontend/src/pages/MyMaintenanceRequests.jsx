@@ -1,5 +1,5 @@
 // src/pages/MyMaintenanceRequests.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
@@ -9,7 +9,10 @@ import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
-  const tr = (key, options) => t(`myMaintenanceRequestsPage.${key}`, options);
+  const tr = useCallback(
+    (key, options) => t(`myMaintenanceRequestsPage.${key}`, options),
+    [t],
+  );
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,21 +94,107 @@ const MyMaintenanceRequests = () => {
     }
   };
 
+  const formatItemsForExport = (items) => {
+    if (!Array.isArray(items) || items.length === 0) {
+      return tr('export.noItems');
+    }
+
+    return items
+      .map((item) => {
+        if (!item) {
+          return '';
+        }
+
+        const parts = [];
+
+        if (item.item_name) {
+          parts.push(item.item_name);
+        }
+
+        if (item.quantity !== undefined && item.quantity !== null) {
+          parts.push(`x${item.quantity}`);
+        }
+
+        if (item.specs) {
+          parts.push(`(${item.specs})`);
+        }
+
+        return parts.join(' ').trim();
+      })
+      .filter(Boolean)
+      .join(' | ');
+  };
+
+  const getCurrentApprovalStepLabel = (request) => {
+    if (request.current_approval_step !== null && request.current_approval_step !== undefined) {
+      return `${t('common.approvalLevel')} ${request.current_approval_step}`;
+    }
+
+    const normalizedStatus = request.status?.toLowerCase();
+
+    if (normalizedStatus === 'approved' || normalizedStatus === 'completed') {
+      return tr('export.currentStepCompleted');
+    }
+
+    if (normalizedStatus === 'rejected') {
+      return tr('export.currentStepRejected');
+    }
+
+    if (normalizedStatus === 'pending' || normalizedStatus === 'submitted') {
+      return tr('export.currentStepPending');
+    }
+
+    return tr('export.currentStepUnknown');
+  };
+
+  const getFinalApprovalDateLabel = (request) => {
+    if (request.final_approval_date) {
+      const date = new Date(request.final_approval_date);
+      if (!Number.isNaN(date.getTime())) {
+        return date.toLocaleString();
+      }
+    }
+
+    return tr('export.finalApprovalPending');
+  };
+
   const exportToCSV = () => {
     const headers = tr('export.headers', { returnObjects: true });
     const csvRows = [
       headers,
-      ...filteredRequests.map((r) => [
-        r.id,
-        r.justification,
-        r.project_name || '',
-        r.maintenance_ref_number || '-',
-        r.status,
-        new Date(r.created_at).toLocaleString(),
-      ]),
+      ...filteredRequests.map((r) => {
+        const normalizedStatus = r.status?.toLowerCase();
+        const statusLabel = statusLabels[normalizedStatus] || r.status || '';
+
+        return [
+          r.id,
+          r.department_name || tr('table.notAvailable'),
+          r.requester_name || tr('table.notAvailable'),
+          r.justification || '',
+          r.project_name || '',
+          r.maintenance_ref_number || '-',
+          formatItemsForExport(r.items),
+          statusLabel,
+          getCurrentApprovalStepLabel(r),
+          getFinalApprovalDateLabel(r),
+        ];
+      }),
     ];
 
-    const csvContent = csvRows.map((row) => row.join(',')).join('\n');
+    const csvContent = csvRows.map((row) => row.map((value) => {
+      if (value === null || value === undefined) {
+        return '';
+      }
+
+      const stringValue = String(value);
+
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+
+      return stringValue;
+    }).join(',')).join('\n');
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, `${tr('export.filePrefix')}_${new Date().toISOString().split('T')[0]}.csv`);
   };
@@ -120,10 +209,19 @@ const MyMaintenanceRequests = () => {
       })
       .filter((request) => {
         if (!normalizedSearch) return true;
+        const itemsText = Array.isArray(request.items)
+          ? request.items
+              .map((item) => [item?.item_name, item?.specs].filter(Boolean).join(' '))
+              .join(' ')
+          : '';
+
         const haystack = [
           request.justification,
           request.project_name,
           request.maintenance_ref_number,
+          request.department_name,
+          request.requester_name,
+          itemsText,
         ]
           .filter(Boolean)
           .join(' ')

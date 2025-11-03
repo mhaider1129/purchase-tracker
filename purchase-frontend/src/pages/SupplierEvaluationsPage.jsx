@@ -34,6 +34,12 @@ const toNumberOrNull = (value) => {
   return Math.round(numeric * 100) / 100;
 };
 
+const initialFiltersState = {
+  search: '',
+  start_date: '',
+  end_date: '',
+};
+
 const SupplierEvaluationsPage = () => {
   const { user } = useCurrentUser();
 
@@ -41,11 +47,7 @@ const SupplierEvaluationsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [filters, setFilters] = useState({
-    search: '',
-    start_date: '',
-    end_date: '',
-  });
+  const [filters, setFilters] = useState(initialFiltersState);
   const [searchInput, setSearchInput] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -316,6 +318,20 @@ const SupplierEvaluationsPage = () => {
     formState.quality_score,
   ]);
 
+  const hasActiveFilters = useMemo(
+    () =>
+      Boolean(
+        searchInput.trim() || filters.start_date?.trim() || filters.end_date?.trim()
+      ),
+    [filters.end_date, filters.start_date, searchInput]
+  );
+
+  const handleClearFilters = () => {
+    setFilters({ ...initialFiltersState });
+    setSearchInput('');
+    setDebouncedSearch('');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <Navbar />
@@ -330,7 +346,17 @@ const SupplierEvaluationsPage = () => {
         </header>
 
         <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm mb-6 p-4">
-          <h2 className="text-lg font-semibold mb-4">Filters</h2>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-lg font-semibold">Filters</h2>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              disabled={!hasActiveFilters}
+              className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Clear filters
+            </button>
+          </div>
           <div className="grid gap-4 md:grid-cols-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium mb-1" htmlFor="search">

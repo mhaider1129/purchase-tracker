@@ -748,14 +748,24 @@
     },
     "export": {
       "headers": [
-        "ID",
+        "Request ID",
+        "Department",
+        "Designated Requester Name",
         "Justification",
         "Project",
-        "Reference #",
+        "Ref #",
+        "Items",
         "Status",
-        "Submitted At"
+        "Current Step of Approval",
+        "Date of Final Approval"
       ],
-      "filePrefix": "My_Maintenance_Requests"
+      "filePrefix": "My_Maintenance_Requests",
+      "noItems": "No items recorded",
+      "currentStepCompleted": "All approvals completed",
+      "currentStepRejected": "Approval flow ended (rejected)",
+      "currentStepPending": "Awaiting next approval",
+      "currentStepUnknown": "Approval status unavailable",
+      "finalApprovalPending": "Pending final approval"
     },
     "filters": {
       "searchLabel": "Search",
@@ -1038,7 +1048,24 @@
     "failedFetchLogs": "Failed to fetch logs.",
     "logEntry": "Log Entry",
     "systemLogsFile": "system_logs",
-    "systemLogsTitle": "System Logs"
+    "systemLogsTitle": "System Logs",
+    "export": {
+      "noLogs": "No logs available to export.",
+      "generatedAt": "Generated at: {{timestamp}}",
+      "headers": {
+        "id": "Log ID",
+        "requestId": "Request ID",
+        "approvalId": "Approval ID",
+        "actor": "Actor",
+        "actorId": "Actor ID",
+        "action": "Action",
+        "comments": "Comments",
+        "type": "Type",
+        "justification": "Request Justification",
+        "createdAt": "Created At",
+        "raw": "Raw Entry"
+      }
+    }
   },
   "requestSubmitted": {
     "title": "{{type}} Request Submitted Successfully!",

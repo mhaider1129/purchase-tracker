@@ -19,10 +19,8 @@ const Navbar = () => {
   const hoverTimeoutRef = useRef(null);
 
   useEffect(() => {
-    if (isOpen) {
-      setIsOpen(false);
-    }
-  }, [location.pathname, isOpen]);
+    setIsOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     setOpenGroup(null);

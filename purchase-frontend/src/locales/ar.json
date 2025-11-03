@@ -747,14 +747,24 @@
     },
     "export": {
       "headers": [
-        "المعرف",
+        "معرّف الطلب",
+        "القسم",
+        "مقدم الطلب المعيّن",
         "المبرر",
         "المشروع",
-        "المرجع",
+        "رقم المرجع",
+        "الأصناف",
         "الحالة",
-        "تاريخ التقديم"
+        "المرحلة الحالية للموافقة",
+        "تاريخ الموافقة النهائية"
       ],
-      "filePrefix": "طلبات_الصيانة_الخاصة_بي"
+      "filePrefix": "طلبات_الصيانة_الخاصة_بي",
+      "noItems": "لا توجد أصناف",
+      "currentStepCompleted": "اكتملت جميع الموافقات",
+      "currentStepRejected": "انتهى مسار الموافقة (مرفوض)",
+      "currentStepPending": "بانتظار الموافقة التالية",
+      "currentStepUnknown": "حالة الموافقة غير متاحة",
+      "finalApprovalPending": "بلا موافقة نهائية بعد"
     },
     "filters": {
       "searchLabel": "بحث",
@@ -1035,7 +1045,24 @@
     "failedFetchLogs": "فشل جلب السجلات.",
     "logEntry": "سجل",
     "systemLogsFile": "سجلات_النظام",
-    "systemLogsTitle": "سجلات النظام"
+    "systemLogsTitle": "سجلات النظام",
+    "export": {
+      "noLogs": "لا توجد سجلات للتصدير.",
+      "generatedAt": "تاريخ التصدير: {{timestamp}}",
+      "headers": {
+        "id": "معرف السجل",
+        "requestId": "معرف الطلب",
+        "approvalId": "معرف الموافقة",
+        "actor": "المستخدم",
+        "actorId": "معرف المستخدم",
+        "action": "الإجراء",
+        "comments": "التعليقات",
+        "type": "النوع",
+        "justification": "مبرر الطلب",
+        "createdAt": "تاريخ الإنشاء",
+        "raw": "النص الأصلي"
+      }
+    }
   },
   "requestSubmitted": {
     "title": "تم تقديم طلب {{type}} بنجاح!",
