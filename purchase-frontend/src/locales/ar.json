@@ -602,10 +602,46 @@
     "title": "مساحة عمل استدعاء الأصناف",
     "subtitle": "نسق طلبات الاستدعاء بين الأقسام والمستودع وقسم المشتريات.",
     "loading": "جاري تحميل أدوات الاستدعاء...",
+    "list": {
+      "title": "قائمة الاستدعاءات",
+      "description": "راجع الاستدعاءات التي تحتاج إلى متابعة من المستودع أو المشتريات.",
+      "refresh": "تحديث القائمة",
+      "loading": "جاري تحديث الاستدعاءات...",
+      "empty": {
+        "warehouse": "لا توجد طلبات استدعاء بانتظار مراجعة المستودع.",
+        "procurement": "لا توجد استدعاءات تتطلب تدخل قسم المشتريات حالياً.",
+        "generic": "لا توجد طلبات استدعاء."
+      },
+      "columns": {
+        "item": "الصنف",
+        "department": "القسم",
+        "workflow": "مسار العمل",
+        "status": "الحالة",
+        "quantity": "الكمية",
+        "updated": "آخر تحديث",
+        "details": "التفاصيل"
+      },
+      "recallType": {
+        "departmentToWarehouse": "القسم → المستودع",
+        "warehouseToProcurement": "المستودع → المشتريات",
+        "unknown": "مسار آخر"
+      },
+      "labels": {
+        "recallId": "استدعاء رقم {{id}}",
+        "escalated": "مُصعّد",
+        "reason": "السبب",
+        "departmentNotes": "ملاحظات القسم",
+        "warehouseNotes": "ملاحظات المستودع",
+        "departmentFallback": "القسم رقم {{id}}",
+        "unknownDepartment": "قسم غير معروف"
+      },
+      "notAvailable": "غير متوفر"
+    },
     "errors": {
       "generic": "تعذر معالجة الطلب. حاول مرة أخرى.",
       "recallIdRequired": "يرجى إدخال رقم الاستدعاء قبل التصعيد.",
-      "invalidRecallId": "يجب أن يكون رقم الاستدعاء عدداً موجباً."
+      "invalidRecallId": "يجب أن يكون رقم الاستدعاء عدداً موجباً.",
+      "loadRecalls": "تعذر تحميل قائمة الاستدعاءات. حاول مرة أخرى."
     },
     "actions": {
       "reset": "إعادة تعيين",
@@ -760,11 +796,15 @@
       ],
       "filePrefix": "طلبات_الصيانة_الخاصة_بي",
       "noItems": "لا توجد أصناف",
+      "currentStepPendingWithApproverAndLevel": "المستوى {{level}} – بانتظار {{approver}}",
+      "currentStepPendingWithApprover": "بانتظار {{approver}}",
       "currentStepCompleted": "اكتملت جميع الموافقات",
       "currentStepRejected": "انتهى مسار الموافقة (مرفوض)",
       "currentStepPending": "بانتظار الموافقة التالية",
       "currentStepUnknown": "حالة الموافقة غير متاحة",
-      "finalApprovalPending": "بلا موافقة نهائية بعد"
+      "currentStepFinalized": "أُنجزت الموافقة النهائية بواسطة {{approver}} بتاريخ {{date}}",
+      "finalApprovalPending": "بلا موافقة نهائية بعد",
+      "finalApprovalBy": "{{approver}} بتاريخ {{date}}"
     },
     "filters": {
       "searchLabel": "بحث",

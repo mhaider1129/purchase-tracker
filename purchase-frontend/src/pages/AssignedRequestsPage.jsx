@@ -84,6 +84,55 @@ const summaryToneClasses = {
   danger: 'bg-rose-100 text-rose-700 border border-rose-200',
 };
 
+const evaluateCompletionState = (request = {}, itemsOverride = null) => {
+  const summary = request.status_summary || {};
+  const itemsList = Array.isArray(itemsOverride) ? itemsOverride : null;
+
+  const savedCost = request?.estimated_cost;
+  const numericSavedCost =
+    savedCost !== undefined && savedCost !== null ? Number(savedCost) : NaN;
+  const hasRecordedCost = !Number.isNaN(numericSavedCost) && numericSavedCost > 0;
+
+  let itemsComplete = false;
+
+  if (itemsList) {
+    itemsComplete = itemsList.every((item) => {
+      const status = (item.procurement_status || '').toLowerCase();
+      const qty = item.purchased_quantity;
+
+      if (qty === null || qty === undefined) {
+        return false;
+      }
+
+      if (status === 'purchased' || status === 'completed') {
+        return Number(qty) > 0;
+      }
+
+      if (status === 'not_procured' || status === 'canceled') {
+        return true;
+      }
+
+      return false;
+    });
+  } else {
+    const totalItems = Number(summary.total_items ?? 0);
+    const purchasedCount = Number(summary.purchased_count ?? 0);
+    const notProcuredCount = Number(summary.not_procured_count ?? 0);
+
+    if (totalItems > 0) {
+      itemsComplete = purchasedCount + notProcuredCount >= totalItems;
+    } else {
+      itemsComplete = false;
+    }
+  }
+
+  return {
+    canComplete: hasRecordedCost && itemsComplete,
+    missingCost: !hasRecordedCost,
+    incompleteItems: !itemsComplete,
+  };
+};
+
 const SummaryBadge = ({ label, value, tone = 'default' }) => (
   <div
     className={`rounded-md px-3 py-2 text-sm flex flex-col ${
@@ -156,6 +205,7 @@ const AssignedRequestsPage = () => {
         title: tr(section.titleKey, section.defaults.title),
         description: tr(section.descriptionKey, section.defaults.description),
         empty: tr(section.emptyKey, section.defaults.empty),
+
       })),
     [tr],
   );
@@ -181,6 +231,7 @@ const AssignedRequestsPage = () => {
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
   const [bulkUpdatingRequestId, setBulkUpdatingRequestId] = useState(null);
+  const [completionStates, setCompletionStates] = useState({});
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -198,6 +249,8 @@ const AssignedRequestsPage = () => {
 
       const costMap = {};
       const autoMap = {};
+      const completionMap = {};
+
       fetched.forEach((req) => {
         const recordedCost = req.estimated_cost ?? '';
         const autoTotal = req.status_summary?.calculated_total_cost ?? null;
@@ -208,11 +261,14 @@ const AssignedRequestsPage = () => {
         } else {
           costMap[req.id] = recordedCost;
         }
+
+        completionMap[req.id] = evaluateCompletionState(req);
       });
 
       setRequestCosts(costMap);
       resetApprovals();
       setAutoTotals(autoMap);
+      setCompletionStates(completionMap);
     } catch (err) {
       console.error('❌ Failed to fetch assigned requests:', err);
       alert('Failed to load assigned requests');
@@ -231,12 +287,21 @@ const AssignedRequestsPage = () => {
       setGroupedItems(groups);
 
       const summary = computeSummaryFromItems(fetchedItems);
+      let computedState = null;
       setRequests((prev) =>
-        prev.map((req) =>
-          req.id === requestId ? { ...req, status_summary: summary } : req,
-        ),
+        prev.map((req) => {
+          if (req.id === requestId) {
+            const updatedRequest = { ...req, status_summary: summary };
+            computedState = evaluateCompletionState(updatedRequest, fetchedItems);
+            return updatedRequest;
+          }
+          return req;
+        }),
       );
       setAutoTotals((prev) => ({ ...prev, [requestId]: summary.calculated_total_cost }));
+      if (computedState) {
+        setCompletionStates((prev) => ({ ...prev, [requestId]: computedState }));
+      }
     } catch (err) {
       console.error(`❌ Error fetching items for request ${requestId}:`, err);
       alert(tr('alerts.itemsLoadFailed', 'Failed to load request items'));
@@ -296,11 +361,25 @@ const AssignedRequestsPage = () => {
     try {
       await axios.put(`/api/requests/${requestId}/cost`, { estimated_cost: cost });
       alert(tr('alerts.costUpdated', 'Total cost updated.'));
+      let updatedRequestRef = null;
       setRequests((prev) =>
-        prev.map((req) =>
-          req.id === requestId ? { ...req, estimated_cost: cost } : req,
-        ),
+        prev.map((req) => {
+          if (req.id === requestId) {
+            const updatedRequest = { ...req, estimated_cost: cost };
+            updatedRequestRef = updatedRequest;
+            return updatedRequest;
+          }
+          return req;
+        }),
       );
+      if (updatedRequestRef) {
+        const itemsOverride =
+          expandedRequestId === requestId && items.length > 0 ? items : null;
+        setCompletionStates((prev) => ({
+          ...prev,
+          [requestId]: evaluateCompletionState(updatedRequestRef, itemsOverride),
+        }));
+      }
     } catch (err) {
       console.error('❌ Error updating cost:', err);
       alert(tr('alerts.costUpdateFailed', 'Failed to update total cost.'));
@@ -430,6 +509,7 @@ const AssignedRequestsPage = () => {
       alert(
         tr(
           'alerts.bulkPurchaseFailed',
+
           'Failed to update all items. Some items may not have been updated.',
         ),
       );
@@ -455,43 +535,6 @@ const AssignedRequestsPage = () => {
     }
   };
 
-  const completionState = useMemo(() => {
-    if (!items.length || expandedRequestId === null) {
-      return { canComplete: false, missingCost: items.length > 0, incompleteItems: true };
-    }
-
-    const currentRequest = requests.find((req) => req.id === expandedRequestId);
-    const savedCost = currentRequest?.estimated_cost;
-    const numericSavedCost =
-      savedCost !== undefined && savedCost !== null ? Number(savedCost) : NaN;
-    const hasRecordedCost = !Number.isNaN(numericSavedCost) && numericSavedCost > 0;
-
-    const itemsComplete = items.every((item) => {
-      const status = (item.procurement_status || '').toLowerCase();
-      const qty = item.purchased_quantity;
-
-      if (qty === null || qty === undefined) {
-        return false;
-      }
-
-      if (status === 'purchased' || status === 'completed') {
-        return Number(qty) > 0;
-      }
-
-      if (status === 'not_procured' || status === 'canceled') {
-        return true;
-      }
-
-      return false;
-    });
-
-    return {
-      canComplete: hasRecordedCost && itemsComplete,
-      missingCost: !hasRecordedCost,
-      incompleteItems: !itemsComplete,
-    };
-  }, [expandedRequestId, items, requests]);
-  
   return (
     <>
       <Navbar />
@@ -508,6 +551,14 @@ const AssignedRequestsPage = () => {
             const summary = request.status_summary || {};
             const autoTotal = autoTotals[request.id] ?? summary.calculated_total_cost ?? null;
             const isUrgent = Boolean(request?.is_urgent);
+            const completionState =
+              completionStates[request.id] || {
+                canComplete: false,
+                missingCost: false,
+                incompleteItems: true,
+              };
+            const showCompletionHints =
+              expandedRequestId === request.id && items.length > 0 && !completionState.canComplete;
             const containerClasses = [
               'mb-6 border rounded-lg p-5 bg-white shadow-sm transition',
               isUrgent ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
@@ -550,6 +601,17 @@ const AssignedRequestsPage = () => {
 
                   <div className="flex flex-col items-end gap-2">
                     <button
+                      onClick={() => handleMarkAsCompleted(request.id)}
+                      className={`px-4 py-2 rounded text-white transition ${
+                        completionState.canComplete
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : 'bg-gray-300 cursor-not-allowed'
+                      }`}
+                      disabled={!completionState.canComplete}
+                    >
+                      {tr('completion.markComplete', 'Mark Request as Completed')}
+                    </button>
+                    <button
                       onClick={() => toggleExpand(request.id)}
                       className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                     >
@@ -566,6 +628,26 @@ const AssignedRequestsPage = () => {
                         ? t('common.hideApprovals')
                         : t('common.viewApprovals')}
                     </button>
+                    {showCompletionHints && (
+                      <div className="text-xs text-right text-rose-600 space-y-1">
+                        {completionState.missingCost && (
+                          <p>
+                            {tr(
+                              'completion.missingCost',
+                              'Record and save the total cost of this request before completing it.',
+                            )}
+                          </p>
+                        )}
+                        {completionState.incompleteItems && (
+                          <p>
+                            {tr(
+                              'completion.incompleteItems',
+                              'All items must be marked as purchased or unable to procure with recorded quantities before completing the request.',
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -763,39 +845,6 @@ const AssignedRequestsPage = () => {
                       </div>
                     </div>
 
-                    <div className="mt-6">
-                      <button
-                        onClick={() => handleMarkAsCompleted(request.id)}
-                        className={`px-4 py-2 rounded text-white transition ${
-                          completionState.canComplete
-                            ? 'bg-green-600 hover:bg-green-700'
-                            : 'bg-gray-300 cursor-not-allowed'
-                        }`}
-                        disabled={!completionState.canComplete}
-                      >
-                        {tr('completion.markComplete', 'Mark Request as Completed')}
-                      </button>
-                      {!completionState.canComplete && items.length > 0 && (
-                        <div className="mt-2 text-xs text-rose-600 space-y-1">
-                          {completionState.missingCost && (
-                            <p>
-                              {tr(
-                                'completion.missingCost',
-                                'Record and save the total cost of this request before completing it.',
-                              )}
-                            </p>
-                          )}
-                          {completionState.incompleteItems && (
-                            <p>
-                              {tr(
-                                'completion.incompleteItems',
-                                'All items must be marked as purchased or unable to procure with recorded quantities before completing the request.',
-                              )}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                    </div>
                   </div>
                 )}
               </div>

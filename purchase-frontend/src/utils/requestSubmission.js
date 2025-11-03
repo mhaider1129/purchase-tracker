@@ -179,6 +179,7 @@ export const buildRequestSubmissionState = (
           nextApproval.approver_role ??
           nextApproval.approverRole ??
           nextApproval.role ??
+
           null,
       }
     : null;
@@ -203,6 +204,81 @@ export const buildRequestSubmissionState = (
 
   const items =
     pickArray('items', 'line_items', 'request_items', 'requestItems') || null;
+
+  const normalizedItems = Array.isArray(items)
+    ? items
+        .map((item) => {
+          if (!item || typeof item !== 'object') return null;
+
+          const normalizeString = (value) => {
+            if (value === undefined || value === null) return '';
+            return String(value).trim();
+          };
+
+          const resolveFromItem = (candidate) => {
+            if (Array.isArray(candidate)) {
+              return candidate.reduce((acc, key) => {
+                if (acc === null || acc === undefined) return undefined;
+                if (typeof acc !== 'object') return undefined;
+                return acc[key];
+              }, item);
+            }
+
+            return item[candidate];
+          };
+
+          const itemId =
+            resolveFromItem('id') ??
+            resolveFromItem('requested_item_id') ??
+            resolveFromItem('requestedItemId') ??
+            null;
+
+          const nameCandidate =
+            resolveFromItem('item_name') ??
+            resolveFromItem('name') ??
+            resolveFromItem('title') ??
+            '';
+          const name = normalizeString(nameCandidate);
+
+          const quantity = normalizeNumber(
+            resolveFromItem('quantity') ??
+              resolveFromItem('qty') ??
+              resolveFromItem('requested_quantity') ??
+              resolveFromItem('requestedQuantity'),
+          );
+
+          const purchasedQuantity =
+            normalizeNumber(
+              resolveFromItem('purchased_quantity') ??
+                resolveFromItem('purchasedQuantity') ??
+                resolveFromItem('received_quantity') ??
+                resolveFromItem('receivedQuantity'),
+            ) ?? 0;
+
+          const statusRaw = normalizeString(
+            resolveFromItem('status') ??
+              resolveFromItem('procurement_status') ??
+              resolveFromItem('procurementStatus'),
+          );
+
+          const normalizedStatus = statusRaw
+            ? statusRaw
+            : quantity !== null && purchasedQuantity >= quantity
+            ? 'Purchased'
+            : purchasedQuantity > 0
+            ? 'Partially Purchased'
+            : 'Not Purchased';
+
+          return {
+            id: itemId,
+            name,
+            quantity,
+            purchasedQuantity,
+            status: normalizedStatus,
+          };
+        })
+        .filter((entry) => entry)
+    : [];
 
   return {
     requestType:
@@ -235,7 +311,11 @@ export const buildRequestSubmissionState = (
       estimatedCost,
       attachmentsUploaded,
       attachmentsCount: attachmentsUploaded,
-      itemsCount: items ? items.length : null,
+      itemsCount: normalizedItems.length
+        ? normalizedItems.length
+        : Array.isArray(items)
+        ? items.length
+        : null,
       nextApproval: normalizedNextApproval,
       duplicateDetected: normalizeBoolean(
         pickValue([
@@ -281,5 +361,6 @@ export const buildRequestSubmissionState = (
           ['project', 'name'],
         ]) ?? null,
     },
+    items: normalizedItems,
   };
 };

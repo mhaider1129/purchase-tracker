@@ -603,10 +603,46 @@
     "title": "Item Recall Workspace",
     "subtitle": "Coordinate recall requests between departments, warehouse, and procurement.",
     "loading": "Loading your recall tools...",
+    "list": {
+      "title": "Recall queue",
+      "description": "Review the recalls that require warehouse or procurement attention.",
+      "refresh": "Refresh list",
+      "loading": "Refreshing recalls...",
+      "empty": {
+        "warehouse": "No recall requests are waiting for warehouse review.",
+        "procurement": "No recalls currently need procurement action.",
+        "generic": "No recall requests found."
+      },
+      "columns": {
+        "item": "Item",
+        "department": "Department",
+        "workflow": "Workflow",
+        "status": "Status",
+        "quantity": "Quantity",
+        "updated": "Last update",
+        "details": "Details"
+      },
+      "recallType": {
+        "departmentToWarehouse": "Department → Warehouse",
+        "warehouseToProcurement": "Warehouse → Procurement",
+        "unknown": "Other workflow"
+      },
+      "labels": {
+        "recallId": "Recall #{{id}}",
+        "escalated": "Escalated",
+        "reason": "Reason",
+        "departmentNotes": "Department notes",
+        "warehouseNotes": "Warehouse notes",
+        "departmentFallback": "Department #{{id}}",
+        "unknownDepartment": "Unknown department"
+      },
+      "notAvailable": "N/A"
+    },
     "errors": {
       "generic": "We could not process your request. Please try again.",
       "recallIdRequired": "Please enter the recall ID before escalating.",
-      "invalidRecallId": "Recall ID must be a positive number."
+      "invalidRecallId": "Recall ID must be a positive number.",
+      "loadRecalls": "We couldn't load the recall queue. Please try again."
     },
     "actions": {
       "reset": "Reset",
@@ -746,6 +782,26 @@
       "submitted": "Submitted",
       "completed": "Completed"
     },
+    "items": {
+      "heading": "Requested items",
+      "empty": "No items recorded for this request.",
+      "actions": {
+        "show": "View items",
+        "hide": "Hide items"
+      },
+      "columns": {
+        "item": "Item",
+        "specs": "Specs",
+        "quantity": "Requested",
+        "purchased": "Purchased",
+        "status": "Status"
+      },
+      "statusLabels": {
+        "purchased": "Purchased",
+        "partiallyPurchased": "Partially purchased",
+        "notPurchased": "Not purchased"
+      }
+    },
     "export": {
       "headers": [
         "Request ID",
@@ -761,11 +817,15 @@
       ],
       "filePrefix": "My_Maintenance_Requests",
       "noItems": "No items recorded",
+      "currentStepPendingWithApproverAndLevel": "Level {{level}} – Pending with {{approver}}",
+      "currentStepPendingWithApprover": "Pending with {{approver}}",
       "currentStepCompleted": "All approvals completed",
       "currentStepRejected": "Approval flow ended (rejected)",
       "currentStepPending": "Awaiting next approval",
       "currentStepUnknown": "Approval status unavailable",
-      "finalApprovalPending": "Pending final approval"
+      "currentStepFinalized": "Final approval completed by {{approver}} on {{date}}",
+      "finalApprovalPending": "Pending final approval",
+      "finalApprovalBy": "{{approver}} on {{date}}"
     },
     "filters": {
       "searchLabel": "Search",
@@ -790,6 +850,7 @@
       "reference": "Ref #",
       "status": "Status",
       "submitted": "Submitted",
+      "items": "Items",
       "approvals": "Approvals",
       "notAvailable": "—"
     },
@@ -974,6 +1035,7 @@
     "toDate": "To date",
     "searchItems": "Search items",
     "applyFilters": "Apply Filters",
+    "resetFilters": "Reset Filters",
     "noRequests": "No requests found.",
     "total": "Total",
     "id": "ID",
@@ -987,6 +1049,7 @@
     "item": "Item",
     "brand": "Brand",
     "qty": "Qty",
+    "purchasedQty": "Purchased",
     "unitCost": "Unit Cost",
     "totalAmount": "Total",
     "unit": "Unit",
@@ -996,6 +1059,14 @@
     "noItemsForRequest": "No items found for this request.",
     "hideItems": "Hide Items",
     "showItems": "Show Items",
+    "itemStatus": {
+      "header": "Item status",
+      "labels": {
+        "purchased": "Purchased",
+        "partiallyPurchased": "Partially purchased",
+        "notPurchased": "Not purchased"
+      }
+    },
     "stageFinalized": "Request {{status}}",
     "stageUnknown": "Status unavailable",
     "awaitingStep": "Awaiting {{step}}",
@@ -1086,7 +1157,19 @@
     "notAvailable": "Not available",
     "noPendingApprover": "No further approvals are required at this time.",
     "pendingAssignment": "Pending assignment",
-    "attachmentsCount": "{{count}} file(s) uploaded"
+    "attachmentsCount": "{{count}} file(s) uploaded",
+    "itemsHeading": "Item status overview",
+    "itemNameHeader": "Item",
+    "itemQuantityHeader": "Requested",
+    "itemPurchasedHeader": "Purchased",
+    "itemStatusHeader": "Status",
+    "noItems": "No items were included with this request.",
+    "unnamedItem": "Unnamed item",
+    "itemStatus": {
+      "purchased": "Purchased",
+      "partiallyPurchased": "Partially purchased",
+      "notPurchased": "Not purchased"
+    }
   },
   "closedRequests": {
     "title": "My Closed Requests",

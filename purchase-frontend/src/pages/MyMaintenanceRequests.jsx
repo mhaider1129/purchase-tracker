@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
 
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
@@ -23,6 +24,7 @@ const MyMaintenanceRequests = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortDirection, setSortDirection] = useState('desc');
+  const [expandedItemsId, setExpandedItemsId] = useState(null);
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -76,6 +78,40 @@ const MyMaintenanceRequests = () => {
 
   const statusLabels = tr('statuses', { returnObjects: true });
 
+  const itemStatusLabels = useMemo(
+    () => ({
+      purchased: tr('items.statusLabels.purchased', {
+        defaultValue: 'Purchased',
+      }),
+      partiallyPurchased: tr('items.statusLabels.partiallyPurchased', {
+        defaultValue: 'Partially purchased',
+      }),
+      notPurchased: tr('items.statusLabels.notPurchased', {
+        defaultValue: 'Not purchased',
+      }),
+    }),
+    [tr],
+  );
+
+  const itemCopy = useMemo(
+    () => ({
+      heading: tr('items.heading', { defaultValue: 'Requested items' }),
+      empty: tr('items.empty', { defaultValue: 'No items recorded for this request.' }),
+      columns: {
+        item: tr('items.columns.item', { defaultValue: 'Item' }),
+        specs: tr('items.columns.specs', { defaultValue: 'Specs' }),
+        quantity: tr('items.columns.quantity', { defaultValue: 'Requested' }),
+        purchased: tr('items.columns.purchased', { defaultValue: 'Purchased' }),
+        status: tr('items.columns.status', { defaultValue: 'Status' }),
+      },
+      actions: {
+        show: tr('items.actions.show', { defaultValue: 'View items' }),
+        hide: tr('items.actions.hide', { defaultValue: 'Hide items' }),
+      },
+    }),
+    [tr],
+  );
+
   const getStatusBadge = (status = '') => {
     const base = 'px-2 py-1 text-xs font-semibold rounded';
     switch (status.toLowerCase()) {
@@ -94,45 +130,111 @@ const MyMaintenanceRequests = () => {
     }
   };
 
-  const formatItemsForExport = (items) => {
-    if (!Array.isArray(items) || items.length === 0) {
-      return tr('export.noItems');
+  const formatItemsForExport = useCallback(
+    (items) => {
+      if (!Array.isArray(items) || items.length === 0) {
+        return tr('export.noItems');
+      }
+
+      return items
+        .map((item) => {
+          if (!item) {
+            return '';
+          }
+
+          const parts = [];
+
+          if (item.item_name) {
+            parts.push(item.item_name);
+          }
+
+          const { statusKey, quantity, purchasedQuantity } = deriveItemPurchaseState(item);
+          const statusLabel = itemStatusLabels[statusKey] ?? itemStatusLabels.notPurchased;
+
+          if (quantity !== null && quantity !== undefined) {
+            parts.push(`x${quantity}`);
+          }
+
+          if (purchasedQuantity !== null && purchasedQuantity !== undefined) {
+            parts.push(`(purchased: ${purchasedQuantity})`);
+          }
+
+          if (item.specs) {
+            parts.push(`(${item.specs})`);
+          }
+
+          parts.push(`[${statusLabel}]`);
+
+          return parts.join(' ').trim();
+        })
+        .filter(Boolean)
+        .join(' | ');
+    },
+    [itemStatusLabels, tr],
+  );
+
+  const toggleItems = useCallback((requestId) => {
+    setExpandedItemsId((prev) => (prev === requestId ? null : requestId));
+  }, []);
+
+  const buildApproverDisplayName = (name, role) => {
+    if (!name) {
+      return '';
     }
 
-    return items
-      .map((item) => {
-        if (!item) {
-          return '';
-        }
+    if (role) {
+      return `${name} (${role})`;
+    }
 
-        const parts = [];
+    return name;
+  };
 
-        if (item.item_name) {
-          parts.push(item.item_name);
-        }
+  const getFinalApprovalDetails = (request) => {
+    if (!request || !request.final_approval_date || !request.final_approver_name) {
+      return null;
+    }
 
-        if (item.quantity !== undefined && item.quantity !== null) {
-          parts.push(`x${item.quantity}`);
-        }
+    const date = new Date(request.final_approval_date);
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
 
-        if (item.specs) {
-          parts.push(`(${item.specs})`);
-        }
-
-        return parts.join(' ').trim();
-      })
-      .filter(Boolean)
-      .join(' | ');
+    return {
+      approver: request.final_approver_name,
+      formattedDate: date.toLocaleString(),
+    };
   };
 
   const getCurrentApprovalStepLabel = (request) => {
-    if (request.current_approval_step !== null && request.current_approval_step !== undefined) {
-      return `${t('common.approvalLevel')} ${request.current_approval_step}`;
+    const pendingApproverDisplay = buildApproverDisplayName(
+      request.current_pending_approver_name,
+      request.current_pending_approver_role,
+    );
+
+    if (pendingApproverDisplay) {
+      if (request.current_approval_step !== null && request.current_approval_step !== undefined) {
+        return tr('export.currentStepPendingWithApproverAndLevel', {
+          level: request.current_approval_step,
+          approver: pendingApproverDisplay,
+        });
+      }
+
+      return tr('export.currentStepPendingWithApprover', {
+        approver: pendingApproverDisplay,
+      });
     }
 
     const normalizedStatus = request.status?.toLowerCase();
+    const finalDetails = getFinalApprovalDetails(request);
 
     if (normalizedStatus === 'approved' || normalizedStatus === 'completed') {
+      if (finalDetails) {
+        return tr('export.currentStepFinalized', {
+          approver: finalDetails.approver,
+          date: finalDetails.formattedDate,
+        });
+      }
+
       return tr('export.currentStepCompleted');
     }
 
@@ -148,11 +250,14 @@ const MyMaintenanceRequests = () => {
   };
 
   const getFinalApprovalDateLabel = (request) => {
-    if (request.final_approval_date) {
-      const date = new Date(request.final_approval_date);
-      if (!Number.isNaN(date.getTime())) {
-        return date.toLocaleString();
-      }
+    const normalizedStatus = request.status?.toLowerCase();
+    const finalDetails = getFinalApprovalDetails(request);
+
+    if ((normalizedStatus === 'approved' || normalizedStatus === 'completed') && finalDetails) {
+      return tr('export.finalApprovalBy', {
+        approver: finalDetails.approver,
+        date: finalDetails.formattedDate,
+      });
     }
 
     return tr('export.finalApprovalPending');
@@ -211,7 +316,13 @@ const MyMaintenanceRequests = () => {
         if (!normalizedSearch) return true;
         const itemsText = Array.isArray(request.items)
           ? request.items
-              .map((item) => [item?.item_name, item?.specs].filter(Boolean).join(' '))
+              .map((item) => {
+                const { statusKey } = deriveItemPurchaseState(item);
+                const statusLabel = itemStatusLabels[statusKey] ?? statusKey;
+                return [item?.item_name, item?.specs, statusLabel]
+                  .filter(Boolean)
+                  .join(' ');
+              })
               .join(' ')
           : '';
 
@@ -251,7 +362,15 @@ const MyMaintenanceRequests = () => {
     });
 
     return sorted;
-  }, [requests, statusFilter, searchTerm, startDate, endDate, sortDirection]);
+  }, [
+    requests,
+    statusFilter,
+    searchTerm,
+    startDate,
+    endDate,
+    sortDirection,
+    itemStatusLabels,
+  ]);
 
   useEffect(() => {
     if (!expandedApprovalsId) {
@@ -266,6 +385,20 @@ const MyMaintenanceRequests = () => {
       resetApprovals();
     }
   }, [expandedApprovalsId, filteredRequests, resetApprovals]);
+
+  useEffect(() => {
+    if (!expandedItemsId) {
+      return;
+    }
+
+    const hasExpandedRequest = filteredRequests.some(
+      (request) => String(request.id) === String(expandedItemsId),
+    );
+
+    if (!hasExpandedRequest) {
+      setExpandedItemsId(null);
+    }
+  }, [expandedItemsId, filteredRequests]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
   const paginated = filteredRequests.slice(
@@ -462,12 +595,15 @@ const MyMaintenanceRequests = () => {
                   <th className="border px-3 py-2 text-left">{tr('table.reference')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.status')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.submitted')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.items')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.approvals')}</th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.map((r) => {
-                  const isExpanded = String(expandedApprovalsId) === String(r.id);
+                  const isApprovalsExpanded =
+                    String(expandedApprovalsId) === String(r.id);
+                  const isItemsExpanded = String(expandedItemsId) === String(r.id);
 
                   return (
                     <React.Fragment key={r.id}>
@@ -485,18 +621,80 @@ const MyMaintenanceRequests = () => {
                         <td className="border px-3 py-2">
                           <button
                             type="button"
+                            onClick={() => toggleItems(r.id)}
+                            className="text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            {isItemsExpanded
+                              ? itemCopy.actions.hide
+                              : itemCopy.actions.show}
+                          </button>
+                        </td>
+                        <td className="border px-3 py-2">
+                          <button
+                            type="button"
                             onClick={() => toggleApprovals(r.id)}
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            {isExpanded
+                            {isApprovalsExpanded
                               ? t('common.hideApprovals')
                               : t('common.viewApprovals')}
                           </button>
                         </td>
                       </tr>
-                      {isExpanded && (
+                      {isItemsExpanded && (
                         <tr>
-                          <td colSpan={7} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={8} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                            <div className="space-y-3">
+                              <h3 className="font-semibold text-gray-700">{itemCopy.heading}</h3>
+                              {Array.isArray(r.items) && r.items.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                  <table className="min-w-full border text-sm">
+                                    <thead className="bg-white">
+                                      <tr>
+                                        <th className="border px-2 py-1 text-left">{itemCopy.columns.item}</th>
+                                        <th className="border px-2 py-1 text-left">{itemCopy.columns.specs}</th>
+                                        <th className="border px-2 py-1 text-right">{itemCopy.columns.quantity}</th>
+                                        <th className="border px-2 py-1 text-right">{itemCopy.columns.purchased}</th>
+                                        <th className="border px-2 py-1 text-left">{itemCopy.columns.status}</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {r.items.map((item, idx) => {
+                                        const {
+                                          statusKey,
+                                          quantity: normalizedQuantity,
+                                          purchasedQuantity,
+                                        } = deriveItemPurchaseState(item);
+                                        const statusLabel =
+                                          itemStatusLabels[statusKey] ?? itemStatusLabels.notPurchased;
+
+                                        const displayName =
+                                          item?.item_name || item?.name || item?.title || tr('table.notAvailable');
+                                        const rowKey = item?.id ?? `${r.id}-${idx}`;
+
+                                        return (
+                                          <tr key={rowKey}>
+                                            <td className="border px-2 py-1">{displayName}</td>
+                                            <td className="border px-2 py-1">{item?.specs || tr('table.notAvailable')}</td>
+                                            <td className="border px-2 py-1 text-right">{normalizedQuantity ?? item?.quantity ?? 0}</td>
+                                            <td className="border px-2 py-1 text-right">{purchasedQuantity ?? 0}</td>
+                                            <td className="border px-2 py-1">{statusLabel}</td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-600">{itemCopy.empty}</p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      {isApprovalsExpanded && (
+                        <tr>
+                          <td colSpan={8} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <ApprovalTimeline
                               approvals={approvalsMap[r.id]}
                               isLoading={loadingApprovalsId === r.id}

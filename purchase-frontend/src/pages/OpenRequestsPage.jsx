@@ -7,10 +7,33 @@ import { useTranslation } from 'react-i18next';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import usePageTranslation from '../utils/usePageTranslation';
+import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
+
+const EMPTY_FILTERS = {
+  requestType: '',
+  status: '',
+  fromDate: '',
+  toDate: '',
+};
 
 const OpenRequestsPage = () => {
   const { t } = useTranslation();
   const tr = usePageTranslation('openRequests');
+  const itemStatusLabels = useMemo(
+    () => ({
+      purchased: t('openRequests.itemStatus.labels.purchased', 'Purchased'),
+      partiallyPurchased: t(
+        'openRequests.itemStatus.labels.partiallyPurchased',
+        'Partially purchased',
+      ),
+      notPurchased: t(
+        'openRequests.itemStatus.labels.notPurchased',
+        'Not purchased',
+      ),
+    }),
+    [t],
+  );
+  const itemStatusHeader = t('openRequests.itemStatus.header', 'Item status');
   const roleLabels = useMemo(
     () => ({
       HOD: tr('roleLabels.hod', 'HOD Approval'),
@@ -34,12 +57,7 @@ const OpenRequestsPage = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [appliedFilters, setAppliedFilters] = useState({
-    requestType: '',
-    status: '',
-    fromDate: '',
-    toDate: '',
-  });
+  const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_FILTERS });
   const [expandedId, setExpandedId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingId, setLoadingId] = useState(null);
@@ -122,6 +140,16 @@ const OpenRequestsPage = () => {
       fromDate,
       toDate,
     });
+    setCurrentPage(1);
+  };
+
+  const handleResetFilters = () => {
+    setRequestType('');
+    setStatusFilter('');
+    setFromDate('');
+    setToDate('');
+    setSearch('');
+    setAppliedFilters({ ...EMPTY_FILTERS });
     setCurrentPage(1);
   };
 
@@ -326,13 +354,22 @@ const OpenRequestsPage = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-            onClick={handleFilter}
-            type="button"
-          >
-            {tr('applyFilters')}
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+              onClick={handleFilter}
+              type="button"
+            >
+              {tr('applyFilters')}
+            </button>
+            <button
+              className="bg-gray-200 text-gray-700 px-4 py-2 rounded"
+              onClick={handleResetFilters}
+              type="button"
+            >
+              {tr('resetFilters', 'Reset Filters')}
+            </button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -391,20 +428,34 @@ const OpenRequestsPage = () => {
                             <th className="border p-1">{tr('item')}</th>
                             <th className="border p-1">{tr('brand', 'Brand')}</th>
                             <th className="border p-1">{tr('qty')}</th>
+                            <th className="border p-1">{t('openRequests.purchasedQty', 'Purchased')}</th>
+                            <th className="border p-1">{itemStatusHeader}</th>
                             <th className="border p-1">{tr('unitCost')}</th>
                             <th className="border p-1">{tr('total')}</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {itemsMap[req.id].map((item, idx) => (
-                            <tr key={idx}>
-                              <td className="border p-1">{item.item_name}</td>
-                              <td className="border p-1">{item.brand || '—'}</td>
-                              <td className="border p-1">{item.quantity}</td>
-                              <td className="border p-1">{item.unit_cost}</td>
-                              <td className="border p-1">{item.total_cost}</td>
-                            </tr>
-                          ))}
+                          {itemsMap[req.id].map((item, idx) => {
+                            const {
+                              statusKey,
+                              quantity: normalizedQuantity,
+                              purchasedQuantity,
+                            } = deriveItemPurchaseState(item);
+                            const statusLabel =
+                              itemStatusLabels[statusKey] ?? itemStatusLabels.notPurchased;
+
+                            return (
+                              <tr key={idx}>
+                                <td className="border p-1">{item.item_name}</td>
+                                <td className="border p-1">{item.brand || '—'}</td>
+                                <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0}</td>
+                                <td className="border p-1">{purchasedQuantity ?? 0}</td>
+                                <td className="border p-1">{statusLabel}</td>
+                                <td className="border p-1">{item.unit_cost}</td>
+                                <td className="border p-1">{item.total_cost}</td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     ) : (

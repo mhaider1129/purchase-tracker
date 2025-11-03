@@ -70,6 +70,16 @@ export const submitWarehouseRecall = async ({
   return data;
 };
 
+export const fetchRecallWorkspaceItems = async ({ signal } = {}) => {
+  const config = {};
+  if (signal) {
+    config.signal = signal;
+  }
+
+  const { data } = await api.get('/api/item-recalls', config);
+  return data;
+};
+
 export const escalateRecallToProcurement = async ({ recallId, warehouseNotes }) => {
   const parsedRecallId = toPositiveIntegerOrNull(recallId);
   if (parsedRecallId === undefined) {
