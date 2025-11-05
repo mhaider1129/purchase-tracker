@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import saveAs from 'file-saver';
 import Navbar from '../components/Navbar';
 import ContractForm from '../components/ContractForm';
 import api from '../api/axios';
@@ -119,12 +120,13 @@ const ContractsPage = () => {
   }, []);
 
   useEffect(() => {
-    if (editingId) {
-      fetchAttachments(editingId);
+    const contractId = editingId || viewingContract?.id;
+    if (contractId) {
+      fetchAttachments(contractId);
     } else {
       setAttachments([]);
     }
-  }, [editingId, fetchAttachments]);
+  }, [editingId, viewingContract, fetchAttachments]);
 
   const resetForm = () => {
     setFormState(initialFormState);
@@ -191,6 +193,17 @@ const ContractsPage = () => {
       setAttachmentsError(err?.response?.data?.message || 'Failed to upload attachment.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDownload = async (attachment) => {
+    try {
+      const response = await api.get(`/api/attachments/${attachment.id}`, {
+        responseType: 'blob',
+      });
+      saveAs(response.data, attachment.fileName);
+    } catch (err) {
+      console.error('Failed to download attachment', err);
     }
   };
 
@@ -626,7 +639,7 @@ const ContractsPage = () => {
               )}
             </div>
 
-            {(editingId || !viewingContract) && (
+            {(editingId || viewingContract) && (
               <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attachments</h3>
                 <div className="mt-4 space-y-4">
@@ -648,20 +661,28 @@ const ContractsPage = () => {
                           >
                             {att.fileName}
                           </a>
+                          <button
+                            onClick={() => handleDownload(att)}
+                            className="rounded-md bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-300"
+                          >
+                            Download
+                          </button>
                         </li>
                       ))}
                     </ul>
                   )}
-                  <div className="flex items-center space-x-2">
-                    <input type="file" onChange={handleFileChange} className="text-sm" />
-                    <button
-                      onClick={handleUpload}
-                      disabled={!selectedFile || uploading}
-                      className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {uploading ? 'Uploading...' : 'Upload'}
-                    </button>
-                  </div>
+                  {editingId && (
+                    <div className="flex items-center space-x-2">
+                      <input type="file" onChange={handleFileChange} className="text-sm" />
+                      <button
+                        onClick={handleUpload}
+                        disabled={!selectedFile || uploading}
+                        className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {uploading ? 'Uploading...' : 'Upload'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
