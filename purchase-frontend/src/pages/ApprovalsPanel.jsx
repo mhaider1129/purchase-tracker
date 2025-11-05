@@ -16,6 +16,7 @@ import axios from '../api/axios';
 import { Button } from '../components/ui/Button';
 import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
+import { extractItems } from '../utils/itemUtils';
 
 const STATUS_HIGHLIGHTS = {
   Approved: 'bg-green-50',
@@ -193,7 +194,7 @@ const ApprovalsPanel = () => {
     if (!itemsMap[requestId]) {
       try {
         const res = await axios.get(`/api/requests/${requestId}/items`);
-        const fetchedItems = Array.isArray(res.data?.items) ? res.data.items : [];
+        const fetchedItems = extractItems(res.data);
         setItemsMap((prev) => ({ ...prev, [requestId]: fetchedItems }));
         setItemDecisions((prev) => ({
           ...prev,
@@ -898,16 +899,6 @@ const ApprovalsPanel = () => {
                                 {req.request_type}
                               </span>
                             )}
-                            {req.department_name && (
-                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                                {req.department_name}
-                              </span>
-                            )}
-                            {req.section_name && (
-                              <span className="rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-600">
-                                {req.section_name}
-                              </span>
-                            )}
                             {isUrgentRequest && (
                               <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
                                 Urgent
@@ -918,7 +909,15 @@ const ApprovalsPanel = () => {
                             {req.justification || 'No justification provided.'}
                           </p>
                           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
-                            <span>Requester: {req.requester_name || '—'}</span>
+                            <p>
+                              <strong>Department:</strong> {req.department_name || '—'}
+                            </p>
+                            {req.requester_name && (
+                              <p>
+                                <strong>Requester:</strong> {req.requester_name}
+                                {req.requester_role && ` (${req.requester_role})`}
+                              </p>
+                            )}
                             <span>Submitted: {formatDateTime(req.created_at || req.request_date)}</span>
                             <span>Estimated Cost: {estimatedCostValue.toLocaleString()} IQD</span>
                             <span className="inline-flex items-center gap-1">

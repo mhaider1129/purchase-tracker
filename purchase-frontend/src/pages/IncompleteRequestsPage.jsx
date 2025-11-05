@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 const IncompleteRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
+  const [userRole, setUserRole] = useState(null);
   const [requestType, setRequestType] = useState('');
   const [department, setDepartment] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,9 +22,27 @@ const IncompleteRequestsPage = () => {
 
 
   useEffect(() => {
-    const fetchData = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
       try {
-        const res = await axios.get('/api/requests/incomplete');
+        const decoded = JSON.parse(atob(token.split('.')[1]));
+        setUserRole(decoded.role);
+      } catch (e) {
+        console.error('Error decoding token:', e);
+        setUserRole(null);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userRole) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get('/api/requests/incomplete', {
+          params: { role: userRole },
+        });
         const data = Array.isArray(res.data) ? res.data : [];
         setRequests(data);
         setFiltered(data);
@@ -35,8 +54,9 @@ const IncompleteRequestsPage = () => {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+  }, [userRole]);
 
   useEffect(() => {
     let data = [...requests];

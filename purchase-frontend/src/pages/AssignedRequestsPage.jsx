@@ -105,7 +105,7 @@ const evaluateCompletionState = (request = {}, itemsOverride = null) => {
       }
 
       if (status === 'purchased' || status === 'completed') {
-        return Number(qty) > 0;
+        return true;
       }
 
       if (status === 'not_procured' || status === 'canceled') {
@@ -587,16 +587,19 @@ const AssignedRequestsPage = () => {
                       <strong className="text-gray-700">{tr('requestCard.project', 'Project')}:</strong>{' '}
                       {request.project_name || '—'}
                     </p>
+                    <p>
+                        <strong>Department:</strong> {request.department_name || '—'}
+                    </p>
+                    {request.requester_name && (
+                      <p>
+                        <strong>Requester:</strong> {request.requester_name}
+                        {request.requester_role && ` (${request.requester_role})`}
+                      </p>
+                    )}
                     <p className="text-sm text-gray-500">
                       <strong className="text-gray-700">{tr('requestCard.justification', 'Justification')}:</strong>{' '}
                       {request.justification}
                     </p>
-                    {request.requester_name && (
-                      <p className="text-sm text-gray-500">
-                        <strong className="text-gray-700">{tr('requestCard.requester', 'Requester')}:</strong>{' '}
-                        {request.requester_name} ({request.requester_role})
-                      </p>
-                    )}
                   </div>
 
                   <div className="flex flex-col items-end gap-2">

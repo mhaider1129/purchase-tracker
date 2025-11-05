@@ -6,7 +6,7 @@ import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
-
+import useCurrentUser from '../hooks/useCurrentUser';
 const ITEMS_PER_PAGE = 10;
 
 const formatDate = (value, locale) => {
@@ -30,6 +30,8 @@ const mapStatusColor = (status) => {
       return 'bg-green-100 text-green-700 ring-green-200';
     case 'rejected':
       return 'bg-red-100 text-red-700 ring-red-200';
+    case 'Received':
+      return 'bg-blue-100 text-blue-700 ring-blue-200';
     default:
       return 'bg-gray-100 text-gray-700 ring-gray-200';
   }
@@ -57,6 +59,25 @@ const ClosedRequestsPage = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+  const { user: currentUser } = useCurrentUser();
+  const [markingReceived, setMarkingReceived] = useState(null);
+
+  const handleMarkReceived = async (requestId) => {
+    setMarkingReceived(requestId);
+    try {
+      await api.patch(`/api/requests/${requestId}/mark-received`);
+      setRequests((prevRequests) =>
+        prevRequests.map((req) =>
+          req.id === requestId ? { ...req, status: 'Received' } : req
+        )
+      );
+    } catch (err) {
+      console.error('Failed to mark request as received:', err);
+      alert('Failed to mark request as received.');
+    } finally {
+      setMarkingReceived(null);
+    }
+  };
 
   const timelineLabels = useMemo(
     () => ({
@@ -392,6 +413,9 @@ const ClosedRequestsPage = () => {
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       {tr('table.approvals')}
                     </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      {tr('table.actions')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -443,6 +467,21 @@ const ClosedRequestsPage = () => {
                             >
                               {renderApprovalButtonText(req.id)}
                             </button>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                            {req.status === 'completed' &&
+                              currentUser?.id === req.requester_id && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkReceived(req.id)}
+                                  disabled={markingReceived === req.id}
+                                  className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
+                                >
+                                  {markingReceived === req.id
+                                    ? 'Marking...'
+                                    : 'Mark as Received'}
+                                </button>
+                              )}
                           </td>
                         </tr>
                         {expandedApprovalsId === req.id && (
@@ -526,6 +565,19 @@ const ClosedRequestsPage = () => {
                     )}
 
                     <div className="mt-4 flex justify-end">
+                      {req.status === 'completed' &&
+                        currentUser?.id === req.requester_id && (
+                          <button
+                            type="button"
+                            onClick={() => handleMarkReceived(req.id)}
+                            disabled={markingReceived === req.id}
+                            className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
+                          >
+                            {markingReceived === req.id
+                              ? 'Marking...'
+                              : 'Mark as Received'}
+                          </button>
+                        )}
                       <button
                         type="button"
                         onClick={() => toggleApprovals(req.id)}

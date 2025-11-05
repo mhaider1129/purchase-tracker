@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
+import ContractForm from '../components/ContractForm';
 import api from '../api/axios';
 
 const statusOptions = [
@@ -30,6 +31,9 @@ const initialFormState = {
   status: 'active',
   contract_value: '',
   description: '',
+  delivery_terms: '',
+  warranty_terms: '',
+  performance_management: '',
 };
 
 const ContractsPage = () => {
@@ -43,10 +47,17 @@ const ContractsPage = () => {
 
   const [formState, setFormState] = useState(initialFormState);
   const [editingId, setEditingId] = useState(null);
+  const [viewingContract, setViewingContract] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [archivingId, setArchivingId] = useState(null);
+
+  const [attachments, setAttachments] = useState([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [attachmentsError, setAttachmentsError] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -89,14 +100,54 @@ const ContractsPage = () => {
     return () => clearTimeout(timer);
   }, [successMessage]);
 
+  const fetchAttachments = useCallback(async (contractId) => {
+    if (!contractId) {
+      setAttachments([]);
+      return;
+    }
+    setAttachmentsLoading(true);
+    setAttachmentsError('');
+    try {
+      const { data } = await api.get(`/api/contracts/${contractId}/attachments`);
+      setAttachments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load attachments', err);
+      setAttachmentsError('Unable to load attachments.');
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (editingId) {
+      fetchAttachments(editingId);
+    } else {
+      setAttachments([]);
+    }
+  }, [editingId, fetchAttachments]);
+
   const resetForm = () => {
     setFormState(initialFormState);
     setEditingId(null);
+    setViewingContract(null);
     setFormError('');
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setFormState(initialFormState);
+    setFormError('');
+  };
+
+  const handleViewContract = (contract) => {
+    setViewingContract(contract);
+    setEditingId(null);
+    setFormState(initialFormState);
   };
 
   const handleSelectContract = (contract) => {
     setEditingId(contract.id);
+    setViewingContract(contract);
     setFormState({
       title: contract.title || '',
       vendor: contract.vendor || '',
@@ -109,9 +160,38 @@ const ContractsPage = () => {
           ? ''
           : String(contract.contract_value),
       description: contract.description || '',
+      delivery_terms: contract.delivery_terms || '',
+      warranty_terms: contract.warranty_terms || '',
+      performance_management: contract.performance_management || '',
     });
-    setFormError('');
+   setFormError('');
     setSuccessMessage('');
+  };
+
+  const handleFileChange = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !editingId) return;
+    setUploading(true);
+    setAttachmentsError('');
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    try {
+      await api.post(`/api/contracts/${editingId}/attachments`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setSelectedFile(null);
+      await fetchAttachments(editingId);
+    } catch (err) {
+      console.error('Failed to upload attachment', err);
+      setAttachmentsError(err?.response?.data?.message || 'Failed to upload attachment.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleInputChange = (event) => {
@@ -131,6 +211,9 @@ const ContractsPage = () => {
       end_date: formState.end_date || null,
       status: formState.status,
       description: formState.description.trim() || null,
+      delivery_terms: formState.delivery_terms.trim() || null,
+      warranty_terms: formState.warranty_terms.trim() || null,
+      performance_management: formState.performance_management.trim() || null,
     };
 
     if (!payload.title) {
@@ -351,7 +434,7 @@ const ContractsPage = () => {
                       </tr>
                     ) : (
                       sortedContracts.map((contract) => {
-                        const isSelected = editingId === contract.id;
+                        const isSelected = viewingContract?.id === contract.id;
                         const contractValue =
                           contract.contract_value === null || contract.contract_value === undefined
                             ? '—'
@@ -366,7 +449,7 @@ const ContractsPage = () => {
                             className={`cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
                               isSelected ? 'bg-blue-50/70 dark:bg-blue-900/20' : ''
                             }`}
-                            onClick={() => handleSelectContract(contract)}
+                            onClick={() => handleViewContract(contract)}
                           >
                             <td className="px-4 py-3 align-top">
                               <div className="font-semibold text-gray-900 dark:text-gray-100">{contract.title}</div>
@@ -420,18 +503,24 @@ const ContractsPage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    {editingId ? 'Edit contract' : 'Create a new contract'}
+                    {editingId
+                      ? 'Edit contract'
+                      : viewingContract
+                      ? 'Contract details'
+                      : 'Create a new contract'}
                   </h2>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     {editingId
                       ? 'Update the selected contract. All changes are tracked with timestamps.'
+                      : viewingContract
+                      ? 'Review the contract details below. Click Edit to make changes.'
                       : 'Capture supplier agreements, contract periods, and renewal information.'}
                   </p>
                 </div>
                 {editingId && (
                   <button
                     type="button"
-                    onClick={resetForm}
+                    onClick={cancelEditing}
                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 focus:outline-none focus:underline"
                   >
                     Cancel editing
@@ -439,157 +528,168 @@ const ContractsPage = () => {
                 )}
               </div>
 
-              <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
-                <div className="grid gap-4 sm:grid-cols-2">
+              {editingId || !viewingContract ? (
+                <ContractForm
+                  formState={formState}
+                  handleInputChange={handleInputChange}
+                  handleSubmit={handleSubmit}
+                  saving={saving}
+                  editingId={editingId}
+                  handleArchive={handleArchive}
+                  archivingId={archivingId}
+                  formError={formError}
+                  successMessage={successMessage}
+                  statusOptions={statusOptions}
+                />
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">{viewingContract.vendor}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Reference number</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.reference_number || <span className="italic text-gray-500">None</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Start date</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.start_date || <span className="italic text-gray-500">Not set</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">End date</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.end_date || <span className="italic text-gray-500">Not set</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Contract value</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.contract_value === null || viewingContract.contract_value === undefined
+                          ? '—'
+                          : new Intl.NumberFormat(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 2,
+                            }).format(Number(viewingContract.contract_value))}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</h3>
+                      <div className="mt-1">{renderStatusBadge(viewingContract.status)}</div>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</h3>
+                      <p className="mt-1 text-gray-800 dark:text-gray-200">
+                        {viewingContract.description || <span className="italic text-gray-500">No notes</span>}
+                      </p>
                   <div className="sm:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="title">
-                      Contract title
-                    </label>
-                    <input
-                      id="title"
-                      name="title"
-                      type="text"
-                      value={formState.title}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="vendor">
-                      Vendor
-                    </label>
-                    <input
-                      id="vendor"
-                      name="vendor"
-                      type="text"
-                      value={formState.vendor}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="reference_number">
-                      Reference number
-                    </label>
-                    <input
-                      id="reference_number"
-                      name="reference_number"
-                      type="text"
-                      value={formState.reference_number}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="start_date">
-                      Start date
-                    </label>
-                    <input
-                      id="start_date"
-                      name="start_date"
-                      type="date"
-                      value={formState.start_date}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="end_date">
-                      End date
-                    </label>
-                    <input
-                      id="end_date"
-                      name="end_date"
-                      type="date"
-                      value={formState.end_date}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="contract_value">
-                      Contract value
-                    </label>
-                    <input
-                      id="contract_value"
-                      name="contract_value"
-                      type="text"
-                      value={formState.contract_value}
-                      onChange={handleInputChange}
-                      placeholder="e.g. 250000"
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="status">
-                      Status
-                    </label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formState.status}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                    >
-                      {statusOptions
-                        .filter((option) => option.value !== 'all')
-                        .map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="description">
-                      Notes
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="delivery_terms">
+                      Delivery Terms
                     </label>
                     <textarea
-                      id="description"
-                      name="description"
+                      id="delivery_terms"
+                      name="delivery_terms"
                       rows={4}
-                      value={formState.description}
+                      value={formState.delivery_terms}
                       onChange={handleInputChange}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                      placeholder="Important clauses, renewal reminders, or performance notes"
+                      placeholder="Specify delivery terms, including shipping, timelines, and responsibilities."
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="warranty_terms">
+                      Warranty Terms
+                    </label>
+                    <textarea
+                      id="warranty_terms"
+                      name="warranty_terms"
+                      rows={4}
+                      value={formState.warranty_terms}
+                      onChange={handleInputChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      placeholder="Outline warranty coverage, duration, and claim procedures."
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="performance_management">
+                      Performance Management
+                    </label>
+                    <textarea
+                      id="performance_management"
+                      name="performance_management"
+                      rows={4}
+                      value={formState.performance_management}
+                      onChange={handleInputChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      placeholder="Define KPIs, performance metrics, and review processes."
                     />
                   </div>
                 </div>
 
-                {formError && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
-                    {formError}
                   </div>
-                )}
-                {successMessage && (
-                  <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                    {successMessage}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
-                  >
-                    {saving ? 'Saving...' : editingId ? 'Update contract' : 'Create contract'}
-                  </button>
-                  {editingId && (
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => handleArchive(editingId)}
-                      disabled={archivingId === editingId}
-                      className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+                      onClick={() => handleSelectContract(viewingContract)}
+                      className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
-                      {archivingId === editingId ? 'Archiving...' : 'Archive contract'}
+                      Edit contract
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => setViewingContract(null)}
+                      className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
-              </form>
+              )}
             </div>
+
+            {editingId && (
+              <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attachments</h3>
+                <div className="mt-4 space-y-4">
+                  {attachmentsLoading ? (
+                    <p className="text-sm text-gray-500">Loading attachments...</p>
+                  ) : attachmentsError ? (
+                    <p className="text-sm text-red-600">{attachmentsError}</p>
+                  ) : attachments.length === 0 ? (
+                    <p className="text-sm text-gray-500">No attachments for this contract.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {attachments.map((att) => (
+                        <li key={att.id} className="flex items-center justify-between text-sm">
+                          <a
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            {att.fileName}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="flex items-center space-x-2">
+                    <input type="file" onChange={handleFileChange} className="text-sm" />
+                    <button
+                      onClick={handleUpload}
+                      disabled={!selectedFile || uploading}
+                      className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {uploading ? 'Uploading...' : 'Upload'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
               <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-gray-100">Contract tips</h3>

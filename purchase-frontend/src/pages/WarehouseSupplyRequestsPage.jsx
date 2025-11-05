@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import usePageTranslation from '../utils/usePageTranslation';
+import { extractItems } from '../utils/itemUtils';
 
 const statusClasses = {
   approved: 'bg-green-100 text-green-700',
@@ -179,7 +180,7 @@ const WarehouseSupplyRequestsPage = () => {
         const res = await api.get(`/api/requests/${requestId}/items`);
         setItemsCache((prev) => ({
           ...prev,
-          [requestId]: res.data?.items || [],
+          [requestId]: extractItems(res.data),
         }));
       } catch (err) {
         console.error('Failed to load requested items:', err);

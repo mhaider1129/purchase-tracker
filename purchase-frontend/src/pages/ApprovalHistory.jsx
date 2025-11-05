@@ -346,6 +346,7 @@ const ApprovalHistory = () => {
                     <th className="border-b border-gray-200 p-3 font-semibold">Request ID</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Type</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Department</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Requester</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Project</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Justification</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Cost</th>
@@ -362,6 +363,10 @@ const ApprovalHistory = () => {
                       <td className="border-r p-2 align-top text-gray-900 font-medium">{item.request_id}</td>
                       <td className="border-r p-2 align-top text-gray-700">{item.request_type}</td>
                       <td className="border-r p-2 align-top text-gray-700">{item.department_name}</td>
+                      <td className="border-r p-2 align-top text-gray-700">
+                        {item.requester_name}
+                        {item.requester_role && ` (${item.requester_role})`}
+                      </td>
                       <td className="border-r p-2 align-top text-gray-700">{item.project_name || '—'}</td>
                       <td className="border-r p-2 align-top text-gray-600 max-w-xs">
                         <p className="whitespace-pre-wrap leading-snug">{item.justification}</p>

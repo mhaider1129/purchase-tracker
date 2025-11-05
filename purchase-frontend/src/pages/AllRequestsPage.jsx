@@ -699,6 +699,15 @@ const AllRequestsPage = () => {
                     <p>
                       <strong>Project:</strong> {request.project_name || '—'}
                     </p>
+                    <p>
+                      <strong>Department:</strong> {request.department_name || '—'}
+                    </p>
+                    {request.requester_name && (
+                      <p>
+                        <strong>Requester:</strong> {request.requester_name}
+                        {request.requester_role && ` (${request.requester_role})`}
+                      </p>
+                    )}
                     <p><strong>Justification:</strong> {request.justification}</p>
                     <p>
                       <strong>Assigned To:</strong>{' '}
