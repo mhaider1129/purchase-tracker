@@ -125,6 +125,48 @@ const ContractForm = ({ formState, handleInputChange, handleSubmit, saving, edit
             placeholder="Important clauses, renewal reminders, or performance notes"
           />
         </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="delivery_terms">
+            Delivery Terms
+          </label>
+          <textarea
+            id="delivery_terms"
+            name="delivery_terms"
+            rows={4}
+            value={formState.delivery_terms}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Specify delivery terms, including shipping, timelines, and responsibilities."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="warranty_terms">
+            Warranty Terms
+          </label>
+          <textarea
+            id="warranty_terms"
+            name="warranty_terms"
+            rows={4}
+            value={formState.warranty_terms}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Outline warranty coverage, duration, and claim procedures."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="performance_management">
+            Performance Management
+          </label>
+          <textarea
+            id="performance_management"
+            name="performance_management"
+            rows={4}
+            value={formState.performance_management}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Define KPIs, performance metrics, and review processes."
+          />
+        </div>
       </div>
 
       {formError && (

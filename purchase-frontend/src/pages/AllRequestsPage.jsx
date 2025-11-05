@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import { printRequest } from '../api/requests';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import Card from '../components/Card';
 
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
@@ -586,10 +587,11 @@ const AllRequestsPage = () => {
       <div className="p-6">
       <h1 className="text-2xl font-semibold mb-4">All Purchase Requests</h1>
 
-      <div className="flex flex-wrap gap-4 mb-4">
-        <select className="border p-2 rounded" value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="">All Requests</option>
-          <option value="unassigned">Unassigned Only</option>
+      <Card className="mb-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          <select className="border p-2 rounded" value={filter} onChange={(e) => setFilter(e.target.value)}>
+            <option value="">All Requests</option>
+            <option value="unassigned">Unassigned Only</option>
         </select>
 
         <select className="border p-2 rounded" value={sort} onChange={(e) => setSort(e.target.value)}>
@@ -667,7 +669,8 @@ const AllRequestsPage = () => {
         >
           {loadingExport ? 'Exporting...' : 'Export PDF'}
         </button>
-      </div>
+        </div>
+      </Card>
 
       {requests.length === 0 ? (
         <p>No requests found.</p>
@@ -676,14 +679,11 @@ const AllRequestsPage = () => {
           {requests.map((request) => {
             const step = getCurrentStep(request);
             const isUrgent = Boolean(request?.is_urgent);
-            const cardClasses = [
-              'border rounded p-4 shadow bg-white transition',
-              isUrgent ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
-            ]
-              .filter(Boolean)
-              .join(' ');
+            const cardClasses = isUrgent
+              ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70'
+              : '';
             return (
-              <div key={request.id} className={cardClasses}>
+              <Card key={request.id} className={`transition ${cardClasses}`}>
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="space-y-1">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -817,7 +817,7 @@ const AllRequestsPage = () => {
                   />
                 </div>
               )}
-            </div>
+            </Card>
             );
           })}
         </div>

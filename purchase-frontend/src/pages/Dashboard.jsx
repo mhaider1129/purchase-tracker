@@ -17,6 +17,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import usePageTranslation from '../utils/usePageTranslation';
+import Card from '../components/Card';
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
 
@@ -99,26 +100,48 @@ const Dashboard = () => {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card
-            title={translate('totalRequests', { defaultValue: 'Total Requests' })}
-            value={summary.total_requests}
-          />
-          <Card title={translate('approved', { defaultValue: 'Approved' })} value={summary.approved_requests} />
-          <Card title={translate('pending', { defaultValue: 'Pending' })} value={summary.pending_requests} />
-          <Card title={translate('completed', { defaultValue: 'Completed' })} value={summary.completed_requests} />
-          <Card title={translate('rejected', { defaultValue: 'Rejected' })} value={summary.rejected_requests} />
-          <Card
-            title={translate('completionRate', { defaultValue: 'Completion Rate' })}
-            value={`${completionRate.toFixed(1)}%`}
-          />
-          <Card
-            title={translate('avgApprovalTime', { defaultValue: 'Avg Approval Time (days)' })}
-            value={summary.avg_approval_time_days.toFixed(2)}
-          />
-          <Card
-            title={translate('avgPendingAge', { defaultValue: 'Avg Pending Age (days)' })}
-            value={avgPendingAge.toFixed(1)}
-          />
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">
+              {translate('totalRequests', { defaultValue: 'Total Requests' })}
+            </h3>
+            <p className="text-xl font-bold text-blue-600">{summary.total_requests}</p>
+          </Card>
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">{translate('approved', { defaultValue: 'Approved' })}</h3>
+            <p className="text-xl font-bold text-blue-600">{summary.approved_requests}</p>
+          </Card>
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">{translate('pending', { defaultValue: 'Pending' })}</h3>
+            <p className="text-xl font-bold text-blue-600">{summary.pending_requests}</p>
+          </Card>
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">{translate('completed', { defaultValue: 'Completed' })}</h3>
+            <p className="text-xl font-bold text-blue-600">{summary.completed_requests}</p>
+          </Card>
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">{translate('rejected', { defaultValue: 'Rejected' })}</h3>
+            <p className="text-xl font-bold text-blue-600">{summary.rejected_requests}</p>
+          </Card>
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">
+              {translate('completionRate', { defaultValue: 'Completion Rate' })}
+            </h3>
+            <p className="text-xl font-bold text-blue-600">{`${completionRate.toFixed(1)}%`}</p>
+          </Card>
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">
+              {translate('avgApprovalTime', { defaultValue: 'Avg Approval Time (days)' })}
+            </h3>
+            <p className="text-xl font-bold text-blue-600">
+              {summary.avg_approval_time_days.toFixed(2)}
+            </p>
+          </Card>
+          <Card className="text-center">
+            <h3 className="text-sm text-gray-500">
+              {translate('avgPendingAge', { defaultValue: 'Avg Pending Age (days)' })}
+            </h3>
+            <p className="text-xl font-bold text-blue-600">{avgPendingAge.toFixed(1)}</p>
+          </Card>
         </div>
 
         {/* Charts */}
@@ -272,12 +295,5 @@ const Dashboard = () => {
     </>
   );
 };
-
-const Card = ({ title, value }) => (
-  <div className="bg-white shadow rounded p-4 text-center">
-    <h3 className="text-sm text-gray-500">{title}</h3>
-    <p className="text-xl font-bold text-blue-600">{value}</p>
-  </div>
-);
 
 export default Dashboard;

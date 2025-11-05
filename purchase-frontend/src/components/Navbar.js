@@ -253,7 +253,7 @@ const Navbar = () => {
             'text-orange-600'
           ),
           createItem(
-            ['scm', 'admin', 'procurementspecialist'].includes(normalizedRole),
+            ['scm', 'admin', 'coo', 'medical devices', 'procurementspecialist'].includes(normalizedRole),
             t('navbar.contracts'),
             '/contracts',
             'text-emerald-600'

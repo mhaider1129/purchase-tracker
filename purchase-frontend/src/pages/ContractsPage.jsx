@@ -244,10 +244,10 @@ const ContractsPage = () => {
         await api.patch(`/api/contracts/${editingId}`, payload);
         setSuccessMessage('Contract updated successfully.');
       } else {
-        await api.post('/api/contracts', payload);
+        const { data: newContract } = await api.post('/api/contracts', payload);
         setSuccessMessage('Contract created successfully.');
+        handleSelectContract(newContract);
       }
-
       resetForm();
       await fetchContracts();
     } catch (err) {
@@ -586,50 +586,25 @@ const ContractsPage = () => {
                       <p className="mt-1 text-gray-800 dark:text-gray-200">
                         {viewingContract.description || <span className="italic text-gray-500">No notes</span>}
                       </p>
-                  <div className="sm:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="delivery_terms">
-                      Delivery Terms
-                    </label>
-                    <textarea
-                      id="delivery_terms"
-                      name="delivery_terms"
-                      rows={4}
-                      value={formState.delivery_terms}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                      placeholder="Specify delivery terms, including shipping, timelines, and responsibilities."
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="warranty_terms">
-                      Warranty Terms
-                    </label>
-                    <textarea
-                      id="warranty_terms"
-                      name="warranty_terms"
-                      rows={4}
-                      value={formState.warranty_terms}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                      placeholder="Outline warranty coverage, duration, and claim procedures."
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="performance_management">
-                      Performance Management
-                    </label>
-                    <textarea
-                      id="performance_management"
-                      name="performance_management"
-                      rows={4}
-                      value={formState.performance_management}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-                      placeholder="Define KPIs, performance metrics, and review processes."
-                    />
-                  </div>
-                </div>
-
+                    </div>
+                    <div className="sm:col-span-2">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Delivery Terms</h3>
+                      <p className="mt-1 text-gray-800 dark:text-gray-200">
+                        {viewingContract.delivery_terms || <span className="italic text-gray-500">Not specified</span>}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Warranty Terms</h3>
+                      <p className="mt-1 text-gray-800 dark:text-gray-200">
+                        {viewingContract.warranty_terms || <span className="italic text-gray-500">Not specified</span>}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Performance Management</h3>
+                      <p className="mt-1 text-gray-800 dark:text-gray-200">
+                        {viewingContract.performance_management || <span className="italic text-gray-500">Not specified</span>}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <button
@@ -651,7 +626,7 @@ const ContractsPage = () => {
               )}
             </div>
 
-            {editingId && (
+            {(editingId || !viewingContract) && (
               <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attachments</h3>
                 <div className="mt-4 space-y-4">

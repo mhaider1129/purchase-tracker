@@ -181,7 +181,7 @@ function App() {
         <Route path="/procurement-plans" element={<ProtectedRoute element={<ProcurementPlansPage />} allowedRoles={['SCM', 'admin']} />} />
         <Route
           path="/contracts"
-          element={<ProtectedRoute element={<ContractsPage />} allowedRoles={['SCM', 'admin', 'ProcurementSpecialist']} />}
+          element={<ProtectedRoute element={<ContractsPage />} allowedRoles={['SCM', 'admin', 'COO', 'Medical Devices', 'ProcurementSpecialist']} />}
         />
         <Route
           path="/supplier-evaluations"
