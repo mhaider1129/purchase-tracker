@@ -198,7 +198,7 @@ const ContractsPage = () => {
 
   const handleDownload = async (attachment) => {
     try {
-      const response = await api.get(`/api/attachments/${attachment.id}`, {
+      const response = await api.get(attachment.url, {
         responseType: 'blob',
       });
       saveAs(response.data, attachment.fileName);
