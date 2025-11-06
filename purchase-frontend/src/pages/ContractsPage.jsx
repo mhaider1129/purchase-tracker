@@ -6,6 +6,85 @@ import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
 
+const parseJson = (value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  if (typeof value === 'object') {
+    return value;
+  }
+
+  return null;
+};
+
+const normalizeComponents = (components) => {
+  if (!Array.isArray(components)) {
+    return [];
+  }
+
+  return components
+    .map((component) => {
+      if (typeof component === 'string') {
+        const name = component.trim();
+        return name ? { name, score: null } : null;
+      }
+
+      if (component && typeof component === 'object') {
+        const name = (component.name || component.component || component.label || '').trim();
+        const rawScore = component.score ?? component.value ?? null;
+        const numericScore = Number(rawScore);
+        return name ? { name, score: Number.isFinite(numericScore) ? numericScore : null } : null;
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+};
+
+const calculateOverallScore = (components) => {
+  const numericScores = components
+    .map((component) => (Number.isFinite(component.score) ? component.score : null))
+    .filter((score) => score !== null);
+
+  if (numericScores.length === 0) {
+    return null;
+  }
+
+  const total = numericScores.reduce((sum, value) => sum + value, 0);
+  return Number((total / numericScores.length).toFixed(2));
+};
+
+const normalizeEvaluation = (evaluation) => {
+  const parsedCriteria = parseJson(evaluation.evaluation_criteria);
+  const base = typeof parsedCriteria === 'object' && parsedCriteria !== null ? parsedCriteria : {};
+  const components = normalizeComponents(base.components || base.criteria || base.items || []);
+  const overallScore =
+    base.overallScore !== undefined && base.overallScore !== null
+      ? Number(base.overallScore)
+      : calculateOverallScore(components);
+
+  return {
+    ...evaluation,
+    evaluation_criteria: {
+      ...base,
+      criterionId: base.criterionId || evaluation.criterion_id || null,
+      criterionName: base.criterionName || base.name || evaluation.criterion_name || null,
+      criterionRole: base.criterionRole || base.role || evaluation.criterion_role || null,
+      components,
+      overallScore: Number.isFinite(overallScore) ? Number(overallScore.toFixed(2)) : null,
+    },
+  };
+};
+
 const statusOptions = [
   { value: 'all', label: 'All statuses' },
   { value: 'draft', label: 'Draft' },
@@ -148,7 +227,8 @@ const ContractsPage = () => {
       const { data } = await api.get('/api/contract-evaluations', {
         params: { contract_id: contractId },
       });
-      setEvaluations(Array.isArray(data) ? data : []);
+      const normalized = Array.isArray(data) ? data.map(normalizeEvaluation) : [];
+      setEvaluations(normalized);
     } catch (err) {
       console.error('Failed to load evaluations', err);
       setEvaluationsError('Unable to load evaluations.');
@@ -738,9 +818,26 @@ const ContractsPage = () => {
                   ) : (
                     <ul className="space-y-2">
                       {evaluations.map((evaluation) => (
-                        <li key={evaluation.id} className="flex items-center justify-between text-sm">
-                          <p>{evaluation.evaluator_name}</p>
-                          <p>{evaluation.status}</p>
+                        <li
+                          key={evaluation.id}
+                          className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+                        >
+                          <div>
+                            <p className="font-semibold text-gray-900 dark:text-gray-100">
+                              {evaluation.evaluation_criteria?.criterionName || 'Evaluation'}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-300">
+                              Evaluator: {evaluation.evaluator_name || '—'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold capitalize text-gray-900 dark:text-gray-100">
+                              {evaluation.status}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-300">
+                              Overall score: {evaluation.evaluation_criteria?.overallScore ?? '—'}
+                            </p>
+                          </div>
                         </li>
                       ))}
                     </ul>
