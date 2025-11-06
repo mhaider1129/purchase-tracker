@@ -24,39 +24,84 @@ const normalizeComponents = (components) => {
 };
 
 const ContractEvaluationForm = ({ contractId, onClose }) => {
-  const [users, setUsers] = useState([]);
   const [criteriaOptions, setCriteriaOptions] = useState([]);
   const [selectedCriterionId, setSelectedCriterionId] = useState('');
   const [evaluatorId, setEvaluatorId] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [candidateError, setCandidateError] = useState('');
+  const [criteriaLoading, setCriteriaLoading] = useState(false);
+  const [candidatesLoading, setCandidatesLoading] = useState(false);
+  const [eligibleEvaluators, setEligibleEvaluators] = useState([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError('');
+    let isMounted = true;
+
+    const fetchCriteria = async () => {
+      setCriteriaLoading(true);
+      setFormError('');
       try {
-        const [usersResponse, criteriaResponse] = await Promise.all([
-          api.get('/api/users'),
-          api.get('/api/contract-evaluations/criteria'),
-        ]);
-
-        const usersData = Array.isArray(usersResponse.data) ? usersResponse.data : [];
-        const criteriaData = Array.isArray(criteriaResponse.data) ? criteriaResponse.data : [];
-
-        setUsers(usersData);
+        const { data } = await api.get('/api/contract-evaluations/criteria');
+        if (!isMounted) return;
+        const criteriaData = Array.isArray(data) ? data : [];
         setCriteriaOptions(criteriaData);
       } catch (err) {
-        console.error('Failed to load evaluation data', err);
-        setError('Unable to load evaluation prerequisites.');
+        console.error('Failed to load evaluation criteria', err);
+        if (!isMounted) return;
+        setFormError('Unable to load evaluation prerequisites.');
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setCriteriaLoading(false);
+        }
       }
     };
 
-    fetchData();
+    fetchCriteria();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  useEffect(() => {
+    setCandidateError('');
+
+    if (!selectedCriterionId) {
+      setEligibleEvaluators([]);
+      return;
+    }
+
+    setEligibleEvaluators([]);
+    let isMounted = true;
+    const fetchCandidates = async () => {
+      setCandidatesLoading(true);
+      try {
+        const { data } = await api.get(`/api/contracts/${contractId}/evaluation-candidates`, {
+          params: { criterionId: selectedCriterionId },
+        });
+        if (!isMounted) return;
+        const candidates = Array.isArray(data) ? data : [];
+        setEligibleEvaluators(candidates);
+      } catch (err) {
+        console.error('Failed to load evaluation candidates', err);
+        if (!isMounted) return;
+        setEligibleEvaluators([]);
+        setCandidateError(
+          err?.response?.data?.message || 'Unable to load eligible evaluators for this criterion.'
+        );
+      } finally {
+        if (isMounted) {
+          setCandidatesLoading(false);
+        }
+      }
+    };
+
+    fetchCandidates();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [contractId, selectedCriterionId]);
 
   const selectedCriterion = useMemo(() => {
     if (!selectedCriterionId) {
@@ -66,31 +111,17 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
     return criteriaOptions.find((criterion) => String(criterion.id) === String(selectedCriterionId));
   }, [criteriaOptions, selectedCriterionId]);
 
-  const eligibleEvaluators = useMemo(() => {
-    if (!selectedCriterion) {
-      return users;
-    }
-
-    const expectedRole = (selectedCriterion.role || '').toUpperCase();
-
-    if (!expectedRole) {
-      return users;
-    }
-
-    return users.filter((user) => (user.role || '').toUpperCase() === expectedRole);
-  }, [selectedCriterion, users]);
-
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setError('');
+    setFormError('');
 
     if (!selectedCriterionId) {
-      setError('Please select an evaluation criterion.');
+      setFormError('Please select an evaluation criterion.');
       return;
     }
 
     if (!evaluatorId) {
-      setError('Please select an evaluator.');
+      setFormError('Please select an evaluator.');
       return;
     }
 
@@ -104,7 +135,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
     };
 
     if (evaluationTemplate.components.length === 0) {
-      setError('The selected criterion does not have any components to evaluate.');
+      setFormError('The selected criterion does not have any components to evaluate.');
       return;
     }
 
@@ -120,7 +151,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
       onClose();
     } catch (err) {
       console.error('Failed to send for evaluation', err);
-      setError(err?.response?.data?.message || 'Failed to send for evaluation. Please try again.');
+      setFormError(err?.response?.data?.message || 'Failed to send for evaluation. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -145,7 +176,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
                     setSelectedCriterionId(e.target.value);
                     setEvaluatorId('');
                   }}
-                  disabled={loading}
+                  disabled={criteriaLoading}
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                 >
                   <option value="">Select criterion</option>
@@ -178,27 +209,35 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
                   name="evaluator"
                   value={evaluatorId}
                   onChange={(e) => setEvaluatorId(e.target.value)}
-                  disabled={loading}
+                  disabled={criteriaLoading || candidatesLoading}
                   className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                 >
-                  <option value="">Select an evaluator</option>
+                  <option value="">
+                    {candidatesLoading ? 'Loading evaluators…' : 'Select an evaluator'}
+                  </option>
                   {eligibleEvaluators.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
+                    <option key={user.id} value={String(user.id)}>
+                      {user.name || user.email || `User #${user.id}`} {user.role ? `(${(user.role || '').toUpperCase()})` : ''}
                     </option>
                   ))}
                 </select>
-                {selectedCriterion && eligibleEvaluators.length === 0 && (
-                  <p className="mt-2 text-xs text-red-500">
-                    No users with the {selectedCriterion.role || 'specified'} role are available.
-                  </p>
+                {candidateError && (
+                  <p className="mt-2 text-xs text-red-500">{candidateError}</p>
                 )}
+                {!candidateError &&
+                  !candidatesLoading &&
+                  selectedCriterion &&
+                  eligibleEvaluators.length === 0 && (
+                    <p className="mt-2 text-xs text-red-500">
+                      No eligible evaluators are available for this criterion right now.
+                    </p>
+                  )}
               </div>
-              {error && <p className="text-red-500 text-xs italic">{error}</p>}
+              {formError && <p className="text-red-500 text-xs italic">{formError}</p>}
               <div className="items-center px-4 py-3">
                 <button
                   type="submit"
-                  disabled={saving || loading}
+                  disabled={saving || criteriaLoading || candidatesLoading}
                   className="w-full rounded-md bg-blue-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                 >
                   {saving ? 'Sending...' : 'Send'}

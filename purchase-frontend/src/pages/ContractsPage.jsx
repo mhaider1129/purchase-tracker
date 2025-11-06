@@ -158,6 +158,10 @@ const ContractsPage = () => {
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
 
   const { user } = useAuth();
+  const normalizedUserRole = (user?.role || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  const canInitiateEvaluations = ['SCM', 'COO', 'ADMIN', 'CONTRACTMANAGER'].includes(normalizedUserRole);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -1078,7 +1082,7 @@ const ContractsPage = () => {
                       ))}
                     </ul>
                   )}
-                  {(user?.role?.toUpperCase() === 'SCM' || user?.role?.toUpperCase() === 'COO' || user?.role?.toUpperCase() === 'ADMIN') && (
+                  {canInitiateEvaluations && (
                   <button
                     onClick={() => setIsEvaluationModalOpen(true)}
                     className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
