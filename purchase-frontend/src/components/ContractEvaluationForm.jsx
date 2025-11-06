@@ -52,7 +52,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
       await api.post('/api/contract-evaluations', {
         contract_id: contractId,
         evaluator_id: evaluatorId,
-        evaluation_criteria: criteria,
+        evaluation_criteria: JSON.stringify(criteria),
       });
       onClose();
     } catch (err) {

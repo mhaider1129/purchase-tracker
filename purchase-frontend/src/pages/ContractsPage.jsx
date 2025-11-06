@@ -146,7 +146,7 @@ const ContractsPage = () => {
     setEvaluationsError('');
     try {
       const { data } = await api.get('/api/contract-evaluations', {
-        params: { contractId },
+        params: { contract_id: contractId },
       });
       setEvaluations(Array.isArray(data) ? data : []);
     } catch (err) {
