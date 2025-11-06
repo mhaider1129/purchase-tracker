@@ -269,7 +269,10 @@ const Navbar = () => {
       {
         id: 'account',
         label: t('navbar.groups.account'),
-        items: [createItem(true, t('navbar.changePassword'), '/change-password', 'text-blue-600')],
+        items: [
+          createItem(true, t('navbar.myEvaluations'), '/my-evaluations', 'text-blue-600'),
+          createItem(true, t('navbar.changePassword'), '/change-password', 'text-blue-600'),
+        ],
       },
     ].filter((group) => group.items.length > 0);
 

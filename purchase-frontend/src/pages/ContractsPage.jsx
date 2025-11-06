@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import saveAs from 'file-saver';
 import Navbar from '../components/Navbar';
 import ContractForm from '../components/ContractForm';
+import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
+import { useAuth } from '../hooks/useAuth';
 
 const statusOptions = [
   { value: 'all', label: 'All statuses' },
@@ -59,6 +61,13 @@ const ContractsPage = () => {
   const [attachmentsError, setAttachmentsError] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  const [evaluations, setEvaluations] = useState([]);
+  const [evaluationsLoading, setEvaluationsLoading] = useState(false);
+  const [evaluationsError, setEvaluationsError] = useState('');
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+
+  const { user } = useAuth();
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -127,6 +136,35 @@ const ContractsPage = () => {
       setAttachments([]);
     }
   }, [editingId, viewingContract, fetchAttachments]);
+
+  const fetchEvaluations = useCallback(async (contractId) => {
+    if (!contractId) {
+      setEvaluations([]);
+      return;
+    }
+    setEvaluationsLoading(true);
+    setEvaluationsError('');
+    try {
+      const { data } = await api.get('/api/contract-evaluations', {
+        params: { contractId },
+      });
+      setEvaluations(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load evaluations', err);
+      setEvaluationsError('Unable to load evaluations.');
+    } finally {
+      setEvaluationsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const contractId = editingId || viewingContract?.id;
+    if (contractId) {
+      fetchEvaluations(contractId);
+    } else {
+      setEvaluations([]);
+    }
+  }, [editingId, viewingContract, fetchEvaluations]);
 
   const resetForm = () => {
     setFormState(initialFormState);
@@ -685,6 +723,48 @@ const ContractsPage = () => {
                   )}
                 </div>
               </div>
+            )}
+
+            {(editingId || viewingContract) && (
+              <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Contract Evaluations</h3>
+                <div className="mt-4 space-y-4">
+                  {evaluationsLoading ? (
+                    <p className="text-sm text-gray-500">Loading evaluations...</p>
+                  ) : evaluationsError ? (
+                    <p className="text-sm text-red-600">{evaluationsError}</p>
+                  ) : evaluations.length === 0 ? (
+                    <p className="text-sm text-gray-500">No evaluations for this contract.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {evaluations.map((evaluation) => (
+                        <li key={evaluation.id} className="flex items-center justify-between text-sm">
+                          <p>{evaluation.evaluator_name}</p>
+                          <p>{evaluation.status}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {(user?.role?.toUpperCase() === 'SCM' || user?.role?.toUpperCase() === 'COO' || user?.role?.toUpperCase() === 'ADMIN') && (
+                  <button
+                    onClick={() => setIsEvaluationModalOpen(true)}
+                    className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Send for Evaluation
+                  </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {isEvaluationModalOpen && viewingContract && (
+              <ContractEvaluationForm
+                contractId={viewingContract.id}
+                onClose={() => {
+                  setIsEvaluationModalOpen(false);
+                  fetchEvaluations(viewingContract.id);
+                }}
+              />
             )}
 
             <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">

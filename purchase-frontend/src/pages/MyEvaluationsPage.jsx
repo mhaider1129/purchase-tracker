@@ -1,0 +1,40 @@
+import React, { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
+import api from '../api/axios';
+
+const MyEvaluationsPage = () => {
+  const [evaluations, setEvaluations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchEvaluations = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const { data } = await api.get('/api/contract-evaluations/my-evaluations');
+        setEvaluations(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load evaluations', err);
+        setError('Unable to load evaluations.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvaluations();
+  }, []);
+
+  return (
+    <>
+      <Navbar />
+      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Evaluations</h1>
+        </header>
+        {/* Add UI to display evaluations */}
+      </main>
+    </>
+  );
+};
+
+export default MyEvaluationsPage;
