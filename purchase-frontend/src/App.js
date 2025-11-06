@@ -48,6 +48,7 @@ import LifecycleAnalytics from './pages/LifecycleAnalytics';
 import ContractsPage from './pages/ContractsPage';
 import SupplierEvaluationsPage from './pages/SupplierEvaluationsPage';
 import MyEvaluationsPage from './pages/MyEvaluationsPage';
+import EvaluationDetailsPage from './pages/EvaluationDetailsPage';
 
 
 // 🔒 Reusable Protected Route with Role Filtering
@@ -212,6 +213,7 @@ function App() {
         <Route path="/analytics" element={<ProtectedRoute element={<LifecycleAnalytics />} allowedRoles={['SCM', 'admin']} />} />
         <Route path="/change-password" element={<ProtectedRoute element={<ChangePassword />} />} />
         <Route path="/my-evaluations" element={<ProtectedRoute element={<MyEvaluationsPage />} />} />
+        <Route path="/evaluations/:id" element={<ProtectedRoute element={<EvaluationDetailsPage />} />} />
         {/* 🚨 Catch-All Fallback */}
         <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
 

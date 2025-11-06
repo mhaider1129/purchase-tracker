@@ -31,7 +31,22 @@ const MyEvaluationsPage = () => {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Evaluations</h1>
         </header>
-        {/* Add UI to display evaluations */}
+        {loading && <p>Loading...</p>}
+        {error && <p className="text-red-500">{error}</p>}
+        {evaluations.length > 0 ? (
+          <ul className="space-y-4">
+            {evaluations.map((evaluation) => (
+              <li key={evaluation.id} className="rounded-lg border bg-white p-4 shadow-sm">
+                <a href={`/evaluations/${evaluation.id}`} className="hover:underline">
+                  <h2 className="text-xl font-semibold">{evaluation.contract_title}</h2>
+                  <p>Status: {evaluation.status}</p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>You have no evaluations assigned.</p>
+        )}
       </main>
     </>
   );
