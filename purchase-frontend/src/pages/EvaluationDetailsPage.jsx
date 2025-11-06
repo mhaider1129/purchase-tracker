@@ -17,7 +17,7 @@ const EvaluationDetailsPage = () => {
       setLoading(true);
       setError('');
       try {
-        const { data: evaluationData } = await api.get(`/api/contract-evaluations?id=${id}`);
+        const { data: evaluationData } = await api.get(`/api/contract-evaluations?contract_id=${id}`);
         setEvaluation(evaluationData);
 
         const { data: criteriaData } = await api.get('/api/contract-evaluations/criteria');
