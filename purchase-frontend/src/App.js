@@ -183,14 +183,14 @@ function App() {
         <Route path="/procurement-plans" element={<ProtectedRoute element={<ProcurementPlansPage />} allowedRoles={['SCM', 'admin']} />} />
         <Route
           path="/contracts"
-          element={<ProtectedRoute element={<ContractsPage />} allowedRoles={['SCM', 'admin', 'COO', 'Medical Devices', 'ProcurementSpecialist']} />}
+          element={<ProtectedRoute element={<ContractsPage />} allowedRoles={['SCM', 'admin', 'COO', 'Medical Devices', 'Contract_Manager', 'ProcurementSpecialist']} />}
         />
         <Route
           path="/supplier-evaluations"
           element={
             <ProtectedRoute
               element={<SupplierEvaluationsPage />}
-              allowedRoles={['admin', 'SCM', 'ProcurementSpecialist', 'ProcurementManager']}
+              allowedRoles={['admin', 'SCM', 'Contract_Manager', 'ProcurementSpecialist', 'ProcurementManager']}
             />
           }
         />

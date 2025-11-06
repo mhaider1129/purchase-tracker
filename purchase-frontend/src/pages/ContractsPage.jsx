@@ -116,6 +116,9 @@ const initialFormState = {
   delivery_terms: '',
   warranty_terms: '',
   performance_management: '',
+  end_user_department_id: '',
+  contract_manager_id: '',
+  technical_department_ids: [],
 };
 
 const ContractsPage = () => {
@@ -140,6 +143,14 @@ const ContractsPage = () => {
   const [attachmentsError, setAttachmentsError] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  const [departments, setDepartments] = useState([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const [departmentsError, setDepartmentsError] = useState('');
+
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
 
   const [evaluations, setEvaluations] = useState([]);
   const [evaluationsLoading, setEvaluationsLoading] = useState(false);
@@ -182,6 +193,75 @@ const ContractsPage = () => {
   useEffect(() => {
     fetchContracts();
   }, [fetchContracts]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDepartments = async () => {
+      setDepartmentsLoading(true);
+      setDepartmentsError('');
+      try {
+        const { data } = await api.get('/api/departments');
+        if (!isMounted) return;
+        setDepartments(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load departments', err);
+        if (!isMounted) return;
+        setDepartments([]);
+        setDepartmentsError(
+          err?.response?.data?.message || 'Failed to load departments. Please try again later.'
+        );
+      } finally {
+        if (isMounted) {
+          setDepartmentsLoading(false);
+        }
+      }
+    };
+
+    loadDepartments();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadUsers = async () => {
+      setUsersLoading(true);
+      setUsersError('');
+      try {
+        const { data } = await api.get('/api/users');
+        if (!isMounted) return;
+        const activeUsers = Array.isArray(data)
+          ? data.filter((userRecord) => userRecord?.is_active)
+          : [];
+        setUsers(activeUsers);
+      } catch (err) {
+        console.error('Failed to load users', err);
+        if (!isMounted) return;
+        setUsers([]);
+        if (err?.response?.status === 403) {
+          setUsersError(
+            'You do not have permission to view the users list. Enter a contract manager ID manually if needed.'
+          );
+        } else {
+          setUsersError('Failed to load users. Please try again later.');
+        }
+      } finally {
+        if (isMounted) {
+          setUsersLoading(false);
+        }
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!successMessage) return undefined;
@@ -283,8 +363,17 @@ const ContractsPage = () => {
       delivery_terms: contract.delivery_terms || '',
       warranty_terms: contract.warranty_terms || '',
       performance_management: contract.performance_management || '',
+      end_user_department_id: contract.end_user_department_id
+        ? String(contract.end_user_department_id)
+        : '',
+      contract_manager_id: contract.contract_manager_id
+        ? String(contract.contract_manager_id)
+        : '',
+      technical_department_ids: Array.isArray(contract.technical_department_ids)
+        ? contract.technical_department_ids.map((id) => String(id))
+        : [],
     });
-   setFormError('');
+    setFormError('');
     setSuccessMessage('');
   };
 
@@ -326,7 +415,19 @@ const ContractsPage = () => {
   };
 
   const handleInputChange = (event) => {
-    const { name, value } = event.target;
+    const { name, value, selectedOptions } = event.target;
+
+    if (name === 'technical_department_ids') {
+      const selected = Array.from(selectedOptions || [], (option) => option.value);
+      setFormState((prev) => ({ ...prev, technical_department_ids: selected }));
+      return;
+    }
+
+    if (name === 'end_user_department_id' || name === 'contract_manager_id') {
+      setFormState((prev) => ({ ...prev, [name]: value }));
+      return;
+    }
+
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -367,6 +468,35 @@ const ContractsPage = () => {
     } else {
       payload.contract_value = null;
     }
+
+    if (formState.end_user_department_id) {
+      const parsedDepartment = Number(formState.end_user_department_id);
+      if (!Number.isInteger(parsedDepartment) || parsedDepartment <= 0) {
+        setFormError('End user department must be selected from the list.');
+        return;
+      }
+      payload.end_user_department_id = parsedDepartment;
+    } else {
+      payload.end_user_department_id = null;
+    }
+
+    if (formState.contract_manager_id) {
+      const parsedManager = Number(formState.contract_manager_id);
+      if (!Number.isInteger(parsedManager) || parsedManager <= 0) {
+        setFormError('Contract manager must be a valid user.');
+        return;
+      }
+      payload.contract_manager_id = parsedManager;
+    } else {
+      payload.contract_manager_id = null;
+    }
+
+    const technicalIds = Array.isArray(formState.technical_department_ids)
+      ? formState.technical_department_ids
+          .map((id) => Number(id))
+          .filter((id) => Number.isInteger(id) && id > 0)
+      : [];
+    payload.technical_department_ids = technicalIds;
 
     setSaving(true);
 
@@ -453,6 +583,70 @@ const ContractsPage = () => {
       return `In ${contract.days_until_expiry} day${contract.days_until_expiry === 1 ? '' : 's'}`;
     }
     return '—';
+  };
+
+  const departmentLookup = useMemo(() => {
+    const entries = new Map();
+    departments.forEach((department) => {
+      if (department?.id === undefined || department?.id === null) {
+        return;
+      }
+      entries.set(Number(department.id), department);
+    });
+    return entries;
+  }, [departments]);
+
+  const userLookup = useMemo(() => {
+    const entries = new Map();
+    users.forEach((userRecord) => {
+      if (userRecord?.id === undefined || userRecord?.id === null) {
+        return;
+      }
+      entries.set(Number(userRecord.id), userRecord);
+    });
+    return entries;
+  }, [users]);
+
+  const getDepartmentName = (departmentId) => {
+    if (!departmentId) {
+      return null;
+    }
+    const numericId = Number(departmentId);
+    const record = departmentLookup.get(numericId);
+    return record?.name || null;
+  };
+
+  const getContractManagerLabel = (managerId) => {
+    if (!managerId) {
+      return null;
+    }
+    const numericId = Number(managerId);
+    const record = userLookup.get(numericId);
+    if (!record) {
+      return null;
+    }
+    const roleLabel = (record.role || '').toUpperCase();
+    const nameLabel = record.name || record.email || `User #${numericId}`;
+    return roleLabel ? `${nameLabel} (${roleLabel})` : nameLabel;
+  };
+
+  const getTechnicalDepartmentLabels = (ids) => {
+    if (!Array.isArray(ids)) {
+      return [];
+    }
+    return ids
+      .map((id) => {
+        const label = getDepartmentName(id);
+        if (label) {
+          return label;
+        }
+        const numericId = Number(id);
+        if (Number.isInteger(numericId) && numericId > 0) {
+          return `Department #${numericId}`;
+        }
+        return null;
+      })
+      .filter(Boolean);
   };
 
   return (
@@ -671,6 +865,12 @@ const ContractsPage = () => {
                   formError={formError}
                   successMessage={successMessage}
                   statusOptions={statusOptions}
+                  departments={departments}
+                  departmentsLoading={departmentsLoading}
+                  departmentsError={departmentsError}
+                  users={users}
+                  usersLoading={usersLoading}
+                  usersError={usersError}
                 />
               ) : (
                 <div className="mt-4 space-y-4">
@@ -711,6 +911,42 @@ const ContractsPage = () => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</h3>
                       <div className="mt-1">{renderStatusBadge(viewingContract.status)}</div>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">End user department</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.end_user_department_id
+                          ? getDepartmentName(viewingContract.end_user_department_id) ||
+                            `Department #${viewingContract.end_user_department_id}`
+                          : 'None selected (evaluations route to CMO/COO)'}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Contract manager</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.contract_manager_id
+                          ? getContractManagerLabel(viewingContract.contract_manager_id) ||
+                            `User #${viewingContract.contract_manager_id}`
+                          : 'Not assigned'}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Technical departments</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {(() => {
+                          const labels = getTechnicalDepartmentLabels(
+                            viewingContract.technical_department_ids
+                          );
+                          if (!labels.length) {
+                            return (
+                              <span className="italic text-gray-500 dark:text-gray-400">
+                                No technical departments assigned
+                              </span>
+                            );
+                          }
+                          return labels.join(', ');
+                        })()}
+                      </p>
                     </div>
                     <div className="sm:col-span-2">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</h3>

@@ -1,6 +1,23 @@
 import React from 'react';
 
-const ContractForm = ({ formState, handleInputChange, handleSubmit, saving, editingId, handleArchive, archivingId, formError, successMessage, statusOptions }) => {
+const ContractForm = ({
+  formState,
+  handleInputChange,
+  handleSubmit,
+  saving,
+  editingId,
+  handleArchive,
+  archivingId,
+  formError,
+  successMessage,
+  statusOptions,
+  departments,
+  departmentsLoading,
+  departmentsError,
+  users,
+  usersLoading,
+  usersError,
+}) => {
   return (
     <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -110,6 +127,103 @@ const ContractForm = ({ formState, handleInputChange, handleSubmit, saving, edit
                 </option>
               ))}
           </select>
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="end_user_department_id"
+          >
+            End user department
+          </label>
+          <select
+            id="end_user_department_id"
+            name="end_user_department_id"
+            value={formState.end_user_department_id}
+            onChange={handleInputChange}
+            disabled={departmentsLoading}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
+          >
+            <option value="">
+              {departmentsLoading ? 'Loading departments...' : 'No department (send to CMO/COO)'}
+            </option>
+            {departments.map((department) => (
+              <option key={department.id} value={String(department.id)}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            If no department is selected, stakeholder and risk evaluations will be routed to the CMO/COO.
+          </p>
+          {departmentsError && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{departmentsError}</p>
+          )}
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="contract_manager_id"
+          >
+            Contract manager
+          </label>
+          {users.length > 0 ? (
+            <select
+              id="contract_manager_id"
+              name="contract_manager_id"
+              value={formState.contract_manager_id}
+              onChange={handleInputChange}
+              disabled={usersLoading}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
+            >
+              <option value="">No contract manager assigned</option>
+              {users.map((user) => (
+                <option key={user.id} value={String(user.id)}>
+                  {user.name || user.email || `User #${user.id}`} ({(user.role || '').toUpperCase() || 'Unknown'})
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="contract_manager_id"
+              name="contract_manager_id"
+              type="number"
+              min="1"
+              value={formState.contract_manager_id}
+              onChange={handleInputChange}
+              placeholder="Enter user ID"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            />
+          )}
+          {usersLoading && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Loading users…</p>
+          )}
+          {usersError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{usersError}</p>}
+        </div>
+        <div className="sm:col-span-2">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="technical_department_ids"
+          >
+            Technical departments involved
+          </label>
+          <select
+            id="technical_department_ids"
+            name="technical_department_ids"
+            value={formState.technical_department_ids}
+            onChange={handleInputChange}
+            multiple
+            disabled={departmentsLoading}
+            className="h-32 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
+          >
+            {departments.map((department) => (
+              <option key={department.id} value={String(department.id)}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Hold Ctrl/⌘ to select multiple departments. Leave empty if no technical departments are required.
+          </p>
         </div>
         <div className="sm:col-span-2">
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="description">
