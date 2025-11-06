@@ -702,6 +702,9 @@ const AllRequestsPage = () => {
                     <p>
                       <strong>Department:</strong> {request.department_name || '—'}
                     </p>
+                    <p>
+                      <strong>Section:</strong> {request.section_name || '—'}
+                    </p>
                     {request.requester_name && (
                       <p>
                         <strong>Requester:</strong> {request.requester_name}
