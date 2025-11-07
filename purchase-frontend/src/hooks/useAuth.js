@@ -1,18 +1,21 @@
 // src/hooks/useAuth.js
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState, useCallback, useMemo } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import axios from '../api/axios';
 
-export const useAuth = () => {
+const AuthContext = createContext(null);
+
+const useProvideAuth = () => {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // 🔐 Token Expiration Checker with 5-second buffer
-  const isTokenExpired = useCallback((token) => {
+  const isTokenExpired = useCallback((candidate) => {
+    if (!candidate) return true;
     try {
-      const decoded = jwtDecode(token);
+      const decoded = jwtDecode(candidate);
       const now = Date.now() / 1000;
       return decoded.exp && decoded.exp < now - 5;
     } catch (err) {
@@ -21,25 +24,25 @@ export const useAuth = () => {
     }
   }, []);
 
-  // 🚪 Logout and reset auth state
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    setIsLoading(false);
     navigate('/login');
   }, [navigate]);
 
-  // 🔑 Login and persist token
-  const login = useCallback((newToken) => {
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
-  }, []);
+  const fetchUserProfile = useCallback(async (activeToken) => {
+    if (!activeToken) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
 
-  // 👤 Fetch user profile from backend
-  const fetchUserProfile = useCallback(async (token) => {
+    setIsLoading(true);
     try {
       const res = await axios.get('/api/users/me', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${activeToken}` },
       });
       const profile = res.data || {};
       profile.permissions = Array.isArray(profile.permissions)
@@ -48,22 +51,30 @@ export const useAuth = () => {
       setUser(profile);
     } catch (err) {
       console.error('❌ Failed to fetch user profile:', err);
-      logout(); // 🔁 Auto-logout if token is invalid
+      logout();
+    } finally {
+      setIsLoading(false);
     }
   }, [logout]);
 
-  // 🌀 Initial load & token validation
+  const login = useCallback((newToken) => {
+    localStorage.setItem('token', newToken);
+    setToken(newToken);
+  }, []);
+
   useEffect(() => {
-    if (token) {
-      if (isTokenExpired(token)) {
-        logout();
-      } else {
-        fetchUserProfile(token);
-      }
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
+
+    if (isTokenExpired(token)) {
+      logout();
+    } else {
+      fetchUserProfile(token);
     }
   }, [token, isTokenExpired, fetchUserProfile, logout]);
 
-  // 🧠 Sync auth across browser tabs
   useEffect(() => {
     const handleStorageChange = () => {
       const newToken = localStorage.getItem('token');
@@ -78,14 +89,27 @@ export const useAuth = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [logout, isTokenExpired]);
 
-  // ✅ Memoized value for auth check
-  const isAuthenticated = useMemo(() => !!token && !!user, [token, user]);
-
-  return {
+  const value = useMemo(() => ({
     token,
     user,
     login,
     logout,
-    isAuthenticated,
-  };
+    isAuthenticated: Boolean(token && user),
+    isLoading,
+  }), [token, user, login, logout, isLoading]);
+
+  return value;
+};
+
+export const AuthProvider = ({ children }) => {
+  const auth = useProvideAuth();
+  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

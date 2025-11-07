@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../hooks/useAuth';
+import { useAccessControl } from '../hooks/useAccessControl';
 import { hasPermission, hasAnyPermission } from '../utils/permissions';
 
 const initialUserEditState = {
@@ -66,6 +67,12 @@ const Management = () => {
   const [newProjectName, setNewProjectName] = useState('');
 
   const { user } = useAuth();
+  const {
+    resources: uiResources,
+    loading: uiAccessLoading,
+    error: uiAccessLoadError,
+    refresh: refreshUiAccess,
+  } = useAccessControl();
 
   const permissionFlags = useMemo(() => {
     const currentUser = user || {};
@@ -97,7 +104,10 @@ const Management = () => {
     if (canManageDepartments) tabs.push('departments');
     if (canManageRoutes) tabs.push('routes');
     if (canManageProjects) tabs.push('projects');
-    if (canManagePermissions) tabs.push('permissions');
+    if (canManagePermissions) {
+      tabs.push('permissions');
+      tabs.push('interfaceAccess');
+    }
     return tabs;
   }, [
     canViewUsers,
@@ -115,6 +125,13 @@ const Management = () => {
   const [selectedPermissionRoleId, setSelectedPermissionRoleId] = useState('');
   const [selectedRolePermissions, setSelectedRolePermissions] = useState([]);
   const [savingPermissions, setSavingPermissions] = useState(false);
+  const [editingAccessKey, setEditingAccessKey] = useState('');
+  const [editingAccessPermissions, setEditingAccessPermissions] = useState([]);
+  const [editingAccessRequireAll, setEditingAccessRequireAll] = useState(false);
+  const [customAccessPermission, setCustomAccessPermission] = useState('');
+  const [accessConfigError, setAccessConfigError] = useState('');
+  const [accessConfigSuccess, setAccessConfigSuccess] = useState('');
+  const [savingAccessConfig, setSavingAccessConfig] = useState(false);
 
   useEffect(() => {
     if (canViewUsers || canManageRoutes || canManagePermissions) {
@@ -358,6 +375,92 @@ const Management = () => {
       setPermissionsError(err?.response?.data?.message || 'Failed to update role permissions.');
     } finally {
       setSavingPermissions(false);
+    }
+  };
+
+  const startEditingAccessResource = (resource) => {
+    if (!resource) {
+      return;
+    }
+
+    setAccessConfigError('');
+    setAccessConfigSuccess('');
+    setEditingAccessKey(resource.key);
+    setEditingAccessPermissions(
+      Array.isArray(resource.permissions)
+        ? resource.permissions
+            .map((code) => (typeof code === 'string' ? code.toLowerCase() : ''))
+            .filter(Boolean)
+        : []
+    );
+    setEditingAccessRequireAll(Boolean(resource.requireAll));
+    setCustomAccessPermission('');
+  };
+
+  const cancelEditingAccessResource = () => {
+    setEditingAccessKey('');
+    setEditingAccessPermissions([]);
+    setEditingAccessRequireAll(false);
+    setCustomAccessPermission('');
+  };
+
+  const toggleAccessPermissionForResource = (code) => {
+    if (typeof code !== 'string') {
+      return;
+    }
+
+    const normalized = code.trim().toLowerCase();
+    if (!normalized) {
+      return;
+    }
+
+    setEditingAccessPermissions((prev) => {
+      const exists = prev.some((entry) => entry.toLowerCase() === normalized);
+      if (exists) {
+        return prev.filter((entry) => entry.toLowerCase() !== normalized);
+      }
+      return [...prev, normalized];
+    });
+  };
+
+  const addCustomPermissionToResource = () => {
+    const normalized = customAccessPermission.trim().toLowerCase();
+    if (!normalized) {
+      return;
+    }
+
+    setEditingAccessPermissions((prev) => {
+      if (prev.some((entry) => entry.toLowerCase() === normalized)) {
+        return prev;
+      }
+      return [...prev, normalized];
+    });
+
+    setCustomAccessPermission('');
+  };
+
+  const saveInterfaceAccess = async () => {
+    if (!canManagePermissions || !editingAccessKey) {
+      return;
+    }
+
+    setSavingAccessConfig(true);
+    setAccessConfigError('');
+    setAccessConfigSuccess('');
+
+    try {
+      await api.put(`/api/ui-access/${editingAccessKey}`, {
+        permissions: editingAccessPermissions,
+        requireAll: editingAccessRequireAll,
+      });
+      setAccessConfigSuccess('Interface access updated successfully.');
+      cancelEditingAccessResource();
+      await refreshUiAccess();
+    } catch (err) {
+      console.error('Failed to update interface access', err);
+      setAccessConfigError(err?.response?.data?.message || 'Failed to update interface access.');
+    } finally {
+      setSavingAccessConfig(false);
     }
   };
 
@@ -1552,6 +1655,232 @@ const Management = () => {
     );
   };
 
+  const renderInterfaceAccess = () => {
+    if (!canManagePermissions) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage interface access.
+        </div>
+      );
+    }
+
+    const sortedResources = [...uiResources].sort((a, b) => {
+      const labelA = a.label?.toLowerCase?.() ?? '';
+      const labelB = b.label?.toLowerCase?.() ?? '';
+      return labelA.localeCompare(labelB);
+    });
+
+    const interfaceError = accessConfigError || uiAccessLoadError;
+
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-gray-600">
+          Configure which permission codes unlock each UI feature. Leave the list empty to make a
+          feature available to all authenticated users.
+        </p>
+        {interfaceError && (
+          <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {interfaceError}
+          </div>
+        )}
+        {accessConfigSuccess && (
+          <div className="rounded border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            {accessConfigSuccess}
+          </div>
+        )}
+        <div className="overflow-x-auto rounded border border-gray-200 bg-white p-4 shadow-sm">
+          {uiAccessLoading ? (
+            <p>Loading interface access configuration...</p>
+          ) : sortedResources.length === 0 ? (
+            <p className="text-sm text-gray-600">No interface resources have been registered yet.</p>
+          ) : (
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
+                  <th className="p-2">Feature</th>
+                  <th className="p-2">Description</th>
+                  <th className="p-2">Permissions</th>
+                  <th className="p-2">Requirement</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedResources.map((resource) => {
+                  const isEditing = editingAccessKey === resource.key;
+                  const activePermissions = isEditing
+                    ? editingAccessPermissions
+                    : resource.permissions;
+                  const showSelectedList = activePermissions && activePermissions.length > 0;
+
+                  return (
+                    <tr key={resource.key} className="border-b align-top">
+                      <td className="p-2 font-semibold text-gray-800">{resource.label}</td>
+                      <td className="p-2 text-gray-600">{resource.description || '—'}</td>
+                      <td className="p-2">
+                        {isEditing ? (
+                          <div className="space-y-3">
+                            {permissionsLoading ? (
+                              <p className="text-sm text-gray-600">Loading permission catalog...</p>
+                            ) : availablePermissions.length === 0 ? (
+                              <p className="text-sm text-gray-600">
+                                No permission catalog found. Add custom codes below.
+                              </p>
+                            ) : (
+                              <div className="grid gap-2 md:grid-cols-2">
+                                {availablePermissions.map((permission) => {
+                                  const code = permission.code?.toLowerCase?.() ?? '';
+                                  const checked = editingAccessPermissions.some(
+                                    (entry) => entry.toLowerCase() === code
+                                  );
+                                  return (
+                                    <label
+                                      key={permission.code}
+                                      className="flex cursor-pointer items-start gap-3 rounded border border-gray-200 bg-gray-50 p-3 hover:border-blue-300"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="mt-1 h-4 w-4"
+                                        checked={checked}
+                                        onChange={() => toggleAccessPermissionForResource(permission.code)}
+                                      />
+                                      <div>
+                                        <div className="text-sm font-semibold text-gray-800">
+                                          {permission.name}
+                                        </div>
+                                        <p className="text-xs text-gray-600">{permission.description}</p>
+                                        <p className="text-xs text-gray-400">Code: {permission.code}</p>
+                                      </div>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                              <input
+                                type="text"
+                                value={customAccessPermission}
+                                onChange={(e) => setCustomAccessPermission(e.target.value)}
+                                placeholder="Add permission code"
+                                className="w-full rounded border border-gray-300 p-2 text-sm sm:w-auto"
+                              />
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={addCustomPermissionToResource}
+                                  disabled={!customAccessPermission.trim()}
+                                  className={`rounded px-3 py-1 text-sm font-semibold text-white ${
+                                    customAccessPermission.trim()
+                                      ? 'bg-blue-600 hover:bg-blue-700'
+                                      : 'bg-gray-400'
+                                  }`}
+                                >
+                                  Add code
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingAccessPermissions([])}
+                                  className="rounded border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                                >
+                                  Clear all
+                                </button>
+                              </div>
+                            </div>
+                            {editingAccessPermissions.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {editingAccessPermissions.map((code) => (
+                                  <span
+                                    key={code}
+                                    className="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700"
+                                  >
+                                    {code}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500">No permission required.</p>
+                            )}
+                          </div>
+                        ) : showSelectedList ? (
+                          <div className="flex flex-wrap gap-2">
+                            {activePermissions.map((code) => (
+                              <span
+                                key={code}
+                                className="rounded bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700"
+                              >
+                                {code}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-500">No permission required</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {isEditing ? (
+                          <label className="flex items-center gap-2 text-sm text-gray-700">
+                            <input
+                              type="checkbox"
+                              checked={editingAccessRequireAll}
+                              onChange={(e) => setEditingAccessRequireAll(e.target.checked)}
+                              className="h-4 w-4"
+                            />
+                            Require all selected permissions
+                          </label>
+                        ) : showSelectedList ? (
+                          <span className="text-xs text-gray-600">
+                            {resource.requireAll
+                              ? 'All selected permissions'
+                              : 'Any selected permission'}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-500">Not required</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {isEditing ? (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={saveInterfaceAccess}
+                              disabled={savingAccessConfig}
+                              className={`rounded px-3 py-1 text-sm font-semibold text-white ${
+                                savingAccessConfig
+                                  ? 'bg-gray-400'
+                                  : 'bg-green-600 hover:bg-green-700'
+                              }`}
+                            >
+                              {savingAccessConfig ? 'Saving…' : 'Save'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={cancelEditingAccessResource}
+                              className="rounded border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => startEditingAccessResource(resource)}
+                            className="rounded border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                          >
+                            Edit
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <>
       <Navbar />
@@ -1641,14 +1970,24 @@ const Management = () => {
             </button>
           )}
           {canManagePermissions && (
-            <button
-              onClick={() => setTab('permissions')}
-              className={`px-3 py-1 rounded ${
-                tab === 'permissions' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Permissions
-            </button>
+            <>
+              <button
+                onClick={() => setTab('permissions')}
+                className={`px-3 py-1 rounded ${
+                  tab === 'permissions' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+                }`}
+              >
+                Permissions
+              </button>
+              <button
+                onClick={() => setTab('interfaceAccess')}
+                className={`px-3 py-1 rounded ${
+                  tab === 'interfaceAccess' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+                }`}
+              >
+                Interface Access
+              </button>
+            </>
           )}
         </div>
 
@@ -1658,6 +1997,7 @@ const Management = () => {
         {tab === 'routes' && renderRoutes()}
         {tab === 'projects' && renderProjects()}
         {tab === 'permissions' && renderPermissions()}
+        {tab === 'interfaceAccess' && renderInterfaceAccess()}
       </div>
     </>
   );

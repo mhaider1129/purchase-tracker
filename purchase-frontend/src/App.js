@@ -1,6 +1,6 @@
 // src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -50,174 +50,402 @@ import SupplierEvaluationsPage from './pages/SupplierEvaluationsPage';
 import MyEvaluationsPage from './pages/MyEvaluationsPage';
 import EvaluationDetailsPage from './pages/EvaluationDetailsPage';
 
+import { AuthProvider, useAuth } from './hooks/useAuth';
+import { AccessControlProvider, useAccessControl } from './hooks/useAccessControl';
+import { hasAnyPermission, hasAllPermissions } from './utils/permissions';
 
-// 🔒 Reusable Protected Route with Role Filtering
-const ProtectedRoute = ({ element, allowedRoles = [] }) => {
-  const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/login" replace />;
+const ProtectedRoute = ({
+  element,
+  allowedRoles = [],
+  requiredPermissions = [],
+  requireAllPermissions = false,
+  resourceKey,
+}) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const { resolvePermissions } = useAccessControl();
+  const location = useLocation();
 
-  try {
-    const decoded = JSON.parse(atob(token.split('.')[1]));
-    const userRole = decoded.role;
-
-    if (allowedRoles.length && !allowedRoles.includes(userRole)) {
-      return <Navigate to="/" replace />;
-    }
-
-    return element;
-  } catch (err) {
-    console.error('❌ Invalid token:', err);
-    localStorage.removeItem('token');
-    return <Navigate to="/login" replace />;
+  if (isLoading) {
+    return <div className="p-6 text-center text-gray-600">Loading...</div>;
   }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  const { permissions: effectivePermissions, requireAll } = resourceKey
+    ? resolvePermissions(resourceKey, requiredPermissions, requireAllPermissions)
+    : {
+        permissions: requiredPermissions,
+        requireAll: requireAllPermissions,
+      };
+
+  let hasPermissionAccess = true;
+  if (effectivePermissions && effectivePermissions.length > 0) {
+    hasPermissionAccess = requireAll
+      ? hasAllPermissions(user, effectivePermissions)
+      : hasAnyPermission(user, effectivePermissions);
+  }
+
+  let hasRoleAccess = true;
+  if (allowedRoles.length > 0) {
+    const normalizedRole = user?.role?.toLowerCase?.() ?? '';
+    hasRoleAccess = allowedRoles.some((role) => String(role).toLowerCase() === normalizedRole);
+  }
+
+  if (!hasPermissionAccess && !hasRoleAccess) {
+    return <Navigate to="/" replace />;
+  }
+
+  return element;
 };
 
-function App() {
-  const isAuthenticated = !!localStorage.getItem('token');
+const FallbackRedirect = () => {
+  const { isAuthenticated } = useAuth();
+  return <Navigate to={isAuthenticated ? '/' : '/login'} replace />;
+};
 
+const AppRoutes = () => (
+  <Routes>
+    {/* ✅ Public Routes */}
+    <Route path="/login" element={<Login />} />
+    <Route path="/request-account" element={<RequestAccount />} />
+    <Route path="/register" element={<Register />} />
+
+    {/* ✅ General Protected Routes */}
+    <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
+    <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
+    <Route
+      path="/requests/stock-item"
+      element={
+        <ProtectedRoute
+          element={<StockItemRequestForm />}
+          allowedRoles={['WarehouseManager', 'warehouse_manager']}
+          requiredPermissions={['stock-requests.create']}
+          resourceKey="feature.stockItemRequests"
+        />
+      }
+    />
+    <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />} />
+    <Route
+      path="/item-recalls"
+      element={
+        <ProtectedRoute
+          element={<ItemRecallsPage />}
+          requiredPermissions={['recalls.view', 'recalls.manage']}
+          resourceKey="feature.itemRecalls"
+        />
+      }
+    />
+    <Route
+      path="/requests/maintenance-warehouse-supply"
+      element={
+        <ProtectedRoute
+          element={<MaintenanceWarehouseSupplyRequestForm />}
+          allowedRoles={['technician', 'SCM', 'admin']}
+          requiredPermissions={['warehouse.manage-supply', 'stock-requests.create']}
+          resourceKey="feature.maintenanceWarehouseSupply"
+        />
+      }
+    />
+    <Route
+      path="/custody/issue"
+      element={
+        <ProtectedRoute
+          element={<CustodyIssueForm />}
+          allowedRoles={[
+            'warehouse_keeper',
+            'WarehouseKeeper',
+            'warehousekeeper',
+            'warehousemanager',
+            'WarehouseManager',
+            'SCM',
+            'admin',
+          ]}
+          requiredPermissions={['warehouse.manage-supply']}
+          resourceKey="feature.custody"
+        />
+      }
+    />
+    <Route
+      path="/custody/issued"
+      element={
+        <ProtectedRoute
+          element={<CustodyIssuedList />}
+          allowedRoles={[
+            'warehouse_keeper',
+            'WarehouseKeeper',
+            'warehousekeeper',
+            'warehousemanager',
+            'WarehouseManager',
+            'SCM',
+            'admin',
+          ]}
+          requiredPermissions={['warehouse.manage-supply']}
+          resourceKey="feature.custody"
+        />
+      }
+    />
+    <Route path="/custody/approvals" element={<ProtectedRoute element={<CustodyApprovals />} />} />
+    <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
+    <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
+    <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
+    <Route
+      path="/requests/medication"
+      element={
+        <ProtectedRoute
+          element={<MedicationRequestForm />}
+          allowedRoles={['requester', 'Requester', 'HOD', 'CMO', 'SCM']}
+        />
+      }
+    />
+    <Route path="/approvals" element={<ProtectedRoute element={<ApprovalsPanel />} />} />
+    <Route path="/open-requests" element={<ProtectedRoute element={<OpenRequestsPage />} />} />
+    <Route path="/request-submitted" element={<ProtectedRoute element={<RequestSubmittedPage />} />} />
+    <Route path="/approval-history" element={<ProtectedRoute element={<ApprovalHistory />} />} />
+
+    {/* ✅ Maintenance Routes */}
+    <Route
+      path="/requests/maintenance"
+      element={<ProtectedRoute element={<MaintenanceRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />}
+    />
+    <Route
+      path="/my-maintenance-requests"
+      element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />}
+    />
+    <Route
+      path="/approvals/maintenance"
+      element={
+        <ProtectedRoute
+          element={<MaintenanceHODApprovals />}
+          allowedRoles={['HOD', 'requester', 'Requester', 'CMO', 'COO', 'SCM']}
+        />
+      }
+    />
+
+    <Route
+      path="/maintenance-stock"
+      element={
+        <ProtectedRoute
+          element={<MaintenanceStockPage />}
+          allowedRoles={['WarehouseManager', 'warehouse_manager', 'technician']}
+          requiredPermissions={['warehouse.manage-supply']}
+          resourceKey="feature.maintenanceStock"
+        />
+      }
+    />
+    <Route
+      path="/warehouse-supply-templates"
+      element={
+        <ProtectedRoute
+          element={<WarehouseSupplyTemplatesPage />}
+          allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']}
+          requiredPermissions={['warehouse.manage-supply']}
+          resourceKey="feature.warehouseTemplates"
+        />
+      }
+    />
+    <Route
+      path="/warehouse-supply-requests"
+      element={
+        <ProtectedRoute
+          element={<WarehouseSupplyRequestsPage />}
+          allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']}
+          requiredPermissions={['warehouse.view-supply', 'warehouse.manage-supply']}
+          resourceKey="feature.warehouseRequests"
+        />
+      }
+    />
+
+    {/* ✅ Admin / SCM Routes */}
+    <Route
+      path="/admin-tools"
+      element={
+        <ProtectedRoute
+          element={<AdminTools />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['approvals.reassign']}
+          resourceKey="feature.adminTools"
+        />
+      }
+    />
+    <Route
+      path="/management"
+      element={
+        <ProtectedRoute
+          element={<Management />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['users.manage', 'departments.manage', 'permissions.manage', 'projects.manage']}
+          resourceKey="feature.management"
+        />
+      }
+    />
+    <Route
+      path="/all-requests"
+      element={
+        <ProtectedRoute
+          element={<AllRequestsPage />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['requests.view-all']}
+          resourceKey="feature.allRequests"
+        />
+      }
+    />
+    <Route
+      path="/incomplete"
+      element={
+        <ProtectedRoute
+          element={<IncompleteRequestsPage />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['requests.view-all']}
+          resourceKey="feature.incompleteRequests"
+        />
+      }
+    />
+    <Route
+      path="/procurement-plans"
+      element={
+        <ProtectedRoute
+          element={<ProcurementPlansPage />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['procurement.update-status', 'procurement.update-cost']}
+          resourceKey="feature.procurementPlans"
+        />
+      }
+    />
+    <Route
+      path="/contracts"
+      element={
+        <ProtectedRoute
+          element={<ContractsPage />}
+          allowedRoles={['SCM', 'admin', 'COO', 'Medical Devices', 'Contract_Manager', 'ProcurementSpecialist']}
+          requiredPermissions={['contracts.manage']}
+          resourceKey="feature.contracts"
+        />
+      }
+    />
+    <Route
+      path="/supplier-evaluations"
+      element={
+        <ProtectedRoute
+          element={<SupplierEvaluationsPage />}
+          allowedRoles={['admin', 'SCM', 'Contract_Manager', 'ProcurementSpecialist', 'ProcurementManager']}
+          requiredPermissions={['evaluations.manage']}
+          resourceKey="feature.supplierEvaluations"
+        />
+      }
+    />
+
+    {/* ✅ Procurement-Specific Routes */}
+    <Route
+      path="/assigned-requests"
+      element={
+        <ProtectedRoute
+          element={<AssignedRequestsPage />}
+          allowedRoles={['ProcurementSpecialist', 'SCM']}
+          requiredPermissions={['procurement.update-status']}
+          resourceKey="feature.procurementQueues"
+        />
+      }
+    />
+
+    {/* ✅ Approver Views */}
+    <Route
+      path="/incomplete/medical"
+      element={
+        <ProtectedRoute
+          element={<IncompleteMedicalRequestsPage />}
+          allowedRoles={['CMO', 'SCM']}
+          requiredPermissions={['requests.view-all']}
+          resourceKey="feature.incompleteMedical"
+        />
+      }
+    />
+    <Route
+      path="/incomplete/operational"
+      element={
+        <ProtectedRoute
+          element={<IncompleteOperationalRequestsPage />}
+          allowedRoles={['COO', 'SCM']}
+          requiredPermissions={['requests.view-all']}
+          resourceKey="feature.incompleteOperational"
+        />
+      }
+    />
+
+    <Route
+      path="/completed-assigned"
+      element={
+        <ProtectedRoute
+          element={<CompletedAssignedRequestsPage />}
+          allowedRoles={['ProcurementSpecialist', 'SCM']}
+          requiredPermissions={['procurement.update-status']}
+          resourceKey="feature.procurementQueues"
+        />
+      }
+    />
+    <Route path="/closed-requests" element={<ProtectedRoute element={<ClosedRequestsPage />} />} />
+    <Route
+      path="/audit-requests"
+      element={
+        <ProtectedRoute
+          element={<AuditRequestsPage />}
+          allowedRoles={['audit']}
+          requiredPermissions={['requests.view-all']}
+          resourceKey="feature.auditRequests"
+        />
+      }
+    />
+    <Route
+      path="/warehouse-supply/:id"
+      element={
+        <ProtectedRoute
+          element={<SupplyItemsPage />}
+          allowedRoles={['warehouse_keeper']}
+          requiredPermissions={['warehouse.manage-supply', 'warehouse.view-supply']}
+          resourceKey="feature.warehouseDetail"
+        />
+      }
+    />
+    <Route
+      path="/dashboard"
+      element={
+        <ProtectedRoute
+          element={<Dashboard />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['dashboard.view']}
+          resourceKey="feature.dashboard"
+        />
+      }
+    />
+    <Route
+      path="/analytics"
+      element={
+        <ProtectedRoute
+          element={<LifecycleAnalytics />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['dashboard.view']}
+          resourceKey="feature.analytics"
+        />
+      }
+    />
+    <Route path="/change-password" element={<ProtectedRoute element={<ChangePassword />} />} />
+    <Route path="/my-evaluations" element={<ProtectedRoute element={<MyEvaluationsPage />} />} />
+    <Route path="/evaluations/:id" element={<ProtectedRoute element={<EvaluationDetailsPage />} />} />
+
+    {/* 🚨 Catch-All Fallback */}
+    <Route path="*" element={<FallbackRedirect />} />
+  </Routes>
+);
+
+function App() {
   return (
     <Router>
-      <Routes>
-        {/* ✅ Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/request-account" element={<RequestAccount />} />
-        <Route path="/register" element={<Register />} />
-
-        {/* ✅ General Protected Routes */}
-        <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
-        <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
-        <Route
-          path="/requests/stock-item"
-          element={
-            <ProtectedRoute
-              element={<StockItemRequestForm />}
-              allowedRoles={['WarehouseManager', 'warehouse_manager']}
-            />
-          }
-        />
-        <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />} />
-        <Route path="/item-recalls" element={<ProtectedRoute element={<ItemRecallsPage />} />} />
-        <Route
-          path="/requests/maintenance-warehouse-supply"
-          element={<ProtectedRoute element={<MaintenanceWarehouseSupplyRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />}
-        />
-        <Route
-          path="/custody/issue"
-          element={
-            <ProtectedRoute
-              element={<CustodyIssueForm />}
-              allowedRoles={[
-                'warehouse_keeper',
-                'WarehouseKeeper',
-                'warehousekeeper',
-                'warehousemanager',
-                'WarehouseManager',
-                'SCM',
-                'admin',
-              ]}
-            />
-          }
-        />
-        <Route
-          path="/custody/issued"
-          element={
-            <ProtectedRoute
-              element={<CustodyIssuedList />}
-              allowedRoles={[
-                'warehouse_keeper',
-                'WarehouseKeeper',
-                'warehousekeeper',
-                'warehousemanager',
-                'WarehouseManager',
-                'SCM',
-                'admin',
-              ]}
-            />
-          }
-        />
-        <Route path="/custody/approvals" element={<ProtectedRoute element={<CustodyApprovals />} />} />
-        <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
-        <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
-        <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
-        <Route
-          path="/requests/medication"
-          element={
-            <ProtectedRoute
-              element={<MedicationRequestForm />}
-              allowedRoles={['requester', 'Requester', 'HOD', 'CMO', 'SCM']}
-            />
-          }
-        />
-        <Route path="/approvals" element={<ProtectedRoute element={<ApprovalsPanel />} />} />
-        <Route path="/open-requests" element={<ProtectedRoute element={<OpenRequestsPage />} />} />
-        <Route path="/request-submitted" element={<ProtectedRoute element={<RequestSubmittedPage />} />} />
-        <Route path="/approval-history" element={<ProtectedRoute element={<ApprovalHistory />} />} />
-
-        {/* ✅ Maintenance Routes */}
-        <Route path="/requests/maintenance" element={<ProtectedRoute element={<MaintenanceRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />} />
-        <Route path="/my-maintenance-requests" element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />} />
-        <Route
-          path="/approvals/maintenance"
-          element={
-            <ProtectedRoute
-              element={<MaintenanceHODApprovals />}
-              allowedRoles={['HOD', 'requester', 'Requester', 'CMO', 'COO', 'SCM']}
-            />
-          }
-        />
-        <Route
-          path="/maintenance-stock"
-          element={<ProtectedRoute element={<MaintenanceStockPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'technician']} />}
-        />
-        <Route
-          path="/warehouse-supply-templates"
-          element={<ProtectedRoute element={<WarehouseSupplyTemplatesPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']} />}
-        />
-        <Route path="/warehouse-supply-requests" element={<ProtectedRoute element={<WarehouseSupplyRequestsPage />} allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']} />} />
-
-        {/* ✅ Admin / SCM Routes */}
-        <Route path="/admin-tools" element={<ProtectedRoute element={<AdminTools />} allowedRoles={['SCM', 'admin']} />} />
-        <Route path="/management" element={<ProtectedRoute element={<Management />} allowedRoles={['SCM', 'admin']} />} />
-        <Route path="/all-requests" element={<ProtectedRoute element={<AllRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
-        <Route path="/incomplete" element={<ProtectedRoute element={<IncompleteRequestsPage />} allowedRoles={['SCM', 'admin']} />} />
-        <Route path="/procurement-plans" element={<ProtectedRoute element={<ProcurementPlansPage />} allowedRoles={['SCM', 'admin']} />} />
-        <Route
-          path="/contracts"
-          element={<ProtectedRoute element={<ContractsPage />} allowedRoles={['SCM', 'admin', 'COO', 'Medical Devices', 'Contract_Manager', 'ProcurementSpecialist']} />}
-        />
-        <Route
-          path="/supplier-evaluations"
-          element={
-            <ProtectedRoute
-              element={<SupplierEvaluationsPage />}
-              allowedRoles={['admin', 'SCM', 'Contract_Manager', 'ProcurementSpecialist', 'ProcurementManager']}
-            />
-          }
-        />
-
-        {/* ✅ Procurement-Specific Routes */}
-        <Route path="/assigned-requests" element={<ProtectedRoute element={<AssignedRequestsPage />} allowedRoles={['ProcurementSpecialist', 'SCM']} />} />
-
-        {/* ✅ Approver Views */}
-        <Route path="/incomplete/medical" element={<ProtectedRoute element={<IncompleteMedicalRequestsPage />} allowedRoles={['CMO', 'SCM']} />} />
-        <Route path="/incomplete/operational" element={<ProtectedRoute element={<IncompleteOperationalRequestsPage />} allowedRoles={['COO', 'SCM']} />} />
-
-<Route
-  path="/completed-assigned"
-      element={<ProtectedRoute element={<CompletedAssignedRequestsPage />} allowedRoles={['ProcurementSpecialist', 'SCM']} />}
-/>
-        <Route path="/closed-requests" element={<ProtectedRoute element={<ClosedRequestsPage />} />} />
-        <Route path="/audit-requests" element={<ProtectedRoute element={<AuditRequestsPage />} allowedRoles={['audit']} />} />
-        <Route path="/warehouse-supply/:id" element={<ProtectedRoute element={<SupplyItemsPage />} allowedRoles={['warehouse_keeper']} />} />
-        <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} allowedRoles={['SCM', 'admin']} />} />
-        <Route path="/analytics" element={<ProtectedRoute element={<LifecycleAnalytics />} allowedRoles={['SCM', 'admin']} />} />
-        <Route path="/change-password" element={<ProtectedRoute element={<ChangePassword />} />} />
-        <Route path="/my-evaluations" element={<ProtectedRoute element={<MyEvaluationsPage />} />} />
-        <Route path="/evaluations/:id" element={<ProtectedRoute element={<EvaluationDetailsPage />} />} />
-        {/* 🚨 Catch-All Fallback */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? '/' : '/login'} replace />} />
-
-      </Routes>
+      <AuthProvider>
+        <AccessControlProvider>
+          <AppRoutes />
+        </AccessControlProvider>
+      </AuthProvider>
     </Router>
   );
 }

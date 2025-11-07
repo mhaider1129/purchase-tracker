@@ -1,17 +1,19 @@
 // src/components/Navbar.js
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import useCurrentUser from '../hooks/useCurrentUser';
 import useDarkMode from '../hooks/useDarkMode';
 import { Menu, X, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import NotificationBell from './ui/NotificationBell';
+import { useAuth } from '../hooks/useAuth';
+import { useAccessControl } from '../hooks/useAccessControl';
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useCurrentUser();
+  const { user, logout, isLoading } = useAuth();
+  const { hasAccess } = useAccessControl();
   const [darkMode, toggleDarkMode] = useDarkMode();
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState(null);
@@ -85,8 +87,7 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
   };
 
   const getInitials = (name) =>
@@ -117,37 +118,44 @@ const Navbar = () => {
   };
 
   const NavItems = ({ variant = 'desktop' }) => {
-    if (!user) return null;
+    if (isLoading || !user) return null;
 
     const normalizedRole = user.role?.toLowerCase?.() ?? '';
-    const canManageSupplierEvaluations = [
-      'admin',
-      'scm',
-      'procurementspecialist',
-      'procurementmanager',
-    ].includes(normalizedRole);
+    const currentUser = user;
 
-    const showItemRecallLink =
-      Boolean(user.department_id) ||
-      [
-        'warehousemanager',
-        'warehouse_manager',
-        'warehousekeeper',
-        'warehouse_keeper',
-        'scm',
-        'admin',
-      ].includes(normalizedRole);
+    const canViewAllRequests = hasAccess(currentUser, 'feature.allRequests', ['requests.view-all']);
+    const canManageProcurement = hasAccess(currentUser, 'feature.procurementPlans', [
+      'procurement.update-status',
+      'procurement.update-cost',
+    ]);
+    const canHandleProcurementQueues = hasAccess(currentUser, 'feature.procurementQueues', [
+      'procurement.update-status',
+    ]);
+    const canAccessCustody = hasAccess(currentUser, 'feature.custody', ['warehouse.manage-supply']);
+    const canAccessMaintenanceStock = hasAccess(currentUser, 'feature.maintenanceStock', ['warehouse.manage-supply']);
+    const canViewRecalls = hasAccess(currentUser, 'feature.itemRecalls', ['recalls.view', 'recalls.manage']);
+    const canUseAdminTools = hasAccess(currentUser, 'feature.adminTools', ['approvals.reassign']);
+    const canAccessManagement = hasAccess(currentUser, 'feature.management', [
+      'users.manage',
+      'departments.manage',
+      'permissions.manage',
+      'projects.manage',
+    ]);
+    const canViewDashboard = hasAccess(currentUser, 'feature.dashboard', ['dashboard.view']);
+    const canViewAnalytics = hasAccess(currentUser, 'feature.analytics', ['dashboard.view']);
+    const canManageContracts = hasAccess(currentUser, 'feature.contracts', ['contracts.manage']);
+    const canManageEvaluations = hasAccess(currentUser, 'feature.supplierEvaluations', ['evaluations.manage']);
+    const canAccessAudit = hasAccess(currentUser, 'feature.auditRequests', ['requests.view-all']);
+    const canViewIncompleteQueues =
+      hasAccess(currentUser, 'feature.incompleteRequests', ['requests.view-all']) ||
+      ['cmo', 'coo'].includes(normalizedRole);
 
-    const isWarehouseRole = [
-      'warehousemanager',
-      'warehouse_manager',
-      'warehousekeeper',
-      'warehouse_keeper',
-      'scm',
-      'admin',
-    ].includes(normalizedRole);
-    const isAdminOrScm = ['admin', 'scm'].includes(normalizedRole);
-    const isProcurementSpecialist = normalizedRole === 'procurementspecialist';
+    const incompletePath =
+      normalizedRole === 'cmo'
+        ? '/incomplete/medical'
+        : normalizedRole === 'coo'
+        ? '/incomplete/operational'
+        : '/incomplete';
 
     const createItem = (condition, label, path, color) =>
       condition ? { label, path, color } : null;
@@ -165,21 +173,21 @@ const Navbar = () => {
             'text-orange-600'
           ),
           createItem(true, t('navbar.closedRequests'), '/closed-requests', 'text-gray-600'),
-          createItem(isAdminOrScm, t('navbar.allRequests'), '/all-requests', 'text-indigo-600'),
+          createItem(canViewAllRequests, t('navbar.allRequests'), '/all-requests', 'text-indigo-600'),
           createItem(
-            isAdminOrScm,
+            canManageProcurement,
             t('navbar.procurementPlans'),
             '/procurement-plans',
             'text-teal-600'
           ),
           createItem(
-            isProcurementSpecialist || normalizedRole === 'scm',
+            canHandleProcurementQueues,
             t('navbar.myAssigned'),
             '/assigned-requests',
             'text-purple-600'
           ),
           createItem(
-            isProcurementSpecialist || normalizedRole === 'scm',
+            canHandleProcurementQueues,
             t('navbar.completedRequests'),
             '/completed-assigned',
             'text-gray-700'
@@ -191,26 +199,31 @@ const Navbar = () => {
         label: t('navbar.groups.operations'),
         items: [
           createItem(
-            isWarehouseRole,
+            canAccessCustody,
             t('navbar.custodyIssue'),
             '/custody/issue',
             'text-indigo-600'
           ),
           createItem(
-            isWarehouseRole,
+            canAccessCustody,
             t('navbar.custodyIssued'),
             '/custody/issued',
             'text-indigo-500'
           ),
           createItem(
-            ['warehousemanager', 'warehouse_manager', 'technician'].includes(normalizedRole),
+            canAccessMaintenanceStock,
             t('navbar.maintenanceStock'),
             '/maintenance-stock',
             'text-teal-600'
           ),
-          createItem(showItemRecallLink, t('navbar.itemRecalls'), '/item-recalls', 'text-amber-600'),
           createItem(
-            normalizedRole === 'audit',
+            canViewRecalls,
+            t('navbar.itemRecalls'),
+            '/item-recalls',
+            'text-amber-600'
+          ),
+          createItem(
+            canAccessAudit,
             t('navbar.auditRequests'),
             '/audit-requests',
             'text-blue-600'
@@ -221,15 +234,15 @@ const Navbar = () => {
         id: 'insights',
         label: t('navbar.groups.insights'),
         items: [
-          createItem(isAdminOrScm, t('navbar.dashboard'), '/dashboard', 'text-cyan-600'),
+          createItem(canViewDashboard, t('navbar.dashboard'), '/dashboard', 'text-cyan-600'),
           createItem(
-            isAdminOrScm,
+            canViewAnalytics,
             t('navbar.lifecycleAnalytics'),
             '/analytics',
             'text-pink-600'
           ),
-          createItem(isAdminOrScm, t('navbar.adminTools'), '/admin-tools', 'text-yellow-600'),
-          createItem(isAdminOrScm, t('navbar.management'), '/management', 'text-purple-600'),
+          createItem(canUseAdminTools, t('navbar.adminTools'), '/admin-tools', 'text-yellow-600'),
+          createItem(canAccessManagement, t('navbar.management'), '/management', 'text-purple-600'),
         ].filter(Boolean),
       },
       {
@@ -237,23 +250,19 @@ const Navbar = () => {
         label: t('navbar.groups.governance'),
         items: [
           createItem(
-            canManageSupplierEvaluations,
+            canManageEvaluations,
             t('navbar.supplierEvaluations'),
             '/supplier-evaluations',
             'text-emerald-700'
           ),
           createItem(
-            ['admin', 'scm', 'cmo', 'coo'].includes(normalizedRole),
+            canViewIncompleteQueues,
             t('navbar.viewIncomplete'),
-            normalizedRole === 'cmo'
-              ? '/incomplete/medical'
-              : normalizedRole === 'coo'
-              ? '/incomplete/operational'
-              : '/incomplete',
+            incompletePath,
             'text-orange-600'
           ),
           createItem(
-            ['scm', 'admin', 'coo', 'contract_manager', 'medical devices', 'procurementspecialist'].includes(normalizedRole),
+            canManageContracts,
             t('navbar.contracts'),
             '/contracts',
             'text-emerald-600'
