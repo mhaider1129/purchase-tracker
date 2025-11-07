@@ -41,7 +41,11 @@ export const useAuth = () => {
       const res = await axios.get('/api/users/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUser(res.data);
+      const profile = res.data || {};
+      profile.permissions = Array.isArray(profile.permissions)
+        ? profile.permissions
+        : [];
+      setUser(profile);
     } catch (err) {
       console.error('❌ Failed to fetch user profile:', err);
       logout(); // 🔁 Auto-logout if token is invalid

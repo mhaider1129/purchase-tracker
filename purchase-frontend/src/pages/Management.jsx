@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
+import { useAuth } from '../hooks/useAuth';
+import { hasPermission, hasAnyPermission } from '../utils/permissions';
 
 const initialUserEditState = {
   role: '',
@@ -63,35 +65,156 @@ const Management = () => {
   const [newRoute, setNewRoute] = useState(initialNewRoute);
   const [newProjectName, setNewProjectName] = useState('');
 
-  useEffect(() => {
-    fetchUsers();
-    fetchDepartments();
-    fetchRoles();
-    fetchRoutes();
-    fetchAccountRequests();
-  }, []);
+  const { user } = useAuth();
+
+  const permissionFlags = useMemo(() => {
+    const currentUser = user || {};
+    return {
+      canManageUsers: hasPermission(currentUser, 'users.manage'),
+      canViewUsers: hasAnyPermission(currentUser, ['users.view', 'users.manage']),
+      canManageAccountRequests: hasPermission(currentUser, 'users.manage'),
+      canManageDepartments: hasPermission(currentUser, 'departments.manage'),
+      canManageRoutes: hasPermission(currentUser, 'permissions.manage'),
+      canManageProjects: hasPermission(currentUser, 'projects.manage'),
+      canManagePermissions: hasPermission(currentUser, 'permissions.manage'),
+    };
+  }, [user]);
+
+  const {
+    canManageUsers,
+    canViewUsers,
+    canManageAccountRequests,
+    canManageDepartments,
+    canManageRoutes,
+    canManageProjects,
+    canManagePermissions,
+  } = permissionFlags;
+
+  const availableTabs = useMemo(() => {
+    const tabs = [];
+    if (canViewUsers) tabs.push('users');
+    if (canManageAccountRequests) tabs.push('accountRequests');
+    if (canManageDepartments) tabs.push('departments');
+    if (canManageRoutes) tabs.push('routes');
+    if (canManageProjects) tabs.push('projects');
+    if (canManagePermissions) tabs.push('permissions');
+    return tabs;
+  }, [
+    canViewUsers,
+    canManageAccountRequests,
+    canManageDepartments,
+    canManageRoutes,
+    canManageProjects,
+    canManagePermissions,
+  ]);
+
+  const [availablePermissions, setAvailablePermissions] = useState([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [permissionsError, setPermissionsError] = useState('');
+  const [permissionsSuccess, setPermissionsSuccess] = useState('');
+  const [selectedPermissionRoleId, setSelectedPermissionRoleId] = useState('');
+  const [selectedRolePermissions, setSelectedRolePermissions] = useState([]);
+  const [savingPermissions, setSavingPermissions] = useState(false);
 
   useEffect(() => {
-    if (tab === 'users') {
-      fetchUsers();
+    if (canViewUsers || canManageRoutes || canManagePermissions) {
       fetchRoles();
     }
-    if (tab === 'departments') {
+    if (canViewUsers) {
+      fetchUsers();
+    }
+    if (canManageDepartments) {
       fetchDepartments();
     }
-    if (tab === 'routes') {
+    if (canManageRoutes) {
       fetchRoutes();
-      fetchRoles();
     }
-    if (tab === 'accountRequests') {
+    if (canManageAccountRequests) {
       fetchAccountRequests();
     }
-    if (tab === 'projects') {
+    if (canManageProjects) {
       fetchProjects();
     }
-  }, [tab]);
+  }, [
+    canViewUsers,
+    canManageRoutes,
+    canManagePermissions,
+    canManageDepartments,
+    canManageAccountRequests,
+    canManageProjects,
+  ]);
+
+  useEffect(() => {
+    if (tab === 'users' && canViewUsers) {
+      fetchUsers();
+      if (!roles.length) {
+        fetchRoles();
+      }
+    }
+    if (tab === 'departments' && canManageDepartments) {
+      fetchDepartments();
+    }
+    if (tab === 'routes' && canManageRoutes) {
+      fetchRoutes();
+      if (!roles.length) {
+        fetchRoles();
+      }
+    }
+    if (tab === 'accountRequests' && canManageAccountRequests) {
+      fetchAccountRequests();
+    }
+    if (tab === 'projects' && canManageProjects) {
+      fetchProjects();
+    }
+  }, [
+    tab,
+    canViewUsers,
+    canManageDepartments,
+    canManageRoutes,
+    canManageAccountRequests,
+    canManageProjects,
+    roles.length,
+  ]);
+
+  useEffect(() => {
+    if (availableTabs.length === 0) {
+      return;
+    }
+    if (!availableTabs.includes(tab)) {
+      setTab(availableTabs[0]);
+    }
+  }, [availableTabs, tab]);
+
+  useEffect(() => {
+    if (canManagePermissions) {
+      fetchPermissionsCatalog();
+    } else {
+      setAvailablePermissions([]);
+      setSelectedPermissionRoleId('');
+      setSelectedRolePermissions([]);
+      setPermissionsError('');
+      setPermissionsSuccess('');
+    }
+  }, [canManagePermissions]);
+
+  useEffect(() => {
+    if (!canManagePermissions) {
+      return;
+    }
+    if (!selectedPermissionRoleId && roles.length > 0) {
+      setSelectedPermissionRoleId(String(roles[0].id));
+    }
+  }, [canManagePermissions, roles, selectedPermissionRoleId]);
+
+  useEffect(() => {
+    if (!canManagePermissions || !selectedPermissionRoleId) {
+      return;
+    }
+    fetchRolePermissions(selectedPermissionRoleId);
+  }, [canManagePermissions, selectedPermissionRoleId]);
 
   const fetchUsers = async () => {
+    if (!canViewUsers) return;
     setLoadingUsers(true);
     setUsersError('');
     try {
@@ -106,6 +229,7 @@ const Management = () => {
   };
 
   const fetchDepartments = async () => {
+    if (!canManageDepartments) return;
     setLoadingDepartments(true);
     setDepartmentsError('');
     try {
@@ -120,6 +244,7 @@ const Management = () => {
   };
 
   const fetchRoles = async () => {
+    if (!(canViewUsers || canManageRoutes || canManagePermissions)) return;
     try {
       const res = await api.get('/api/roles');
       setRoles(res.data || []);
@@ -129,6 +254,7 @@ const Management = () => {
   };
 
   const fetchRoutes = async () => {
+    if (!canManageRoutes) return;
     setLoadingRoutes(true);
     setRoutesError('');
     try {
@@ -143,6 +269,7 @@ const Management = () => {
   };
 
   const fetchAccountRequests = async () => {
+    if (!canManageAccountRequests) return;
     setLoadingRequests(true);
     setRequestsError('');
     try {
@@ -157,6 +284,7 @@ const Management = () => {
   };
 
   const fetchProjects = async () => {
+    if (!canManageProjects) return;
     setLoadingProjects(true);
     setProjectError('');
     setProjectMessage('');
@@ -168,6 +296,68 @@ const Management = () => {
       setProjectError(err?.response?.data?.message || 'Failed to load projects');
     } finally {
       setLoadingProjects(false);
+    }
+  };
+
+  const fetchPermissionsCatalog = async () => {
+    if (!canManagePermissions) return;
+    setPermissionsLoading(true);
+    setPermissionsError('');
+    try {
+      const res = await api.get('/api/permissions');
+      setAvailablePermissions(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Failed to load permissions', err);
+      setPermissionsError('Failed to load permissions. Please try again.');
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
+
+  const fetchRolePermissions = async (roleId) => {
+    if (!canManagePermissions || !roleId) return;
+    setPermissionsLoading(true);
+    setPermissionsError('');
+    setPermissionsSuccess('');
+    try {
+      const res = await api.get(`/api/permissions/roles/${roleId}`);
+      setSelectedRolePermissions(res.data?.permissions || []);
+    } catch (err) {
+      console.error('Failed to load role permissions', err);
+      setPermissionsError('Failed to load role permissions.');
+      setSelectedRolePermissions([]);
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
+
+  const togglePermissionForRole = (code) => {
+    setPermissionsSuccess('');
+    setSelectedRolePermissions((prev) => {
+      if (prev.includes(code)) {
+        return prev.filter((permission) => permission !== code);
+      }
+      return [...prev, code];
+    });
+  };
+
+  const saveRolePermissions = async () => {
+    if (!canManagePermissions || !selectedPermissionRoleId) {
+      return;
+    }
+    setSavingPermissions(true);
+    setPermissionsError('');
+    setPermissionsSuccess('');
+    try {
+      await api.put(`/api/permissions/roles/${selectedPermissionRoleId}`, {
+        permissions: selectedRolePermissions,
+      });
+      setPermissionsSuccess('Permissions updated successfully.');
+    } catch (err) {
+      console.error('Failed to update role permissions', err);
+      setPermissionsError(err?.response?.data?.message || 'Failed to update role permissions.');
+    } finally {
+      setSavingPermissions(false);
     }
   };
 
@@ -433,9 +623,18 @@ const Management = () => {
     [projects]
   );
 
-  const renderUsers = () => (
-    <div className="overflow-x-auto">
-      <div className="flex flex-col gap-3 mb-4">
+  const renderUsers = () => {
+    if (!canViewUsers) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to view the user directory.
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <div className="flex flex-col gap-3 mb-4">
         <div className="flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex-1">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -647,11 +846,21 @@ const Management = () => {
         </table>
       )}
     </div>
-  );
+    );
+  };
 
-  const renderAccountRequests = () => (
-    <div className="overflow-x-auto">
-      <div className="flex flex-col gap-3 mb-4 md:flex-row md:items-end">
+  const renderAccountRequests = () => {
+    if (!canManageAccountRequests) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage account requests.
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        <div className="flex flex-col gap-3 mb-4 md:flex-row md:items-end">
         <div className="flex-1">
           <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
             Search
@@ -754,13 +963,23 @@ const Management = () => {
         </table>
       )}
     </div>
-  );
+    );
+  };
 
-  const renderDepartments = () => (
-    <div className="overflow-x-auto">
-      {departmentsError && (
-        <p className="mb-2 text-sm text-red-600">{departmentsError}</p>
-      )}
+  const renderDepartments = () => {
+    if (!canManageDepartments) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage departments.
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        {departmentsError && (
+          <p className="mb-2 text-sm text-red-600">{departmentsError}</p>
+        )}
       {loadingDepartments ? (
         <p>Loading departments...</p>
       ) : (
@@ -858,15 +1077,25 @@ const Management = () => {
         </>
       )}
     </div>
-  );
+    );
+  };
 
-  const renderRoutes = () => (
-    <div className="overflow-x-auto">
-      {routesError && <p className="mb-2 text-sm text-red-600">{routesError}</p>}
-      {loadingRoutes ? (
-        <p>Loading routes...</p>
-      ) : (
-        <table className="min-w-full text-sm">
+  const renderRoutes = () => {
+    if (!canManageRoutes) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage approval routes.
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-x-auto">
+        {routesError && <p className="mb-2 text-sm text-red-600">{routesError}</p>}
+        {loadingRoutes ? (
+          <p>Loading routes...</p>
+        ) : (
+          <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-gray-200 text-left">
               <th className="p-2">Type</th>
@@ -1134,16 +1363,26 @@ const Management = () => {
             </tr>
           </tbody>
         </table>
-      )}
+        )}
     </div>
-  );
+    );
+  };
 
-  const renderProjects = () => (
-    <div className="space-y-4">
-      <div className="rounded border bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold uppercase text-gray-600 mb-3">
-          Add Project
-        </h3>
+  const renderProjects = () => {
+    if (!canManageProjects) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage projects.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="rounded border bg-white p-4 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase text-gray-600 mb-3">
+            Add Project
+          </h3>
         <form onSubmit={addProject} className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <label className="flex-1">
             <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -1169,13 +1408,13 @@ const Management = () => {
         )}
         {projectError && <p className="mt-2 text-sm text-red-600">{projectError}</p>}
       </div>
-      <div className="overflow-x-auto rounded border bg-white shadow-sm">
-        {loadingProjects ? (
-          <p className="p-4">Loading projects...</p>
-        ) : projects.length === 0 ? (
-          <p className="p-4 text-sm text-gray-600">No projects available.</p>
-        ) : (
-          <table className="min-w-full text-sm">
+        <div className="overflow-x-auto rounded border bg-white shadow-sm">
+          {loadingProjects ? (
+            <p className="p-4">Loading projects...</p>
+          ) : projects.length === 0 ? (
+            <p className="p-4 text-sm text-gray-600">No projects available.</p>
+          ) : (
+            <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gray-200 text-left">
                 <th className="p-2">Name</th>
@@ -1210,11 +1449,108 @@ const Management = () => {
                 );
               })}
             </tbody>
-          </table>
-        )}
+            </table>
+          )}
       </div>
     </div>
-  );
+    );
+  };
+
+  const renderPermissions = () => {
+    if (!canManagePermissions) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage role permissions.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end">
+          <div className="md:w-64">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Role
+            </label>
+            <select
+              className="mt-1 w-full rounded border border-gray-300 p-2"
+              value={selectedPermissionRoleId}
+              onChange={(e) => setSelectedPermissionRoleId(e.target.value)}
+            >
+              <option value="">Select role</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex-1 text-sm text-gray-600">
+            {permissionsSuccess && (
+              <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-emerald-700">
+                {permissionsSuccess}
+              </div>
+            )}
+            {permissionsError && (
+              <div className="rounded border border-red-200 bg-red-50 p-2 text-red-700">
+                {permissionsError}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="rounded border border-gray-200 bg-white p-4 shadow-sm">
+          {permissionsLoading ? (
+            <p>Loading permissions...</p>
+          ) : !selectedPermissionRoleId ? (
+            <p className="text-sm text-gray-600">
+              Select a role to view and update its permissions.
+            </p>
+          ) : availablePermissions.length === 0 ? (
+            <p className="text-sm text-gray-600">No permissions available.</p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {availablePermissions.map((permission) => {
+                const checked = selectedRolePermissions.includes(permission.code);
+                return (
+                  <label
+                    key={permission.code}
+                    className="flex cursor-pointer items-start gap-3 rounded border border-gray-200 bg-gray-50 p-3 hover:border-blue-300"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4"
+                      checked={checked}
+                      onChange={() => togglePermissionForRole(permission.code)}
+                    />
+                    <div>
+                      <div className="text-sm font-semibold text-gray-800">
+                        {permission.name}
+                      </div>
+                      <p className="text-xs text-gray-600">{permission.description}</p>
+                      <p className="text-xs text-gray-400">Code: {permission.code}</p>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={saveRolePermissions}
+            disabled={savingPermissions || !selectedPermissionRoleId}
+            className={`rounded px-4 py-2 text-white ${
+              savingPermissions || !selectedPermissionRoleId
+                ? 'bg-gray-400'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {savingPermissions ? 'Saving...' : 'Save permissions'}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -1254,46 +1590,66 @@ const Management = () => {
           </div>
         </div>
         <div className="flex gap-4 mb-4 flex-wrap">
-          <button
-            onClick={() => setTab('users')}
-            className={`px-3 py-1 rounded ${
-              tab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Users
-          </button>
-          <button
-            onClick={() => setTab('accountRequests')}
-            className={`px-3 py-1 rounded ${
-              tab === 'accountRequests' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Account Requests
-          </button>
-          <button
-            onClick={() => setTab('departments')}
-            className={`px-3 py-1 rounded ${
-              tab === 'departments' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Departments
-          </button>
-          <button
-            onClick={() => setTab('routes')}
-            className={`px-3 py-1 rounded ${
-              tab === 'routes' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Approval Routes
-          </button>
-          <button
-            onClick={() => setTab('projects')}
-            className={`px-3 py-1 rounded ${
-              tab === 'projects' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Projects
-          </button>
+          {canViewUsers && (
+            <button
+              onClick={() => setTab('users')}
+              className={`px-3 py-1 rounded ${
+                tab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Users
+            </button>
+          )}
+          {canManageAccountRequests && (
+            <button
+              onClick={() => setTab('accountRequests')}
+              className={`px-3 py-1 rounded ${
+                tab === 'accountRequests' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Account Requests
+            </button>
+          )}
+          {canManageDepartments && (
+            <button
+              onClick={() => setTab('departments')}
+              className={`px-3 py-1 rounded ${
+                tab === 'departments' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Departments
+            </button>
+          )}
+          {canManageRoutes && (
+            <button
+              onClick={() => setTab('routes')}
+              className={`px-3 py-1 rounded ${
+                tab === 'routes' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Approval Routes
+            </button>
+          )}
+          {canManageProjects && (
+            <button
+              onClick={() => setTab('projects')}
+              className={`px-3 py-1 rounded ${
+                tab === 'projects' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Projects
+            </button>
+          )}
+          {canManagePermissions && (
+            <button
+              onClick={() => setTab('permissions')}
+              className={`px-3 py-1 rounded ${
+                tab === 'permissions' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Permissions
+            </button>
+          )}
         </div>
 
         {tab === 'users' && renderUsers()}
@@ -1301,6 +1657,7 @@ const Management = () => {
         {tab === 'departments' && renderDepartments()}
         {tab === 'routes' && renderRoutes()}
         {tab === 'projects' && renderProjects()}
+        {tab === 'permissions' && renderPermissions()}
       </div>
     </>
   );
