@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useAuth } from '../hooks/useAuth';
 
 const Login = () => {
   const { t } = useTranslation();
@@ -14,6 +15,7 @@ const Login = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const emailInputRef = useRef(null);
   const navigate = useNavigate();
+  const { login: persistToken, logout } = useAuth();
 
   useEffect(() => {
     emailInputRef.current?.focus();
@@ -41,18 +43,24 @@ const Login = () => {
       const token = res.data.token;
       if (!token) throw new Error('No token returned from server');
 
-      localStorage.setItem('token', token);
+      // ✅ Persist the token through the auth context so protected routes react immediately
+      persistToken(token);
 
-      const userRes = await api.get('/api/users/me');
-      const user = userRes.data;
+      try {
+        const userRes = await api.get('/api/users/me');
+        const user = userRes.data;
 
-      if (!user || user.is_active === false) {
-        setErrorMsg(t('login.accountInactive'));
-        localStorage.removeItem('token');
+        if (!user || user.is_active === false) {
+          setErrorMsg(t('login.accountInactive'));
+          logout();
+          return;
+        }
+      } catch (profileError) {
+        console.error('❌ Failed to load user profile:', profileError);
+        setErrorMsg(t('login.errorCredentials'));
+        logout();
         return;
       }
-
-      localStorage.setItem('currentUser', JSON.stringify(user));
 
       // ✅ Redirect all users to the request type selector
       navigate('/');

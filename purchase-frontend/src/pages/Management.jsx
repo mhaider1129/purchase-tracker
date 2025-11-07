@@ -122,8 +122,8 @@ const Management = () => {
   const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [permissionsError, setPermissionsError] = useState('');
   const [permissionsSuccess, setPermissionsSuccess] = useState('');
-  const [selectedPermissionRoleId, setSelectedPermissionRoleId] = useState('');
-  const [selectedRolePermissions, setSelectedRolePermissions] = useState([]);
+  const [selectedPermissionUserId, setSelectedPermissionUserId] = useState('');
+  const [selectedUserPermissions, setSelectedUserPermissions] = useState([]);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [editingAccessKey, setEditingAccessKey] = useState('');
   const [editingAccessPermissions, setEditingAccessPermissions] = useState([]);
@@ -137,7 +137,7 @@ const Management = () => {
     if (canViewUsers || canManageRoutes || canManagePermissions) {
       fetchRoles();
     }
-    if (canViewUsers) {
+    if (canViewUsers || canManagePermissions) {
       fetchUsers();
     }
     if (canManageDepartments) {
@@ -177,6 +177,12 @@ const Management = () => {
         fetchRoles();
       }
     }
+    if (tab === 'permissions' && canManagePermissions) {
+      fetchUsers();
+      if (!availablePermissions.length) {
+        fetchPermissionsCatalog();
+      }
+    }
     if (tab === 'accountRequests' && canManageAccountRequests) {
       fetchAccountRequests();
     }
@@ -188,9 +194,11 @@ const Management = () => {
     canViewUsers,
     canManageDepartments,
     canManageRoutes,
+    canManagePermissions,
     canManageAccountRequests,
     canManageProjects,
     roles.length,
+    availablePermissions.length,
   ]);
 
   useEffect(() => {
@@ -207,8 +215,8 @@ const Management = () => {
       fetchPermissionsCatalog();
     } else {
       setAvailablePermissions([]);
-      setSelectedPermissionRoleId('');
-      setSelectedRolePermissions([]);
+      setSelectedPermissionUserId('');
+      setSelectedUserPermissions([]);
       setPermissionsError('');
       setPermissionsSuccess('');
     }
@@ -218,20 +226,20 @@ const Management = () => {
     if (!canManagePermissions) {
       return;
     }
-    if (!selectedPermissionRoleId && roles.length > 0) {
-      setSelectedPermissionRoleId(String(roles[0].id));
+    if (!selectedPermissionUserId && users.length > 0) {
+      setSelectedPermissionUserId(String(users[0].id));
     }
-  }, [canManagePermissions, roles, selectedPermissionRoleId]);
+  }, [canManagePermissions, users, selectedPermissionUserId]);
 
   useEffect(() => {
-    if (!canManagePermissions || !selectedPermissionRoleId) {
+    if (!canManagePermissions || !selectedPermissionUserId) {
       return;
     }
-    fetchRolePermissions(selectedPermissionRoleId);
-  }, [canManagePermissions, selectedPermissionRoleId]);
+    fetchUserPermissions(selectedPermissionUserId);
+  }, [canManagePermissions, selectedPermissionUserId]);
 
   const fetchUsers = async () => {
-    if (!canViewUsers) return;
+    if (!(canViewUsers || canManagePermissions)) return;
     setLoadingUsers(true);
     setUsersError('');
     try {
@@ -239,7 +247,11 @@ const Management = () => {
       setUsers(res.data || []);
     } catch (err) {
       console.error('Failed to load users', err);
-      setUsersError('Failed to load users. Please try again.');
+      const message = err?.response?.data?.message || 'Failed to load users. Please try again.';
+      setUsersError(message);
+      if (canManagePermissions && !canViewUsers) {
+        setPermissionsError(message);
+      }
     } finally {
       setLoadingUsers(false);
     }
@@ -331,26 +343,26 @@ const Management = () => {
     }
   };
 
-  const fetchRolePermissions = async (roleId) => {
-    if (!canManagePermissions || !roleId) return;
+  const fetchUserPermissions = async (userId) => {
+    if (!canManagePermissions || !userId) return;
     setPermissionsLoading(true);
     setPermissionsError('');
     setPermissionsSuccess('');
     try {
-      const res = await api.get(`/api/permissions/roles/${roleId}`);
-      setSelectedRolePermissions(res.data?.permissions || []);
+      const res = await api.get(`/api/permissions/users/${userId}`);
+      setSelectedUserPermissions(res.data?.permissions || []);
     } catch (err) {
-      console.error('Failed to load role permissions', err);
-      setPermissionsError('Failed to load role permissions.');
-      setSelectedRolePermissions([]);
+      console.error('Failed to load user permissions', err);
+      setPermissionsError('Failed to load user permissions.');
+      setSelectedUserPermissions([]);
     } finally {
       setPermissionsLoading(false);
     }
   };
 
-  const togglePermissionForRole = (code) => {
+  const togglePermissionForUser = (code) => {
     setPermissionsSuccess('');
-    setSelectedRolePermissions((prev) => {
+    setSelectedUserPermissions((prev) => {
       if (prev.includes(code)) {
         return prev.filter((permission) => permission !== code);
       }
@@ -358,21 +370,21 @@ const Management = () => {
     });
   };
 
-  const saveRolePermissions = async () => {
-    if (!canManagePermissions || !selectedPermissionRoleId) {
+  const saveUserPermissions = async () => {
+    if (!canManagePermissions || !selectedPermissionUserId) {
       return;
     }
     setSavingPermissions(true);
     setPermissionsError('');
     setPermissionsSuccess('');
     try {
-      await api.put(`/api/permissions/roles/${selectedPermissionRoleId}`, {
-        permissions: selectedRolePermissions,
+      await api.put(`/api/permissions/users/${selectedPermissionUserId}`, {
+        permissions: selectedUserPermissions,
       });
       setPermissionsSuccess('Permissions updated successfully.');
     } catch (err) {
-      console.error('Failed to update role permissions', err);
-      setPermissionsError(err?.response?.data?.message || 'Failed to update role permissions.');
+      console.error('Failed to update user permissions', err);
+      setPermissionsError(err?.response?.data?.message || 'Failed to update user permissions.');
     } finally {
       setSavingPermissions(false);
     }
@@ -1563,7 +1575,7 @@ const Management = () => {
     if (!canManagePermissions) {
       return (
         <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-          You do not have permission to manage role permissions.
+          You do not have permission to manage user permissions.
         </div>
       );
     }
@@ -1573,17 +1585,18 @@ const Management = () => {
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
           <div className="md:w-64">
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Role
+              User
             </label>
             <select
               className="mt-1 w-full rounded border border-gray-300 p-2"
-              value={selectedPermissionRoleId}
-              onChange={(e) => setSelectedPermissionRoleId(e.target.value)}
+              value={selectedPermissionUserId}
+              onChange={(e) => setSelectedPermissionUserId(e.target.value)}
             >
-              <option value="">Select role</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.name}
+              <option value="">Select user</option>
+              {users.map((permissionUser) => (
+                <option key={permissionUser.id} value={permissionUser.id}>
+                  {permissionUser.name}
+                  {permissionUser.email ? ` (${permissionUser.email})` : ''}
                 </option>
               ))}
             </select>
@@ -1604,16 +1617,16 @@ const Management = () => {
         <div className="rounded border border-gray-200 bg-white p-4 shadow-sm">
           {permissionsLoading ? (
             <p>Loading permissions...</p>
-          ) : !selectedPermissionRoleId ? (
+          ) : !selectedPermissionUserId ? (
             <p className="text-sm text-gray-600">
-              Select a role to view and update its permissions.
+              Select a user to view and update their permissions.
             </p>
           ) : availablePermissions.length === 0 ? (
             <p className="text-sm text-gray-600">No permissions available.</p>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {availablePermissions.map((permission) => {
-                const checked = selectedRolePermissions.includes(permission.code);
+                const checked = selectedUserPermissions.includes(permission.code);
                 return (
                   <label
                     key={permission.code}
@@ -1623,7 +1636,7 @@ const Management = () => {
                       type="checkbox"
                       className="mt-1 h-4 w-4"
                       checked={checked}
-                      onChange={() => togglePermissionForRole(permission.code)}
+                      onChange={() => togglePermissionForUser(permission.code)}
                     />
                     <div>
                       <div className="text-sm font-semibold text-gray-800">
@@ -1640,10 +1653,10 @@ const Management = () => {
         </div>
         <div className="flex justify-end">
           <button
-            onClick={saveRolePermissions}
-            disabled={savingPermissions || !selectedPermissionRoleId}
+            onClick={saveUserPermissions}
+            disabled={savingPermissions || !selectedPermissionUserId}
             className={`rounded px-4 py-2 text-white ${
-              savingPermissions || !selectedPermissionRoleId
+              savingPermissions || !selectedPermissionUserId
                 ? 'bg-gray-400'
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
