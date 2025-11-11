@@ -425,6 +425,7 @@ const AssignedRequestsPage = () => {
     try {
       const response = await axios.get(downloadEndpoint, {
         responseType: 'blob',
+        baseURL: '',
       });
 
       const blob = new Blob([response.data], {

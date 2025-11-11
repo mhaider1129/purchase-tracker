@@ -75,8 +75,12 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   }, [itemId]);
 
   const handleDownloadAttachment = async (attachment) => {
-    const filename = attachment.file_path?.split(/[\\/]/).pop();
-    if (!filename) {
+    const storedPath = attachment?.file_path || '';
+    const filename = storedPath.split(/[\\/]/).pop();
+    const downloadEndpoint =
+      attachment?.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
+
+    if (!downloadEndpoint) {
       alert('Attachment file is missing.');
       return;
     }
@@ -84,12 +88,10 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     setDownloadingAttachmentId(attachment.id);
 
     try {
-      const response = await axios.get(
-        `/api/attachments/download/${encodeURIComponent(filename)}`,
-        {
-          responseType: 'blob',
-        }
-      );
+      const response = await axios.get(downloadEndpoint, {
+        responseType: 'blob',
+        baseURL: '',
+      });
 
       const blob = new Blob([response.data], {
         type: response.headers['content-type'] || 'application/octet-stream',
