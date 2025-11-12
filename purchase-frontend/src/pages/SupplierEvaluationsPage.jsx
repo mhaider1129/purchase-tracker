@@ -3,10 +3,33 @@ import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 import {
   listSupplierEvaluations,
+  listSupplierEvaluationBenchmarks,
   createSupplierEvaluation,
   updateSupplierEvaluation,
   deleteSupplierEvaluation,
 } from '../api/supplierEvaluations';
+
+const DEFAULT_KPI_WEIGHTS = {
+  otif: 0.4,
+  corrective_actions: 0.35,
+  esg_compliance: 0.25,
+};
+
+const formatWeightForInput = (decimalValue, fallbackDecimal = null) => {
+  const source =
+    decimalValue !== null && decimalValue !== undefined
+      ? Number(decimalValue)
+      : fallbackDecimal !== null && fallbackDecimal !== undefined
+      ? Number(fallbackDecimal)
+      : null;
+
+  if (source === null || Number.isNaN(source)) {
+    return '';
+  }
+
+  const percent = source > 1 ? source : source * 100;
+  return String(Math.round(percent * 100) / 100);
+};
 
 const initialFormState = {
   supplier_name: '',
@@ -15,6 +38,18 @@ const initialFormState = {
   delivery_score: '',
   cost_score: '',
   compliance_score: '',
+  otif_score: '',
+  corrective_actions_score: '',
+  esg_compliance_score: '',
+  otif_weight: formatWeightForInput(null, DEFAULT_KPI_WEIGHTS.otif),
+  corrective_actions_weight: formatWeightForInput(
+    null,
+    DEFAULT_KPI_WEIGHTS.corrective_actions
+  ),
+  esg_compliance_weight: formatWeightForInput(
+    null,
+    DEFAULT_KPI_WEIGHTS.esg_compliance
+  ),
   overall_score: '',
   strengths: '',
   weaknesses: '',
@@ -57,6 +92,11 @@ const SupplierEvaluationsPage = () => {
   const [formSuccess, setFormSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [benchmarks, setBenchmarks] = useState([]);
+  const [benchmarksLoading, setBenchmarksLoading] = useState(false);
+  const [benchmarksError, setBenchmarksError] = useState('');
+  const [benchmarkInterval, setBenchmarkInterval] = useState('quarter');
+  const [benchmarkSupplier, setBenchmarkSupplier] = useState('');
 
   const canManage = useMemo(() => {
     const normalizedRole = user?.role?.toLowerCase?.();
@@ -67,6 +107,16 @@ const SupplierEvaluationsPage = () => {
       'procurementmanager',
     ].includes(normalizedRole);
   }, [user]);
+
+  const supplierOptions = useMemo(() => {
+    const names = new Set();
+    evaluations.forEach((evaluation) => {
+      if (evaluation?.supplier_name) {
+        names.add(evaluation.supplier_name);
+      }
+    });
+    return Array.from(names).sort((a, b) => a.localeCompare(b));
+  }, [evaluations]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -122,6 +172,48 @@ const SupplierEvaluationsPage = () => {
     [activeFilters]
   );
 
+  const fetchBenchmarks = useCallback(
+    async (signal) => {
+      setBenchmarksLoading(true);
+      setBenchmarksError('');
+
+      const params = {
+        interval: benchmarkInterval,
+      };
+
+      if (benchmarkSupplier) {
+        params.supplier_name = benchmarkSupplier;
+      }
+
+      if (filters.start_date) {
+        params.start_date = filters.start_date;
+      }
+
+      if (filters.end_date) {
+        params.end_date = filters.end_date;
+      }
+
+      try {
+        const data = await listSupplierEvaluationBenchmarks(params, { signal });
+        setBenchmarks(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (signal?.aborted) {
+          return;
+        }
+        console.error('Failed to load supplier benchmarking data', err);
+        setBenchmarksError(
+          err?.response?.data?.message ||
+            'Unable to load supplier benchmarking data. Please try again later.'
+        );
+      } finally {
+        if (!signal?.aborted) {
+          setBenchmarksLoading(false);
+        }
+      }
+    },
+    [benchmarkInterval, benchmarkSupplier, filters.end_date, filters.start_date]
+  );
+
   useEffect(() => {
     const controller = new AbortController();
     fetchEvaluations(controller.signal);
@@ -132,6 +224,15 @@ const SupplierEvaluationsPage = () => {
   }, [fetchEvaluations]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    fetchBenchmarks(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [fetchBenchmarks]);
+
+  useEffect(() => {
     if (!formSuccess) {
       return () => {};
     }
@@ -139,6 +240,12 @@ const SupplierEvaluationsPage = () => {
     const timer = setTimeout(() => setFormSuccess(''), 4000);
     return () => clearTimeout(timer);
   }, [formSuccess]);
+
+  useEffect(() => {
+    if (benchmarkSupplier && !supplierOptions.includes(benchmarkSupplier)) {
+      setBenchmarkSupplier('');
+    }
+  }, [benchmarkSupplier, supplierOptions]);
 
   const resetForm = () => {
     setFormState(initialFormState);
@@ -148,6 +255,7 @@ const SupplierEvaluationsPage = () => {
 
   const handleSelectEvaluation = (evaluation) => {
     setEditingId(evaluation.id);
+    const kpiWeights = evaluation.kpi_weights || {};
     setFormState({
       supplier_name: evaluation.supplier_name || '',
       evaluation_date: evaluation.evaluation_date || '',
@@ -168,6 +276,32 @@ const SupplierEvaluationsPage = () => {
         evaluation.compliance_score === undefined
           ? ''
           : String(evaluation.compliance_score),
+      otif_score:
+        evaluation.otif_score === null || evaluation.otif_score === undefined
+          ? ''
+          : String(evaluation.otif_score),
+      corrective_actions_score:
+        evaluation.corrective_actions_score === null ||
+        evaluation.corrective_actions_score === undefined
+          ? ''
+          : String(evaluation.corrective_actions_score),
+      esg_compliance_score:
+        evaluation.esg_compliance_score === null ||
+        evaluation.esg_compliance_score === undefined
+          ? ''
+          : String(evaluation.esg_compliance_score),
+      otif_weight: formatWeightForInput(
+        kpiWeights?.otif,
+        DEFAULT_KPI_WEIGHTS.otif
+      ),
+      corrective_actions_weight: formatWeightForInput(
+        kpiWeights?.corrective_actions,
+        DEFAULT_KPI_WEIGHTS.corrective_actions
+      ),
+      esg_compliance_weight: formatWeightForInput(
+        kpiWeights?.esg_compliance,
+        DEFAULT_KPI_WEIGHTS.esg_compliance
+      ),
       overall_score:
         evaluation.overall_score === null || evaluation.overall_score === undefined
           ? ''
@@ -191,12 +325,33 @@ const SupplierEvaluationsPage = () => {
       'delivery_score',
       'cost_score',
       'compliance_score',
+      'otif_score',
+      'corrective_actions_score',
+      'esg_compliance_score',
       'overall_score',
     ];
 
     for (const field of scoreFields) {
       const value = formState[field];
       if (value === '') {
+        continue;
+      }
+
+      const numeric = Number(value);
+      if (Number.isNaN(numeric) || numeric < 0 || numeric > 100) {
+        return `${field.replace('_', ' ')} must be between 0 and 100.`;
+      }
+    }
+
+    const weightFields = [
+      'otif_weight',
+      'corrective_actions_weight',
+      'esg_compliance_weight',
+    ];
+
+    for (const field of weightFields) {
+      const value = formState[field];
+      if (value === '' || value === null || value === undefined) {
         continue;
       }
 
@@ -222,6 +377,16 @@ const SupplierEvaluationsPage = () => {
       delivery_score: toNumberOrNull(formState.delivery_score),
       cost_score: toNumberOrNull(formState.cost_score),
       compliance_score: toNumberOrNull(formState.compliance_score),
+      otif_score: toNumberOrNull(formState.otif_score),
+      corrective_actions_score: toNumberOrNull(
+        formState.corrective_actions_score
+      ),
+      esg_compliance_score: toNumberOrNull(formState.esg_compliance_score),
+      otif_weight: toNumberOrNull(formState.otif_weight),
+      corrective_actions_weight: toNumberOrNull(
+        formState.corrective_actions_weight
+      ),
+      esg_compliance_weight: toNumberOrNull(formState.esg_compliance_weight),
       overall_score: toNumberOrNull(formState.overall_score),
       strengths: formState.strengths.trim() || null,
       weaknesses: formState.weaknesses.trim() || null,
@@ -270,6 +435,7 @@ const SupplierEvaluationsPage = () => {
     }
 
     const confirmed = window.confirm(
+
       'Are you sure you want to delete this supplier evaluation?'
     );
     if (!confirmed) {
@@ -295,7 +461,7 @@ const SupplierEvaluationsPage = () => {
     }
   };
 
-  const computedAverage = useMemo(() => {
+  const componentAverage = useMemo(() => {
     const scores = [
       formState.quality_score,
       formState.delivery_score,
@@ -317,6 +483,127 @@ const SupplierEvaluationsPage = () => {
     formState.delivery_score,
     formState.quality_score,
   ]);
+
+  const weightedKpiPreview = useMemo(() => {
+    const metrics = [];
+
+    const resolveWeightDecimal = (value, key) => {
+      const numeric = toNumberOrNull(value);
+      if (numeric === null || numeric === undefined) {
+        return DEFAULT_KPI_WEIGHTS[key];
+      }
+      return numeric > 1 ? numeric / 100 : numeric;
+    };
+
+    const otifScore = toNumberOrNull(formState.otif_score);
+    if (otifScore !== null) {
+      metrics.push({
+        key: 'otif',
+        label: 'OTIF',
+        score: otifScore,
+        weight: resolveWeightDecimal(formState.otif_weight, 'otif'),
+      });
+    }
+
+    const correctiveScore = toNumberOrNull(formState.corrective_actions_score);
+    if (correctiveScore !== null) {
+      metrics.push({
+        key: 'corrective_actions',
+        label: 'Corrective actions',
+        score: correctiveScore,
+        weight: resolveWeightDecimal(
+          formState.corrective_actions_weight,
+          'corrective_actions'
+        ),
+      });
+    }
+
+    const esgScore = toNumberOrNull(formState.esg_compliance_score);
+    if (esgScore !== null) {
+      metrics.push({
+        key: 'esg_compliance',
+        label: 'ESG compliance',
+        score: esgScore,
+        weight: resolveWeightDecimal(
+          formState.esg_compliance_weight,
+          'esg_compliance'
+        ),
+      });
+    }
+
+    if (!metrics.length) {
+      return { score: null, normalizedWeights: null };
+    }
+
+    const positiveMetrics = metrics.filter((metric) => metric.weight > 0);
+    const targetMetrics = positiveMetrics.length ? positiveMetrics : metrics;
+
+    const totalWeight = targetMetrics.reduce(
+      (acc, metric) => acc + Math.max(metric.weight, 0),
+      0
+    );
+
+    if (totalWeight <= 0) {
+      return { score: null, normalizedWeights: null };
+    }
+
+    const normalizedWeights = {};
+    let weightedSum = 0;
+
+    targetMetrics.forEach((metric) => {
+      const normalized = Math.max(metric.weight, 0) / totalWeight;
+      normalizedWeights[metric.key] = normalized;
+      weightedSum += metric.score * normalized;
+    });
+
+    return {
+      score: Math.round(weightedSum * 100) / 100,
+      normalizedWeights,
+    };
+  }, [
+    formState.corrective_actions_score,
+    formState.corrective_actions_weight,
+    formState.esg_compliance_score,
+    formState.esg_compliance_weight,
+    formState.otif_score,
+    formState.otif_weight,
+  ]);
+
+  const formatBenchmarkPeriod = useCallback(
+    (periodStart, intervalOverride = benchmarkInterval) => {
+      if (!periodStart) {
+        return '—';
+      }
+
+      const date = new Date(periodStart);
+      if (Number.isNaN(date.getTime())) {
+        return periodStart;
+      }
+
+      const intervalValue = intervalOverride || benchmarkInterval;
+
+      if (intervalValue === 'month') {
+        return date.toLocaleDateString(undefined, {
+          month: 'short',
+          year: 'numeric',
+        });
+      }
+
+      if (intervalValue === 'quarter') {
+        const month = date.getUTCMonth();
+        const year = date.getUTCFullYear();
+        const quarter = Math.floor(month / 3) + 1;
+        return `Q${quarter} ${year}`;
+      }
+
+      if (intervalValue === 'year') {
+        return String(date.getUTCFullYear());
+      }
+
+      return date.toISOString().slice(0, 10);
+    },
+    [benchmarkInterval]
+  );
 
   const hasActiveFilters = useMemo(
     () =>
@@ -420,7 +707,11 @@ const SupplierEvaluationsPage = () => {
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold">Supplier</th>
                   <th className="px-4 py-3 text-left font-semibold">Evaluation date</th>
-                  <th className="px-4 py-3 text-left font-semibold">Overall score</th>
+                  <th className="px-4 py-3 text-left font-semibold">Weighted KPI</th>
+                  <th className="px-4 py-3 text-left font-semibold">OTIF</th>
+                  <th className="px-4 py-3 text-left font-semibold">Corrective actions</th>
+                  <th className="px-4 py-3 text-left font-semibold">ESG compliance</th>
+                  <th className="px-4 py-3 text-left font-semibold">Legacy overall</th>
                   <th className="px-4 py-3 text-left font-semibold">Evaluator</th>
                   <th className="px-4 py-3 text-left font-semibold">Updated</th>
                   <th className="px-4 py-3" aria-label="Actions" />
@@ -431,7 +722,7 @@ const SupplierEvaluationsPage = () => {
                   <tr>
                     <td
                       className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
-                      colSpan={6}
+                      colSpan={10}
                     >
                       No supplier evaluations found for the selected filters.
                     </td>
@@ -447,8 +738,20 @@ const SupplierEvaluationsPage = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 text-xs font-semibold">
-                          {evaluation.overall_score ?? '—'}
+                          {evaluation.weighted_overall_score ?? evaluation.overall_score ?? '—'}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {evaluation.otif_score ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {evaluation.corrective_actions_score ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {evaluation.esg_compliance_score ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {evaluation.overall_score ?? '—'}
                       </td>
                       <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
                         {evaluation.evaluator_name || '—'}
@@ -476,6 +779,121 @@ const SupplierEvaluationsPage = () => {
                             </button>
                           )}
                         </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm mb-6">
+          <div className="flex flex-col gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Supplier benchmarking</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Compare weighted KPI performance over time to identify trends and benchmark vendors.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="text-sm text-gray-600 dark:text-gray-300">
+                Interval
+                <select
+                  value={benchmarkInterval}
+                  onChange={(event) => setBenchmarkInterval(event.target.value)}
+                  className="ml-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="month">Monthly</option>
+                  <option value="quarter">Quarterly</option>
+                  <option value="year">Yearly</option>
+                </select>
+              </label>
+              <label className="text-sm text-gray-600 dark:text-gray-300">
+                Supplier
+                <select
+                  value={benchmarkSupplier}
+                  onChange={(event) => setBenchmarkSupplier(event.target.value)}
+                  className="ml-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">All suppliers</option>
+                  {supplierOptions.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {benchmarksError && (
+            <div className="px-4 py-3 text-sm text-red-600 dark:text-red-400 border-b border-red-200 dark:border-red-700 bg-red-50 dark:bg-red-900/20">
+              {benchmarksError}
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-900/50">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold">Supplier</th>
+                  <th className="px-4 py-3 text-left font-semibold">Period</th>
+                  <th className="px-4 py-3 text-left font-semibold">Weighted KPI</th>
+                  <th className="px-4 py-3 text-left font-semibold">OTIF</th>
+                  <th className="px-4 py-3 text-left font-semibold">Corrective actions</th>
+                  <th className="px-4 py-3 text-left font-semibold">ESG compliance</th>
+                  <th className="px-4 py-3 text-left font-semibold">Legacy overall</th>
+                  <th className="px-4 py-3 text-left font-semibold">Evaluations</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {benchmarksLoading ? (
+                  <tr>
+                    <td
+                      className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
+                      colSpan={8}
+                    >
+                      Loading benchmarking data…
+                    </td>
+                  </tr>
+                ) : benchmarks.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
+                      colSpan={8}
+                    >
+                      No benchmarking data found for the selected interval.
+                    </td>
+                  </tr>
+                ) : (
+                  benchmarks.map((entry) => (
+                    <tr key={`${entry.supplier_name}-${entry.period_start}`}> 
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
+                        {entry.supplier_name}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {formatBenchmarkPeriod(entry.period_start, entry.interval)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-1 text-xs font-semibold">
+                          {entry.avg_weighted_overall_score ?? entry.avg_overall_score ?? '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {entry.avg_otif_score ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {entry.avg_corrective_actions_score ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {entry.avg_esg_compliance_score ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {entry.avg_overall_score ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                        {entry.evaluation_count}
                       </td>
                     </tr>
                   ))
@@ -618,6 +1036,114 @@ const SupplierEvaluationsPage = () => {
               </div>
 
               <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="otif_score">
+                  OTIF score
+                </label>
+                <input
+                  id="otif_score"
+                  name="otif_score"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formState.otif_score}
+                  onChange={handleInputChange}
+                  placeholder="0-100"
+                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="corrective_actions_score">
+                  Corrective actions score
+                </label>
+                <input
+                  id="corrective_actions_score"
+                  name="corrective_actions_score"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formState.corrective_actions_score}
+                  onChange={handleInputChange}
+                  placeholder="0-100"
+                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="esg_compliance_score">
+                  ESG compliance score
+                </label>
+                <input
+                  id="esg_compliance_score"
+                  name="esg_compliance_score"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formState.esg_compliance_score}
+                  onChange={handleInputChange}
+                  placeholder="0-100"
+                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="otif_weight">
+                  OTIF weight (%)
+                </label>
+                <input
+                  id="otif_weight"
+                  name="otif_weight"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formState.otif_weight}
+                  onChange={handleInputChange}
+                  placeholder="0-100"
+                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="corrective_actions_weight">
+                  Corrective actions weight (%)
+                </label>
+                <input
+                  id="corrective_actions_weight"
+                  name="corrective_actions_weight"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formState.corrective_actions_weight}
+                  onChange={handleInputChange}
+                  placeholder="0-100"
+                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" htmlFor="esg_compliance_weight">
+                  ESG compliance weight (%)
+                </label>
+                <input
+                  id="esg_compliance_weight"
+                  name="esg_compliance_weight"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formState.esg_compliance_weight}
+                  onChange={handleInputChange}
+                  placeholder="0-100"
+                  className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium mb-1" htmlFor="overall_score">
                   Overall score
                 </label>
@@ -633,9 +1159,35 @@ const SupplierEvaluationsPage = () => {
                   placeholder="0-100"
                   className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                {computedAverage !== null && (
+                {componentAverage !== null && (
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Average of component scores: {computedAverage}
+                    Average of component scores: {componentAverage}
+                  </p>
+                )}
+                {weightedKpiPreview.score !== null && (
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Weighted KPI preview: {weightedKpiPreview.score}
+                    {weightedKpiPreview.normalizedWeights && (
+                      <span>
+                        {` (weights ${Object.entries(
+                          weightedKpiPreview.normalizedWeights
+                        )
+                          .map(([key, value]) => {
+                            const percent = Math.round(value * 1000) / 10;
+                            if (key === 'otif') {
+                              return `OTIF ${percent}%`;
+                            }
+                            if (key === 'corrective_actions') {
+                              return `Corrective actions ${percent}%`;
+                            }
+                            if (key === 'esg_compliance') {
+                              return `ESG compliance ${percent}%`;
+                            }
+                            return `${key} ${percent}%`;
+                          })
+                          .join(', ')})`}
+                      </span>
+                    )}
                   </p>
                 )}
               </div>

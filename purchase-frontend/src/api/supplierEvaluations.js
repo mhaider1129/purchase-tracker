@@ -8,6 +8,14 @@ export const listSupplierEvaluations = async (params = {}, options = {}) => {
   return Array.isArray(data) ? data : [];
 };
 
+export const listSupplierEvaluationBenchmarks = async (
+  params = {},
+  options = {}
+) => {
+  const { data } = await api.get(`${RESOURCE}/benchmarks`, { params, ...options });
+  return Array.isArray(data) ? data : [];
+};
+
 export const getSupplierEvaluation = async (id, options = {}) => {
   const { data } = await api.get(`${RESOURCE}/${id}`, options);
   return data;
@@ -29,6 +37,7 @@ export const deleteSupplierEvaluation = async (id, options = {}) => {
 
 export default {
   listSupplierEvaluations,
+  listSupplierEvaluationBenchmarks,
   getSupplierEvaluation,
   createSupplierEvaluation,
   updateSupplierEvaluation,
