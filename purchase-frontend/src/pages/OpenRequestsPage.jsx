@@ -6,6 +6,8 @@ import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
+import useRequestAttachments from '../hooks/useRequestAttachments';
 import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
 import { extractItems } from '../utils/itemUtils';
 
@@ -57,6 +59,7 @@ const OpenRequestsPage = () => {
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedId, setExpandedId] = useState(null);
+  const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingId, setLoadingId] = useState(null);
   const {
@@ -66,6 +69,15 @@ const OpenRequestsPage = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+  const {
+    attachmentsMap,
+    attachmentLoadingMap,
+    attachmentErrorMap,
+    downloadingAttachmentId,
+    loadAttachmentsForRequest,
+    handleDownloadAttachment,
+    resetAttachments,
+  } = useRequestAttachments();
 
   const timelineLabels = useMemo(
     () => ({
@@ -90,6 +102,7 @@ const OpenRequestsPage = () => {
       setError('');
 
       try {
+        resetAttachments();
         const response = await api.get('/api/requests/my');
         const open = response.data.filter(
           (r) => !['completed', 'received', 'rejected'].includes((r.status || '').toLowerCase())
@@ -105,7 +118,7 @@ const OpenRequestsPage = () => {
     };
 
     fetchOpenRequests();
-  }, [resetApprovals, tr]);
+  }, [resetApprovals, resetAttachments, tr]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -233,6 +246,9 @@ const OpenRequestsPage = () => {
   const toggleExpand = async (requestId) => {
     if (expandedId === requestId) {
       setExpandedId(null);
+      if (expandedAttachmentsId === requestId) {
+        setExpandedAttachmentsId(null);
+      }
       return;
     }
     if (!itemsMap[requestId]) {
@@ -247,6 +263,16 @@ const OpenRequestsPage = () => {
       }
     }
     setExpandedId(requestId);
+  };
+
+  const toggleAttachments = async (requestId) => {
+    if (expandedAttachmentsId === requestId) {
+      setExpandedAttachmentsId(null);
+      return;
+    }
+
+    await loadAttachmentsForRequest(requestId);
+    setExpandedAttachmentsId(requestId);
   };
 
   const exportCSV = () => {
@@ -460,6 +486,9 @@ const OpenRequestsPage = () => {
                       {tr('table.stage')}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      {tr('table.attachments', { defaultValue: 'Attachments' })}
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       {tr('table.items')}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
@@ -476,6 +505,13 @@ const OpenRequestsPage = () => {
                           ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
                           : tr('notAvailable'),
                     });
+                    const attachments = attachmentsMap[req.id] || [];
+                    const attachmentsLoading = Boolean(attachmentLoadingMap[req.id]);
+                    const attachmentsError = attachmentErrorMap[req.id];
+                    const attachmentsButtonLabel =
+                      expandedAttachmentsId === req.id
+                        ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
+                        : tr('viewAttachments', { defaultValue: 'View Attachments' });
 
                     return (
                       <React.Fragment key={req.id}>
@@ -513,6 +549,16 @@ const OpenRequestsPage = () => {
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             <button
                               type="button"
+                              onClick={() => toggleAttachments(req.id)}
+                              disabled={attachmentsLoading}
+                              className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                            >
+                              {attachmentsButtonLabel}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                            <button
+                              type="button"
                               onClick={() => toggleExpand(req.id)}
                               disabled={loadingId === req.id}
                               className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -531,9 +577,26 @@ const OpenRequestsPage = () => {
                             </button>
                           </td>
                         </tr>
+                        {expandedAttachmentsId === req.id && (
+                          <tr>
+                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                              <RequestAttachmentsSection
+                                attachments={attachments}
+                                isLoading={attachmentsLoading}
+                                error={attachmentsError}
+                                onDownload={handleDownloadAttachment}
+                                downloadingAttachmentId={downloadingAttachmentId}
+                                onRetry={() => loadAttachmentsForRequest(req.id, { force: true })}
+                                title={tr('attachmentsTitle', { defaultValue: 'Attachments' })}
+                                emptyMessage={tr('attachmentsEmpty', { defaultValue: 'No attachments uploaded.' })}
+                                loadingMessage={tr('attachmentsLoading', { defaultValue: 'Loading attachments…' })}
+                              />
+                            </td>
+                          </tr>
+                        )}
                         {expandedId === req.id && (
                           <tr>
-                            <td colSpan={9} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <h3 className="font-semibold mb-2">{tr('requestedItems')}</h3>
                               {itemsMap[req.id]?.length > 0 ? (
                                 <table className="w-full text-sm border">
@@ -580,7 +643,7 @@ const OpenRequestsPage = () => {
                         )}
                         {expandedApprovalsId === req.id && (
                           <tr>
-                            <td colSpan={9} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <ApprovalTimeline
                                 approvals={approvalsMap[req.id]}
                                 isLoading={loadingApprovalsId === req.id}
@@ -607,6 +670,13 @@ const OpenRequestsPage = () => {
                       ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
                       : tr('notAvailable'),
                 });
+                const attachments = attachmentsMap[req.id] || [];
+                const attachmentsLoading = Boolean(attachmentLoadingMap[req.id]);
+                const attachmentsError = attachmentErrorMap[req.id];
+                const attachmentsButtonLabel =
+                  expandedAttachmentsId === req.id
+                    ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
+                    : tr('viewAttachments', { defaultValue: 'View Attachments' });
 
                 return (
                   <article
@@ -673,13 +743,37 @@ const OpenRequestsPage = () => {
                       </button>
                       <button
                         type="button"
+                        onClick={() => toggleAttachments(req.id)}
+                        disabled={attachmentsLoading}
+                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        {attachmentsButtonLabel}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => toggleApprovals(req.id)}
                         disabled={loadingApprovalsId === req.id}
-                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         {renderApprovalButtonText(req.id)}
                       </button>
                     </div>
+
+                    {expandedAttachmentsId === req.id && (
+                      <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+                        <RequestAttachmentsSection
+                          attachments={attachments}
+                          isLoading={attachmentsLoading}
+                          error={attachmentsError}
+                          onDownload={handleDownloadAttachment}
+                          downloadingAttachmentId={downloadingAttachmentId}
+                          onRetry={() => loadAttachmentsForRequest(req.id, { force: true })}
+                          title={tr('attachmentsTitle', { defaultValue: 'Attachments' })}
+                          emptyMessage={tr('attachmentsEmpty', { defaultValue: 'No attachments uploaded.' })}
+                          loadingMessage={tr('attachmentsLoading', { defaultValue: 'Loading attachments…' })}
+                        />
+                      </div>
+                    )}
 
                     {expandedId === req.id && (
                       <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">

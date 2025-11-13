@@ -35,13 +35,15 @@ const categorizeItems = (items = []) => {
   return groups;
 };
 
-const computeSummaryFromItems = (items = []) => {
+const computeSummaryFromItems = (items = [], recordedCost = null) => {
   const summary = {
     total_items: items.length,
     purchased_count: 0,
     pending_count: 0,
     not_procured_count: 0,
     calculated_total_cost: 0,
+    items_total_cost: 0,
+    recorded_total_cost: null,
   };
 
   items.forEach((item) => {
@@ -58,11 +60,23 @@ const computeSummaryFromItems = (items = []) => {
     const quantity = Number(item.purchased_quantity ?? item.quantity ?? 0);
     const unitCost = Number(item.unit_cost ?? 0);
     if (!Number.isNaN(quantity) && !Number.isNaN(unitCost)) {
-      summary.calculated_total_cost += quantity * unitCost;
+      summary.items_total_cost += quantity * unitCost;
     }
   });
 
-  summary.calculated_total_cost = Number(summary.calculated_total_cost.toFixed(2));
+  summary.items_total_cost = Number(summary.items_total_cost.toFixed(2));
+
+  const fallbackNumber = Number(recordedCost);
+  const hasFallback = Number.isFinite(fallbackNumber) && fallbackNumber >= 0;
+  summary.recorded_total_cost = hasFallback
+    ? Number(fallbackNumber.toFixed(2))
+    : null;
+
+  summary.calculated_total_cost =
+    summary.items_total_cost > 0
+      ? summary.items_total_cost
+      : summary.recorded_total_cost ?? summary.items_total_cost;
+
   return summary;
 };
 
@@ -253,7 +267,7 @@ const AssignedRequestsPage = () => {
 
       fetched.forEach((req) => {
         const recordedCost = req.estimated_cost ?? '';
-        const autoTotal = req.status_summary?.calculated_total_cost ?? null;
+        const autoTotal = req.status_summary?.items_total_cost ?? null;
         autoMap[req.id] = autoTotal;
 
         if (recordedCost === '' && autoTotal !== null) {
@@ -286,7 +300,11 @@ const AssignedRequestsPage = () => {
       const groups = categorizeItems(fetchedItems);
       setGroupedItems(groups);
 
-      const summary = computeSummaryFromItems(fetchedItems);
+      const targetRequest = requests.find((req) => req.id === requestId);
+      const summary = computeSummaryFromItems(
+        fetchedItems,
+        targetRequest?.estimated_cost,
+      );
       let computedState = null;
       setRequests((prev) =>
         prev.map((req) => {
@@ -298,7 +316,7 @@ const AssignedRequestsPage = () => {
           return req;
         }),
       );
-      setAutoTotals((prev) => ({ ...prev, [requestId]: summary.calculated_total_cost }));
+      setAutoTotals((prev) => ({ ...prev, [requestId]: summary.items_total_cost }));
       if (computedState) {
         setCompletionStates((prev) => ({ ...prev, [requestId]: computedState }));
       }
@@ -549,7 +567,8 @@ const AssignedRequestsPage = () => {
         ) : (
           requests.map((request) => {
             const summary = request.status_summary || {};
-            const autoTotal = autoTotals[request.id] ?? summary.calculated_total_cost ?? null;
+            const autoTotal =
+              autoTotals[request.id] ?? summary.items_total_cost ?? null;
             const isUrgent = Boolean(request?.is_urgent);
             const completionState =
               completionStates[request.id] || {

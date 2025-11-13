@@ -2,19 +2,33 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import Navbar from '../components/Navbar';
+import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
+import useRequestAttachments from '../hooks/useRequestAttachments';
 
 const CompletedAssignedRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
+  const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [itemsCache, setItemsCache] = useState({});
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
 
+  const {
+    attachmentsMap,
+    attachmentLoadingMap,
+    attachmentErrorMap,
+    downloadingAttachmentId,
+    loadAttachmentsForRequest,
+    handleDownloadAttachment,
+    resetAttachments,
+  } = useRequestAttachments();
+
   const fetchCompleted = useCallback(async () => {
     setLoading(true);
     try {
+      resetAttachments();
       const res = await axios.get('/api/requests/completed-assigned', {
         params: { search },
       });
@@ -25,11 +39,14 @@ const CompletedAssignedRequestsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [resetAttachments, search]);
 
   const toggleItems = async (requestId) => {
     if (expandedRequestId === requestId) {
       setExpandedRequestId(null);
+      if (expandedAttachmentsId === requestId) {
+        setExpandedAttachmentsId(null);
+      }
       return;
     }
 
@@ -45,6 +62,16 @@ const CompletedAssignedRequestsPage = () => {
     }
 
     setExpandedRequestId(requestId);
+  };
+
+  const toggleAttachments = async (requestId) => {
+    if (expandedAttachmentsId === requestId) {
+      setExpandedAttachmentsId(null);
+      return;
+    }
+
+    await loadAttachmentsForRequest(requestId);
+    setExpandedAttachmentsId(requestId);
   };
 
   useEffect(() => {
@@ -307,6 +334,18 @@ const CompletedAssignedRequestsPage = () => {
                         <span aria-hidden="true">{expandedRequestId === req.id ? '▲' : '▼'}</span>
                       </button>
 
+                      <button
+                        type="button"
+                        onClick={() => toggleAttachments(req.id)}
+                        className="ml-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                        disabled={Boolean(attachmentLoadingMap[req.id])}
+                      >
+                        <span>
+                          {expandedAttachmentsId === req.id ? 'Hide Attachments' : 'View Attachments'}
+                        </span>
+                        <span aria-hidden="true">{expandedAttachmentsId === req.id ? '▲' : '▼'}</span>
+                      </button>
+
                       {expandedRequestId === req.id && (
                         <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
                           {itemsCache[req.id]?.length > 0 ? (
@@ -335,6 +374,19 @@ const CompletedAssignedRequestsPage = () => {
                           ) : (
                             <p className="text-sm text-gray-500">No items found.</p>
                           )}
+                        </div>
+                      )}
+
+                      {expandedAttachmentsId === req.id && (
+                        <div className="mt-4 border-t border-gray-100 pt-4">
+                          <RequestAttachmentsSection
+                            attachments={attachmentsMap[req.id] || []}
+                            isLoading={Boolean(attachmentLoadingMap[req.id])}
+                            error={attachmentErrorMap[req.id]}
+                            onDownload={handleDownloadAttachment}
+                            downloadingAttachmentId={downloadingAttachmentId}
+                            onRetry={() => loadAttachmentsForRequest(req.id, { force: true })}
+                          />
                         </div>
                       )}
                     </footer>

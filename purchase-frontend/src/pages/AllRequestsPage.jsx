@@ -7,6 +7,8 @@ import { printRequest } from '../api/requests';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import Card from '../components/Card';
+import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
+import useRequestAttachments from '../hooks/useRequestAttachments';
 
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
@@ -51,12 +53,14 @@ const AllRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [expandedAssignId, setExpandedAssignId] = useState(null);
   const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingItemsId, setLoadingItemsId] = useState(null);
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState('');
   const [requestType, setRequestType] = useState('');
   const [search, setSearch] = useState('');
+  const [requestId, setRequestId] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [status, setStatus] = useState('');
@@ -74,6 +78,15 @@ const AllRequestsPage = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+  const {
+    attachmentsMap,
+    attachmentLoadingMap,
+    attachmentErrorMap,
+    downloadingAttachmentId,
+    loadAttachmentsForRequest,
+    handleDownloadAttachment,
+    resetAttachments,
+  } = useRequestAttachments();
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -88,6 +101,7 @@ const AllRequestsPage = () => {
   }, []);
 
   const fetchRequests = useCallback(async () => {
+    resetAttachments();
     try {
       const res = await axios.get('/api/requests', {
         params: {
@@ -95,6 +109,7 @@ const AllRequestsPage = () => {
           sort,
           request_type: requestType,
           search,
+          request_id: requestId.trim() || undefined,
           from_date: fromDate,
           to_date: toDate,
           status,
@@ -124,7 +139,20 @@ const AllRequestsPage = () => {
       console.error(err);
       alert('❌ Failed to fetch requests.');
     }
-  }, [department, filter, fromDate, page, requestType, resetApprovals, search, sort, status, toDate]);
+    }, [
+    department,
+    filter,
+    fromDate,
+    page,
+    requestId,
+    requestType,
+    resetApprovals,
+    resetAttachments,
+    search,
+    sort,
+    status,
+    toDate,
+  ]);
 
   useEffect(() => {
     if (filtersChanged) {
@@ -162,6 +190,16 @@ const AllRequestsPage = () => {
     setExpandedItemsId(requestId);
   };
 
+  const toggleAttachments = async (requestId) => {
+    if (expandedAttachmentsId === requestId) {
+      setExpandedAttachmentsId(null);
+      return;
+    }
+
+    await loadAttachmentsForRequest(requestId);
+    setExpandedAttachmentsId(requestId);
+  };
+
   const handleExport = async (type) => {
     setLoadingExport(true);
     try {
@@ -171,6 +209,7 @@ const AllRequestsPage = () => {
           sort,
           request_type: requestType,
           search,
+          request_id: requestId.trim() || undefined,
           from_date: fromDate,
           to_date: toDate,
           status,
@@ -617,6 +656,14 @@ const AllRequestsPage = () => {
         />
 
         <input
+          type="text"
+          className="border p-2 rounded"
+          placeholder="Request ID"
+          value={requestId}
+          onChange={(e) => setRequestId(e.target.value)}
+        />
+
+        <input
           type="date"
           className="border p-2 rounded"
           value={fromDate}
@@ -745,6 +792,13 @@ const AllRequestsPage = () => {
                     </button>
                     <button
                       className="text-blue-600 underline"
+                      onClick={() => toggleAttachments(request.id)}
+                      disabled={attachmentLoadingMap[request.id]}
+                    >
+                      {expandedAttachmentsId === request.id ? 'Hide Attachments' : 'View Attachments'}
+                    </button>
+                    <button
+                      className="text-blue-600 underline"
                       onClick={() => toggleApprovals(request.id)}
                       disabled={loadingApprovalsId === request.id}
                     >
@@ -775,6 +829,19 @@ const AllRequestsPage = () => {
                     currentAssignee={request.assigned_user_name}
                     onSuccess={fetchRequests}
                   />
+                )}
+
+                {expandedAttachmentsId === request.id && (
+                  <div className="mt-4 border-t pt-2">
+                    <RequestAttachmentsSection
+                      attachments={attachmentsMap[request.id] || []}
+                      isLoading={Boolean(attachmentLoadingMap[request.id])}
+                      error={attachmentErrorMap[request.id]}
+                      onDownload={handleDownloadAttachment}
+                      downloadingAttachmentId={downloadingAttachmentId}
+                      onRetry={() => loadAttachmentsForRequest(request.id, { force: true })}
+                    />
+                  </div>
                 )}
 
                 {expandedItemsId === request.id && (
