@@ -1,5 +1,5 @@
 // src/pages/OpenRequestsPage.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
@@ -10,6 +10,7 @@ import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
 import { extractItems } from '../utils/itemUtils';
+import { useLocation, useSearchParams } from 'react-router-dom';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -62,6 +63,12 @@ const OpenRequestsPage = () => {
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingId, setLoadingId] = useState(null);
+  const [focusedRequestId, setFocusedRequestId] = useState(null);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const focusAppliedRef = useRef(false);
+  const lastFocusIdRef = useRef(null);
+  const lastLocationKeyRef = useRef(null);
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -186,13 +193,15 @@ const OpenRequestsPage = () => {
     const normalizedStatus = statusFilter === 'all' ? '' : statusFilter.toLowerCase();
     const normalizedType = requestType === 'all' ? '' : requestType.toLowerCase();
 
+    const finalizedStatuses = ['completed', 'received', 'approved', 'rejected', 'cancelled'];
+
     return requests.filter((req) => {
       const status = (req.status || '').toLowerCase();
       const type = (req.request_type || '').toLowerCase();
       const matchesStatus = !normalizedStatus
         ? true
         : normalizedStatus === 'pending'
-        ? !['completed', 'received', 'approved'].includes(status)
+        ? !finalizedStatuses.includes(status)
         : status === normalizedStatus;
       const matchesType = !normalizedType || type === normalizedType;
 
@@ -257,26 +266,41 @@ const OpenRequestsPage = () => {
     return tr('stageUnknown', 'Status unavailable');
   };
 
+  const openRequestDetails = useCallback(
+    async (requestId) => {
+      if (!requestId) {
+        return;
+      }
+
+      if (!itemsMap[requestId]) {
+        try {
+          setLoadingId(requestId);
+          const res = await api.get(`/api/requests/${requestId}/items`);
+          setItemsMap((prev) => ({ ...prev, [requestId]: extractItems(res.data) }));
+        } catch (err) {
+          console.error('❌ Failed to load items:', err);
+        } finally {
+          setLoadingId(null);
+        }
+      }
+
+      setExpandedId(requestId);
+    },
+    [itemsMap],
+  );
+
   const toggleExpand = async (requestId) => {
     if (expandedId === requestId) {
       setExpandedId(null);
+      setFocusedRequestId(null);
       if (expandedAttachmentsId === requestId) {
         setExpandedAttachmentsId(null);
       }
       return;
     }
-    if (!itemsMap[requestId]) {
-      try {
-        setLoadingId(requestId);
-        const res = await api.get(`/api/requests/${requestId}/items`);
-        setItemsMap((prev) => ({ ...prev, [requestId]: extractItems(res.data) }));
-      } catch (err) {
-        console.error('❌ Failed to load items:', err);
-      } finally {
-        setLoadingId(null);
-      }
-    }
-    setExpandedId(requestId);
+
+    await openRequestDetails(requestId);
+    setFocusedRequestId(requestId);
   };
 
   const toggleAttachments = async (requestId) => {
@@ -326,6 +350,76 @@ const OpenRequestsPage = () => {
     expandedApprovalsId === requestId
       ? translate('common.hideApprovals')
       : translate('common.viewApprovals');
+
+  const focusRequestIdFromState = location.state?.focusRequestId;
+
+  useEffect(() => {
+    const queryRequestId = searchParams.get('requestId');
+    const rawFocusId =
+      focusRequestIdFromState != null && focusRequestIdFromState !== ''
+        ? String(focusRequestIdFromState)
+        : queryRequestId;
+
+    if (!rawFocusId) {
+      focusAppliedRef.current = false;
+      lastFocusIdRef.current = null;
+      return;
+    }
+
+    if (lastFocusIdRef.current !== rawFocusId) {
+      focusAppliedRef.current = false;
+      lastFocusIdRef.current = rawFocusId;
+    }
+
+    if (lastLocationKeyRef.current !== location.key) {
+      focusAppliedRef.current = false;
+      lastLocationKeyRef.current = location.key;
+    }
+
+    if (focusAppliedRef.current) {
+      return;
+    }
+
+    const targetIndex = sorted.findIndex((req) => String(req.id) === rawFocusId);
+
+    if (targetIndex === -1) {
+      setFocusedRequestId(null);
+      return;
+    }
+
+    const targetPage = Math.floor(targetIndex / ITEMS_PER_PAGE) + 1;
+
+    if (currentPage !== targetPage) {
+      setCurrentPage(targetPage);
+      return;
+    }
+
+    const targetRequest = sorted[targetIndex];
+
+    if (!targetRequest) {
+      return;
+    }
+
+    focusAppliedRef.current = true;
+    setFocusedRequestId(targetRequest.id);
+    openRequestDetails(targetRequest.id);
+
+    window.requestAnimationFrame(() => {
+      const element = document.querySelector(
+        `[data-request-id="${targetRequest.id}"]`
+      );
+      if (element?.scrollIntoView) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }, [
+    currentPage,
+    focusRequestIdFromState,
+    location.key,
+    openRequestDetails,
+    searchParams,
+    sorted,
+  ]);
 
   return (
     <>
@@ -527,9 +621,18 @@ const OpenRequestsPage = () => {
                         ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
                         : tr('viewAttachments', { defaultValue: 'View Attachments' });
 
+                    const isFocused = focusedRequestId === req.id;
+
                     return (
                       <React.Fragment key={req.id}>
-                        <tr className="bg-white dark:bg-gray-900">
+                        <tr
+                          className={`${
+                            isFocused
+                              ? 'bg-blue-50/70 transition-colors dark:bg-blue-950/30'
+                              : 'bg-white transition-colors dark:bg-gray-900'
+                          }`}
+                          data-request-id={req.id}
+                        >
                           <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
                             #{req.id}
                           </td>
@@ -692,10 +795,17 @@ const OpenRequestsPage = () => {
                     ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
                     : tr('viewAttachments', { defaultValue: 'View Attachments' });
 
+                const isFocused = focusedRequestId === req.id;
+
                 return (
                   <article
                     key={`card-${req.id}`}
-                    className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                    data-request-id={req.id}
+                    className={`rounded-lg border p-4 shadow-sm transition-colors ${
+                      isFocused
+                        ? 'border-blue-400 bg-blue-50/70 dark:border-blue-500 dark:bg-blue-950/30'
+                        : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
+                    }`}
                   >
                     <header className="flex items-start justify-between gap-3">
                       <div>

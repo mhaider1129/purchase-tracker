@@ -53,6 +53,38 @@ const formatTimestamp = (value) => {
   return date.toLocaleString();
 };
 
+const resolveNotificationDestination = (rawLink) => {
+  if (!rawLink || typeof rawLink !== 'string') {
+    return null;
+  }
+
+  try {
+    const url = new URL(rawLink, window.location.origin);
+    const normalizedPath = url.pathname.replace(/\/+$/, '');
+    const requestMatch = normalizedPath.match(/^\/requests\/(\d+)$/i);
+
+    if (requestMatch) {
+      const requestId = requestMatch[1];
+      return {
+        path: `/open-requests?requestId=${encodeURIComponent(requestId)}`,
+        options: {
+          state: { focusRequestId: Number(requestId) || requestId },
+        },
+      };
+    }
+
+    return {
+      path: `${url.pathname}${url.search}${url.hash}`,
+    };
+  } catch (error) {
+    if (rawLink.startsWith('/')) {
+      return { path: rawLink };
+    }
+  }
+
+  return { external: true, url: rawLink };
+};
+
 const NotificationBell = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -120,6 +152,20 @@ const NotificationBell = () => {
       remove(notification.id);
 
       if (notification.link) {
+        const destination = resolveNotificationDestination(notification.link);
+
+        if (destination?.external && destination.url) {
+          setIsOpen(false);
+          window.open(destination.url, '_blank', 'noopener,noreferrer');
+          return;
+        }
+
+        if (destination?.path) {
+          setIsOpen(false);
+          navigate(destination.path, destination.options ?? undefined);
+          return;
+        }
+
         setIsOpen(false);
         navigate(notification.link);
       }
