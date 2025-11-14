@@ -148,6 +148,16 @@ const OpenRequestsPage = () => {
       count,
     }));
 
+    if (!entries.some(({ key }) => key === 'received')) {
+      entries.push({
+        key: 'received',
+        label: translate('openRequests.statuses.received', {
+          defaultValue: 'Received',
+        }),
+        count: statusCounts.received || 0,
+      });
+    }
+
     entries.sort((a, b) => b.count - a.count);
 
     return [
@@ -179,7 +189,11 @@ const OpenRequestsPage = () => {
     return requests.filter((req) => {
       const status = (req.status || '').toLowerCase();
       const type = (req.request_type || '').toLowerCase();
-      const matchesStatus = !normalizedStatus || status === normalizedStatus;
+      const matchesStatus = !normalizedStatus
+        ? true
+        : normalizedStatus === 'pending'
+        ? !['completed', 'received', 'approved'].includes(status)
+        : status === normalizedStatus;
       const matchesType = !normalizedType || type === normalizedType;
 
       const matchesSearch =

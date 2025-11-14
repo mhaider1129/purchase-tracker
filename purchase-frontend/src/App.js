@@ -52,6 +52,7 @@ import EvaluationDetailsPage from './pages/EvaluationDetailsPage';
 
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AccessControlProvider, useAccessControl } from './hooks/useAccessControl';
+import { NotificationProvider } from './components/ui/NotificationProvider';
 import { hasAnyPermission, hasAllPermissions } from './utils/permissions';
 
 const ProtectedRoute = ({
@@ -442,9 +443,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AccessControlProvider>
-          <AppRoutes />
-        </AccessControlProvider>
+        <NotificationProvider>
+          <AccessControlProvider>
+            <AppRoutes />
+          </AccessControlProvider>
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );

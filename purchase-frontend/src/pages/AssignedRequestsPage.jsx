@@ -35,6 +35,36 @@ const categorizeItems = (items = []) => {
   return groups;
 };
 
+const computeDepartmentSpending = (requests = []) => {
+  const totals = new Map();
+
+  requests.forEach((request) => {
+    const rawCost = request?.estimated_cost;
+    const costNumber = Number(rawCost);
+
+    if (!Number.isFinite(costNumber) || costNumber <= 0) {
+      return;
+    }
+
+    const key = request?.department_id ?? 'unassigned';
+    const current = totals.get(key) || {
+      departmentId: request?.department_id ?? null,
+      departmentName: request?.department_name || '',
+      totalCost: 0,
+    };
+
+    current.totalCost += costNumber;
+    totals.set(key, current);
+  });
+
+  return Array.from(totals.values())
+    .map((entry) => ({
+      ...entry,
+      totalCost: Number(entry.totalCost.toFixed(2)),
+    }))
+    .sort((a, b) => b.totalCost - a.totalCost);
+};
+
 const computeSummaryFromItems = (items = [], recordedCost = null) => {
   const summary = {
     total_items: items.length,

@@ -677,10 +677,11 @@ const AllRequestsPage = () => {
           onChange={(e) => setToDate(e.target.value)}
         />
 
-                <select className="border p-2 rounded" value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select className="border p-2 rounded" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All Statuses</option>
           <option value="Pending">Pending</option>
           <option value="Approved">Approved</option>
+          <option value="Received">Received</option>
           <option value="Rejected">Rejected</option>
           <option value="Completed">Completed</option>
         </select>

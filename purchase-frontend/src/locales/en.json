@@ -121,7 +121,9 @@
     "noNotifications": "You're all caught up!",
     "clearAll": "Clear all",
     "openNotifications": "Open notifications",
-    "dismissNotification": "Dismiss notification"
+    "dismissNotification": "Dismiss notification",
+    "loadingNotifications": "Loading notifications…",
+    "viewDetails": "View details"
   },
   "pageTitles": {
     "nonStockRequestForm": "Non-Stock Request Form",
@@ -803,6 +805,19 @@
         "notPurchased": "Not purchased"
       }
     },
+    "attachments": {
+      "title": "Attachments",
+      "loading": "Loading attachments…",
+      "empty": "No attachments uploaded for this request.",
+      "error": "Unable to load attachments. Please try again.",
+      "retry": "Try again",
+      "countLabel": "{{count}} attachment",
+      "countLabel_plural": "{{count}} attachments",
+      "actions": {
+        "show": "View attachments",
+        "hide": "Hide attachments"
+      }
+    },
     "export": {
       "headers": [
         "Request ID",
@@ -855,6 +870,7 @@
       "reference": "Ref #",
       "status": "Status",
       "submitted": "Submitted",
+      "attachments": "Attachments",
       "items": "Items",
       "approvals": "Approvals",
       "notAvailable": "—"
@@ -1049,6 +1065,7 @@
       "completed": "Completed",
       "rejected": "Rejected",
       "approved": "Approved",
+      "received": "Received",
       "pending": "Pending",
       "in_progress": "In Progress",
       "cancelled": "Cancelled",
@@ -1297,6 +1314,16 @@
       "suggestedLabel": "Suggested total:",
       "useSuggested": "Use suggested value",
       "saveButton": "Save Total Cost"
+    },
+    "departmentSummary": {
+      "title": "Recorded spending by department",
+      "totalLabel": "Total recorded cost:",
+      "headers": {
+        "department": "Department",
+        "cost": "Recorded cost"
+      },
+      "unknownDepartment": "Unassigned / Unknown",
+      "empty": "Record a total cost to see the department spending breakdown."
     },
     "attachments": {
       "title": "Attachments",

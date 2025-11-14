@@ -21,6 +21,7 @@ const RequestAttachmentsSection = ({
   onDownload,
   downloadingAttachmentId,
   onRetry,
+  retryLabel = 'Try again',
   title = 'Attachments',
   emptyMessage = 'No attachments uploaded.',
   loadingMessage = 'Loading attachments…',
@@ -40,7 +41,7 @@ const RequestAttachmentsSection = ({
               onClick={onRetry}
               className="text-sm text-blue-600 underline hover:text-blue-800"
             >
-              Try again
+              {retryLabel}
             </button>
           )}
         </div>

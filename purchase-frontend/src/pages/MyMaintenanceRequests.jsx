@@ -5,7 +5,9 @@ import axios from '../api/axios';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import ApprovalTimeline from '../components/ApprovalTimeline';
+import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import useRequestAttachments from '../hooks/useRequestAttachments';
 import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
 
 const MyMaintenanceRequests = () => {
@@ -27,6 +29,7 @@ const MyMaintenanceRequests = () => {
   const [endDate, setEndDate] = useState('');
   const [sortDirection, setSortDirection] = useState('desc');
   const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -34,6 +37,15 @@ const MyMaintenanceRequests = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+  const {
+    attachmentsMap,
+    attachmentLoadingMap,
+    attachmentErrorMap,
+    downloadingAttachmentId,
+    loadAttachmentsForRequest,
+    handleDownloadAttachment,
+    resetAttachments,
+  } = useRequestAttachments();
   const timelineLabels = useMemo(
     () => ({
       title: t('common.approvalTimeline'),
@@ -63,6 +75,7 @@ const MyMaintenanceRequests = () => {
         });
         setRequests(sorted);
         resetApprovals();
+        resetAttachments();
       } catch (err) {
         console.error('❌ Failed to fetch maintenance requests:', err);
         setError(tr('errors.loadFailed'));
@@ -72,7 +85,7 @@ const MyMaintenanceRequests = () => {
     };
 
     fetchRequests();
-  }, [tr, resetApprovals]);
+  }, [tr, resetApprovals, resetAttachments]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -118,6 +131,30 @@ const MyMaintenanceRequests = () => {
       actions: {
         show: tr('items.actions.show', { defaultValue: 'View items' }),
         hide: tr('items.actions.hide', { defaultValue: 'Hide items' }),
+      },
+    }),
+    [tr],
+  );
+
+  const attachmentsCopy = useMemo(
+    () => ({
+      title: tr('attachments.title', { defaultValue: 'Attachments' }),
+      empty: tr('attachments.empty', {
+        defaultValue: 'No attachments uploaded for this request.',
+      }),
+      loading: tr('attachments.loading', { defaultValue: 'Loading attachments…' }),
+      error: tr('attachments.error', {
+        defaultValue: 'Unable to load attachments. Please try again.',
+      }),
+      retryLabel: tr('attachments.retry', { defaultValue: 'Try again' }),
+      countLabel: (count) =>
+        tr('attachments.countLabel', {
+          count,
+          defaultValue: count === 1 ? '1 attachment' : `${count} attachments`,
+        }),
+      actions: {
+        show: tr('attachments.actions.show', { defaultValue: 'View attachments' }),
+        hide: tr('attachments.actions.hide', { defaultValue: 'Hide attachments' }),
       },
     }),
     [tr],
@@ -187,6 +224,35 @@ const MyMaintenanceRequests = () => {
   const toggleItems = useCallback((requestId) => {
     setExpandedItemsId((prev) => (prev === requestId ? null : requestId));
   }, []);
+
+  const toggleAttachments = useCallback(
+    (requestId) => {
+      if (!requestId) {
+        return;
+      }
+
+      setExpandedAttachmentsId((prev) => {
+        if (prev === requestId) {
+          return null;
+        }
+
+        loadAttachmentsForRequest(requestId);
+        return requestId;
+      });
+    },
+    [loadAttachmentsForRequest],
+  );
+
+  const retryAttachments = useCallback(
+    (requestId) => {
+      if (!requestId) {
+        return;
+      }
+
+      loadAttachmentsForRequest(requestId, { force: true });
+    },
+    [loadAttachmentsForRequest],
+  );
 
   const buildApproverDisplayName = (name, role) => {
     if (!name) {
@@ -427,6 +493,20 @@ const MyMaintenanceRequests = () => {
     }
   }, [expandedItemsId, filteredRequests]);
 
+  useEffect(() => {
+    if (!expandedAttachmentsId) {
+      return;
+    }
+
+    const hasExpandedRequest = filteredRequests.some(
+      (request) => String(request.id) === String(expandedAttachmentsId),
+    );
+
+    if (!hasExpandedRequest) {
+      setExpandedAttachmentsId(null);
+    }
+  }, [expandedAttachmentsId, filteredRequests]);
+
   const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
   const paginated = filteredRequests.slice(
     (currentPage - 1) * itemsPerPage,
@@ -650,6 +730,7 @@ const MyMaintenanceRequests = () => {
                   <th className="border px-3 py-2 text-left">{tr('table.reference')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.status')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.submitted')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('table.attachments')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.items')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.approvals')}</th>
                 </tr>
@@ -659,6 +740,25 @@ const MyMaintenanceRequests = () => {
                   const isApprovalsExpanded =
                     String(expandedApprovalsId) === String(r.id);
                   const isItemsExpanded = String(expandedItemsId) === String(r.id);
+                  const isAttachmentsExpanded =
+                    String(expandedAttachmentsId) === String(r.id);
+                  const attachments = attachmentsMap[r.id] || [];
+                  const hasLoadedAttachments = Object.prototype.hasOwnProperty.call(
+                    attachmentsMap,
+                    r.id,
+                  );
+                  const attachmentsLoading = Boolean(attachmentLoadingMap[r.id]);
+                  const attachmentsErrorRaw = attachmentErrorMap[r.id] || '';
+                  const attachmentsError = attachmentsErrorRaw ? attachmentsCopy.error : '';
+                  const attachmentsCount = hasLoadedAttachments
+                    ? attachments.length
+                    : typeof r.attachments_count === 'number'
+                      ? r.attachments_count
+                      : 0;
+                  const attachmentsButtonLabel = isAttachmentsExpanded
+                    ? attachmentsCopy.actions.hide
+                    : attachmentsCopy.actions.show;
+                  const attachmentsCountLabel = attachmentsCopy.countLabel(attachmentsCount);
 
                   return (
                     <React.Fragment key={r.id}>
@@ -672,6 +772,19 @@ const MyMaintenanceRequests = () => {
                         </td>
                         <td className="border px-3 py-2">
                           {new Date(r.created_at).toLocaleString()}
+                        </td>
+                        <td className="border px-3 py-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs text-gray-600">{attachmentsCountLabel}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleAttachments(r.id)}
+                              className="text-blue-600 hover:text-blue-800 font-medium disabled:opacity-60"
+                              disabled={attachmentsLoading}
+                            >
+                              {attachmentsButtonLabel}
+                            </button>
+                          </div>
                         </td>
                         <td className="border px-3 py-2">
                           <button
@@ -696,9 +809,28 @@ const MyMaintenanceRequests = () => {
                           </button>
                         </td>
                       </tr>
+                      {isAttachmentsExpanded && (
+                        <tr>
+                          <td colSpan={9} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                            <RequestAttachmentsSection
+                              attachments={attachments}
+                              isLoading={attachmentsLoading}
+                              error={attachmentsError}
+                              onDownload={handleDownloadAttachment}
+                              downloadingAttachmentId={downloadingAttachmentId}
+                              onRetry={() => retryAttachments(r.id)}
+                              retryLabel={attachmentsCopy.retryLabel}
+                              title={attachmentsCopy.title}
+                              emptyMessage={attachmentsCopy.empty}
+                              loadingMessage={attachmentsCopy.loading}
+                              className="space-y-2"
+                            />
+                          </td>
+                        </tr>
+                      )}
                       {isItemsExpanded && (
                         <tr>
-                          <td colSpan={8} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={9} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <div className="space-y-3">
                               <h3 className="font-semibold text-gray-700">{itemCopy.heading}</h3>
                               {Array.isArray(r.items) && r.items.length > 0 ? (
@@ -749,7 +881,7 @@ const MyMaintenanceRequests = () => {
                       )}
                       {isApprovalsExpanded && (
                         <tr>
-                          <td colSpan={8} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={9} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <ApprovalTimeline
                               approvals={approvalsMap[r.id]}
                               isLoading={loadingApprovalsId === r.id}

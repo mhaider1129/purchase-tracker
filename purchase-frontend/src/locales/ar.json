@@ -121,7 +121,9 @@
     "noNotifications": "لا توجد إشعارات حالياً",
     "clearAll": "مسح الكل",
     "openNotifications": "عرض الإشعارات",
-    "dismissNotification": "إغلاق الإشعار"
+    "dismissNotification": "إغلاق الإشعار",
+    "loadingNotifications": "جاري تحميل الإشعارات...",
+    "viewDetails": "عرض التفاصيل"
   },
   "pageTitles": {
     "nonStockRequestForm": "نموذج طلب غير مخزوني",
@@ -782,6 +784,39 @@
       "submitted": "مُقدَّم",
       "completed": "مكتمل"
     },
+    "items": {
+      "heading": "العناصر المطلوبة",
+      "empty": "لا توجد عناصر مسجلة لهذا الطلب.",
+      "actions": {
+        "show": "عرض العناصر",
+        "hide": "إخفاء العناصر"
+      },
+      "columns": {
+        "item": "العنصر",
+        "specs": "المواصفات",
+        "quantity": "الكمية المطلوبة",
+        "purchased": "المشتراة",
+        "status": "الحالة"
+      },
+      "statusLabels": {
+        "purchased": "تم الشراء",
+        "partiallyPurchased": "تم الشراء جزئياً",
+        "notPurchased": "غير مشتراة"
+      }
+    },
+    "attachments": {
+      "title": "المرفقات",
+      "loading": "جاري تحميل المرفقات...",
+      "empty": "لا توجد مرفقات لهذا الطلب.",
+      "error": "تعذر تحميل المرفقات. يرجى المحاولة مرة أخرى.",
+      "retry": "إعادة المحاولة",
+      "countLabel": "{{count}} مرفق",
+      "countLabel_plural": "{{count}} مرفق",
+      "actions": {
+        "show": "عرض المرفقات",
+        "hide": "إخفاء المرفقات"
+      }
+    },
     "export": {
       "headers": [
         "معرّف الطلب",
@@ -834,6 +869,8 @@
       "reference": "المرجع",
       "status": "الحالة",
       "submitted": "تاريخ التقديم",
+      "attachments": "المرفقات",
+      "items": "العناصر",
       "approvals": "الموافقات",
       "notAvailable": "—"
     },
@@ -1028,6 +1065,7 @@
       "completed": "مكتمل",
       "rejected": "مرفوض",
       "approved": "موافق",
+      "received": "تم الاستلام",
       "pending": "قيد الانتظار",
       "in_progress": "قيد المعالجة",
       "cancelled": "ملغى",
@@ -1264,6 +1302,16 @@
       "suggestedLabel": "الإجمالي المقترح:",
       "useSuggested": "استخدام القيمة المقترحة",
       "saveButton": "حفظ إجمالي التكلفة"
+    },
+    "departmentSummary": {
+      "title": "الإنفاق المسجل حسب الإدارة",
+      "totalLabel": "إجمالي التكلفة المسجلة:",
+      "headers": {
+        "department": "الإدارة",
+        "cost": "التكلفة المسجلة"
+      },
+      "unknownDepartment": "إدارة غير محددة",
+      "empty": "سجّل إجمالي التكلفة لعرض توزيع الإنفاق حسب الإدارة."
     },
     "attachments": {
       "title": "المرفقات",

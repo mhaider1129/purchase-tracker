@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Bell, CheckCircle2, Info, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useNotificationContext } from './NotificationProvider';
 
 const typeIcons = {
@@ -14,9 +15,48 @@ const typeIcons = {
   info: <Info className="h-4 w-4 text-sky-500 dark:text-sky-300" aria-hidden="true" />,
 };
 
+const deriveNotificationVariant = (notification) => {
+  if (!notification) return 'info';
+
+  const metadata = notification.metadata || {};
+  const explicit = metadata.level || metadata.variant || metadata.type;
+  if (explicit && typeIcons[explicit]) {
+    return explicit;
+  }
+
+  const action = typeof metadata.action === 'string' ? metadata.action.toLowerCase() : '';
+  const title = typeof notification.title === 'string' ? notification.title.toLowerCase() : '';
+  const message = typeof notification.message === 'string' ? notification.message.toLowerCase() : '';
+  const combined = `${title} ${message} ${action}`;
+
+  if (combined.includes('reject') || combined.includes('declin') || combined.includes('fail')) {
+    return 'error';
+  }
+
+  if (combined.includes('approve') || combined.includes('complete') || combined.includes('success')) {
+    return 'success';
+  }
+
+  if (combined.includes('urgent') || combined.includes('reminder') || combined.includes('due')) {
+    return 'warning';
+  }
+
+  return 'info';
+};
+
+const formatTimestamp = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toLocaleString();
+};
+
 const NotificationBell = () => {
   const { t } = useTranslation();
-  const { notifications, remove, clearAll } = useNotificationContext();
+  const navigate = useNavigate();
+  const { notifications, remove, clearAll, refresh, isLoading, unreadCount } = useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
@@ -43,14 +83,56 @@ const NotificationBell = () => {
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    refresh({ silent: true });
+  }, [isOpen, refresh]);
+
+  useEffect(() => {
     if (notifications.length === 0) {
       setIsOpen(false);
     }
   }, [notifications.length]);
 
   const sortedNotifications = useMemo(
-    () => [...notifications].sort((a, b) => b.id - a.id),
+    () =>
+      [...notifications].sort((a, b) => {
+        const left = new Date(a.createdAt || 0).getTime();
+        const right = new Date(b.createdAt || 0).getTime();
+
+        if (left === right) {
+          return (b.id ?? 0) - (a.id ?? 0);
+        }
+
+        return right - left;
+      }),
     [notifications],
+  );
+
+  const handleNotificationClick = useCallback(
+    (notification) => {
+      if (!notification) {
+        return;
+      }
+
+      remove(notification.id);
+
+      if (notification.link) {
+        setIsOpen(false);
+        navigate(notification.link);
+      }
+    },
+    [navigate, remove],
+  );
+
+  const handleDismiss = useCallback(
+    (event, id) => {
+      event?.stopPropagation();
+      remove(id);
+    },
+    [remove],
   );
 
   return (
@@ -65,9 +147,9 @@ const NotificationBell = () => {
         aria-haspopup="dialog"
       >
         <Bell className="h-5 w-5" aria-hidden="true" />
-        {hasNotifications ? (
+        {unreadCount > 0 ? (
           <span className="absolute -right-0.5 -top-0.5 inline-flex min-h-[1.25rem] min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white shadow">
-            {notifications.length}
+            {unreadCount}
           </span>
         ) : null}
       </button>
@@ -87,36 +169,62 @@ const NotificationBell = () => {
               <button
                 type="button"
                 onClick={clearAll}
-                className="text-xs font-medium text-blue-600 transition hover:text-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                disabled={isLoading}
+                className="text-xs font-medium text-blue-600 transition hover:text-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:text-blue-300 dark:disabled:text-blue-700"
               >
                 {t('navbar.clearAll')}
               </button>
             ) : null}
           </div>
 
-          {hasNotifications ? (
+          {isLoading ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t('navbar.loadingNotifications', 'Loading notifications…')}
+            </p>
+          ) : null}
+
+          {!isLoading && hasNotifications ? (
             <ul className="flex max-h-64 flex-col gap-2 overflow-y-auto pr-1">
-              {sortedNotifications.map(({ id, message, title, type }) => {
-                const icon = typeIcons[type] ?? typeIcons.info;
+              {sortedNotifications.map((notification) => {
+                const { id, message, title, link, createdAt } = notification;
+                const variant = deriveNotificationVariant(notification);
+                const icon = typeIcons[variant] ?? typeIcons.info;
+                const timestamp = formatTimestamp(createdAt);
 
                 return (
                   <li
                     key={id}
-                    className="rounded-md border border-gray-200 bg-white/90 p-2 shadow-sm dark:border-gray-700 dark:bg-gray-800/80"
+                    className="rounded-md border border-gray-200 bg-white/90 p-2 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/60 dark:border-gray-700 dark:bg-gray-800/80 dark:hover:border-blue-700/60 dark:hover:bg-blue-900/30"
                   >
                     <div className="flex items-start gap-2">
                       <div className="mt-0.5">{icon}</div>
                       <div className="flex-1">
-                        {title ? (
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-100">
-                            {title}
-                          </p>
-                        ) : null}
-                        <p className="text-xs text-gray-600 dark:text-gray-300">{message}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleNotificationClick(notification)}
+                          className="flex w-full flex-col items-start gap-1 text-left focus:outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        >
+                          {title ? (
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-100">
+                              {title}
+                            </p>
+                          ) : null}
+                          <p className="text-xs text-gray-600 dark:text-gray-300">{message}</p>
+                          {timestamp ? (
+                            <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
+                              {timestamp}
+                            </span>
+                          ) : null}
+                          {link ? (
+                            <span className="text-[11px] font-medium text-blue-600 underline decoration-dashed underline-offset-4 dark:text-blue-400">
+                              {t('navbar.viewDetails', 'View details')}
+                            </span>
+                          ) : null}
+                        </button>
                       </div>
                       <button
                         type="button"
-                        onClick={() => remove(id)}
+                        onClick={(event) => handleDismiss(event, id)}
                         className="text-xs font-medium text-gray-400 transition hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                         aria-label={t('navbar.dismissNotification', 'Dismiss notification')}
                       >
@@ -127,11 +235,13 @@ const NotificationBell = () => {
                 );
               })}
             </ul>
-          ) : (
+          ) : null}
+
+          {!isLoading && !hasNotifications ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {t('navbar.noNotifications')}
             </p>
-          )}
+          ) : null}
         </div>
       ) : null}
     </div>
