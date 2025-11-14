@@ -72,10 +72,13 @@ const computeSummaryFromItems = (items = [], recordedCost = null) => {
     ? Number(fallbackNumber.toFixed(2))
     : null;
 
-  summary.calculated_total_cost =
-    summary.items_total_cost > 0
-      ? summary.items_total_cost
-      : summary.recorded_total_cost ?? summary.items_total_cost;
+  if (summary.recorded_total_cost !== null) {
+    summary.calculated_total_cost = summary.recorded_total_cost;
+  } else if (summary.items_total_cost > 0) {
+    summary.calculated_total_cost = summary.items_total_cost;
+  } else {
+    summary.calculated_total_cost = 0;
+  }
 
   return summary;
 };
