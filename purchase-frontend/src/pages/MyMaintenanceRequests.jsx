@@ -21,6 +21,8 @@ const MyMaintenanceRequests = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [referenceSearch, setReferenceSearch] = useState('');
+  const [requesterSearch, setRequesterSearch] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -74,7 +76,16 @@ const MyMaintenanceRequests = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [itemsPerPage, statusFilter, searchTerm, startDate, endDate, sortDirection]);
+  }, [
+    itemsPerPage,
+    statusFilter,
+    searchTerm,
+    referenceSearch,
+    requesterSearch,
+    startDate,
+    endDate,
+    sortDirection,
+  ]);
 
   const statusLabels = tr('statuses', { returnObjects: true });
 
@@ -340,6 +351,20 @@ const MyMaintenanceRequests = () => {
         return haystack.includes(normalizedSearch);
       })
       .filter((request) => {
+        const normalizedReference = referenceSearch.trim().toLowerCase();
+        if (!normalizedReference) return true;
+        return (request.maintenance_ref_number || '')
+          .toLowerCase()
+          .includes(normalizedReference);
+      })
+      .filter((request) => {
+        const normalizedRequester = requesterSearch.trim().toLowerCase();
+        if (!normalizedRequester) return true;
+        return (request.requester_name || '')
+          .toLowerCase()
+          .includes(normalizedRequester);
+      })
+      .filter((request) => {
         if (!startDate && !endDate) return true;
         const createdAt = new Date(request.created_at);
         if (Number.isNaN(createdAt.getTime())) return false;
@@ -366,6 +391,8 @@ const MyMaintenanceRequests = () => {
     requests,
     statusFilter,
     searchTerm,
+    referenceSearch,
+    requesterSearch,
     startDate,
     endDate,
     sortDirection,
@@ -420,6 +447,8 @@ const MyMaintenanceRequests = () => {
   const resetFilters = () => {
     setStatusFilter('all');
     setSearchTerm('');
+    setReferenceSearch('');
+    setRequesterSearch('');
     setStartDate('');
     setEndDate('');
     setSortDirection('desc');
@@ -506,7 +535,7 @@ const MyMaintenanceRequests = () => {
               </div>
             </div>
 
-            <div className="mb-6 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-5">
+            <div className="mb-6 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-6 lg:grid-cols-8">
               <div className="md:col-span-2">
                 <label htmlFor="search" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
                   {tr('filters.searchLabel')}
@@ -517,6 +546,32 @@ const MyMaintenanceRequests = () => {
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   placeholder={tr('filters.searchPlaceholder')}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
+                />
+              </div>
+              <div>
+                <label htmlFor="reference" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
+                  {tr('filters.referenceLabel')}
+                </label>
+                <input
+                  id="reference"
+                  type="text"
+                  value={referenceSearch}
+                  onChange={(event) => setReferenceSearch(event.target.value)}
+                  placeholder={tr('filters.referencePlaceholder')}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
+                />
+              </div>
+              <div>
+                <label htmlFor="requester" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
+                  {tr('filters.requesterLabel')}
+                </label>
+                <input
+                  id="requester"
+                  type="text"
+                  value={requesterSearch}
+                  onChange={(event) => setRequesterSearch(event.target.value)}
+                  placeholder={tr('filters.requesterPlaceholder')}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
                 />
               </div>
@@ -576,7 +631,7 @@ const MyMaintenanceRequests = () => {
                   <option value="asc">{tr('filters.sortOptions.asc')}</option>
                 </select>
               </div>
-              <div className="md:col-span-5 flex justify-end">
+              <div className="md:col-span-6 lg:col-span-8 flex justify-end">
                 <button
                   onClick={resetFilters}
                   className="text-sm font-medium text-blue-600 hover:underline"

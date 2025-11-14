@@ -682,7 +682,7 @@ const AllRequestsPage = () => {
           <option value="Pending">Pending</option>
           <option value="Approved">Approved</option>
           <option value="Rejected">Rejected</option>
-          <option value="completed">Completed</option>
+          <option value="Completed">Completed</option>
         </select>
 
         <select className="border p-2 rounded" value={department} onChange={(e) => setDepartment(e.target.value)}>

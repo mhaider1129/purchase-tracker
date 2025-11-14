@@ -830,7 +830,11 @@
     },
     "filters": {
       "searchLabel": "Search",
-      "searchPlaceholder": "Search justification, project, or reference",
+      "searchPlaceholder": "Search justification, project, department, or items",
+      "referenceLabel": "Reference #",
+      "referencePlaceholder": "Search reference number",
+      "requesterLabel": "Requester",
+      "requesterPlaceholder": "Search requester name",
       "statusLabel": "Status",
       "statusOptions": {
         "all": "All"

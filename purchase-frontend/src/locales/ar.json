@@ -809,7 +809,11 @@
     },
     "filters": {
       "searchLabel": "بحث",
-      "searchPlaceholder": "ابحث بالمبرر أو المشروع أو المرجع",
+      "searchPlaceholder": "ابحث بالمبرر أو المشروع أو القسم أو العناصر",
+      "referenceLabel": "الرقم المرجعي",
+      "referencePlaceholder": "ابحث بالرقم المرجعي",
+      "requesterLabel": "مقدم الطلب",
+      "requesterPlaceholder": "ابحث باسم مقدم الطلب",
       "statusLabel": "الحالة",
       "statusOptions": {
         "all": "الكل"
