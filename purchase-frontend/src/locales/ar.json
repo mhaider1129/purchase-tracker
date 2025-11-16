@@ -5,7 +5,7 @@
     "password": "كلمة المرور",
     "button": "تسجيل الدخول",
     "loggingIn": "جاري تسجيل الدخول...",
-    "accountInactive": "حسابك غير مفعل. يرجى التواصل مع المسؤول.",
+    "accountInactive": "حسابك غير مفعل. يرجى التواصل مع مسؤول المشتريات.",
     "emailPasswordRequired": "البريد الإلكتروني وكلمة المرور مطلوبة.",
     "errorCredentials": "فشل تسجيل الدخول. يرجى التحقق من البيانات.",
     "requestAccessPrompt": "ليس لديك حساب؟",
@@ -41,11 +41,12 @@
     "roles": {
       "requester": "مقدم الطلب",
       "hod": "رئيس القسم",
-      "cmo": "المدير الطبي التنفيذي (CMO)",
-      "coo": "المدير التنفيذي للعمليات (COO)",
-      "cfo": "المدير المالي التنفيذي (CFO)",
-      "ceo": "الرئيس التنفيذي (CEO)",
+      "cmo": "المدير الطبي  (CMO)",
+      "coo": "المدير  الاداري (COO)",
+      "cfo": "المدير المالي (CFO)",
+      "ceo": "المدير التنفيذي (CEO)",
       "cpo": "رئيس المشتريات (CPO)",
+      "scm": "مدير سلسلة الإمداد (SCM)",
       "procurementSpecialist": "أخصائي المشتريات",
       "warehouseManager": "مدير المستودع",
       "warehouseKeeper": "أمين المستودع"
@@ -78,11 +79,11 @@
     "loginLink": "العودة لتسجيل الدخول"
   },
   "navbar": {
-    "openRequests": "طلباتي المفتوحة",
+    "openRequests": "طلبات الشراء المفتوحة",
     "myMaintenance": "طلباتي للصيانة",
     "maintenanceStock": "مخزون الصيانة",
     "maintenanceApprovals": "موافقات الصيانة",
-    "closedRequests": "طلباتي المغلقة",
+    "closedRequests": "طلبات الشراء المغلقة",
     "dashboard": "لوحة المعلومات",
     "adminTools": "أدوات المشرف",
     "management": "الإدارة",
@@ -96,9 +97,9 @@
     "registerUser": "تسجيل مستخدم",
     "myAssigned": "طلباتي المسندة",
     "completedRequests": "الطلبات المكتملة",
-    "custodyIssue": "إصدار عهدة",
-    "custodyIssued": "العهد المصدرة",
-    "custodyApprovals": "موافقات العهدة",
+    "custodyIssue": "إصدار ذمة",
+    "custodyIssued": "الذمم المصدرة",
+    "custodyApprovals": "موافقات الذمم",
     "itemRecalls": "استدعاء الأصناف",
     "myEvaluations": "تقييماتي",
     "changePassword": "تغيير كلمة المرور",
@@ -126,15 +127,15 @@
     "viewDetails": "عرض التفاصيل"
   },
   "pageTitles": {
-    "nonStockRequestForm": "نموذج طلب غير مخزوني",
+    "nonStockRequestForm": "نموذج طلب مواد غير مخزنية",
     "maintenanceRequestForm": "نموذج طلب صيانة",
     "requestTypeSelector": "محدد نوع الطلب",
     "itRequest": "طلب تقنية المعلومات",
     "auditRequests": "صفحة طلبات التدقيق",
     "myMaintenanceRequests": "طلباتي للصيانة",
     "maintenanceStock": "مخزون الصيانة",
-    "custodyApprovals": "موافقات العهدة",
-    "custodyIssued": "العهد المصدرة"
+    "custodyApprovals": "موافقات الذمم",
+    "custodyIssued": "الذمم المصدرة"
   },
   "maintenanceHODApprovals": {
     "title": "مركز موافقات الصيانة",

@@ -1443,11 +1443,19 @@
       "noJustification": "No justification provided.",
       "recordSupplied": "Record Supplied Items",
       "viewItems": "View Requested Items",
-      "hideItems": "Hide Requested Items"
+      "hideItems": "Hide Requested Items",
+      "itemsCount": "Items in request",
+      "supplied": "Supplied so far",
+      "outstanding": "Outstanding",
+      "progressLabel": "{{progress}}% fulfilled",
+      "suppliedSummary": "{{supplied}} of {{requested}} supplied",
+      "fullySupplied": "All requested quantities have been supplied.",
+      "fulfillmentHint": "Record supplied quantities to complete this request."
     },
     "items": {
       "loading": "Loading requested items…",
       "requestedQuantity": "Requested: {{quantity}}",
+      "suppliedQuantity": "Supplied: {{quantity}}",
       "empty": "No requested items available."
     },
     "alerts": {
@@ -1458,6 +1466,7 @@
       "approved": "Approved",
       "pending": "Pending",
       "rejected": "Rejected",
+      "completed": "Completed",
       "unknown": "Unknown"
     }
   }

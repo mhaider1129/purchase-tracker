@@ -8,6 +8,19 @@ import ProjectSelector from '../../components/projects/ProjectSelector';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
+const createItemId = () =>
+  typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `item-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const getEmptyItem = () => ({
+  id: createItemId(),
+  item_name: '',
+  quantity: 1,
+  specs: '',
+  unit_cost: '',
+});
+
 const MAX_ATTACHMENTS = 5;
 const MAX_ATTACHMENT_SIZE_MB = 10;
 
@@ -32,10 +45,6 @@ const ITRequestForm = () => {
   const [attachmentError, setAttachmentError] = useState('');
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-
-  function getEmptyItem() {
-    return { item_name: '', quantity: 1, specs: '', unit_cost: '' };
-  }
 
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
@@ -64,7 +73,7 @@ const ITRequestForm = () => {
   const duplicateItem = (index) => {
     setItems((prev) => {
       const next = [...prev];
-      const cloned = { ...next[index] };
+      const cloned = { ...next[index], id: createItemId() };
       next.splice(index + 1, 0, cloned);
       return next;
     });
@@ -181,7 +190,8 @@ const ITRequestForm = () => {
     formData.append('target_department_id', user.department_id);
     formData.append('target_section_id', user.section_id || '');
     formData.append('budget_impact_month', '');
-    formData.append('items', JSON.stringify(items));
+    const sanitizedItems = items.map(({ id, ...rest }) => rest);
+    formData.append('items', JSON.stringify(sanitizedItems));
     formData.append('project_id', projectId || '');
     formData.append('preferred_delivery_date', preferredDeliveryDate || '');
     formData.append('priority', priority);
@@ -370,7 +380,7 @@ const ITRequestForm = () => {
             <div className="space-y-3">
               {items.map((item, index) => (
                 <div
-                  key={`${index}-${item.item_name}`}
+                  key={item.id || index}
                   className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
                 >
                   <div className="mb-3 flex items-center justify-between">

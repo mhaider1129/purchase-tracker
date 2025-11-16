@@ -10,6 +10,7 @@ const statusClasses = {
   approved: 'bg-green-100 text-green-700',
   pending: 'bg-yellow-100 text-yellow-700',
   rejected: 'bg-red-100 text-red-700',
+  completed: 'bg-blue-100 text-blue-700',
 };
 
 const formatDateTime = (value) => {
@@ -40,6 +41,33 @@ const WarehouseSupplyRequestsPage = () => {
   const [itemsError, setItemsError] = useState({});
   const [itemsLoadingId, setItemsLoadingId] = useState(null);
   const navigate = useNavigate();
+
+  const normalizeItems = (items = []) =>
+    items.map((item) => ({
+      ...item,
+      item_id: item.item_id || item.id,
+      item_name: item.item_name || item.name,
+      quantity: Number(item.quantity ?? item.requested_quantity ?? 0),
+      supplied_quantity: Number(item.supplied_quantity ?? item.supplied ?? 0),
+    }));
+
+  const getFulfillmentStats = (request) => {
+    const items = itemsCache[request.id] || normalizeItems(request.items || []);
+    const requestedTotal = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    const suppliedTotal = items.reduce(
+      (sum, item) => sum + Number(item.supplied_quantity || 0),
+      0,
+    );
+    const outstanding = Math.max(requestedTotal - suppliedTotal, 0);
+    const progress = requestedTotal
+      ? Math.min(100, Math.round((suppliedTotal / requestedTotal) * 100))
+      : 0;
+    const fullySupplied =
+      items.length > 0 &&
+      items.every((item) => Number(item.supplied_quantity || 0) >= Number(item.quantity || 0));
+
+    return { requestedTotal, suppliedTotal, outstanding, progress, fullySupplied };
+  };
   const getStatusLabel = (status) => {
     if (!status) {
       return tr('statuses.unknown', 'Unknown');
@@ -52,7 +80,17 @@ const WarehouseSupplyRequestsPage = () => {
     setError('');
     try {
       const res = await api.get('/api/warehouse-supply');
-      setRequests(res.data || []);
+      const data = res.data || [];
+      setRequests(data);
+      setItemsCache((prev) => {
+        const next = { ...prev };
+        data.forEach((request) => {
+          if (request.items && request.items.length > 0) {
+            next[request.id] = normalizeItems(request.items);
+          }
+        });
+        return next;
+      });
     } catch (err) {
       console.error('Failed to load requests:', err);
       setError(
@@ -180,7 +218,7 @@ const WarehouseSupplyRequestsPage = () => {
         const res = await api.get(`/api/requests/${requestId}/items`);
         setItemsCache((prev) => ({
           ...prev,
-          [requestId]: extractItems(res.data),
+          [requestId]: normalizeItems(extractItems(res.data)),
         }));
       } catch (err) {
         console.error('Failed to load requested items:', err);
@@ -367,85 +405,152 @@ const WarehouseSupplyRequestsPage = () => {
               {tr('list.empty', 'No warehouse supply requests match the selected filters.')}
             </p>
           ) : (
-            filteredRequests.map((req) => (
-              <article key={req.id} className="rounded border border-gray-200 bg-white p-5 shadow-sm">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm text-gray-500">{tr('requestCard.requestId', 'Request ID')}</p>
-                    <p className="text-xl font-semibold">{req.id}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                    <div>
-                      <span className="font-medium text-gray-700">{tr('requestCard.department', 'Department')}:</span>{' '}
-                      {req.department_name || '—'}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">{tr('requestCard.section', 'Section')}:</span>{' '}
-                      {req.section_name || '—'}
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">{tr('requestCard.submitted', 'Submitted')}:</span>{' '}
-                      {formatDateTime(req.created_at)}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-700">{tr('requestCard.status', 'Status')}:</span>
-                      {renderStatusBadge(req.status)}
-                    </div>
-                  </div>
-                </div>
+            filteredRequests.map((req) => {
+              const items = itemsCache[req.id] || normalizeItems(req.items || []);
+              const stats = getFulfillmentStats({ ...req, items });
 
-                <div className="mt-4 rounded bg-gray-50 p-4 text-sm text-gray-700">
-                  <p className="font-medium text-gray-900">{tr('requestCard.justification', 'Justification')}</p>
-                  <p className="mt-1 whitespace-pre-line">
-                    {req.justification || tr('requestCard.noJustification', 'No justification provided.')}
-                  </p>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/warehouse-supply/${req.id}`)}
-                    className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                  >
-                    {tr('requestCard.recordSupplied', 'Record Supplied Items')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleItems(req.id)}
-                    className="rounded border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
-                  >
-                    {expandedRequestId === req.id
-                      ? tr('requestCard.hideItems', 'Hide Requested Items')
-                      : tr('requestCard.viewItems', 'View Requested Items')}
-                  </button>
-                </div>
-
-                {expandedRequestId === req.id && (
-                  <div className="mt-4 rounded border border-gray-200 bg-gray-50 p-4">
-                    {itemsLoadingId === req.id ? (
-                      <p className="text-sm text-gray-600">{tr('items.loading', 'Loading requested items…')}</p>
-                    ) : itemsError[req.id] ? (
-                      <p className="text-sm text-red-600">{itemsError[req.id]}</p>
-                    ) : itemsCache[req.id] && itemsCache[req.id].length > 0 ? (
-                      <ul className="space-y-2 text-sm text-gray-700">
-                        {itemsCache[req.id].map((item) => (
-                          <li key={item.item_id || item.id} className="flex items-center justify-between rounded bg-white px-3 py-2 shadow">
-                            <span className="font-medium text-gray-900">{item.item_name}</span>
-                            <span className="text-gray-600">
-                              {tr('items.requestedQuantity', 'Requested: {{quantity}}', {
-                                quantity: item.quantity,
-                              })}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-gray-600">{tr('items.empty', 'No requested items available.')}</p>
-                    )}
+              return (
+                <article key={req.id} className="rounded border border-gray-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm text-gray-500">{tr('requestCard.requestId', 'Request ID')}</p>
+                      <p className="text-xl font-semibold">{req.id}</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                      <div>
+                        <span className="font-medium text-gray-700">{tr('requestCard.department', 'Department')}:</span>{' '}
+                        {req.department_name || '—'}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">{tr('requestCard.section', 'Section')}:</span>{' '}
+                        {req.section_name || '—'}
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">{tr('requestCard.submitted', 'Submitted')}:</span>{' '}
+                        {formatDateTime(req.created_at)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-700">{tr('requestCard.status', 'Status')}:</span>
+                        {renderStatusBadge(req.status)}
+                      </div>
+                    </div>
                   </div>
-                )}
-              </article>
-            ))
+
+                  <div className="mt-4 rounded bg-gray-50 p-4 text-sm text-gray-700">
+                    <p className="font-medium text-gray-900">{tr('requestCard.justification', 'Justification')}</p>
+                    <p className="mt-1 whitespace-pre-line">
+                      {req.justification || tr('requestCard.noJustification', 'No justification provided.')}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded border border-gray-200 bg-white p-3 shadow-sm">
+                      <p className="text-sm text-gray-500">{tr('requestCard.itemsCount', 'Items in request')}</p>
+                      <p className="mt-1 text-xl font-semibold">{items.length}</p>
+                    </div>
+                    <div className="rounded border border-gray-200 bg-white p-3 shadow-sm">
+                      <p className="text-sm text-gray-500">{tr('requestCard.supplied', 'Supplied so far')}</p>
+                      <p className="mt-1 text-xl font-semibold">{stats.suppliedTotal}</p>
+                    </div>
+                    <div className="rounded border border-gray-200 bg-white p-3 shadow-sm">
+                      <p className="text-sm text-gray-500">{tr('requestCard.outstanding', 'Outstanding')}</p>
+                      <p className={`mt-1 text-xl font-semibold ${stats.outstanding > 0 ? 'text-amber-600' : 'text-green-700'}`}>
+                        {stats.outstanding}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm font-medium text-gray-800">
+                        {tr('requestCard.progressLabel', '{{progress}}% fulfilled', {
+                          progress: stats.progress,
+                        })}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {tr('requestCard.suppliedSummary', '{{supplied}} of {{requested}} supplied', {
+                          supplied: stats.suppliedTotal,
+                          requested: stats.requestedTotal || '—',
+                        })}
+                      </p>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-gray-200">
+                      <div
+                        className={`h-2 rounded-full transition-all ${stats.fullySupplied ? 'bg-green-500' : 'bg-blue-500'}`}
+                        style={{ width: `${stats.progress}%` }}
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {stats.fullySupplied
+                        ? tr('requestCard.fullySupplied', 'All requested quantities have been supplied.')
+                        : tr(
+                          'requestCard.fulfillmentHint',
+                          'Record supplied quantities to complete this request.',
+                        )}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/warehouse-supply/${req.id}`)}
+                      className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                      {tr('requestCard.recordSupplied', 'Record Supplied Items')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleItems(req.id)}
+                      className="rounded border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+                    >
+                      {expandedRequestId === req.id
+                        ? tr('requestCard.hideItems', 'Hide Requested Items')
+                        : tr('requestCard.viewItems', 'View Requested Items')}
+                    </button>
+                  </div>
+
+                  {expandedRequestId === req.id && (
+                    <div className="mt-4 rounded border border-gray-200 bg-gray-50 p-4">
+                      {itemsLoadingId === req.id ? (
+                        <p className="text-sm text-gray-600">{tr('items.loading', 'Loading requested items…')}</p>
+                      ) : itemsError[req.id] ? (
+                        <p className="text-sm text-red-600">{itemsError[req.id]}</p>
+                      ) : items && items.length > 0 ? (
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          {items.map((item) => (
+                            <li
+                              key={item.item_id || item.id}
+                              className="rounded bg-white px-3 py-2 shadow"
+                            >
+                              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900">{item.item_name}</p>
+                                  <p className="text-xs text-gray-500">ID: {item.item_id || item.id}</p>
+                                </div>
+                                <div className="flex flex-wrap gap-3 text-sm">
+                                  <span className="text-gray-700">
+                                    {tr('items.requestedQuantity', 'Requested: {{quantity}}', {
+                                      quantity: item.quantity,
+                                    })}
+                                  </span>
+                                  <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
+                                    {tr('items.suppliedQuantity', 'Supplied: {{quantity}}', {
+                                      quantity: item.supplied_quantity || 0,
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-600">{tr('items.empty', 'No requested items available.')}</p>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })
           )}
         </section>
       </div>
