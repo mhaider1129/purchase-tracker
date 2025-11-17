@@ -146,6 +146,9 @@ const Navbar = () => {
     const canManageContracts = hasAccess(currentUser, 'feature.contracts', ['contracts.manage']);
     const canManageEvaluations = hasAccess(currentUser, 'feature.supplierEvaluations', ['evaluations.manage']);
     const canAccessAudit = hasAccess(currentUser, 'feature.auditRequests', ['requests.view-all']);
+    const canReviewStockItems = hasAccess(currentUser, 'feature.stockItemRequests', [
+      'stock-requests.review',
+    ]);
     const canViewIncompleteQueues =
       hasAccess(currentUser, 'feature.incompleteRequests', ['requests.view-all']) ||
       ['cmo', 'coo'].includes(normalizedRole);
@@ -215,6 +218,12 @@ const Navbar = () => {
             t('navbar.maintenanceStock'),
             '/maintenance-stock',
             'text-teal-600'
+          ),
+          createItem(
+            canReviewStockItems,
+            t('navbar.stockItemApprovals'),
+            '/stock-item-approvals',
+            'text-blue-700'
           ),
           createItem(
             canViewRecalls,

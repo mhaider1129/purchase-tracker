@@ -49,6 +49,7 @@ import ContractsPage from './pages/ContractsPage';
 import SupplierEvaluationsPage from './pages/SupplierEvaluationsPage';
 import MyEvaluationsPage from './pages/MyEvaluationsPage';
 import EvaluationDetailsPage from './pages/EvaluationDetailsPage';
+import StockItemApprovals from './pages/StockItemApprovals';
 
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AccessControlProvider, useAccessControl } from './hooks/useAccessControl';
@@ -311,6 +312,17 @@ const AppRoutes = () => (
           allowedRoles={['SCM', 'admin']}
           requiredPermissions={['procurement.update-status', 'procurement.update-cost']}
           resourceKey="feature.procurementPlans"
+        />
+      }
+    />
+    <Route
+      path="/stock-item-approvals"
+      element={
+        <ProtectedRoute
+          element={<StockItemApprovals />}
+          allowedRoles={['SCM', 'admin']}
+          requiredPermissions={['stock-requests.review']}
+          resourceKey="feature.stockItemRequests"
         />
       }
     />
