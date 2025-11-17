@@ -63,7 +63,7 @@ const StockItemRequestForm = () => {
       <Navbar />
       <div className="max-w-md mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
-          New Stock Item Request
+          Stock List Addition Request
           <HelpTooltip text="Request a new item to be added to the stock list." />
         </h1>
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">

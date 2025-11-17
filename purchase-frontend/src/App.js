@@ -321,8 +321,8 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<StockItemApprovals />}
           allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['stock-requests.review']}
-          resourceKey="feature.stockItemRequests"
+          requiredPermissions={['stock-requests.review', 'stock-items.manage']}
+          resourceKey="feature.stockItemApprovals"
         />
       }
     />

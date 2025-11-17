@@ -640,11 +640,13 @@ const AssignedRequestsPage = () => {
                       {request.project_name || '—'}
                     </p>
                     <p>
-                        <strong>Department:</strong> {request.department_name || '—'}
+                      <strong className="text-gray-700">{tr('requestCard.department', 'Department')}:</strong>{' '}
+                      {request.department_name || '—'}
                     </p>
                     {request.requester_name && (
                       <p>
-                        <strong>Requester:</strong> {request.requester_name}
+                        <strong className="text-gray-700">{tr('requestCard.requester', 'Requester')}:</strong>{' '}
+                        {request.requester_name}
                         {request.requester_role && ` (${request.requester_role})`}
                       </p>
                     )}

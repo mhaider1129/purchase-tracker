@@ -1,6 +1,7 @@
 // src/components/ProcurementItemStatusPanel.jsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from '../api/axios';
+import usePageTranslation from '../utils/usePageTranslation';
 
 const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [status, setStatus] = useState(item.procurement_status || '');
@@ -17,6 +18,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [attachmentsError, setAttachmentsError] = useState('');
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
   const itemId = item?.id;
+  const tr = usePageTranslation('assignedRequests');
 
   const updatedAt = item.procurement_updated_at
     ? new Date(item.procurement_updated_at).toLocaleString()
@@ -27,14 +29,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       if (item.procurement_updated_by) {
         try {
           const res = await axios.get(`/api/users/${item.procurement_updated_by}`);
-          setUpdaterName(res.data.name || 'Unknown');
+          setUpdaterName(res.data.name || tr('itemPanel.lastUpdatedUnknown', 'Unknown'));
         } catch (err) {
           console.warn('⚠️ Could not fetch updater name:', err);
         }
       }
     };
     fetchUpdater();
-  }, [item.procurement_updated_by]);
+  }, [item.procurement_updated_by, tr]);
 
   useEffect(() => {
     setUnitCost(item.unit_cost ?? '');
@@ -65,14 +67,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       } catch (err) {
         console.error(`❌ Error fetching attachments for item ${itemId}:`, err);
         setAttachments([]);
-        setAttachmentsError('Failed to load attachments.');
+    setAttachmentsError(tr('itemPanel.attachments.error', 'Failed to load attachments.'));
       } finally {
         setLoadingAttachments(false);
       }
     };
 
     fetchItemAttachments();
-  }, [itemId]);
+  }, [itemId, tr]);
 
   const handleDownloadAttachment = async (attachment) => {
     const storedPath = attachment?.file_path || '';
@@ -81,7 +83,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       attachment?.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
 
     if (!downloadEndpoint) {
-      alert('Attachment file is missing.');
+      alert(tr('itemPanel.attachments.missing', 'Attachment file is missing.'));
       return;
     }
 
@@ -105,7 +107,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error(`❌ Error downloading attachment ${attachment.id}:`, err);
-      alert('Failed to download attachment. Please try again.');
+      alert(tr('itemPanel.attachments.downloadFailed', 'Failed to download attachment. Please try again.'));
     } finally {
       setDownloadingAttachmentId(null);
     }
@@ -169,22 +171,22 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
   const metaDetails = useMemo(() => {
     const details = [
-      { label: 'Brand', value: item.brand },
-      { label: 'Specs', value: item.specs },
-      { label: 'Category', value: item.category },
-      { label: 'Supplier', value: item.preferred_supplier },
+      { label: tr('itemPanel.meta.brand', 'Brand'), value: item.brand },
+      { label: tr('itemPanel.meta.specs', 'Specs'), value: item.specs },
+      { label: tr('itemPanel.meta.category', 'Category'), value: item.category },
+      { label: tr('itemPanel.meta.supplier', 'Supplier'), value: item.preferred_supplier },
     ];
 
     return details.filter((detail) => detail.value);
-  }, [item.brand, item.category, item.preferred_supplier, item.specs]);
+  }, [item.brand, item.category, item.preferred_supplier, item.specs, tr]);
 
   const statusOptions = useMemo(
     () => [
-      { value: 'pending', label: 'Pending Purchase' },
-      { value: 'purchased', label: 'Purchased' },
-      { value: 'not_procured', label: 'Not Procured' },
+      { value: 'pending', label: tr('itemPanel.statusOptions.pending', 'Pending Purchase') },
+      { value: 'purchased', label: tr('itemPanel.statusOptions.purchased', 'Purchased') },
+      { value: 'not_procured', label: tr('itemPanel.statusOptions.notProcured', 'Not Procured') },
     ],
-    []
+    [tr]
   );
 
   const statusStyles = useMemo(
@@ -200,7 +202,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
   const handleSave = async () => {
     if (!status) {
-      setMessage({ type: 'error', text: 'Please select a status.' });
+      setMessage({ type: 'error', text: tr('itemPanel.messages.selectStatus', 'Please select a status.') });
       return;
     }
 
@@ -209,18 +211,30 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     const numericQty = Number(purchasedQty);
 
     if (hasUnitCost && (Number.isNaN(numericUnitCost) || numericUnitCost < 0)) {
-      setMessage({ type: 'error', text: 'Enter a valid unit cost (zero or above).' });
+      setMessage({
+        type: 'error',
+        text: tr('itemPanel.messages.unitCostInvalid', 'Enter a valid unit cost (zero or above).'),
+      });
       return;
     }
 
     if (Number.isNaN(numericQty) || numericQty < 0) {
-      setMessage({ type: 'error', text: 'Enter a valid purchased quantity (zero or above).' });
+      setMessage({
+        type: 'error',
+        text: tr('itemPanel.messages.purchasedQtyInvalid', 'Enter a valid purchased quantity (zero or above).'),
+      });
       return;
     }
 
     if (status === 'purchased') {
       if (numericQty <= 0) {
-        setMessage({ type: 'error', text: 'Purchased items require a purchased quantity greater than zero.' });
+        setMessage({
+          type: 'error',
+          text: tr(
+            'itemPanel.messages.purchasedQtyRequired',
+            'Purchased items require a purchased quantity greater than zero.'
+          ),
+        });
         return;
       }
     }
@@ -244,13 +258,13 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         procurement_comment: comment,
       });
 
-      setMessage({ type: 'success', text: '✅ Updated successfully.' });
+      setMessage({ type: 'success', text: tr('itemPanel.messages.updateSuccess', '✅ Updated successfully.') });
       if (onUpdate) onUpdate(); // Notify parent to refresh data
     } catch (err) {
       console.error('❌ Update error:', err);
       setMessage({
         type: 'error',
-        text: err.response?.data?.message || '❌ Failed to update.',
+        text: err.response?.data?.message || tr('itemPanel.messages.updateFailed', '❌ Failed to update.'),
       });
     } finally {
       setSaving(false);
@@ -264,7 +278,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           <div>
             <h4 className="text-lg font-semibold text-slate-800">{item.item_name}</h4>
             <p className="mt-1 text-sm text-slate-500">
-              Requested quantity: <span className="font-medium text-slate-700">{formatNumber(requestedQty)}</span>
+              {tr('itemPanel.requestedQuantityPrefix', 'Requested quantity:')}{' '}
+              <span className="font-medium text-slate-700">{formatNumber(requestedQty)}</span>
             </p>
             {metaDetails.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
@@ -290,12 +305,15 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
                   statusStyles[status] || 'border-slate-200 bg-slate-100 text-slate-700'
                 }`}
               >
-                {status.replace('_', ' ')}
+                {statusOptions.find((opt) => opt.value === status)?.label || status.replace('_', ' ')}
               </span>
             )}
             {(updaterName || updatedAt) && (
               <div className="text-xs italic text-slate-500">
-                Last updated by {updaterName || 'Unknown'} at {updatedAt || 'Unknown time'}
+                {tr('itemPanel.lastUpdated', 'Last updated by {{name}} at {{time}}', {
+                  name: updaterName || tr('itemPanel.lastUpdatedUnknown', 'Unknown'),
+                  time: updatedAt || tr('itemPanel.lastUpdatedUnknownTime', 'Unknown time'),
+                })}
               </div>
             )}
           </div>
@@ -303,21 +321,29 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Requested Qty</p>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">
+              {tr('itemPanel.cards.requestedQty', 'Requested Qty')}
+            </p>
             <p className="mt-1 text-base font-semibold text-slate-700">{formatNumber(requestedQty)}</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Purchased Qty</p>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">
+              {tr('itemPanel.cards.purchasedQty', 'Purchased Qty')}
+            </p>
             <p className="mt-1 text-base font-semibold text-emerald-700">
               {formatNumber(purchasedQtyNumber)}
             </p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Remaining Qty</p>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">
+              {tr('itemPanel.cards.remainingQty', 'Remaining Qty')}
+            </p>
             <p className="mt-1 text-base font-semibold text-amber-700">{formatNumber(outstandingQty)}</p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-            <p className="text-[11px] uppercase tracking-wide text-slate-400">Requested Line Total</p>
+            <p className="text-[11px] uppercase tracking-wide text-slate-400">
+              {tr('itemPanel.cards.requestedLineTotal', 'Requested Line Total')}
+            </p>
             <p className="mt-1 text-base font-semibold text-slate-700">
               {formatNumber(requestedLineTotal, {
                 minimumFractionDigits: 2,
@@ -329,7 +355,9 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Unit Cost</label>
+            <label className="block text-sm font-medium text-slate-700">
+              {tr('itemPanel.inputs.unitCost', 'Unit Cost')}
+            </label>
             <input
               type="number"
               min={0}
@@ -340,16 +368,20 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             />
             {originalUnitCost !== null && (
               <p className="mt-1 text-xs text-slate-500">
-                Originally requested at {formatNumber(originalUnitCost, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
+                {tr('itemPanel.inputs.originalUnitCost', 'Originally requested at {{cost}}', {
+                  cost: formatNumber(originalUnitCost, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }),
                 })}
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Purchased Quantity</label>
+            <label className="block text-sm font-medium text-slate-700">
+              {tr('itemPanel.inputs.purchasedQuantity', 'Purchased Quantity')}
+            </label>
             <input
               type="number"
               min={0}
@@ -362,13 +394,15 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Procurement Status</label>
+            <label className="block text-sm font-medium text-slate-700">
+              {tr('itemPanel.inputs.procurementStatus', 'Procurement Status')}
+            </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="">-- Select Status --</option>
+              <option value="">{tr('itemPanel.inputs.selectStatus', '-- Select Status --')}</option>
               {statusOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -378,7 +412,9 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700">Comment</label>
+            <label className="block text-sm font-medium text-slate-700">
+              {tr('itemPanel.inputs.comment', 'Comment')}
+            </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -390,7 +426,9 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
         <div className="mt-6 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-600">
-            <span className="font-semibold text-slate-700">Recorded Line Total:</span>{' '}
+            <span className="font-semibold text-slate-700">
+              {tr('itemPanel.recordedLineTotal', 'Recorded Line Total:')}
+            </span>{' '}
             {formatNumber(totalCost, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -405,7 +443,9 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             }`}
             type="button"
           >
-            {saving ? 'Saving…' : 'Save Updates'}
+            {saving
+              ? tr('itemPanel.buttons.saving', 'Saving…')
+              : tr('itemPanel.buttons.save', 'Save Updates')}
           </button>
         </div>
 
@@ -420,13 +460,19 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         )}
 
         <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
-          <h4 className="text-sm font-semibold text-slate-700">Item Attachments</h4>
+          <h4 className="text-sm font-semibold text-slate-700">
+            {tr('itemPanel.attachments.title', 'Item Attachments')}
+          </h4>
           {loadingAttachments ? (
-            <p className="text-xs text-slate-500">Loading attachments…</p>
+            <p className="text-xs text-slate-500">
+              {tr('itemPanel.attachments.loading', 'Loading attachments…')}
+            </p>
           ) : attachmentsError ? (
             <p className="text-xs text-rose-600">{attachmentsError}</p>
           ) : attachments.length === 0 ? (
-            <p className="text-xs text-slate-500">No attachments uploaded for this item.</p>
+            <p className="text-xs text-slate-500">
+              {tr('itemPanel.attachments.empty', 'No attachments uploaded for this item.')}
+            </p>
           ) : (
             <ul className="mt-2 space-y-1 text-sm">
               {attachments.map((attachment) => {
@@ -440,8 +486,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
                       disabled={downloadingAttachmentId === attachment.id}
                     >
                       {downloadingAttachmentId === attachment.id
-                        ? 'Downloading…'
-                        : attachment.file_name || filename || 'Attachment'}
+                        ? tr('itemPanel.attachments.downloading', 'Downloading…')
+                        : attachment.file_name || filename || tr('itemPanel.attachments.fallback', 'Attachment')}
                     </button>
                   </li>
                 );

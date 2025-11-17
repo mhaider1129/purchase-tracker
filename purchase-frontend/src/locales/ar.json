@@ -52,6 +52,60 @@
       "warehouseKeeper": "أمين المستودع"
     }
   },
+  "itemPanel": {
+    "requestedQuantityPrefix": "الكمية المطلوبة:",
+    "meta": {
+      "brand": "العلامة التجارية",
+      "specs": "المواصفات",
+      "category": "الفئة",
+      "supplier": "المورّد"
+    },
+    "statusOptions": {
+      "pending": "قيد الشراء",
+      "purchased": "تم الشراء",
+      "notProcured": "لم يتم التوريد"
+    },
+    "lastUpdated": "آخر تحديث بواسطة {{name}} في {{time}}",
+    "lastUpdatedUnknown": "غير معروف",
+    "lastUpdatedUnknownTime": "وقت غير معروف",
+    "cards": {
+      "requestedQty": "الكمية المطلوبة",
+      "purchasedQty": "الكمية المشتراة",
+      "remainingQty": "الكمية المتبقية",
+      "requestedLineTotal": "إجمالي السطر المطلوب"
+    },
+    "inputs": {
+      "unitCost": "تكلفة الوحدة",
+      "originalUnitCost": "تم طلبه أصلاً بسعر {{cost}}",
+      "purchasedQuantity": "الكمية المشتراة",
+      "procurementStatus": "حالة الشراء",
+      "selectStatus": "-- اختر الحالة --",
+      "comment": "تعليق"
+    },
+    "recordedLineTotal": "إجمالي السطر المسجل:",
+    "buttons": {
+      "saving": "جارٍ الحفظ…",
+      "save": "حفظ التحديثات"
+    },
+    "messages": {
+      "selectStatus": "يرجى اختيار الحالة.",
+      "unitCostInvalid": "أدخل تكلفة وحدة صالحة (صفر أو أكثر).",
+      "purchasedQtyInvalid": "أدخل كمية مشتراة صالحة (صفر أو أكثر).",
+      "purchasedQtyRequired": "تحتاج العناصر المشتراة إلى كمية مشتراة أكبر من الصفر.",
+      "updateSuccess": "✅ تم التحديث بنجاح.",
+      "updateFailed": "❌ فشل التحديث."
+    },
+    "attachments": {
+      "title": "مرفقات العنصر",
+      "loading": "جارٍ تحميل المرفقات…",
+      "empty": "لا توجد مرفقات مرفوعة لهذا العنصر.",
+      "error": "فشل في تحميل المرفقات.",
+      "missing": "ملف المرفق مفقود.",
+      "downloadFailed": "فشل تنزيل المرفق. يرجى المحاولة مرة أخرى.",
+      "downloading": "جارٍ التنزيل…",
+      "fallback": "مرفق"
+    }
+  },
   "requestAccount": {
     "title": "طلب إنشاء حساب",
     "subtitle": "املأ بياناتك ليقوم مسؤول سلسلة الإمداد بمراجعة الطلب.",
@@ -506,8 +560,8 @@
         "aria": "طلب مواد مخزونية"
       },
       "newStockItem": {
-        "label": "إضافة صنف مخزون جديد",
-        "aria": "إضافة صنف مخزون جديد"
+        "label": "إضافة صنف إلى قائمة المخزون",
+        "aria": "إضافة صنف إلى قائمة المخزون"
       },
       "warehouseTemplates": {
         "label": "قوالب توريد المستودع",
@@ -1260,6 +1314,7 @@
       "type": "النوع",
       "project": "المشروع",
       "justification": "التبرير",
+      "department": "الإدارة",
       "requester": "مقدّم الطلب",
       "viewItems": "عرض العناصر",
       "hideItems": "إخفاء العناصر"

@@ -146,8 +146,9 @@ const Navbar = () => {
     const canManageContracts = hasAccess(currentUser, 'feature.contracts', ['contracts.manage']);
     const canManageEvaluations = hasAccess(currentUser, 'feature.supplierEvaluations', ['evaluations.manage']);
     const canAccessAudit = hasAccess(currentUser, 'feature.auditRequests', ['requests.view-all']);
-    const canReviewStockItems = hasAccess(currentUser, 'feature.stockItemRequests', [
+    const canReviewStockItems = hasAccess(currentUser, 'feature.stockItemApprovals', [
       'stock-requests.review',
+      'stock-items.manage',
     ]);
     const canViewIncompleteQueues =
       hasAccess(currentUser, 'feature.incompleteRequests', ['requests.view-all']) ||
