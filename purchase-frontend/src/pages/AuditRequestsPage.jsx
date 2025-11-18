@@ -32,6 +32,8 @@ const AuditRequestsPage = () => {
     () => [
       { value: 'all', label: tr('filters.status.all', 'All Statuses') },
       { value: 'approved', label: tr('filters.status.approved', 'Approved') },
+      { value: 'completed', label: tr('filters.status.completed', 'Completed') },
+      { value: 'received', label: tr('filters.status.received', 'Received') },
       { value: 'rejected', label: tr('filters.status.rejected', 'Rejected') },
     ],
     [tr],

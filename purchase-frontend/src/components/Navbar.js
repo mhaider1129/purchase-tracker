@@ -151,7 +151,7 @@ const Navbar = () => {
       'stock-items.manage',
     ]);
     const canViewIncompleteQueues =
-      hasAccess(currentUser, 'feature.incompleteRequests', ['requests.view-all']) ||
+      hasAccess(currentUser, 'feature.incompleteRequests', ['requests.view-incomplete']) ||
       ['cmo', 'coo'].includes(normalizedRole);
 
     const incompletePath =

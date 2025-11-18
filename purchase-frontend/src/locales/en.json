@@ -788,6 +788,8 @@
       "status": {
         "all": "All Statuses",
         "approved": "Approved",
+        "completed": "Completed",
+        "received": "Received",
         "rejected": "Rejected"
       },
       "type": {
@@ -1394,6 +1396,60 @@
       "markComplete": "Mark Request as Completed",
       "missingCost": "Record and save the total cost of this request before completing it.",
       "incompleteItems": "All items must be marked as purchased or unable to procure with recorded quantities before completing the request."
+    },
+    "itemPanel": {
+      "requestedQuantityPrefix": "Requested quantity:",
+      "meta": {
+        "brand": "Brand",
+        "specs": "Specs",
+        "category": "Category",
+        "supplier": "Supplier"
+      },
+      "statusOptions": {
+        "pending": "Pending Purchase",
+        "purchased": "Purchased",
+        "notProcured": "Not Procured"
+      },
+      "lastUpdated": "Last updated by {{name}} at {{time}}",
+      "lastUpdatedUnknown": "Unknown",
+      "lastUpdatedUnknownTime": "Unknown time",
+      "cards": {
+        "requestedQty": "Requested Qty",
+        "purchasedQty": "Purchased Qty",
+        "remainingQty": "Remaining Qty",
+        "requestedLineTotal": "Requested Line Total"
+      },
+      "inputs": {
+        "unitCost": "Unit Cost",
+        "originalUnitCost": "Originally requested at {{cost}}",
+        "purchasedQuantity": "Purchased Quantity",
+        "procurementStatus": "Procurement Status",
+        "selectStatus": "-- Select Status --",
+        "comment": "Comment"
+      },
+      "recordedLineTotal": "Recorded Line Total:",
+      "buttons": {
+        "saving": "Saving…",
+        "save": "Save Updates"
+      },
+      "messages": {
+        "selectStatus": "Please select a status.",
+        "unitCostInvalid": "Enter a valid unit cost (zero or above).",
+        "purchasedQtyInvalid": "Enter a valid purchased quantity (zero or above).",
+        "purchasedQtyRequired": "Purchased items require a purchased quantity greater than zero.",
+        "updateSuccess": "✅ Updated successfully.",
+        "updateFailed": "❌ Failed to update."
+      },
+      "attachments": {
+        "title": "Item Attachments",
+        "loading": "Loading attachments…",
+        "empty": "No attachments uploaded for this item.",
+        "error": "Failed to load attachments.",
+        "missing": "Attachment file is missing.",
+        "downloadFailed": "Failed to download attachment. Please try again.",
+        "downloading": "Downloading…",
+        "fallback": "Attachment"
+      }
     }
   },
   "auditRequests": {
@@ -1460,6 +1516,8 @@
     },
     "statuses": {
       "approved": "Approved",
+      "completed": "Completed",
+      "received": "Received",
       "rejected": "Rejected",
       "unknown": "Unknown"
     }

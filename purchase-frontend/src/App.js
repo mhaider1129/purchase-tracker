@@ -299,7 +299,7 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<IncompleteRequestsPage />}
           allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['requests.view-all']}
+          requiredPermissions={['requests.view-incomplete']}
           resourceKey="feature.incompleteRequests"
         />
       }
@@ -369,7 +369,7 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<IncompleteMedicalRequestsPage />}
           allowedRoles={['CMO', 'SCM']}
-          requiredPermissions={['requests.view-all']}
+          requiredPermissions={['requests.view-incomplete']}
           resourceKey="feature.incompleteMedical"
         />
       }
@@ -380,7 +380,7 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<IncompleteOperationalRequestsPage />}
           allowedRoles={['COO', 'SCM']}
-          requiredPermissions={['requests.view-all']}
+          requiredPermissions={['requests.view-incomplete']}
           resourceKey="feature.incompleteOperational"
         />
       }

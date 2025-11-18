@@ -1382,6 +1382,60 @@
       "markComplete": "وضع علامة مكتمل على الطلب",
       "missingCost": "سجّل واحفظ إجمالي تكلفة هذا الطلب قبل إكماله.",
       "incompleteItems": "يجب وضع علامة مشتراة أو تعذر الشراء لجميع العناصر مع تسجيل الكميات قبل إكمال الطلب."
+    },
+    "itemPanel": {
+      "requestedQuantityPrefix": "الكمية المطلوبة:",
+      "meta": {
+        "brand": "العلامة التجارية",
+        "specs": "المواصفات",
+        "category": "الفئة",
+        "supplier": "المورّد"
+      },
+      "statusOptions": {
+        "pending": "قيد الشراء",
+        "purchased": "تم الشراء",
+        "notProcured": "لم يتم التوريد"
+      },
+      "lastUpdated": "آخر تحديث بواسطة {{name}} في {{time}}",
+      "lastUpdatedUnknown": "غير معروف",
+      "lastUpdatedUnknownTime": "وقت غير معروف",
+      "cards": {
+        "requestedQty": "الكمية المطلوبة",
+        "purchasedQty": "الكمية المشتراة",
+        "remainingQty": "الكمية المتبقية",
+        "requestedLineTotal": "إجمالي السطر المطلوب"
+      },
+      "inputs": {
+        "unitCost": "تكلفة الوحدة",
+        "originalUnitCost": "تم طلبه أصلاً بسعر {{cost}}",
+        "purchasedQuantity": "الكمية المشتراة",
+        "procurementStatus": "حالة الشراء",
+        "selectStatus": "-- اختر الحالة --",
+        "comment": "تعليق"
+      },
+      "recordedLineTotal": "إجمالي السطر المسجل:",
+      "buttons": {
+        "saving": "جارٍ الحفظ…",
+        "save": "حفظ التحديثات"
+      },
+      "messages": {
+        "selectStatus": "يرجى اختيار الحالة.",
+        "unitCostInvalid": "أدخل تكلفة وحدة صالحة (صفر أو أكثر).",
+        "purchasedQtyInvalid": "أدخل كمية مشتراة صالحة (صفر أو أكثر).",
+        "purchasedQtyRequired": "تحتاج العناصر المشتراة إلى كمية مشتراة أكبر من الصفر.",
+        "updateSuccess": "✅ تم التحديث بنجاح.",
+        "updateFailed": "❌ فشل التحديث."
+      },
+      "attachments": {
+        "title": "مرفقات العنصر",
+        "loading": "جارٍ تحميل المرفقات…",
+        "empty": "لا توجد مرفقات مرفوعة لهذا العنصر.",
+        "error": "فشل في تحميل المرفقات.",
+        "missing": "ملف المرفق مفقود.",
+        "downloadFailed": "فشل تنزيل المرفق. يرجى المحاولة مرة أخرى.",
+        "downloading": "جارٍ التنزيل…",
+        "fallback": "مرفق"
+      }
     }
   },
   "auditRequests": {
@@ -1399,6 +1453,8 @@
       "status": {
         "all": "جميع الحالات",
         "approved": "موافق",
+        "completed": "مكتمل",
+        "received": "مستلم",
         "rejected": "مرفوض"
       },
       "type": {
@@ -1448,6 +1504,8 @@
     },
     "statuses": {
       "approved": "موافق",
+      "completed": "مكتمل",
+      "received": "مستلم",
       "rejected": "مرفوض",
       "unknown": "غير معروف"
     }
