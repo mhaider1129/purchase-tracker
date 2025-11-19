@@ -224,66 +224,73 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
             </select>
           </div>
 
-          <div>
-            <label className="block font-semibold mb-1">Template</label>
-            <select
-              value={selectedTemplateId}
-              onChange={(e) => applyTemplate(e.target.value)}
-              className="p-2 border rounded"
-              disabled={submitting}
-            >
-              <option value="">-- Select Template --</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.template_name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-2">Items</label>
-            {items.map((it, idx) => (
-              <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
-                <input
-                  type="text"
-                  value={it.item_name}
-                  onChange={(e) => handleItemChange(idx, 'item_name', e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  placeholder="Item name"
-                  required
-                  disabled={submitting}
-                />
-                <input
-                  type="number"
-                  min={1}
-                  value={it.quantity}
-                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
-                  className="w-24 p-2 border rounded"
-                  required
-                  disabled={submitting}
-                />
-                {items.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(idx)}
-                    className="text-red-600 text-lg"
-                    disabled={submitting}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+        <div>
+          <label className="block font-semibold mb-1">Template</label>
+          <select
+            value={selectedTemplateId}
+            onChange={(e) => applyTemplate(e.target.value)}
+            className="p-2 border rounded"
+            disabled={submitting}
+          >
+            <option value="">-- Select Template --</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.template_name}
+              </option>
             ))}
-            <button
-              type="button"
-              onClick={addItem}
-              className="text-blue-600 mt-2"
-              disabled={submitting}
-            >
-              + Add Item
-            </button>
-          </div>
+          </select>
+        </div>
+
+        <ProjectSelector
+          value={projectId}
+          onChange={setProjectId}
+          disabled={submitting}
+          user={user}
+        />
+
+        <div>
+          <label className="block font-semibold mb-2">Items</label>
+          {items.map((it, idx) => (
+            <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
+              <input
+                type="text"
+                value={it.item_name}
+                onChange={(e) => handleItemChange(idx, 'item_name', e.target.value)}
+                className="flex-1 p-2 border rounded"
+                placeholder="Item name"
+                required
+                disabled={submitting}
+              />
+              <input
+                type="number"
+                min={1}
+                value={it.quantity}
+                onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                className="w-24 p-2 border rounded"
+                required
+                disabled={submitting}
+              />
+              {items.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeItem(idx)}
+                  className="text-red-600 text-lg"
+                  disabled={submitting}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addItem}
+            className="text-blue-600 mt-2"
+            disabled={submitting}
+          >
+            + Add Item
+          </button>
+        </div>
 
           <button
             type="submit"

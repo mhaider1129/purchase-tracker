@@ -11,6 +11,7 @@ import useCurrentUser from '../../hooks/useCurrentUser';
 
 const createEmptyItem = (overrides = {}) => ({
   item_name: '',
+  stock_item_id: '',
   brand: '',
   category: overrides.category ?? '',
   sub_category: overrides.sub_category ?? '',
@@ -151,22 +152,24 @@ const StockRequestForm = () => {
     });
   };
 
-  const handleItemSelection = (index, itemName) => {
+  const handleItemSelection = (index, stockItemId) => {
     setSelectedItems((prev) => {
       const updated = [...prev];
       const current = { ...updated[index] };
-      if (!itemName) {
+      if (!stockItemId) {
         updated[index] = {
           ...current,
+          stock_item_id: '',
           item_name: '',
           brand: '',
           available_quantity: '',
         };
       } else {
-        const matchedItem = itemsList.find((stock) => stock.name === itemName);
+        const matchedItem = itemsList.find((stock) => String(stock.id) === stockItemId);
         if (matchedItem) {
           updated[index] = {
             ...current,
+            stock_item_id: matchedItem.id,
             item_name: matchedItem.name,
             brand: matchedItem.brand || '',
             available_quantity: matchedItem.available_quantity ?? '',
@@ -186,7 +189,7 @@ const StockRequestForm = () => {
 
     setItemSearchTerms((terms) => {
       const next = [...terms];
-      next[index] = itemName;
+      next[index] = '';
       return next;
     });
   };
@@ -466,14 +469,23 @@ const StockRequestForm = () => {
             <label className="block font-semibold mb-2">Select Items</label>
             {selectedItems.map((item, index) => {
               const searchTerm = itemSearchTerms[index] || '';
-              let filteredOptions = scopedCatalog.filter((stock) =>
-                stock.name.toLowerCase().includes(searchTerm.toLowerCase())
-              );
+              const normalizedTerm = searchTerm.toLowerCase();
+              let filteredOptions = scopedCatalog.filter((stock) => {
+                const nameMatch = stock.name
+                  .toLowerCase()
+                  .includes(normalizedTerm);
+                const brandMatch = (stock.brand || '')
+                  .toLowerCase()
+                  .includes(normalizedTerm);
+                return nameMatch || brandMatch;
+              });
               const hasSelectedOption = filteredOptions.some(
-                (stock) => stock.name === item.item_name
+                (stock) => String(stock.id) === String(item.stock_item_id)
               );
-              if (item.item_name && !hasSelectedOption) {
-                const matched = scopedCatalog.find((stock) => stock.name === item.item_name);
+              if (item.stock_item_id && !hasSelectedOption) {
+                const matched = scopedCatalog.find(
+                  (stock) => String(stock.id) === String(item.stock_item_id)
+                );
                 if (matched) {
                   filteredOptions = [matched, ...filteredOptions];
                 }
@@ -521,7 +533,7 @@ const StockRequestForm = () => {
                     <div className="flex-1 min-w-[200px]">
                       <label className="block text-sm text-gray-600 mb-1">Item name</label>
                       <select
-                        value={item.item_name}
+                        value={item.stock_item_id}
                         onChange={(e) => handleItemSelection(index, e.target.value)}
                         className="w-full p-2 border rounded"
                         required
@@ -529,8 +541,10 @@ const StockRequestForm = () => {
                       >
                         <option value="">Choose an item</option>
                         {filteredOptions.map((stock) => (
-                          <option key={stock.id} value={stock.name}>
-                            {stock.name} ({stock.available_quantity ?? '—'} in stock)
+                          <option key={stock.id} value={stock.id}>
+                            {stock.name}
+                            {stock.brand ? ` • ${stock.brand}` : ''} (
+                            {stock.available_quantity ?? '—'} in stock)
                           </option>
                         ))}
                       </select>

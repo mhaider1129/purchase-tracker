@@ -151,26 +151,33 @@ const WarehouseSupplyRequestForm = () => {
               disabled={submitting}
             >
               <option value="medical">Medical Warehouse</option>
-          <option value="operational">Operational Warehouse</option>
-        </select>
-      </div>
+              <option value="operational">Operational Warehouse</option>
+            </select>
+          </div>
 
-      <div>
-        <label className="block font-semibold mb-1">Template</label>
-        <select
-          value={selectedTemplateId}
-          onChange={(e) => applyTemplate(e.target.value)}
-          className="p-2 border rounded"
-          disabled={submitting}
-        >
-          <option value="">-- Select Template --</option>
-          {templates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.template_name}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div>
+            <label className="block font-semibold mb-1">Template</label>
+            <select
+              value={selectedTemplateId}
+              onChange={(e) => applyTemplate(e.target.value)}
+              className="p-2 border rounded"
+              disabled={submitting}
+            >
+              <option value="">-- Select Template --</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.template_name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <ProjectSelector
+            value={projectId}
+            onChange={setProjectId}
+            disabled={submitting}
+            user={user}
+          />
 
           <div>
             <label className="block font-semibold mb-2">Items</label>
