@@ -53,7 +53,72 @@ const formatTimestamp = (value) => {
   return date.toLocaleString();
 };
 
-const resolveNotificationDestination = (rawLink) => {
+const resolveNotificationDestination = (notification) => {
+  const metadata = notification?.metadata || {};
+  const rawLink = notification?.link;
+  const linkRequestId = (() => {
+    if (!rawLink || typeof rawLink !== 'string') {
+      return null;
+    }
+
+    try {
+      const parsedUrl = new URL(rawLink, window.location.origin);
+      const normalizedPath = parsedUrl.pathname.replace(/\/+$/, '');
+      const match = normalizedPath.match(/^\/requests\/(\d+)$/i);
+      return match ? match[1] : null;
+    } catch (error) {
+      const fallbackMatch = rawLink.match(/^\/requests\/(\d+)$/i);
+      return fallbackMatch ? fallbackMatch[1] : null;
+    }
+  })();
+  const requestId = metadata.requestId ?? metadata.request_id ?? linkRequestId ?? null;
+  const action = typeof metadata.action === 'string' ? metadata.action.toLowerCase() : '';
+  const requestType =
+    typeof metadata.requestType === 'string'
+      ? metadata.requestType.toLowerCase()
+      : typeof metadata.request_type === 'string'
+        ? metadata.request_type.toLowerCase()
+        : '';
+
+  const withRequestFocus = (path) => {
+    const hasRequestId = requestId !== null && requestId !== undefined && requestId !== '';
+
+    if (!hasRequestId) {
+      return { path };
+    }
+
+    const separator = path.includes('?') ? '&' : '?';
+    const encodedId = encodeURIComponent(requestId);
+
+    return {
+      path: `${path}${separator}requestId=${encodedId}`,
+      options: {
+        state: { focusRequestId: Number(requestId) || requestId },
+      },
+    };
+  };
+
+  if (action === 'approval_required') {
+    if (requestType === 'maintenance') {
+      return withRequestFocus('/approvals/maintenance');
+    }
+
+    return withRequestFocus('/approvals');
+  }
+
+  if (action === 'procurement_assignment' || action === 'request_ready_for_assignment') {
+    return withRequestFocus('/open-requests');
+  }
+
+  if (
+    action === 'request_completed' ||
+    action === 'maintenance_completed' ||
+    action === 'request_approved' ||
+    action === 'request_rejected'
+  ) {
+    return withRequestFocus('/all-requests');
+  }
+
   if (!rawLink || typeof rawLink !== 'string') {
     return null;
   }
@@ -64,13 +129,7 @@ const resolveNotificationDestination = (rawLink) => {
     const requestMatch = normalizedPath.match(/^\/requests\/(\d+)$/i);
 
     if (requestMatch) {
-      const requestId = requestMatch[1];
-      return {
-        path: `/open-requests?requestId=${encodeURIComponent(requestId)}`,
-        options: {
-          state: { focusRequestId: Number(requestId) || requestId },
-        },
-      };
+      return withRequestFocus('/open-requests');
     }
 
     return {
@@ -151,21 +210,21 @@ const NotificationBell = () => {
 
       remove(notification.id);
 
+      const destination = resolveNotificationDestination(notification);
+
+      if (destination?.external && destination.url) {
+        setIsOpen(false);
+        window.open(destination.url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      if (destination?.path) {
+        setIsOpen(false);
+        navigate(destination.path, destination.options ?? undefined);
+        return;
+      }
+
       if (notification.link) {
-        const destination = resolveNotificationDestination(notification.link);
-
-        if (destination?.external && destination.url) {
-          setIsOpen(false);
-          window.open(destination.url, '_blank', 'noopener,noreferrer');
-          return;
-        }
-
-        if (destination?.path) {
-          setIsOpen(false);
-          navigate(destination.path, destination.options ?? undefined);
-          return;
-        }
-
         setIsOpen(false);
         navigate(notification.link);
       }

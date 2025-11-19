@@ -15,12 +15,14 @@ const StockRequestForm = () => {
       item_name: '',
       brand: '',
       category: '',
+      sub_category: '',
       quantity: 1,
       available_quantity: '',
       attachments: []
     }
   ]);
   const [category, setCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
   const [justification, setJustification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
@@ -32,6 +34,12 @@ const StockRequestForm = () => {
     () => Array.from(new Set(itemsList.map((it) => it.category))).filter(Boolean),
     [itemsList]
   );
+  const subCategories = useMemo(() => {
+    const scopedItems = category
+      ? itemsList.filter((it) => it.category === category)
+      : itemsList;
+    return Array.from(new Set(scopedItems.map((it) => it.sub_category))).filter(Boolean);
+  }, [category, itemsList]);
 
   const hasSelectedData = useMemo(
     () =>
@@ -59,6 +67,7 @@ const StockRequestForm = () => {
           item_name: '',
           brand: '',
           category: value,
+          sub_category: '',
           quantity: 1,
           available_quantity: '',
           attachments: [],
@@ -66,10 +75,16 @@ const StockRequestForm = () => {
       ]);
     } else {
       setSelectedItems((items) =>
-        items.map((it) => ({ ...it, category: value }))
+        items.map((it) => ({ ...it, category: value, sub_category: '' }))
       );
     }
     setCategory(value);
+    setSubCategory('');
+  };
+
+  const handleSubCategoryChange = (value) => {
+    setSubCategory(value);
+    setSelectedItems((items) => items.map((it) => ({ ...it, sub_category: value })));
   };
 
   // ✅ Validate and restrict access based on role
@@ -145,6 +160,7 @@ const StockRequestForm = () => {
         item_name: '',
         brand: '',
         category,
+        sub_category: subCategory,
         quantity: 1,
         available_quantity: '',
         attachments: []
@@ -186,7 +202,7 @@ const StockRequestForm = () => {
     formData.append('budget_impact_month', '');
     formData.append('project_id', projectId);
     const itemsPayload = selectedItems.map(
-      ({ attachments, category, ...rest }) => rest
+      ({ attachments, category, sub_category, ...rest }) => rest
     );
     formData.append('items', JSON.stringify(itemsPayload));
     attachments.forEach((file) => formData.append('attachments', file));
@@ -255,11 +271,29 @@ const StockRequestForm = () => {
           </div>
 
           <div>
+            <label className="block font-semibold mb-1">Sub Category</label>
+            <select
+              value={subCategory}
+              onChange={(e) => handleSubCategoryChange(e.target.value)}
+              className="p-2 border rounded"
+              disabled={isSubmitting || subCategories.length === 0}
+            >
+              <option value="">All Sub Categories</option>
+              {subCategories.map((subCat) => (
+                <option key={subCat} value={subCat}>
+                  {subCat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label className="block font-semibold mb-2">Select Items</label>
             {selectedItems.map((item, index) => {
               const filtered = itemsList.filter(
                 (stock) =>
                   (!category || stock.category === category) &&
+                  (!subCategory || stock.sub_category === subCategory) &&
                   stock.name.toLowerCase().includes(item.item_name.toLowerCase())
               );
               return (
