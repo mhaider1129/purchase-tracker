@@ -15,6 +15,56 @@ const DEFAULT_KPI_WEIGHTS = {
   esg_compliance: 0.25,
 };
 
+const CRITERIA_RATING_QUESTIONS = [
+  {
+    key: 'overall_supplier_happiness',
+    label: 'Overall, how happy are you with the supplier?',
+    category: 'Quality',
+  },
+  {
+    key: 'price_satisfaction',
+    label: 'How satisfied are you with the price of the goods/services?',
+    category: 'Quality',
+  },
+  {
+    key: 'delivery_as_scheduled',
+    label: 'Does the supplier deliver the goods/services as scheduled?',
+    category: 'Service delivery',
+  },
+  {
+    key: 'delivery_in_good_condition',
+    label: 'Does the supplier deliver the goods/services in good condition?',
+    category: 'Service delivery',
+  },
+  {
+    key: 'delivery_meets_quality_expectations',
+    label: 'Does the supplier deliver the goods/services within acceptable quality?',
+    category: 'Service delivery (quality)',
+  },
+  {
+    key: 'communication_effectiveness',
+    label: 'How effective is the supplier communication?',
+    category: 'Communication',
+  },
+  {
+    key: 'compliance_alignment',
+    label: 'Does the supplier comply with requirements and regulations?',
+    category: 'Compliance',
+  },
+  {
+    key: 'operations_effectiveness_rating',
+    label: 'How effective are the supplier operations?',
+    category: 'Operations',
+  },
+  {
+    key: 'payment_terms_comfort',
+    label: 'How comfortable are you with the payment terms?',
+    category: 'Payment terms',
+  },
+];
+
+const RATING_SCALE_OPTIONS = [1, 2, 3, 4, 5];
+
 const formatWeightForInput = (decimalValue, fallbackDecimal = null) => {
   const source =
     decimalValue !== null && decimalValue !== undefined
@@ -36,6 +86,9 @@ const boolToChoice = (value, fallback = 'yes') => {
   if (value === false) return 'no';
   return fallback;
 };
+
+const formatScaleInput = (value) =>
+  value === null || value === undefined ? '' : String(value);
 
 const initialFormState = {
   supplier_name: '',
@@ -62,20 +115,14 @@ const initialFormState = {
   action_items: '',
   scheduled_annually: 'yes',
   travel_required: 'no',
-  event_based_review: 'yes',
-  total_employees: '',
-  covers_full_workforce: 'all',
-  sample_size: '',
   evaluation_criteria_notes: '',
-  qualified_auditor: 'yes',
-  third_party_auditor: 'no',
-  quality_compliance: 'yes',
-  service_delivery: 'yes',
-  service_delivery_quality: 'yes',
-  manufacturing_adherence: 'yes',
-  regulatory_compliance: 'yes',
-  operations_effectiveness: 'yes',
-  payment_terms_alignment: 'yes',
+  ...CRITERIA_RATING_QUESTIONS.reduce(
+    (acc, question) => ({
+      ...acc,
+      [question.key]: '',
+    }),
+    {}
+  ),
 };
 
 const toNumberOrNull = (value) => {
@@ -279,6 +326,13 @@ const SupplierEvaluationsPage = () => {
     setEditingId(evaluation.id);
     const kpiWeights = evaluation.kpi_weights || {};
     const criteria = evaluation.criteria_responses || {};
+    const criteriaRatingsState = CRITERIA_RATING_QUESTIONS.reduce(
+      (acc, question) => ({
+        ...acc,
+        [question.key]: formatScaleInput(criteria[question.key]),
+      }),
+      {}
+    );
     setFormState({
       supplier_name: evaluation.supplier_name || '',
       evaluation_date: evaluation.evaluation_date || '',
@@ -334,26 +388,8 @@ const SupplierEvaluationsPage = () => {
       action_items: evaluation.action_items || '',
       scheduled_annually: boolToChoice(criteria.scheduled_annually),
       travel_required: boolToChoice(criteria.travel_required, 'no'),
-      event_based_review: boolToChoice(criteria.event_based_review),
-      total_employees:
-        criteria.total_employees === null || criteria.total_employees === undefined
-          ? ''
-          : String(criteria.total_employees),
-      covers_full_workforce: criteria.covers_full_workforce === false ? 'sample' : 'all',
-      sample_size:
-        criteria.sample_size === null || criteria.sample_size === undefined
-          ? ''
-          : String(criteria.sample_size),
       evaluation_criteria_notes: criteria.evaluation_criteria_notes || '',
-      qualified_auditor: boolToChoice(criteria.qualified_auditor),
-      third_party_auditor: boolToChoice(criteria.third_party_auditor, 'no'),
-      quality_compliance: boolToChoice(criteria.quality_compliance),
-      service_delivery: boolToChoice(criteria.service_delivery),
-      service_delivery_quality: boolToChoice(criteria.service_delivery_quality),
-      manufacturing_adherence: boolToChoice(criteria.manufacturing_adherence),
-      regulatory_compliance: boolToChoice(criteria.regulatory_compliance),
-      operations_effectiveness: boolToChoice(criteria.operations_effectiveness),
-      payment_terms_alignment: boolToChoice(criteria.payment_terms_alignment),
+      ...criteriaRatingsState,
     });
     setFormError('');
     setFormSuccess('');
@@ -415,6 +451,19 @@ const SupplierEvaluationsPage = () => {
       return;
     }
 
+    const missingRating = CRITERIA_RATING_QUESTIONS.find(
+      (question) => !formState[question.key]
+    );
+    if (missingRating) {
+      setFormError('Please provide a score for every performance indicator.');
+      return;
+    }
+
+    const ratingResponses = CRITERIA_RATING_QUESTIONS.reduce((acc, question) => {
+      acc[question.key] = toNumberOrNull(formState[question.key]);
+      return acc;
+    }, {});
+
     const payload = {
       supplier_name: formState.supplier_name.trim(),
       evaluation_date: formState.evaluation_date || undefined,
@@ -439,23 +488,8 @@ const SupplierEvaluationsPage = () => {
       criteria_responses: {
         scheduled_annually: formState.scheduled_annually === 'yes',
         travel_required: formState.travel_required === 'yes',
-        event_based_review: formState.event_based_review === 'yes',
-        total_employees: toNumberOrNull(formState.total_employees),
-        covers_full_workforce: formState.covers_full_workforce !== 'sample',
-        sample_size:
-          formState.covers_full_workforce === 'sample'
-            ? toNumberOrNull(formState.sample_size)
-            : null,
         evaluation_criteria_notes: formState.evaluation_criteria_notes.trim() || null,
-        qualified_auditor: formState.qualified_auditor === 'yes',
-        third_party_auditor: formState.third_party_auditor === 'yes',
-        quality_compliance: formState.quality_compliance === 'yes',
-        service_delivery: formState.service_delivery === 'yes',
-        service_delivery_quality: formState.service_delivery_quality === 'yes',
-        manufacturing_adherence: formState.manufacturing_adherence === 'yes',
-        regulatory_compliance: formState.regulatory_compliance === 'yes',
-        operations_effectiveness: formState.operations_effectiveness === 'yes',
-        payment_terms_alignment: formState.payment_terms_alignment === 'yes',
+        ...ratingResponses,
       },
     };
 
@@ -1259,9 +1293,14 @@ const SupplierEvaluationsPage = () => {
               </div>
 
               <div className="md:col-span-2 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 p-4">
-                <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-gray-100">
-                  Annual evaluation criteria
-                </h3>
+                <div className="flex flex-col gap-2 mb-4">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    Annual evaluation criteria
+                  </h3>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Record how the supplier performs against each indicator. Scores use a 1 (poor) to 5 (excellent) scale.
+                  </p>
+                </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium mb-1" htmlFor="scheduled_annually">
@@ -1294,232 +1333,50 @@ const SupplierEvaluationsPage = () => {
                       <option value="yes">Yes</option>
                     </select>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="event_based_review">
-                      Event-based review during supplier visits?
-                    </label>
-                    <select
-                      id="event_based_review"
-                      name="event_based_review"
-                      value={formState.event_based_review}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="total_employees">
-                      Supplier headcount evaluated
-                    </label>
-                    <input
-                      id="total_employees"
-                      name="total_employees"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formState.total_employees}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="covers_full_workforce">
-                      Scope of evaluation
-                    </label>
-                    <select
-                      id="covers_full_workforce"
-                      name="covers_full_workforce"
-                      value={formState.covers_full_workforce}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">All employees</option>
-                      <option value="sample">Sampled population</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="sample_size">
-                      Sample size (if sampled)
-                    </label>
-                    <input
-                      id="sample_size"
-                      name="sample_size"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formState.sample_size}
-                      onChange={handleInputChange}
-                      disabled={formState.covers_full_workforce !== 'sample'}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="qualified_auditor">
-                      Qualified (internal/3rd party) auditor?
-                    </label>
-                    <select
-                      id="qualified_auditor"
-                      name="qualified_auditor"
-                      value={formState.qualified_auditor}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="third_party_auditor">
-                      Third party auditing?
-                    </label>
-                    <select
-                      id="third_party_auditor"
-                      name="third_party_auditor"
-                      value={formState.third_party_auditor}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="quality_compliance">
-                      Quality compliance in place?
-                    </label>
-                    <select
-                      id="quality_compliance"
-                      name="quality_compliance"
-                      value={formState.quality_compliance}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="service_delivery">
-                      Service delivery in place?
-                    </label>
-                    <select
-                      id="service_delivery"
-                      name="service_delivery"
-                      value={formState.service_delivery}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="service_delivery_quality">
-                      Service delivery &amp; quality maintained?
-                    </label>
-                    <select
-                      id="service_delivery_quality"
-                      name="service_delivery_quality"
-                      value={formState.service_delivery_quality}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="manufacturing_adherence">
-                      Manufacturing maintained?
-                    </label>
-                    <select
-                      id="manufacturing_adherence"
-                      name="manufacturing_adherence"
-                      value={formState.manufacturing_adherence}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="regulatory_compliance">
-                      Regulatory compliance assessed?
-                    </label>
-                    <select
-                      id="regulatory_compliance"
-                      name="regulatory_compliance"
-                      value={formState.regulatory_compliance}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="operations_effectiveness">
-                      Operations effectiveness maintained?
-                    </label>
-                    <select
-                      id="operations_effectiveness"
-                      name="operations_effectiveness"
-                      value={formState.operations_effectiveness}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" htmlFor="payment_terms_alignment">
-                      Payment terms understood &amp; signed off?
-                    </label>
-                    <select
-                      id="payment_terms_alignment"
-                      name="payment_terms_alignment"
-                      value={formState.payment_terms_alignment}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
-                    </select>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1" htmlFor="evaluation_criteria_notes">
-                      Evaluation criteria notes
-                    </label>
-                    <textarea
-                      id="evaluation_criteria_notes"
-                      name="evaluation_criteria_notes"
-                      rows={2}
-                      value={formState.evaluation_criteria_notes}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                <div className="mt-6">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {CRITERIA_RATING_QUESTIONS.map((question) => (
+                      <div key={question.key} className="flex flex-col gap-1">
+                        <label className="text-sm font-medium" htmlFor={question.key}>
+                          {question.label}
+                        </label>
+                        <select
+                          id={question.key}
+                          name={question.key}
+                          value={formState[question.key]}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Select</option>
+                          {RATING_SCALE_OPTIONS.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{question.category}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              </div>
 
+                <div className="mt-4">
+                  <label className="block text-sm font-medium mb-1" htmlFor="evaluation_criteria_notes">
+                    Evaluation criteria notes
+                  </label>
+                  <textarea
+                    id="evaluation_criteria_notes"
+                    name="evaluation_criteria_notes"
+                    rows={2}
+                    value={formState.evaluation_criteria_notes}
+                    onChange={handleInputChange}
+                    className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1" htmlFor="strengths">
                   Strengths
