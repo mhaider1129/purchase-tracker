@@ -88,8 +88,14 @@ const Login = () => {
         )}
 
         <div className="mb-4">
-          <label className="block mb-1 text-gray-700 dark:text-gray-300">{t('login.email')}</label>
+          <label
+            htmlFor="login-email"
+            className="block mb-1 text-gray-700 dark:text-gray-300"
+          >
+            {t('login.email')}
+          </label>
           <input
+            id="login-email"
             ref={emailInputRef}
             type="email"
             className="w-full p-2 border border-gray-300 rounded"
@@ -100,8 +106,14 @@ const Login = () => {
         </div>
 
         <div className="mb-6">
-          <label className="block mb-1 text-gray-700 dark:text-gray-300">{t('login.password')}</label>
+          <label
+            htmlFor="login-password"
+            className="block mb-1 text-gray-700 dark:text-gray-300"
+          >
+            {t('login.password')}
+          </label>
           <input
+            id="login-password"
             type="password"
             className="w-full p-2 border border-gray-300 rounded"
             value={password}
