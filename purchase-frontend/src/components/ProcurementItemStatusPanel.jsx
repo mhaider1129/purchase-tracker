@@ -1,24 +1,24 @@
 // src/components/ProcurementItemStatusPanel.jsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import axios from '../api/axios';
-import usePageTranslation from '../utils/usePageTranslation';
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import axios from "../api/axios";
+import usePageTranslation from "../utils/usePageTranslation";
 
 const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
-  const [status, setStatus] = useState(item.procurement_status || '');
-  const [comment, setComment] = useState(item.procurement_comment || '');
+  const [status, setStatus] = useState(item.procurement_status || "");
+  const [comment, setComment] = useState(item.procurement_comment || "");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
-  const [updaterName, setUpdaterName] = useState('');
-  const [unitCost, setUnitCost] = useState(item.unit_cost ?? '');
+  const [updaterName, setUpdaterName] = useState("");
+  const [unitCost, setUnitCost] = useState(item.unit_cost ?? "");
   const [purchasedQty, setPurchasedQty] = useState(
-    item.purchased_quantity ?? item.quantity ?? ''
+    item.purchased_quantity ?? item.quantity ?? "",
   );
   const [attachments, setAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
-  const [attachmentsError, setAttachmentsError] = useState('');
+  const [attachmentsError, setAttachmentsError] = useState("");
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
   const itemId = item?.id;
-  const tr = usePageTranslation('assignedRequests');
+  const tr = usePageTranslation("assignedRequests");
 
   const updatedAt = item.procurement_updated_at
     ? new Date(item.procurement_updated_at).toLocaleString()
@@ -28,10 +28,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     const fetchUpdater = async () => {
       if (item.procurement_updated_by) {
         try {
-          const res = await axios.get(`/api/users/${item.procurement_updated_by}`);
-          setUpdaterName(res.data.name || tr('itemPanel.lastUpdatedUnknown', 'Unknown'));
+          const res = await axios.get(
+            `/api/users/${item.procurement_updated_by}`,
+          );
+          setUpdaterName(
+            res.data.name || tr("itemPanel.lastUpdatedUnknown", "Unknown"),
+          );
         } catch (err) {
-          console.warn('⚠️ Could not fetch updater name:', err);
+          console.warn("⚠️ Could not fetch updater name:", err);
         }
       }
     };
@@ -39,16 +43,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   }, [item.procurement_updated_by, tr]);
 
   useEffect(() => {
-    setUnitCost(item.unit_cost ?? '');
+    setUnitCost(item.unit_cost ?? "");
   }, [item.unit_cost]);
 
   useEffect(() => {
-    setPurchasedQty(item.purchased_quantity ?? item.quantity ?? '');
+    setPurchasedQty(item.purchased_quantity ?? item.quantity ?? "");
   }, [item.purchased_quantity, item.quantity]);
 
   useEffect(() => {
-    setStatus(item.procurement_status || '');
-    setComment(item.procurement_comment || '');
+    setStatus(item.procurement_status || "");
+    setComment(item.procurement_comment || "");
   }, [item.procurement_status, item.procurement_comment]);
 
   useEffect(() => {
@@ -59,7 +63,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       }
 
       setLoadingAttachments(true);
-      setAttachmentsError('');
+      setAttachmentsError("");
 
       try {
         const res = await axios.get(`/api/attachments/item/${itemId}`);
@@ -67,7 +71,9 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       } catch (err) {
         console.error(`❌ Error fetching attachments for item ${itemId}:`, err);
         setAttachments([]);
-    setAttachmentsError(tr('itemPanel.attachments.error', 'Failed to load attachments.'));
+        setAttachmentsError(
+          tr("itemPanel.attachments.error", "Failed to load attachments."),
+        );
       } finally {
         setLoadingAttachments(false);
       }
@@ -77,13 +83,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   }, [itemId, tr]);
 
   const handleDownloadAttachment = async (attachment) => {
-    const storedPath = attachment?.file_path || '';
+    const storedPath = attachment?.file_path || "";
     const filename = storedPath.split(/[\\/]/).pop();
     const downloadEndpoint =
-      attachment?.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
+      attachment?.download_url ||
+      (filename
+        ? `/api/attachments/download/${encodeURIComponent(filename)}`
+        : null);
 
     if (!downloadEndpoint) {
-      alert(tr('itemPanel.attachments.missing', 'Attachment file is missing.'));
+      alert(tr("itemPanel.attachments.missing", "Attachment file is missing."));
       return;
     }
 
@@ -91,14 +100,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
     try {
       const response = await axios.get(downloadEndpoint, {
-        responseType: 'blob',
+        responseType: "blob",
       });
 
       const blob = new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/octet-stream',
+        type: response.headers["content-type"] || "application/octet-stream",
       });
       const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = downloadUrl;
       link.download = attachment.file_name || filename;
       document.body.appendChild(link);
@@ -107,14 +116,19 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error(`❌ Error downloading attachment ${attachment.id}:`, err);
-      alert(tr('itemPanel.attachments.downloadFailed', 'Failed to download attachment. Please try again.'));
+      alert(
+        tr(
+          "itemPanel.attachments.downloadFailed",
+          "Failed to download attachment. Please try again.",
+        ),
+      );
     } finally {
       setDownloadingAttachmentId(null);
     }
   };
 
   const parseNumber = useCallback((value) => {
-    if (value === '' || value === null || value === undefined) {
+    if (value === "" || value === null || value === undefined) {
       return null;
     }
 
@@ -136,10 +150,13 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     return Number((qty * cost).toFixed(2));
   }, [parseNumber, purchasedQty, unitCost]);
 
-  const requestedQty = useMemo(() => parseNumber(item.quantity), [item.quantity, parseNumber]);
+  const requestedQty = useMemo(
+    () => parseNumber(item.quantity),
+    [item.quantity, parseNumber],
+  );
   const purchasedQtyNumber = useMemo(
     () => parseNumber(purchasedQty),
-    [parseNumber, purchasedQty]
+    [parseNumber, purchasedQty],
   );
   const outstandingQty = useMemo(() => {
     if (requestedQty === null || purchasedQtyNumber === null) {
@@ -151,7 +168,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
   const originalUnitCost = useMemo(
     () => parseNumber(item.unit_cost),
-    [item.unit_cost, parseNumber]
+    [item.unit_cost, parseNumber],
   );
   const requestedLineTotal = useMemo(() => {
     if (requestedQty === null || originalUnitCost === null) {
@@ -163,7 +180,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
   const formatNumber = useCallback((value, options = {}) => {
     if (value === null || value === undefined) {
-      return '—';
+      return "—";
     }
 
     return Number(value).toLocaleString(undefined, options);
@@ -171,10 +188,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
   const metaDetails = useMemo(() => {
     const details = [
-      { label: tr('itemPanel.meta.brand', 'Brand'), value: item.brand },
-      { label: tr('itemPanel.meta.specs', 'Specs'), value: item.specs },
-      { label: tr('itemPanel.meta.category', 'Category'), value: item.category },
-      { label: tr('itemPanel.meta.supplier', 'Supplier'), value: item.preferred_supplier },
+      { label: tr("itemPanel.meta.brand", "Brand"), value: item.brand },
+      { label: tr("itemPanel.meta.specs", "Specs"), value: item.specs },
+      {
+        label: tr("itemPanel.meta.category", "Category"),
+        value: item.category,
+      },
+      {
+        label: tr("itemPanel.meta.supplier", "Supplier"),
+        value: item.preferred_supplier,
+      },
     ];
 
     return details.filter((detail) => detail.value);
@@ -182,57 +205,76 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
   const statusOptions = useMemo(
     () => [
-      { value: 'pending', label: tr('itemPanel.statusOptions.pending', 'Pending Purchase') },
-      { value: 'purchased', label: tr('itemPanel.statusOptions.purchased', 'Purchased') },
-      { value: 'not_procured', label: tr('itemPanel.statusOptions.notProcured', 'Not Procured') },
+      {
+        value: "pending",
+        label: tr("itemPanel.statusOptions.pending", "Pending Purchase"),
+      },
+      {
+        value: "purchased",
+        label: tr("itemPanel.statusOptions.purchased", "Purchased"),
+      },
+      {
+        value: "not_procured",
+        label: tr("itemPanel.statusOptions.notProcured", "Not Procured"),
+      },
     ],
-    [tr]
+    [tr],
   );
 
   const statusStyles = useMemo(
     () => ({
-      pending: 'border-amber-200 bg-amber-50 text-amber-700',
-      purchased: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-      not_procured: 'border-rose-200 bg-rose-50 text-rose-700',
-      completed: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-      canceled: 'border-rose-200 bg-rose-50 text-rose-700',
+      pending: "border-amber-200 bg-amber-50 text-amber-700",
+      purchased: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      not_procured: "border-rose-200 bg-rose-50 text-rose-700",
+      completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      canceled: "border-rose-200 bg-rose-50 text-rose-700",
     }),
-    []
+    [],
   );
 
   const handleSave = async () => {
     if (!status) {
-      setMessage({ type: 'error', text: tr('itemPanel.messages.selectStatus', 'Please select a status.') });
+      setMessage({
+        type: "error",
+        text: tr("itemPanel.messages.selectStatus", "Please select a status."),
+      });
       return;
     }
 
-    const hasUnitCost = unitCost !== '' && unitCost !== null && unitCost !== undefined;
+    const hasUnitCost =
+      unitCost !== "" && unitCost !== null && unitCost !== undefined;
     const numericUnitCost = hasUnitCost ? Number(unitCost) : null;
     const numericQty = Number(purchasedQty);
 
     if (hasUnitCost && (Number.isNaN(numericUnitCost) || numericUnitCost < 0)) {
       setMessage({
-        type: 'error',
-        text: tr('itemPanel.messages.unitCostInvalid', 'Enter a valid unit cost (zero or above).'),
+        type: "error",
+        text: tr(
+          "itemPanel.messages.unitCostInvalid",
+          "Enter a valid unit cost (zero or above).",
+        ),
       });
       return;
     }
 
     if (Number.isNaN(numericQty) || numericQty < 0) {
       setMessage({
-        type: 'error',
-        text: tr('itemPanel.messages.purchasedQtyInvalid', 'Enter a valid purchased quantity (zero or above).'),
+        type: "error",
+        text: tr(
+          "itemPanel.messages.purchasedQtyInvalid",
+          "Enter a valid purchased quantity (zero or above).",
+        ),
       });
       return;
     }
 
-    if (status === 'purchased') {
+    if (status === "purchased") {
       if (numericQty <= 0) {
         setMessage({
-          type: 'error',
+          type: "error",
           text: tr(
-            'itemPanel.messages.purchasedQtyRequired',
-            'Purchased items require a purchased quantity greater than zero.'
+            "itemPanel.messages.purchasedQtyRequired",
+            "Purchased items require a purchased quantity greater than zero.",
           ),
         });
         return;
@@ -258,13 +300,21 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         procurement_comment: comment,
       });
 
-      setMessage({ type: 'success', text: tr('itemPanel.messages.updateSuccess', '✅ Updated successfully.') });
+      setMessage({
+        type: "success",
+        text: tr(
+          "itemPanel.messages.updateSuccess",
+          "✅ Updated successfully.",
+        ),
+      });
       if (onUpdate) onUpdate(); // Notify parent to refresh data
     } catch (err) {
-      console.error('❌ Update error:', err);
+      console.error("❌ Update error:", err);
       setMessage({
-        type: 'error',
-        text: err.response?.data?.message || tr('itemPanel.messages.updateFailed', '❌ Failed to update.'),
+        type: "error",
+        text:
+          err.response?.data?.message ||
+          tr("itemPanel.messages.updateFailed", "❌ Failed to update."),
       });
     } finally {
       setSaving(false);
@@ -276,10 +326,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       <div className="p-4 sm:p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
-            <h4 className="text-lg font-semibold text-slate-800">{item.item_name}</h4>
+            <h4 className="text-lg font-semibold text-slate-800">
+              {item.item_name}
+            </h4>
             <p className="mt-1 text-sm text-slate-500">
-              {tr('itemPanel.requestedQuantityPrefix', 'Requested quantity:')}{' '}
-              <span className="font-medium text-slate-700">{formatNumber(requestedQty)}</span>
+              {tr("itemPanel.requestedQuantityPrefix", "Requested quantity:")}{" "}
+              <span className="font-medium text-slate-700">
+                {formatNumber(requestedQty)}
+              </span>
             </p>
             {metaDetails.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
@@ -290,7 +344,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
                   >
                     <span className="uppercase tracking-wide text-[10px] text-slate-400">
                       {detail.label}:
-                    </span>{' '}
+                    </span>{" "}
                     <span className="text-slate-600">{detail.value}</span>
                   </span>
                 ))}
@@ -302,18 +356,28 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             {status && (
               <span
                 className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-semibold capitalize ${
-                  statusStyles[status] || 'border-slate-200 bg-slate-100 text-slate-700'
+                  statusStyles[status] ||
+                  "border-slate-200 bg-slate-100 text-slate-700"
                 }`}
               >
-                {statusOptions.find((opt) => opt.value === status)?.label || status.replace('_', ' ')}
+                {statusOptions.find((opt) => opt.value === status)?.label ||
+                  status.replace("_", " ")}
               </span>
             )}
             {(updaterName || updatedAt) && (
               <div className="text-xs italic text-slate-500">
-                {tr('itemPanel.lastUpdated', 'Last updated by {{name}} at {{time}}', {
-                  name: updaterName || tr('itemPanel.lastUpdatedUnknown', 'Unknown'),
-                  time: updatedAt || tr('itemPanel.lastUpdatedUnknownTime', 'Unknown time'),
-                })}
+                {tr(
+                  "itemPanel.lastUpdated",
+                  "Last updated by {{name}} at {{time}}",
+                  {
+                    name:
+                      updaterName ||
+                      tr("itemPanel.lastUpdatedUnknown", "Unknown"),
+                    time:
+                      updatedAt ||
+                      tr("itemPanel.lastUpdatedUnknownTime", "Unknown time"),
+                  },
+                )}
               </div>
             )}
           </div>
@@ -322,13 +386,15 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
-              {tr('itemPanel.cards.requestedQty', 'Requested Qty')}
+              {tr("itemPanel.cards.requestedQty", "Requested Qty")}
             </p>
-            <p className="mt-1 text-base font-semibold text-slate-700">{formatNumber(requestedQty)}</p>
+            <p className="mt-1 text-base font-semibold text-slate-700">
+              {formatNumber(requestedQty)}
+            </p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
-              {tr('itemPanel.cards.purchasedQty', 'Purchased Qty')}
+              {tr("itemPanel.cards.purchasedQty", "Purchased Qty")}
             </p>
             <p className="mt-1 text-base font-semibold text-emerald-700">
               {formatNumber(purchasedQtyNumber)}
@@ -336,13 +402,15 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
-              {tr('itemPanel.cards.remainingQty', 'Remaining Qty')}
+              {tr("itemPanel.cards.remainingQty", "Remaining Qty")}
             </p>
-            <p className="mt-1 text-base font-semibold text-amber-700">{formatNumber(outstandingQty)}</p>
+            <p className="mt-1 text-base font-semibold text-amber-700">
+              {formatNumber(outstandingQty)}
+            </p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
-              {tr('itemPanel.cards.requestedLineTotal', 'Requested Line Total')}
+              {tr("itemPanel.cards.requestedLineTotal", "Requested Line Total")}
             </p>
             <p className="mt-1 text-base font-semibold text-slate-700">
               {formatNumber(requestedLineTotal, {
@@ -356,7 +424,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700">
-              {tr('itemPanel.inputs.unitCost', 'Unit Cost')}
+              {tr("itemPanel.inputs.unitCost", "Unit Cost")}
             </label>
             <input
               type="number"
@@ -368,19 +436,23 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             />
             {originalUnitCost !== null && (
               <p className="mt-1 text-xs text-slate-500">
-                {tr('itemPanel.inputs.originalUnitCost', 'Originally requested at {{cost}}', {
-                  cost: formatNumber(originalUnitCost, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }),
-                })}
+                {tr(
+                  "itemPanel.inputs.originalUnitCost",
+                  "Originally requested at {{cost}}",
+                  {
+                    cost: formatNumber(originalUnitCost, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }),
+                  },
+                )}
               </p>
             )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700">
-              {tr('itemPanel.inputs.purchasedQuantity', 'Purchased Quantity')}
+              {tr("itemPanel.inputs.purchasedQuantity", "Purchased Quantity")}
             </label>
             <input
               type="number"
@@ -395,14 +467,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700">
-              {tr('itemPanel.inputs.procurementStatus', 'Procurement Status')}
+              {tr("itemPanel.inputs.procurementStatus", "Procurement Status")}
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="">{tr('itemPanel.inputs.selectStatus', '-- Select Status --')}</option>
+              <option value="">
+                {tr("itemPanel.inputs.selectStatus", "-- Select Status --")}
+              </option>
               {statusOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
@@ -413,7 +487,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
           <div>
             <label className="block text-sm font-medium text-slate-700">
-              {tr('itemPanel.inputs.comment', 'Comment')}
+              {tr("itemPanel.inputs.comment", "Comment")}
             </label>
             <textarea
               value={comment}
@@ -427,8 +501,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         <div className="mt-6 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-600">
             <span className="font-semibold text-slate-700">
-              {tr('itemPanel.recordedLineTotal', 'Recorded Line Total:')}
-            </span>{' '}
+              {tr("itemPanel.recordedLineTotal", "Recorded Line Total:")}
+            </span>{" "}
             {formatNumber(totalCost, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -439,20 +513,22 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             onClick={handleSave}
             disabled={saving}
             className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 ${
-              saving ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+              saving
+                ? "bg-green-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
             }`}
             type="button"
           >
             {saving
-              ? tr('itemPanel.buttons.saving', 'Saving…')
-              : tr('itemPanel.buttons.save', 'Save Updates')}
+              ? tr("itemPanel.buttons.saving", "Saving…")
+              : tr("itemPanel.buttons.save", "Save Updates")}
           </button>
         </div>
 
         {message && (
           <div
             className={`mt-2 text-sm font-medium ${
-              message.type === 'error' ? 'text-red-600' : 'text-green-600'
+              message.type === "error" ? "text-red-600" : "text-green-600"
             }`}
           >
             {message.text}
@@ -461,17 +537,20 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
         <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
           <h4 className="text-sm font-semibold text-slate-700">
-            {tr('itemPanel.attachments.title', 'Item Attachments')}
+            {tr("itemPanel.attachments.title", "Item Attachments")}
           </h4>
           {loadingAttachments ? (
             <p className="text-xs text-slate-500">
-              {tr('itemPanel.attachments.loading', 'Loading attachments…')}
+              {tr("itemPanel.attachments.loading", "Loading attachments…")}
             </p>
           ) : attachmentsError ? (
             <p className="text-xs text-rose-600">{attachmentsError}</p>
           ) : attachments.length === 0 ? (
             <p className="text-xs text-slate-500">
-              {tr('itemPanel.attachments.empty', 'No attachments uploaded for this item.')}
+              {tr(
+                "itemPanel.attachments.empty",
+                "No attachments uploaded for this item.",
+              )}
             </p>
           ) : (
             <ul className="mt-2 space-y-1 text-sm">
@@ -486,8 +565,13 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
                       disabled={downloadingAttachmentId === attachment.id}
                     >
                       {downloadingAttachmentId === attachment.id
-                        ? tr('itemPanel.attachments.downloading', 'Downloading…')
-                        : attachment.file_name || filename || tr('itemPanel.attachments.fallback', 'Attachment')}
+                        ? tr(
+                            "itemPanel.attachments.downloading",
+                            "Downloading…",
+                          )
+                        : attachment.file_name ||
+                          filename ||
+                          tr("itemPanel.attachments.fallback", "Attachment")}
                     </button>
                   </li>
                 );

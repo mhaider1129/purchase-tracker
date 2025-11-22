@@ -1,24 +1,30 @@
-import React from 'react';
+import React from "react";
 
 const defaultLabels = {
-  title: 'Approval Timeline',
-  loading: 'Loading approvals...',
-  empty: 'No approvals recorded yet.',
+  title: "Approval Timeline",
+  loading: "Loading approvals...",
+  empty: "No approvals recorded yet.",
   columns: {
-    level: 'Level',
-    approver: 'Approver',
-    role: 'Role',
-    decision: 'Decision',
-    comment: 'Comment',
-    date: 'Date',
+    level: "Level",
+    approver: "Approver",
+    role: "Role",
+    decision: "Decision",
+    comment: "Comment",
+    date: "Date",
   },
   urgentBadge: {
-    title: 'Urgent',
-    description: 'Requires immediate attention',
+    title: "Urgent",
+    description: "Requires immediate attention",
   },
 };
 
-const ApprovalTimeline = ({ approvals, isLoading, labels = {}, isUrgent = false, formatDate }) => {
+const ApprovalTimeline = ({
+  approvals,
+  isLoading,
+  labels = {},
+  isUrgent = false,
+  formatDate,
+}) => {
   const mergedLabels = {
     ...defaultLabels,
     ...labels,
@@ -33,14 +39,14 @@ const ApprovalTimeline = ({ approvals, isLoading, labels = {}, isUrgent = false,
   };
 
   const formatApprovalDate = (value) => {
-    if (!value) return '—';
-    if (typeof formatDate === 'function') {
+    if (!value) return "—";
+    if (typeof formatDate === "function") {
       return formatDate(value);
     }
 
     const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '—';
-    return parsed.toLocaleString('en-GB');
+    if (Number.isNaN(parsed.getTime())) return "—";
+    return parsed.toLocaleString("en-GB");
   };
 
   return (
@@ -52,7 +58,9 @@ const ApprovalTimeline = ({ approvals, isLoading, labels = {}, isUrgent = false,
             {mergedLabels.urgentBadge.title}
           </span>
           {mergedLabels.urgentBadge.description && (
-            <span className="font-normal normal-case">{mergedLabels.urgentBadge.description}</span>
+            <span className="font-normal normal-case">
+              {mergedLabels.urgentBadge.description}
+            </span>
           )}
         </div>
       )}
@@ -65,23 +73,41 @@ const ApprovalTimeline = ({ approvals, isLoading, labels = {}, isUrgent = false,
           <table className="w-full text-sm border">
             <thead>
               <tr className="bg-gray-100">
-                <th className="border p-1 text-left">{mergedLabels.columns.level}</th>
-                <th className="border p-1 text-left">{mergedLabels.columns.approver}</th>
-                <th className="border p-1 text-left">{mergedLabels.columns.role}</th>
-                <th className="border p-1 text-left">{mergedLabels.columns.decision}</th>
-                <th className="border p-1 text-left">{mergedLabels.columns.comment}</th>
-                <th className="border p-1 text-left">{mergedLabels.columns.date}</th>
+                <th className="border p-1 text-left">
+                  {mergedLabels.columns.level}
+                </th>
+                <th className="border p-1 text-left">
+                  {mergedLabels.columns.approver}
+                </th>
+                <th className="border p-1 text-left">
+                  {mergedLabels.columns.role}
+                </th>
+                <th className="border p-1 text-left">
+                  {mergedLabels.columns.decision}
+                </th>
+                <th className="border p-1 text-left">
+                  {mergedLabels.columns.comment}
+                </th>
+                <th className="border p-1 text-left">
+                  {mergedLabels.columns.date}
+                </th>
               </tr>
             </thead>
             <tbody>
               {approvals.map((approval, idx) => (
                 <tr key={idx}>
-                  <td className="border p-1">{approval.approval_level ?? '—'}</td>
-                  <td className="border p-1">{approval.approver_name || '—'}</td>
-                  <td className="border p-1">{approval.role || '—'}</td>
-                  <td className="border p-1">{approval.status || '—'}</td>
-                  <td className="border p-1">{approval.comments || '—'}</td>
-                  <td className="border p-1">{formatApprovalDate(approval.approved_at)}</td>
+                  <td className="border p-1">
+                    {approval.approval_level ?? "—"}
+                  </td>
+                  <td className="border p-1">
+                    {approval.approver_name || "—"}
+                  </td>
+                  <td className="border p-1">{approval.role || "—"}</td>
+                  <td className="border p-1">{approval.status || "—"}</td>
+                  <td className="border p-1">{approval.comments || "—"}</td>
+                  <td className="border p-1">
+                    {formatApprovalDate(approval.approved_at)}
+                  </td>
                 </tr>
               ))}
             </tbody>

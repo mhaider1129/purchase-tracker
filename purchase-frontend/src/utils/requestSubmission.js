@@ -4,23 +4,23 @@ export const buildRequestSubmissionState = (
   overrides = {},
 ) => {
   const safeData =
-    responseData && typeof responseData === 'object' ? responseData : {};
+    responseData && typeof responseData === "object" ? responseData : {};
   const merged = { ...safeData, ...overrides };
 
   const resolveCandidate = (candidate) => {
-    if (typeof candidate === 'function') {
+    if (typeof candidate === "function") {
       return candidate();
     }
 
     if (Array.isArray(candidate)) {
       return candidate.reduce((acc, key) => {
         if (acc === null || acc === undefined) return undefined;
-        if (typeof acc !== 'object') return undefined;
+        if (typeof acc !== "object") return undefined;
         return acc[key];
       }, merged);
     }
 
-    if (typeof candidate === 'string') {
+    if (typeof candidate === "string") {
       return merged[candidate];
     }
 
@@ -33,8 +33,8 @@ export const buildRequestSubmissionState = (
       if (value === undefined || value === null) continue;
       if (
         !preserveEmptyString &&
-        typeof value === 'string' &&
-        value.trim() === ''
+        typeof value === "string" &&
+        value.trim() === ""
       ) {
         continue;
       }
@@ -46,8 +46,8 @@ export const buildRequestSubmissionState = (
   const normalizeNumber = (value) => {
     if (value === null || value === undefined) return null;
 
-    if (typeof value === 'string') {
-      if (value.trim() === '') return null;
+    if (typeof value === "string") {
+      if (value.trim() === "") return null;
       const parsedFromString = Number(value.trim());
       return Number.isNaN(parsedFromString) ? null : parsedFromString;
     }
@@ -69,12 +69,12 @@ export const buildRequestSubmissionState = (
 
   const normalizeBoolean = (value, defaultValue = false) => {
     if (value === undefined || value === null) return defaultValue;
-    if (typeof value === 'boolean') return value;
-    if (typeof value === 'number') return value !== 0;
-    if (typeof value === 'string') {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    if (typeof value === "string") {
       const lowered = value.trim().toLowerCase();
-      if (['true', '1', 'yes', 'y'].includes(lowered)) return true;
-      if (['false', '0', 'no', 'n'].includes(lowered)) return false;
+      if (["true", "1", "yes", "y"].includes(lowered)) return true;
+      if (["false", "0", "no", "n"].includes(lowered)) return false;
     }
     return defaultValue;
   };
@@ -91,12 +91,12 @@ export const buildRequestSubmissionState = (
 
   const computeEstimatedCostFromItems = () => {
     const items =
-      pickArray('items', 'line_items', 'request_items', 'requestItems') || [];
+      pickArray("items", "line_items", "request_items", "requestItems") || [];
     if (!items.length) return null;
 
     let hasValidEntry = false;
     const total = items.reduce((sum, item) => {
-      if (!item || typeof item !== 'object') return sum;
+      if (!item || typeof item !== "object") return sum;
       const quantity =
         pickNumber(
           () =>
@@ -105,16 +105,15 @@ export const buildRequestSubmissionState = (
             item.requested_quantity ??
             item.requestedQuantity,
         ) ?? 1;
-      const unitCost =
-        pickNumber(
-          () =>
-            item.unit_cost ??
-            item.unitCost ??
-            item.cost ??
-            item.price ??
-            item.unit_price ??
-            item.unitPrice,
-        );
+      const unitCost = pickNumber(
+        () =>
+          item.unit_cost ??
+          item.unitCost ??
+          item.cost ??
+          item.price ??
+          item.unit_price ??
+          item.unitPrice,
+      );
 
       if (unitCost === null) return sum;
       hasValidEntry = true;
@@ -128,22 +127,22 @@ export const buildRequestSubmissionState = (
 
   const computeAttachmentsFromData = () => {
     const directAttachments = pickArray(
-      'attachments',
-      'files',
-      'uploaded_files',
-      'uploadedFiles',
+      "attachments",
+      "files",
+      "uploaded_files",
+      "uploadedFiles",
     );
     if (directAttachments) {
       return directAttachments.length;
     }
 
     const items =
-      pickArray('items', 'line_items', 'request_items', 'requestItems') || [];
+      pickArray("items", "line_items", "request_items", "requestItems") || [];
     if (!items.length) return null;
 
     let attachmentsFound = false;
     const total = items.reduce((sum, item) => {
-      if (!item || typeof item !== 'object') return sum;
+      if (!item || typeof item !== "object") return sum;
       const itemAttachments = item.attachments || item.files || [];
       if (Array.isArray(itemAttachments) && itemAttachments.length >= 0) {
         attachmentsFound = true;
@@ -156,12 +155,8 @@ export const buildRequestSubmissionState = (
   };
 
   const nextApproval =
-    pickValue([
-      'next_approval',
-      'nextApproval',
-      'next_step',
-      'nextStep',
-    ]) || null;
+    pickValue(["next_approval", "nextApproval", "next_step", "nextStep"]) ||
+    null;
 
   const normalizedNextApproval = nextApproval
     ? {
@@ -179,39 +174,37 @@ export const buildRequestSubmissionState = (
           nextApproval.approver_role ??
           nextApproval.approverRole ??
           nextApproval.role ??
-
           null,
       }
     : null;
 
-  const estimatedCost =
-    pickNumber(
-      'estimated_cost',
-      'estimatedCost',
-      'total_estimated_cost',
-      'totalEstimatedCost',
-      computeEstimatedCostFromItems,
-    );
+  const estimatedCost = pickNumber(
+    "estimated_cost",
+    "estimatedCost",
+    "total_estimated_cost",
+    "totalEstimatedCost",
+    computeEstimatedCostFromItems,
+  );
 
   const attachmentsUploaded =
     pickNumber(
-      'attachments_uploaded',
-      'attachmentsUploaded',
-      'attachments_count',
-      'attachmentsCount',
+      "attachments_uploaded",
+      "attachmentsUploaded",
+      "attachments_count",
+      "attachmentsCount",
       computeAttachmentsFromData,
     ) ?? 0;
 
   const items =
-    pickArray('items', 'line_items', 'request_items', 'requestItems') || null;
+    pickArray("items", "line_items", "request_items", "requestItems") || null;
 
   const normalizedItems = Array.isArray(items)
     ? items
         .map((item) => {
-          if (!item || typeof item !== 'object') return null;
+          if (!item || typeof item !== "object") return null;
 
           const normalizeString = (value) => {
-            if (value === undefined || value === null) return '';
+            if (value === undefined || value === null) return "";
             return String(value).trim();
           };
 
@@ -219,7 +212,7 @@ export const buildRequestSubmissionState = (
             if (Array.isArray(candidate)) {
               return candidate.reduce((acc, key) => {
                 if (acc === null || acc === undefined) return undefined;
-                if (typeof acc !== 'object') return undefined;
+                if (typeof acc !== "object") return undefined;
                 return acc[key];
               }, item);
             }
@@ -228,46 +221,46 @@ export const buildRequestSubmissionState = (
           };
 
           const itemId =
-            resolveFromItem('id') ??
-            resolveFromItem('requested_item_id') ??
-            resolveFromItem('requestedItemId') ??
+            resolveFromItem("id") ??
+            resolveFromItem("requested_item_id") ??
+            resolveFromItem("requestedItemId") ??
             null;
 
           const nameCandidate =
-            resolveFromItem('item_name') ??
-            resolveFromItem('name') ??
-            resolveFromItem('title') ??
-            '';
+            resolveFromItem("item_name") ??
+            resolveFromItem("name") ??
+            resolveFromItem("title") ??
+            "";
           const name = normalizeString(nameCandidate);
 
           const quantity = normalizeNumber(
-            resolveFromItem('quantity') ??
-              resolveFromItem('qty') ??
-              resolveFromItem('requested_quantity') ??
-              resolveFromItem('requestedQuantity'),
+            resolveFromItem("quantity") ??
+              resolveFromItem("qty") ??
+              resolveFromItem("requested_quantity") ??
+              resolveFromItem("requestedQuantity"),
           );
 
           const purchasedQuantity =
             normalizeNumber(
-              resolveFromItem('purchased_quantity') ??
-                resolveFromItem('purchasedQuantity') ??
-                resolveFromItem('received_quantity') ??
-                resolveFromItem('receivedQuantity'),
+              resolveFromItem("purchased_quantity") ??
+                resolveFromItem("purchasedQuantity") ??
+                resolveFromItem("received_quantity") ??
+                resolveFromItem("receivedQuantity"),
             ) ?? 0;
 
           const statusRaw = normalizeString(
-            resolveFromItem('status') ??
-              resolveFromItem('procurement_status') ??
-              resolveFromItem('procurementStatus'),
+            resolveFromItem("status") ??
+              resolveFromItem("procurement_status") ??
+              resolveFromItem("procurementStatus"),
           );
 
           const normalizedStatus = statusRaw
             ? statusRaw
             : quantity !== null && purchasedQuantity >= quantity
-            ? 'Purchased'
-            : purchasedQuantity > 0
-            ? 'Partially Purchased'
-            : 'Not Purchased';
+              ? "Purchased"
+              : purchasedQuantity > 0
+                ? "Partially Purchased"
+                : "Not Purchased";
 
           return {
             id: itemId,
@@ -282,29 +275,29 @@ export const buildRequestSubmissionState = (
 
   return {
     requestType:
-      pickValue(['request_type', 'requestType', 'type']) ?? requestType,
+      pickValue(["request_type", "requestType", "type"]) ?? requestType,
     summary: {
       requestId:
         pickValue(
           [
-            'request_id',
-            'requestId',
-            'id',
-            'request_number',
-            'requestNumber',
-            ['request', 'id'],
+            "request_id",
+            "requestId",
+            "id",
+            "request_number",
+            "requestNumber",
+            ["request", "id"],
           ],
           { preserveEmptyString: true },
         ) ?? null,
       requestNumber:
         pickValue(
           [
-            'request_number',
-            'requestNumber',
-            'reference',
-            'reference_number',
-            'tracking_number',
-            'trackingNumber',
+            "request_number",
+            "requestNumber",
+            "reference",
+            "reference_number",
+            "tracking_number",
+            "trackingNumber",
           ],
           { preserveEmptyString: true },
         ) ?? null,
@@ -314,52 +307,48 @@ export const buildRequestSubmissionState = (
       itemsCount: normalizedItems.length
         ? normalizedItems.length
         : Array.isArray(items)
-        ? items.length
-        : null,
+          ? items.length
+          : null,
       nextApproval: normalizedNextApproval,
       duplicateDetected: normalizeBoolean(
         pickValue([
-          'duplicate_detected',
-          'duplicateDetected',
-          'is_duplicate',
-          'isDuplicate',
-          'duplicate',
+          "duplicate_detected",
+          "duplicateDetected",
+          "is_duplicate",
+          "isDuplicate",
+          "duplicate",
         ]),
       ),
       message:
         pickValue(
           [
-            'message',
-            'status_message',
-            'statusMessage',
-            'description',
-            'detail',
-            'details',
+            "message",
+            "status_message",
+            "statusMessage",
+            "description",
+            "detail",
+            "details",
           ],
           { preserveEmptyString: true },
-        ) ?? '',
+        ) ?? "",
       submittedAt:
         pickValue([
-          'submitted_at',
-          'submittedAt',
-          'created_at',
-          'createdAt',
-          'timestamp',
+          "submitted_at",
+          "submittedAt",
+          "created_at",
+          "createdAt",
+          "timestamp",
         ]) ?? null,
       submittedBy:
         pickValue([
-          'submitted_by',
-          'submittedBy',
-          'temporary_requester_name',
-          'requester_name',
-          'requesterName',
+          "submitted_by",
+          "submittedBy",
+          "temporary_requester_name",
+          "requester_name",
+          "requesterName",
         ]) ?? null,
       projectName:
-        pickValue([
-          'project_name',
-          'projectName',
-          ['project', 'name'],
-        ]) ?? null,
+        pickValue(["project_name", "projectName", ["project", "name"]]) ?? null,
     },
     items: normalizedItems,
   };

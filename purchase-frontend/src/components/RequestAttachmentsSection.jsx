@@ -1,31 +1,31 @@
-import React from 'react';
+import React from "react";
 
 const getFilenameFromAttachment = (attachment = {}) => {
   if (attachment.file_name) {
     return attachment.file_name;
   }
 
-  const storedPath = attachment.file_path || '';
+  const storedPath = attachment.file_path || "";
   if (storedPath) {
     const parts = storedPath.split(/[\\/]/);
-    return parts[parts.length - 1] || 'Attachment';
+    return parts[parts.length - 1] || "Attachment";
   }
 
-  return 'Attachment';
+  return "Attachment";
 };
 
 const RequestAttachmentsSection = ({
   attachments = [],
   isLoading = false,
-  error = '',
+  error = "",
   onDownload,
   downloadingAttachmentId,
   onRetry,
-  retryLabel = 'Try again',
-  title = 'Attachments',
-  emptyMessage = 'No attachments uploaded.',
-  loadingMessage = 'Loading attachments…',
-  className = '',
+  retryLabel = "Try again",
+  title = "Attachments",
+  emptyMessage = "No attachments uploaded.",
+  loadingMessage = "Loading attachments…",
+  className = "",
 }) => {
   return (
     <section className={className}>
@@ -54,7 +54,10 @@ const RequestAttachmentsSection = ({
             const viewUrl = attachment.file_url || attachment.view_url || null;
 
             return (
-              <li key={attachment.id} className="flex flex-wrap items-center gap-3">
+              <li
+                key={attachment.id}
+                className="flex flex-wrap items-center gap-3"
+              >
                 <span className="break-all">{filename}</span>
                 {viewUrl && (
                   <a
@@ -73,7 +76,9 @@ const RequestAttachmentsSection = ({
                     className="text-blue-600 underline hover:text-blue-800 disabled:opacity-50"
                     disabled={downloadingAttachmentId === attachment.id}
                   >
-                    {downloadingAttachmentId === attachment.id ? 'Downloading…' : 'Download'}
+                    {downloadingAttachmentId === attachment.id
+                      ? "Downloading…"
+                      : "Download"}
                   </button>
                 )}
               </li>

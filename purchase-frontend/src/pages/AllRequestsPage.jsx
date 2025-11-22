@@ -320,7 +320,7 @@ const AllRequestsPage = () => {
   const handlePrint = async (requestId) => {
     try {
       const data = await printRequest(requestId);
-      const { request, items, print_count } = data;
+      const { request, items, message = 'Request ready for printing.', print_count } = data;
 
       const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
       const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';

@@ -5,10 +5,10 @@ import {
   useEffect,
   useMemo,
   useState,
-} from 'react';
-import api from '../api/axios';
-import { hasAllPermissions, hasAnyPermission } from '../utils/permissions';
-import { useAuth } from './useAuth';
+} from "react";
+import api from "../api/axios";
+import { hasAllPermissions, hasAnyPermission } from "../utils/permissions";
+import { useAuth } from "./useAuth";
 
 const AccessControlContext = createContext(null);
 
@@ -18,9 +18,9 @@ const normalizeResource = (resource = {}) => {
     : [];
 
   return {
-    key: resource.resource_key ?? resource.key ?? '',
-    label: resource.label ?? '',
-    description: resource.description ?? '',
+    key: resource.resource_key ?? resource.key ?? "",
+    label: resource.label ?? "",
+    description: resource.description ?? "",
     permissions,
     requireAll: Boolean(resource.require_all ?? resource.requireAll ?? false),
   };
@@ -30,31 +30,31 @@ export const AccessControlProvider = ({ children }) => {
   const { isAuthenticated, user } = useAuth();
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const fetchResources = useCallback(async () => {
     if (!isAuthenticated) {
       setResources([]);
-      setError('');
+      setError("");
       setLoading(false);
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const res = await api.get('/api/ui-access');
+      const res = await api.get("/api/ui-access");
       const payload = Array.isArray(res.data?.resources)
         ? res.data.resources
         : Array.isArray(res.data)
-        ? res.data
-        : [];
+          ? res.data
+          : [];
 
       setResources(payload.map(normalizeResource).filter((item) => item.key));
     } catch (err) {
-      console.error('❌ Failed to load interface access configuration:', err);
-      setError('Failed to load interface access configuration.');
+      console.error("❌ Failed to load interface access configuration:", err);
+      setError("Failed to load interface access configuration.");
       setResources([]);
     } finally {
       setLoading(false);
@@ -99,26 +99,31 @@ export const AccessControlProvider = ({ children }) => {
         resource.permissions.length > 0
           ? resource.permissions
           : Array.isArray(fallbackPermissions)
-          ? fallbackPermissions
-          : [];
+            ? fallbackPermissions
+            : [];
 
       const requireAll =
-        typeof resource.requireAll === 'boolean'
+        typeof resource.requireAll === "boolean"
           ? resource.requireAll
           : Boolean(fallbackRequireAll);
 
       return { permissions, requireAll };
     },
-    [resourceMap]
+    [resourceMap],
   );
 
   const hasAccess = useCallback(
-    (candidateUser, resourceKey, fallbackPermissions = [], fallbackRequireAll = false) => {
+    (
+      candidateUser,
+      resourceKey,
+      fallbackPermissions = [],
+      fallbackRequireAll = false,
+    ) => {
       const activeUser = candidateUser ?? user;
       const { permissions, requireAll } = resolvePermissions(
         resourceKey,
         fallbackPermissions,
-        fallbackRequireAll
+        fallbackRequireAll,
       );
 
       if (!permissions || permissions.length === 0) {
@@ -129,7 +134,7 @@ export const AccessControlProvider = ({ children }) => {
         ? hasAllPermissions(activeUser, permissions)
         : hasAnyPermission(activeUser, permissions);
     },
-    [resolvePermissions, user]
+    [resolvePermissions, user],
   );
 
   const value = useMemo(
@@ -141,7 +146,7 @@ export const AccessControlProvider = ({ children }) => {
       resolvePermissions,
       hasAccess,
     }),
-    [resources, loading, error, fetchResources, resolvePermissions, hasAccess]
+    [resources, loading, error, fetchResources, resolvePermissions, hasAccess],
   );
 
   return (
@@ -154,7 +159,9 @@ export const AccessControlProvider = ({ children }) => {
 export const useAccessControl = () => {
   const context = useContext(AccessControlContext);
   if (!context) {
-    throw new Error('useAccessControl must be used within an AccessControlProvider');
+    throw new Error(
+      "useAccessControl must be used within an AccessControlProvider",
+    );
   }
   return context;
 };

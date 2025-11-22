@@ -1,7 +1,7 @@
 const STATUS_KEYS = {
-  PURCHASED: 'purchased',
-  PARTIALLY_PURCHASED: 'partiallyPurchased',
-  NOT_PURCHASED: 'notPurchased',
+  PURCHASED: "purchased",
+  PARTIALLY_PURCHASED: "partiallyPurchased",
+  NOT_PURCHASED: "notPurchased",
 };
 
 const stringToNumber = (value) => {
@@ -9,11 +9,11 @@ const stringToNumber = (value) => {
     return null;
   }
 
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return Number.isFinite(value) ? value : null;
   }
 
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) {
       return null;
@@ -31,7 +31,7 @@ const pickNumberFromItem = (item, keys) => {
     if (Array.isArray(key)) {
       let nestedValue = item;
       for (const nestedKey of key) {
-        if (!nestedValue || typeof nestedValue !== 'object') {
+        if (!nestedValue || typeof nestedValue !== "object") {
           nestedValue = undefined;
           break;
         }
@@ -75,11 +75,11 @@ const pickStatusText = (item) => {
     }
   }
 
-  return '';
+  return "";
 };
 
 export const deriveItemPurchaseState = (item) => {
-  if (!item || typeof item !== 'object') {
+  if (!item || typeof item !== "object") {
     return {
       statusKey: STATUS_KEYS.NOT_PURCHASED,
       quantity: null,
@@ -88,27 +88,29 @@ export const deriveItemPurchaseState = (item) => {
   }
 
   const quantity = pickNumberFromItem(item, [
-    'quantity',
-    'qty',
-    'requested_quantity',
-    'requestedQuantity',
-    ['item', 'quantity'],
+    "quantity",
+    "qty",
+    "requested_quantity",
+    "requestedQuantity",
+    ["item", "quantity"],
   ]);
 
   const purchasedQuantityRaw =
     pickNumberFromItem(item, [
-      'purchased_quantity',
-      'purchasedQuantity',
-      'received_quantity',
-      'receivedQuantity',
-      'fulfilled_quantity',
-      'fulfilledQuantity',
+      "purchased_quantity",
+      "purchasedQuantity",
+      "received_quantity",
+      "receivedQuantity",
+      "fulfilled_quantity",
+      "fulfilledQuantity",
     ]) ?? 0;
 
   const purchasedQuantity = purchasedQuantityRaw;
   const statusText = pickStatusText(item);
 
-  if (['purchased', 'completed', 'received', 'fulfilled'].includes(statusText)) {
+  if (
+    ["purchased", "completed", "received", "fulfilled"].includes(statusText)
+  ) {
     return {
       statusKey: STATUS_KEYS.PURCHASED,
       quantity,
@@ -118,12 +120,12 @@ export const deriveItemPurchaseState = (item) => {
 
   if (
     [
-      'partially purchased',
-      'partially received',
-      'partial',
-      'partial purchase',
-      'in progress',
-      'processing',
+      "partially purchased",
+      "partially received",
+      "partial",
+      "partial purchase",
+      "in progress",
+      "processing",
     ].includes(statusText)
   ) {
     return {
@@ -134,7 +136,9 @@ export const deriveItemPurchaseState = (item) => {
   }
 
   if (
-    ['not purchased', 'pending', 'awaiting purchase', 'requested'].includes(statusText)
+    ["not purchased", "pending", "awaiting purchase", "requested"].includes(
+      statusText,
+    )
   ) {
     return {
       statusKey: STATUS_KEYS.NOT_PURCHASED,

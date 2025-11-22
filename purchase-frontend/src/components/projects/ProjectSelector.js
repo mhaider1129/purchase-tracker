@@ -1,29 +1,31 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import api from '../../api/axios';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import api from "../../api/axios";
 
 const sortProjectsByName = (list) =>
-  [...list].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  [...list].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+  );
 
 const ProjectSelector = ({ value, onChange, disabled = false, user }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  const normalizedValue = value ?? '';
+  const normalizedValue = value ?? "";
   const canManageProjects = useMemo(() => {
-    const role = (user?.role || '').toLowerCase();
-    return role === 'scm' || role === 'admin';
+    const role = (user?.role || "").toLowerCase();
+    return role === "scm" || role === "admin";
   }, [user?.role]);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
-      const { data } = await api.get('/api/projects');
+      const { data } = await api.get("/api/projects");
       setProjects(sortProjectsByName(data || []));
     } catch (err) {
-      console.error('❌ Failed to load projects:', err);
-      setError(err?.response?.data?.message || 'Unable to load projects');
+      console.error("❌ Failed to load projects:", err);
+      setError(err?.response?.data?.message || "Unable to load projects");
     } finally {
       setLoading(false);
     }
@@ -34,20 +36,21 @@ const ProjectSelector = ({ value, onChange, disabled = false, user }) => {
   }, [fetchProjects]);
 
   const handleAddProject = async () => {
-    const name = window.prompt('Enter new project name');
+    const name = window.prompt("Enter new project name");
     if (!name || !name.trim()) {
       return;
     }
     try {
-      const { data } = await api.post('/api/projects', { name: name.trim() });
+      const { data } = await api.post("/api/projects", { name: name.trim() });
       setProjects((prev) => sortProjectsByName([...prev, data]));
       if (onChange) {
         onChange(String(data.id));
       }
-      setError('');
+      setError("");
     } catch (err) {
-      console.error('❌ Failed to create project:', err);
-      const message = err?.response?.data?.message || 'Failed to create project';
+      console.error("❌ Failed to create project:", err);
+      const message =
+        err?.response?.data?.message || "Failed to create project";
       setError(message);
       alert(message);
     }
@@ -60,7 +63,7 @@ const ProjectSelector = ({ value, onChange, disabled = false, user }) => {
         <select
           className="p-2 border rounded flex-1"
           value={normalizedValue}
-          onChange={(e) => onChange?.(e.target.value || '')}
+          onChange={(e) => onChange?.(e.target.value || "")}
           disabled={disabled || loading}
         >
           <option value="">No linked project</option>
@@ -81,7 +84,9 @@ const ProjectSelector = ({ value, onChange, disabled = false, user }) => {
           </button>
         )}
       </div>
-      {loading && <p className="text-sm text-gray-500 mt-1">Loading projects...</p>}
+      {loading && (
+        <p className="text-sm text-gray-500 mt-1">Loading projects...</p>
+      )}
       {error && !loading && (
         <p className="text-sm text-red-600 mt-1" role="alert">
           {error}

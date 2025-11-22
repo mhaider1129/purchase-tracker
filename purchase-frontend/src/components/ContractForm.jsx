@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const ContractForm = ({
   formState,
@@ -22,7 +22,10 @@ const ContractForm = ({
     <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="title">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="title"
+          >
             Contract title
           </label>
           <input
@@ -36,7 +39,10 @@ const ContractForm = ({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="vendor">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="vendor"
+          >
             Vendor
           </label>
           <input
@@ -66,7 +72,10 @@ const ContractForm = ({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="start_date">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="start_date"
+          >
             Start date
           </label>
           <input
@@ -79,7 +88,10 @@ const ContractForm = ({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="end_date">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="end_date"
+          >
             End date
           </label>
           <input
@@ -109,7 +121,10 @@ const ContractForm = ({
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="status">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="status"
+          >
             Status
           </label>
           <select
@@ -120,7 +135,7 @@ const ContractForm = ({
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           >
             {statusOptions
-              .filter((option) => option.value !== 'all')
+              .filter((option) => option.value !== "all")
               .map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -144,7 +159,9 @@ const ContractForm = ({
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
           >
             <option value="">
-              {departmentsLoading ? 'Loading departments...' : 'No department (send to CMO/COO)'}
+              {departmentsLoading
+                ? "Loading departments..."
+                : "No department (send to CMO/COO)"}
             </option>
             {departments.map((department) => (
               <option key={department.id} value={String(department.id)}>
@@ -153,10 +170,13 @@ const ContractForm = ({
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            If no department is selected, stakeholder and risk evaluations will be routed to the CMO/COO.
+            If no department is selected, stakeholder and risk evaluations will
+            be routed to the CMO/COO.
           </p>
           {departmentsError && (
-            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{departmentsError}</p>
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+              {departmentsError}
+            </p>
           )}
         </div>
         <div>
@@ -178,7 +198,8 @@ const ContractForm = ({
               <option value="">No contract manager assigned</option>
               {users.map((user) => (
                 <option key={user.id} value={String(user.id)}>
-                  {user.name || user.email || `User #${user.id}`} ({(user.role || '').toUpperCase() || 'Unknown'})
+                  {user.name || user.email || `User #${user.id}`} (
+                  {(user.role || "").toUpperCase() || "Unknown"})
                 </option>
               ))}
             </select>
@@ -195,9 +216,15 @@ const ContractForm = ({
             />
           )}
           {usersLoading && (
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Loading users…</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Loading users…
+            </p>
           )}
-          {usersError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{usersError}</p>}
+          {usersError && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+              {usersError}
+            </p>
+          )}
         </div>
         <div className="sm:col-span-2">
           <label
@@ -222,11 +249,15 @@ const ContractForm = ({
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Hold Ctrl/⌘ to select multiple departments. Leave empty if no technical departments are required.
+            Hold Ctrl/⌘ to select multiple departments. Leave empty if no
+            technical departments are required.
           </p>
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="description">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="description"
+          >
             Notes
           </label>
           <textarea
@@ -240,7 +271,10 @@ const ContractForm = ({
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="delivery_terms">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="delivery_terms"
+          >
             Delivery Terms
           </label>
           <textarea
@@ -254,7 +288,10 @@ const ContractForm = ({
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="warranty_terms">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="warranty_terms"
+          >
             Warranty Terms
           </label>
           <textarea
@@ -268,7 +305,10 @@ const ContractForm = ({
           />
         </div>
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="performance_management">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="performance_management"
+          >
             Performance Management
           </label>
           <textarea
@@ -300,7 +340,11 @@ const ContractForm = ({
           disabled={saving}
           className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
         >
-          {saving ? 'Saving...' : editingId ? 'Update contract' : 'Create contract'}
+          {saving
+            ? "Saving..."
+            : editingId
+              ? "Update contract"
+              : "Create contract"}
         </button>
         {editingId && (
           <button
@@ -309,12 +353,12 @@ const ContractForm = ({
             disabled={archivingId === editingId}
             className="inline-flex items-center justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-60 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
           >
-            {archivingId === editingId ? 'Archiving...' : 'Archive contract'}
+            {archivingId === editingId ? "Archiving..." : "Archive contract"}
           </button>
         )}
       </div>
     </form>
-  )
+  );
 };
 
 export default ContractForm;

@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import axios from '../api/axios';
+import { useCallback, useState } from "react";
+import axios from "../api/axios";
 
 const useApprovalTimeline = () => {
   const [expandedApprovalsId, setExpandedApprovalsId] = useState(null);
@@ -16,11 +16,16 @@ const useApprovalTimeline = () => {
       if (!approvalsMap[requestId]) {
         try {
           setLoadingApprovalsId(requestId);
-          const res = await axios.get(`/api/approvals/request/${requestId}/approvals`);
+          const res = await axios.get(
+            `/api/approvals/request/${requestId}/approvals`,
+          );
           setApprovalsMap((prev) => ({ ...prev, [requestId]: res.data || [] }));
         } catch (err) {
-          console.error(`❌ Failed to load approvals for request ${requestId}:`, err);
-          alert('Failed to load approvals');
+          console.error(
+            `❌ Failed to load approvals for request ${requestId}:`,
+            err,
+          );
+          alert("Failed to load approvals");
         } finally {
           setLoadingApprovalsId(null);
         }
@@ -28,7 +33,7 @@ const useApprovalTimeline = () => {
 
       setExpandedApprovalsId(requestId);
     },
-    [approvalsMap, expandedApprovalsId]
+    [approvalsMap, expandedApprovalsId],
   );
 
   const resetApprovals = useCallback(() => {

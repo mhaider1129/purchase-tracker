@@ -1,7 +1,7 @@
 // src/api/supplierEvaluations.js
-import api from './axios';
+import api from "./axios";
 
-const RESOURCE = '/api/supplier-evaluations';
+const RESOURCE = "/api/supplier-evaluations";
 
 export const listSupplierEvaluations = async (params = {}, options = {}) => {
   const { data } = await api.get(RESOURCE, { params, ...options });
@@ -10,9 +10,12 @@ export const listSupplierEvaluations = async (params = {}, options = {}) => {
 
 export const listSupplierEvaluationBenchmarks = async (
   params = {},
-  options = {}
+  options = {},
 ) => {
-  const { data } = await api.get(`${RESOURCE}/benchmarks`, { params, ...options });
+  const { data } = await api.get(`${RESOURCE}/benchmarks`, {
+    params,
+    ...options,
+  });
   return Array.isArray(data) ? data : [];
 };
 

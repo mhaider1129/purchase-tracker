@@ -1,8 +1,8 @@
 // src/api/itemRecalls.js
-import api from './axios';
+import api from "./axios";
 
 const toPositiveIntegerOrNull = (value) => {
-  if (value === undefined || value === null || value === '') {
+  if (value === undefined || value === null || value === "") {
     return undefined;
   }
 
@@ -37,7 +37,7 @@ export const submitDepartmentRecall = async ({
     payload.quantity = parsedQuantity;
   }
 
-  const { data } = await api.post('/api/item-recalls/department', payload);
+  const { data } = await api.post("/api/item-recalls/department", payload);
   return data;
 };
 
@@ -66,7 +66,7 @@ export const submitWarehouseRecall = async ({
     payload.quantity = parsedQuantity;
   }
 
-  const { data } = await api.post('/api/item-recalls/warehouse', payload);
+  const { data } = await api.post("/api/item-recalls/warehouse", payload);
   return data;
 };
 
@@ -76,14 +76,17 @@ export const fetchRecallWorkspaceItems = async ({ signal } = {}) => {
     config.signal = signal;
   }
 
-  const { data } = await api.get('/api/item-recalls', config);
+  const { data } = await api.get("/api/item-recalls", config);
   return data;
 };
 
-export const escalateRecallToProcurement = async ({ recallId, warehouseNotes }) => {
+export const escalateRecallToProcurement = async ({
+  recallId,
+  warehouseNotes,
+}) => {
   const parsedRecallId = toPositiveIntegerOrNull(recallId);
   if (parsedRecallId === undefined) {
-    throw new Error('A valid recall ID is required');
+    throw new Error("A valid recall ID is required");
   }
 
   const payload = {};
@@ -91,6 +94,9 @@ export const escalateRecallToProcurement = async ({ recallId, warehouseNotes }) 
     payload.warehouse_notes = warehouseNotes.trim();
   }
 
-  const { data } = await api.post(`/api/item-recalls/${parsedRecallId}/escalate`, payload);
+  const { data } = await api.post(
+    `/api/item-recalls/${parsedRecallId}/escalate`,
+    payload,
+  );
   return data;
 };

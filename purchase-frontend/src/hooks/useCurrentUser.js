@@ -1,6 +1,6 @@
 // src/hooks/useCurrentUser.js
-import { useEffect, useState, useMemo } from 'react';
-import api from '../api/axios';
+import { useEffect, useState, useMemo } from "react";
+import api from "../api/axios";
 
 const useCurrentUser = () => {
   const [user, setUser] = useState(null);
@@ -12,14 +12,14 @@ const useCurrentUser = () => {
 
     const fetchUser = async () => {
       try {
-        const res = await api.get('/api/users/me', {
+        const res = await api.get("/api/users/me", {
           signal: controller.signal,
         });
         setUser(res.data);
       } catch (err) {
         if (!controller.signal.aborted) {
-          console.error('❌ Failed to fetch current user:', err);
-          setError(err?.response?.data?.message || 'Failed to load user');
+          console.error("❌ Failed to fetch current user:", err);
+          setError(err?.response?.data?.message || "Failed to load user");
         }
       } finally {
         if (!controller.signal.aborted) {

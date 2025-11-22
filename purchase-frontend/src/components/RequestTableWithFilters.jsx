@@ -1,5 +1,5 @@
 // src/components/RequestTableWithFilters.jsx
-import React from 'react';
+import React from "react";
 
 const RequestTableWithFilters = ({ requests }) => {
   if (!requests || requests.length === 0) {
@@ -8,7 +8,10 @@ const RequestTableWithFilters = ({ requests }) => {
 
   return (
     <div className="overflow-x-auto border rounded shadow-sm">
-      <table className="min-w-full text-sm text-left" aria-label="Request Table">
+      <table
+        className="min-w-full text-sm text-left"
+        aria-label="Request Table"
+      >
         <thead className="bg-gray-100 text-gray-700">
           <tr>
             <th className="p-2 border">ID</th>
@@ -23,23 +26,25 @@ const RequestTableWithFilters = ({ requests }) => {
         <tbody>
           {requests.map((req) => {
             const formattedCost = req.estimated_cost
-              ? req.estimated_cost.toLocaleString('en-US', {
-                  style: 'currency',
-                  currency: 'IQD',
+              ? req.estimated_cost.toLocaleString("en-US", {
+                  style: "currency",
+                  currency: "IQD",
                   minimumFractionDigits: 0,
                 })
-              : '—';
+              : "—";
 
-            const formattedDate = new Date(req.created_at).toLocaleDateString('en-GB');
+            const formattedDate = new Date(req.created_at).toLocaleDateString(
+              "en-GB",
+            );
 
             const statusColor =
-              req.status === 'rejected'
-                ? 'bg-red-50 text-red-700'
-                : req.status === 'approved'
-                ? 'bg-green-50 text-green-700'
-                : req.status === 'pending'
-                ? 'bg-yellow-50 text-yellow-700'
-                : '';
+              req.status === "rejected"
+                ? "bg-red-50 text-red-700"
+                : req.status === "approved"
+                  ? "bg-green-50 text-green-700"
+                  : req.status === "pending"
+                    ? "bg-yellow-50 text-yellow-700"
+                    : "";
 
             return (
               <tr key={req.id} className={statusColor}>

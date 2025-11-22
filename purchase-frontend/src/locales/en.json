@@ -193,125 +193,125 @@
     "custodyApprovals": "Custody Approvals",
     "custodyIssued": "Issued Custodies"
   },
-    "maintenanceHODApprovals": {
-      "title": "Maintenance Approval Center",
-      "subtitle": "Review maintenance requisitions, confirm departmental alignment, and provide approval decisions with clear context.",
-      "summary": {
-        "pendingLabel": "Pending decisions",
-        "departmentsLabel": "Departments involved",
-        "sectionsLabel": "Sections represented",
-        "projectsLabel": "Projects referenced"
-      },
-      "filters": {
-        "searchPlaceholder": "Search by reference, requester, justification, or item…",
-        "departmentLabel": "Department",
-        "allDepartments": "All departments",
-        "sectionLabel": "Section",
-        "allSections": "All sections",
-        "projectLabel": "Project",
-        "allProjects": "All projects",
-        "sortLabel": "Sort by",
-        "sortNewest": "Newest first",
-        "sortOldest": "Oldest first",
-        "sortReference": "Reference (A–Z)",
-        "reset": "Reset filters",
-        "resetAria": "Reset all maintenance approval filters"
-      },
-      "labels": {
-        "referencePrefix": "Reference",
-        "noJustification": "No justification provided",
-        "requester": "Requested by {{name}}",
-        "submittedAt": "Submitted on {{date}}",
-        "itemsCount": "Items: {{count}}",
-        "estimatedCost": "Estimated cost: {{amount}} IQD",
-        "project": "Project: {{project}}",
-        "itemsHeading": "Requested items",
-        "noItems": "No items were included with this submission.",
-        "notApplicable": "N/A"
-      },
-      "itemsColumns": {
-        "name": "Item name",
-        "quantity": "Quantity",
-        "status": "Decision",
-        "comments": "Reviewer notes",
-        "commentsPlaceholder": "Optional context for this item…",
-        "availableQuantity": "Available: {{count}}"
-      },
-      "itemStatus": {
-        "pending": "Pending",
-        "approved": "Approved",
-        "rejected": "Rejected"
-      },
-      "itemSummary": {
-        "approved": "Approved: {{count}}",
-        "rejected": "Rejected: {{count}}",
-        "pending": "Pending: {{count}}"
-      },
-      "itemActions": {
-        "save": "Save item decisions",
-        "saveAria": "Save item decisions for maintenance request {{reference}}",
-        "noneSelected": "Record at least one item decision before saving.",
-        "success": "Item decisions saved. Approved: {{approved}}, Rejected: {{rejected}}, Pending: {{pending}}.",
-        "locked": "{{count}} item(s) were rejected by previous approvers and could not be updated. Approved: {{approved}}, Rejected: {{rejected}}, Pending: {{pending}}.",
-        "error": "Failed to save item decisions. Please try again."
-      },
-      "flags": {
-        "urgentLabel": "Mark this request as urgent",
-        "urgentHelper": "Urgent requests are highlighted for downstream teams.",
-        "urgentBadge": "Urgent"
-      },
-      "attachments": {
-        "title": "Request attachments",
-        "refresh": "Reload attachments",
-        "loading": "Loading attachments…",
-        "empty": "No attachments uploaded for this request.",
-        "download": "Download",
-        "loadError": "Unable to load attachments. Please try again."
-      },
-      "actions": {
-        "refresh": "Refresh",
-        "refreshAria": "Refresh pending maintenance requests",
-        "export": "Export",
-        "exportAria": "Export the filtered maintenance approvals to CSV",
-        "confirmApprove": "Approve maintenance request {{reference}}?",
-        "confirmReject": "Reject maintenance request {{reference}}?",
-        "commentLabel": "Decision notes",
-        "commentPlaceholder": "Add optional notes for the requester or downstream teams…",
-        "commentHint": "Comments are recorded in the request log and help downstream stakeholders understand your decision.",
-        "approve": "Approve request",
-        "reject": "Reject request",
-        "approveAria": "Approve maintenance request {{reference}}",
-        "rejectAria": "Reject maintenance request {{reference}}"
-      },
-      "cost": {
-        "label": "Estimated Cost (IQD)",
-        "placeholder": "Add an estimated total before approving",
-        "helper": "Provide the projected total for the request. Leave blank to keep the current value.",
-        "invalid": "Enter a positive number for the estimated cost or leave it blank."
-      },
-      "feedback": {
-        "approved": "Request {{reference}} approved successfully.",
-        "rejected": "Request {{reference}} rejected successfully.",
-        "failedDecision": "Unable to record your decision. Please try again."
-      },
-      "export": {
-        "fileName": "Maintenance_Approvals",
-        "columns": {
-          "reference": "Reference",
-          "department": "Department",
-          "section": "Section",
-          "justification": "Justification",
-          "requester": "Requested By",
-          "project": "Project",
-          "submittedAt": "Submitted At",
-          "items": "Items"
-        }
-      },
-      "errors": {
-        "loadFailed": "Failed to load pending maintenance requests."
-      },
-      "emptyState": "No maintenance approvals match the current filters."
+  "maintenanceHODApprovals": {
+    "title": "Maintenance Approval Center",
+    "subtitle": "Review maintenance requisitions, confirm departmental alignment, and provide approval decisions with clear context.",
+    "summary": {
+      "pendingLabel": "Pending decisions",
+      "departmentsLabel": "Departments involved",
+      "sectionsLabel": "Sections represented",
+      "projectsLabel": "Projects referenced"
     },
+    "filters": {
+      "searchPlaceholder": "Search by reference, requester, justification, or item…",
+      "departmentLabel": "Department",
+      "allDepartments": "All departments",
+      "sectionLabel": "Section",
+      "allSections": "All sections",
+      "projectLabel": "Project",
+      "allProjects": "All projects",
+      "sortLabel": "Sort by",
+      "sortNewest": "Newest first",
+      "sortOldest": "Oldest first",
+      "sortReference": "Reference (A–Z)",
+      "reset": "Reset filters",
+      "resetAria": "Reset all maintenance approval filters"
+    },
+    "labels": {
+      "referencePrefix": "Reference",
+      "noJustification": "No justification provided",
+      "requester": "Requested by {{name}}",
+      "submittedAt": "Submitted on {{date}}",
+      "itemsCount": "Items: {{count}}",
+      "estimatedCost": "Estimated cost: {{amount}} IQD",
+      "project": "Project: {{project}}",
+      "itemsHeading": "Requested items",
+      "noItems": "No items were included with this submission.",
+      "notApplicable": "N/A"
+    },
+    "itemsColumns": {
+      "name": "Item name",
+      "quantity": "Quantity",
+      "status": "Decision",
+      "comments": "Reviewer notes",
+      "commentsPlaceholder": "Optional context for this item…",
+      "availableQuantity": "Available: {{count}}"
+    },
+    "itemStatus": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "itemSummary": {
+      "approved": "Approved: {{count}}",
+      "rejected": "Rejected: {{count}}",
+      "pending": "Pending: {{count}}"
+    },
+    "itemActions": {
+      "save": "Save item decisions",
+      "saveAria": "Save item decisions for maintenance request {{reference}}",
+      "noneSelected": "Record at least one item decision before saving.",
+      "success": "Item decisions saved. Approved: {{approved}}, Rejected: {{rejected}}, Pending: {{pending}}.",
+      "locked": "{{count}} item(s) were rejected by previous approvers and could not be updated. Approved: {{approved}}, Rejected: {{rejected}}, Pending: {{pending}}.",
+      "error": "Failed to save item decisions. Please try again."
+    },
+    "flags": {
+      "urgentLabel": "Mark this request as urgent",
+      "urgentHelper": "Urgent requests are highlighted for downstream teams.",
+      "urgentBadge": "Urgent"
+    },
+    "attachments": {
+      "title": "Request attachments",
+      "refresh": "Reload attachments",
+      "loading": "Loading attachments…",
+      "empty": "No attachments uploaded for this request.",
+      "download": "Download",
+      "loadError": "Unable to load attachments. Please try again."
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshAria": "Refresh pending maintenance requests",
+      "export": "Export",
+      "exportAria": "Export the filtered maintenance approvals to CSV",
+      "confirmApprove": "Approve maintenance request {{reference}}?",
+      "confirmReject": "Reject maintenance request {{reference}}?",
+      "commentLabel": "Decision notes",
+      "commentPlaceholder": "Add optional notes for the requester or downstream teams…",
+      "commentHint": "Comments are recorded in the request log and help downstream stakeholders understand your decision.",
+      "approve": "Approve request",
+      "reject": "Reject request",
+      "approveAria": "Approve maintenance request {{reference}}",
+      "rejectAria": "Reject maintenance request {{reference}}"
+    },
+    "cost": {
+      "label": "Estimated Cost (IQD)",
+      "placeholder": "Add an estimated total before approving",
+      "helper": "Provide the projected total for the request. Leave blank to keep the current value.",
+      "invalid": "Enter a positive number for the estimated cost or leave it blank."
+    },
+    "feedback": {
+      "approved": "Request {{reference}} approved successfully.",
+      "rejected": "Request {{reference}} rejected successfully.",
+      "failedDecision": "Unable to record your decision. Please try again."
+    },
+    "export": {
+      "fileName": "Maintenance_Approvals",
+      "columns": {
+        "reference": "Reference",
+        "department": "Department",
+        "section": "Section",
+        "justification": "Justification",
+        "requester": "Requested By",
+        "project": "Project",
+        "submittedAt": "Submitted At",
+        "items": "Items"
+      }
+    },
+    "errors": {
+      "loadFailed": "Failed to load pending maintenance requests."
+    },
+    "emptyState": "No maintenance approvals match the current filters."
+  },
   "language": {
     "english": "English",
     "arabic": "Arabic"

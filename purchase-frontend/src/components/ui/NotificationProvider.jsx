@@ -6,27 +6,26 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { createPortal } from 'react-dom';
-import axios from '../../api/axios';
-import { useAuth } from '../../hooks/useAuth';
+} from "react";
+import { createPortal } from "react-dom";
+import axios from "../../api/axios";
+import { useAuth } from "../../hooks/useAuth";
 
 const NotificationContext = createContext(null);
 let toastId = 0;
 
 const toastStyles = {
   success:
-    'border-green-200 bg-green-50 text-green-800 dark:border-green-700/60 dark:bg-green-900/40 dark:text-green-200',
+    "border-green-200 bg-green-50 text-green-800 dark:border-green-700/60 dark:bg-green-900/40 dark:text-green-200",
   error:
-    'border-red-200 bg-red-50 text-red-800 dark:border-red-700/60 dark:bg-red-900/40 dark:text-red-200',
+    "border-red-200 bg-red-50 text-red-800 dark:border-red-700/60 dark:bg-red-900/40 dark:text-red-200",
   warning:
-    'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/40 dark:text-amber-100',
-  info:
-    'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-700/60 dark:bg-sky-900/40 dark:text-sky-100',
+    "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/40 dark:text-amber-100",
+  info: "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-700/60 dark:bg-sky-900/40 dark:text-sky-100",
 };
 
 const ToastPortal = ({ toasts, onDismiss }) => {
-  if (typeof document === 'undefined') return null;
+  if (typeof document === "undefined") return null;
 
   if (toasts.length === 0) {
     return null;
@@ -46,7 +45,9 @@ const ToastPortal = ({ toasts, onDismiss }) => {
           >
             <div className="flex items-start gap-3 px-4 py-3">
               <div className="flex-1">
-                {title ? <p className="text-sm font-semibold">{title}</p> : null}
+                {title ? (
+                  <p className="text-sm font-semibold">{title}</p>
+                ) : null}
                 <p className="text-sm leading-relaxed">{message}</p>
               </div>
               <button
@@ -71,8 +72,8 @@ const normalizeNotification = (candidate) => {
 
   return {
     id: candidate.id,
-    title: candidate.title ?? '',
-    message: candidate.message ?? '',
+    title: candidate.title ?? "",
+    message: candidate.message ?? "",
     link: candidate.link ?? null,
     metadata: candidate.metadata ?? null,
     createdAt: candidate.createdAt ?? candidate.created_at ?? null,
@@ -105,7 +106,7 @@ export const NotificationProvider = ({
   }, []);
 
   const pushToast = useCallback(
-    ({ message, title, type = 'info', duration }) => {
+    ({ message, title, type = "info", duration }) => {
       if (!message) {
         return null;
       }
@@ -117,10 +118,13 @@ export const NotificationProvider = ({
 
       if (
         timeoutDuration !== null &&
-        typeof timeoutDuration === 'number' &&
+        typeof timeoutDuration === "number" &&
         timeoutDuration > 0
       ) {
-        const timeoutId = window.setTimeout(() => dismissToast(id), timeoutDuration);
+        const timeoutId = window.setTimeout(
+          () => dismissToast(id),
+          timeoutDuration,
+        );
         toastTimers.current.set(id, timeoutId);
       }
 
@@ -147,7 +151,7 @@ export const NotificationProvider = ({
       }
 
       try {
-        const response = await axios.get('/api/notifications', {
+        const response = await axios.get("/api/notifications", {
           params: { unreadOnly: true, limit: 50 },
         });
 
@@ -164,7 +168,7 @@ export const NotificationProvider = ({
         setInbox(normalized);
         setError(null);
       } catch (err) {
-        console.error('❌ Failed to load notifications:', err);
+        console.error("❌ Failed to load notifications:", err);
         setError(err);
       } finally {
         isFetchingRef.current = false;
@@ -185,9 +189,11 @@ export const NotificationProvider = ({
       try {
         await axios.patch(`/api/notifications/${id}/read`);
       } catch (err) {
-        console.error('❌ Failed to mark notification as read:', err);
+        console.error("❌ Failed to mark notification as read:", err);
       } finally {
-        setInbox((prev) => prev.filter((notification) => notification.id !== id));
+        setInbox((prev) =>
+          prev.filter((notification) => notification.id !== id),
+        );
         fetchNotifications({ silent: true });
       }
     },
@@ -200,9 +206,9 @@ export const NotificationProvider = ({
     }
 
     try {
-      await axios.patch('/api/notifications/read-all');
+      await axios.patch("/api/notifications/read-all");
     } catch (err) {
-      console.error('❌ Failed to mark all notifications as read:', err);
+      console.error("❌ Failed to mark all notifications as read:", err);
     } finally {
       setInbox([]);
       fetchNotifications({ silent: true });
@@ -233,7 +239,11 @@ export const NotificationProvider = ({
       return undefined;
     }
 
-    if (!pollInterval || typeof pollInterval !== 'number' || pollInterval <= 0) {
+    if (
+      !pollInterval ||
+      typeof pollInterval !== "number" ||
+      pollInterval <= 0
+    ) {
       return undefined;
     }
 
@@ -246,13 +256,16 @@ export const NotificationProvider = ({
     };
   }, [isAuthenticated, pollInterval, fetchNotifications, clearPolling]);
 
-  useEffect(() => () => {
-    clearPolling();
-    toastTimers.current.forEach((timeoutId) => {
-      clearTimeout(timeoutId);
-    });
-    toastTimers.current.clear();
-  }, [clearPolling]);
+  useEffect(
+    () => () => {
+      clearPolling();
+      toastTimers.current.forEach((timeoutId) => {
+        clearTimeout(timeoutId);
+      });
+      toastTimers.current.clear();
+    },
+    [clearPolling],
+  );
 
   const contextValue = useMemo(
     () => ({
@@ -265,7 +278,15 @@ export const NotificationProvider = ({
       notify: pushToast,
       unreadCount: inbox.length,
     }),
-    [fetchNotifications, inbox, isLoading, error, markNotificationAsRead, markAllNotificationsAsRead, pushToast],
+    [
+      fetchNotifications,
+      inbox,
+      isLoading,
+      error,
+      markNotificationAsRead,
+      markAllNotificationsAsRead,
+      pushToast,
+    ],
   );
 
   return (
@@ -280,7 +301,9 @@ export const useNotificationContext = () => {
   const context = useContext(NotificationContext);
 
   if (!context) {
-    throw new Error('useNotificationContext must be used within a NotificationProvider');
+    throw new Error(
+      "useNotificationContext must be used within a NotificationProvider",
+    );
   }
 
   return context;

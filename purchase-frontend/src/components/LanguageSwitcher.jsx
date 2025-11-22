@@ -1,10 +1,10 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
+import React from "react";
+import { useTranslation } from "react-i18next";
 
-const LanguageSwitcher = ({ className = '' }) => {
+const LanguageSwitcher = ({ className = "" }) => {
   const { i18n, t } = useTranslation();
 
-  const currentLang = i18n.language?.startsWith('ar') ? 'ar' : 'en';
+  const currentLang = i18n.language?.startsWith("ar") ? "ar" : "en";
 
   const handleChange = (event) => {
     const lang = event.target.value;
@@ -15,8 +15,11 @@ const LanguageSwitcher = ({ className = '' }) => {
 
   return (
     <div className={`flex items-center gap-2 text-sm ${className}`}>
-      <label htmlFor="language-switcher" className="text-gray-600 dark:text-gray-300">
-        {t('common.language')}
+      <label
+        htmlFor="language-switcher"
+        className="text-gray-600 dark:text-gray-300"
+      >
+        {t("common.language")}
       </label>
       <select
         id="language-switcher"

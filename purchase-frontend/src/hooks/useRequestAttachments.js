@@ -1,18 +1,18 @@
-import { useCallback, useRef, useState } from 'react';
-import axios from '../api/axios';
+import { useCallback, useRef, useState } from "react";
+import axios from "../api/axios";
 
 const getFilenameFromAttachment = (attachment = {}) => {
   if (attachment.file_name) {
     return attachment.file_name;
   }
 
-  const storedPath = attachment.file_path || '';
+  const storedPath = attachment.file_path || "";
   if (storedPath) {
     const parts = storedPath.split(/[\\/]/);
-    return parts[parts.length - 1] || 'attachment';
+    return parts[parts.length - 1] || "attachment";
   }
 
-  return 'attachment';
+  return "attachment";
 };
 
 const useRequestAttachments = () => {
@@ -41,7 +41,7 @@ const useRequestAttachments = () => {
       }
 
       setAttachmentLoadingMap((prev) => ({ ...prev, [requestId]: true }));
-      setAttachmentErrorMap((prev) => ({ ...prev, [requestId]: '' }));
+      setAttachmentErrorMap((prev) => ({ ...prev, [requestId]: "" }));
 
       try {
         const res = await axios.get(`/api/attachments/${requestId}`);
@@ -49,11 +49,14 @@ const useRequestAttachments = () => {
         setAttachmentsMap((prev) => ({ ...prev, [requestId]: attachments }));
         loadedRequestsRef.current.add(requestId);
       } catch (err) {
-        console.error(`❌ Failed to load attachments for request ${requestId}:`, err);
+        console.error(
+          `❌ Failed to load attachments for request ${requestId}:`,
+          err,
+        );
         setAttachmentsMap((prev) => ({ ...prev, [requestId]: [] }));
         setAttachmentErrorMap((prev) => ({
           ...prev,
-          [requestId]: 'Failed to load attachments.',
+          [requestId]: "Failed to load attachments.",
         }));
         loadedRequestsRef.current.delete(requestId);
       } finally {
@@ -68,40 +71,42 @@ const useRequestAttachments = () => {
       return;
     }
 
-    const storedPath = attachment.file_path || '';
+    const storedPath = attachment.file_path || "";
     const filename = getFilenameFromAttachment(attachment);
     const fallbackName = storedPath
       ? storedPath.split(/[\\/]/).pop()
       : attachment.file_name || filename;
     const downloadEndpoint =
       attachment.download_url ||
-      (fallbackName ? `/api/attachments/download/${encodeURIComponent(fallbackName)}` : null);
+      (fallbackName
+        ? `/api/attachments/download/${encodeURIComponent(fallbackName)}`
+        : null);
 
     if (!downloadEndpoint) {
-      alert('Attachment file is missing.');
+      alert("Attachment file is missing.");
       return;
     }
 
     setDownloadingAttachmentId(attachment.id);
     try {
       const response = await axios.get(downloadEndpoint, {
-        responseType: 'blob',
+        responseType: "blob",
       });
 
       const blob = new Blob([response.data], {
-        type: response.headers['content-type'] || 'application/octet-stream',
+        type: response.headers["content-type"] || "application/octet-stream",
       });
       const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = filename || 'attachment';
+      link.download = filename || "attachment";
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error(`❌ Error downloading attachment ${attachment?.id}:`, err);
-      alert('Failed to download attachment. Please try again.');
+      alert("Failed to download attachment. Please try again.");
     } finally {
       setDownloadingAttachmentId(null);
     }

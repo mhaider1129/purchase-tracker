@@ -1,61 +1,70 @@
 // src/App.js
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 
-import Login from './pages/Login';
-import Register from './pages/Register';
-import RequestAccount from './pages/RequestAccount';
-import RequestTypeSelector from './pages/requests/RequestTypeSelector';
-import StockRequestForm from './pages/requests/StockRequestForm';
-import NonStockRequestForm from './pages/requests/NonStockRequestForm';
-import StockItemRequestForm from './pages/requests/StockItemRequestForm';
-import MedicalDeviceRequestForm from './pages/requests/MedicalDeviceRequestForm';
-import ITRequestForm from './pages/requests/ITRequestForm';
-import MaintenanceRequestForm from './pages/requests/MaintenanceRequestForm';
-import WarehouseSupplyRequestForm from './pages/requests/WarehouseSupplyRequestForm';
-import MaintenanceWarehouseSupplyRequestForm from './pages/requests/MaintenanceWarehouseSupplyRequestForm';
-import MedicationRequestForm from './pages/requests/MedicationRequestForm';
-import SupplyItemsPage from './pages/requests/SupplyItemsPage';
-import WarehouseSupplyRequestsPage from './pages/WarehouseSupplyRequestsPage';
-import CustodyIssueForm from './pages/custody/CustodyIssueForm';
-import CustodyApprovals from './pages/custody/CustodyApprovals';
-import CustodyIssuedList from './pages/custody/CustodyIssuedList';
-import ItemRecallsPage from './pages/ItemRecallsPage';
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import RequestAccount from "./pages/RequestAccount";
+import RequestTypeSelector from "./pages/requests/RequestTypeSelector";
+import StockRequestForm from "./pages/requests/StockRequestForm";
+import NonStockRequestForm from "./pages/requests/NonStockRequestForm";
+import StockItemRequestForm from "./pages/requests/StockItemRequestForm";
+import MedicalDeviceRequestForm from "./pages/requests/MedicalDeviceRequestForm";
+import ITRequestForm from "./pages/requests/ITRequestForm";
+import MaintenanceRequestForm from "./pages/requests/MaintenanceRequestForm";
+import WarehouseSupplyRequestForm from "./pages/requests/WarehouseSupplyRequestForm";
+import MaintenanceWarehouseSupplyRequestForm from "./pages/requests/MaintenanceWarehouseSupplyRequestForm";
+import MedicationRequestForm from "./pages/requests/MedicationRequestForm";
+import SupplyItemsPage from "./pages/requests/SupplyItemsPage";
+import WarehouseSupplyRequestsPage from "./pages/WarehouseSupplyRequestsPage";
+import CustodyIssueForm from "./pages/custody/CustodyIssueForm";
+import CustodyApprovals from "./pages/custody/CustodyApprovals";
+import CustodyIssuedList from "./pages/custody/CustodyIssuedList";
+import ItemRecallsPage from "./pages/ItemRecallsPage";
 
-import ApprovalsPanel from './pages/ApprovalsPanel';
-import OpenRequestsPage from './pages/OpenRequestsPage';
-import MyMaintenanceRequests from './pages/MyMaintenanceRequests';
-import MaintenanceHODApprovals from './pages/MaintenanceHODApprovals';
-import ApprovalHistory from './pages/ApprovalHistory';
+import ApprovalsPanel from "./pages/ApprovalsPanel";
+import OpenRequestsPage from "./pages/OpenRequestsPage";
+import MyMaintenanceRequests from "./pages/MyMaintenanceRequests";
+import MaintenanceHODApprovals from "./pages/MaintenanceHODApprovals";
+import ApprovalHistory from "./pages/ApprovalHistory";
 
-import AllRequestsPage from './pages/AllRequestsPage';
-import AssignedRequestsPage from './pages/AssignedRequestsPage';
-import AdminTools from './pages/AdminTools';
-import Management from './pages/Management';
-import ChangePassword from './pages/ChangePassword';
-import IncompleteRequestsPage from './pages/IncompleteRequestsPage';
-import IncompleteMedicalRequestsPage from './pages/IncompleteMedicalRequestsPage';
-import IncompleteOperationalRequestsPage from './pages/IncompleteOperationalRequestsPage';
-import Dashboard from './pages/Dashboard';
-import CompletedAssignedRequestsPage from './pages/CompletedAssignedRequestsPage';
-import ClosedRequestsPage from './pages/ClosedRequestsPage';
-import MaintenanceStockPage from './pages/MaintenanceStockPage';
-import ProcurementPlansPage from './pages/ProcurementPlansPage';
-import RequestSubmittedPage from './pages/requests/RequestSubmittedPage';
-import WarehouseSupplyTemplatesPage from './pages/WarehouseSupplyTemplatesPage';
-import AuditRequestsPage from './pages/AuditRequestsPage';
-import LifecycleAnalytics from './pages/LifecycleAnalytics';
-import ContractsPage from './pages/ContractsPage';
-import SupplierEvaluationsPage from './pages/SupplierEvaluationsPage';
-import MyEvaluationsPage from './pages/MyEvaluationsPage';
-import EvaluationDetailsPage from './pages/EvaluationDetailsPage';
-import StockItemApprovals from './pages/StockItemApprovals';
-import WarehouseInventoryPage from './pages/WarehouseInventoryPage';
+import AllRequestsPage from "./pages/AllRequestsPage";
+import AssignedRequestsPage from "./pages/AssignedRequestsPage";
+import AdminTools from "./pages/AdminTools";
+import Management from "./pages/Management";
+import ChangePassword from "./pages/ChangePassword";
+import IncompleteRequestsPage from "./pages/IncompleteRequestsPage";
+import IncompleteMedicalRequestsPage from "./pages/IncompleteMedicalRequestsPage";
+import IncompleteOperationalRequestsPage from "./pages/IncompleteOperationalRequestsPage";
+import Dashboard from "./pages/Dashboard";
+import CompletedAssignedRequestsPage from "./pages/CompletedAssignedRequestsPage";
+import ClosedRequestsPage from "./pages/ClosedRequestsPage";
+import MaintenanceStockPage from "./pages/MaintenanceStockPage";
+import ProcurementPlansPage from "./pages/ProcurementPlansPage";
+import RequestSubmittedPage from "./pages/requests/RequestSubmittedPage";
+import WarehouseSupplyTemplatesPage from "./pages/WarehouseSupplyTemplatesPage";
+import AuditRequestsPage from "./pages/AuditRequestsPage";
+import LifecycleAnalytics from "./pages/LifecycleAnalytics";
+import ContractsPage from "./pages/ContractsPage";
+import SupplierEvaluationsPage from "./pages/SupplierEvaluationsPage";
+import MyEvaluationsPage from "./pages/MyEvaluationsPage";
+import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
+import StockItemApprovals from "./pages/StockItemApprovals";
+import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 
-import { AuthProvider, useAuth } from './hooks/useAuth';
-import { AccessControlProvider, useAccessControl } from './hooks/useAccessControl';
-import { NotificationProvider } from './components/ui/NotificationProvider';
-import { hasAnyPermission, hasAllPermissions } from './utils/permissions';
+import { AuthProvider, useAuth } from "./hooks/useAuth";
+import {
+  AccessControlProvider,
+  useAccessControl,
+} from "./hooks/useAccessControl";
+import { NotificationProvider } from "./components/ui/NotificationProvider";
+import { hasAnyPermission, hasAllPermissions } from "./utils/permissions";
 
 const ProtectedRoute = ({
   element,
@@ -77,7 +86,11 @@ const ProtectedRoute = ({
   }
 
   const { permissions: effectivePermissions, requireAll } = resourceKey
-    ? resolvePermissions(resourceKey, requiredPermissions, requireAllPermissions)
+    ? resolvePermissions(
+        resourceKey,
+        requiredPermissions,
+        requireAllPermissions,
+      )
     : {
         permissions: requiredPermissions,
         requireAll: requireAllPermissions,
@@ -92,8 +105,10 @@ const ProtectedRoute = ({
 
   let hasRoleAccess = true;
   if (allowedRoles.length > 0) {
-    const normalizedRole = user?.role?.toLowerCase?.() ?? '';
-    hasRoleAccess = allowedRoles.some((role) => String(role).toLowerCase() === normalizedRole);
+    const normalizedRole = user?.role?.toLowerCase?.() ?? "";
+    hasRoleAccess = allowedRoles.some(
+      (role) => String(role).toLowerCase() === normalizedRole,
+    );
   }
 
   if (!hasPermissionAccess && !hasRoleAccess) {
@@ -105,7 +120,7 @@ const ProtectedRoute = ({
 
 const FallbackRedirect = () => {
   const { isAuthenticated } = useAuth();
-  return <Navigate to={isAuthenticated ? '/' : '/login'} replace />;
+  return <Navigate to={isAuthenticated ? "/" : "/login"} replace />;
 };
 
 const AppRoutes = () => (
@@ -116,26 +131,35 @@ const AppRoutes = () => (
     <Route path="/register" element={<Register />} />
 
     {/* ✅ General Protected Routes */}
-    <Route path="/" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
-    <Route path="/requests/stock" element={<ProtectedRoute element={<StockRequestForm />} />} />
+    <Route
+      path="/"
+      element={<ProtectedRoute element={<RequestTypeSelector />} />}
+    />
+    <Route
+      path="/requests/stock"
+      element={<ProtectedRoute element={<StockRequestForm />} />}
+    />
     <Route
       path="/requests/stock-item"
       element={
         <ProtectedRoute
           element={<StockItemRequestForm />}
-          allowedRoles={['WarehouseManager', 'warehouse_manager']}
-          requiredPermissions={['stock-requests.create']}
+          allowedRoles={["WarehouseManager", "warehouse_manager"]}
+          requiredPermissions={["stock-requests.create"]}
           resourceKey="feature.stockItemRequests"
         />
       }
     />
-    <Route path="/requests/warehouse-supply" element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />} />
+    <Route
+      path="/requests/warehouse-supply"
+      element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />}
+    />
     <Route
       path="/item-recalls"
       element={
         <ProtectedRoute
           element={<ItemRecallsPage />}
-          requiredPermissions={['recalls.view', 'recalls.manage']}
+          requiredPermissions={["recalls.view", "recalls.manage"]}
           resourceKey="feature.itemRecalls"
         />
       }
@@ -145,8 +169,11 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<MaintenanceWarehouseSupplyRequestForm />}
-          allowedRoles={['technician', 'SCM', 'admin']}
-          requiredPermissions={['warehouse.manage-supply', 'stock-requests.create']}
+          allowedRoles={["technician", "SCM", "admin"]}
+          requiredPermissions={[
+            "warehouse.manage-supply",
+            "stock-requests.create",
+          ]}
           resourceKey="feature.maintenanceWarehouseSupply"
         />
       }
@@ -157,15 +184,15 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<CustodyIssueForm />}
           allowedRoles={[
-            'warehouse_keeper',
-            'WarehouseKeeper',
-            'warehousekeeper',
-            'warehousemanager',
-            'WarehouseManager',
-            'SCM',
-            'admin',
+            "warehouse_keeper",
+            "WarehouseKeeper",
+            "warehousekeeper",
+            "warehousemanager",
+            "WarehouseManager",
+            "SCM",
+            "admin",
           ]}
-          requiredPermissions={['warehouse.manage-supply']}
+          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.custody"
         />
       }
@@ -175,8 +202,16 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<WarehouseInventoryPage />}
-          allowedRoles={['warehouse_manager', 'WarehouseManager', 'warehouse_keeper', 'WarehouseKeeper']}
-          requiredPermissions={['warehouse.manage-supply', 'warehouse.view-supply']}
+          allowedRoles={[
+            "warehouse_manager",
+            "WarehouseManager",
+            "warehouse_keeper",
+            "WarehouseKeeper",
+          ]}
+          requiredPermissions={[
+            "warehouse.manage-supply",
+            "warehouse.view-supply",
+          ]}
           requireAllPermissions
           resourceKey="feature.warehouseInventory"
         />
@@ -188,52 +223,95 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<CustodyIssuedList />}
           allowedRoles={[
-            'warehouse_keeper',
-            'WarehouseKeeper',
-            'warehousekeeper',
-            'warehousemanager',
-            'WarehouseManager',
-            'SCM',
-            'admin',
+            "warehouse_keeper",
+            "WarehouseKeeper",
+            "warehousekeeper",
+            "warehousemanager",
+            "WarehouseManager",
+            "SCM",
+            "admin",
           ]}
-          requiredPermissions={['warehouse.manage-supply']}
+          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.custody"
         />
       }
     />
-    <Route path="/custody/approvals" element={<ProtectedRoute element={<CustodyApprovals />} />} />
-    <Route path="/requests/non-stock" element={<ProtectedRoute element={<NonStockRequestForm />} />} />
-    <Route path="/requests/it-items" element={<ProtectedRoute element={<ITRequestForm />} />} />
-    <Route path="/requests/medical-device" element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />} />
+    <Route
+      path="/custody/approvals"
+      element={<ProtectedRoute element={<CustodyApprovals />} />}
+    />
+    <Route
+      path="/requests/non-stock"
+      element={<ProtectedRoute element={<NonStockRequestForm />} />}
+    />
+    <Route
+      path="/requests/it-items"
+      element={<ProtectedRoute element={<ITRequestForm />} />}
+    />
+    <Route
+      path="/requests/medical-device"
+      element={<ProtectedRoute element={<MedicalDeviceRequestForm />} />}
+    />
     <Route
       path="/requests/medication"
       element={
         <ProtectedRoute
           element={<MedicationRequestForm />}
-          allowedRoles={['requester', 'Requester', 'HOD', 'CMO', 'SCM']}
+          allowedRoles={["requester", "Requester", "HOD", "CMO", "SCM"]}
         />
       }
     />
-    <Route path="/approvals" element={<ProtectedRoute element={<ApprovalsPanel />} />} />
-    <Route path="/open-requests" element={<ProtectedRoute element={<OpenRequestsPage />} />} />
-    <Route path="/request-submitted" element={<ProtectedRoute element={<RequestSubmittedPage />} />} />
-    <Route path="/approval-history" element={<ProtectedRoute element={<ApprovalHistory />} />} />
+    <Route
+      path="/approvals"
+      element={<ProtectedRoute element={<ApprovalsPanel />} />}
+    />
+    <Route
+      path="/open-requests"
+      element={<ProtectedRoute element={<OpenRequestsPage />} />}
+    />
+    <Route
+      path="/request-submitted"
+      element={<ProtectedRoute element={<RequestSubmittedPage />} />}
+    />
+    <Route
+      path="/approval-history"
+      element={<ProtectedRoute element={<ApprovalHistory />} />}
+    />
 
     {/* ✅ Maintenance Routes */}
     <Route
       path="/requests/maintenance"
-      element={<ProtectedRoute element={<MaintenanceRequestForm />} allowedRoles={['technician', 'SCM', 'admin']} />}
+      element={
+        <ProtectedRoute
+          element={<MaintenanceRequestForm />}
+          allowedRoles={["technician", "SCM", "admin"]}
+        />
+      }
     />
     <Route
       path="/my-maintenance-requests"
-      element={<ProtectedRoute element={<MyMaintenanceRequests />} allowedRoles={['technician', 'SCM', 'admin']} />}
+      element={
+        <ProtectedRoute
+          element={<MyMaintenanceRequests />}
+          allowedRoles={["technician", "SCM", "admin"]}
+        />
+      }
     />
     <Route
       path="/approvals/maintenance"
       element={
         <ProtectedRoute
           element={<MaintenanceHODApprovals />}
-          allowedRoles={['HOD', 'requester', 'Requester', 'Warehouse_Keeper', 'WarehouseManager', 'CMO', 'COO', 'SCM']}
+          allowedRoles={[
+            "HOD",
+            "requester",
+            "Requester",
+            "Warehouse_Keeper",
+            "WarehouseManager",
+            "CMO",
+            "COO",
+            "SCM",
+          ]}
         />
       }
     />
@@ -243,8 +321,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<MaintenanceStockPage />}
-          allowedRoles={['WarehouseManager', 'warehouse_manager', 'technician']}
-          requiredPermissions={['warehouse.manage-supply']}
+          allowedRoles={["WarehouseManager", "warehouse_manager", "technician"]}
+          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.maintenanceStock"
         />
       }
@@ -254,8 +332,12 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<WarehouseSupplyTemplatesPage />}
-          allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']}
-          requiredPermissions={['warehouse.manage-supply']}
+          allowedRoles={[
+            "WarehouseManager",
+            "warehouse_manager",
+            "warehouse_keeper",
+          ]}
+          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.warehouseTemplates"
         />
       }
@@ -265,8 +347,15 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<WarehouseSupplyRequestsPage />}
-          allowedRoles={['WarehouseManager', 'warehouse_manager', 'warehouse_keeper']}
-          requiredPermissions={['warehouse.view-supply', 'warehouse.manage-supply']}
+          allowedRoles={[
+            "WarehouseManager",
+            "warehouse_manager",
+            "warehouse_keeper",
+          ]}
+          requiredPermissions={[
+            "warehouse.view-supply",
+            "warehouse.manage-supply",
+          ]}
           resourceKey="feature.warehouseRequests"
         />
       }
@@ -278,8 +367,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<AdminTools />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['approvals.reassign']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={["approvals.reassign"]}
           resourceKey="feature.adminTools"
         />
       }
@@ -289,8 +378,13 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<Management />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['users.manage', 'departments.manage', 'permissions.manage', 'projects.manage']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={[
+            "users.manage",
+            "departments.manage",
+            "permissions.manage",
+            "projects.manage",
+          ]}
           resourceKey="feature.management"
         />
       }
@@ -300,8 +394,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<AllRequestsPage />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['requests.view-all']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={["requests.view-all"]}
           resourceKey="feature.allRequests"
         />
       }
@@ -311,8 +405,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<IncompleteRequestsPage />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['requests.view-incomplete']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={["requests.view-incomplete"]}
           resourceKey="feature.incompleteRequests"
         />
       }
@@ -322,8 +416,11 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ProcurementPlansPage />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['procurement.update-status', 'procurement.update-cost']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={[
+            "procurement.update-status",
+            "procurement.update-cost",
+          ]}
           resourceKey="feature.procurementPlans"
         />
       }
@@ -333,8 +430,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<StockItemApprovals />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['stock-requests.review', 'stock-items.manage']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={["stock-requests.review", "stock-items.manage"]}
           resourceKey="feature.stockItemApprovals"
         />
       }
@@ -344,8 +441,15 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ContractsPage />}
-          allowedRoles={['SCM', 'admin', 'COO', 'Medical Devices', 'Contract_Manager', 'ProcurementSpecialist']}
-          requiredPermissions={['contracts.manage']}
+          allowedRoles={[
+            "SCM",
+            "admin",
+            "COO",
+            "Medical Devices",
+            "Contract_Manager",
+            "ProcurementSpecialist",
+          ]}
+          requiredPermissions={["contracts.manage"]}
           resourceKey="feature.contracts"
         />
       }
@@ -355,8 +459,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<SupplierEvaluationsPage />}
-          allowedRoles={['admin', 'SCM', 'Contract_Manager', 'ProcurementSpecialist', 'ProcurementManager']}
-          requiredPermissions={['evaluations.manage']}
+          allowedRoles={[
+            "admin",
+            "SCM",
+            "Contract_Manager",
+            "ProcurementSpecialist",
+            "ProcurementManager",
+          ]}
+          requiredPermissions={["evaluations.manage"]}
           resourceKey="feature.supplierEvaluations"
         />
       }
@@ -368,8 +478,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<AssignedRequestsPage />}
-          allowedRoles={['ProcurementSpecialist', 'SCM']}
-          requiredPermissions={['procurement.update-status']}
+          allowedRoles={["ProcurementSpecialist", "SCM"]}
+          requiredPermissions={["procurement.update-status"]}
           resourceKey="feature.procurementQueues"
         />
       }
@@ -381,8 +491,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<IncompleteMedicalRequestsPage />}
-          allowedRoles={['CMO', 'SCM']}
-          requiredPermissions={['requests.view-incomplete']}
+          allowedRoles={["CMO", "SCM"]}
+          requiredPermissions={["requests.view-incomplete"]}
           resourceKey="feature.incompleteMedical"
         />
       }
@@ -392,8 +502,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<IncompleteOperationalRequestsPage />}
-          allowedRoles={['COO', 'SCM']}
-          requiredPermissions={['requests.view-incomplete']}
+          allowedRoles={["COO", "SCM"]}
+          requiredPermissions={["requests.view-incomplete"]}
           resourceKey="feature.incompleteOperational"
         />
       }
@@ -404,20 +514,23 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<CompletedAssignedRequestsPage />}
-          allowedRoles={['ProcurementSpecialist', 'SCM']}
-          requiredPermissions={['procurement.update-status']}
+          allowedRoles={["ProcurementSpecialist", "SCM"]}
+          requiredPermissions={["procurement.update-status"]}
           resourceKey="feature.procurementQueues"
         />
       }
     />
-    <Route path="/closed-requests" element={<ProtectedRoute element={<ClosedRequestsPage />} />} />
+    <Route
+      path="/closed-requests"
+      element={<ProtectedRoute element={<ClosedRequestsPage />} />}
+    />
     <Route
       path="/audit-requests"
       element={
         <ProtectedRoute
           element={<AuditRequestsPage />}
-          allowedRoles={['audit']}
-          requiredPermissions={['requests.view-all']}
+          allowedRoles={["audit"]}
+          requiredPermissions={["requests.view-all"]}
           resourceKey="feature.auditRequests"
         />
       }
@@ -427,8 +540,11 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<SupplyItemsPage />}
-          allowedRoles={['warehouse_keeper']}
-          requiredPermissions={['warehouse.manage-supply', 'warehouse.view-supply']}
+          allowedRoles={["warehouse_keeper"]}
+          requiredPermissions={[
+            "warehouse.manage-supply",
+            "warehouse.view-supply",
+          ]}
           resourceKey="feature.warehouseDetail"
         />
       }
@@ -438,8 +554,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<Dashboard />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['dashboard.view']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={["dashboard.view"]}
           resourceKey="feature.dashboard"
         />
       }
@@ -449,15 +565,24 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<LifecycleAnalytics />}
-          allowedRoles={['SCM', 'admin']}
-          requiredPermissions={['dashboard.view']}
+          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={["dashboard.view"]}
           resourceKey="feature.analytics"
         />
       }
     />
-    <Route path="/change-password" element={<ProtectedRoute element={<ChangePassword />} />} />
-    <Route path="/my-evaluations" element={<ProtectedRoute element={<MyEvaluationsPage />} />} />
-    <Route path="/evaluations/:id" element={<ProtectedRoute element={<EvaluationDetailsPage />} />} />
+    <Route
+      path="/change-password"
+      element={<ProtectedRoute element={<ChangePassword />} />}
+    />
+    <Route
+      path="/my-evaluations"
+      element={<ProtectedRoute element={<MyEvaluationsPage />} />}
+    />
+    <Route
+      path="/evaluations/:id"
+      element={<ProtectedRoute element={<EvaluationDetailsPage />} />}
+    />
 
     {/* 🚨 Catch-All Fallback */}
     <Route path="*" element={<FallbackRedirect />} />

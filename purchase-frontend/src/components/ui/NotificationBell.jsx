@@ -1,22 +1,44 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Bell, CheckCircle2, Info, XCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-import { useNotificationContext } from './NotificationProvider';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { AlertTriangle, Bell, CheckCircle2, Info, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { useNotificationContext } from "./NotificationProvider";
 
 const typeIcons = {
   success: (
-    <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-300" aria-hidden="true" />
+    <CheckCircle2
+      className="h-4 w-4 text-green-500 dark:text-green-300"
+      aria-hidden="true"
+    />
   ),
-  error: <XCircle className="h-4 w-4 text-red-500 dark:text-red-300" aria-hidden="true" />,
+  error: (
+    <XCircle
+      className="h-4 w-4 text-red-500 dark:text-red-300"
+      aria-hidden="true"
+    />
+  ),
   warning: (
-    <AlertTriangle className="h-4 w-4 text-amber-500 dark:text-amber-300" aria-hidden="true" />
+    <AlertTriangle
+      className="h-4 w-4 text-amber-500 dark:text-amber-300"
+      aria-hidden="true"
+    />
   ),
-  info: <Info className="h-4 w-4 text-sky-500 dark:text-sky-300" aria-hidden="true" />,
+  info: (
+    <Info
+      className="h-4 w-4 text-sky-500 dark:text-sky-300"
+      aria-hidden="true"
+    />
+  ),
 };
 
 const deriveNotificationVariant = (notification) => {
-  if (!notification) return 'info';
+  if (!notification) return "info";
 
   const metadata = notification.metadata || {};
   const explicit = metadata.level || metadata.variant || metadata.type;
@@ -24,24 +46,43 @@ const deriveNotificationVariant = (notification) => {
     return explicit;
   }
 
-  const action = typeof metadata.action === 'string' ? metadata.action.toLowerCase() : '';
-  const title = typeof notification.title === 'string' ? notification.title.toLowerCase() : '';
-  const message = typeof notification.message === 'string' ? notification.message.toLowerCase() : '';
+  const action =
+    typeof metadata.action === "string" ? metadata.action.toLowerCase() : "";
+  const title =
+    typeof notification.title === "string"
+      ? notification.title.toLowerCase()
+      : "";
+  const message =
+    typeof notification.message === "string"
+      ? notification.message.toLowerCase()
+      : "";
   const combined = `${title} ${message} ${action}`;
 
-  if (combined.includes('reject') || combined.includes('declin') || combined.includes('fail')) {
-    return 'error';
+  if (
+    combined.includes("reject") ||
+    combined.includes("declin") ||
+    combined.includes("fail")
+  ) {
+    return "error";
   }
 
-  if (combined.includes('approve') || combined.includes('complete') || combined.includes('success')) {
-    return 'success';
+  if (
+    combined.includes("approve") ||
+    combined.includes("complete") ||
+    combined.includes("success")
+  ) {
+    return "success";
   }
 
-  if (combined.includes('urgent') || combined.includes('reminder') || combined.includes('due')) {
-    return 'warning';
+  if (
+    combined.includes("urgent") ||
+    combined.includes("reminder") ||
+    combined.includes("due")
+  ) {
+    return "warning";
   }
 
-  return 'info';
+  return "info";
 };
 
 const formatTimestamp = (value) => {
@@ -57,13 +98,13 @@ const resolveNotificationDestination = (notification) => {
   const metadata = notification?.metadata || {};
   const rawLink = notification?.link;
   const linkRequestId = (() => {
-    if (!rawLink || typeof rawLink !== 'string') {
+    if (!rawLink || typeof rawLink !== "string") {
       return null;
     }
 
     try {
       const parsedUrl = new URL(rawLink, window.location.origin);
-      const normalizedPath = parsedUrl.pathname.replace(/\/+$/, '');
+      const normalizedPath = parsedUrl.pathname.replace(/\/+$/, "");
       const match = normalizedPath.match(/^\/requests\/(\d+)$/i);
       return match ? match[1] : null;
     } catch (error) {
@@ -71,23 +112,26 @@ const resolveNotificationDestination = (notification) => {
       return fallbackMatch ? fallbackMatch[1] : null;
     }
   })();
-  const requestId = metadata.requestId ?? metadata.request_id ?? linkRequestId ?? null;
-  const action = typeof metadata.action === 'string' ? metadata.action.toLowerCase() : '';
+  const requestId =
+    metadata.requestId ?? metadata.request_id ?? linkRequestId ?? null;
+  const action =
+    typeof metadata.action === "string" ? metadata.action.toLowerCase() : "";
   const requestType =
-    typeof metadata.requestType === 'string'
+    typeof metadata.requestType === "string"
       ? metadata.requestType.toLowerCase()
-      : typeof metadata.request_type === 'string'
+      : typeof metadata.request_type === "string"
         ? metadata.request_type.toLowerCase()
-        : '';
+        : "";
 
   const withRequestFocus = (path) => {
-    const hasRequestId = requestId !== null && requestId !== undefined && requestId !== '';
+    const hasRequestId =
+      requestId !== null && requestId !== undefined && requestId !== "";
 
     if (!hasRequestId) {
       return { path };
     }
 
-    const separator = path.includes('?') ? '&' : '?';
+    const separator = path.includes("?") ? "&" : "?";
     const encodedId = encodeURIComponent(requestId);
 
     return {
@@ -98,45 +142,48 @@ const resolveNotificationDestination = (notification) => {
     };
   };
 
-  if (action === 'approval_required') {
-    if (requestType === 'maintenance') {
-      return withRequestFocus('/approvals/maintenance');
+  if (action === "approval_required") {
+    if (requestType === "maintenance") {
+      return withRequestFocus("/approvals/maintenance");
     }
 
-    return withRequestFocus('/approvals');
-  }
-
-  if (action === 'procurement_assignment' || action === 'request_ready_for_assignment') {
-    return withRequestFocus('/open-requests');
+    return withRequestFocus("/approvals");
   }
 
   if (
-    action === 'request_completed' ||
-    action === 'maintenance_completed' ||
-    action === 'request_approved' ||
-    action === 'request_rejected'
+    action === "procurement_assignment" ||
+    action === "request_ready_for_assignment"
   ) {
-    return withRequestFocus('/all-requests');
+    return withRequestFocus("/open-requests");
   }
 
-  if (!rawLink || typeof rawLink !== 'string') {
+  if (
+    action === "request_completed" ||
+    action === "maintenance_completed" ||
+    action === "request_approved" ||
+    action === "request_rejected"
+  ) {
+    return withRequestFocus("/all-requests");
+  }
+
+  if (!rawLink || typeof rawLink !== "string") {
     return null;
   }
 
   try {
     const url = new URL(rawLink, window.location.origin);
-    const normalizedPath = url.pathname.replace(/\/+$/, '');
+    const normalizedPath = url.pathname.replace(/\/+$/, "");
     const requestMatch = normalizedPath.match(/^\/requests\/(\d+)$/i);
 
     if (requestMatch) {
-      return withRequestFocus('/open-requests');
+      return withRequestFocus("/open-requests");
     }
 
     return {
       path: `${url.pathname}${url.search}${url.hash}`,
     };
   } catch (error) {
-    if (rawLink.startsWith('/')) {
+    if (rawLink.startsWith("/")) {
       return { path: rawLink };
     }
   }
@@ -147,7 +194,8 @@ const resolveNotificationDestination = (notification) => {
 const NotificationBell = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { notifications, remove, clearAll, refresh, isLoading, unreadCount } = useNotificationContext();
+  const { notifications, remove, clearAll, refresh, isLoading, unreadCount } =
+    useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
@@ -168,9 +216,9 @@ const NotificationBell = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
 
-    return () => document.removeEventListener('mousedown', handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
 
   useEffect(() => {
@@ -214,7 +262,7 @@ const NotificationBell = () => {
 
       if (destination?.external && destination.url) {
         setIsOpen(false);
-        window.open(destination.url, '_blank', 'noopener,noreferrer');
+        window.open(destination.url, "_blank", "noopener,noreferrer");
         return;
       }
 
@@ -247,7 +295,7 @@ const NotificationBell = () => {
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className="relative inline-flex items-center justify-center rounded-full border border-gray-200 bg-white/80 p-2 text-gray-600 transition hover:bg-gray-100 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-200 dark:hover:bg-gray-700"
-        aria-label={t('navbar.openNotifications', 'Open notifications')}
+        aria-label={t("navbar.openNotifications", "Open notifications")}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
       >
@@ -264,11 +312,11 @@ const NotificationBell = () => {
           ref={panelRef}
           className="absolute right-0 z-[1001] mt-2 w-80 max-w-xs origin-top-right rounded-lg border border-gray-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/95"
           role="dialog"
-          aria-label={t('navbar.notifications')}
+          aria-label={t("navbar.notifications")}
         >
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-              {t('navbar.notifications')}
+              {t("navbar.notifications")}
             </p>
             {hasNotifications ? (
               <button
@@ -277,14 +325,14 @@ const NotificationBell = () => {
                 disabled={isLoading}
                 className="text-xs font-medium text-blue-600 transition hover:text-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:text-blue-300 dark:disabled:text-blue-700"
               >
-                {t('navbar.clearAll')}
+                {t("navbar.clearAll")}
               </button>
             ) : null}
           </div>
 
           {isLoading ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('navbar.loadingNotifications', 'Loading notifications…')}
+              {t("navbar.loadingNotifications", "Loading notifications…")}
             </p>
           ) : null}
 
@@ -314,7 +362,9 @@ const NotificationBell = () => {
                               {title}
                             </p>
                           ) : null}
-                          <p className="text-xs text-gray-600 dark:text-gray-300">{message}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-300">
+                            {message}
+                          </p>
                           {timestamp ? (
                             <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500">
                               {timestamp}
@@ -322,7 +372,7 @@ const NotificationBell = () => {
                           ) : null}
                           {link ? (
                             <span className="text-[11px] font-medium text-blue-600 underline decoration-dashed underline-offset-4 dark:text-blue-400">
-                              {t('navbar.viewDetails', 'View details')}
+                              {t("navbar.viewDetails", "View details")}
                             </span>
                           ) : null}
                         </button>
@@ -331,7 +381,10 @@ const NotificationBell = () => {
                         type="button"
                         onClick={(event) => handleDismiss(event, id)}
                         className="text-xs font-medium text-gray-400 transition hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                        aria-label={t('navbar.dismissNotification', 'Dismiss notification')}
+                        aria-label={t(
+                          "navbar.dismissNotification",
+                          "Dismiss notification",
+                        )}
                       >
                         ×
                       </button>
@@ -344,7 +397,7 @@ const NotificationBell = () => {
 
           {!isLoading && !hasNotifications ? (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('navbar.noNotifications')}
+              {t("navbar.noNotifications")}
             </p>
           ) : null}
         </div>

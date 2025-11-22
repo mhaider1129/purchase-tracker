@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 
 const usePageTranslation = (namespace) => {
   const { t } = useTranslation();
@@ -10,7 +10,7 @@ const usePageTranslation = (namespace) => {
         defaultValue: defaultValue ?? key,
         ...options,
       }),
-    [namespace, t]
+    [namespace, t],
   );
 };
 
