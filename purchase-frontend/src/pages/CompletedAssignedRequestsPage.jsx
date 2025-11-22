@@ -6,6 +6,81 @@ import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import { printRequest } from '../api/requests';
 
+const PRINT_TRANSLATIONS = {
+  en: {
+    purchaseSummary: 'Purchase Request Summary',
+    generatedOn: 'Generated on',
+    requestDetails: 'Request Details',
+    justification: 'Justification',
+    requestedItems: 'Requested Items',
+    specs: 'Specs:',
+    approval: 'Approval:',
+    approvalSeparator: ' – ',
+    noItems: 'No line items recorded.',
+    tableHeaders: ['#', 'Item', 'Brand', 'Qty', 'Purchased Qty', 'Unit Cost', 'Total Cost'],
+    grandTotal: 'Grand Total',
+    preparedBy: 'Prepared By',
+    reviewedBy: 'Reviewed By',
+    approvedBy: 'Approved By',
+    requestId: 'Request ID',
+    status: 'Status',
+    requestType: 'Request Type',
+    requestDomain: 'Request Domain',
+    createdOn: 'Created On',
+    neededBy: 'Needed By',
+    estimatedCost: 'Estimated Cost',
+    maintenanceRef: 'Maintenance Ref #',
+    project: 'Project',
+    department: 'Department',
+    section: 'Section',
+    requester: 'Requester',
+    assignedTo: 'Assigned To',
+    printCount: 'Print Count',
+    lastUpdated: 'Last Updated',
+    printLanguage: 'Print Language',
+    english: 'English',
+    arabic: 'Arabic',
+    yes: 'Yes',
+    no: 'No',
+  },
+  ar: {
+    purchaseSummary: 'ملخص طلب الشراء',
+    generatedOn: 'تم الإنشاء في',
+    requestDetails: 'تفاصيل الطلب',
+    justification: 'المبررات',
+    requestedItems: 'المواد المطلوبة',
+    specs: 'المواصفات:',
+    approval: 'الاعتماد:',
+    approvalSeparator: ' – ',
+    noItems: 'لا توجد بنود مسجلة.',
+    tableHeaders: ['#', 'المادة', 'العلامة التجارية', 'الكمية', 'الكمية المشتراة', 'تكلفة الوحدة', 'إجمالي التكلفة'],
+    grandTotal: 'الإجمالي',
+    preparedBy: 'أعدها',
+    reviewedBy: 'تمت مراجعتها من',
+    approvedBy: 'تم اعتمادها من',
+    requestId: 'رقم الطلب',
+    status: 'الحالة',
+    requestType: 'نوع الطلب',
+    requestDomain: 'مجال الطلب',
+    createdOn: 'تاريخ الإنشاء',
+    neededBy: 'مطلوب في',
+    estimatedCost: 'التكلفة التقديرية',
+    maintenanceRef: 'رقم مرجع الصيانة',
+    project: 'المشروع',
+    department: 'القسم',
+    section: 'الشعبة',
+    requester: 'مقدم الطلب',
+    assignedTo: 'مكلف إلى',
+    printCount: 'عدد الطباعة',
+    lastUpdated: 'آخر تحديث',
+    printLanguage: 'لغة الطباعة',
+    english: 'الإنجليزية',
+    arabic: 'العربية',
+    yes: 'نعم',
+    no: 'لا',
+  },
+};
+
 const CompletedAssignedRequestsPage = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,6 +90,7 @@ const CompletedAssignedRequestsPage = () => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [printLanguage, setPrintLanguage] = useState('en');
 
   const {
     attachmentsMap,
@@ -156,6 +232,11 @@ const CompletedAssignedRequestsPage = () => {
       const data = await printRequest(requestId);
       const { request, items, assigned_user, message, print_count } = data;
 
+      const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
+      const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';
+      const translate = (key) =>
+        PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
+
       const win = window.open('', '_blank');
       if (!win) {
         alert('Please enable popups to print the request.');
@@ -174,53 +255,53 @@ const CompletedAssignedRequestsPage = () => {
 
       const formatValue = (value) => {
         if (value === null || value === undefined || value === '') return '—';
-        if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+        if (typeof value === 'boolean') return value ? translate('yes') : translate('no');
         return escapeHtml(value);
       };
 
       const formatDate = (value) => {
         if (!value) return '—';
         const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString());
+        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString(locale));
       };
 
       const formatAmount = (value) => {
         const numeric = Number(value);
         if (!Number.isFinite(numeric)) return formatValue(value);
         return escapeHtml(
-          numeric.toLocaleString(undefined, {
+          numeric.toLocaleString(locale, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })
         );
       };
 
-      const now = escapeHtml(new Date().toLocaleString());
+      const now = escapeHtml(new Date().toLocaleString(locale));
       const requesterName = request.requester_name
         ? `${request.requester_name}${request.requester_role ? ` (${request.requester_role})` : ''}`
         : request.temporary_requester_name;
 
       const detailFields = [
-        { label: 'Request ID', value: request.id },
-        { label: 'Status', value: request.status },
-        { label: 'Request Type', value: request.request_type },
-        { label: 'Request Domain', value: request.request_domain },
-        { label: 'Created On', value: formatDate(request.created_at) },
-        { label: 'Needed By', value: formatDate(request.needed_by) },
-        { label: 'Estimated Cost', value: formatAmount(request.estimated_cost) },
-        { label: 'Maintenance Ref #', value: request.maintenance_ref_number },
-        { label: 'Project', value: request.project_name },
-        { label: 'Department', value: request.department_name },
-        { label: 'Section', value: request.section_name },
-        { label: 'Requester', value: requesterName },
+        { label: translate('requestId'), value: request.id },
+        { label: translate('status'), value: request.status },
+        { label: translate('requestType'), value: request.request_type },
+        { label: translate('requestDomain'), value: request.request_domain },
+        { label: translate('createdOn'), value: formatDate(request.created_at) },
+        { label: translate('neededBy'), value: formatDate(request.needed_by) },
+        { label: translate('estimatedCost'), value: formatAmount(request.estimated_cost) },
+        { label: translate('maintenanceRef'), value: request.maintenance_ref_number },
+        { label: translate('project'), value: request.project_name },
+        { label: translate('department'), value: request.department_name },
+        { label: translate('section'), value: request.section_name },
+        { label: translate('requester'), value: requesterName },
         {
-          label: 'Assigned To',
+          label: translate('assignedTo'),
           value: assigned_user
             ? `${assigned_user.name}${assigned_user.role ? ` (${assigned_user.role})` : ''}`
             : null,
         },
-        { label: 'Print Count', value: print_count },
-        { label: 'Last Updated', value: formatDate(request.updated_at) },
+        { label: translate('printCount'), value: print_count },
+        { label: translate('lastUpdated'), value: formatDate(request.updated_at) },
       ]
         .map(({ label, value }) => ({ label, value: formatValue(value) }))
         .filter(({ value }) => value && value !== '—');
@@ -242,11 +323,15 @@ const CompletedAssignedRequestsPage = () => {
 
       const itemRows = items
         .map((item, index) => {
-          const specsNote = item.specs ? `<div class="item-note"><strong>Specs:</strong> ${formatValue(item.specs)}</div>` : '';
+          const specsNote = item.specs
+            ? `<div class="item-note"><strong>${translate('specs')}</strong> ${formatValue(item.specs)}</div>`
+            : '';
           const approvalNote =
             item.approval_status || item.approval_comments
-              ? `<div class="item-note"><strong>Approval:</strong> ${formatValue(item.approval_status)}${
-                  item.approval_comments ? ` – ${formatValue(item.approval_comments)}` : ''
+              ? `<div class="item-note"><strong>${translate('approval')}</strong> ${formatValue(item.approval_status)}${
+                  item.approval_comments
+                    ? `${translate('approvalSeparator')}${formatValue(item.approval_comments)}`
+                    : ''
                 }</div>`
               : '';
 
@@ -268,18 +353,18 @@ const CompletedAssignedRequestsPage = () => {
 
       const justification = request.justification
         ? `<section class="section">
-            <h2>Justification</h2>
+            <h2>${translate('justification')}</h2>
             <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
           </section>`
         : '';
 
       const body = `
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="${printLanguage}" dir="${direction}">
           <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>Request ${escapeHtml(request.id)}</title>
+            <title>${translate('requestId')} ${escapeHtml(request.id)}</title>
             <style>
               :root {
                 color-scheme: light;
@@ -465,14 +550,14 @@ const CompletedAssignedRequestsPage = () => {
             <div class="page">
               <header>
                 <div>
-                  <h1>Purchase Request Summary</h1>
-                  <p>Generated on ${now}</p>
+                  <h1>${translate('purchaseSummary')}</h1>
+                  <p>${translate('generatedOn')} ${now}</p>
                 </div>
-                <span class="print-badge">Print Count: ${formatValue(print_count)}</span>
+                <span class="print-badge">${translate('printCount')}: ${formatValue(print_count)}</span>
               </header>
 
               <section class="section">
-                <h2>Request Details</h2>
+                <h2>${translate('requestDetails')}</h2>
                 <div class="details-grid">
                   ${detailGrid}
                 </div>
@@ -481,23 +566,22 @@ const CompletedAssignedRequestsPage = () => {
               ${justification}
 
               <section class="section">
-                <h2>Requested Items</h2>
+                <h2>${translate('requestedItems')}</h2>
                 <table class="items-table">
                   <thead>
                     <tr>
-                      <th>#</th>
-                      <th>Item</th>
-                      <th>Brand</th>
-                      <th>Qty</th>
-                      <th>Purchased Qty</th>
-                      <th>Unit Cost</th>
-                      <th>Total Cost</th>
+                      ${PRINT_TRANSLATIONS[printLanguage].tableHeaders
+                        .map((header) => `<th>${escapeHtml(header)}</th>`)
+                        .join('')}
                     </tr>
                   </thead>
                   <tbody>
-                    ${itemRows || '<tr><td colspan="7" style="text-align:center; padding: 24px;">No line items recorded.</td></tr>'}
+                    ${
+                      itemRows ||
+                      `<tr><td colspan="7" style="text-align:center; padding: 24px;">${translate('noItems')}</td></tr>`
+                    }
                     <tr class="totals-row">
-                      <td colspan="6">Grand Total</td>
+                      <td colspan="6">${translate('grandTotal')}</td>
                       <td class="numeric">${formatAmount(totalCost)}</td>
                     </tr>
                   </tbody>
@@ -505,13 +589,13 @@ const CompletedAssignedRequestsPage = () => {
               </section>
 
               <section class="signature-blocks">
-                <div class="signature">Prepared By</div>
-                <div class="signature">Reviewed By</div>
-                <div class="signature">Approved By</div>
+                <div class="signature">${translate('preparedBy')}</div>
+                <div class="signature">${translate('reviewedBy')}</div>
+                <div class="signature">${translate('approvedBy')}</div>
               </section>
 
               <footer>
-                Request ID ${escapeHtml(request.id)} • ${now}
+                ${translate('requestId')} ${escapeHtml(request.id)} • ${now}
               </footer>
             </div>
           </body>
@@ -613,6 +697,18 @@ const CompletedAssignedRequestsPage = () => {
                 Reset filters
               </button>
             </div>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-gray-700">{PRINT_TRANSLATIONS[printLanguage].printLanguage}</span>
+              <select
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={printLanguage}
+                onChange={(e) => setPrintLanguage(e.target.value)}
+              >
+                <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
+                <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
+              </select>
+            </label>
           </div>
         </section>
 

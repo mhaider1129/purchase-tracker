@@ -63,7 +63,8 @@ const ClosedRequestsPage = () => {
     resetApprovals,
   } = useApprovalTimeline();
   const { user: currentUser } = useCurrentUser();
-  const [markingReceived, setMarkingReceived] = useState(null);
+  const [markingItemReceived, setMarkingItemReceived] = useState(null);
+  const [expandedItemsId, setExpandedItemsId] = useState(null);
   const {
     attachmentsMap,
     attachmentLoadingMap,
@@ -74,21 +75,50 @@ const ClosedRequestsPage = () => {
     resetAttachments,
   } = useRequestAttachments();
 
-  const handleMarkReceived = async (requestId) => {
-    setMarkingReceived(requestId);
+  const handleMarkItemReceived = async (requestId, itemId) => {
+    const trackingKey = `${requestId}-${itemId}`;
+    setMarkingItemReceived(trackingKey);
     try {
-      await api.patch(`/api/requests/${requestId}/mark-received`);
+      const response = await api.patch(`/api/requests/${requestId}/mark-received`, {
+        item_id: itemId,
+      });
+
       setRequests((prevRequests) =>
-        prevRequests.map((req) =>
-          req.id === requestId ? { ...req, status: 'Received' } : req
-        )
+        prevRequests.map((req) => {
+          if (req.id !== requestId) {
+            return req;
+          }
+
+          const updatedItems = (req.items || []).map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
+                  is_received: true,
+                  received_at: new Date().toISOString(),
+                  received_by: currentUser?.id || item.received_by,
+                }
+              : item
+          );
+
+          const updatedStatus = response?.data?.request_status || req.status;
+
+          return {
+            ...req,
+            status: updatedStatus,
+            items: updatedItems,
+          };
+        })
       );
     } catch (err) {
-      console.error('Failed to mark request as received:', err);
-      alert('Failed to mark request as received.');
+      console.error('Failed to mark item as received:', err);
+      alert('Failed to mark item as received.');
     } finally {
-      setMarkingReceived(null);
+      setMarkingItemReceived(null);
     }
+  };
+
+  const toggleItems = (requestId) => {
+    setExpandedItemsId((prev) => (prev === requestId ? null : requestId));
   };
 
   const toggleAttachments = async (requestId) => {
@@ -126,7 +156,10 @@ const ClosedRequestsPage = () => {
       try {
         resetAttachments();
         const response = await api.get('/api/requests/closed');
-        setRequests(response.data || []);
+        setRequests((response.data || []).map((req) => ({
+          ...req,
+          items: req.items || [],
+        })));
         resetApprovals();
       } catch (err) {
         console.error('Failed to fetch closed requests:', err);
@@ -434,6 +467,9 @@ const ClosedRequestsPage = () => {
                       {tr('table.updated')}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      {tr('table.items', { defaultValue: 'Items' })}
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       {tr('table.attachments', { defaultValue: 'Attachments' })}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
@@ -453,6 +489,11 @@ const ClosedRequestsPage = () => {
                           ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
                           : tr('notAvailable'),
                     });
+                    const items = req.items || [];
+                    const itemsButtonLabel =
+                      expandedItemsId === req.id
+                        ? tr('hideItems', { defaultValue: 'Hide Items' })
+                        : tr('viewItems', { defaultValue: 'View Items' });
                     const attachments = attachmentsMap[req.id] || [];
                     const attachmentsLoading = Boolean(attachmentLoadingMap[req.id]);
                     const attachmentsError = attachmentErrorMap[req.id];
@@ -494,12 +535,24 @@ const ClosedRequestsPage = () => {
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             <button
                               type="button"
+                              onClick={() => toggleItems(req.id)}
+                              className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                            >
+                              {itemsButtonLabel}
+                              <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-gray-200 px-2 text-[11px] font-bold text-gray-800 dark:bg-gray-700 dark:text-gray-100">
+                                {items.length}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                            <button
+                              type="button"
                               onClick={() => toggleAttachments(req.id)}
                               disabled={attachmentsLoading}
                               className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                             >
-                              {attachmentsButtonLabel}
-                            </button>
+                                {attachmentsButtonLabel}
+                              </button>
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             <button
@@ -512,24 +565,105 @@ const ClosedRequestsPage = () => {
                             </button>
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
-                            {req.status === 'completed' &&
-                              currentUser?.id === req.requester_id && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleMarkReceived(req.id)}
-                                  disabled={markingReceived === req.id}
-                                  className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
-                                >
-                                  {markingReceived === req.id
-                                    ? 'Marking...'
-                                    : 'Mark as Received'}
-                                </button>
-                              )}
+                            <span className="text-gray-400 dark:text-gray-600">—</span>
                           </td>
                         </tr>
+                        {expandedItemsId === req.id && (
+                          <tr>
+                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                              <div className="space-y-3">
+                                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                  {tr('itemsTitle', { defaultValue: 'Requested Items' })}
+                                </h3>
+                                {items.length === 0 ? (
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    {tr('itemsEmpty', { defaultValue: 'No items were added to this request.' })}
+                                  </p>
+                                ) : (
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
+                                      <thead className="bg-white dark:bg-gray-900">
+                                        <tr>
+                                          <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
+                                            {tr('itemName', { defaultValue: 'Item' })}
+                                          </th>
+                                          <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
+                                            {tr('quantity', { defaultValue: 'Quantity' })}
+                                          </th>
+                                          <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
+                                            {tr('procurementStatus', { defaultValue: 'Procurement Status' })}
+                                          </th>
+                                          <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
+                                            {tr('receiptStatus', { defaultValue: 'Receipt Status' })}
+                                          </th>
+                                          <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
+                                            {tr('actions', { defaultValue: 'Actions' })}
+                                          </th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        {items.map((item) => {
+                                          const isReceived = Boolean(item.is_received);
+                                          const trackingKey = `${req.id}-${item.id}`;
+                                          const canMarkItem =
+                                            ['completed', 'received'].includes(normalizedStatus) &&
+                                            currentUser?.id === req.requester_id &&
+                                            !isReceived;
+
+                                          return (
+                                            <tr key={item.id} className="bg-white dark:bg-gray-900">
+                                              <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
+                                                {item.item_name || tr('notAvailable')}
+                                              </td>
+                                              <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
+                                                {item.quantity ?? '—'}
+                                              </td>
+                                              <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
+                                                {item.procurement_status || tr('notAvailable')}
+                                              </td>
+                                              <td className="px-4 py-2">
+                                                <span
+                                                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
+                                                    isReceived
+                                                      ? 'bg-green-100 text-green-700 ring-green-200'
+                                                      : 'bg-yellow-100 text-yellow-800 ring-yellow-200'
+                                                  }`}
+                                                >
+                                                  {isReceived
+                                                    ? tr('receivedLabel', { defaultValue: 'Received' })
+                                                    : tr('pendingReceiptLabel', { defaultValue: 'Pending Receipt' })}
+                                                </span>
+                                              </td>
+                                              <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
+                                                {canMarkItem ? (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleMarkItemReceived(req.id, item.id)}
+                                                    disabled={markingItemReceived === trackingKey}
+                                                    className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
+                                                  >
+                                                    {markingItemReceived === trackingKey
+                                                      ? tr('markingItem', { defaultValue: 'Marking…' })
+                                                      : tr('markItemReceived', { defaultValue: 'Mark as Received' })}
+                                                  </button>
+                                                ) : (
+                                                  <span className="text-sm text-gray-500 dark:text-gray-300">—</span>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
                         {expandedAttachmentsId === req.id && (
                           <tr>
-                            <td colSpan={10} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <RequestAttachmentsSection
                                 attachments={attachments}
                                 isLoading={attachmentsLoading}
@@ -546,7 +680,7 @@ const ClosedRequestsPage = () => {
                         )}
                         {expandedApprovalsId === req.id && (
                           <tr>
-                            <td colSpan={10} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <ApprovalTimeline
                                 approvals={approvalsMap[req.id]}
                                 isLoading={loadingApprovalsId === req.id}
@@ -573,6 +707,11 @@ const ClosedRequestsPage = () => {
                       ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
                       : tr('notAvailable'),
                 });
+                const items = req.items || [];
+                const itemsButtonLabel =
+                  expandedItemsId === req.id
+                    ? tr('hideItems', { defaultValue: 'Hide Items' })
+                    : tr('viewItems', { defaultValue: 'View Items' });
                 const attachments = attachmentsMap[req.id] || [];
                 const attachmentsLoading = Boolean(attachmentLoadingMap[req.id]);
                 const attachmentsError = attachmentErrorMap[req.id];
@@ -632,19 +771,16 @@ const ClosedRequestsPage = () => {
                     )}
 
                     <div className="mt-4 flex justify-end">
-                      {req.status === 'completed' &&
-                        currentUser?.id === req.requester_id && (
-                          <button
-                            type="button"
-                            onClick={() => handleMarkReceived(req.id)}
-                            disabled={markingReceived === req.id}
-                            className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
-                          >
-                            {markingReceived === req.id
-                              ? 'Marking...'
-                              : 'Mark as Received'}
-                          </button>
-                        )}
+                      <button
+                        type="button"
+                        onClick={() => toggleItems(req.id)}
+                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        {itemsButtonLabel}
+                        <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-gray-200 px-2 text-[11px] font-bold text-gray-800 dark:bg-gray-700 dark:text-gray-100">
+                          {items.length}
+                        </span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => toggleAttachments(req.id)}
@@ -662,6 +798,80 @@ const ClosedRequestsPage = () => {
                         {renderApprovalButtonText(req.id)}
                       </button>
                     </div>
+
+                    {expandedItemsId === req.id && (
+                      <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                          {tr('itemsTitle', { defaultValue: 'Requested Items' })}
+                        </h3>
+                        {items.length === 0 ? (
+                          <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                            {tr('itemsEmpty', { defaultValue: 'No items were added to this request.' })}
+                          </p>
+                        ) : (
+                          <div className="mt-3 space-y-2">
+                            {items.map((item) => {
+                              const isReceived = Boolean(item.is_received);
+                              const trackingKey = `${req.id}-${item.id}`;
+                              const canMarkItem =
+                                ['completed', 'received'].includes(normalizedStatus) &&
+                                currentUser?.id === req.requester_id &&
+                                !isReceived;
+
+                              return (
+                                <div
+                                  key={`item-${item.id}`}
+                                  className="rounded-md border border-gray-200 p-3 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div>
+                                      <p className="font-semibold text-gray-900 dark:text-gray-100">
+                                        {item.item_name || tr('notAvailable')}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-300">
+                                        {tr('quantity', { defaultValue: 'Quantity' })}: {item.quantity ?? '—'}
+                                      </p>
+                                      {item.procurement_status && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-300">
+                                          {tr('procurementStatus', { defaultValue: 'Procurement Status' })}: {item.procurement_status}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <div className="text-right">
+                                      <span
+                                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${
+                                          isReceived
+                                            ? 'bg-green-100 text-green-700 ring-green-200'
+                                            : 'bg-yellow-100 text-yellow-800 ring-yellow-200'
+                                        }`}
+                                      >
+                                        {isReceived
+                                          ? tr('receivedLabel', { defaultValue: 'Received' })
+                                          : tr('pendingReceiptLabel', { defaultValue: 'Pending Receipt' })}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {canMarkItem && (
+                                    <div className="mt-3 flex justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleMarkItemReceived(req.id, item.id)}
+                                        disabled={markingItemReceived === trackingKey}
+                                        className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
+                                      >
+                                        {markingItemReceived === trackingKey
+                                          ? tr('markingItem', { defaultValue: 'Marking…' })
+                                          : tr('markItemReceived', { defaultValue: 'Mark as Received' })}
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {expandedAttachmentsId === req.id && (
                       <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
