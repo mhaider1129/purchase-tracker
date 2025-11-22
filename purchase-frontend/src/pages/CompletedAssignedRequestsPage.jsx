@@ -40,6 +40,7 @@ const PRINT_TRANSLATIONS = {
     printLanguage: 'Print Language',
     english: 'English',
     arabic: 'Arabic',
+    printSuccess: 'Request printed successfully (Print Count: {count})',
     yes: 'Yes',
     no: 'No',
   },
@@ -76,6 +77,7 @@ const PRINT_TRANSLATIONS = {
     printLanguage: 'لغة الطباعة',
     english: 'الإنجليزية',
     arabic: 'العربية',
+    printSuccess: 'تم طباعة الطلب بنجاح (عدد الطباعة: {count})',
     yes: 'نعم',
     no: 'لا',
   },
@@ -609,7 +611,12 @@ const CompletedAssignedRequestsPage = () => {
         win.print();
       };
 
-      alert(message);
+      const successMessage = (PRINT_TRANSLATIONS[printLanguage]?.printSuccess || '').replace(
+        '{count}',
+        formatValue(print_count)
+      );
+
+      alert(successMessage || message);
     } catch (err) {
       console.error('❌ Failed to print request:', err);
       alert('❌ Failed to print request.');
