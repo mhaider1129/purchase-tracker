@@ -59,6 +59,13 @@ const ApprovalsPanel = () => {
   const [estimatedCost, setEstimatedCost] = useState('');
   const [estimatedCostError, setEstimatedCostError] = useState('');
   const [estimatedCostDrafts, setEstimatedCostDrafts] = useState({});
+  const [showHodModal, setShowHodModal] = useState(false);
+  const [hodOptions, setHodOptions] = useState([]);
+  const [hodOptionsLoading, setHodOptionsLoading] = useState(false);
+  const [hodOptionsError, setHodOptionsError] = useState('');
+  const [selectedHodId, setSelectedHodId] = useState('');
+  const [hodModalRequestId, setHodModalRequestId] = useState(null);
+  const [hodSubmitLoading, setHodSubmitLoading] = useState(false);
 
   const formatDateTime = useCallback((value) => {
     if (!value) return '—';
@@ -113,6 +120,28 @@ const ApprovalsPanel = () => {
   useEffect(() => {
     fetchApprovals();
   }, [fetchApprovals]);
+
+  const loadHodOptions = useCallback(async () => {
+    setHodOptionsLoading(true);
+    setHodOptionsError('');
+
+    try {
+      const res = await axios.get('/api/requests/hod-approvers');
+      setHodOptions(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('❌ Failed to load HOD approvers:', err);
+      setHodOptions([]);
+      setHodOptionsError('Failed to load HOD approvers. Please try again.');
+    } finally {
+      setHodOptionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if ((user?.role || '').toUpperCase() === 'SCM') {
+      loadHodOptions();
+    }
+  }, [loadHodOptions, user?.role]);
 
   useEffect(() => {
     if (!Array.isArray(requests) || requests.length === 0) {
@@ -626,6 +655,50 @@ const ApprovalsPanel = () => {
     } catch (err) {
       console.error('❌ Reassignment failed:', err);
       alert('Failed to assign request to department requester.');
+    }
+  };
+
+  const openHodModal = (requestId) => {
+    setHodModalRequestId(requestId);
+    setSelectedHodId('');
+    setHodOptionsError('');
+    setShowHodModal(true);
+
+    if ((user?.role || '').toUpperCase() === 'SCM') {
+      loadHodOptions();
+    }
+  };
+
+  const closeHodModal = () => {
+    setShowHodModal(false);
+    setHodModalRequestId(null);
+    setSelectedHodId('');
+    setHodOptionsError('');
+  };
+
+  const submitHodForward = async () => {
+    if (!hodModalRequestId) return;
+
+    if (!selectedHodId) {
+      setHodOptionsError('Select a department HOD to continue.');
+      return;
+    }
+
+    setHodOptionsError('');
+    setHodSubmitLoading(true);
+
+    try {
+      await axios.post(`/api/requests/${hodModalRequestId}/request-hod-approval`, {
+        hod_user_id: Number(selectedHodId),
+      });
+
+      closeHodModal();
+      alert('Request forwarded to the selected HOD for approval.');
+    } catch (err) {
+      console.error('❌ Failed to forward request to HOD:', err);
+      setHodOptionsError('Failed to send the request to the selected HOD. Please try again.');
+    } finally {
+      setHodSubmitLoading(false);
     }
   };
 
@@ -1284,17 +1357,25 @@ const ApprovalsPanel = () => {
                             </div>
 
                             <div className="space-y-4">
-                              {isUrgentRequest && (
-                                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
-                                  Requires immediate attention
-                                </div>
+                            {isUrgentRequest && (
+                              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
+                                Requires immediate attention
+                              </div>
+                            )}
+                            <div className="space-y-3">
+                              {user?.role === 'SCM' && (
+                                <Button
+                                  variant="secondary"
+                                  onClick={() => openHodModal(req.request_id)}
+                                >
+                                  Send to Department HOD
+                                </Button>
                               )}
-                              <div className="space-y-3">
-                                {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
-                                  <Button onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}>
-                                    Assign to Department Requester
-                                  </Button>
-                                ) : (
+                              {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
+                                <Button onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}>
+                                  Assign to Department Requester
+                                </Button>
+                              ) : (
                                   <>
                                     <Button onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}>
                                       Approve
@@ -1317,8 +1398,71 @@ const ApprovalsPanel = () => {
                 })}
             </div>
           )}
-        </div>
       </div>
+    </div>
+
+      {showHodModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-semibold">Send to Department HOD</h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Add a department HOD approval step before continuing the workflow.
+            </p>
+
+            {hodOptionsLoading ? (
+              <div className="mt-4 flex items-center gap-2 text-slate-600">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Loading HOD approvers...</span>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-2">
+                <label htmlFor="hod-select" className="text-sm font-medium text-slate-700">
+                  Select department HOD
+                </label>
+                <select
+                  id="hod-select"
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedHodId}
+                  onChange={(e) => {
+                    setSelectedHodId(e.target.value);
+                    setHodOptionsError('');
+                  }}
+                >
+                  <option value="">Choose a HOD</option>
+                  {hodOptions.map((hod) => (
+                    <option key={hod.id} value={hod.id}>
+                      {hod.name || 'HOD'} {hod.department_name ? `— ${hod.department_name}` : ''}
+                    </option>
+                  ))}
+                </select>
+                {!hodOptionsLoading && hodOptions.length === 0 && (
+                  <p className="text-sm text-slate-500">No active HOD approvers are available.</p>
+                )}
+                {hodOptionsError && (
+                  <p className="text-sm text-red-600">{hodOptionsError}</p>
+                )}
+              </div>
+            )}
+
+            <p className="mt-3 text-xs text-slate-500">
+              The selected HOD will receive a pending approval before the request continues to the next level.
+            </p>
+
+            <div className="mt-4 flex justify-end gap-3">
+              <Button
+                onClick={submitHodForward}
+                isLoading={hodSubmitLoading}
+                disabled={hodSubmitLoading || hodOptionsLoading}
+              >
+                Send
+              </Button>
+              <Button variant="ghost" onClick={closeHodModal} disabled={hodSubmitLoading}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCommentBox && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

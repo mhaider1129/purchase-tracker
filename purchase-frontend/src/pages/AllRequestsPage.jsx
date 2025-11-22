@@ -757,6 +757,7 @@ const AllRequestsPage = () => {
           <option value="Medical Device">Medical Device</option>
           <option value="Medication">Medication</option>
           <option value="IT Item">IT Item</option>
+          <option value="Maintenance">Maintenance</option>
         </select>
 
         <input

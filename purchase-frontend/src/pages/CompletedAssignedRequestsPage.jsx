@@ -706,7 +706,16 @@ const CompletedAssignedRequestsPage = () => {
                       </p>
                     )}
 
-                    <footer className="mt-4">
+                    <footer className="mt-4 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handlePrint(req.id)}
+                        className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-200"
+                      >
+                        <span aria-hidden="true">🖨</span>
+                        <span>Print</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => toggleItems(req.id)}
@@ -719,7 +728,7 @@ const CompletedAssignedRequestsPage = () => {
                       <button
                         type="button"
                         onClick={() => toggleAttachments(req.id)}
-                        className="ml-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
                         disabled={Boolean(attachmentLoadingMap[req.id])}
                       >
                         <span>

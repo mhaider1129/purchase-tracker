@@ -20,6 +20,7 @@ import Navbar from '../components/Navbar';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import { Button } from '../components/ui/Button';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import useCurrentUser from '../hooks/useCurrentUser';
 
 const ITEMS_PER_PAGE = 8;
 const ITEM_STATUS_OPTIONS = ['Pending', 'Approved', 'Rejected'];
@@ -62,6 +63,8 @@ const MaintenanceHODApprovals = () => {
   const [itemFeedbackMap, setItemFeedbackMap] = useState({});
   const [savingItemsMap, setSavingItemsMap] = useState({});
   const [urgentSelections, setUrgentSelections] = useState({});
+  const [estimatedCostDrafts, setEstimatedCostDrafts] = useState({});
+  const [estimatedCostErrors, setEstimatedCostErrors] = useState({});
 
   const {
     approvalsMap,
@@ -70,6 +73,7 @@ const MaintenanceHODApprovals = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+  const { user } = useCurrentUser();
 
   const itemStatusLabels = useMemo(
     () => ({
@@ -130,6 +134,7 @@ const MaintenanceHODApprovals = () => {
       const nextDecisions = {};
       const nextSummaries = {};
       const nextUrgent = {};
+      const nextEstimatedCosts = {};
 
       normalized.forEach((req) => {
         const decisionsByItem = {};
@@ -149,6 +154,10 @@ const MaintenanceHODApprovals = () => {
 
         nextSummaries[req.request_id] = buildSummaryFromItems(req.items, decisionsByItem);
         nextUrgent[req.request_id] = Boolean(req.is_urgent);
+
+        if (req?.estimated_cost !== undefined && req.estimated_cost !== null) {
+          nextEstimatedCosts[req.request_id] = String(req.estimated_cost);
+        }
       });
 
       setItemDecisions(nextDecisions);
@@ -156,6 +165,8 @@ const MaintenanceHODApprovals = () => {
       setItemFeedbackMap({});
       setSavingItemsMap({});
       setUrgentSelections(nextUrgent);
+      setEstimatedCostDrafts(nextEstimatedCosts);
+      setEstimatedCostErrors({});
       setAttachmentsMap({});
       setAttachmentLoadingMap({});
       setAttachmentErrorMap({});
@@ -511,6 +522,31 @@ const MaintenanceHODApprovals = () => {
           ? 'maintenanceHODApprovals.actions.confirmApprove'
           : 'maintenanceHODApprovals.actions.confirmReject';
 
+      let normalizedCost = null;
+      if (user?.role === 'SCM') {
+        const rawCost = estimatedCostDrafts[request.request_id];
+        const trimmedCost = rawCost != null ? String(rawCost).trim() : '';
+
+        if (trimmedCost !== '') {
+          const numericCost = Number(trimmedCost.replace(/,/g, ''));
+
+          if (Number.isNaN(numericCost) || numericCost <= 0) {
+            setEstimatedCostErrors((prev) => ({
+              ...prev,
+              [request.request_id]: t('maintenanceHODApprovals.cost.invalid'),
+            }));
+            return;
+          }
+
+          normalizedCost = numericCost;
+        }
+
+        setEstimatedCostErrors((prev) => ({
+          ...prev,
+          [request.request_id]: '',
+        }));
+      }
+
       const confirmed = window.confirm(
         t(confirmKey, {
           reference: request.maintenance_ref_number,
@@ -525,11 +561,17 @@ const MaintenanceHODApprovals = () => {
 
       try {
         const comments = decisionDrafts[request.request_id] || '';
-        await axios.patch(`/api/approvals/${request.approval_id}/decision`, {
+        const payload = {
           status: normalizedDecision,
           comments: comments.trim() === '' ? undefined : comments.trim(),
           is_urgent: urgentSelections[request.request_id] ?? Boolean(request.is_urgent),
-        });
+        };
+
+        if (normalizedCost !== null) {
+          payload.estimated_cost = normalizedCost;
+        }
+
+        await axios.patch(`/api/approvals/${request.approval_id}/decision`, payload);
         setFeedback({
           type: 'success',
           message:
@@ -551,6 +593,16 @@ const MaintenanceHODApprovals = () => {
           delete next[request.request_id];
           return next;
         });
+        setEstimatedCostDrafts((prev) => {
+          const next = { ...prev };
+          delete next[request.request_id];
+          return next;
+        });
+        setEstimatedCostErrors((prev) => {
+          const next = { ...prev };
+          delete next[request.request_id];
+          return next;
+        });
         fetchRequests();
       } catch (err) {
         console.error('❌ Failed to submit decision', err);
@@ -563,8 +615,19 @@ const MaintenanceHODApprovals = () => {
         setProcessingDecision(null);
       }
     },
-    [decisionDrafts, fetchRequests, t, urgentSelections],
+    [decisionDrafts, estimatedCostDrafts, fetchRequests, t, urgentSelections, user?.role],
   );
+
+  const handleEstimatedCostChange = (requestId, value) => {
+    setEstimatedCostDrafts((prev) => ({
+      ...prev,
+      [requestId]: value,
+    }));
+    setEstimatedCostErrors((prev) => ({
+      ...prev,
+      [requestId]: '',
+    }));
+  };
 
   const loadAttachments = useCallback(
     async (requestId) => {
@@ -915,6 +978,13 @@ const MaintenanceHODApprovals = () => {
                           <span>
                             {t('maintenanceHODApprovals.labels.itemsCount', { count: request.items.length })}
                           </span>
+                          {request?.estimated_cost !== undefined && request.estimated_cost !== null && (
+                            <span>
+                              {t('maintenanceHODApprovals.labels.estimatedCost', {
+                                amount: Number(request.estimated_cost).toLocaleString(),
+                              })}
+                            </span>
+                          )}
                           <span>
                             {t('maintenanceHODApprovals.labels.project', {
                               project: request.project_name || t('maintenanceHODApprovals.labels.notApplicable'),
@@ -1188,6 +1258,39 @@ const MaintenanceHODApprovals = () => {
                               <p className="mt-1 text-xs text-slate-500">
                                 {t('maintenanceHODApprovals.actions.commentHint')}
                               </p>
+                              {user?.role === 'SCM' && (
+                                <div className="mt-3 space-y-1">
+                                  <label
+                                    htmlFor={`estimated-cost-${request.request_id}`}
+                                    className="text-sm font-medium text-slate-800"
+                                  >
+                                    {t('maintenanceHODApprovals.cost.label')}
+                                  </label>
+                                  <input
+                                    id={`estimated-cost-${request.request_id}`}
+                                    type="text"
+                                    inputMode="decimal"
+                                    className={`w-full rounded-md border px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                      estimatedCostErrors[request.request_id]
+                                        ? 'border-rose-400'
+                                        : 'border-slate-200'
+                                    }`}
+                                    placeholder={t('maintenanceHODApprovals.cost.placeholder')}
+                                    value={estimatedCostDrafts[request.request_id] ?? ''}
+                                    onChange={(event) =>
+                                      handleEstimatedCostChange(request.request_id, event.target.value)
+                                    }
+                                  />
+                                  <p className="text-xs text-slate-500">
+                                    {t('maintenanceHODApprovals.cost.helper')}
+                                  </p>
+                                  {estimatedCostErrors[request.request_id] && (
+                                    <p className="text-xs text-rose-600">
+                                      {estimatedCostErrors[request.request_id]}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                               <div className="mt-3 flex items-center gap-2">
                                 <input
                                   id={`urgent-flag-${request.request_id}`}
