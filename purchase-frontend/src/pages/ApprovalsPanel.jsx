@@ -44,6 +44,7 @@ const ApprovalsPanel = () => {
   const [comments, setComments] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
   const [itemDecisions, setItemDecisions] = useState({});
+  const [itemQuantityDrafts, setItemQuantityDrafts] = useState({});
   const [savingItems, setSavingItems] = useState({});
   const [itemSummaries, setItemSummaries] = useState({});
   const [itemFeedback, setItemFeedback] = useState({});
@@ -207,6 +208,14 @@ const ApprovalsPanel = () => {
             return acc;
           }, {}),
         }));
+        setItemQuantityDrafts((prev) => ({
+          ...prev,
+          [requestId]: fetchedItems.reduce((acc, item) => {
+            if (!item?.id) return acc;
+            acc[item.id] = item.quantity ?? '';
+            return acc;
+          }, {}),
+        }));
         setItemSummaries((prev) => ({
           ...prev,
           [requestId]: getItemSummaryFromItems(fetchedItems),
@@ -313,22 +322,96 @@ const ApprovalsPanel = () => {
       },
     }));
   };
+
+  const handleItemQuantityChange = (requestId, itemId, quantityValue) => {
+    const currentItems = itemsMap[requestId] || [];
+    const targetItem = currentItems.find((it) => it.id === itemId);
+
+    if (targetItem && isItemLockedForUser(targetItem)) {
+      setItemFeedback((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'warning',
+          message: 'Items rejected by a previous approver cannot be changed.',
+        },
+      }));
+      return;
+    }
+
+    setItemQuantityDrafts((prev) => ({
+      ...prev,
+      [requestId]: {
+        ...(prev[requestId] || {}),
+        [itemId]: quantityValue,
+      },
+    }));
+  };
   const saveItemDecisions = async (requestId, approvalId) => {
     const decisionsForRequest = itemDecisions[requestId] || {};
-    const payloadItems = Object.entries(decisionsForRequest)
-      .map(([itemId, decision]) => ({
-        item_id: Number(itemId),
-        status: decision?.status || 'Pending',
-        comments: decision?.comments || '',
-      }))
-      .filter((item) => !Number.isNaN(item.item_id));
+    const quantityDrafts = itemQuantityDrafts[requestId] || {};
+    const itemsForRequest = itemsMap[requestId] || [];
+
+    const payloadItems = [];
+
+    for (const item of itemsForRequest) {
+      if (!item?.id) continue;
+
+      const decision = decisionsForRequest[item.id] || {
+        status: item?.approval_status || 'Pending',
+        comments: item?.approval_comments || '',
+      };
+
+      const status = decision?.status || 'Pending';
+      const commentsValue = decision?.comments || '';
+      const rawQuantity = quantityDrafts[item.id];
+      const hasQuantityDraft = rawQuantity !== undefined && rawQuantity !== null && rawQuantity !== '';
+
+      let parsedQuantity = null;
+      if (hasQuantityDraft) {
+        parsedQuantity = Number(rawQuantity);
+        if (Number.isNaN(parsedQuantity) || parsedQuantity <= 0) {
+          setItemFeedback((prev) => ({
+            ...prev,
+            [requestId]: {
+              type: 'error',
+              message: 'Enter a valid quantity greater than zero for changed items.',
+            },
+          }));
+          return;
+        }
+
+        if (!Number.isInteger(parsedQuantity)) {
+          setItemFeedback((prev) => ({
+            ...prev,
+            [requestId]: {
+              type: 'error',
+              message: 'Quantity must be a whole number.',
+            },
+          }));
+          return;
+        }
+      }
+
+      const statusChanged =
+        status !== (item.approval_status || 'Pending') || commentsValue !== (item.approval_comments || '');
+      const quantityChanged = hasQuantityDraft && parsedQuantity !== Number(item.quantity);
+
+      if (statusChanged || quantityChanged) {
+        payloadItems.push({
+          item_id: Number(item.id),
+          status,
+          comments: commentsValue,
+          ...(hasQuantityDraft ? { quantity: parsedQuantity } : {}),
+        });
+      }
+    }
 
     if (payloadItems.length === 0) {
       setItemFeedback((prev) => ({
         ...prev,
         [requestId]: {
           type: 'warning',
-          message: 'Please record at least one item decision before saving.',
+          message: 'Record at least one item decision or quantity change before saving.',
         },
       }));
       return;
@@ -356,6 +439,9 @@ const ApprovalsPanel = () => {
             approval_comments: updated.approval_comments,
             approved_at: updated.approved_at,
             approved_by: updated.approved_by,
+            quantity: updated.quantity ?? item.quantity,
+            total_cost: updated.total_cost ?? item.total_cost,
+            unit_cost: updated.unit_cost ?? item.unit_cost,
           };
         });
 
@@ -363,6 +449,17 @@ const ApprovalsPanel = () => {
           ...prev,
           [requestId]: mergedItems,
         }));
+
+        setItemQuantityDrafts((prev) => {
+          const existing = { ...(prev[requestId] || {}) };
+          mergedItems.forEach((item) => {
+            if (item?.id) {
+              existing[item.id] = item.quantity ?? '';
+            }
+          });
+
+          return { ...prev, [requestId]: existing };
+        });
 
         setItemDecisions((prev) => {
           const existing = { ...(prev[requestId] || {}) };
@@ -382,6 +479,24 @@ const ApprovalsPanel = () => {
         ...prev,
         [requestId]: summary,
       }));
+
+      if (res.data?.updatedEstimatedCost !== undefined) {
+        setRequests((prev) =>
+          prev.map((req) =>
+            req.request_id === requestId
+              ? { ...req, estimated_cost: res.data.updatedEstimatedCost }
+              : req,
+          ),
+        );
+
+        setEstimatedCostDrafts((prev) => ({
+          ...prev,
+          [requestId]:
+            res.data.updatedEstimatedCost === null || res.data.updatedEstimatedCost === undefined
+              ? ''
+              : String(res.data.updatedEstimatedCost),
+        }));
+      }
 
       const lockedFromResponse = Array.isArray(res.data?.lockedItems)
         ? res.data.lockedItems
@@ -1046,30 +1161,53 @@ const ApprovalsPanel = () => {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
                                           {itemsMap[req.request_id].map((item) => {
-                                            const decision = itemDecisions[req.request_id]?.[item.id] || {
-                                              status: item.approval_status || 'Pending',
-                                              comments: item.approval_comments || '',
-                                            };
-                                            const normalizedStatus = typeof decision.status === 'string'
-                                              ? `${decision.status.charAt(0).toUpperCase()}${decision.status.slice(1).toLowerCase()}`
-                                              : 'Pending';
-                                            const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || '';
-                                            const decisionLocked = canEditItems && isItemLockedForUser(item);
+                                          const decision = itemDecisions[req.request_id]?.[item.id] || {
+                                            status: item.approval_status || 'Pending',
+                                            comments: item.approval_comments || '',
+                                          };
+                                          const normalizedStatus = typeof decision.status === 'string'
+                                            ? `${decision.status.charAt(0).toUpperCase()}${decision.status.slice(1).toLowerCase()}`
+                                            : 'Pending';
+                                          const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || '';
+                                          const decisionLocked = canEditItems && isItemLockedForUser(item);
+                                          const quantityDraftsForRequest = itemQuantityDrafts[req.request_id] || {};
+                                          const quantityValue =
+                                            quantityDraftsForRequest[item.id] ?? item.quantity ?? '';
 
-                                            return (
-                                              <tr key={item.id || item.item_name} className={`${rowHighlight} transition-colors`}>
-                                                <td className="px-3 py-3 text-slate-800">
-                                                  <div className="font-medium">{item.item_name}</div>
+                                          return (
+                                            <tr key={item.id || item.item_name} className={`${rowHighlight} transition-colors`}>
+                                              <td className="px-3 py-3 text-slate-800">
+                                                <div className="font-medium">{item.item_name}</div>
                                                   {(item.brand || item.specs) && (
                                                     <div className="mt-1 text-xs text-slate-500">
                                                       {item.brand && <span className="mr-2">{item.brand}</span>}
                                                       {item.specs && <span>{item.specs}</span>}
                                                     </div>
                                                   )}
-                                                </td>
+                                              </td>
                                                 <td className="px-3 py-3 text-slate-600">{item.brand || '—'}</td>
                                                 <td className="px-3 py-3 text-slate-600">{item.specs || '—'}</td>
-                                                <td className="px-3 py-3 text-slate-600">{item.quantity}</td>
+                                                <td className="px-3 py-3 text-slate-600">
+                                                  {canEditItems ? (
+                                                    <input
+                                                      type="number"
+                                                      min={1}
+                                                      step={1}
+                                                      value={quantityValue}
+                                                      onChange={(event) =>
+                                                        handleItemQuantityChange(
+                                                          req.request_id,
+                                                          item.id,
+                                                          event.target.value,
+                                                        )
+                                                      }
+                                                      className="w-24 rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                      disabled={decisionLocked}
+                                                    />
+                                                  ) : (
+                                                    <span>{item.quantity ?? '—'}</span>
+                                                  )}
+                                                </td>
                                                 <td className="px-3 py-3 text-slate-600">{item.available_quantity ?? '—'}</td>
                                                 <td className="px-3 py-3 text-slate-600">{item.unit_cost}</td>
                                                 <td className="px-3 py-3 text-slate-600">{item.total_cost}</td>
