@@ -50,6 +50,7 @@ import SupplierEvaluationsPage from './pages/SupplierEvaluationsPage';
 import MyEvaluationsPage from './pages/MyEvaluationsPage';
 import EvaluationDetailsPage from './pages/EvaluationDetailsPage';
 import StockItemApprovals from './pages/StockItemApprovals';
+import WarehouseInventoryPage from './pages/WarehouseInventoryPage';
 
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { AccessControlProvider, useAccessControl } from './hooks/useAccessControl';
@@ -166,6 +167,18 @@ const AppRoutes = () => (
           ]}
           requiredPermissions={['warehouse.manage-supply']}
           resourceKey="feature.custody"
+        />
+      }
+    />
+    <Route
+      path="/warehouse-inventory"
+      element={
+        <ProtectedRoute
+          element={<WarehouseInventoryPage />}
+          allowedRoles={['warehouse_manager', 'WarehouseManager', 'warehouse_keeper', 'WarehouseKeeper']}
+          requiredPermissions={['warehouse.manage-supply', 'warehouse.view-supply']}
+          requireAllPermissions
+          resourceKey="feature.warehouseInventory"
         />
       }
     />

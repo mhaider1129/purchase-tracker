@@ -136,6 +136,7 @@
     "openRequests": "طلبات الشراء المفتوحة",
     "myMaintenance": "طلباتي للصيانة",
     "maintenanceStock": "مخزون الصيانة",
+    "warehouseInventory": "مخزون المستودع",
     "maintenanceApprovals": "موافقات الصيانة",
     "closedRequests": "طلبات الشراء المغلقة",
     "dashboard": "لوحة المعلومات",
@@ -188,6 +189,7 @@
     "auditRequests": "صفحة طلبات التدقيق",
     "myMaintenanceRequests": "طلباتي للصيانة",
     "maintenanceStock": "مخزون الصيانة",
+    "warehouseInventory": "مخزون المستودع",
     "custodyApprovals": "موافقات الذمم",
     "custodyIssued": "الذمم المصدرة"
   },
@@ -974,6 +976,48 @@
     },
     "newItem": {
       "namePlaceholder": "صنف جديد"
+    }
+  },
+  "warehouseInventory": {
+    "loading": "جاري تحميل أدوات مخزون المستودع...",
+    "subtitle": "سجل الكميات الواردة للمستودع وتابع التحويلات الأسبوعية إلى الأقسام.",
+    "alerts": {
+      "loadItemsFailed": "تعذر تحميل قائمة الأصناف. يرجى المحاولة مرة أخرى.",
+      "validationFailed": "اختر صنفًا وحدد كمية موجبة للمتابعة.",
+      "submitSuccess": "تمت إضافة الكمية إلى مخزون المستودع.",
+      "submitFailed": "فشل في إضافة الكمية إلى المستودع. يرجى المحاولة مرة أخرى.",
+      "reportFailed": "تعذر تحميل تقرير التزويد الأسبوعي للأقسام."
+    },
+    "form": {
+      "title": "إضافة مخزون إلى المستودع",
+      "description": "سجل الكميات الواردة للحفاظ على رصيد المستودع محدثًا.",
+      "saving": "جاري الحفظ...",
+      "submit": "إضافة المخزون",
+      "submitLoading": "جاري الحفظ...",
+      "fields": {
+        "stockItem": "الصنف المخزني",
+        "stockItemSearch": "ابحث بالاسم أو العلامة أو الفئة",
+        "selectPlaceholder": "اختر صنفًا مخزنيًا",
+        "available": "المتوفر: {{count}}",
+        "quantity": "الكمية المستلمة",
+        "quantityPlaceholder": "أدخل الكمية المستلمة",
+        "notes": "ملاحظات (اختياري)",
+        "notesPlaceholder": "مرجع أو دفعة أو تفاصيل التسليم"
+      }
+    },
+    "report": {
+      "title": "تزويد الأقسام الأسبوعي",
+      "description": "حركات التزويد من المستودع إلى الأقسام خلال آخر 7 أيام.",
+      "generatedAt": "تم التوليد:",
+      "refresh": "تحديث التقرير",
+      "loading": "جاري تحميل التقرير الأسبوعي...",
+      "empty": "لا توجد تحويلات للأقسام هذا الأسبوع.",
+      "itemCount": "{{count}} أصناف",
+      "last7days": "آخر 7 أيام",
+      "columns": {
+        "item": "الصنف",
+        "quantity": "الكمية الموردة"
+      }
     }
   },
   "custodyApprovalsPage": {

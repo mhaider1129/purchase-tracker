@@ -10,6 +10,81 @@ import Card from '../components/Card';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 
+const PRINT_TRANSLATIONS = {
+  en: {
+    purchaseSummary: 'Purchase Request Summary',
+    generatedOn: 'Generated on',
+    requestDetails: 'Request Details',
+    justification: 'Justification',
+    requestedItems: 'Requested Items',
+    specs: 'Specs:',
+    approval: 'Approval:',
+    approvalSeparator: ' – ',
+    noItems: 'No line items recorded.',
+    tableHeaders: ['#', 'Item', 'Brand', 'Qty', 'Purchased Qty', 'Unit Cost', 'Total Cost'],
+    grandTotal: 'Grand Total',
+    preparedBy: 'Prepared By',
+    reviewedBy: 'Reviewed By',
+    approvedBy: 'Approved By',
+    requestId: 'Request ID',
+    status: 'Status',
+    requestType: 'Request Type',
+    createdOn: 'Created On',
+    neededBy: 'Needed By',
+    estimatedCost: 'Estimated Cost',
+    maintenanceRef: 'Maintenance Ref #',
+    project: 'Project',
+    department: 'Department',
+    section: 'Section',
+    requester: 'Requester',
+    printCount: 'Print Count',
+    lastUpdated: 'Last Updated',
+    approvalOn: 'on',
+    finalApprover: 'Final approver',
+    printLanguage: 'Print Language',
+    english: 'English',
+    arabic: 'Arabic',
+    yes: 'Yes',
+    no: 'No',
+  },
+  ar: {
+    purchaseSummary: 'ملخص طلب الشراء',
+    generatedOn: 'تم الإنشاء في',
+    requestDetails: 'تفاصيل الطلب',
+    justification: 'المبررات',
+    requestedItems: 'المواد المطلوبة',
+    specs: 'المواصفات:',
+    approval: 'الاعتماد:',
+    approvalSeparator: ' – ',
+    noItems: 'لا توجد بنود مسجلة.',
+    tableHeaders: ['#', 'المادة', 'العلامة التجارية', 'الكمية', 'الكمية المشتراة', 'تكلفة الوحدة', 'إجمالي التكلفة'],
+    grandTotal: 'الإجمالي',
+    preparedBy: 'أعدها',
+    reviewedBy: 'تمت مراجعتها من',
+    approvedBy: 'تم اعتمادها من',
+    requestId: 'رقم الطلب',
+    status: 'الحالة',
+    requestType: 'نوع الطلب',
+    createdOn: 'تاريخ الإنشاء',
+    neededBy: 'مطلوب في',
+    estimatedCost: 'التكلفة التقديرية',
+    maintenanceRef: 'رقم مرجع الصيانة',
+    project: 'المشروع',
+    department: 'القسم',
+    section: 'الشعبة',
+    requester: 'مقدم الطلب',
+    printCount: 'عدد الطباعة',
+    lastUpdated: 'آخر تحديث',
+    approvalOn: 'بتاريخ',
+    finalApprover: 'المعتمد النهائي',
+    printLanguage: 'لغة الطباعة',
+    english: 'الإنجليزية',
+    arabic: 'العربية',
+    yes: 'نعم',
+    no: 'لا',
+  },
+};
+
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
   HOD: 'HOD Approval',
@@ -27,6 +102,7 @@ const STEP_LABELS = {
 const getCurrentStep = (req) => {
   if (req.status === 'Rejected') return 'Rejected';
   if (req.status?.toLowerCase() === 'completed') return 'Completed';
+  if (req.status?.toLowerCase() === 'received') return 'Received';
   if (req.status === 'Approved' && !req.current_approver_role) return 'Approved';
   if (req.current_approver_role) {
     return STEP_LABELS[req.current_approver_role] || `${req.current_approver_role} Approval`;
@@ -41,6 +117,7 @@ const getStepColor = (step) => {
       return 'bg-red-100 text-red-800';
     case 'Completed':
     case 'Approved':
+    case 'Received':
       return 'bg-green-100 text-green-800';
     case 'Submitted':
       return 'bg-gray-100 text-gray-800';
@@ -70,6 +147,7 @@ const AllRequestsPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
+  const [printLanguage, setPrintLanguage] = useState('en');
   const limit = 10;
   const {
     expandedApprovalsId,
@@ -242,7 +320,12 @@ const AllRequestsPage = () => {
   const handlePrint = async (requestId) => {
     try {
       const data = await printRequest(requestId);
-      const { request, items, assigned_user, message, print_count } = data;
+      const { request, items, print_count } = data;
+
+      const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
+      const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';
+      const translate = (key) =>
+        PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
 
       const win = window.open('', '_blank');
       if (!win) {
@@ -262,53 +345,77 @@ const AllRequestsPage = () => {
 
       const formatValue = (value) => {
         if (value === null || value === undefined || value === '') return '—';
-        if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+        if (typeof value === 'boolean') return value ? translate('yes') : translate('no');
         return escapeHtml(value);
       };
 
       const formatDate = (value) => {
         if (!value) return '—';
         const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString());
+        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString(locale));
       };
 
       const formatAmount = (value) => {
         const numeric = Number(value);
         if (!Number.isFinite(numeric)) return formatValue(value);
         return escapeHtml(
-          numeric.toLocaleString(undefined, {
+          numeric.toLocaleString(locale, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })
         );
       };
 
-      const now = escapeHtml(new Date().toLocaleString());
-      const requesterName = request.requester_name
-        ? `${request.requester_name}${request.requester_role ? ` (${request.requester_role})` : ''}`
-        : request.temporary_requester_name;
+      const formatFinalApprovalSummary = (name, dateValue) => {
+        const formattedDate = formatDate(dateValue);
+        if (formattedDate === '—') return formattedDate;
+        return `${name || translate('finalApprover')} ${translate('approvalOn')} ${formattedDate}`;
+      };
+
+      const now = escapeHtml(new Date().toLocaleString(locale));
+      const isMaintenanceRequest = request.request_type === 'Maintenance';
+      const maintenanceAssignedToRequester =
+        isMaintenanceRequest &&
+        request.initiated_by_technician_id &&
+        request.requester_id &&
+        request.requester_id !== request.initiated_by_technician_id;
+
+      const maintenanceRequesterName = maintenanceAssignedToRequester
+        ? request.requester_name
+        : request.temporary_requester_name || request.requester_name;
+
+      const requesterName = isMaintenanceRequest
+        ? maintenanceRequesterName
+        : request.requester_name || request.temporary_requester_name;
+
+      const requesterRole = maintenanceAssignedToRequester
+        ? request.requester_role
+        : isMaintenanceRequest && request.temporary_requester_name
+          ? 'Temporary Requester'
+          : request.requester_role;
+
+      const requesterDisplay = requesterName
+        ? `${requesterName}${requesterRole ? ` (${requesterRole})` : ''}`
+        : requesterName;
+
+      const lastUpdated = request.final_approval?.approved_at
+        ? formatFinalApprovalSummary(request.final_approval.approver_name, request.final_approval.approved_at)
+        : formatDate(request.updated_at);
 
       const detailFields = [
-        { label: 'Request ID', value: request.id },
-        { label: 'Status', value: request.status },
-        { label: 'Request Type', value: request.request_type },
-        { label: 'Request Domain', value: request.request_domain },
-        { label: 'Created On', value: formatDate(request.created_at) },
-        { label: 'Needed By', value: formatDate(request.needed_by) },
-        { label: 'Estimated Cost', value: formatAmount(request.estimated_cost) },
-        { label: 'Maintenance Ref #', value: request.maintenance_ref_number },
-        { label: 'Project', value: request.project_name },
-        { label: 'Department', value: request.department_name },
-        { label: 'Section', value: request.section_name },
-        { label: 'Requester', value: requesterName },
-        {
-          label: 'Assigned To',
-          value: assigned_user
-            ? `${assigned_user.name}${assigned_user.role ? ` (${assigned_user.role})` : ''}`
-            : null,
-        },
-        { label: 'Print Count', value: print_count },
-        { label: 'Last Updated', value: formatDate(request.updated_at) },
+        { label: translate('requestId'), value: request.id },
+        { label: translate('status'), value: request.status },
+        { label: translate('requestType'), value: request.request_type },
+        { label: translate('createdOn'), value: formatDate(request.created_at) },
+        { label: translate('neededBy'), value: formatDate(request.needed_by) },
+        { label: translate('estimatedCost'), value: formatAmount(request.estimated_cost) },
+        { label: translate('maintenanceRef'), value: request.maintenance_ref_number },
+        { label: translate('project'), value: request.project_name },
+        { label: translate('department'), value: request.department_name },
+        { label: translate('section'), value: request.section_name },
+        { label: translate('requester'), value: requesterDisplay },
+        { label: translate('printCount'), value: print_count },
+        { label: translate('lastUpdated'), value: lastUpdated },
       ]
         .map(({ label, value }) => ({ label, value: formatValue(value) }))
         .filter(({ value }) => value && value !== '—');
@@ -330,11 +437,13 @@ const AllRequestsPage = () => {
 
       const itemRows = items
         .map((item, index) => {
-          const specsNote = item.specs ? `<div class="item-note"><strong>Specs:</strong> ${formatValue(item.specs)}</div>` : '';
+          const specsNote = item.specs
+            ? `<div class="item-note"><strong>${translate('specs')}</strong> ${formatValue(item.specs)}</div>`
+            : '';
           const approvalNote =
             item.approval_status || item.approval_comments
-              ? `<div class="item-note"><strong>Approval:</strong> ${formatValue(item.approval_status)}${
-                  item.approval_comments ? ` – ${formatValue(item.approval_comments)}` : ''
+              ? `<div class="item-note"><strong>${translate('approval')}</strong> ${formatValue(item.approval_status)}${
+                  item.approval_comments ? `${translate('approvalSeparator')}${formatValue(item.approval_comments)}` : ''
                 }</div>`
               : '';
 
@@ -356,14 +465,14 @@ const AllRequestsPage = () => {
 
       const justification = request.justification
         ? `<section class="section">
-            <h2>Justification</h2>
+            <h2>${translate('justification')}</h2>
             <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
           </section>`
         : '';
 
       const body = `
         <!DOCTYPE html>
-        <html lang="en">
+        <html lang="${printLanguage}" dir="${direction}">
           <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -377,11 +486,12 @@ const AllRequestsPage = () => {
                 margin: 20mm;
               }
               body {
-                font-family: 'Segoe UI', Arial, sans-serif;
+                font-family: 'Segoe UI', 'Cairo', Arial, sans-serif;
                 color: #1f2937;
                 margin: 0;
                 padding: 32px;
                 background: #f9fafb;
+                direction: ${direction};
               }
               .page {
                 background: #ffffff;
@@ -397,6 +507,7 @@ const AllRequestsPage = () => {
                 border-bottom: 3px solid #2563eb;
                 padding-bottom: 16px;
                 margin-bottom: 24px;
+                flex-direction: ${direction === 'rtl' ? 'row-reverse' : 'row'};
               }
               header h1 {
                 margin: 0;
@@ -435,12 +546,14 @@ const AllRequestsPage = () => {
                 color: #6b7280;
                 text-transform: uppercase;
                 margin-bottom: 4px;
+                text-align: ${direction === 'rtl' ? 'right' : 'left'};
               }
               .detail-value {
                 font-weight: 600;
                 font-size: 15px;
                 color: #111827;
                 word-break: break-word;
+                text-align: ${direction === 'rtl' ? 'right' : 'left'};
               }
               .section {
                 margin-bottom: 24px;
@@ -553,14 +666,14 @@ const AllRequestsPage = () => {
             <div class="page">
               <header>
                 <div>
-                  <h1>Purchase Request Summary</h1>
-                  <p>Generated on ${now}</p>
+                  <h1>${translate('purchaseSummary')}</h1>
+                  <p>${translate('generatedOn')} ${now}</p>
                 </div>
-                <span class="print-badge">Print Count: ${formatValue(print_count)}</span>
+                <span class="print-badge">${translate('printCount')}: ${formatValue(print_count)}</span>
               </header>
 
               <section class="section">
-                <h2>Request Details</h2>
+                <h2>${translate('requestDetails')}</h2>
                 <div class="details-grid">
                   ${detailGrid}
                 </div>
@@ -569,23 +682,22 @@ const AllRequestsPage = () => {
               ${justification}
 
               <section class="section">
-                <h2>Requested Items</h2>
+                <h2>${translate('requestedItems')}</h2>
                 <table class="items-table">
                   <thead>
                     <tr>
-                      <th>#</th>
-                      <th>Item</th>
-                      <th>Brand</th>
-                      <th>Qty</th>
-                      <th>Purchased Qty</th>
-                      <th>Unit Cost</th>
-                      <th>Total Cost</th>
+                      ${PRINT_TRANSLATIONS[printLanguage].tableHeaders
+                        .map((header) => `<th>${escapeHtml(header)}</th>`)
+                        .join('')}
                     </tr>
                   </thead>
                   <tbody>
-                    ${itemRows || '<tr><td colspan="7" style="text-align:center; padding: 24px;">No line items recorded.</td></tr>'}
+                    ${
+                      itemRows ||
+                      `<tr><td colspan="7" style="text-align:center; padding: 24px;">${translate('noItems')}</td></tr>`
+                    }
                     <tr class="totals-row">
-                      <td colspan="6">Grand Total</td>
+                      <td colspan="6">${translate('grandTotal')}</td>
                       <td class="numeric">${formatAmount(totalCost)}</td>
                     </tr>
                   </tbody>
@@ -593,13 +705,13 @@ const AllRequestsPage = () => {
               </section>
 
               <section class="signature-blocks">
-                <div class="signature">Prepared By</div>
-                <div class="signature">Reviewed By</div>
-                <div class="signature">Approved By</div>
+                <div class="signature">${translate('preparedBy')}</div>
+                <div class="signature">${translate('reviewedBy')}</div>
+                <div class="signature">${translate('approvedBy')}</div>
               </section>
 
               <footer>
-                Request ID ${escapeHtml(request.id)} • ${now}
+                ${translate('requestId')} ${escapeHtml(request.id)} • ${now}
               </footer>
             </div>
           </body>
@@ -694,6 +806,21 @@ const AllRequestsPage = () => {
             </option>
           ))}
         </select>
+
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-700" htmlFor="print-language">
+            {PRINT_TRANSLATIONS[printLanguage].printLanguage}
+          </label>
+          <select
+            id="print-language"
+            className="border p-2 rounded"
+            value={printLanguage}
+            onChange={(e) => setPrintLanguage(e.target.value)}
+          >
+            <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
+            <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
+          </select>
+        </div>
 
         <button
           onClick={applyFilters}

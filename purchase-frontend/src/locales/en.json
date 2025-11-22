@@ -135,6 +135,7 @@
     "openRequests": "My Open Requests",
     "myMaintenance": "My Maintenance Requests",
     "maintenanceStock": "Maintenance Stock",
+    "warehouseInventory": "Warehouse Inventory",
     "maintenanceApprovals": "Maintenance Approvals",
     "closedRequests": "My Closed Requests",
     "dashboard": "Dashboard",
@@ -188,6 +189,7 @@
     "auditRequests": "Audit Requests Page",
     "myMaintenanceRequests": "My Maintenance Requests",
     "maintenanceStock": "Maintenance Stock",
+    "warehouseInventory": "Warehouse Inventory",
     "custodyApprovals": "Custody Approvals",
     "custodyIssued": "Issued Custodies"
   },
@@ -979,6 +981,48 @@
       "namePlaceholder": "New item"
     }
   },
+  "warehouseInventory": {
+    "loading": "Loading warehouse inventory tools...",
+    "subtitle": "Record inbound warehouse stock and monitor weekly transfers to departments.",
+    "alerts": {
+      "loadItemsFailed": "Unable to load the stock catalog. Please try again.",
+      "validationFailed": "Select a stock item and enter a positive quantity to continue.",
+      "submitSuccess": "Stock quantity added to the warehouse inventory.",
+      "submitFailed": "Failed to add stock to the warehouse. Please try again.",
+      "reportFailed": "Could not load the weekly departmental stocking report."
+    },
+    "form": {
+      "title": "Add stock to warehouse",
+      "description": "Log inbound quantities so current warehouse balances stay accurate.",
+      "saving": "Saving...",
+      "submit": "Add stock",
+      "submitLoading": "Saving...",
+      "fields": {
+        "stockItem": "Stock item",
+        "stockItemSearch": "Search by name, brand, or category",
+        "selectPlaceholder": "Choose a stock item",
+        "available": "Available: {{count}}",
+        "quantity": "Quantity received",
+        "quantityPlaceholder": "Enter quantity received",
+        "notes": "Notes (optional)",
+        "notesPlaceholder": "Reference, batch, or delivery details"
+      }
+    },
+    "report": {
+      "title": "Weekly departmental stocking",
+      "description": "Movements from your warehouse to departments over the last 7 days.",
+      "generatedAt": "Generated:",
+      "refresh": "Refresh report",
+      "loading": "Loading weekly report...",
+      "empty": "No departmental transfers recorded this week.",
+      "itemCount": "{{count}} items",
+      "last7days": "Past 7 days",
+      "columns": {
+        "item": "Item",
+        "quantity": "Quantity supplied"
+      }
+    }
+  },
   "custodyApprovalsPage": {
     "errors": {
       "loadFailed": "Failed to load custody approvals.",
@@ -1543,6 +1587,26 @@
       "to": "To",
       "allOption": "All"
     },
+    "sort": {
+      "label": "Sort by",
+      "options": {
+        "newest": "Newest",
+        "oldest": "Oldest",
+        "outstanding": "Outstanding items",
+        "progress": "Highest progress"
+      }
+    },
+    "activeFilters": {
+      "title": "Active filters",
+      "none": "No filters applied.",
+      "clear": "Clear all",
+      "search": "Search: \"{{value}}\"",
+      "department": "Department: {{value}}",
+      "section": "Section: {{value}}",
+      "status": "Status: {{value}}",
+      "from": "From: {{value}}",
+      "to": "To: {{value}}"
+    },
     "list": {
       "loading": "Loading requests…",
       "empty": "No warehouse supply requests match the selected filters."
@@ -1561,10 +1625,17 @@
       "itemsCount": "Items in request",
       "supplied": "Supplied so far",
       "outstanding": "Outstanding",
+      "outstandingDetail": "{{count}} items still need to be supplied.",
+      "noOutstanding": "Everything requested has been supplied.",
       "progressLabel": "{{progress}}% fulfilled",
       "suppliedSummary": "{{supplied}} of {{requested}} supplied",
       "fullySupplied": "All requested quantities have been supplied.",
-      "fulfillmentHint": "Record supplied quantities to complete this request."
+      "fulfillmentHint": "Record supplied quantities to complete this request.",
+      "badges": {
+        "fullySupplied": "Ready to close",
+        "needsAttention": "Needs supply attention",
+        "inProgress": "In progress"
+      }
     },
     "items": {
       "loading": "Loading requested items…",

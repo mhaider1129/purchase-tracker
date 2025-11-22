@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
@@ -23,7 +22,6 @@ const formatDateTime = (value) => {
 };
 
 const WarehouseSupplyRequestsPage = () => {
-  const { t } = useTranslation();
   const tr = usePageTranslation('warehouseSupplyRequests');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -40,6 +38,7 @@ const WarehouseSupplyRequestsPage = () => {
   const [itemsCache, setItemsCache] = useState({});
   const [itemsError, setItemsError] = useState({});
   const [itemsLoadingId, setItemsLoadingId] = useState(null);
+  const [sortOption, setSortOption] = useState('newest');
   const navigate = useNavigate();
 
   const normalizeItems = (items = []) =>
@@ -121,6 +120,66 @@ const WarehouseSupplyRequestsPage = () => {
     });
   };
 
+  const activeFilters = useMemo(() => {
+    const chips = [];
+
+    if (filters.search.trim()) {
+      chips.push({
+        key: 'search',
+        label: tr('activeFilters.search', 'Search: "{{value}}"', {
+          value: filters.search.trim(),
+        }),
+      });
+    }
+
+    if (filters.department !== 'all') {
+      chips.push({
+        key: 'department',
+        label: tr('activeFilters.department', 'Department: {{value}}', {
+          value: filters.department,
+        }),
+      });
+    }
+
+    if (filters.section !== 'all') {
+      chips.push({
+        key: 'section',
+        label: tr('activeFilters.section', 'Section: {{value}}', {
+          value: filters.section,
+        }),
+      });
+    }
+
+    if (filters.status !== 'all') {
+      chips.push({
+        key: 'status',
+        label: tr('activeFilters.status', 'Status: {{value}}', {
+          value: getStatusLabel(filters.status),
+        }),
+      });
+    }
+
+    if (filters.fromDate) {
+      chips.push({
+        key: 'fromDate',
+        label: tr('activeFilters.from', 'From: {{value}}', {
+          value: filters.fromDate,
+        }),
+      });
+    }
+
+    if (filters.toDate) {
+      chips.push({
+        key: 'toDate',
+        label: tr('activeFilters.to', 'To: {{value}}', {
+          value: filters.toDate,
+        }),
+      });
+    }
+
+    return chips;
+  }, [filters, tr]);
+
   const departments = useMemo(
     () => Array.from(new Set(requests.map((req) => req.department_name).filter(Boolean))).sort(),
     [requests],
@@ -191,6 +250,38 @@ const WarehouseSupplyRequestsPage = () => {
       return true;
     });
   }, [filters, requests]);
+
+  const sortRequests = (list) => {
+    const sorted = [...list];
+
+    return sorted.sort((a, b) => {
+      if (sortOption === 'newest') {
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      }
+
+      if (sortOption === 'oldest') {
+        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+      }
+
+      const statsA = getFulfillmentStats(a);
+      const statsB = getFulfillmentStats(b);
+
+      if (sortOption === 'outstanding') {
+        return statsB.outstanding - statsA.outstanding;
+      }
+
+      if (sortOption === 'progress') {
+        return statsB.progress - statsA.progress;
+      }
+
+      return 0;
+    });
+  };
+
+  const sortedRequests = useMemo(
+    () => sortRequests(filteredRequests),
+    [filteredRequests, sortOption, itemsCache],
+  );
 
   const summary = useMemo(() => {
     const totals = {
@@ -298,7 +389,28 @@ const WarehouseSupplyRequestsPage = () => {
         </section>
 
         <section className="rounded border bg-white p-4 shadow-sm">
-          <h2 className="text-lg font-semibold">{tr('filters.title', 'Filters')}</h2>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <h2 className="text-lg font-semibold">{tr('filters.title', 'Filters')}</h2>
+            <div className="flex flex-col gap-2 text-sm md:flex-row md:items-center">
+              <label className="font-medium text-gray-700" htmlFor="sort">
+                {tr('sort.label', 'Sort by')}
+              </label>
+              <select
+                id="sort"
+                value={sortOption}
+                onChange={(event) => setSortOption(event.target.value)}
+                className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none md:w-56"
+              >
+                <option value="newest">{tr('sort.options.newest', 'Newest')}</option>
+                <option value="oldest">{tr('sort.options.oldest', 'Oldest')}</option>
+                <option value="outstanding">
+                  {tr('sort.options.outstanding', 'Outstanding items')}
+                </option>
+                <option value="progress">{tr('sort.options.progress', 'Highest progress')}</option>
+              </select>
+            </div>
+          </div>
+
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col gap-1">
               <label className="text-sm font-medium text-gray-700" htmlFor="search">
@@ -395,17 +507,42 @@ const WarehouseSupplyRequestsPage = () => {
               />
             </div>
           </div>
+
+          <div className="mt-4 rounded border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-700">
+            <p className="font-medium text-gray-900">{tr('activeFilters.title', 'Active filters')}</p>
+            {activeFilters.length === 0 ? (
+              <p className="mt-1 text-gray-600">{tr('activeFilters.none', 'No filters applied.')}</p>
+            ) : (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {activeFilters.map((filter) => (
+                  <span
+                    key={filter.key}
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-800 shadow-sm"
+                  >
+                    {filter.label}
+                  </span>
+                ))}
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-100"
+                >
+                  {tr('activeFilters.clear', 'Clear all')}
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="space-y-4">
           {loading ? (
             <p className="text-gray-600">{tr('list.loading', 'Loading requests…')}</p>
-          ) : filteredRequests.length === 0 ? (
+          ) : sortedRequests.length === 0 ? (
             <p className="rounded border border-gray-200 bg-white p-6 text-center text-gray-600">
               {tr('list.empty', 'No warehouse supply requests match the selected filters.')}
             </p>
           ) : (
-            filteredRequests.map((req) => {
+            sortedRequests.map((req) => {
               const items = itemsCache[req.id] || normalizeItems(req.items || []);
               const stats = getFulfillmentStats({ ...req, items });
 
@@ -457,6 +594,17 @@ const WarehouseSupplyRequestsPage = () => {
                       <p className={`mt-1 text-xl font-semibold ${stats.outstanding > 0 ? 'text-amber-600' : 'text-green-700'}`}>
                         {stats.outstanding}
                       </p>
+                      <p className="text-xs text-gray-600">
+                        {stats.outstanding > 0
+                          ? tr(
+                              'requestCard.outstandingDetail',
+                              '{{count}} items still need to be supplied.',
+                              {
+                                count: stats.outstanding,
+                              },
+                            )
+                          : tr('requestCard.noOutstanding', 'Everything requested has been supplied.')}
+                      </p>
                     </div>
                   </div>
 
@@ -507,6 +655,21 @@ const WarehouseSupplyRequestsPage = () => {
                         ? tr('requestCard.hideItems', 'Hide Requested Items')
                         : tr('requestCard.viewItems', 'View Requested Items')}
                     </button>
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                        stats.fullySupplied
+                          ? 'bg-green-50 text-green-700'
+                          : stats.outstanding > 0
+                            ? 'bg-amber-50 text-amber-700'
+                            : 'bg-blue-50 text-blue-700'
+                      }`}
+                    >
+                      {stats.fullySupplied
+                        ? tr('requestCard.badges.fullySupplied', 'Ready to close')
+                        : stats.outstanding > 0
+                          ? tr('requestCard.badges.needsAttention', 'Needs supply attention')
+                          : tr('requestCard.badges.inProgress', 'In progress')}
+                    </span>
                   </div>
 
                   {expandedRequestId === req.id && (

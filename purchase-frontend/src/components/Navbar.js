@@ -133,6 +133,12 @@ const Navbar = () => {
     ]);
     const canAccessCustody = hasAccess(currentUser, 'feature.custody', ['warehouse.manage-supply']);
     const canAccessMaintenanceStock = hasAccess(currentUser, 'feature.maintenanceStock', ['warehouse.manage-supply']);
+    const canManageWarehouseInventory = hasAccess(
+      currentUser,
+      'feature.warehouseInventory',
+      ['warehouse.manage-supply', 'warehouse.view-supply'],
+      true
+    );
     const canViewRecalls = hasAccess(currentUser, 'feature.itemRecalls', ['recalls.view', 'recalls.manage']);
     const canUseAdminTools = hasAccess(currentUser, 'feature.adminTools', ['approvals.reassign']);
     const canAccessManagement = hasAccess(currentUser, 'feature.management', [
@@ -219,6 +225,12 @@ const Navbar = () => {
             t('navbar.maintenanceStock'),
             '/maintenance-stock',
             'text-teal-600'
+          ),
+          createItem(
+            canManageWarehouseInventory,
+            t('navbar.warehouseInventory'),
+            '/warehouse-inventory',
+            'text-blue-700'
           ),
           createItem(
             canReviewStockItems,
