@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
+import useWarehouses from '../../hooks/useWarehouses';
 
 const MaintenanceWarehouseSupplyRequestForm = () => {
   const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
@@ -19,9 +20,11 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
   const [sections, setSections] = useState([]);
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
+  const [supplyWarehouseId, setSupplyWarehouseId] = useState('');
 
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
+  const { warehouses, loading: warehousesLoading, error: warehousesError } = useWarehouses();
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -34,6 +37,20 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
     };
     fetchTemplates();
   }, []);
+
+  useEffect(() => {
+    if (!supplyWarehouseId && warehouses.length > 0) {
+      const preferred = user?.warehouse_id || warehouses[0]?.id;
+      if (preferred) {
+        setSupplyWarehouseId(String(preferred));
+        const selected = warehouses.find((wh) => wh.id === preferred);
+        const normalizedType = (selected?.type || '').toLowerCase();
+        if (['medical', 'operational'].includes(normalizedType)) {
+          setSupplyDomain(normalizedType);
+        }
+      }
+    }
+  }, [supplyWarehouseId, warehouses, user]);
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -82,6 +99,15 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
     setItems(items.filter((_, i) => i !== idx));
   };
 
+  const handleWarehouseChange = (value) => {
+    setSupplyWarehouseId(value);
+    const selected = warehouses.find((wh) => String(wh.id) === String(value));
+    const normalizedType = (selected?.type || '').toLowerCase();
+    if (['medical', 'operational'].includes(normalizedType)) {
+      setSupplyDomain(normalizedType);
+    }
+  };
+
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     updated[index][field] = field === 'quantity' ? parseInt(value, 10) : value;
@@ -96,6 +122,10 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
     }
     if (!targetDeptId) {
       alert('Please select a target department');
+      return;
+    }
+    if (!supplyWarehouseId) {
+      alert('Please select the warehouse fulfilling this request');
       return;
     }
     const hasInvalid = items.some((i) => !i.item_name.trim() || i.quantity < 1);
@@ -222,6 +252,27 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
               <option value="medical">Medical Warehouse</option>
               <option value="operational">Operational Warehouse</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Fulfillment Warehouse</label>
+            <select
+              value={supplyWarehouseId}
+              onChange={(e) => handleWarehouseChange(e.target.value)}
+              className="p-2 border rounded"
+              disabled={submitting || warehousesLoading || warehouses.length === 0}
+              required
+            >
+              <option value="">Select Warehouse</option>
+              {warehouses.map((wh) => (
+                <option key={wh.id} value={wh.id}>
+                  {wh.name}
+                </option>
+              ))}
+            </select>
+            {warehousesError && (
+              <p className="text-sm text-red-600 mt-1">{warehousesError}</p>
+            )}
           </div>
 
         <div>

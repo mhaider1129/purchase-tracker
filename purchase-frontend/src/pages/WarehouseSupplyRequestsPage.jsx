@@ -563,6 +563,10 @@ const WarehouseSupplyRequestsPage = () => {
                         {req.section_name || '—'}
                       </div>
                       <div>
+                        <span className="font-medium text-gray-700">{tr('requestCard.warehouse', 'Warehouse')}:</span>{' '}
+                        {req.warehouse_name || '—'}
+                      </div>
+                      <div>
                         <span className="font-medium text-gray-700">{tr('requestCard.submitted', 'Submitted')}:</span>{' '}
                         {formatDateTime(req.created_at)}
                       </div>

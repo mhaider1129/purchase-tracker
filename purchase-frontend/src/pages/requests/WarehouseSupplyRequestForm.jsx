@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
+import useWarehouses from '../../hooks/useWarehouses';
 
 const WarehouseSupplyRequestForm = () => {
   const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
@@ -15,9 +16,11 @@ const WarehouseSupplyRequestForm = () => {
   const [supplyDomain, setSupplyDomain] = useState('medical');
   const [submitting, setSubmitting] = useState(false);
   const [projectId, setProjectId] = useState('');
+  const [supplyWarehouseId, setSupplyWarehouseId] = useState('');
 
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
+  const { warehouses, loading: warehousesLoading, error: warehousesError } = useWarehouses();
   const targetDeptId = user?.department_id;
   const targetSectionId = user?.section_id;
 
@@ -34,6 +37,20 @@ const WarehouseSupplyRequestForm = () => {
     };
     fetchTemplates();
   }, []);
+
+  useEffect(() => {
+    if (!supplyWarehouseId && warehouses.length > 0) {
+      const preferred = user?.warehouse_id || warehouses[0]?.id;
+      if (preferred) {
+        setSupplyWarehouseId(String(preferred));
+        const selected = warehouses.find((wh) => wh.id === preferred);
+        const normalizedType = (selected?.type || '').toLowerCase();
+        if (['medical', 'operational'].includes(normalizedType)) {
+          setSupplyDomain(normalizedType);
+        }
+      }
+    }
+  }, [supplyWarehouseId, warehouses, user]);
 
   const applyTemplate = (id) => {
     setSelectedTemplateId(id);
@@ -53,6 +70,15 @@ const WarehouseSupplyRequestForm = () => {
     setItems(items.filter((_, i) => i !== idx));
   };
 
+  const handleWarehouseChange = (value) => {
+    setSupplyWarehouseId(value);
+    const selected = warehouses.find((wh) => String(wh.id) === String(value));
+    const normalizedType = (selected?.type || '').toLowerCase();
+    if (['medical', 'operational'].includes(normalizedType)) {
+      setSupplyDomain(normalizedType);
+    }
+  };
+
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     updated[index][field] =
@@ -70,6 +96,10 @@ const WarehouseSupplyRequestForm = () => {
       alert('Your account is missing department information');
       return;
     }
+    if (!supplyWarehouseId) {
+      alert('Please select the warehouse fulfilling this request');
+      return;
+    }
     const hasInvalid = items.some(i => !i.item_name.trim() || i.quantity < 1);
     if (hasInvalid) {
       alert('Each item must have a name and quantity');
@@ -83,6 +113,7 @@ const WarehouseSupplyRequestForm = () => {
     payload.append('target_section_id', targetSectionId || '');
     payload.append('budget_impact_month', '');
     payload.append('supply_domain', supplyDomain);
+    payload.append('supply_warehouse_id', supplyWarehouseId);
     payload.append('project_id', projectId || '');
     const mapped = items.map(it => ({ item_name: it.item_name, quantity: it.quantity }));
     payload.append('items', JSON.stringify(mapped));
@@ -153,6 +184,27 @@ const WarehouseSupplyRequestForm = () => {
               <option value="medical">Medical Warehouse</option>
               <option value="operational">Operational Warehouse</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Fulfillment Warehouse</label>
+            <select
+              value={supplyWarehouseId}
+              onChange={(e) => handleWarehouseChange(e.target.value)}
+              className="p-2 border rounded"
+              disabled={submitting || warehousesLoading || warehouses.length === 0}
+              required
+            >
+              <option value="">Select Warehouse</option>
+              {warehouses.map((wh) => (
+                <option key={wh.id} value={wh.id}>
+                  {wh.name}
+                </option>
+              ))}
+            </select>
+            {warehousesError && (
+              <p className="text-sm text-red-600 mt-1">{warehousesError}</p>
+            )}
           </div>
 
           <div>

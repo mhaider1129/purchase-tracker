@@ -4,12 +4,14 @@ import Navbar from '../components/Navbar';
 import { useAuth } from '../hooks/useAuth';
 import { useAccessControl } from '../hooks/useAccessControl';
 import { hasPermission, hasAnyPermission } from '../utils/permissions';
+import useWarehouses from '../hooks/useWarehouses';
 
 const initialUserEditState = {
   role: '',
   department_id: '',
   section_id: '',
   can_request_medication: false,
+  warehouse_id: '',
 };
 
 const initialNewDepartment = { name: '', type: 'operational' };
@@ -67,6 +69,7 @@ const Management = () => {
   const [newProjectName, setNewProjectName] = useState('');
 
   const { user } = useAuth();
+  const { warehouses, warehouseMap, refresh: refreshWarehouses } = useWarehouses();
   const {
     resources: uiResources,
     loading: uiAccessLoading,
@@ -140,7 +143,7 @@ const Management = () => {
     if (canViewUsers || canManagePermissions) {
       fetchUsers();
     }
-    if (canManageDepartments) {
+    if (canManageDepartments || canViewUsers || canManagePermissions) {
       fetchDepartments();
     }
     if (canManageRoutes) {
@@ -164,6 +167,7 @@ const Management = () => {
   useEffect(() => {
     if (tab === 'users' && canViewUsers) {
       fetchUsers();
+      fetchDepartments();
       if (!roles.length) {
         fetchRoles();
       }
@@ -258,7 +262,7 @@ const Management = () => {
   };
 
   const fetchDepartments = async () => {
-    if (!canManageDepartments) return;
+    if (!(canManageDepartments || canViewUsers || canManagePermissions)) return;
     setLoadingDepartments(true);
     setDepartmentsError('');
     try {
@@ -494,6 +498,7 @@ const Management = () => {
       department_id: user.department_id ? String(user.department_id) : '',
       section_id: user.section_id ? String(user.section_id) : '',
       can_request_medication: Boolean(user.can_request_medication),
+      warehouse_id: user.warehouse_id ? String(user.warehouse_id) : '',
     });
   };
 
@@ -508,6 +513,7 @@ const Management = () => {
         role: editData.role,
         department_id: editData.department_id ? Number(editData.department_id) : null,
         section_id: editData.section_id ? Number(editData.section_id) : null,
+        warehouse_id: editData.warehouse_id ? Number(editData.warehouse_id) : null,
         can_request_medication: editData.can_request_medication,
       });
       setEditUserId(null);
@@ -815,6 +821,7 @@ const Management = () => {
               <th className="p-2">Role</th>
               <th className="p-2">Department</th>
               <th className="p-2">Section</th>
+              <th className="p-2">Warehouse</th>
               <th className="p-2">Medication?</th>
               <th className="p-2">Active</th>
               <th className="p-2">Actions</th>
@@ -827,6 +834,9 @@ const Management = () => {
                 : null;
               const section = user.section_id
                 ? sectionOptions.get(user.section_id)
+                : null;
+              const warehouse = user.warehouse_id
+                ? warehouseMap.get(user.warehouse_id)
                 : null;
               return (
                 <tr key={user.id} className="border-b">
@@ -899,6 +909,31 @@ const Management = () => {
                       )
                     ) : section ? (
                       section
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editUserId === user.id ? (
+                      <select
+                        className="border p-1"
+                        value={editData.warehouse_id}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            warehouse_id: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">--Warehouse--</option>
+                        {warehouses.map((wh) => (
+                          <option key={wh.id} value={wh.id}>
+                            {wh.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : warehouse ? (
+                      warehouse.name
                     ) : (
                       '—'
                     )}

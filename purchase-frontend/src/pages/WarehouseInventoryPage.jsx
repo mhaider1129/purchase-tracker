@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
+import useWarehouses from '../hooks/useWarehouses';
 
 const numberFormatter = new Intl.NumberFormat();
 
@@ -10,10 +11,16 @@ const WarehouseInventoryPage = () => {
   const { t } = useTranslation();
   const tr = (key, fallback) => t(`warehouseInventory.${key}`, fallback);
   const { user, loading: userLoading } = useCurrentUser();
+  const { warehouses, loading: warehousesLoading, error: warehousesError } = useWarehouses();
 
   const [stockItems, setStockItems] = useState([]);
   const [itemSearch, setItemSearch] = useState('');
-  const [form, setForm] = useState({ stock_item_id: '', quantity: '', notes: '' });
+  const [form, setForm] = useState({
+    stock_item_id: '',
+    quantity: '',
+    notes: '',
+    warehouse_id: '',
+  });
   const [formStatus, setFormStatus] = useState({ state: 'idle', message: '' });
 
   const [report, setReport] = useState({ departments: [], window_start: '', window_end: '', generated_at: '' });
@@ -54,6 +61,15 @@ const WarehouseInventoryPage = () => {
   }, [user, userLoading]);
 
   useEffect(() => {
+    if (!form.warehouse_id && warehouses.length > 0) {
+      const preferred = user?.warehouse_id || warehouses[0]?.id;
+      if (preferred) {
+        setForm((prev) => ({ ...prev, warehouse_id: String(preferred) }));
+      }
+    }
+  }, [form.warehouse_id, warehouses, user]);
+
+  useEffect(() => {
     if (formStatus.state === 'success') {
       const timer = setTimeout(() => setFormStatus({ state: 'idle', message: '' }), 3000);
       return () => clearTimeout(timer);
@@ -81,6 +97,10 @@ const WarehouseInventoryPage = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     const parsedQuantity = Number(form.quantity);
+    if (!form.warehouse_id) {
+      setFormStatus({ state: 'error', message: tr('alerts.validationFailed') });
+      return;
+    }
     if (!form.stock_item_id || !Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
       setFormStatus({ state: 'error', message: tr('alerts.validationFailed') });
       return;
@@ -92,9 +112,10 @@ const WarehouseInventoryPage = () => {
         stock_item_id: Number(form.stock_item_id),
         quantity: parsedQuantity,
         notes: form.notes?.trim() || undefined,
+        warehouse_id: form.warehouse_id ? Number(form.warehouse_id) : undefined,
       });
       setFormStatus({ state: 'success', message: tr('alerts.submitSuccess') });
-      setForm({ stock_item_id: '', quantity: '', notes: '' });
+      setForm({ stock_item_id: '', quantity: '', notes: '', warehouse_id: form.warehouse_id });
       setItemSearch('');
       loadReport();
     } catch (err) {
@@ -162,6 +183,30 @@ const WarehouseInventoryPage = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="warehouse">
+                  {tr('form.fields.warehouse')}
+                </label>
+                <select
+                  id="warehouse"
+                  value={form.warehouse_id}
+                  onChange={handleFormChange('warehouse_id')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  disabled={warehousesLoading || !warehouses.length}
+                  required
+                >
+                  <option value="">{tr('form.fields.warehousePlaceholder')}</option>
+                  {warehouses.map((wh) => (
+                    <option key={wh.id} value={wh.id}>
+                      {wh.name}
+                    </option>
+                  ))}
+                </select>
+                {warehousesError && (
+                  <p className="text-xs text-red-600">{warehousesError}</p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="stock-item">
                   {tr('form.fields.stockItem')}
