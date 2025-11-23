@@ -672,7 +672,7 @@ const Management = () => {
     setWarehouseMessage('');
 
     try {
-      await api.post('/api/departments', { name: trimmed, type: 'warehouse' });
+      await api.post('/api/warehouses', { name: trimmed });
       setWarehouseForm({ name: '' });
       setWarehouseMessage('Warehouse added successfully.');
       await Promise.all([refreshWarehouses(), fetchDepartments()]);
@@ -697,9 +697,8 @@ const Management = () => {
     setWarehouseMessage('');
 
     try {
-      await api.put(`/api/departments/${editingWarehouseId}`, {
+      await api.put(`/api/warehouses/${editingWarehouseId}`, {
         name: trimmed,
-        type: 'warehouse',
       });
       setWarehouseMessage('Warehouse updated successfully.');
       cancelWarehouseEdit();

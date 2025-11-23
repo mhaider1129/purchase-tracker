@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import api from "../api/axios";
 
-const normalizeWarehouses = (departments) => {
-  if (!Array.isArray(departments)) return [];
-  return departments.filter((dept) => {
-    const type = (dept.type || "").toLowerCase();
-    return type === "warehouse";
-  });
+const normalizeWarehouses = (rawList) => {
+  if (!Array.isArray(rawList)) return [];
+  return rawList.map((warehouse) => ({
+    ...warehouse,
+    type: warehouse.type || "warehouse",
+  }));
 };
 
 const useWarehouses = () => {
@@ -18,7 +18,7 @@ const useWarehouses = () => {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/api/departments");
+      const res = await api.get("/api/warehouses");
       setWarehouses(normalizeWarehouses(res.data));
     } catch (err) {
       console.error("Failed to load warehouses", err);
