@@ -13,7 +13,6 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [justification, setJustification] = useState('');
-  const [supplyDomain, setSupplyDomain] = useState('medical');
   const [submitting, setSubmitting] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [departments, setDepartments] = useState([]);
@@ -43,11 +42,6 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
       const preferred = user?.warehouse_id || warehouses[0]?.id;
       if (preferred) {
         setSupplyWarehouseId(String(preferred));
-        const selected = warehouses.find((wh) => wh.id === preferred);
-        const normalizedType = (selected?.type || '').toLowerCase();
-        if (['medical', 'operational'].includes(normalizedType)) {
-          setSupplyDomain(normalizedType);
-        }
       }
     }
   }, [supplyWarehouseId, warehouses, user]);
@@ -101,11 +95,6 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
 
   const handleWarehouseChange = (value) => {
     setSupplyWarehouseId(value);
-    const selected = warehouses.find((wh) => String(wh.id) === String(value));
-    const normalizedType = (selected?.type || '').toLowerCase();
-    if (['medical', 'operational'].includes(normalizedType)) {
-      setSupplyDomain(normalizedType);
-    }
   };
 
   const handleItemChange = (index, field, value) => {
@@ -140,7 +129,6 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
     payload.append('target_department_id', targetDeptId);
     payload.append('target_section_id', targetSectionId || '');
     payload.append('budget_impact_month', '');
-    payload.append('supply_domain', supplyDomain);
     payload.append('project_id', projectId || '');
     const mapped = items.map((it) => ({ item_name: it.item_name, quantity: it.quantity }));
     payload.append('items', JSON.stringify(mapped));
@@ -177,6 +165,17 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
       </>
     );
   }
+
+  const selectedWarehouse = warehouses.find(
+    (wh) => String(wh.id) === String(supplyWarehouseId),
+  );
+  const warehouseTypeLabel = (selectedWarehouse?.type || '').toLowerCase();
+  const warehouseDomainDisplay =
+    warehouseTypeLabel === 'medical'
+      ? 'Medical'
+      : warehouseTypeLabel === 'operational'
+        ? 'Operational'
+        : 'Not specified';
 
   return (
     <>
@@ -242,19 +241,6 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Supply From</label>
-            <select
-              value={supplyDomain}
-              onChange={(e) => setSupplyDomain(e.target.value)}
-              className="p-2 border rounded"
-              disabled={submitting}
-            >
-              <option value="medical">Medical Warehouse</option>
-              <option value="operational">Operational Warehouse</option>
-            </select>
-          </div>
-
-          <div>
             <label className="block font-semibold mb-1">Fulfillment Warehouse</label>
             <select
               value={supplyWarehouseId}
@@ -272,6 +258,11 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
             </select>
             {warehousesError && (
               <p className="text-sm text-red-600 mt-1">{warehousesError}</p>
+            )}
+            {supplyWarehouseId && (
+              <p className="text-sm text-gray-600 mt-1">
+                Domain: {warehouseDomainDisplay}
+              </p>
             )}
           </div>
 

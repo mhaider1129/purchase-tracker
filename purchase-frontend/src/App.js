@@ -232,7 +232,7 @@ const AppRoutes = () => (
             "WarehouseKeeper",
             "warehouse_keeper",
           ]}
-          requiredPermissions={["warehouse.manage-supply"]}
+          requiredPermissions={["technical-inspections.manage"]}
           resourceKey="feature.technicalInspections"
         />
       }
