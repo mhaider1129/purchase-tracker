@@ -7,9 +7,10 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import useWarehouses from '../../hooks/useWarehouses';
+import useWarehouseStockItems from '../../hooks/useWarehouseStockItems';
 
 const WarehouseSupplyRequestForm = () => {
-  const [items, setItems] = useState([{ item_name: '', quantity: 1 }]);
+  const [items, setItems] = useState([{ stock_item_id: '', item_name: '', quantity: 1 }]);
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [justification, setJustification] = useState('');
@@ -20,6 +21,11 @@ const WarehouseSupplyRequestForm = () => {
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
   const { warehouses, loading: warehousesLoading, error: warehousesError } = useWarehouses();
+  const {
+    items: warehouseItems,
+    loading: warehouseItemsLoading,
+    error: warehouseItemsError,
+  } = useWarehouseStockItems(supplyWarehouseId);
   const targetDeptId = user?.department_id;
   const targetSectionId = user?.section_id;
 
@@ -50,15 +56,35 @@ const WarehouseSupplyRequestForm = () => {
     setSelectedTemplateId(id);
     const template = templates.find((t) => t.id === parseInt(id, 10));
     if (template) {
-      const mapped = (template.items || []).map((it) => ({
-        item_name: it.item_name || '',
-        quantity: 1,
-      }));
-      setItems(mapped.length ? mapped : items);
+      if (!supplyWarehouseId) {
+        alert('Please select a fulfillment warehouse first');
+        return;
+      }
+
+      const mapped = (template.items || [])
+        .map((it) => {
+          const matchedItem = warehouseItems.find(
+            (whItem) => whItem.item_name?.toLowerCase() === (it.item_name || '').toLowerCase(),
+          );
+          if (!matchedItem) return null;
+          return {
+            stock_item_id: matchedItem.stock_item_id?.toString() || '',
+            item_name: matchedItem.item_name || '',
+            quantity: 1,
+          };
+        })
+        .filter(Boolean);
+
+      if (mapped.length === 0) {
+        alert('None of the template items are available in the selected warehouse');
+      }
+
+      setItems(mapped.length ? mapped : [{ stock_item_id: '', item_name: '', quantity: 1 }]);
     }
   };
 
-  const addItem = () => setItems([...items, { item_name: '', quantity: 1 }]);
+  const addItem = () =>
+    setItems([...items, { stock_item_id: '', item_name: '', quantity: 1 }]);
   const removeItem = (idx) => {
     if (!window.confirm('Remove this item?')) return;
     setItems(items.filter((_, i) => i !== idx));
@@ -66,12 +92,26 @@ const WarehouseSupplyRequestForm = () => {
 
   const handleWarehouseChange = (value) => {
     setSupplyWarehouseId(value);
+    setSelectedTemplateId('');
+    setItems([{ stock_item_id: '', item_name: '', quantity: 1 }]);
   };
 
-  const handleItemChange = (index, field, value) => {
+  const handleItemSelection = (index, stockItemId) => {
+    const selected = warehouseItems.find(
+      (it) => String(it.stock_item_id) === String(stockItemId),
+    );
     const updated = [...items];
-    updated[index][field] =
-      field === 'quantity' ? parseInt(value, 10) : value;
+    updated[index] = {
+      ...updated[index],
+      stock_item_id: stockItemId,
+      item_name: selected?.item_name || '',
+    };
+    setItems(updated);
+  };
+
+  const handleQuantityChange = (index, value) => {
+    const updated = [...items];
+    updated[index].quantity = parseInt(value, 10);
     setItems(updated);
   };
   
@@ -89,9 +129,11 @@ const WarehouseSupplyRequestForm = () => {
       alert('Please select the warehouse fulfilling this request');
       return;
     }
-    const hasInvalid = items.some(i => !i.item_name.trim() || i.quantity < 1);
+    const hasInvalid = items.some(
+      (i) => !i.stock_item_id || !i.item_name.trim() || i.quantity < 1,
+    );
     if (hasInvalid) {
-      alert('Each item must have a name and quantity');
+      alert('Each item must have a warehouse item selected and a quantity');
       return;
     }
 
@@ -224,22 +266,48 @@ const WarehouseSupplyRequestForm = () => {
 
           <div>
             <label className="block font-semibold mb-2">Items</label>
+            {supplyWarehouseId === '' && (
+              <p className="text-sm text-gray-600 mb-2">
+                Select a warehouse to choose from its available items.
+              </p>
+            )}
+            {warehouseItemsError && (
+              <p className="text-sm text-red-600 mb-2">{warehouseItemsError}</p>
+            )}
+            {warehouseItemsLoading && (
+              <p className="text-sm text-gray-600 mb-2">Loading warehouse items...</p>
+            )}
+            {supplyWarehouseId && !warehouseItemsLoading && warehouseItems.length === 0 && (
+              <p className="text-sm text-gray-600 mb-2">
+                No items are configured for this warehouse.
+              </p>
+            )}
             {items.map((it, idx) => (
               <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
-                <input
-                  type="text"
-                  value={it.item_name}
-                  onChange={(e) => handleItemChange(idx, 'item_name', e.target.value)}
-                  className="flex-1 p-2 border rounded"
-                  placeholder="Item name"
+                <select
+                  value={it.stock_item_id}
+                  onChange={(e) => handleItemSelection(idx, e.target.value)}
+                  className="flex-1 p-2 border rounded min-w-[200px]"
                   required
-                  disabled={submitting}
-                />
+                  disabled={
+                    submitting ||
+                    warehouseItemsLoading ||
+                    !supplyWarehouseId ||
+                    warehouseItems.length === 0
+                  }
+                >
+                  <option value="">Select item</option>
+                  {warehouseItems.map((item) => (
+                    <option key={item.stock_item_id} value={item.stock_item_id}>
+                      {item.item_name} ({item.quantity} available)
+                    </option>
+                  ))}
+                </select>
                 <input
                   type="number"
                   min={1}
                   value={it.quantity}
-                  onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                  onChange={(e) => handleQuantityChange(idx, e.target.value)}
                   className="w-24 p-2 border rounded"
                   required
                   disabled={submitting}
