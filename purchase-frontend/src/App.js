@@ -57,6 +57,7 @@ import MyEvaluationsPage from "./pages/MyEvaluationsPage";
 import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
 import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
+import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -214,6 +215,25 @@ const AppRoutes = () => (
           ]}
           requireAllPermissions
           resourceKey="feature.warehouseInventory"
+        />
+      }
+    />
+    <Route
+      path="/technical-inspections"
+      element={
+        <ProtectedRoute
+          element={<TechnicalInspectionsPage />}
+          allowedRoles={[
+            "technician",
+            "SCM",
+            "admin",
+            "WarehouseManager",
+            "warehouse_manager",
+            "WarehouseKeeper",
+            "warehouse_keeper",
+          ]}
+          requiredPermissions={["warehouse.manage-supply"]}
+          resourceKey="feature.technicalInspections"
         />
       }
     />

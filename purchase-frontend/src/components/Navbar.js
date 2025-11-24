@@ -153,6 +153,11 @@ const Navbar = () => {
       "feature.maintenanceStock",
       ["warehouse.manage-supply"],
     );
+    const canManageTechnicalInspections = hasAccess(
+      currentUser,
+      "feature.technicalInspections",
+      ["warehouse.manage-supply"],
+    );
     const canManageWarehouseInventory = hasAccess(
       currentUser,
       "feature.warehouseInventory",
@@ -279,6 +284,12 @@ const Navbar = () => {
             t("navbar.maintenanceStock"),
             "/maintenance-stock",
             "text-teal-600",
+          ),
+          createItem(
+            canManageTechnicalInspections,
+            t("navbar.technicalInspections"),
+            "/technical-inspections",
+            "text-emerald-600",
           ),
           createItem(
             canManageWarehouseInventory,
