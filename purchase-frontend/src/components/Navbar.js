@@ -186,6 +186,9 @@ const Navbar = () => {
     const canManageContracts = hasAccess(currentUser, "feature.contracts", [
       "contracts.manage",
     ]);
+    const canViewSuppliers = hasAccess(currentUser, "feature.suppliers", [
+      "contracts.manage",
+    ]);
     const canManageEvaluations = hasAccess(
       currentUser,
       "feature.supplierEvaluations",
@@ -351,6 +354,12 @@ const Navbar = () => {
         id: "governance",
         label: t("navbar.groups.governance"),
         items: [
+          createItem(
+            canViewSuppliers,
+            t("navbar.suppliers"),
+            "/suppliers",
+            "text-emerald-700",
+          ),
           createItem(
             canManageEvaluations,
             t("navbar.supplierEvaluations"),

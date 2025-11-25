@@ -29,6 +29,13 @@ const Management = () => {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [rolesError, setRolesError] = useState('');
+  const [roleSuccess, setRoleSuccess] = useState('');
+  const [newRoleName, setNewRoleName] = useState('');
+  const [savingRole, setSavingRole] = useState(false);
+  const [editingRole, setEditingRole] = useState({ id: null, name: '' });
+  const [deletingRoleId, setDeletingRoleId] = useState(null);
   const [routes, setRoutes] = useState([]);
   const [accountRequests, setAccountRequests] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -121,6 +128,7 @@ const Management = () => {
     if (canManageRoutes) tabs.push('routes');
     if (canManageProjects) tabs.push('projects');
     if (canManagePermissions) {
+      tabs.push('roles');
       tabs.push('permissions');
       tabs.push('interfaceAccess');
     }
@@ -195,6 +203,9 @@ const Management = () => {
     }
     if (tab === 'departments' && canManageDepartments) {
       fetchDepartments();
+    }
+    if (tab === 'roles' && canManagePermissions) {
+      fetchRoles();
     }
     if (tab === 'warehouses' && canManageDepartments) {
       refreshWarehouses();
@@ -303,11 +314,16 @@ const Management = () => {
 
   const fetchRoles = async () => {
     if (!(canViewUsers || canManageRoutes || canManagePermissions)) return;
+    setRolesLoading(true);
+    setRolesError('');
     try {
       const res = await api.get('/api/roles');
       setRoles(res.data || []);
     } catch (err) {
       console.error('Failed to load roles', err);
+      setRolesError('Failed to load roles.');
+    } finally {
+      setRolesLoading(false);
     }
   };
 
@@ -354,6 +370,84 @@ const Management = () => {
       setProjectError(err?.response?.data?.message || 'Failed to load projects');
     } finally {
       setLoadingProjects(false);
+    }
+  };
+
+  const handleCreateRole = async (e) => {
+    e.preventDefault();
+    if (!canManagePermissions) return;
+    if (!newRoleName.trim()) {
+      setRolesError('Role name is required.');
+      return;
+    }
+
+    setSavingRole(true);
+    setRolesError('');
+    setRoleSuccess('');
+
+    try {
+      await api.post('/api/roles', { name: newRoleName.trim() });
+      setNewRoleName('');
+      setRoleSuccess('Role created successfully.');
+      fetchRoles();
+    } catch (err) {
+      setRolesError(err?.response?.data?.message || 'Failed to create role.');
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
+  const startEditingRole = (role) => {
+    setEditingRole({ id: role.id, name: role.name });
+    setRolesError('');
+    setRoleSuccess('');
+  };
+
+  const cancelEditingRole = () => {
+    setEditingRole({ id: null, name: '' });
+  };
+
+  const handleUpdateRole = async () => {
+    if (!canManagePermissions || !editingRole.id) return;
+    if (!editingRole.name.trim()) {
+      setRolesError('Role name is required.');
+      return;
+    }
+
+    setSavingRole(true);
+    setRolesError('');
+    setRoleSuccess('');
+
+    try {
+      await api.put(`/api/roles/${editingRole.id}`, { name: editingRole.name.trim() });
+      setRoleSuccess('Role updated successfully.');
+      setEditingRole({ id: null, name: '' });
+      fetchRoles();
+    } catch (err) {
+      setRolesError(err?.response?.data?.message || 'Failed to update role.');
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
+  const handleDeleteRole = async (roleId) => {
+    if (!canManagePermissions || !roleId) return;
+    if (!window.confirm('Delete this role? This cannot be undone.')) {
+      return;
+    }
+
+    setDeletingRoleId(roleId);
+    setRolesError('');
+    setRoleSuccess('');
+
+    try {
+      await api.delete(`/api/roles/${roleId}`);
+      setRoleSuccess('Role deleted.');
+      fetchRoles();
+    } catch (err) {
+      setRolesError(err?.response?.data?.message || 'Failed to delete role.');
+    } finally {
+      setDeletingRoleId(null);
     }
   };
 
@@ -1721,6 +1815,119 @@ const Management = () => {
     );
   };
 
+  const renderRoles = () => {
+    if (!canManagePermissions) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage roles.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="rounded border bg-white p-4 shadow-sm">
+          <h3 className="text-sm font-semibold uppercase text-gray-600 mb-3">Add Role</h3>
+          <form onSubmit={handleCreateRole} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <label className="flex-1">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Role name
+              </span>
+              <input
+                className="mt-1 w-full rounded border px-3 py-2"
+                placeholder="Enter role name"
+                value={newRoleName}
+                onChange={(e) => setNewRoleName(e.target.value)}
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-60"
+              disabled={savingRole}
+            >
+              Add role
+            </button>
+          </form>
+          {roleSuccess && <p className="mt-2 text-sm text-emerald-600">{roleSuccess}</p>}
+          {rolesError && <p className="mt-2 text-sm text-red-600">{rolesError}</p>}
+        </div>
+
+        <div className="overflow-x-auto rounded border bg-white shadow-sm">
+          {rolesLoading ? (
+            <p className="p-4">Loading roles...</p>
+          ) : roles.length === 0 ? (
+            <p className="p-4 text-sm text-gray-600">No roles defined yet.</p>
+          ) : (
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="bg-gray-200 text-left">
+                  <th className="p-2">Name</th>
+                  <th className="p-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roles.map((role) => (
+                  <tr key={role.id} className="border-b">
+                    <td className="p-2">
+                      {editingRole.id === role.id ? (
+                        <input
+                          className="w-full rounded border px-2 py-1"
+                          value={editingRole.name}
+                          onChange={(e) =>
+                            setEditingRole((prev) => ({ ...prev, name: e.target.value }))
+                          }
+                        />
+                      ) : (
+                        <span className="font-medium text-gray-900">{role.name}</span>
+                      )}
+                    </td>
+                    <td className="p-2">
+                      {editingRole.id === role.id ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={handleUpdateRole}
+                            className="rounded bg-green-600 px-3 py-1 text-white disabled:opacity-60"
+                            disabled={savingRole}
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={cancelEditingRole}
+                            className="rounded border px-3 py-1"
+                            type="button"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => startEditingRole(role)}
+                            className="rounded border px-3 py-1"
+                            type="button"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRole(role.id)}
+                            className="rounded bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                            disabled={deletingRoleId === role.id}
+                          >
+                            {deletingRoleId === role.id ? 'Deleting…' : 'Delete'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderProjects = () => {
     if (!canManageProjects) {
       return (
@@ -2240,6 +2447,14 @@ const Management = () => {
           {canManagePermissions && (
             <>
               <button
+                onClick={() => setTab('roles')}
+                className={`px-3 py-1 rounded ${
+                  tab === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+                }`}
+              >
+                Roles
+              </button>
+              <button
                 onClick={() => setTab('permissions')}
                 className={`px-3 py-1 rounded ${
                   tab === 'permissions' ? 'bg-blue-600 text-white' : 'bg-gray-200'
@@ -2265,6 +2480,7 @@ const Management = () => {
         {tab === 'warehouses' && renderWarehouses()}
         {tab === 'routes' && renderRoutes()}
         {tab === 'projects' && renderProjects()}
+        {tab === 'roles' && renderRoles()}
         {tab === 'permissions' && renderPermissions()}
         {tab === 'interfaceAccess' && renderInterfaceAccess()}
       </div>

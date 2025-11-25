@@ -58,6 +58,7 @@ import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
 import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
+import SuppliersPage from "./pages/SuppliersPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -471,6 +472,25 @@ const AppRoutes = () => (
           ]}
           requiredPermissions={["contracts.manage"]}
           resourceKey="feature.contracts"
+        />
+      }
+    />
+    <Route
+      path="/suppliers"
+      element={
+        <ProtectedRoute
+          element={<SuppliersPage />}
+          allowedRoles={[
+            "SCM",
+            "admin",
+            "COO",
+            "Medical Devices",
+            "Contract_Manager",
+            "ProcurementSpecialist",
+            "ProcurementManager",
+          ]}
+          requiredPermissions={["contracts.manage"]}
+          resourceKey="feature.suppliers"
         />
       }
     />

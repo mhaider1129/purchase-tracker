@@ -146,6 +146,7 @@
     "lifecycleAnalytics": "Lifecycle Analytics",
     "auditRequests": "Audit Requests",
     "procurementPlans": "Procurement Plans",
+    "suppliers": "Suppliers",
     "contracts": "Contracts",
     "supplierEvaluations": "Supplier Evaluations",
     "viewIncomplete": "View Incomplete Requests",
@@ -312,6 +313,25 @@
       "loadFailed": "Failed to load pending maintenance requests."
     },
     "emptyState": "No maintenance approvals match the current filters."
+  },
+  "suppliersPage": {
+    "title": "Suppliers",
+    "subtitle": "Review supplier records and find contact information quickly.",
+    "refresh": "Refresh",
+    "loading": "Loading suppliers…",
+    "error": "Failed to load suppliers. Please try again.",
+    "retry": "Retry",
+    "empty": "No suppliers found.",
+    "search": {
+      "label": "Search suppliers",
+      "placeholder": "Search by supplier name, email, or phone"
+    },
+    "table": {
+      "name": "Supplier",
+      "email": "Email",
+      "phone": "Phone",
+      "createdAt": "Added"
+    }
   },
   "language": {
     "english": "English",
