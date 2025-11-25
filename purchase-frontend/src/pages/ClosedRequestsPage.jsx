@@ -111,7 +111,8 @@ const ClosedRequestsPage = () => {
       );
     } catch (err) {
       console.error('Failed to mark item as received:', err);
-      alert('Failed to mark item as received.');
+      const serverMessage = err?.response?.data?.message;
+      alert(serverMessage || 'Failed to mark item as received.');
     } finally {
       setMarkingItemReceived(null);
     }

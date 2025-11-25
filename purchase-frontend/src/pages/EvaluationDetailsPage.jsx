@@ -93,6 +93,8 @@ const normalizeEvaluation = (evaluation) => {
       components,
       overallScore: Number.isFinite(overallScore) ? Number(overallScore.toFixed(2)) : null,
     },
+    technical_inspection_results: parseJson(evaluation.technical_inspection_results),
+    request_fulfillment_metrics: parseJson(evaluation.request_fulfillment_metrics),
   };
 };
 
@@ -258,6 +260,79 @@ const EvaluationDetailsPage = () => {
             </div>
           </div>
         </section>
+
+        {(evaluation.technical_inspection_results || evaluation.request_fulfillment_metrics) && (
+          <section className="grid gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Technical inspection signal</h3>
+                {evaluation.technical_inspection_results ? (
+                  <div className="mt-2 space-y-2 text-sm text-gray-700 dark:text-gray-200">
+                    <p>
+                      <span className="font-semibold">Latest inspection date:</span>{' '}
+                      {evaluation.technical_inspection_results.latest_inspection_date || '—'}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Overall condition:</span>{' '}
+                      {evaluation.technical_inspection_results.overall_condition || '—'}
+                    </p>
+                    {evaluation.technical_inspection_results.issues && evaluation.technical_inspection_results.issues.length > 0 && (
+                      <div>
+                        <p className="font-semibold">Flagged issues</p>
+                        <ul className="mt-1 list-disc space-y-1 pl-5">
+                          {evaluation.technical_inspection_results.issues.map((issue, index) => (
+                            <li key={index}>
+                              {issue.summary}
+                              {issue.severity ? ` (${issue.severity})` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    No technical inspection data was linked to this evaluation.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Request fulfillment metrics</h3>
+                {evaluation.request_fulfillment_metrics ? (
+                  <div className="mt-2 grid gap-2 text-sm text-gray-700 dark:text-gray-200 sm:grid-cols-2">
+                    <p>
+                      <span className="font-semibold">Completion rate:</span>{' '}
+                      {evaluation.request_fulfillment_metrics.completion_rate ?? '—'}%
+                    </p>
+                    <p>
+                      <span className="font-semibold">Completed requests:</span>{' '}
+                      {evaluation.request_fulfillment_metrics.completed_requests ?? '—'} /{' '}
+                      {evaluation.request_fulfillment_metrics.total_requests ?? '—'}
+                    </p>
+                    <p>
+                      <span className="font-semibold">Avg lead time (days):</span>{' '}
+                      {evaluation.request_fulfillment_metrics.average_lead_time_days ?? '—'}
+                    </p>
+                    <p>
+                      <span className="font-semibold">On-time rate:</span>{' '}
+                      {evaluation.request_fulfillment_metrics.on_time_rate ?? '—'}
+                    </p>
+                    {evaluation.request_fulfillment_metrics.notes && (
+                      <p className="sm:col-span-2">
+                        <span className="font-semibold">Notes:</span> {evaluation.request_fulfillment_metrics.notes}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    No fulfillment metrics are available for this contract yet.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Component scores</h3>

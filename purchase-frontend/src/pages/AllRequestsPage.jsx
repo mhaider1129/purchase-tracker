@@ -98,10 +98,11 @@ const STEP_LABELS = {
   ProcurementSpecialist: 'Procurement Specialist Action',
 };
 
-// Helper to derive a readable current step string for a request
 const getCurrentStep = (req) => {
   if (req.status === 'Rejected') return 'Rejected';
   if (req.status?.toLowerCase() === 'completed') return 'Completed';
+  if (req.status?.toLowerCase() === 'technical_inspection_pending')
+    return 'Technical Inspection Pending';
   if (req.status?.toLowerCase() === 'received') return 'Received';
   if (req.status === 'Approved' && !req.current_approver_role) return 'Approved';
   if (req.current_approver_role) {
@@ -115,6 +116,8 @@ const getStepColor = (step) => {
   switch (step) {
     case 'Rejected':
       return 'bg-red-100 text-red-800';
+    case 'Technical Inspection Pending':
+      return 'bg-amber-100 text-amber-800';
     case 'Completed':
     case 'Approved':
     case 'Received':

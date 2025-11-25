@@ -181,17 +181,6 @@ const WarehouseSupplyRequestForm = () => {
     );
   }
 
-  const selectedWarehouse = warehouses.find(
-    (wh) => String(wh.id) === String(supplyWarehouseId),
-  );
-  const warehouseTypeLabel = (selectedWarehouse?.type || '').toLowerCase();
-  const warehouseDomainDisplay =
-    warehouseTypeLabel === 'medical'
-      ? 'Medical'
-      : warehouseTypeLabel === 'operational'
-        ? 'Operational'
-        : 'Not specified';
-
   return (
     <>
       <Navbar />
@@ -232,11 +221,6 @@ const WarehouseSupplyRequestForm = () => {
             </select>
             {warehousesError && (
               <p className="text-sm text-red-600 mt-1">{warehousesError}</p>
-            )}
-            {supplyWarehouseId && (
-              <p className="text-sm text-gray-600 mt-1">
-                Domain: {warehouseDomainDisplay}
-              </p>
             )}
           </div>
 

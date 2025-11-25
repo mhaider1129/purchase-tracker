@@ -119,6 +119,8 @@ const initialFormState = {
   end_user_department_id: '',
   contract_manager_id: '',
   technical_department_ids: [],
+  supplier_id: '',
+  source_request_id: '',
 };
 
 const ContractsPage = () => {
@@ -151,6 +153,10 @@ const ContractsPage = () => {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
+
+  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [suppliersError, setSuppliersError] = useState('');
 
   const [evaluations, setEvaluations] = useState([]);
   const [evaluationsLoading, setEvaluationsLoading] = useState(false);
@@ -268,6 +274,46 @@ const ContractsPage = () => {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const loadSuppliers = async () => {
+      setSuppliersLoading(true);
+      setSuppliersError('');
+      try {
+        const { data } = await api.get('/api/suppliers');
+        if (!isMounted) return;
+        setSuppliers(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load suppliers', err);
+        if (!isMounted) return;
+        setSuppliers([]);
+        setSuppliersError(
+          err?.response?.data?.message || 'Failed to load suppliers. Please try again later.'
+        );
+      } finally {
+        if (isMounted) {
+          setSuppliersLoading(false);
+        }
+      }
+    };
+
+    loadSuppliers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshSuppliers = useCallback(async () => {
+    try {
+      const { data } = await api.get('/api/suppliers');
+      setSuppliers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to refresh suppliers', err);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!successMessage) return undefined;
     const timer = setTimeout(() => setSuccessMessage(''), 4000);
     return () => clearTimeout(timer);
@@ -355,6 +401,8 @@ const ContractsPage = () => {
     setFormState({
       title: contract.title || '',
       vendor: contract.vendor || '',
+      supplier_id: contract.supplier_id ? String(contract.supplier_id) : '',
+      source_request_id: contract.source_request_id ? String(contract.source_request_id) : '',
       reference_number: contract.reference_number || '',
       start_date: contract.start_date || '',
       end_date: contract.end_date || '',
@@ -432,6 +480,23 @@ const ContractsPage = () => {
       return;
     }
 
+    if (name === 'supplier_id') {
+      setFormState((prev) => {
+        const matchedSupplier = suppliers.find((supplier) => String(supplier.id) === value);
+        return {
+          ...prev,
+          supplier_id: value,
+          vendor: matchedSupplier?.name || prev.vendor,
+        };
+      });
+      return;
+    }
+
+    if (name === 'source_request_id') {
+      setFormState((prev) => ({ ...prev, source_request_id: value }));
+      return;
+    }
+
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -495,6 +560,24 @@ const ContractsPage = () => {
       payload.contract_manager_id = null;
     }
 
+    if (formState.supplier_id) {
+      const parsedSupplier = Number(formState.supplier_id);
+      if (!Number.isInteger(parsedSupplier) || parsedSupplier <= 0) {
+        setFormError('Supplier must be selected from the list or left blank.');
+        return;
+      }
+      payload.supplier_id = parsedSupplier;
+    }
+
+    if (formState.source_request_id) {
+      const parsedRequest = Number(formState.source_request_id);
+      if (!Number.isInteger(parsedRequest) || parsedRequest <= 0) {
+        setFormError('Source request ID must be a positive number.');
+        return;
+      }
+      payload.source_request_id = parsedRequest;
+    }
+
     const technicalIds = Array.isArray(formState.technical_department_ids)
       ? formState.technical_department_ids
           .map((id) => Number(id))
@@ -515,6 +598,7 @@ const ContractsPage = () => {
       }
       resetForm();
       await fetchContracts();
+      await refreshSuppliers();
     } catch (err) {
       console.error('Failed to save contract', err);
       setFormError(err?.response?.data?.message || 'Failed to save contract. Please try again.');
@@ -735,6 +819,9 @@ const ContractsPage = () => {
                         Vendor
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                        Request
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Value
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
@@ -751,13 +838,13 @@ const ContractsPage = () => {
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {loading ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           Loading contracts...
                         </td>
                       </tr>
                     ) : sortedContracts.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           No contracts match your current filters.
                         </td>
                       </tr>
@@ -787,6 +874,9 @@ const ContractsPage = () => {
                               </div>
                             </td>
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{contract.vendor}</td>
+                            <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">
+                              {contract.source_request_id ? `#${contract.source_request_id}` : '—'}
+                            </td>
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{contractValue}</td>
                             <td className="px-4 py-3 align-top">{renderStatusBadge(contract.status)}</td>
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{renderExpiry(contract)}</td>
@@ -875,6 +965,9 @@ const ContractsPage = () => {
                   users={users}
                   usersLoading={usersLoading}
                   usersError={usersError}
+                  suppliers={suppliers}
+                  suppliersLoading={suppliersLoading}
+                  suppliersError={suppliersError}
                 />
               ) : (
                 <div className="mt-4 space-y-4">
@@ -884,9 +977,25 @@ const ContractsPage = () => {
                       <p className="mt-1 text-gray-900 dark:text-gray-100">{viewingContract.vendor}</p>
                     </div>
                     <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Supplier record</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.supplier_id
+                          ? `Supplier #${viewingContract.supplier_id}`
+                          : 'Not linked to a supplier profile'}
+                      </p>
+                    </div>
+                    <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Reference number</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
                         {viewingContract.reference_number || <span className="italic text-gray-500">None</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Source request</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.source_request_id
+                          ? `Request #${viewingContract.source_request_id}`
+                          : 'No originating request linked'}
                       </p>
                     </div>
                     <div>

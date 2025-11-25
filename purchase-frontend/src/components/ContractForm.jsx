@@ -17,6 +17,9 @@ const ContractForm = ({
   users,
   usersLoading,
   usersError,
+  suppliers,
+  suppliersLoading,
+  suppliersError,
 }) => {
   return (
     <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
@@ -52,8 +55,48 @@ const ContractForm = ({
             value={formState.vendor}
             onChange={handleInputChange}
             required
+            list="supplier-suggestions"
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Start typing to reuse an existing supplier or enter a new vendor name.
+          </p>
+          <datalist id="supplier-suggestions">
+            {suppliers.map((supplier) => (
+              <option key={supplier.id} value={supplier.name}>
+                {supplier.name}
+              </option>
+            ))}
+          </datalist>
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="supplier_id"
+          >
+            Supplier record (optional)
+          </label>
+          <select
+            id="supplier_id"
+            name="supplier_id"
+            value={formState.supplier_id}
+            onChange={handleInputChange}
+            disabled={suppliersLoading}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
+          >
+            <option value="">No linked supplier selected</option>
+            {suppliers.map((supplier) => (
+              <option key={supplier.id} value={String(supplier.id)}>
+                {supplier.name}
+              </option>
+            ))}
+          </select>
+          {suppliersLoading && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Loading suppliers…</p>
+          )}
+          {suppliersError && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{suppliersError}</p>
+          )}
         </div>
         <div>
           <label
@@ -70,6 +113,27 @@ const ContractForm = ({
             onChange={handleInputChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           />
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="source_request_id"
+          >
+            Source request ID
+          </label>
+          <input
+            id="source_request_id"
+            name="source_request_id"
+            type="number"
+            min="1"
+            value={formState.source_request_id}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Link the originating request"
+          />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Linking a contract to its originating request keeps the lifecycle connected and auditable.
+          </p>
         </div>
         <div>
           <label

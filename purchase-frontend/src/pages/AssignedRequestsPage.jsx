@@ -384,8 +384,13 @@ const AssignedRequestsPage = () => {
     }
 
     try {
-      await axios.patch(`/api/requests/${requestId}/mark-completed`);
-      alert(tr('alerts.markCompletedSuccess', '✅ Request marked as completed.'));
+      const response = await axios.patch(
+        `/api/requests/${requestId}/mark-completed`,
+      );
+      const successMessage =
+        response?.data?.message ||
+        tr('alerts.markCompletedSuccess', '✅ Request marked as completed.');
+      alert(successMessage);
       setExpandedRequestId(null);
       setItems([]);
       setGroupedItems(createEmptyGroups());
