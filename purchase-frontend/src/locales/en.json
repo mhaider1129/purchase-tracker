@@ -316,7 +316,7 @@
   },
   "suppliersPage": {
     "title": "Suppliers",
-    "subtitle": "Review supplier records and find contact information quickly.",
+    "subtitle": "Manage supplier records, contacts, and readiness for procurement.",
     "refresh": "Refresh",
     "loading": "Loading suppliers…",
     "error": "Failed to load suppliers. Please try again.",
@@ -326,11 +326,45 @@
       "label": "Search suppliers",
       "placeholder": "Search by supplier name, email, or phone"
     },
+    "stats": {
+      "total": "Total suppliers",
+      "withEmail": "With email",
+      "withPhone": "With phone",
+      "needsContacts": "Missing contact info"
+    },
+    "form": {
+      "title": "Supplier management",
+      "description": "Add a new supplier record or capture missing contact details.",
+      "editing": "Editing an existing supplier. Update their details and save your changes.",
+      "name": "Supplier name",
+      "namePlaceholder": "e.g. Gulf Trading Partners",
+      "email": "Contact email",
+      "emailPlaceholder": "contact@supplier.com",
+      "phone": "Contact phone",
+      "phonePlaceholder": "+966 555 123 456",
+      "create": "Create supplier",
+      "update": "Update supplier",
+      "reset": "Reset form",
+      "created": "Supplier was created successfully.",
+      "updated": "Supplier details were updated.",
+      "deleted": "{{name}} was removed.",
+      "deleteError": "Unable to delete the supplier. Remove any linked records first.",
+      "genericError": "Unable to save the supplier right now. Please try again.",
+      "validation": {
+        "name": "Supplier name is required."
+      }
+    },
     "table": {
       "name": "Supplier",
       "email": "Email",
       "phone": "Phone",
-      "createdAt": "Added"
+      "createdAt": "Added",
+      "actions": "Actions"
+    },
+    "actions": {
+      "manage": "Manage",
+      "delete": "Delete",
+      "confirmDelete": "Delete {{name}}? This cannot be undone."
     }
   },
   "language": {
@@ -1328,6 +1362,7 @@
     "statuses": {
       "completed": "Completed",
       "rejected": "Rejected",
+      "technical_inspection_pending": "Technical Inspection Pending",
       "approved": "Approved",
       "pending": "Pending",
       "in_progress": "In Progress",
@@ -1360,6 +1395,7 @@
       "approvals": "Approvals"
     },
     "notAvailable": "Not available",
+    "inspectionPendingNotice": "Procurement finalized this request. Technical inspection must be completed before you can mark items as received.",
     "errorLoading": "Failed to load closed requests.",
     "loading": "Loading closed requests...",
     "emptyState": "No closed requests match your filters.",

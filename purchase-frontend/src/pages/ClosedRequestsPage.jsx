@@ -32,8 +32,11 @@ const mapStatusColor = (status) => {
       return 'bg-green-100 text-green-700 ring-green-200';
     case 'rejected':
       return 'bg-red-100 text-red-700 ring-red-200';
+    case 'received':
     case 'Received':
       return 'bg-blue-100 text-blue-700 ring-blue-200';
+    case 'technical_inspection_pending':
+      return 'bg-amber-100 text-amber-800 ring-amber-200';
     default:
       return 'bg-gray-100 text-gray-700 ring-gray-200';
   }
@@ -502,6 +505,8 @@ const ClosedRequestsPage = () => {
                       expandedAttachmentsId === req.id
                         ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
                         : tr('viewAttachments', { defaultValue: 'View Attachments' });
+                    const isTechnicalInspectionPending =
+                      normalizedStatus === 'technical_inspection_pending';
 
                     return (
                       <React.Fragment key={req.id}>
@@ -566,7 +571,16 @@ const ClosedRequestsPage = () => {
                             </button>
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
-                            <span className="text-gray-400 dark:text-gray-600">—</span>
+                            {isTechnicalInspectionPending ? (
+                              <div className="rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700/60">
+                                {tr('inspectionPendingNotice', {
+                                  defaultValue:
+                                    'Awaiting technical inspection before items can be marked as received.',
+                                })}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 dark:text-gray-600">—</span>
+                            )}
                           </td>
                         </tr>
                         {expandedItemsId === req.id && (
@@ -720,6 +734,8 @@ const ClosedRequestsPage = () => {
                   expandedAttachmentsId === req.id
                     ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
                     : tr('viewAttachments', { defaultValue: 'View Attachments' });
+                const isTechnicalInspectionPending =
+                  normalizedStatus === 'technical_inspection_pending';
 
                 return (
                   <article
@@ -768,6 +784,15 @@ const ClosedRequestsPage = () => {
                       <div className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200">
                         <p className="font-medium">{tr('table.justification')}</p>
                         <p className="mt-1 whitespace-pre-line">{req.justification}</p>
+                      </div>
+                    )}
+
+                    {isTechnicalInspectionPending && (
+                      <div className="mt-3 rounded-md bg-amber-50 p-3 text-xs font-medium text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-700/60">
+                        {tr('inspectionPendingNotice', {
+                          defaultValue:
+                            'Awaiting technical inspection before items can be marked as received.',
+                        })}
                       </div>
                     )}
 

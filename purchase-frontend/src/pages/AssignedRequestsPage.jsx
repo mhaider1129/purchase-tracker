@@ -6,6 +6,7 @@ import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel
 import Navbar from '../components/Navbar';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import { getRequesterDisplay } from '../utils/requester';
 import usePageTranslation from '../utils/usePageTranslation';
 
 const createEmptyGroups = () => ({
@@ -608,6 +609,7 @@ const AssignedRequestsPage = () => {
             const autoTotal =
               autoTotals[request.id] ?? summary.items_total_cost ?? null;
             const isUrgent = Boolean(request?.is_urgent);
+            const requesterDisplay = getRequesterDisplay(request);
             const completionState =
               completionStates[request.id] || {
                 canComplete: false,
@@ -648,13 +650,10 @@ const AssignedRequestsPage = () => {
                       <strong className="text-gray-700">{tr('requestCard.department', 'Department')}:</strong>{' '}
                       {request.department_name || '—'}
                     </p>
-                    {request.requester_name && (
-                      <p>
-                        <strong className="text-gray-700">{tr('requestCard.requester', 'Requester')}:</strong>{' '}
-                        {request.requester_name}
-                        {request.requester_role && ` (${request.requester_role})`}
-                      </p>
-                    )}
+                    <p>
+                      <strong className="text-gray-700">{tr('requestCard.requester', 'Requester')}:</strong>{' '}
+                      {requesterDisplay}
+                    </p>
                     <p className="text-sm text-gray-500">
                       <strong className="text-gray-700">{tr('requestCard.justification', 'Justification')}:</strong>{' '}
                       {request.justification}

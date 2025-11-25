@@ -17,6 +17,7 @@ import { Button } from '../components/ui/Button';
 import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 import { extractItems } from '../utils/itemUtils';
+import { getRequesterDisplay } from '../utils/requester';
 
 const STATUS_HIGHLIGHTS = {
   Approved: 'bg-green-50',
@@ -1070,6 +1071,7 @@ const ApprovalsPanel = () => {
                   const attachmentsError = attachmentErrorMap[req.request_id];
                   const isUrgentRequest = Boolean(req.is_urgent);
                   const isExpanded = expandedId === req.request_id;
+                  const requesterDisplay = getRequesterDisplay(req);
 
                   return (
                     <div key={req.approval_id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -1100,12 +1102,9 @@ const ApprovalsPanel = () => {
                             <p>
                               <strong>Department:</strong> {req.department_name || '—'}
                             </p>
-                            {req.requester_name && (
-                              <p>
-                                <strong>Requester:</strong> {req.requester_name}
-                                {req.requester_role && ` (${req.requester_role})`}
-                              </p>
-                            )}
+                            <p>
+                              <strong>Requester:</strong> {requesterDisplay}
+                            </p>
                             <span>Submitted: {formatDateTime(req.created_at || req.request_date)}</span>
                             <span>Estimated Cost: {estimatedCostValue.toLocaleString()} IQD</span>
                             <span className="inline-flex items-center gap-1">

@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import { printRequest } from '../api/requests';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import { getRequesterDisplay } from '../utils/requester';
 import Card from '../components/Card';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
@@ -861,6 +862,7 @@ const AllRequestsPage = () => {
             const cardClasses = isUrgent
               ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70'
               : '';
+            const requesterDisplay = getRequesterDisplay(request);
             return (
               <Card key={request.id} className={`transition ${cardClasses}`}>
                 <div className="flex justify-between items-start gap-4 flex-wrap">
@@ -884,12 +886,9 @@ const AllRequestsPage = () => {
                     <p>
                       <strong>Section:</strong> {request.section_name || '—'}
                     </p>
-                    {request.requester_name && (
-                      <p>
-                        <strong>Requester:</strong> {request.requester_name}
-                        {request.requester_role && ` (${request.requester_role})`}
-                      </p>
-                    )}
+                  <p>
+                    <strong>Requester:</strong> {requesterDisplay}
+                  </p>
                     <p><strong>Justification:</strong> {request.justification}</p>
                     <p>
                       <strong>Assigned To:</strong>{' '}

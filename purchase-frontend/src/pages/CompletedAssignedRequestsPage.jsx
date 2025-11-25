@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import { printRequest } from '../api/requests';
+import { getRequesterDisplay } from '../utils/requester';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -763,6 +764,7 @@ const CompletedAssignedRequestsPage = () => {
           <div className="space-y-4">
             {filteredRequests.map((req) => {
               const isUrgent = Boolean(req?.is_urgent);
+              const requesterDisplay = getRequesterDisplay(req);
               const articleClasses = [
                 'bg-white border border-gray-100 rounded-lg shadow-sm p-5 transition hover:border-blue-200',
                 isUrgent ? 'border-red-300 hover:border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
@@ -797,8 +799,7 @@ const CompletedAssignedRequestsPage = () => {
                       <div className="text-sm text-gray-500">
                         <p>
                           <span className="font-medium text-gray-700">Submitted by:</span>{' '}
-                          {req.requester_name}
-                          {req.requester_role && <span className="text-gray-400"> • {req.requester_role}</span>}
+                          {requesterDisplay}
                         </p>
                       </div>
                     </header>
