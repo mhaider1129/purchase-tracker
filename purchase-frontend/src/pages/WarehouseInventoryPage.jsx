@@ -15,14 +15,25 @@ const WarehouseInventoryPage = () => {
 
   const [stockItems, setStockItems] = useState([]);
   const [itemSearch, setItemSearch] = useState('');
+  const [issueItemSearch, setIssueItemSearch] = useState('');
   const [form, setForm] = useState({
     stock_item_id: '',
     quantity: '',
     notes: '',
     warehouse_id: '',
   });
+  const [issueForm, setIssueForm] = useState({
+    stock_item_id: '',
+    department_id: '',
+    quantity: '',
+    notes: '',
+    warehouse_id: '',
+  });
   const [formStatus, setFormStatus] = useState({ state: 'idle', message: '' });
+  const [issueFormStatus, setIssueFormStatus] = useState({ state: 'idle', message: '' });
 
+  const [departments, setDepartments] = useState([]);
+  const [departmentsStatus, setDepartmentsStatus] = useState({ state: 'idle', message: '' });
   const [report, setReport] = useState({ departments: [], window_start: '', window_end: '', generated_at: '' });
   const [reportStatus, setReportStatus] = useState({ state: 'idle', message: '' });
 
@@ -33,6 +44,18 @@ const WarehouseInventoryPage = () => {
     } catch (err) {
       console.error('Failed to load stock items:', err);
       setFormStatus({ state: 'error', message: tr('alerts.loadItemsFailed') });
+    }
+  };
+
+  const loadDepartments = async () => {
+    setDepartmentsStatus({ state: 'loading', message: '' });
+    try {
+      const res = await api.get('/api/departments');
+      setDepartments(res.data || []);
+      setDepartmentsStatus({ state: 'idle', message: '' });
+    } catch (err) {
+      console.error('Failed to load departments:', err);
+      setDepartmentsStatus({ state: 'error', message: tr('alerts.loadDepartmentsFailed') });
     }
   };
 
@@ -56,18 +79,24 @@ const WarehouseInventoryPage = () => {
   useEffect(() => {
     if (!userLoading && user) {
       loadStockItems();
+      loadDepartments();
       loadReport();
     }
   }, [user, userLoading]);
 
   useEffect(() => {
-    if (!form.warehouse_id && warehouses.length > 0) {
+    if (warehouses.length > 0) {
       const preferred = user?.warehouse_id || warehouses[0]?.id;
       if (preferred) {
-        setForm((prev) => ({ ...prev, warehouse_id: String(preferred) }));
+        if (!form.warehouse_id) {
+          setForm((prev) => ({ ...prev, warehouse_id: String(preferred) }));
+        }
+        if (!issueForm.warehouse_id) {
+          setIssueForm((prev) => ({ ...prev, warehouse_id: String(preferred) }));
+        }
       }
     }
-  }, [form.warehouse_id, warehouses, user]);
+  }, [form.warehouse_id, issueForm.warehouse_id, warehouses, user]);
 
   useEffect(() => {
     if (formStatus.state === 'success') {
@@ -76,6 +105,14 @@ const WarehouseInventoryPage = () => {
     }
     return undefined;
   }, [formStatus]);
+
+  useEffect(() => {
+    if (issueFormStatus.state === 'success') {
+      const timer = setTimeout(() => setIssueFormStatus({ state: 'idle', message: '' }), 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [issueFormStatus]);
 
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase();
@@ -87,11 +124,27 @@ const WarehouseInventoryPage = () => {
     );
   }, [itemSearch, stockItems]);
 
+  const filteredIssueItems = useMemo(() => {
+    const term = issueItemSearch.trim().toLowerCase();
+    if (!term) return stockItems;
+    return stockItems.filter((item) =>
+      [item.name, item.brand, item.category]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term))
+    );
+  }, [issueItemSearch, stockItems]);
+
   const selectedItem = stockItems.find((item) => String(item.id) === String(form.stock_item_id));
+  const selectedIssueItem = stockItems.find((item) => String(item.id) === String(issueForm.stock_item_id));
 
   const handleFormChange = (key) => (event) => {
     const value = event.target.value;
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleIssueFormChange = (key) => (event) => {
+    const value = event.target.value;
+    setIssueForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = async (event) => {
@@ -122,6 +175,46 @@ const WarehouseInventoryPage = () => {
       console.error('Failed to add warehouse stock:', err);
       const message = err?.response?.data?.message || tr('alerts.submitFailed');
       setFormStatus({ state: 'error', message });
+    }
+  };
+
+  const handleIssueSubmit = async (event) => {
+    event.preventDefault();
+    const parsedQuantity = Number(issueForm.quantity);
+
+    if (!issueForm.warehouse_id || !issueForm.stock_item_id || !issueForm.department_id) {
+      setIssueFormStatus({ state: 'error', message: tr('alerts.issueValidationFailed') });
+      return;
+    }
+
+    if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) {
+      setIssueFormStatus({ state: 'error', message: tr('alerts.issueValidationFailed') });
+      return;
+    }
+
+    setIssueFormStatus({ state: 'loading', message: '' });
+    try {
+      await api.post('/api/warehouse-inventory/stock/issue', {
+        stock_item_id: Number(issueForm.stock_item_id),
+        department_id: Number(issueForm.department_id),
+        quantity: parsedQuantity,
+        notes: issueForm.notes?.trim() || undefined,
+        warehouse_id: issueForm.warehouse_id ? Number(issueForm.warehouse_id) : undefined,
+      });
+      setIssueFormStatus({ state: 'success', message: tr('alerts.issueSubmitSuccess') });
+      setIssueForm((prev) => ({
+        stock_item_id: '',
+        department_id: '',
+        quantity: '',
+        notes: '',
+        warehouse_id: prev.warehouse_id,
+      }));
+      setIssueItemSearch('');
+      loadReport();
+    } catch (err) {
+      console.error('Failed to issue warehouse stock:', err);
+      const message = err?.response?.data?.message || tr('alerts.issueSubmitFailed');
+      setIssueFormStatus({ state: 'error', message });
     }
   };
 
@@ -171,7 +264,7 @@ const WarehouseInventoryPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between gap-2">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('form.title')}</h2>
@@ -366,6 +459,156 @@ const WarehouseInventoryPage = () => {
                 ))}
               </div>
             )}
+            </div>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('issueForm.title')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{tr('issueForm.description')}</p>
+              </div>
+              {issueFormStatus.state === 'loading' && (
+                <span className="text-xs text-blue-600 dark:text-blue-300">{tr('issueForm.saving')}</span>
+              )}
+            </div>
+
+            <form onSubmit={handleIssueSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="issue-warehouse">
+                  {tr('form.fields.warehouse')}
+                </label>
+                <select
+                  id="issue-warehouse"
+                  value={issueForm.warehouse_id}
+                  onChange={handleIssueFormChange('warehouse_id')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  disabled={warehousesLoading || !warehouses.length}
+                  required
+                >
+                  <option value="">{tr('form.fields.warehousePlaceholder')}</option>
+                  {warehouses.map((wh) => (
+                    <option key={wh.id} value={wh.id}>
+                      {wh.name}
+                    </option>
+                  ))}
+                </select>
+                {warehousesError && <p className="text-xs text-red-600">{warehousesError}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="issue-stock-item">
+                  {tr('issueForm.fields.stockItem')}
+                </label>
+                <input
+                  id="issue-stock-item-search"
+                  type="search"
+                  value={issueItemSearch}
+                  onChange={(e) => setIssueItemSearch(e.target.value)}
+                  placeholder={tr('issueForm.fields.stockItemSearch')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                />
+                <select
+                  id="issue-stock-item"
+                  value={issueForm.stock_item_id}
+                  onChange={handleIssueFormChange('stock_item_id')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  required
+                >
+                  <option value="">{tr('issueForm.fields.selectPlaceholder')}</option>
+                  {filteredIssueItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} {item.brand ? `(${item.brand})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {selectedIssueItem && (
+                  <p className="text-xs text-gray-500">
+                    {selectedIssueItem.category && `${selectedIssueItem.category} • `}
+                    {selectedIssueItem.available_quantity !== undefined &&
+                      tr('form.fields.available', {
+                        count: numberFormatter.format(Number(selectedIssueItem.available_quantity) || 0),
+                      })}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="issue-department">
+                  {tr('issueForm.fields.department')}
+                </label>
+                <select
+                  id="issue-department"
+                  value={issueForm.department_id}
+                  onChange={handleIssueFormChange('department_id')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  disabled={departmentsStatus.state === 'loading' || departments.length === 0}
+                  required
+                >
+                  <option value="">{tr('issueForm.fields.departmentPlaceholder')}</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+                {departmentsStatus.state === 'error' && (
+                  <p className="text-xs text-red-600">{departmentsStatus.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="issue-quantity">
+                  {tr('issueForm.fields.quantity')}
+                </label>
+                <input
+                  id="issue-quantity"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={issueForm.quantity}
+                  onChange={handleIssueFormChange('quantity')}
+                  placeholder={tr('issueForm.fields.quantityPlaceholder')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="issue-notes">
+                  {tr('issueForm.fields.notes')}
+                </label>
+                <textarea
+                  id="issue-notes"
+                  value={issueForm.notes}
+                  onChange={handleIssueFormChange('notes')}
+                  rows="3"
+                  placeholder={tr('issueForm.fields.notesPlaceholder')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                />
+              </div>
+
+              {issueFormStatus.message && (
+                <div
+                  className={`rounded-md px-3 py-2 text-sm ${
+                    issueFormStatus.state === 'success'
+                      ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-100'
+                      : 'bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-100'
+                  }`}
+                >
+                  {issueFormStatus.message}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  disabled={issueFormStatus.state === 'loading'}
+                >
+                  {issueFormStatus.state === 'loading' ? tr('issueForm.submitLoading') : tr('issueForm.submit')}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

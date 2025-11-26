@@ -1051,7 +1051,11 @@
       "validationFailed": "Select a stock item and enter a positive quantity to continue.",
       "submitSuccess": "Stock quantity added to the warehouse inventory.",
       "submitFailed": "Failed to add stock to the warehouse. Please try again.",
-      "reportFailed": "Could not load the weekly departmental stocking report."
+      "reportFailed": "Could not load the weekly departmental stocking report.",
+      "loadDepartmentsFailed": "Could not load departments. Please refresh and try again.",
+      "issueValidationFailed": "Select a warehouse, department, stock item, and enter a positive quantity to continue.",
+      "issueSubmitSuccess": "Stock issued to department.",
+      "issueSubmitFailed": "Failed to issue stock to the department. Please try again."
     },
     "form": {
       "title": "Add stock to warehouse",
@@ -1070,6 +1074,24 @@
         "quantityPlaceholder": "Enter quantity received",
         "notes": "Notes (optional)",
         "notesPlaceholder": "Reference, batch, or delivery details"
+      }
+    },
+    "issueForm": {
+      "title": "Issue stock to department",
+      "description": "Record outbound quantities from the warehouse to requesting departments.",
+      "saving": "Issuing...",
+      "submit": "Issue stock",
+      "submitLoading": "Issuing...",
+      "fields": {
+        "stockItem": "Stock item",
+        "stockItemSearch": "Search by name, brand, or category",
+        "selectPlaceholder": "Choose a stock item",
+        "department": "Department",
+        "departmentPlaceholder": "Choose a department",
+        "quantity": "Quantity issued",
+        "quantityPlaceholder": "Enter quantity issued",
+        "notes": "Notes (optional)",
+        "notesPlaceholder": "Reference, ticket, or requester details"
       }
     },
     "report": {
@@ -1406,6 +1428,10 @@
     "title": "Assigned Requests",
     "loading": "Loading assigned requests...",
     "empty": "No requests assigned to you.",
+    "actions": {
+      "refresh": "Refresh",
+      "refreshing": "Refreshing..."
+    },
     "confirm": {
       "markComplete": "Are you sure you want to mark this request as completed?",
       "bulkPurchase": "This will copy the requested quantity into the purchased quantity and mark every item as purchased. Continue?"

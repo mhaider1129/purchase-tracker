@@ -236,7 +236,7 @@ const ApprovalsPanel = () => {
               {filteredRequests.map((req) => {
                 const estimatedCostValue = Number(req.estimated_cost) || 0;
                 const costTag = getCostLabel(estimatedCostValue);
-                const canEditItems = req.request_type !== 'Warehouse Supply';
+                const canEditItems = true;
                 const attachments = attachmentsMap[req.request_id] || [];
                 const attachmentsLoading = attachmentLoadingMap[req.request_id];
                 const attachmentsError = attachmentErrorMap[req.request_id];

@@ -287,6 +287,14 @@ const AssignedRequestsPage = () => {
     toggleApprovals,
     resetApprovals,
   } = useApprovalTimeline();
+
+  const handleRefresh = () => {
+    setExpandedRequestId(null);
+    setItems([]);
+    setGroupedItems(createEmptyGroups());
+    setAttachments([]);
+    fetchAssignedRequests();
+  };
   
   const fetchAssignedRequests = async () => {
     setLoading(true);
@@ -597,7 +605,19 @@ const AssignedRequestsPage = () => {
       <Navbar />
 
       <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-4">{tr('title', 'Assigned Requests')}</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h1 className="text-2xl font-semibold">{tr('title', 'Assigned Requests')}</h1>
+          <button
+            type="button"
+            className="self-start rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            {loading
+              ? tr('actions.refreshing', 'Refreshing...')
+              : tr('actions.refresh', 'Refresh')}
+          </button>
+        </div>
 
         {loading ? (
           <p className="text-gray-600">{tr('loading', 'Loading assigned requests...')}</p>
