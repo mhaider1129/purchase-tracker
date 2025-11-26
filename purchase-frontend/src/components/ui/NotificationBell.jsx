@@ -143,10 +143,6 @@ const resolveNotificationDestination = (notification) => {
   };
 
   if (action === "approval_required") {
-    if (requestType === "maintenance") {
-      return withRequestFocus("/approvals/maintenance");
-    }
-
     return withRequestFocus("/approvals");
   }
 

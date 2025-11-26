@@ -7,6 +7,7 @@ import {
   updateTechnicalInspection,
 } from "../api/technicalInspections";
 import { getRequestDetails } from "../api/requests";
+import { useLocation } from "react-router-dom";
 
 const CONDITION_OPTIONS = [
   { value: "excellent", label: "Excellent" },
@@ -151,6 +152,8 @@ const normalizeSignatures = (signatures = [], fallbackCount = 3) => {
 };
 
 const TechnicalInspectionsPage = () => {
+  const location = useLocation();
+  const prefillInspection = location.state?.prefillInspection;
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -171,6 +174,24 @@ const TechnicalInspectionsPage = () => {
     data: null,
     error: "",
   });
+
+  useEffect(() => {
+    if (!prefillInspection) return;
+
+    setEditingId(null);
+    setSuccess("");
+    setError("");
+    setFormState((prev) => ({
+      ...prev,
+      request_id: prefillInspection.requestId
+        ? String(prefillInspection.requestId)
+        : prev.request_id,
+      requested_item_id: prefillInspection.itemId
+        ? String(prefillInspection.itemId)
+        : prev.requested_item_id,
+      item_name: prefillInspection.itemName || prev.item_name,
+    }));
+  }, [prefillInspection]);
 
   useEffect(() => {
     const handler = setTimeout(

@@ -1396,6 +1396,7 @@
     },
     "notAvailable": "Not available",
     "inspectionPendingNotice": "Procurement finalized this request. Technical inspection must be completed before you can mark items as received.",
+    "startTechnicalInspection": "Open Technical Inspection",
     "errorLoading": "Failed to load closed requests.",
     "loading": "Loading closed requests...",
     "emptyState": "No closed requests match your filters.",

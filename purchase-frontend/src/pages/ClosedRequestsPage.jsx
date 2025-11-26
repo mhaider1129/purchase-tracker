@@ -9,7 +9,8 @@ import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import useCurrentUser from '../hooks/useCurrentUser';
-const ITEMS_PER_PAGE = 10;
+import { useNavigate } from 'react-router-dom';
+const ITEMS_PER_PAGE = 20;
 
 const formatDate = (value, locale) => {
   if (!value) {
@@ -48,6 +49,7 @@ const ClosedRequestsPage = () => {
     () => (key, options) => translate(`closedRequests.${key}`, options),
     [translate]
   );
+  const navigate = useNavigate();
 
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState('');
@@ -119,6 +121,18 @@ const ClosedRequestsPage = () => {
     } finally {
       setMarkingItemReceived(null);
     }
+  };
+
+  const handleStartTechnicalInspection = (requestId, item) => {
+    navigate('/technical-inspections', {
+      state: {
+        prefillInspection: {
+          requestId,
+          itemId: item?.id,
+          itemName: item?.item_name,
+        },
+      },
+    });
   };
 
   const toggleItems = (requestId) => {
@@ -661,6 +675,16 @@ const ClosedRequestsPage = () => {
                                                       ? tr('markingItem', { defaultValue: 'Marking…' })
                                                       : tr('markItemReceived', { defaultValue: 'Mark as Received' })}
                                                   </button>
+                                                ) : isTechnicalInspectionPending ? (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleStartTechnicalInspection(req.id, item)}
+                                                    className="inline-flex items-center gap-2 rounded-md border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-900/40"
+                                                  >
+                                                    {tr('startTechnicalInspection', {
+                                                      defaultValue: 'Open Technical Inspection',
+                                                    })}
+                                                  </button>
                                                 ) : (
                                                   <span className="text-sm text-gray-500 dark:text-gray-300">—</span>
                                                 )}
@@ -888,6 +912,20 @@ const ClosedRequestsPage = () => {
                                         {markingItemReceived === trackingKey
                                           ? tr('markingItem', { defaultValue: 'Marking…' })
                                           : tr('markItemReceived', { defaultValue: 'Mark as Received' })}
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {!canMarkItem && isTechnicalInspectionPending && (
+                                    <div className="mt-3 flex justify-end">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleStartTechnicalInspection(req.id, item)}
+                                        className="inline-flex items-center gap-2 rounded-md border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-900/40"
+                                      >
+                                        {tr('startTechnicalInspection', {
+                                          defaultValue: 'Open Technical Inspection',
+                                        })}
                                       </button>
                                     </div>
                                   )}

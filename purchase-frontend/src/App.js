@@ -31,7 +31,6 @@ import ItemRecallsPage from "./pages/ItemRecallsPage";
 import ApprovalsPanel from "./pages/ApprovalsPanel";
 import OpenRequestsPage from "./pages/OpenRequestsPage";
 import MyMaintenanceRequests from "./pages/MyMaintenanceRequests";
-import MaintenanceHODApprovals from "./pages/MaintenanceHODApprovals";
 import ApprovalHistory from "./pages/ApprovalHistory";
 
 import AllRequestsPage from "./pages/AllRequestsPage";
@@ -321,19 +320,7 @@ const AppRoutes = () => (
     <Route
       path="/approvals/maintenance"
       element={
-        <ProtectedRoute
-          element={<MaintenanceHODApprovals />}
-          allowedRoles={[
-            "HOD",
-            "requester",
-            "Requester",
-            "Warehouse_Keeper",
-            "WarehouseManager",
-            "CMO",
-            "COO",
-            "SCM",
-          ]}
-        />
+        <ProtectedRoute element={<Navigate to="/approvals" replace />} />
       }
     />
 

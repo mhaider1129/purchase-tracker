@@ -137,7 +137,7 @@ const ACTION_GROUPS = [
       {
         labelKey: 'requestTypeSelector.actions.maintenanceApprovals.label',
         ariaLabelKey: 'requestTypeSelector.actions.maintenanceApprovals.aria',
-        path: '/approvals/maintenance',
+        path: '/approvals',
         roles: ['hod', 'requester', 'warehouse_keeper', 'warehousemanager', 'cmo', 'coo', 'scm'],
         buttonClassName: 'bg-orange-700 hover:bg-orange-800 focus:ring-orange-400',
       },
