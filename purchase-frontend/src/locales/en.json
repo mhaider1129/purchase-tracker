@@ -1046,6 +1046,26 @@
   "warehouseInventory": {
     "loading": "Loading warehouse inventory tools...",
     "subtitle": "Record inbound warehouse stock and monitor weekly transfers to departments.",
+    "inventory": {
+      "title": "Current warehouse inventory",
+      "description": "See available items and quantities in the selected warehouse.",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "loading": "Loading inventory levels...",
+      "empty": "No inventory items found for this warehouse.",
+      "selectWarehouse": "Select a warehouse to view its inventory.",
+      "summary": "{{count}} items",
+      "columns": {
+        "item": "Item",
+        "quantity": "Quantity available"
+      },
+      "fields": {
+        "warehouse": "Warehouse",
+        "warehousePlaceholder": "Choose a warehouse",
+        "search": "Search inventory",
+        "searchPlaceholder": "Search by item name"
+      }
+    },
     "alerts": {
       "loadItemsFailed": "Unable to load the stock catalog. Please try again.",
       "validationFailed": "Select a stock item and enter a positive quantity to continue.",
@@ -1053,9 +1073,12 @@
       "submitFailed": "Failed to add stock to the warehouse. Please try again.",
       "reportFailed": "Could not load the weekly departmental stocking report.",
       "loadDepartmentsFailed": "Could not load departments. Please refresh and try again.",
-      "issueValidationFailed": "Select a warehouse, department, stock item, and enter a positive quantity to continue.",
+      "issueValidationFailed": "Select a warehouse and department, then add at least one stock item with a positive quantity.",
       "issueSubmitSuccess": "Stock issued to department.",
-      "issueSubmitFailed": "Failed to issue stock to the department. Please try again."
+      "issueSubmitFailed": "Failed to issue stock to the department. Please try again.",
+      "discardValidationFailed": "Select a warehouse, stock item, reason, and enter a positive quantity to continue.",
+      "discardSubmitSuccess": "Stock removal recorded for expired or damaged items.",
+      "discardSubmitFailed": "Failed to record stock removal. Please try again."
     },
     "form": {
       "title": "Add stock to warehouse",
@@ -1078,7 +1101,7 @@
     },
     "issueForm": {
       "title": "Issue stock to department",
-      "description": "Record outbound quantities from the warehouse to requesting departments.",
+      "description": "Record outbound quantities from the warehouse to requesting departments, including multiple items at once.",
       "saving": "Issuing...",
       "submit": "Issue stock",
       "submitLoading": "Issuing...",
@@ -1088,10 +1111,37 @@
         "selectPlaceholder": "Choose a stock item",
         "department": "Department",
         "departmentPlaceholder": "Choose a department",
+        "itemsLabel": "Items to issue",
+        "itemsHelper": "Add one or more stock items with the quantities issued to this department.",
+        "addItem": "Add item",
+        "itemLabel": "Item #{{index}}",
+        "removeItem": "Remove",
         "quantity": "Quantity issued",
         "quantityPlaceholder": "Enter quantity issued",
         "notes": "Notes (optional)",
         "notesPlaceholder": "Reference, ticket, or requester details"
+      }
+    },
+    "discardForm": {
+      "title": "Discard expired or damaged stock",
+      "description": "Document warehouse write-offs so balances reflect unusable items.",
+      "saving": "Recording...",
+      "submit": "Record discard",
+      "submitLoading": "Recording...",
+      "fields": {
+        "stockItem": "Stock item",
+        "stockItemSearch": "Search by name, brand, or category",
+        "selectPlaceholder": "Choose a stock item",
+        "quantity": "Quantity discarded",
+        "quantityPlaceholder": "Enter quantity discarded",
+        "reason": "Reason",
+        "reasons": {
+          "expired": "Expired",
+          "damaged": "Damaged",
+          "other": "Other"
+        },
+        "notes": "Notes (optional)",
+        "notesPlaceholder": "Batch, inspection, or disposal reference"
       }
     },
     "report": {
