@@ -17,9 +17,17 @@ const WarehouseInventoryPage = () => {
   const [stockItems, setStockItems] = useState([]);
   const [itemSearch, setItemSearch] = useState('');
   const [issueItemSearch, setIssueItemSearch] = useState('');
+  const [discardItemSearch, setDiscardItemSearch] = useState('');
   const [form, setForm] = useState({
     stock_item_id: '',
     quantity: '',
+    notes: '',
+    warehouse_id: '',
+  });
+  const [discardForm, setDiscardForm] = useState({
+    stock_item_id: '',
+    quantity: '',
+    reason: '',
     notes: '',
     warehouse_id: '',
   });
@@ -30,6 +38,7 @@ const WarehouseInventoryPage = () => {
   });
   const [issueItems, setIssueItems] = useState([{ stock_item_id: '', quantity: '' }]);
   const [formStatus, setFormStatus] = useState({ state: 'idle', message: '' });
+  const [discardFormStatus, setDiscardFormStatus] = useState({ state: 'idle', message: '' });
   const [issueFormStatus, setIssueFormStatus] = useState({ state: 'idle', message: '' });
 
   const [departments, setDepartments] = useState([]);
@@ -100,6 +109,9 @@ const WarehouseInventoryPage = () => {
         if (!form.warehouse_id) {
           setForm((prev) => ({ ...prev, warehouse_id: String(preferred) }));
         }
+        if (!discardForm.warehouse_id) {
+          setDiscardForm((prev) => ({ ...prev, warehouse_id: String(preferred) }));
+        }
         if (!issueForm.warehouse_id) {
           setIssueForm((prev) => ({ ...prev, warehouse_id: String(preferred) }));
         }
@@ -108,7 +120,7 @@ const WarehouseInventoryPage = () => {
         }
       }
     }
-  }, [form.warehouse_id, inventoryWarehouseId, issueForm.warehouse_id, warehouses, user]);
+  }, [discardForm.warehouse_id, form.warehouse_id, inventoryWarehouseId, issueForm.warehouse_id, warehouses, user]);
 
   useEffect(() => {
     if (formStatus.state === 'success') {
@@ -117,6 +129,14 @@ const WarehouseInventoryPage = () => {
     }
     return undefined;
   }, [formStatus]);
+
+  useEffect(() => {
+    if (discardFormStatus.state === 'success') {
+      const timer = setTimeout(() => setDiscardFormStatus({ state: 'idle', message: '' }), 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [discardFormStatus]);
 
   useEffect(() => {
     if (issueFormStatus.state === 'success') {
@@ -147,6 +167,19 @@ const WarehouseInventoryPage = () => {
   }, [issueItemSearch, stockItems]);
 
   const selectedItem = stockItems.find((item) => String(item.id) === String(form.stock_item_id));
+  const filteredDiscardItems = useMemo(() => {
+    const term = discardItemSearch.trim().toLowerCase();
+    if (!term) return stockItems;
+
+    return stockItems.filter((item) =>
+      [item.name, item.brand, item.category]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term))
+    );
+  }, [discardItemSearch, stockItems]);
+  const selectedDiscardItem = stockItems.find(
+    (item) => String(item.id) === String(discardForm.stock_item_id),
+  );
   const filteredInventoryItems = useMemo(() => {
     const term = inventorySearch.trim().toLowerCase();
     if (!term) return inventoryItems;
@@ -166,6 +199,11 @@ const WarehouseInventoryPage = () => {
   const handleIssueFormChange = (key) => (event) => {
     const value = event.target.value;
     setIssueForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleDiscardFormChange = (key) => (event) => {
+    const value = event.target.value;
+    setDiscardForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleIssueItemChange = (index, key) => (event) => {
@@ -209,6 +247,49 @@ const WarehouseInventoryPage = () => {
       console.error('Failed to add warehouse stock:', err);
       const message = err?.response?.data?.message || tr('alerts.submitFailed');
       setFormStatus({ state: 'error', message });
+    }
+  };
+
+  const handleDiscardSubmit = async (event) => {
+    event.preventDefault();
+    const parsedQuantity = Number(discardForm.quantity);
+
+    if (
+      !discardForm.warehouse_id ||
+      !discardForm.stock_item_id ||
+      !discardForm.reason ||
+      !Number.isFinite(parsedQuantity) ||
+      parsedQuantity <= 0
+    ) {
+      setDiscardFormStatus({ state: 'error', message: tr('alerts.discardValidationFailed') });
+      return;
+    }
+
+    setDiscardFormStatus({ state: 'loading', message: '' });
+    try {
+      await api.post('/api/warehouse-inventory/stock/discard', {
+        stock_item_id: Number(discardForm.stock_item_id),
+        quantity: parsedQuantity,
+        reason: discardForm.reason,
+        notes: discardForm.notes?.trim() || undefined,
+        warehouse_id: discardForm.warehouse_id ? Number(discardForm.warehouse_id) : undefined,
+      });
+
+      setDiscardFormStatus({ state: 'success', message: tr('alerts.discardSubmitSuccess') });
+      setDiscardForm((prev) => ({
+        stock_item_id: '',
+        quantity: '',
+        reason: '',
+        notes: '',
+        warehouse_id: prev.warehouse_id,
+      }));
+      setDiscardItemSearch('');
+      refreshInventory();
+      loadReport();
+    } catch (err) {
+      console.error('Failed to discard warehouse stock:', err);
+      const message = err?.response?.data?.message || tr('alerts.discardSubmitFailed');
+      setDiscardFormStatus({ state: 'error', message });
     }
   };
 
@@ -392,8 +473,8 @@ const WarehouseInventoryPage = () => {
             </div>
           </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between gap-2">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('form.title')}</h2>
@@ -424,9 +505,7 @@ const WarehouseInventoryPage = () => {
                     </option>
                   ))}
                 </select>
-                {warehousesError && (
-                  <p className="text-xs text-red-600">{warehousesError}</p>
-                )}
+                {warehousesError && <p className="text-xs text-red-600">{warehousesError}</p>}
               </div>
 
               <div className="space-y-2">
@@ -524,13 +603,156 @@ const WarehouseInventoryPage = () => {
           <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('report.title')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{tr('report.description')}</p>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('discardForm.title')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{tr('discardForm.description')}</p>
               </div>
-              {reportRange && (
-                <span className="text-xs text-gray-500">{reportRange}</span>
+              {discardFormStatus.state === 'loading' && (
+                <span className="text-xs text-blue-600 dark:text-blue-300">{tr('discardForm.saving')}</span>
               )}
             </div>
+
+            <form onSubmit={handleDiscardSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-warehouse">
+                  {tr('form.fields.warehouse')}
+                </label>
+                <select
+                  id="discard-warehouse"
+                  value={discardForm.warehouse_id}
+                  onChange={handleDiscardFormChange('warehouse_id')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  disabled={warehousesLoading || !warehouses.length}
+                  required
+                >
+                  <option value="">{tr('form.fields.warehousePlaceholder')}</option>
+                  {warehouses.map((wh) => (
+                    <option key={wh.id} value={wh.id}>
+                      {wh.name}
+                    </option>
+                  ))}
+                </select>
+                {warehousesError && <p className="text-xs text-red-600">{warehousesError}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-stock-item">
+                  {tr('discardForm.fields.stockItem')}
+                </label>
+                <input
+                  id="discard-stock-item-search"
+                  type="search"
+                  value={discardItemSearch}
+                  onChange={(e) => setDiscardItemSearch(e.target.value)}
+                  placeholder={tr('discardForm.fields.stockItemSearch')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                />
+                <select
+                  id="discard-stock-item"
+                  value={discardForm.stock_item_id}
+                  onChange={handleDiscardFormChange('stock_item_id')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  required
+                >
+                  <option value="">{tr('discardForm.fields.selectPlaceholder')}</option>
+                  {filteredDiscardItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} {item.brand ? `(${item.brand})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {selectedDiscardItem && (
+                  <p className="text-xs text-gray-500">
+                    {selectedDiscardItem.category && `${selectedDiscardItem.category} • `}
+                    {selectedDiscardItem.available_quantity !== undefined &&
+                      tr('form.fields.available', {
+                        count: numberFormatter.format(Number(selectedDiscardItem.available_quantity) || 0),
+                      })}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-quantity">
+                  {tr('discardForm.fields.quantity')}
+                </label>
+                <input
+                  id="discard-quantity"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discardForm.quantity}
+                  onChange={handleDiscardFormChange('quantity')}
+                  placeholder={tr('discardForm.fields.quantityPlaceholder')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-reason">
+                  {tr('discardForm.fields.reason')}
+                </label>
+                <select
+                  id="discard-reason"
+                  value={discardForm.reason}
+                  onChange={handleDiscardFormChange('reason')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  required
+                >
+                  <option value="">{tr('discardForm.fields.selectPlaceholder')}</option>
+                  <option value="expired">{tr('discardForm.fields.reasons.expired')}</option>
+                  <option value="damaged">{tr('discardForm.fields.reasons.damaged')}</option>
+                  <option value="other">{tr('discardForm.fields.reasons.other')}</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-notes">
+                  {tr('discardForm.fields.notes')}
+                </label>
+                <textarea
+                  id="discard-notes"
+                  value={discardForm.notes}
+                  onChange={handleDiscardFormChange('notes')}
+                  rows="3"
+                  placeholder={tr('discardForm.fields.notesPlaceholder')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                />
+              </div>
+
+              {discardFormStatus.message && (
+                <div
+                  className={`rounded-md px-3 py-2 text-sm ${
+                    discardFormStatus.state === 'success'
+                      ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-100'
+                      : 'bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-100'
+                  }`}
+                >
+                  {discardFormStatus.message}
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  disabled={discardFormStatus.state === 'loading'}
+                >
+                  {discardFormStatus.state === 'loading' ? tr('discardForm.submitLoading') : tr('discardForm.submit')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('report.title')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{tr('report.description')}</p>
+            </div>
+            {reportRange && <span className="text-xs text-gray-500">{reportRange}</span>}
+          </div>
 
             {reportStatus.state === 'error' && (
               <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-100">
@@ -799,8 +1021,7 @@ const WarehouseInventoryPage = () => {
             </form>
           </div>
         </div>
-      </div>
-    </>
+      </>
   );
 };
 
