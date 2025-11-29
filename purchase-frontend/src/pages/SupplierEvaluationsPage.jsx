@@ -8,6 +8,7 @@ import {
   updateSupplierEvaluation,
   deleteSupplierEvaluation,
 } from '../api/supplierEvaluations';
+import { listSuppliers } from '../api/suppliers';
 
 const DEFAULT_KPI_WEIGHTS = {
   otif: 0.4,
@@ -166,6 +167,9 @@ const SupplierEvaluationsPage = () => {
   const [benchmarksError, setBenchmarksError] = useState('');
   const [benchmarkInterval, setBenchmarkInterval] = useState('quarter');
   const [benchmarkSupplier, setBenchmarkSupplier] = useState('');
+  const [suppliers, setSuppliers] = useState([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [suppliersError, setSuppliersError] = useState('');
 
   const canManage = useMemo(() => {
     const normalizedRole = user?.role?.toLowerCase?.();
@@ -184,8 +188,31 @@ const SupplierEvaluationsPage = () => {
         names.add(evaluation.supplier_name);
       }
     });
+
+    suppliers.forEach((supplier) => {
+      if (supplier?.name) {
+        names.add(supplier.name);
+      }
+    });
+
     return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, [evaluations]);
+  }, [evaluations, suppliers]);
+
+  const fetchSuppliers = useCallback(async () => {
+    setSuppliersLoading(true);
+    setSuppliersError('');
+
+    try {
+      const data = await listSuppliers();
+      setSuppliers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load suppliers for evaluations', err);
+      setSuppliersError('Unable to load suppliers. You can still type a supplier name.');
+      setSuppliers([]);
+    } finally {
+      setSuppliersLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -194,6 +221,10 @@ const SupplierEvaluationsPage = () => {
 
     return () => clearTimeout(handler);
   }, [searchInput]);
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, [fetchSuppliers]);
 
   const activeFilters = useMemo(
     () => ({
@@ -1045,8 +1076,19 @@ const SupplierEvaluationsPage = () => {
                     value={formState.supplier_name}
                     onChange={handleInputChange}
                     required
+                    list="supplier-options"
                     className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <datalist id="supplier-options">
+                    {supplierOptions.map((name) => (
+                      <option key={name} value={name} />
+                    ))}
+                  </datalist>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {suppliersLoading
+                      ? 'Loading suppliers…'
+                      : suppliersError || 'Start typing to select an existing supplier from the list.'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1" htmlFor="evaluation_date">

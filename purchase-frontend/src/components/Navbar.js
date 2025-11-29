@@ -183,6 +183,9 @@ const Navbar = () => {
     const canViewAnalytics = hasAccess(currentUser, "feature.analytics", [
       "dashboard.view",
     ]);
+    const canRunPlanning =
+      ["scm", "admin"].includes(normalizedRole) &&
+      hasAccess(currentUser, "feature.demandPlanning", []);
     const canManageContracts = hasAccess(currentUser, "feature.contracts", [
       "contracts.manage",
     ]);
@@ -337,6 +340,12 @@ const Navbar = () => {
             "text-pink-600",
           ),
           createItem(
+            canRunPlanning,
+            t("navbar.demandPlanning"),
+            "/planning",
+            "text-indigo-600",
+          ),
+          createItem(
             canUseAdminTools,
             t("navbar.adminTools"),
             "/admin-tools",
@@ -358,6 +367,12 @@ const Navbar = () => {
             canViewSuppliers,
             t("navbar.suppliers"),
             "/suppliers",
+            "text-emerald-700",
+          ),
+          createItem(
+            canViewSuppliers,
+            t("navbar.supplierSrm"),
+            "/supplier-srm",
             "text-emerald-700",
           ),
           createItem(
