@@ -170,6 +170,9 @@
     "navigation": "التنقل",
     "closeMenu": "إغلاق القائمة",
     "selectLanguage": "اختر اللغة",
+    "searchPlaceholder": "ابحث في التنقل…",
+    "clearSearch": "مسح بحث التنقل",
+    "noSearchResults": "لا توجد نتائج مطابقة في التنقل.",
     "groups": {
       "requests": "الطلبات",
       "operations": "العمليات",
@@ -1045,6 +1048,33 @@
   "warehouseInventory": {
     "loading": "جاري تحميل أدوات رصيد المخزن...",
     "subtitle": "سجل الكميات الواردة للمخزن وتابع التحويلات الأسبوعية إلى الأقسام.",
+    "unassigned": {
+      "title": "توزيع الأصناف الجديدة على المخازن",
+      "description": "وزع الأصناف التي تحتوي على كمية متاحة ولم يتم ربطها بمخازن بعد.",
+      "loading": "جاري تحميل الأصناف غير الموزعة...",
+      "refresh": "تحديث القائمة",
+      "empty": "لا توجد أصناف غير موزعة تحتاج للتخصيص.",
+      "selected": "محدد",
+      "availableLabel": "المتاح: {{count}}",
+      "allocationTotal": "إجمالي التخصيص: {{total}}",
+      "submit": "تخصيص للمخازن",
+      "submitLoading": "جارٍ التخصيص...",
+      "fields": {
+        "stockItem": "الصنف المخزني",
+        "selectPlaceholder": "اختر صنفًا",
+        "allocations": "تخصيصات المخازن",
+        "addRow": "إضافة مخزن",
+        "quantity": "الكمية",
+        "removeRow": "حذف"
+      },
+      "alerts": {
+        "loadFailed": "تعذر تحميل الأصناف غير الموزعة.",
+        "validationFailed": "يرجى اختيار صنف وإدخال كميات صحيحة للمخازن.",
+        "totalMismatch": "يجب أن يساوي إجمالي التخصيص ({{total}}) الكمية المتاحة ({{available}}).",
+        "submitFailed": "تعذر تخصيص الصنف للمخازن.",
+        "submitSuccess": "تم تخصيص الصنف للمخازن."
+      }
+    },
     "inventory": {
       "title": "مخزون المخزن الحالي",
       "description": "عرض العناصر والكميات المتاحة في المخزن المحدد.",

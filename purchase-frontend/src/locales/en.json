@@ -170,6 +170,9 @@
     "navigation": "Navigation",
     "closeMenu": "Close menu",
     "selectLanguage": "Select language",
+    "searchPlaceholder": "Search navigation…",
+    "clearSearch": "Clear navigation search",
+    "noSearchResults": "No navigation matches found.",
     "groups": {
       "requests": "Requests",
       "operations": "Operations",
@@ -1048,6 +1051,33 @@
   "warehouseInventory": {
     "loading": "Loading warehouse inventory tools...",
     "subtitle": "Record inbound warehouse stock and monitor weekly transfers to departments.",
+    "unassigned": {
+      "title": "Allocate new stock items to warehouses",
+      "description": "Distribute stock items that have availability but no warehouse balances yet.",
+      "loading": "Loading unassigned stock items...",
+      "refresh": "Refresh list",
+      "empty": "No unassigned stock items require allocation.",
+      "selected": "Selected",
+      "availableLabel": "{{count}} available",
+      "allocationTotal": "Allocated total: {{total}}",
+      "submit": "Assign to warehouses",
+      "submitLoading": "Assigning...",
+      "fields": {
+        "stockItem": "Stock item",
+        "selectPlaceholder": "Choose a stock item",
+        "allocations": "Warehouse allocations",
+        "addRow": "Add warehouse",
+        "quantity": "Quantity",
+        "removeRow": "Remove"
+      },
+      "alerts": {
+        "loadFailed": "Failed to load unassigned stock items.",
+        "validationFailed": "Select a stock item and enter valid warehouse quantities.",
+        "totalMismatch": "Total allocation ({{total}}) must match available quantity ({{available}}).",
+        "submitFailed": "Failed to assign the stock item to warehouses.",
+        "submitSuccess": "Stock item allocated to warehouses."
+      }
+    },
     "inventory": {
       "title": "Current warehouse inventory",
       "description": "See available items and quantities in the selected warehouse.",

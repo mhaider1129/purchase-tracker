@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useDarkMode from "../hooks/useDarkMode";
-import { Menu, X, Sun, Moon, ChevronDown } from "lucide-react";
+import { Menu, X, Sun, Moon, ChevronDown, Search, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./ui/NotificationBell";
 import { useAuth } from "../hooks/useAuth";
@@ -18,6 +18,7 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState(null);
   const [isTouchInteraction, setIsTouchInteraction] = useState(false);
+  const [navSearch, setNavSearch] = useState("");
   const hoverTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -96,6 +97,28 @@ const Navbar = () => {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
+
+  const escapeRegExp = (value) =>
+    value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const highlightMatch = (label) => {
+    const trimmedQuery = navSearch.trim();
+
+    if (!trimmedQuery) {
+      return label;
+    }
+
+    const queryRegex = new RegExp(`(${escapeRegExp(trimmedQuery)})`, "ig");
+    return label.split(queryRegex).map((part, index) =>
+      part.toLowerCase() === trimmedQuery.toLowerCase() ? (
+        <mark key={`${part}-${index}`} className="rounded bg-yellow-200 px-1 py-0.5 text-gray-900">
+          {part}
+        </mark>
+      ) : (
+        <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>
+      ),
+    );
+  };
 
   const renderNavButton = (
     label,
@@ -421,6 +444,19 @@ const Navbar = () => {
       },
     ].filter((group) => group.items.length > 0);
 
+    const normalizedQuery = navSearch.trim().toLowerCase();
+
+    const filteredGroups = navGroups
+      .map((group) => ({
+        ...group,
+        items: normalizedQuery
+          ? group.items.filter((item) =>
+              item.label.toLowerCase().includes(normalizedQuery),
+            )
+          : group.items,
+      }))
+      .filter((group) => group.items.length > 0);
+
     const renderProfileCard = () => (
       <div
         className="mt-2 flex w-fit items-center gap-2 rounded bg-white/80 px-3 py-1 text-gray-700 shadow dark:bg-gray-700 dark:text-gray-100 lg:mt-0"
@@ -455,7 +491,7 @@ const Navbar = () => {
     if (variant === "desktop") {
       return (
         <>
-          {navGroups.map((group) => (
+          {filteredGroups.map((group) => (
             <div
               key={group.id}
               className="relative"
@@ -496,7 +532,7 @@ const Navbar = () => {
                   {group.items.map((item) => (
                     <div key={item.path}>
                       {renderNavButton(
-                        item.label,
+                        highlightMatch(item.label),
                         item.path,
                         item.color,
                         "w-full text-left",
@@ -509,13 +545,18 @@ const Navbar = () => {
           ))}
           {renderProfileCard()}
           {renderLogoutButton()}
+          {!filteredGroups.length && navSearch && (
+            <p className="rounded-md bg-white/80 px-3 py-2 text-sm text-gray-600 shadow-sm dark:bg-gray-800/80 dark:text-gray-300">
+              {t("navbar.noSearchResults")}
+            </p>
+          )}
         </>
       );
     }
 
     return (
       <>
-        {navGroups.map((group) => (
+        {filteredGroups.map((group) => (
           <div
             key={group.id}
             className="flex flex-col gap-2 rounded-md border border-gray-200/70 bg-white/80 p-3 dark:border-gray-700/70 dark:bg-gray-800/80"
@@ -527,7 +568,7 @@ const Navbar = () => {
               {group.items.map((item) => (
                 <div key={item.path}>
                   {renderNavButton(
-                    item.label,
+                    highlightMatch(item.label),
                     item.path,
                     item.color,
                     "w-full text-left",
@@ -539,6 +580,11 @@ const Navbar = () => {
         ))}
         {renderProfileCard()}
         {renderLogoutButton()}
+        {!filteredGroups.length && navSearch && (
+          <p className="rounded-md border border-dashed border-gray-300 bg-white/80 px-3 py-2 text-sm text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-800/80 dark:text-gray-300">
+            {t("navbar.noSearchResults")}
+          </p>
+        )}
       </>
     );
   };
@@ -560,6 +606,26 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
+          <div className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white/80 px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:border-gray-700 dark:bg-gray-800/80 dark:focus-within:ring-offset-gray-900 md:flex">
+            <Search size={16} className="text-gray-500 dark:text-gray-400" aria-hidden="true" />
+            <input
+              type="text"
+              value={navSearch}
+              onChange={(event) => setNavSearch(event.target.value)}
+              placeholder={t("navbar.searchPlaceholder")}
+              className="w-48 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
+            />
+            {navSearch && (
+              <button
+                type="button"
+                onClick={() => setNavSearch("")}
+                className="text-gray-500 transition hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+                aria-label={t("navbar.clearSearch")}
+              >
+                <XCircle size={16} />
+              </button>
+            )}
+          </div>
           <div className="hidden flex-wrap items-center justify-center gap-3 lg:flex">
             <NavItems variant="desktop" />
           </div>
@@ -615,6 +681,26 @@ const Navbar = () => {
             >
               {t("navbar.closeMenu")}
             </button>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white/90 px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:border-gray-700 dark:bg-gray-800/90 dark:focus-within:ring-offset-gray-900">
+            <Search size={16} className="text-gray-500 dark:text-gray-400" aria-hidden="true" />
+            <input
+              type="text"
+              value={navSearch}
+              onChange={(event) => setNavSearch(event.target.value)}
+              placeholder={t("navbar.searchPlaceholder")}
+              className="flex-1 bg-transparent text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none dark:text-gray-100 dark:placeholder:text-gray-500"
+            />
+            {navSearch && (
+              <button
+                type="button"
+                onClick={() => setNavSearch("")}
+                className="text-gray-500 transition hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
+                aria-label={t("navbar.clearSearch")}
+              >
+                <XCircle size={16} />
+              </button>
+            )}
           </div>
           <div className="flex flex-col gap-2">
             <NavItems variant="mobile" />

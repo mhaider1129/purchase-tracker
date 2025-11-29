@@ -40,6 +40,13 @@ const WarehouseInventoryPage = () => {
   const [formStatus, setFormStatus] = useState({ state: 'idle', message: '' });
   const [discardFormStatus, setDiscardFormStatus] = useState({ state: 'idle', message: '' });
   const [issueFormStatus, setIssueFormStatus] = useState({ state: 'idle', message: '' });
+  const [unassignedItems, setUnassignedItems] = useState([]);
+  const [unassignedStatus, setUnassignedStatus] = useState({ state: 'idle', message: '' });
+  const [allocationForm, setAllocationForm] = useState({
+    stock_item_id: '',
+    allocations: [{ warehouse_id: '', quantity: '' }],
+  });
+  const [allocationStatus, setAllocationStatus] = useState({ state: 'idle', message: '' });
 
   const [departments, setDepartments] = useState([]);
   const [departmentsStatus, setDepartmentsStatus] = useState({ state: 'idle', message: '' });
@@ -62,6 +69,19 @@ const WarehouseInventoryPage = () => {
     } catch (err) {
       console.error('Failed to load stock items:', err);
       setFormStatus({ state: 'error', message: tr('alerts.loadItemsFailed') });
+    }
+  };
+
+  const loadUnassignedStockItems = async () => {
+    setUnassignedStatus({ state: 'loading', message: '' });
+    try {
+      const res = await api.get('/api/stock-items/unassigned');
+      setUnassignedItems(res.data || []);
+      setUnassignedStatus({ state: 'idle', message: '' });
+    } catch (err) {
+      console.error('Failed to load unassigned stock items:', err);
+      const message = err?.response?.data?.message || tr('unassigned.alerts.loadFailed');
+      setUnassignedStatus({ state: 'error', message });
     }
   };
 
@@ -97,6 +117,7 @@ const WarehouseInventoryPage = () => {
   useEffect(() => {
     if (!userLoading && user) {
       loadStockItems();
+      loadUnassignedStockItems();
       loadDepartments();
       loadReport();
     }
@@ -146,6 +167,14 @@ const WarehouseInventoryPage = () => {
     return undefined;
   }, [issueFormStatus]);
 
+  useEffect(() => {
+    if (allocationStatus.state === 'success') {
+      const timer = setTimeout(() => setAllocationStatus({ state: 'idle', message: '' }), 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [allocationStatus]);
+
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase();
     if (!term) return stockItems;
@@ -191,6 +220,20 @@ const WarehouseInventoryPage = () => {
     );
   }, [inventoryItems, inventorySearch]);
 
+  const selectedUnassignedItem = useMemo(
+    () => unassignedItems.find((item) => String(item.id) === String(allocationForm.stock_item_id)),
+    [allocationForm.stock_item_id, unassignedItems],
+  );
+
+  const allocationTotal = useMemo(
+    () =>
+      allocationForm.allocations.reduce(
+        (sum, entry) => sum + (Number.isFinite(Number(entry.quantity)) ? Number(entry.quantity) : 0),
+        0,
+      ),
+    [allocationForm.allocations],
+  );
+
   const handleFormChange = (key) => (event) => {
     const value = event.target.value;
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -215,8 +258,48 @@ const WarehouseInventoryPage = () => {
     setIssueItems((prev) => [...prev, { stock_item_id: '', quantity: '' }]);
   };
 
+  const addAllocationRow = () => {
+    setAllocationForm((prev) => ({
+      ...prev,
+      allocations: [...prev.allocations, { warehouse_id: '', quantity: '' }],
+    }));
+  };
+
   const removeIssueItemRow = (index) => {
     setIssueItems((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)));
+  };
+
+  const removeAllocationRow = (index) => {
+    setAllocationForm((prev) => ({
+      ...prev,
+      allocations: prev.allocations.length === 1 ? prev.allocations : prev.allocations.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleAllocationItemChange = (value) => {
+    const selected = unassignedItems.find((item) => String(item.id) === String(value));
+    setAllocationForm((prev) => ({
+      ...prev,
+      stock_item_id: value,
+      allocations: [
+        {
+          warehouse_id:
+            prev.allocations[0]?.warehouse_id || (warehouses[0]?.id ? String(warehouses[0].id) : ''),
+          quantity: selected?.available_quantity ?? '',
+        },
+      ],
+    }));
+    setAllocationStatus({ state: 'idle', message: '' });
+  };
+
+  const handleAllocationRowChange = (index, key) => (event) => {
+    const value = event.target.value;
+    setAllocationForm((prev) => ({
+      ...prev,
+      allocations: prev.allocations.map((entry, idx) =>
+        idx === index ? { ...entry, [key]: value } : entry,
+      ),
+    }));
   };
 
   const handleSubmit = async (event) => {
@@ -338,6 +421,59 @@ const WarehouseInventoryPage = () => {
     }
   };
 
+  const handleAllocationSubmit = async (event) => {
+    event.preventDefault();
+    const stockItemId = Number(allocationForm.stock_item_id);
+    const normalizedAllocations = allocationForm.allocations.map((entry) => ({
+      warehouse_id: Number(entry.warehouse_id),
+      quantity: Number(entry.quantity),
+    }));
+
+    const hasInvalidAllocations =
+      !Number.isInteger(stockItemId) ||
+      normalizedAllocations.length === 0 ||
+      normalizedAllocations.some(
+        (entry) => !Number.isInteger(entry.warehouse_id) || !Number.isFinite(entry.quantity) || entry.quantity <= 0,
+      );
+
+    if (hasInvalidAllocations) {
+      setAllocationStatus({ state: 'error', message: tr('unassigned.alerts.validationFailed') });
+      return;
+    }
+
+    const targetQuantity = Number(selectedUnassignedItem?.available_quantity) || 0;
+    const totalsMatch = Math.abs((allocationTotal || 0) - targetQuantity) < 0.0001;
+    if (targetQuantity > 0 && !totalsMatch) {
+      setAllocationStatus({
+        state: 'error',
+        message: tr('unassigned.alerts.totalMismatch', {
+          total: numberFormatter.format(allocationTotal),
+          available: numberFormatter.format(targetQuantity),
+        }),
+      });
+      return;
+    }
+
+    setAllocationStatus({ state: 'loading', message: '' });
+    try {
+      await api.post('/api/stock-items/assign-warehouses', {
+        stock_item_id: stockItemId,
+        allocations: normalizedAllocations.map((entry) => ({
+          warehouse_id: entry.warehouse_id,
+          quantity: entry.quantity,
+        })),
+      });
+
+      setAllocationStatus({ state: 'success', message: tr('unassigned.alerts.submitSuccess') });
+      setAllocationForm({ stock_item_id: '', allocations: [{ warehouse_id: '', quantity: '' }] });
+      await Promise.all([loadUnassignedStockItems(), loadStockItems(), refreshInventory()]);
+    } catch (err) {
+      console.error('Failed to assign stock item to warehouses:', err);
+      const message = err?.response?.data?.message || tr('unassigned.alerts.submitFailed');
+      setAllocationStatus({ state: 'error', message });
+    }
+  };
+
   const reportRange = useMemo(() => {
     if (!report.window_start || !report.window_end) return '';
     try {
@@ -360,11 +496,11 @@ const WarehouseInventoryPage = () => {
 
   return (
     <>
-        <Navbar />
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+      <Navbar />
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {t('pageTitles.warehouseInventory', 'Warehouse Inventory')}
             </h1>
             <p className="text-sm text-gray-600 dark:text-gray-300">{tr('subtitle')}</p>
@@ -383,7 +519,195 @@ const WarehouseInventoryPage = () => {
           </div>
         </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('unassigned.title')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{tr('unassigned.description')}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {unassignedStatus.state === 'loading' && (
+                <span className="text-xs text-blue-600 dark:text-blue-300">{tr('unassigned.loading')}</span>
+              )}
+              <button
+                type="button"
+                onClick={loadUnassignedStockItems}
+                className="inline-flex items-center gap-2 rounded-md bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+              >
+                {tr('unassigned.refresh')}
+              </button>
+            </div>
+          </div>
+
+          {unassignedStatus.state === 'error' && (
+            <div className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-100">
+              {unassignedStatus.message}
+            </div>
+          )}
+
+          {unassignedItems.length === 0 ? (
+            <p className="text-sm text-gray-600 dark:text-gray-300">{tr('unassigned.empty')}</p>
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="space-y-3 overflow-y-auto pr-1 sm:max-h-80">
+                {unassignedItems.map((item) => {
+                  const isSelected = String(item.id) === String(allocationForm.stock_item_id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleAllocationItemChange(String(item.id))}
+                      className={`w-full rounded-md border px-3 py-2 text-left shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-100 ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 hover:border-blue-400 dark:border-gray-700 dark:hover:border-blue-400'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="font-medium text-gray-900 dark:text-gray-100">{item.name}</p>
+                          {item.brand && <p className="text-xs text-gray-600 dark:text-gray-300">{item.brand}</p>}
+                          <p className="text-xs text-gray-600 dark:text-gray-300">
+                            {tr('unassigned.availableLabel', {
+                              count: numberFormatter.format(Number(item.available_quantity) || 0),
+                            })}
+                          </p>
+                        </div>
+                        {isSelected && (
+                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+                            {tr('unassigned.selected')}
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <form onSubmit={handleAllocationSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="unassigned-stock-item">
+                    {tr('unassigned.fields.stockItem')}
+                  </label>
+                  <select
+                    id="unassigned-stock-item"
+                    value={allocationForm.stock_item_id}
+                    onChange={(event) => handleAllocationItemChange(event.target.value)}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  >
+                    <option value="">{tr('unassigned.fields.selectPlaceholder')}</option>
+                    {unassignedItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} {item.brand ? `(${item.brand})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedUnassignedItem && (
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
+                      <p>
+                        {tr('unassigned.availableLabel', {
+                          count: numberFormatter.format(Number(selectedUnassignedItem.available_quantity) || 0),
+                        })}
+                      </p>
+                      <p>
+                        {tr('unassigned.allocationTotal', { total: numberFormatter.format(allocationTotal) })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tr('unassigned.fields.allocations')}</h3>
+                    <button
+                      type="button"
+                      onClick={addAllocationRow}
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    >
+                      {tr('unassigned.fields.addRow')}
+                    </button>
+                  </div>
+
+                  {allocationForm.allocations.map((entry, index) => (
+                    <div key={`${entry.warehouse_id || 'new'}-${index}`} className="grid gap-3 sm:grid-cols-2 sm:items-end">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor={`allocation-warehouse-${index}`}>
+                          {tr('form.fields.warehouse')}
+                        </label>
+                        <select
+                          id={`allocation-warehouse-${index}`}
+                          value={entry.warehouse_id}
+                          onChange={handleAllocationRowChange(index, 'warehouse_id')}
+                          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                          disabled={warehousesLoading || !warehouses.length}
+                          required
+                        >
+                          <option value="">{tr('form.fields.selectPlaceholder')}</option>
+                          {warehouses.map((wh) => (
+                            <option key={wh.id} value={wh.id}>
+                              {wh.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor={`allocation-quantity-${index}`}>
+                          {tr('unassigned.fields.quantity')}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            id={`allocation-quantity-${index}`}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={entry.quantity}
+                            onChange={handleAllocationRowChange(index, 'quantity')}
+                            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                            required
+                          />
+                          {allocationForm.allocations.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeAllocationRow(index)}
+                              className="rounded-md border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                            >
+                              {tr('unassigned.fields.removeRow')}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {allocationStatus.message && (
+                  <div
+                    className={`rounded-md px-3 py-2 text-sm ${
+                      allocationStatus.state === 'success'
+                        ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-100'
+                        : 'bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-100'
+                    }`}
+                  >
+                    {allocationStatus.message}
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+                    disabled={allocationStatus.state === 'loading' || !allocationForm.stock_item_id}
+                  >
+                    {allocationStatus.state === 'loading' ? tr('unassigned.submitLoading') : tr('unassigned.submit')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('inventory.title')}</h2>
@@ -1021,7 +1345,7 @@ const WarehouseInventoryPage = () => {
             </form>
           </div>
         </div>
-      </>
+    </>
   );
 };
 

@@ -58,6 +58,8 @@ import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import SupplierSrmPage from "./pages/SupplierSrmPage";
+import PlanningWorkbench from "./pages/PlanningWorkbench";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -145,8 +147,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<StockItemRequestForm />}
-          allowedRoles={["WarehouseManager", "warehouse_manager"]}
-          requiredPermissions={["stock-requests.create"]}
           resourceKey="feature.stockItemRequests"
         />
       }
@@ -160,7 +160,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ItemRecallsPage />}
-          requiredPermissions={["recalls.view", "recalls.manage"]}
           resourceKey="feature.itemRecalls"
         />
       }
@@ -170,11 +169,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<MaintenanceWarehouseSupplyRequestForm />}
-          allowedRoles={["technician", "SCM", "admin"]}
-          requiredPermissions={[
-            "warehouse.manage-supply",
-            "stock-requests.create",
-          ]}
           resourceKey="feature.maintenanceWarehouseSupply"
         />
       }
@@ -184,16 +178,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<CustodyIssueForm />}
-          allowedRoles={[
-            "warehouse_keeper",
-            "WarehouseKeeper",
-            "warehousekeeper",
-            "warehousemanager",
-            "WarehouseManager",
-            "SCM",
-            "admin",
-          ]}
-          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.custody"
         />
       }
@@ -203,17 +187,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<WarehouseInventoryPage />}
-          allowedRoles={[
-            "warehouse_manager",
-            "WarehouseManager",
-            "warehouse_keeper",
-            "WarehouseKeeper",
-          ]}
-          requiredPermissions={[
-            "warehouse.manage-supply",
-            "warehouse.view-supply",
-          ]}
-          requireAllPermissions
           resourceKey="feature.warehouseInventory"
         />
       }
@@ -223,16 +196,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<TechnicalInspectionsPage />}
-          allowedRoles={[
-            "technician",
-            "SCM",
-            "admin",
-            "WarehouseManager",
-            "warehouse_manager",
-            "WarehouseKeeper",
-            "warehouse_keeper",
-          ]}
-          requiredPermissions={["technical-inspections.manage"]}
           resourceKey="feature.technicalInspections"
         />
       }
@@ -242,16 +205,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<CustodyIssuedList />}
-          allowedRoles={[
-            "warehouse_keeper",
-            "WarehouseKeeper",
-            "warehousekeeper",
-            "warehousemanager",
-            "WarehouseManager",
-            "SCM",
-            "admin",
-          ]}
-          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.custody"
         />
       }
@@ -329,8 +282,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<MaintenanceStockPage />}
-          allowedRoles={["WarehouseManager", "warehouse_manager", "technician"]}
-          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.maintenanceStock"
         />
       }
@@ -340,12 +291,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<WarehouseSupplyTemplatesPage />}
-          allowedRoles={[
-            "WarehouseManager",
-            "warehouse_manager",
-            "warehouse_keeper",
-          ]}
-          requiredPermissions={["warehouse.manage-supply"]}
           resourceKey="feature.warehouseTemplates"
         />
       }
@@ -355,15 +300,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<WarehouseSupplyRequestsPage />}
-          allowedRoles={[
-            "WarehouseManager",
-            "warehouse_manager",
-            "warehouse_keeper",
-          ]}
-          requiredPermissions={[
-            "warehouse.view-supply",
-            "warehouse.manage-supply",
-          ]}
           resourceKey="feature.warehouseRequests"
         />
       }
@@ -375,8 +311,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<AdminTools />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={["approvals.reassign"]}
           resourceKey="feature.adminTools"
         />
       }
@@ -386,13 +320,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<Management />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={[
-            "users.manage",
-            "departments.manage",
-            "permissions.manage",
-            "projects.manage",
-          ]}
           resourceKey="feature.management"
         />
       }
@@ -402,8 +329,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<AllRequestsPage />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={["requests.view-all"]}
           resourceKey="feature.allRequests"
         />
       }
@@ -413,8 +338,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<IncompleteRequestsPage />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={["requests.view-incomplete"]}
           resourceKey="feature.incompleteRequests"
         />
       }
@@ -424,11 +347,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ProcurementPlansPage />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={[
-            "procurement.update-status",
-            "procurement.update-cost",
-          ]}
           resourceKey="feature.procurementPlans"
         />
       }
@@ -438,8 +356,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<StockItemApprovals />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={["stock-requests.review", "stock-items.manage"]}
           resourceKey="feature.stockItemApprovals"
         />
       }
@@ -449,15 +365,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ContractsPage />}
-          allowedRoles={[
-            "SCM",
-            "admin",
-            "COO",
-            "Medical Devices",
-            "Contract_Manager",
-            "ProcurementSpecialist",
-          ]}
-          requiredPermissions={["contracts.manage"]}
           resourceKey="feature.contracts"
         />
       }
@@ -467,6 +374,15 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<SuppliersPage />}
+          resourceKey="feature.suppliers"
+        />
+      }
+    />
+    <Route
+      path="/supplier-srm"
+      element={
+        <ProtectedRoute
+          element={<SupplierSrmPage />}
           allowedRoles={[
             "SCM",
             "admin",
@@ -505,8 +421,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<AssignedRequestsPage />}
-          allowedRoles={["ProcurementSpecialist", "SCM"]}
-          requiredPermissions={["procurement.update-status"]}
           resourceKey="feature.procurementQueues"
         />
       }
@@ -518,8 +432,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<IncompleteMedicalRequestsPage />}
-          allowedRoles={["CMO", "SCM"]}
-          requiredPermissions={["requests.view-incomplete"]}
           resourceKey="feature.incompleteMedical"
         />
       }
@@ -529,8 +441,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<IncompleteOperationalRequestsPage />}
-          allowedRoles={["COO", "SCM"]}
-          requiredPermissions={["requests.view-incomplete"]}
           resourceKey="feature.incompleteOperational"
         />
       }
@@ -541,8 +451,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<CompletedAssignedRequestsPage />}
-          allowedRoles={["ProcurementSpecialist", "SCM"]}
-          requiredPermissions={["procurement.update-status"]}
           resourceKey="feature.procurementQueues"
         />
       }
@@ -556,8 +464,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<AuditRequestsPage />}
-          allowedRoles={["audit"]}
-          requiredPermissions={["requests.view-all"]}
           resourceKey="feature.auditRequests"
         />
       }
@@ -567,11 +473,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<SupplyItemsPage />}
-          allowedRoles={["warehouse_keeper"]}
-          requiredPermissions={[
-            "warehouse.manage-supply",
-            "warehouse.view-supply",
-          ]}
           resourceKey="feature.warehouseDetail"
         />
       }
@@ -581,8 +482,6 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<Dashboard />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={["dashboard.view"]}
           resourceKey="feature.dashboard"
         />
       }
@@ -592,9 +491,17 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<LifecycleAnalytics />}
-          allowedRoles={["SCM", "admin"]}
-          requiredPermissions={["dashboard.view"]}
           resourceKey="feature.analytics"
+        />
+      }
+    />
+    <Route
+      path="/planning"
+      element={
+        <ProtectedRoute
+          element={<PlanningWorkbench />}
+          allowedRoles={["SCM", "admin"]}
+          resourceKey="feature.demandPlanning"
         />
       }
     />
