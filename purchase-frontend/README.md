@@ -2,6 +2,15 @@
 
 This project is built with [Vite](https://vitejs.dev/) and React.
 
+## Setup
+
+1. Install dependencies (includes Vite and the React plugin):
+   ```bash
+   npm install
+   ```
+2. If you previously saw `vite` is not recognized, re-run the install step to ensure dev dependencies are present on your PATH (Windows users may need a fresh terminal after installation).
+3. Start the dev server with `npm start` or `npm run dev` (both call Vite).
+
 ## Available Scripts
 
 In the project directory, you can run:
@@ -26,11 +35,3 @@ Builds the app for production into the `dist` folder.
 ### `npm run preview`
 
 Serves the production build locally for inspection.
-
-### `npm run lint`
-
-Lints the source files with ESLint.
-
-### `npm run format`
-
-Formats source and config files with Prettier.
