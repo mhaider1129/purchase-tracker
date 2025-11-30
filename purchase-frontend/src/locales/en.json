@@ -623,83 +623,121 @@
       "loadUser": "We could not load your user details. Please retry.",
       "heading": "Unable to load user information."
     },
+    "summary": {
+      "tagline": "Curated for your role",
+      "role": "Role: {{value}}",
+      "department": "Department: {{value}}",
+      "section": "Section ID: {{value}}",
+      "medicationAccessEnabled": "Medication access enabled",
+      "medicationAccessDisabled": "Medication access not enabled",
+      "accessTitle": "Access overview",
+      "accessDetails": "You can launch {{count}} actions across {{groups}} areas.",
+      "quickTipTitle": "Stay in control",
+      "quickTipCopy": "Your available workflows refresh automatically based on approvals.",
+      "recommendationTitle": "Need a suggestion?",
+      "recommendationCopy": "Start with the highlighted tiles or jump directly into any category."
+    },
+    "recommended": {
+      "title": "Recommended actions",
+      "subtitle": "Quick start",
+      "badge": "Featured"
+    },
     "actions": {
       "retry": "Retry",
       "stockRequest": {
         "label": "Stock Request",
-        "aria": "Stock Request"
+        "aria": "Stock Request",
+        "description": "Request items from existing warehouse stock levels."
       },
       "newStockItem": {
         "label": "Add Stock Item to List",
-        "aria": "Add Stock Item to List"
+        "aria": "Add Stock Item to List",
+        "description": "Propose a new catalog item so it can be requested later."
       },
       "warehouseTemplates": {
         "label": "Warehouse Supply Templates",
-        "aria": "Manage Warehouse Supply Templates"
+        "aria": "Manage Warehouse Supply Templates",
+        "description": "Maintain reusable templates for frequently requested kits."
       },
       "issueCustody": {
         "label": "Issue Custody Record",
-        "aria": "Issue custody record to staff or departments"
+        "aria": "Issue custody record to staff or departments",
+        "description": "Record custody issuance to staff or departments with approvals."
       },
       "issuedCustodies": {
         "label": "Issued Custody Records",
-        "aria": "Review previously issued custody records"
+        "aria": "Review previously issued custody records",
+        "description": "See what has been issued and track return obligations."
       },
       "submittedSupply": {
         "label": "Submitted Warehouse Supply Requests",
-        "aria": "View Warehouse Supply Requests"
+        "aria": "View Warehouse Supply Requests",
+        "description": "Review submitted warehouse supply requests awaiting fulfillment."
       },
       "itemRecalls": {
         "label": "Item Recalls",
-        "aria": "Open the item recall workspace"
+        "aria": "Open the item recall workspace",
+        "description": "Coordinate recall workflows between warehouse and procurement."
       },
       "warehouseSupply": {
         "label": "Warehouse Supply Request",
-        "aria": "Warehouse Supply Request"
+        "aria": "Warehouse Supply Request",
+        "description": "Request consumables or supplies from warehouse-managed stock."
       },
       "nonStock": {
         "label": "Non-Stock Request",
-        "aria": "Non-Stock Request"
+        "aria": "Non-Stock Request",
+        "description": "Request items not yet kept in warehouse stock."
       },
       "medicalDevice": {
         "label": "Medical Device Request",
-        "aria": "Medical Device Request"
+        "aria": "Medical Device Request",
+        "description": "Submit a request for medical equipment and devices."
       },
       "medication": {
         "label": "Medication Request",
-        "aria": "Medication Request"
+        "aria": "Medication Request",
+        "description": "Request medications with CMO/SCM visibility."
       },
       "itRequest": {
         "label": "IT Item Request",
-        "aria": "IT Item Request"
+        "aria": "IT Item Request",
+        "description": "Request laptops, peripherals, or other IT hardware."
       },
       "maintenanceRequest": {
         "label": "Maintenance Request",
-        "aria": "Maintenance Request"
+        "aria": "Maintenance Request",
+        "description": "Log a maintenance job for technician review."
       },
       "maintenanceSupply": {
         "label": "Maintenance Warehouse Supply Request",
-        "aria": "Maintenance Warehouse Supply Request"
+        "aria": "Maintenance Warehouse Supply Request",
+        "description": "Request spare parts or supplies to complete maintenance work."
       },
       "maintenanceApprovals": {
         "label": "Maintenance Approvals",
-        "aria": "Maintenance Approvals"
+        "aria": "Maintenance Approvals",
+        "description": "Approve or review maintenance-related requests."
       },
       "approvalsPanel": {
         "label": "Approvals Panel",
-        "aria": "Approvals Panel"
+        "aria": "Approvals Panel",
+        "description": "Work through all pending approvals assigned to you."
       },
       "custodyApprovals": {
         "label": "Custody Approvals",
-        "aria": "Custody approvals awaiting your action"
+        "aria": "Custody approvals awaiting your action",
+        "description": "Approve custody issuances that need your authorization."
       },
       "approvalHistory": {
         "label": "Approval History",
-        "aria": "Approval History"
+        "aria": "Approval History",
+        "description": "Browse a full log of past approvals you were involved in."
       },
       "registerUser": {
         "label": "Register New User",
-        "aria": "Register New User"
+        "aria": "Register New User",
+        "description": "Onboard a colleague with the correct access role."
       }
     },
     "emptyState": "No available actions were found for your role. Please contact an administrator if you believe this is an error.",
@@ -1098,7 +1136,10 @@
         "warehousePlaceholder": "Choose a warehouse",
         "search": "Search inventory",
         "searchPlaceholder": "Search by item name",
-        "sort": "Sort"
+        "sort": "Sort",
+        "stockFilter": "Stock filter",
+        "view": "View",
+        "pageSize": "Items per page"
       },
       "sortOptions": {
         "nameAsc": "Name (A→Z)",
@@ -1107,7 +1148,16 @@
         "quantityAsc": "Quantity (low → high)"
       },
       "filters": {
-        "hideZero": "Hide items with zero quantity"
+        "hideZero": "Hide items with zero quantity",
+        "stock": {
+          "all": "All items",
+          "inStock": "In stock only",
+          "outOfStock": "Out of stock"
+        }
+      },
+      "viewOptions": {
+        "grid": "Grid view",
+        "table": "Table view"
       },
       "stats": {
         "totalItems": "Tracked items",
@@ -1120,7 +1170,12 @@
         "attention": "Needs attention",
         "showingFor": "Showing",
         "noWarehouse": "No warehouse selected",
-        "restock": "Restock"
+        "restock": "Restock",
+        "itemCode": "Item #{{code}}",
+        "showingRange": "Showing {{start}}-{{end}} of {{total}} items",
+        "pageSummary": "Page {{page}} of {{pages}}",
+        "previousPage": "Previous",
+        "nextPage": "Next"
       }
     },
     "alerts": {
@@ -1314,7 +1369,31 @@
     "failedToLoad": "Failed to load dashboard",
     "loadingDashboard": "Loading dashboard...",
     "overviewTitle": "📊 Dashboard Overview",
+    "completionPerformance": "Completion performance",
+    "completionHelper": "Share of requests completed so far",
+    "statusOnTrack": "On track",
+    "statusWatchlist": "Watchlist",
+    "statusActionNeeded": "Action needed",
+    "approvalSpeed": "Average approval time of {{days}} days keeps work moving",
+    "changeSinceLastMonth": "{{pct}} vs last month",
+    "spendHighlights": "Spending insights",
+    "yearToDateSpend": "YTD {{amount}}",
+    "viewingYear": "Viewing {{year}}",
+    "topSpendingMonth": "Highest spend in {{month}}",
+    "topSpendingMonthFallback": "Monthly spending will appear as data arrives",
+    "leadingDepartment": "Leading department",
+    "departmentSpend": "{{name}} with {{amount}} spent",
+    "backlogPulse": "Backlog pulse",
+    "backlogStable": "Stable",
+    "backlogGrowing": "Pending queue grew vs last month",
+    "backlogImproving": "Pending queue is shrinking",
+    "backlogNoChange": "Tracking changes once two months are available",
+    "pendingChange": "{{pct}} change",
+    "pendingNow": "Current pending",
+    "agingIndicator": "Avg pending age",
+    "daysValue": "{{days}} days",
     "totalRequests": "Total Requests",
+    "requestsLabel": "requests",
     "approved": "Approved",
     "pending": "Pending",
     "completed": "Completed",
@@ -1322,6 +1401,8 @@
     "completionRate": "Completion Rate",
     "avgApprovalTime": "Avg Approval Time (days)",
     "avgPendingAge": "Avg Pending Age (days)",
+    "trendLabel": "Last 6 months trend",
+    "completionSparkLabel": "Completion velocity",
     "monthlySpending": "Monthly Spending",
     "departmentSpending": "Department Spending",
     "pendingVsCompleted": "Pending vs Completed Trend",

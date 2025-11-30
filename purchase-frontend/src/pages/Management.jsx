@@ -105,6 +105,7 @@ const Management = () => {
       canManageDepartments: hasPermission(currentUser, 'departments.manage'),
       canManageRoutes: hasPermission(currentUser, 'permissions.manage'),
       canManageProjects: hasPermission(currentUser, 'projects.manage'),
+      canManageRoles: hasAnyPermission(currentUser, ['roles.manage', 'permissions.manage']),
       canManagePermissions: hasPermission(currentUser, 'permissions.manage'),
     };
   }, [user]);
@@ -116,6 +117,7 @@ const Management = () => {
     canManageDepartments,
     canManageRoutes,
     canManageProjects,
+    canManageRoles,
     canManagePermissions,
   } = permissionFlags;
 
@@ -127,8 +129,10 @@ const Management = () => {
     if (canManageDepartments) tabs.push('warehouses');
     if (canManageRoutes) tabs.push('routes');
     if (canManageProjects) tabs.push('projects');
-    if (canManagePermissions) {
+    if (canManageRoles) {
       tabs.push('roles');
+    }
+    if (canManagePermissions) {
       tabs.push('permissions');
       tabs.push('interfaceAccess');
     }
@@ -139,6 +143,7 @@ const Management = () => {
     canManageDepartments,
     canManageRoutes,
     canManageProjects,
+    canManageRoles,
     canManagePermissions,
   ]);
 
@@ -166,13 +171,13 @@ const Management = () => {
     warehouseRoles.has(String(roleName || '').toLowerCase());
 
   useEffect(() => {
-    if (canViewUsers || canManageRoutes || canManagePermissions) {
+    if (canViewUsers || canManageRoutes || canManagePermissions || canManageRoles) {
       fetchRoles();
     }
-    if (canViewUsers || canManagePermissions) {
+    if (canViewUsers || canManagePermissions || canManageRoles) {
       fetchUsers();
     }
-    if (canManageDepartments || canViewUsers || canManagePermissions) {
+    if (canManageDepartments || canViewUsers || canManagePermissions || canManageRoles) {
       fetchDepartments();
     }
     if (canManageRoutes) {
@@ -188,6 +193,7 @@ const Management = () => {
     canViewUsers,
     canManageRoutes,
     canManagePermissions,
+    canManageRoles,
     canManageDepartments,
     canManageAccountRequests,
     canManageProjects,
@@ -204,7 +210,7 @@ const Management = () => {
     if (tab === 'departments' && canManageDepartments) {
       fetchDepartments();
     }
-    if (tab === 'roles' && canManagePermissions) {
+    if (tab === 'roles' && canManageRoles) {
       fetchRoles();
     }
     if (tab === 'warehouses' && canManageDepartments) {
@@ -237,6 +243,7 @@ const Management = () => {
     canManagePermissions,
     canManageAccountRequests,
     canManageProjects,
+    canManageRoles,
     roles.length,
     availablePermissions.length,
   ]);
@@ -313,7 +320,7 @@ const Management = () => {
   };
 
   const fetchRoles = async () => {
-    if (!(canViewUsers || canManageRoutes || canManagePermissions)) return;
+    if (!(canViewUsers || canManageRoutes || canManagePermissions || canManageRoles)) return;
     setRolesLoading(true);
     setRolesError('');
     try {
@@ -375,7 +382,7 @@ const Management = () => {
 
   const handleCreateRole = async (e) => {
     e.preventDefault();
-    if (!canManagePermissions) return;
+    if (!canManageRoles) return;
     if (!newRoleName.trim()) {
       setRolesError('Role name is required.');
       return;
@@ -408,7 +415,7 @@ const Management = () => {
   };
 
   const handleUpdateRole = async () => {
-    if (!canManagePermissions || !editingRole.id) return;
+    if (!canManageRoles || !editingRole.id) return;
     if (!editingRole.name.trim()) {
       setRolesError('Role name is required.');
       return;
@@ -431,7 +438,7 @@ const Management = () => {
   };
 
   const handleDeleteRole = async (roleId) => {
-    if (!canManagePermissions || !roleId) return;
+    if (!canManageRoles || !roleId) return;
     if (!window.confirm('Delete this role? This cannot be undone.')) {
       return;
     }
@@ -1816,7 +1823,7 @@ const Management = () => {
   };
 
   const renderRoles = () => {
-    if (!canManagePermissions) {
+    if (!canManageRoles) {
       return (
         <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
           You do not have permission to manage roles.
@@ -1826,15 +1833,58 @@ const Management = () => {
 
     return (
       <div className="space-y-4">
+        <div className="rounded-xl border border-blue-100 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 text-white shadow-md">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+                Role directory
+              </p>
+              <h3 className="text-xl font-semibold">Manage who can access what</h3>
+              <p className="text-sm opacity-90">
+                Roles can be managed by users with <span className="font-semibold">roles.manage</span> or
+                <span className="font-semibold"> permissions.manage</span>.
+              </p>
+            </div>
+            <div className="grid w-full max-w-md grid-cols-2 gap-3 text-sm md:w-auto md:grid-cols-3">
+              <div className="rounded-lg bg-white/15 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide opacity-80">Roles</p>
+                <p className="text-lg font-bold">{roles.length || 0}</p>
+              </div>
+              <div className="rounded-lg bg-white/15 px-3 py-2">
+                <p className="text-[11px] uppercase tracking-wide opacity-80">Status</p>
+                <p className="flex items-center gap-1 text-lg font-semibold">
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-300" aria-hidden />
+                  Active
+                </p>
+              </div>
+              <div className="col-span-2 rounded-lg bg-white/15 px-3 py-2 md:col-span-1">
+                <p className="text-[11px] uppercase tracking-wide opacity-80">Access</p>
+                <p className="text-sm font-semibold">roles.manage · permissions.manage</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="rounded border bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold uppercase text-gray-600 mb-3">Add Role</h3>
-          <form onSubmit={handleCreateRole} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Add Role</p>
+              <p className="text-sm text-gray-600">Create reusable permission groups for your teams.</p>
+            </div>
+            {roles.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
+                {roles.length} configured
+              </span>
+            )}
+          </div>
+          <form onSubmit={handleCreateRole} className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
             <label className="flex-1">
               <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Role name
               </span>
               <input
-                className="mt-1 w-full rounded border px-3 py-2"
+                className="mt-1 w-full rounded border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 placeholder="Enter role name"
                 value={newRoleName}
                 onChange={(e) => setNewRoleName(e.target.value)}
@@ -1842,36 +1892,52 @@ const Management = () => {
             </label>
             <button
               type="submit"
-              className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-60"
+              className="rounded bg-blue-600 px-4 py-2 text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
               disabled={savingRole}
             >
-              Add role
+              {savingRole ? 'Saving…' : 'Add role'}
             </button>
           </form>
-          {roleSuccess && <p className="mt-2 text-sm text-emerald-600">{roleSuccess}</p>}
-          {rolesError && <p className="mt-2 text-sm text-red-600">{rolesError}</p>}
+          {roleSuccess && (
+            <p className="mt-3 rounded border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              {roleSuccess}
+            </p>
+          )}
+          {rolesError && (
+            <p className="mt-3 rounded border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {rolesError}
+            </p>
+          )}
         </div>
 
-        <div className="overflow-x-auto rounded border bg-white shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           {rolesLoading ? (
             <p className="p-4">Loading roles...</p>
           ) : roles.length === 0 ? (
-            <p className="p-4 text-sm text-gray-600">No roles defined yet.</p>
+            <div className="flex items-start gap-3 p-4 text-sm text-gray-700">
+              <div className="mt-0.5 h-8 w-8 flex-shrink-0 rounded-full bg-blue-50 text-center text-base font-semibold leading-8 text-blue-700">
+                ℹ️
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">No roles defined yet</p>
+                <p className="text-gray-600">Create a role to start grouping permissions for your teams.</p>
+              </div>
+            </div>
           ) : (
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="bg-gray-200 text-left">
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Actions</th>
+                <tr className="bg-gray-100 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-gray-100">
                 {roles.map((role) => (
-                  <tr key={role.id} className="border-b">
-                    <td className="p-2">
+                  <tr key={role.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 align-middle">
                       {editingRole.id === role.id ? (
                         <input
-                          className="w-full rounded border px-2 py-1"
+                          className="w-full rounded border px-2 py-1 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                           value={editingRole.name}
                           onChange={(e) =>
                             setEditingRole((prev) => ({ ...prev, name: e.target.value }))
@@ -1881,36 +1947,36 @@ const Management = () => {
                         <span className="font-medium text-gray-900">{role.name}</span>
                       )}
                     </td>
-                    <td className="p-2">
+                    <td className="px-3 py-2 text-right">
                       {editingRole.id === role.id ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={handleUpdateRole}
-                            className="rounded bg-green-600 px-3 py-1 text-white disabled:opacity-60"
+                            className="rounded bg-emerald-600 px-3 py-1 text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
                             disabled={savingRole}
                           >
                             Save
                           </button>
                           <button
                             onClick={cancelEditingRole}
-                            className="rounded border px-3 py-1"
+                            className="rounded border px-3 py-1 text-gray-700 transition hover:bg-gray-50"
                             type="button"
                           >
                             Cancel
                           </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => startEditingRole(role)}
-                            className="rounded border px-3 py-1"
+                            className="rounded border px-3 py-1 text-gray-800 transition hover:bg-gray-50"
                             type="button"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDeleteRole(role.id)}
-                            className="rounded bg-red-600 px-3 py-1 text-white disabled:opacity-60"
+                            className="rounded bg-red-600 px-3 py-1 text-white shadow-sm transition hover:bg-red-700 disabled:opacity-60"
                             disabled={deletingRoleId === role.id}
                           >
                             {deletingRoleId === role.id ? 'Deleting…' : 'Delete'}
@@ -2444,16 +2510,18 @@ const Management = () => {
               Projects
             </button>
           )}
+          {canManageRoles && (
+            <button
+              onClick={() => setTab('roles')}
+              className={`px-3 py-1 rounded ${
+                tab === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Roles
+            </button>
+          )}
           {canManagePermissions && (
             <>
-              <button
-                onClick={() => setTab('roles')}
-                className={`px-3 py-1 rounded ${
-                  tab === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-                }`}
-              >
-                Roles
-              </button>
               <button
                 onClick={() => setTab('permissions')}
                 className={`px-3 py-1 rounded ${

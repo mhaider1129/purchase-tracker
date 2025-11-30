@@ -56,6 +56,10 @@ const WarehouseInventoryPage = () => {
   const [inventorySearch, setInventorySearch] = useState('');
   const [hideZeroInventory, setHideZeroInventory] = useState(false);
   const [inventorySort, setInventorySort] = useState('name-asc');
+  const [inventoryStockFilter, setInventoryStockFilter] = useState('all');
+  const [inventoryView, setInventoryView] = useState('grid');
+  const [inventoryPage, setInventoryPage] = useState(1);
+  const [inventoryPageSize, setInventoryPageSize] = useState(12);
   const [inventoryRefreshedAt, setInventoryRefreshedAt] = useState('');
   const selectedInventoryWarehouse = useMemo(
     () => warehouses.find((wh) => String(wh.id) === String(inventoryWarehouseId)),
@@ -188,6 +192,10 @@ const WarehouseInventoryPage = () => {
     }
   }, [inventoryItems, inventoryLoading, inventoryWarehouseId]);
 
+  useEffect(() => {
+    setInventoryPage(1);
+  }, [inventoryWarehouseId, inventorySearch, hideZeroInventory, inventorySort, inventoryStockFilter, inventoryPageSize]);
+
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase();
     if (!term) return stockItems;
@@ -238,6 +246,12 @@ const WarehouseInventoryPage = () => {
       items = items.filter((item) => Number(item.quantity) > 0);
     }
 
+    if (inventoryStockFilter === 'inStock') {
+      items = items.filter((item) => Number(item.quantity) > 0);
+    } else if (inventoryStockFilter === 'outOfStock') {
+      items = items.filter((item) => Number(item.quantity) <= 0);
+    }
+
     const sortedItems = [...items].sort((a, b) => {
       const nameA = a.item_name?.toLowerCase?.() || '';
       const nameB = b.item_name?.toLowerCase?.() || '';
@@ -258,7 +272,30 @@ const WarehouseInventoryPage = () => {
     });
 
     return sortedItems;
-  }, [hideZeroInventory, inventoryItems, inventorySearch, inventorySort]);
+  }, [hideZeroInventory, inventoryItems, inventorySearch, inventorySort, inventoryStockFilter]);
+
+  const totalInventoryPages = useMemo(
+    () => Math.max(1, Math.ceil(visibleInventoryItems.length / inventoryPageSize) || 1),
+    [inventoryPageSize, visibleInventoryItems.length],
+  );
+
+  useEffect(() => {
+    setInventoryPage((prev) => Math.min(prev, totalInventoryPages));
+  }, [totalInventoryPages]);
+
+  const paginatedInventoryItems = useMemo(() => {
+    const start = (inventoryPage - 1) * inventoryPageSize;
+    return visibleInventoryItems.slice(start, start + inventoryPageSize);
+  }, [inventoryPage, inventoryPageSize, visibleInventoryItems]);
+
+  const inventoryRange = useMemo(() => {
+    if (!visibleInventoryItems.length) {
+      return { start: 0, end: 0 };
+    }
+    const start = (inventoryPage - 1) * inventoryPageSize + 1;
+    const end = Math.min(inventoryPage * inventoryPageSize, visibleInventoryItems.length);
+    return { start, end };
+  }, [inventoryPage, inventoryPageSize, visibleInventoryItems.length]);
 
   const visibleInventoryQuantity = useMemo(
     () =>
@@ -887,7 +924,7 @@ const WarehouseInventoryPage = () => {
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 lg:grid-cols-3 lg:items-end">
+          <div className="mt-4 grid gap-3 lg:grid-cols-4 lg:items-end">
             <div className="space-y-1 lg:col-span-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-search">
                 {tr('inventory.fields.search')}
@@ -915,6 +952,33 @@ const WarehouseInventoryPage = () => {
               </div>
             </div>
 
+            <div className="flex flex-col gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-stock-filter">
+                  {tr('inventory.fields.stockFilter')}
+                </label>
+                <select
+                  id="inventory-stock-filter"
+                  value={inventoryStockFilter}
+                  onChange={(event) => setInventoryStockFilter(event.target.value)}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                >
+                  <option value="all">{tr('inventory.filters.stock.all')}</option>
+                  <option value="inStock">{tr('inventory.filters.stock.inStock')}</option>
+                  <option value="outOfStock">{tr('inventory.filters.stock.outOfStock')}</option>
+                </select>
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                  checked={hideZeroInventory}
+                  onChange={(event) => setHideZeroInventory(event.target.checked)}
+                />
+                {tr('inventory.filters.hideZero')}
+              </label>
+            </div>
+
             <div className="flex flex-col gap-3 lg:items-end">
               <div className="flex flex-wrap items-center gap-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-sort">
@@ -932,15 +996,55 @@ const WarehouseInventoryPage = () => {
                   <option value="quantity-asc">{tr('inventory.sortOptions.quantityAsc')}</option>
                 </select>
               </div>
-              <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
-                  checked={hideZeroInventory}
-                  onChange={(event) => setHideZeroInventory(event.target.checked)}
-                />
-                {tr('inventory.filters.hideZero')}
-              </label>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-view">
+                  {tr('inventory.fields.view')}
+                </label>
+                <div className="inline-flex overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                  <button
+                    type="button"
+                    id="inventory-view"
+                    onClick={() => setInventoryView('grid')}
+                    className={`px-3 py-2 text-xs font-semibold transition ${
+                      inventoryView === 'grid'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {tr('inventory.viewOptions.grid')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInventoryView('table')}
+                    className={`px-3 py-2 text-xs font-semibold transition ${
+                      inventoryView === 'table'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    {tr('inventory.viewOptions.table')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-page-size">
+                  {tr('inventory.fields.pageSize')}
+                </label>
+                <select
+                  id="inventory-page-size"
+                  value={inventoryPageSize}
+                  onChange={(event) => setInventoryPageSize(Number(event.target.value))}
+                  className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                >
+                  {[6, 12, 24, 36].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -950,7 +1054,7 @@ const WarehouseInventoryPage = () => {
             </div>
           )}
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 space-y-4">
             {inventoryLoading ? (
               <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.loading')}</div>
             ) : !inventoryWarehouseId ? (
@@ -958,22 +1062,37 @@ const WarehouseInventoryPage = () => {
             ) : visibleInventoryItems.length === 0 ? (
               <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.empty')}</div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200 overflow-hidden rounded-lg text-sm shadow-sm ring-1 ring-gray-200 dark:divide-gray-700 dark:ring-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.item')}</th>
-                    <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.quantity')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                  {visibleInventoryItems.map((item) => {
-                    const quantityValue = Number(item.quantity) || 0;
-                    const isZeroQuantity = quantityValue <= 0;
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-600 dark:text-gray-300">
+                  <span>
+                    {tr('inventory.labels.showingRange', {
+                      start: numberFormatter.format(inventoryRange.start),
+                      end: numberFormatter.format(inventoryRange.end),
+                      total: numberFormatter.format(visibleInventoryItems.length),
+                    })}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700">
+                    {tr('inventory.labels.pageSummary', { page: inventoryPage, pages: totalInventoryPages })}
+                  </span>
+                </div>
 
-                    return (
-                      <tr key={`${item.stock_item_id}-${item.item_name}`} className={isZeroQuantity ? 'bg-amber-50/60 dark:bg-amber-900/10' : ''}>
-                        <td className="px-3 py-2 text-gray-800 dark:text-gray-100">{item.item_name}</td>
-                        <td className="px-3 py-2 text-gray-800 dark:text-gray-100">
+                {inventoryView === 'grid' ? (
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {paginatedInventoryItems.map((item) => {
+                      const quantityValue = Number(item.quantity) || 0;
+                      const isZeroQuantity = quantityValue <= 0;
+
+                      return (
+                        <div
+                          key={`${item.stock_item_id}-${item.item_name}`}
+                          className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-900/50"
+                        >
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.item_name}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-300">
+                              {tr('inventory.labels.itemCode', { code: item.stock_item_id || '—' })}
+                            </p>
+                          </div>
                           <span
                             className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
                               isZeroQuantity
@@ -984,12 +1103,74 @@ const WarehouseInventoryPage = () => {
                             {numberFormatter.format(quantityValue)}
                             {isZeroQuantity && <span className="text-[10px] uppercase tracking-wide">{tr('inventory.labels.restock')}</span>}
                           </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 overflow-hidden rounded-lg text-sm shadow-sm ring-1 ring-gray-200 dark:divide-gray-700 dark:ring-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-900">
+                        <tr>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.item')}</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.quantity')}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                        {paginatedInventoryItems.map((item) => {
+                          const quantityValue = Number(item.quantity) || 0;
+                          const isZeroQuantity = quantityValue <= 0;
+
+                          return (
+                            <tr key={`${item.stock_item_id}-${item.item_name}`} className={isZeroQuantity ? 'bg-amber-50/60 dark:bg-amber-900/10' : ''}>
+                              <td className="px-3 py-2 text-gray-800 dark:text-gray-100">{item.item_name}</td>
+                              <td className="px-3 py-2 text-gray-800 dark:text-gray-100">
+                                <span
+                                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                                    isZeroQuantity
+                                      ? 'bg-amber-100 text-amber-800 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800/60'
+                                      : 'bg-green-50 text-green-800 ring-green-200 dark:bg-green-900/30 dark:text-green-100 dark:ring-green-800/40'
+                                  }`}
+                                >
+                                  {numberFormatter.format(quantityValue)}
+                                  {isZeroQuantity && <span className="text-[10px] uppercase tracking-wide">{tr('inventory.labels.restock')}</span>}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {totalInventoryPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-700 dark:text-gray-200">
+                    <div className="text-gray-600 dark:text-gray-300">
+                      {tr('inventory.labels.pageSummary', { page: inventoryPage, pages: totalInventoryPages })}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setInventoryPage((prev) => Math.max(1, prev - 1))}
+                        disabled={inventoryPage === 1}
+                        className="rounded-md border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                      >
+                        {tr('inventory.labels.previousPage')}
+                      </button>
+                      <span className="text-gray-600 dark:text-gray-300">{inventoryPage}</span>
+                      <button
+                        type="button"
+                        onClick={() => setInventoryPage((prev) => Math.min(totalInventoryPages, prev + 1))}
+                        disabled={inventoryPage >= totalInventoryPages}
+                        className="rounded-md border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
+                      >
+                        {tr('inventory.labels.nextPage')}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
