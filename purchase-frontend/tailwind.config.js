@@ -1,15 +1,17 @@
 /** @type {import('tailwindcss').Config} */
-import defaultTheme from "tailwindcss/defaultTheme";
+const defaultTheme = require('tailwindcss/defaultTheme');
 
-export default {
-  darkMode: "class",
-  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+module.exports = {
+  darkMode: 'class',
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}", // This tells Tailwind to scan all React components
+  ],
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", ...defaultTheme.fontFamily.sans],
+        sans: ['Inter', ...defaultTheme.fontFamily.sans],
       },
     },
   },
   plugins: [],
-};
+}

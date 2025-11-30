@@ -1087,6 +1087,8 @@
       "empty": "No inventory items found for this warehouse.",
       "selectWarehouse": "Select a warehouse to view its inventory.",
       "summary": "{{count}} items",
+      "summaryWithQuantity": "{{count}} items • {{total}} total units",
+      "lastUpdated": "Last updated {{timestamp}}",
       "columns": {
         "item": "Item",
         "quantity": "Quantity available"
@@ -1095,7 +1097,30 @@
         "warehouse": "Warehouse",
         "warehousePlaceholder": "Choose a warehouse",
         "search": "Search inventory",
-        "searchPlaceholder": "Search by item name"
+        "searchPlaceholder": "Search by item name",
+        "sort": "Sort"
+      },
+      "sortOptions": {
+        "nameAsc": "Name (A→Z)",
+        "nameDesc": "Name (Z→A)",
+        "quantityDesc": "Quantity (high → low)",
+        "quantityAsc": "Quantity (low → high)"
+      },
+      "filters": {
+        "hideZero": "Hide items with zero quantity"
+      },
+      "stats": {
+        "totalItems": "Tracked items",
+        "visibleItems": "Visible items",
+        "totalQuantity": "Total quantity",
+        "zeroQuantity": "Zero-quantity items"
+      },
+      "labels": {
+        "systemWide": "Across all tracked SKUs",
+        "attention": "Needs attention",
+        "showingFor": "Showing",
+        "noWarehouse": "No warehouse selected",
+        "restock": "Restock"
       }
     },
     "alerts": {
@@ -1349,6 +1374,7 @@
       "submitted": "Submitted",
       "updated": "Updated",
       "stage": "Stage",
+      "edit": "Edit",
       "items": "Items",
       "approvals": "Approvals",
       "justification": "Justification"
@@ -1377,6 +1403,28 @@
     "stageUnknown": "Status unavailable",
     "awaitingStep": "Awaiting {{step}}",
     "awaitingLevelOnly": "Awaiting approval level {{level}}"
+  },
+  "edit": {
+    "title": "Edit request",
+    "subtitle": "You can update your request as long as no approvals have started.",
+    "closeLabel": "Close edit modal",
+    "buttonLabel": "Edit",
+    "lockedTooltip": "Editing is available only before approvals start.",
+    "justificationLabel": "Justification",
+    "justificationPlaceholder": "Explain why you need these items",
+    "itemHeading": "Item {{index}}",
+    "removeItem": "Remove item",
+    "addItem": "Add item",
+    "quantityLabel": "Quantity",
+    "unitCostLabel": "Unit cost",
+    "specsLabel": "Specifications / Notes",
+    "specsPlaceholder": "Add specifications or notes for procurement",
+    "cancel": "Cancel",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "validationError": "Please provide a name and quantity for each item.",
+    "error": "Failed to update request.",
+    "loadError": "Unable to load request items for editing."
   },
   "adminTools": {
     "title": "Admin Tools",

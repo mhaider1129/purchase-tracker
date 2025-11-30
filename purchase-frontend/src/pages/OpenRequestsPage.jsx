@@ -1,6 +1,7 @@
 // src/pages/OpenRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/axios';
+import { updateRequest } from '../api/requests';
 import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +49,10 @@ const OpenRequestsPage = () => {
     () => (key, options) => translate(`openRequests.${key}`, options),
     [translate]
   );
+  const te = useMemo(
+    () => (key, options) => translate(`edit.${key}`, options),
+    [translate]
+  );
 
   const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState('');
@@ -64,6 +69,11 @@ const OpenRequestsPage = () => {
   const [itemsMap, setItemsMap] = useState({});
   const [loadingId, setLoadingId] = useState(null);
   const [focusedRequestId, setFocusedRequestId] = useState(null);
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [editForm, setEditForm] = useState({ justification: '', items: [] });
+  const [editError, setEditError] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const focusAppliedRef = useRef(false);
@@ -311,6 +321,160 @@ const OpenRequestsPage = () => {
 
     await loadAttachmentsForRequest(requestId);
     setExpandedAttachmentsId(requestId);
+  };
+
+  const resetEditState = useCallback(() => {
+    setEditingRequest(null);
+    setEditForm({ justification: '', items: [] });
+    setEditError('');
+    setIsEditModalOpen(false);
+    setEditSubmitting(false);
+  }, []);
+
+  const canEditRequest = useCallback((req) => {
+    const normalizedStatus = (req?.status || '').toLowerCase();
+    const approvalsStarted = Boolean(req?.has_approval_activity);
+    const finalizedStatuses = ['approved', 'rejected', 'completed', 'received', 'cancelled'];
+    return !approvalsStarted && !finalizedStatuses.includes(normalizedStatus);
+  }, []);
+
+  const prepareEditableItems = useCallback((rawItems = []) => {
+    return (rawItems || []).map((item) => ({
+      item_name: item.item_name || '',
+      brand: item.brand || '',
+      quantity: item.quantity ?? '',
+      unit_cost: item.unit_cost ?? '',
+      specs: item.specs || '',
+    }));
+  }, []);
+
+  const loadItemsForEditing = useCallback(
+    async (requestId) => {
+      if (itemsMap[requestId]) {
+        return itemsMap[requestId];
+      }
+
+      const res = await api.get(`/api/requests/${requestId}/items`);
+      const normalizedItems = extractItems(res.data);
+      setItemsMap((prev) => ({ ...prev, [requestId]: normalizedItems }));
+      return normalizedItems;
+    },
+    [itemsMap],
+  );
+
+  const openEditRequest = async (request) => {
+    if (!request?.id) return;
+    setEditError('');
+
+    try {
+      const rawItems = await loadItemsForEditing(request.id);
+      setEditForm({
+        justification: request.justification || '',
+        items: prepareEditableItems(rawItems),
+      });
+      setEditingRequest(request);
+      setIsEditModalOpen(true);
+      setExpandedId(request.id);
+    } catch (err) {
+      console.error('❌ Failed to prepare request for editing:', err);
+      setEditError(te('loadError'));
+    }
+  };
+
+  const handleEditItemChange = (index, field, value) => {
+    setEditForm((prev) => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        [field]: value,
+      };
+      return { ...prev, items: updatedItems };
+    });
+  };
+
+  const handleAddEditItem = () => {
+    setEditForm((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { item_name: '', brand: '', quantity: '', unit_cost: '', specs: '' },
+      ],
+    }));
+  };
+
+  const handleRemoveEditItem = (index) => {
+    setEditForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const handleSubmitEdit = async (event) => {
+    event?.preventDefault?.();
+    if (!editingRequest) return;
+
+    const sanitizedItems = editForm.items.map((item) => ({
+      item_name: item.item_name?.trim(),
+      brand: item.brand?.trim() || undefined,
+      quantity: Number(item.quantity),
+      unit_cost:
+        item.unit_cost === '' || item.unit_cost === null || item.unit_cost === undefined
+          ? null
+          : Number(item.unit_cost),
+      specs: item.specs?.trim() || undefined,
+    }));
+
+    if (sanitizedItems.length === 0) {
+      setEditError(te('validationError'));
+      return;
+    }
+
+    const hasInvalidItem = sanitizedItems.some(
+      (item) => !item.item_name || !Number.isFinite(item.quantity) || item.quantity <= 0,
+    );
+
+    if (hasInvalidItem) {
+      setEditError(te('validationError'));
+      return;
+    }
+
+    setEditSubmitting(true);
+
+    try {
+      await updateRequest(editingRequest.id, {
+        justification: editForm.justification,
+        items: sanitizedItems,
+      });
+
+      const updatedAt = new Date().toISOString();
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.id === editingRequest.id
+            ? { ...req, justification: editForm.justification, updated_at: updatedAt }
+            : req,
+        ),
+      );
+
+      setItemsMap((prev) => ({
+        ...prev,
+        [editingRequest.id]: sanitizedItems.map((item) => ({
+          ...item,
+          total_cost:
+            item.unit_cost === null || item.unit_cost === undefined
+              ? null
+              : Number(item.unit_cost || 0) * Number(item.quantity || 0),
+        })),
+      }));
+
+      resetEditState();
+    } catch (err) {
+      console.error('❌ Failed to update request:', err);
+      const message =
+        err?.response?.data?.error || te('error', { defaultValue: 'Failed to update request.' });
+      setEditError(message);
+    } finally {
+      setEditSubmitting(false);
+    }
   };
 
   const exportCSV = () => {
@@ -594,6 +758,9 @@ const OpenRequestsPage = () => {
                       {tr('table.stage')}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
+                      {tr('table.edit')}
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
                       {tr('table.attachments', { defaultValue: 'Attachments' })}
                     </th>
                     <th className="px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300">
@@ -620,6 +787,8 @@ const OpenRequestsPage = () => {
                       expandedAttachmentsId === req.id
                         ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
                         : tr('viewAttachments', { defaultValue: 'View Attachments' });
+
+                    const canEdit = canEditRequest(req);
 
                     const isFocused = focusedRequestId === req.id;
 
@@ -666,6 +835,17 @@ const OpenRequestsPage = () => {
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             <button
                               type="button"
+                              onClick={() => openEditRequest(req)}
+                              disabled={!canEdit || loadingId === req.id}
+                              title={!canEdit ? te('lockedTooltip') : undefined}
+                              className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                            >
+                              {te('buttonLabel')}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                            <button
+                              type="button"
                               onClick={() => toggleAttachments(req.id)}
                               disabled={attachmentsLoading}
                               className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
@@ -696,7 +876,7 @@ const OpenRequestsPage = () => {
                         </tr>
                         {expandedAttachmentsId === req.id && (
                           <tr>
-                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={12} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <RequestAttachmentsSection
                                 attachments={attachments}
                                 isLoading={attachmentsLoading}
@@ -713,7 +893,7 @@ const OpenRequestsPage = () => {
                         )}
                         {expandedId === req.id && (
                           <tr>
-                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={12} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <h3 className="font-semibold mb-2">{tr('requestedItems')}</h3>
                               {itemsMap[req.id]?.length > 0 ? (
                                 <table className="w-full text-sm border">
@@ -760,7 +940,7 @@ const OpenRequestsPage = () => {
                         )}
                         {expandedApprovalsId === req.id && (
                           <tr>
-                            <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td colSpan={12} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <ApprovalTimeline
                                 approvals={approvalsMap[req.id]}
                                 isLoading={loadingApprovalsId === req.id}
@@ -794,6 +974,8 @@ const OpenRequestsPage = () => {
                   expandedAttachmentsId === req.id
                     ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
                     : tr('viewAttachments', { defaultValue: 'View Attachments' });
+
+                const canEdit = canEditRequest(req);
 
                 const isFocused = focusedRequestId === req.id;
 
@@ -859,9 +1041,18 @@ const OpenRequestsPage = () => {
                     <div className="mt-4 flex justify-end">
                       <button
                         type="button"
+                        onClick={() => openEditRequest(req)}
+                        disabled={!canEdit || loadingId === req.id}
+                        title={!canEdit ? te('lockedTooltip') : undefined}
+                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                      >
+                        {te('buttonLabel')}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => toggleExpand(req.id)}
                         disabled={loadingId === req.id}
-                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         {expandedId === req.id ? tr('hideItems') : tr('showItems')}
                       </button>
@@ -984,6 +1175,168 @@ const OpenRequestsPage = () => {
           </div>
         )}
       </div>
+
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-4xl rounded-lg bg-white p-6 shadow-xl dark:bg-gray-900">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  {te('title')} {editingRequest?.id ? `#${editingRequest.id}` : ''}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                  {te('subtitle')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={resetEditState}
+                className="rounded-md p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-800"
+                aria-label={te('closeLabel')}
+              >
+                ×
+              </button>
+            </div>
+
+            {editError && (
+              <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-200">
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitEdit} className="mt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {te('justificationLabel')}
+                </label>
+                <textarea
+                  className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  rows={3}
+                  value={editForm.justification}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, justification: e.target.value }))}
+                  placeholder={te('justificationPlaceholder')}
+                />
+              </div>
+
+              <div className="space-y-3">
+                {editForm.items.map((item, idx) => (
+                  <div
+                    key={`edit-item-${idx}`}
+                    className="rounded-md border border-gray-200 p-3 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                  >
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        {te('itemHeading', { index: idx + 1 })}
+                      </h4>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEditItem(idx)}
+                        className="text-xs font-medium text-red-600 transition hover:text-red-700 disabled:opacity-50 dark:text-red-300 dark:hover:text-red-200"
+                        disabled={editForm.items.length === 1}
+                      >
+                        {te('removeItem')}
+                      </button>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {tr('item')}
+                        </label>
+                        <input
+                          type="text"
+                          value={item.item_name}
+                          onChange={(e) => handleEditItemChange(idx, 'item_name', e.target.value)}
+                          className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {tr('brand')}
+                        </label>
+                        <input
+                          type="text"
+                          value={item.brand}
+                          onChange={(e) => handleEditItemChange(idx, 'brand', e.target.value)}
+                          className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {te('quantityLabel')}
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => handleEditItemChange(idx, 'quantity', e.target.value)}
+                          className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {te('unitCostLabel')}
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={item.unit_cost}
+                          onChange={(e) => handleEditItemChange(idx, 'unit_cost', e.target.value)}
+                          className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {te('specsLabel')}
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={item.specs}
+                        onChange={(e) => handleEditItemChange(idx, 'specs', e.target.value)}
+                        className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                        placeholder={te('specsPlaceholder')}
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={handleAddEditItem}
+                  className="inline-flex items-center gap-2 rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  {te('addItem')}
+                </button>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={resetEditState}
+                  className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                >
+                  {te('cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+                >
+                  {editSubmitting ? te('saving') : te('save')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 };

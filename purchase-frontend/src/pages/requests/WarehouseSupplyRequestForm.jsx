@@ -283,7 +283,7 @@ const WarehouseSupplyRequestForm = () => {
                   <option value="">Select item</option>
                   {warehouseItems.map((item) => (
                     <option key={item.stock_item_id} value={item.stock_item_id}>
-                      {item.item_name} ({item.quantity} available)
+                      {item.item_name}
                     </option>
                   ))}
                 </select>

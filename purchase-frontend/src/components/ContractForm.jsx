@@ -187,6 +187,26 @@ const ContractForm = ({
         <div>
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="amount_paid"
+          >
+            Amount paid
+          </label>
+          <input
+            id="amount_paid"
+            name="amount_paid"
+            type="text"
+            value={formState.amount_paid}
+            onChange={handleInputChange}
+            placeholder="e.g. 125000"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Track how much has been paid against the contract value.
+          </p>
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="status"
           >
             Status

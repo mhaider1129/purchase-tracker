@@ -1,9 +1,10 @@
 // src/api/axios.js
 import axios from 'axios';
 
-// ✅ Use VITE_API_BASE (or legacy VITE_API_BASE_URL) or fall back to current host
+// ✅ Use REACT_APP_API_BASE env var or fall back to current host (helpful on LAN)
 const API_BASE =
-  import.meta.env.VITE_API_BASE || import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:5000/`;
+  process.env.REACT_APP_API_BASE ||
+  `${window.location.protocol}//${window.location.hostname}:5000/`;
 
 // ✅ Create axios instance
 const api = axios.create({

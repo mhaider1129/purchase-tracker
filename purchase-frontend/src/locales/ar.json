@@ -1084,6 +1084,8 @@
       "empty": "لا توجد عناصر مخزون لهذا المخزن.",
       "selectWarehouse": "اختر المخزن لعرض رصيده.",
       "summary": "{{count}} عناصر",
+      "summaryWithQuantity": "{{count}} عنصر • {{total}} إجمالي الوحدات",
+      "lastUpdated": "آخر تحديث {{timestamp}}",
       "columns": {
         "item": "العنصر",
         "quantity": "الكمية المتاحة"
@@ -1092,7 +1094,30 @@
         "warehouse": "المخزن",
         "warehousePlaceholder": "اختر مخزناً",
         "search": "البحث في المخزون",
-        "searchPlaceholder": "ابحث حسب اسم العنصر"
+        "searchPlaceholder": "ابحث حسب اسم العنصر",
+        "sort": "فرز"
+      },
+      "sortOptions": {
+        "nameAsc": "الاسم (أ→ي)",
+        "nameDesc": "الاسم (ي→أ)",
+        "quantityDesc": "الكمية (من الأعلى إلى الأدنى)",
+        "quantityAsc": "الكمية (من الأدنى إلى الأعلى)"
+      },
+      "filters": {
+        "hideZero": "إخفاء العناصر ذات الكمية الصفرية"
+      },
+      "stats": {
+        "totalItems": "العناصر المتتبعة",
+        "visibleItems": "العناصر المعروضة",
+        "totalQuantity": "إجمالي الكمية",
+        "zeroQuantity": "عناصر بدون رصيد"
+      },
+      "labels": {
+        "systemWide": "على مستوى جميع الأصناف",
+        "attention": "بحاجة للانتباه",
+        "showingFor": "عرض لـ",
+        "noWarehouse": "لم يتم اختيار مخزن",
+        "restock": "إعادة التزويد"
       }
     },
     "alerts": {
@@ -1346,6 +1371,7 @@
       "submitted": "تاريخ التقديم",
       "updated": "تاريخ التحديث",
       "stage": "المرحلة",
+      "edit": "تعديل",
       "items": "العناصر",
       "approvals": "الموافقات",
       "justification": "المبرر"
@@ -1374,6 +1400,28 @@
     "stageUnknown": "الحالة غير متوفرة",
     "awaitingStep": "بانتظار {{step}}",
     "awaitingLevelOnly": "بانتظار موافقة المستوى {{level}}"
+  },
+  "edit": {
+    "title": "تعديل الطلب",
+    "subtitle": "يمكنك تعديل الطلب قبل بدء خطوات الموافقة.",
+    "closeLabel": "إغلاق نافذة التعديل",
+    "buttonLabel": "تعديل",
+    "lockedTooltip": "التعديل متاح فقط قبل بدء الموافقات.",
+    "justificationLabel": "المبرر",
+    "justificationPlaceholder": "اشرح سبب الحاجة لهذه العناصر",
+    "itemHeading": "عنصر {{index}}",
+    "removeItem": "حذف العنصر",
+    "addItem": "إضافة عنصر",
+    "quantityLabel": "الكمية",
+    "unitCostLabel": "تكلفة الوحدة",
+    "specsLabel": "المواصفات / الملاحظات",
+    "specsPlaceholder": "أضف المواصفات أو الملاحظات لفريق المشتريات",
+    "cancel": "إلغاء",
+    "save": "حفظ التعديلات",
+    "saving": "جاري الحفظ...",
+    "validationError": "يرجى إدخال اسم وكمية لكل عنصر.",
+    "error": "فشل تحديث الطلب.",
+    "loadError": "تعذر تحميل بيانات العناصر للتعديل."
   },
   "adminTools": {
     "title": "أدوات المشرف",

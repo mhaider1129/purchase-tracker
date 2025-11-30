@@ -95,6 +95,65 @@ const statusOptions = [
   { value: 'archived', label: 'Archived' },
 ];
 
+const renewalOptions = [
+  { value: 'all', label: 'All renewals' },
+  { value: 'expiring', label: 'Expiring soon' },
+  { value: 'expired', label: 'Expired' },
+];
+
+const EXPIRING_SOON_THRESHOLD_DAYS = 30;
+
+const statStyles = {
+  active: {
+    gradient: 'from-emerald-500/90 to-emerald-600',
+    icon: (
+      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path
+          fillRule="evenodd"
+          d="M16.704 5.29a1 1 0 0 1 .006 1.414l-7.07 7.1a1 1 0 0 1-1.42.006L3.29 9.89a1 1 0 0 1 1.42-1.408l3.093 3.117 6.362-6.387a1 1 0 0 1 1.54.079Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
+  },
+  expiring: {
+    gradient: 'from-amber-400/90 to-amber-500',
+    icon: (
+      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M10 2a1 1 0 0 1 .894.553l7 14A1 1 0 0 1 17 18H3a1 1 0 0 1-.894-1.447l7-14A1 1 0 0 1 10 2Zm0 4a1 1 0 0 0-1 1v3.382l-1.447 1.447a1 1 0 1 0 1.414 1.414l2-2A1 1 0 0 0 11 10V7a1 1 0 0 0-1-1Zm0 9a1.25 1.25 0 1 0 0-2.5A1.25 1.25 0 0 0 10 15Z" />
+      </svg>
+    ),
+  },
+  expired: {
+    gradient: 'from-rose-500/90 to-rose-600',
+    icon: (
+      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path
+          fillRule="evenodd"
+          d="M4.293 4.293a1 1 0 0 1 1.414 0L10 8.586l4.293-4.293a1 1 0 1 1 1.414 1.414L11.414 10l4.293 4.293a1 1 0 0 1-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 0 1-1.414-1.414L8.586 10 4.293 5.707a1 1 0 0 1 0-1.414Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    ),
+  },
+  renewal: {
+    gradient: 'from-blue-500/90 to-indigo-600',
+    icon: (
+      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M6 2a1 1 0 1 0 0 2h8a2 2 0 0 1 2 2v1.09A6.5 6.5 0 1 0 9.25 16H6a1 1 0 1 0 0 2h8a4 4 0 0 0 4-4V6a4 4 0 0 0-4-4H6Zm9.5 10.5a4.5 4.5 0 1 1-8.17-2.46l1.6 1.6a1 1 0 0 0 1.41-1.42L8.74 8.12A4.5 4.5 0 0 1 15.5 12.5Z" />
+      </svg>
+    ),
+  },
+  paid: {
+    gradient: 'from-cyan-500/90 to-sky-600',
+    icon: (
+      <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M4.5 4A1.5 1.5 0 0 1 6 2.5h8A1.5 1.5 0 0 1 15.5 4v1.25A3.75 3.75 0 0 1 12 9h-1v2h1a1 1 0 0 1 0 2h-1v1a1 1 0 1 1-2 0v-1H8a1 1 0 1 1 0-2h1V9H8A3.75 3.75 0 0 1 4.5 5.25V4Z" />
+      </svg>
+    ),
+  },
+};
+
 const statusStyles = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   draft: 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
@@ -112,6 +171,7 @@ const initialFormState = {
   end_date: '',
   status: 'active',
   contract_value: '',
+  amount_paid: '',
   description: '',
   delivery_terms: '',
   warranty_terms: '',
@@ -129,6 +189,7 @@ const ContractsPage = () => {
   const [error, setError] = useState('');
 
   const [statusFilter, setStatusFilter] = useState('all');
+  const [renewalFilter, setRenewalFilter] = useState('all');
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -411,6 +472,8 @@ const ContractsPage = () => {
         contract.contract_value === null || contract.contract_value === undefined
           ? ''
           : String(contract.contract_value),
+      amount_paid:
+        contract.amount_paid === null || contract.amount_paid === undefined ? '' : String(contract.amount_paid),
       description: contract.description || '',
       delivery_terms: contract.delivery_terms || '',
       warranty_terms: contract.warranty_terms || '',
@@ -538,6 +601,25 @@ const ContractsPage = () => {
       payload.contract_value = null;
     }
 
+    if (formState.amount_paid !== '') {
+      const numericPaid = Number(formState.amount_paid);
+      if (Number.isNaN(numericPaid)) {
+        setFormError('Amount paid must be a valid number.');
+        return;
+      }
+      if (numericPaid < 0) {
+        setFormError('Amount paid cannot be negative.');
+        return;
+      }
+      if (payload.contract_value !== null && numericPaid > payload.contract_value) {
+        setFormError('Amount paid cannot exceed the contract value.');
+        return;
+      }
+      payload.amount_paid = numericPaid;
+    } else {
+      payload.amount_paid = null;
+    }
+
     if (formState.end_user_department_id) {
       const parsedDepartment = Number(formState.end_user_department_id);
       if (!Number.isInteger(parsedDepartment) || parsedDepartment <= 0) {
@@ -631,8 +713,95 @@ const ContractsPage = () => {
     }
   };
 
+  const isExpiringSoon = (contract) => {
+    if (!contract || contract.is_expired) {
+      return false;
+    }
+
+    const daysUntilExpiry = contract.days_until_expiry;
+    return typeof daysUntilExpiry === 'number' && daysUntilExpiry >= 0 && daysUntilExpiry <= EXPIRING_SOON_THRESHOLD_DAYS;
+  };
+
+  const contractStats = useMemo(() => {
+    const stats = {
+      active: 0,
+      expiringSoon: 0,
+      expired: 0,
+      nextRenewal: null,
+      totalValue: 0,
+      totalPaid: 0,
+    };
+
+    contracts.forEach((contract) => {
+      const normalizedStatus = (contract.status || '').toLowerCase();
+      if (normalizedStatus === 'active') {
+        stats.active += 1;
+      }
+
+      const numericValue = Number(contract.contract_value);
+      const numericPaid = Number(contract.amount_paid);
+      if (Number.isFinite(numericValue)) {
+        stats.totalValue += numericValue;
+      }
+      if (Number.isFinite(numericPaid)) {
+        stats.totalPaid += numericPaid;
+      }
+
+      if (contract.is_expired) {
+        stats.expired += 1;
+        return;
+      }
+
+      if (isExpiringSoon(contract)) {
+        stats.expiringSoon += 1;
+      }
+
+      const daysUntilExpiry = contract.days_until_expiry;
+      if (typeof daysUntilExpiry === 'number' && daysUntilExpiry >= 0) {
+        if (!stats.nextRenewal || daysUntilExpiry < stats.nextRenewal.daysUntil) {
+          stats.nextRenewal = {
+            daysUntil: daysUntilExpiry,
+            title: contract.title,
+            endDate: contract.end_date,
+          };
+        }
+      }
+    });
+
+    const paidCoverage =
+      stats.totalValue > 0
+        ? Number(Math.min((stats.totalPaid / stats.totalValue) * 100, 9999).toFixed(1))
+        : null;
+
+    return { ...stats, paidCoverage };
+  }, [contracts]);
+
+  const {
+    active: activeCount,
+    expiringSoon: expiringSoonCount,
+    expired: expiredCount,
+    nextRenewal,
+    totalValue,
+    totalPaid,
+    paidCoverage,
+  } = contractStats;
+
+  const filteredContracts = useMemo(() => {
+    return contracts.filter((contract) => {
+      if (renewalFilter === 'expiring') {
+        return isExpiringSoon(contract);
+      }
+
+      if (renewalFilter === 'expired') {
+        return Boolean(contract.is_expired);
+      }
+
+      return true;
+    });
+  }, [contracts, renewalFilter]);
+
   const sortedContracts = useMemo(() => {
-    return [...contracts].sort((a, b) => {
+    return [...filteredContracts].sort((a, b) => {
       const statusA = (a.status || '').toLowerCase();
       const statusB = (b.status || '').toLowerCase();
 
@@ -642,12 +811,7 @@ const ContractsPage = () => {
 
       return statusA.localeCompare(statusB);
     });
-  }, [contracts]);
-
-  const activeCount = useMemo(
-    () => contracts.filter((contract) => (contract.status || '').toLowerCase() === 'active').length,
-    [contracts]
-  );
+  }, [filteredContracts]);
 
   const renderStatusBadge = (status) => {
     const normalized = (status || '').toLowerCase();
@@ -662,15 +826,70 @@ const ContractsPage = () => {
   };
 
   const renderExpiry = (contract) => {
-    if (!contract.end_date) return '—';
+    if (!contract.end_date) {
+      return renewalPill('ok', 'No end date');
+    }
+
     if (contract.is_expired) {
       const days = Math.abs(contract.days_until_expiry || 0);
-      return days === 0 ? 'Expired today' : `Expired ${days} day${days === 1 ? '' : 's'} ago`;
+      const label = days === 0 ? 'Expired today' : `Expired ${days} day${days === 1 ? '' : 's'} ago`;
+      return renewalPill('expired', label);
     }
+
     if (typeof contract.days_until_expiry === 'number') {
-      return `In ${contract.days_until_expiry} day${contract.days_until_expiry === 1 ? '' : 's'}`;
+      const label = `In ${contract.days_until_expiry} day${contract.days_until_expiry === 1 ? '' : 's'}`;
+      const tone = isExpiringSoon(contract) ? 'expiring' : 'ok';
+      return renewalPill(tone, label);
     }
-    return '—';
+
+    return renewalPill('ok', 'Date pending');
+  };
+
+  const formatDate = (value) => {
+    if (!value) return null;
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed.toLocaleDateString();
+  };
+
+  const formatCurrency = (value) => {
+    if (value === null || value === undefined) return null;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return null;
+
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(numeric);
+  };
+
+  const getPaidSummary = (contract) => {
+    const paidValue = Number(contract?.amount_paid);
+    const totalValue = Number(contract?.contract_value);
+    const hasPaid = Number.isFinite(paidValue);
+    const hasTotal = Number.isFinite(totalValue) && totalValue > 0;
+
+    const percent = hasTotal && hasPaid ? Math.min((paidValue / totalValue) * 100, 9999) : null;
+
+    return {
+      formattedPaid: hasPaid ? formatCurrency(paidValue) : null,
+      formattedTotal: hasTotal ? formatCurrency(totalValue) : null,
+      percent: percent !== null ? Number(percent.toFixed(1)) : null,
+    };
+  };
+
+  const getRowHighlight = (contract) => {
+    if (contract.is_expired) {
+      return 'border-l-4 border-rose-400/80 bg-rose-50/60 dark:border-rose-400/60 dark:bg-rose-900/10';
+    }
+
+    if (isExpiringSoon(contract)) {
+      return 'border-l-4 border-amber-400/80 bg-amber-50/60 dark:border-amber-400/60 dark:bg-amber-900/10';
+    }
+
+    return 'border-l-4 border-transparent';
   };
 
   const departmentLookup = useMemo(() => {
@@ -735,6 +954,49 @@ const ContractsPage = () => {
         return null;
       })
       .filter(Boolean);
+    };
+
+  const StatCard = ({ tone, title, value, description }) => {
+    const style = statStyles[tone] || statStyles.active;
+
+    return (
+      <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-900">
+        <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${style.gradient}`} aria-hidden="true" />
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{title}</p>
+            <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{value}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{description}</p>
+          </div>
+          <span
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br ${style.gradient} text-white shadow-sm`}
+          >
+            {style.icon}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renewalPill = (tone, label) => {
+    const colorMap = {
+      expired: 'bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-900/30 dark:text-rose-200 dark:ring-rose-800/60',
+      expiring: 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-800/60',
+      ok: 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-200 dark:ring-emerald-800/60',
+    };
+
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
+          colorMap[tone] || colorMap.ok
+        }`}
+      >
+        {tone === 'expired' && '⏳'}
+        {tone === 'expiring' && '⚠️'}
+        {tone === 'ok' && '✅'}
+        {label}
+      </span>
+    );
   };
 
   return (
@@ -755,6 +1017,53 @@ const ContractsPage = () => {
             </div>
           </div>
         </header>
+
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          <StatCard
+            tone="active"
+            title="Active contracts"
+            value={activeCount}
+            description="Based on current status"
+          />
+          <StatCard
+            tone="expiring"
+            title="Expiring soon"
+            value={expiringSoonCount}
+            description={`Within the next ${EXPIRING_SOON_THRESHOLD_DAYS} days`}
+          />
+          <StatCard
+            tone="expired"
+            title="Expired"
+            value={expiredCount}
+            description="Requires close-out or archiving"
+          />
+          <StatCard
+            tone="renewal"
+            title="Next renewal"
+            value={
+              nextRenewal
+                ? `${nextRenewal.daysUntil} day${nextRenewal.daysUntil === 1 ? '' : 's'}`
+                : 'No upcoming renewals'
+            }
+            description={
+              nextRenewal
+                ? `${nextRenewal.title || 'Unnamed contract'}${
+                    formatDate(nextRenewal.endDate) ? ` • ${formatDate(nextRenewal.endDate)}` : ''
+                  }`
+                : 'Awaiting schedule'
+            }
+          />
+          <StatCard
+            tone="paid"
+            title="Paid to date"
+            value={formatCurrency(totalPaid) ?? '—'}
+            description={
+              totalValue
+                ? `of ${formatCurrency(totalValue)}${paidCoverage !== null ? ` • ${paidCoverage}% paid` : ''}`
+                : 'Add contract values to track spend'
+            }
+          />
+        </div>
 
         <section className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
           <div className="space-y-4">
@@ -784,7 +1093,24 @@ const ContractsPage = () => {
                       onChange={(event) => setStatusFilter(event.target.value)}
                       className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                     >
-                      {statusOptions.map((option) => (
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="w-full sm:w-48">
+                    <label htmlFor="renewal-filter" className="sr-only">
+                      Filter by renewal window
+                    </label>
+                    <select
+                      id="renewal-filter"
+                      value={renewalFilter}
+                      onChange={(event) => setRenewalFilter(event.target.value)}
+                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                    >
+                      {renewalOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -825,6 +1151,9 @@ const ContractsPage = () => {
                         Value
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                        Paid
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Status
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
@@ -838,33 +1167,36 @@ const ContractsPage = () => {
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                     {loading ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           Loading contracts...
                         </td>
                       </tr>
                     ) : sortedContracts.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           No contracts match your current filters.
                         </td>
                       </tr>
                     ) : (
                       sortedContracts.map((contract) => {
                         const isSelected = viewingContract?.id === contract.id;
-                        const contractValue =
-                          contract.contract_value === null || contract.contract_value === undefined
-                            ? '—'
-                            : new Intl.NumberFormat(undefined, {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 2,
-                              }).format(Number(contract.contract_value));
+                        const contractValue = formatCurrency(contract.contract_value);
+                        const paidSummary = getPaidSummary(contract);
+                        const paidBarTone =
+                          paidSummary.percent === null
+                            ? 'bg-gray-300 dark:bg-gray-700'
+                            : paidSummary.percent >= 90
+                            ? 'bg-emerald-500'
+                            : paidSummary.percent >= 50
+                            ? 'bg-blue-500'
+                            : 'bg-amber-500';
 
                         return (
                           <tr
                             key={contract.id}
-                            className={`cursor-pointer transition hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                            className={`cursor-pointer transition hover:-translate-y-[1px] hover:shadow-sm hover:ring-1 hover:ring-blue-100 dark:hover:ring-blue-800 ${
                               isSelected ? 'bg-blue-50/70 dark:bg-blue-900/20' : ''
-                            }`}
+                            } ${getRowHighlight(contract)}`}
                             onClick={() => handleViewContract(contract)}
                           >
                             <td className="px-4 py-3 align-top">
@@ -877,7 +1209,36 @@ const ContractsPage = () => {
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">
                               {contract.source_request_id ? `#${contract.source_request_id}` : '—'}
                             </td>
-                            <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{contractValue}</td>
+                            <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{contractValue ?? '—'}</td>
+                            <td className="px-4 py-3 align-top">
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+                                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                    {paidSummary.formattedPaid ?? '—'}
+                                  </span>
+                                  <span className="text-gray-500 dark:text-gray-400">
+                                    {paidSummary.formattedTotal ? `of ${paidSummary.formattedTotal}` : 'No total set'}
+                                  </span>
+                                </div>
+                                {paidSummary.percent !== null ? (
+                                  <div className="h-2.5 rounded-full bg-gray-200 dark:bg-gray-800">
+                                    <div
+                                      className={`h-2.5 rounded-full ${paidBarTone}`}
+                                      style={{ width: `${Math.min(paidSummary.percent, 100)}%` }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                                    Track value to see coverage
+                                  </div>
+                                )}
+                                {paidSummary.percent !== null && (
+                                  <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                                    {paidSummary.percent}% paid
+                                  </div>
+                                )}
+                              </div>
+                            </td>
                             <td className="px-4 py-3 align-top">{renderStatusBadge(contract.status)}</td>
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{renderExpiry(contract)}</td>
                             <td className="px-4 py-3 align-top">
@@ -1013,13 +1374,37 @@ const ContractsPage = () => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Contract value</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
-                        {viewingContract.contract_value === null || viewingContract.contract_value === undefined
-                          ? '—'
-                          : new Intl.NumberFormat(undefined, {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 2,
-                            }).format(Number(viewingContract.contract_value))}
+                        {formatCurrency(viewingContract.contract_value) ?? '—'}
                       </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Paid to date</h3>
+                      {(() => {
+                        const paidSummary = getPaidSummary(viewingContract);
+                        return (
+                          <div className="mt-1 space-y-1">
+                            <div className="text-gray-900 dark:text-gray-100">
+                              {paidSummary.formattedPaid ?? '—'}
+                              {paidSummary.formattedTotal ? ` of ${paidSummary.formattedTotal}` : ''}
+                            </div>
+                            {paidSummary.percent !== null ? (
+                              <>
+                                <div className="h-2.5 rounded-full bg-gray-200 dark:bg-gray-800">
+                                  <div
+                                    className="h-2.5 rounded-full bg-emerald-500"
+                                    style={{ width: `${Math.min(paidSummary.percent, 100)}%` }}
+                                  />
+                                </div>
+                                <div className="text-[11px] text-gray-500 dark:text-gray-400">
+                                  {paidSummary.percent}% paid
+                                </div>
+                              </>
+                            ) : (
+                              <p className="text-xs text-gray-500 dark:text-gray-400">Add a contract value to track coverage.</p>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</h3>

@@ -54,6 +54,13 @@ const WarehouseInventoryPage = () => {
   const [reportStatus, setReportStatus] = useState({ state: 'idle', message: '' });
   const [inventoryWarehouseId, setInventoryWarehouseId] = useState('');
   const [inventorySearch, setInventorySearch] = useState('');
+  const [hideZeroInventory, setHideZeroInventory] = useState(false);
+  const [inventorySort, setInventorySort] = useState('name-asc');
+  const [inventoryRefreshedAt, setInventoryRefreshedAt] = useState('');
+  const selectedInventoryWarehouse = useMemo(
+    () => warehouses.find((wh) => String(wh.id) === String(inventoryWarehouseId)),
+    [inventoryWarehouseId, warehouses],
+  );
 
   const {
     items: inventoryItems,
@@ -175,6 +182,12 @@ const WarehouseInventoryPage = () => {
     return undefined;
   }, [allocationStatus]);
 
+  useEffect(() => {
+    if (inventoryWarehouseId && !inventoryLoading) {
+      setInventoryRefreshedAt(new Date().toISOString());
+    }
+  }, [inventoryItems, inventoryLoading, inventoryWarehouseId]);
+
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase();
     if (!term) return stockItems;
@@ -209,16 +222,67 @@ const WarehouseInventoryPage = () => {
   const selectedDiscardItem = stockItems.find(
     (item) => String(item.id) === String(discardForm.stock_item_id),
   );
-  const filteredInventoryItems = useMemo(() => {
+  const visibleInventoryItems = useMemo(() => {
     const term = inventorySearch.trim().toLowerCase();
-    if (!term) return inventoryItems;
+    let items = inventoryItems;
 
-    return inventoryItems.filter((item) =>
-      [item.item_name]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term))
-    );
-  }, [inventoryItems, inventorySearch]);
+    if (term) {
+      items = items.filter((item) =>
+        [item.item_name]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(term))
+      );
+    }
+
+    if (hideZeroInventory) {
+      items = items.filter((item) => Number(item.quantity) > 0);
+    }
+
+    const sortedItems = [...items].sort((a, b) => {
+      const nameA = a.item_name?.toLowerCase?.() || '';
+      const nameB = b.item_name?.toLowerCase?.() || '';
+      const quantityA = Number(a.quantity) || 0;
+      const quantityB = Number(b.quantity) || 0;
+
+      switch (inventorySort) {
+        case 'name-desc':
+          return nameB.localeCompare(nameA);
+        case 'quantity-desc':
+          return quantityB - quantityA;
+        case 'quantity-asc':
+          return quantityA - quantityB;
+        case 'name-asc':
+        default:
+          return nameA.localeCompare(nameB);
+      }
+    });
+
+    return sortedItems;
+  }, [hideZeroInventory, inventoryItems, inventorySearch, inventorySort]);
+
+  const visibleInventoryQuantity = useMemo(
+    () =>
+      visibleInventoryItems.reduce(
+        (sum, item) => sum + (Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0),
+        0,
+      ),
+    [visibleInventoryItems],
+  );
+
+  const inventoryTotalQuantity = useMemo(
+    () =>
+      inventoryItems.reduce(
+        (sum, item) => sum + (Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0),
+        0,
+      ),
+    [inventoryItems],
+  );
+
+  const zeroQuantityCount = useMemo(
+    () =>
+      inventoryItems.filter((item) => (Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0) <= 0).length,
+    [inventoryItems],
+  );
 
   const selectedUnassignedItem = useMemo(
     () => unassignedItems.find((item) => String(item.id) === String(allocationForm.stock_item_id)),
@@ -708,94 +772,227 @@ const WarehouseInventoryPage = () => {
         </div>
 
         <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('inventory.title')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{tr('inventory.description')}</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('inventory.title')}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{tr('inventory.description')}</p>
+              {selectedInventoryWarehouse && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-100 dark:ring-blue-800">
+                  <span className="h-2 w-2 rounded-full bg-blue-500" aria-hidden />
+                  {selectedInventoryWarehouse.name}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {inventoryRefreshedAt && (
+                <span className="inline-flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 ring-1 ring-gray-200 dark:bg-gray-900 dark:text-gray-200 dark:ring-gray-700">
+                  <span className="h-2 w-2 rounded-full bg-green-500" aria-hidden />
+                  {tr('inventory.lastUpdated', {
+                    timestamp: new Date(inventoryRefreshedAt).toLocaleString(),
+                  })}
+                </span>
+              )}
+              <label className="sr-only" htmlFor="inventory-warehouse">
+                {tr('inventory.fields.warehouse')}
+              </label>
+              <select
+                id="inventory-warehouse"
+                value={inventoryWarehouseId}
+                onChange={(event) => setInventoryWarehouseId(event.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                disabled={warehousesLoading || !warehouses.length}
+              >
+                <option value="">{tr('inventory.fields.warehousePlaceholder')}</option>
+                {warehouses.map((wh) => (
+                  <option key={wh.id} value={wh.id}>
+                    {wh.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={refreshInventory}
+                className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2 text-sm font-semibold text-white shadow transition hover:from-blue-700 hover:to-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:from-blue-300 disabled:to-blue-400"
+                disabled={!inventoryWarehouseId || inventoryLoading}
+              >
+                <span className="inline-flex h-2 w-2 rounded-full bg-white/80" aria-hidden />
+                {inventoryLoading ? tr('inventory.refreshing') : tr('inventory.refresh')}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="flex items-center gap-3 rounded-md bg-gradient-to-br from-blue-50 to-white p-4 shadow-sm ring-1 ring-blue-100 dark:from-blue-900/30 dark:via-gray-800 dark:to-gray-800 dark:ring-blue-800/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-100">
+                📦
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="sr-only" htmlFor="inventory-warehouse">
-                  {tr('inventory.fields.warehouse')}
-                </label>
-                <select
-                  id="inventory-warehouse"
-                  value={inventoryWarehouseId}
-                  onChange={(event) => setInventoryWarehouseId(event.target.value)}
-                  className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                  disabled={warehousesLoading || !warehouses.length}
-                >
-                  <option value="">{tr('inventory.fields.warehousePlaceholder')}</option>
-                  {warehouses.map((wh) => (
-                    <option key={wh.id} value={wh.id}>
-                      {wh.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={refreshInventory}
-                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
-                  disabled={!inventoryWarehouseId || inventoryLoading}
-                >
-                  {inventoryLoading ? tr('inventory.refreshing') : tr('inventory.refresh')}
-                </button>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-100">
+                  {tr('inventory.stats.totalItems')}
+                </p>
+                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+                  {numberFormatter.format(inventoryItems.length)}
+                </p>
               </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 sm:items-center">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-search">
-                  {tr('inventory.fields.search')}
-                </label>
+            <div className="flex items-center gap-3 rounded-md bg-gradient-to-br from-indigo-50 to-white p-4 shadow-sm ring-1 ring-indigo-100 dark:from-indigo-900/30 dark:via-gray-800 dark:to-gray-800 dark:ring-indigo-800/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-100">
+                📊
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-100">
+                  {tr('inventory.stats.visibleItems')}
+                </p>
+                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+                  {numberFormatter.format(visibleInventoryItems.length)}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  {tr('inventory.summaryWithQuantity', {
+                    count: visibleInventoryItems.length,
+                    total: numberFormatter.format(visibleInventoryQuantity),
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-md bg-gradient-to-br from-green-50 to-white p-4 shadow-sm ring-1 ring-green-100 dark:from-green-900/30 dark:via-gray-800 dark:to-gray-800 dark:ring-green-800/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-700 dark:bg-green-900/60 dark:text-green-100">
+                ✅
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-green-700 dark:text-green-100">
+                  {tr('inventory.stats.totalQuantity')}
+                </p>
+                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
+                  {numberFormatter.format(inventoryTotalQuantity)}
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-300">{tr('inventory.labels.systemWide')}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-md bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm ring-1 ring-amber-100 dark:from-amber-900/30 dark:via-gray-800 dark:to-gray-800 dark:ring-amber-800/40">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-100">
+                ⚠️
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-100">
+                  {tr('inventory.stats.zeroQuantity')}
+                </p>
+                <p className="mt-1 text-2xl font-bold text-amber-800 dark:text-amber-100">
+                  {numberFormatter.format(zeroQuantityCount)}
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-200">{tr('inventory.labels.attention')}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3 lg:items-end">
+            <div className="space-y-1 lg:col-span-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-search">
+                {tr('inventory.fields.search')}
+              </label>
+              <div className="relative">
+                <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-gray-400">🔎</span>
                 <input
                   id="inventory-search"
                   type="search"
                   value={inventorySearch}
                   onChange={(event) => setInventorySearch(event.target.value)}
                   placeholder={tr('inventory.fields.searchPlaceholder')}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 pl-9 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 />
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-300 sm:text-right">
-                {tr('inventory.summary', { count: inventoryItems.length })}
+              <div className="flex flex-wrap gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
+                  {tr('inventory.labels.showingFor')} {selectedInventoryWarehouse?.name || tr('inventory.labels.noWarehouse')}
+                </span>
+                {hideZeroInventory && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-900/30 dark:text-amber-100 dark:ring-amber-800/40">
+                    {tr('inventory.filters.hideZero')}
+                  </span>
+                )}
               </div>
             </div>
 
-            {inventoryError && (
-              <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-100">
-                {inventoryError}
+            <div className="flex flex-col gap-3 lg:items-end">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-sort">
+                  {tr('inventory.fields.sort')}
+                </label>
+                <select
+                  id="inventory-sort"
+                  value={inventorySort}
+                  onChange={(event) => setInventorySort(event.target.value)}
+                  className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                >
+                  <option value="name-asc">{tr('inventory.sortOptions.nameAsc')}</option>
+                  <option value="name-desc">{tr('inventory.sortOptions.nameDesc')}</option>
+                  <option value="quantity-desc">{tr('inventory.sortOptions.quantityDesc')}</option>
+                  <option value="quantity-asc">{tr('inventory.sortOptions.quantityAsc')}</option>
+                </select>
               </div>
-            )}
-
-            <div className="mt-4 overflow-x-auto">
-              {inventoryLoading ? (
-                <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.loading')}</div>
-              ) : !inventoryWarehouseId ? (
-                <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.selectWarehouse')}</div>
-              ) : filteredInventoryItems.length === 0 ? (
-                <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.empty')}</div>
-              ) : (
-                <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-900">
-                    <tr>
-                      <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.item')}</th>
-                      <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.quantity')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                    {filteredInventoryItems.map((item) => (
-                      <tr key={`${item.stock_item_id}-${item.item_name}`}>
-                        <td className="px-3 py-2 text-gray-800 dark:text-gray-100">{item.item_name}</td>
-                        <td className="px-3 py-2 text-gray-800 dark:text-gray-100">
-                          {numberFormatter.format(Number(item.quantity) || 0)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+              <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600"
+                  checked={hideZeroInventory}
+                  onChange={(event) => setHideZeroInventory(event.target.checked)}
+                />
+                {tr('inventory.filters.hideZero')}
+              </label>
             </div>
           </div>
+
+          {inventoryError && (
+            <div className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/40 dark:text-red-100">
+              {inventoryError}
+            </div>
+          )}
+
+          <div className="mt-4 overflow-x-auto">
+            {inventoryLoading ? (
+              <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.loading')}</div>
+            ) : !inventoryWarehouseId ? (
+              <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.selectWarehouse')}</div>
+            ) : visibleInventoryItems.length === 0 ? (
+              <div className="py-6 text-sm text-gray-600 dark:text-gray-300">{tr('inventory.empty')}</div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200 overflow-hidden rounded-lg text-sm shadow-sm ring-1 ring-gray-200 dark:divide-gray-700 dark:ring-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-900">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.item')}</th>
+                    <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.quantity')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
+                  {visibleInventoryItems.map((item) => {
+                    const quantityValue = Number(item.quantity) || 0;
+                    const isZeroQuantity = quantityValue <= 0;
+
+                    return (
+                      <tr key={`${item.stock_item_id}-${item.item_name}`} className={isZeroQuantity ? 'bg-amber-50/60 dark:bg-amber-900/10' : ''}>
+                        <td className="px-3 py-2 text-gray-800 dark:text-gray-100">{item.item_name}</td>
+                        <td className="px-3 py-2 text-gray-800 dark:text-gray-100">
+                          <span
+                            className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
+                              isZeroQuantity
+                                ? 'bg-amber-100 text-amber-800 ring-amber-200 dark:bg-amber-900/40 dark:text-amber-100 dark:ring-amber-800/60'
+                                : 'bg-green-50 text-green-800 ring-green-200 dark:bg-green-900/30 dark:text-green-100 dark:ring-green-800/40'
+                            }`}
+                          >
+                            {numberFormatter.format(quantityValue)}
+                            {isZeroQuantity && <span className="text-[10px] uppercase tracking-wide">{tr('inventory.labels.restock')}</span>}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
