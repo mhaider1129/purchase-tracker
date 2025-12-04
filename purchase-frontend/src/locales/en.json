@@ -146,6 +146,7 @@
     "lifecycleAnalytics": "Lifecycle Analytics",
     "auditRequests": "Audit Requests",
     "procurementPlans": "Procurement Plans",
+    "historicalRequests": "Import Historical Requests",
     "suppliers": "Suppliers",
     "supplierSrm": "Supplier SRM",
     "contracts": "Contracts",
@@ -199,6 +200,72 @@
     "warehouseInventory": "Warehouse Inventory",
     "custodyApprovals": "Custody Approvals",
     "custodyIssued": "Issued Custodies"
+  },
+  "historicalRequests": {
+    "breadcrumb": "Requests / Historical import",
+    "title": "Import historical paper requests",
+    "subtitle": "Record previously approved paper requests so KPIs and analytics remain accurate.",
+    "success": "Historical request saved for KPI tracking",
+    "error": "Unable to save historical request",
+    "validation": {
+      "requestType": "Select a request type",
+      "department": "Select a department ID",
+      "requester": "Provide a requester ID or temporary requester name",
+      "items": "Add at least one item",
+      "itemName": "Each item needs a name",
+      "quantity": "Quantities must be whole numbers",
+      "unitCost": "Unit cost must be a whole number or left blank",
+      "supplyWarehouse": "Select the fulfilling warehouse"
+    },
+    "fields": {
+      "requestType": "Request type",
+      "departmentId": "Department ID",
+      "requesterId": "Requester ID",
+      "temporaryRequester": "Temporary requester name",
+      "projectId": "Project ID (optional)",
+      "supplyWarehouse": "Supply warehouse ID",
+      "justification": "Justification (optional)",
+      "approvedAt": "Approved on",
+      "markCompleted": "Mark as completed"
+    },
+    "placeholders": {
+      "selectType": "Select type",
+      "requesterId": "Employee ID for the requester",
+      "temporaryRequester": "Name on the paper request"
+    },
+    "help": {
+      "requester": "Required unless you provide a temporary requester name.",
+      "completion": "If checked, the request will be stored as Completed and ready for KPI tracking.",
+      "items": "Use one line per requested item. Quantities and costs must be whole numbers.",
+      "dates": "Set the approved date to match the original paper approval. Completion date is optional.",
+      "access": "Only authorized users can import requests for KPI alignment.",
+      "title": "Import guidance"
+    },
+    "items": {
+      "title": "Requested items",
+      "subtitle": "Use whole numbers for quantity and unit cost to match paper forms.",
+      "add": "Add item",
+      "label": "Item",
+      "remove": "Remove",
+      "fields": {
+        "name": "Item name",
+        "brand": "Brand (optional)",
+        "quantity": "Quantity",
+        "unitCost": "Unit cost (optional)",
+        "unitCostHelp": "Leave blank if the paper form omitted pricing.",
+        "availableQuantity": "Available quantity (optional)",
+        "intendedUse": "Intended use (optional)",
+        "specs": "Specs (optional)"
+      }
+    },
+    "summary": {
+      "total": "Estimated total",
+      "note": "Totals are calculated from item quantities and unit costs."
+    },
+    "actions": {
+      "saving": "Saving…",
+      "save": "Import historical request"
+    }
   },
   "maintenanceHODApprovals": {
     "title": "Maintenance Approval Center",
@@ -1185,7 +1252,7 @@
       "submitFailed": "Failed to add stock to the warehouse. Please try again.",
       "reportFailed": "Could not load the weekly departmental stocking report.",
       "loadDepartmentsFailed": "Could not load departments. Please refresh and try again.",
-      "issueValidationFailed": "Select a warehouse and department, then add at least one stock item with a positive quantity.",
+      "issueValidationFailed": "Select a warehouse and department, then add at least one stock item with a positive quantity. Include a section if applicable.",
       "issueSubmitSuccess": "Stock issued to department.",
       "issueSubmitFailed": "Failed to issue stock to the department. Please try again.",
       "discardValidationFailed": "Select a warehouse, stock item, reason, and enter a positive quantity to continue.",
@@ -1223,6 +1290,9 @@
         "selectPlaceholder": "Choose a stock item",
         "department": "Department",
         "departmentPlaceholder": "Choose a department",
+        "section": "Section",
+        "sectionPlaceholder": "Choose a section (if applicable)",
+        "optional": "Optional",
         "itemsLabel": "Items to issue",
         "itemsHelper": "Add one or more stock items with the quantities issued to this department.",
         "addItem": "Add item",
@@ -1875,7 +1945,9 @@
     "subtitle": "Review approved warehouse requests and record supplied items.",
     "actions": {
       "refresh": "Refresh",
-      "clearFilters": "Clear Filters"
+      "clearFilters": "Clear Filters",
+      "print": "Print",
+      "printing": "Printing…"
     },
     "summary": {
       "total": "Total Requests"
@@ -1925,6 +1997,9 @@
       "justification": "Justification",
       "noJustification": "No justification provided.",
       "recordSupplied": "Record Supplied Items",
+      "closeRequest": "Close Request",
+      "closeRequestConfirm": "Close this warehouse supply request even if it is not fully supplied?",
+      "closing": "Closing…",
       "viewItems": "View Requested Items",
       "hideItems": "Hide Requested Items",
       "itemsCount": "Items in request",
@@ -1935,9 +2010,9 @@
       "progressLabel": "{{progress}}% fulfilled",
       "suppliedSummary": "{{supplied}} of {{requested}} supplied",
       "fullySupplied": "All requested quantities have been supplied.",
-      "fulfillmentHint": "Record supplied quantities to complete this request.",
+      "fulfillmentHint": "Record supplied quantities or close the request when you are done.",
       "badges": {
-        "fullySupplied": "Ready to close",
+        "closed": "Closed",
         "needsAttention": "Needs supply attention",
         "inProgress": "In progress"
       }
@@ -1950,7 +2025,22 @@
     },
     "alerts": {
       "loadFailed": "Failed to load warehouse supply requests. Please try again.",
-      "itemsLoadFailed": "Failed to load requested items. Please try again later."
+      "itemsLoadFailed": "Failed to load requested items. Please try again later.",
+      "printFailed": "Failed to print warehouse supply request.",
+      "enablePopups": "Please enable popups to print this request."
+    },
+    "print": {
+      "title": "Warehouse Supply Request",
+      "heading": "Warehouse Supply Request",
+      "printCount": "Print count",
+      "requester": "Requester",
+      "role": "Role",
+      "items": "Requested items",
+      "itemName": "Item",
+      "outstanding": "Outstanding",
+      "totals": "Totals",
+      "footer": "Generated for warehouse fulfillment tracking.",
+      "closeFailed": "Failed to close the request. Please try again."
     },
     "statuses": {
       "approved": "Approved",

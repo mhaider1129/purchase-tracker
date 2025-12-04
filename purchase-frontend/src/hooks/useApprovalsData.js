@@ -50,6 +50,7 @@ const useApprovalsData = (user) => {
   const [selectedHodId, setSelectedHodId] = useState('');
   const [hodModalRequestId, setHodModalRequestId] = useState(null);
   const [hodSubmitLoading, setHodSubmitLoading] = useState(false);
+  const [holdLoadingMap, setHoldLoadingMap] = useState({});
 
   const canMarkUrgent = useMemo(
     () => ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role),
@@ -92,7 +93,13 @@ const useApprovalsData = (user) => {
     setLoading(true);
     try {
       const res = await axios.get('/api/requests/pending-approvals');
-      setRequests(res.data);
+      const normalized = Array.isArray(res.data)
+        ? res.data.map((row) => ({
+            ...row,
+            approval_status: row?.approval_status || 'Pending',
+          }))
+        : [];
+      setRequests(normalized);
     } catch (err) {
       console.error('❌ Failed to fetch approvals:', err);
       setError('Failed to load pending approvals.');
@@ -561,6 +568,34 @@ const useApprovalsData = (user) => {
     }
   };
 
+  const toggleApprovalHoldStatus = async (approvalId, requestId, placeOnHold) => {
+    const actionLabel = placeOnHold ? 'put on hold' : 'resume';
+    const confirmed = window.confirm(
+      `Are you sure you want to ${actionLabel} Request #${requestId}?`,
+    );
+    if (!confirmed) return;
+
+    setHoldLoadingMap((prev) => ({ ...prev, [approvalId]: true }));
+
+    try {
+      const res = await axios.put(`/api/approvals/${approvalId}/hold`, {
+        on_hold: placeOnHold,
+      });
+
+      const nextStatus = res.data?.status || (placeOnHold ? 'On Hold' : 'Pending');
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.approval_id === approvalId ? { ...req, approval_status: nextStatus } : req,
+        ),
+      );
+    } catch (err) {
+      console.error('❌ Failed to update approval hold status:', err);
+      alert('Unable to update the approval hold status. Please try again.');
+    } finally {
+      setHoldLoadingMap((prev) => ({ ...prev, [approvalId]: false }));
+    }
+  };
+
   const reassignToDepartmentRequester = async (requestId, approvalId) => {
     const confirmed = window.confirm(
       `Assign Maintenance Request #${requestId} to a designated requester in your department?`,
@@ -867,6 +902,7 @@ const useApprovalsData = (user) => {
     hodOptionsError,
     hodOptionsLoading,
     hodSubmitLoading,
+    holdLoadingMap,
     isItemLockedForUser,
     isUrgent,
     itemDecisions,
@@ -902,6 +938,7 @@ const useApprovalsData = (user) => {
     sortOption,
     submitDecision,
     submitHodForward,
+    toggleApprovalHoldStatus,
     summary,
     toggleExpand,
     typeFilter,

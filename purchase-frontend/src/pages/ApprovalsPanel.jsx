@@ -49,6 +49,7 @@ const ApprovalsPanel = () => {
     hodOptionsError,
     hodOptionsLoading,
     hodSubmitLoading,
+    holdLoadingMap,
     isUrgent,
     isItemLockedForUser,
     itemDecisions,
@@ -82,6 +83,7 @@ const ApprovalsPanel = () => {
     sortOption,
     submitDecision,
     submitHodForward,
+    toggleApprovalHoldStatus,
     summary,
     toggleExpand,
     typeFilter,
@@ -124,9 +126,9 @@ const ApprovalsPanel = () => {
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900">Pending Approvals</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">Pending & On-Hold Approvals</h1>
             <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              Review and process all outstanding approval requests from your departments.
+              Review, pause, or continue approval requests from your departments.
             </p>
           </div>
           <div className="flex gap-2">
@@ -242,6 +244,9 @@ const ApprovalsPanel = () => {
                 const attachmentsError = attachmentErrorMap[req.request_id];
                 const isExpanded = expandedId === req.request_id;
                 const requesterDisplay = getRequesterDisplay(req);
+                const approvalStatus = req.approval_status || 'Pending';
+                const isOnHold = approvalStatus.toLowerCase() === 'on hold';
+                const holdLoading = Boolean(holdLoadingMap[req.approval_id]);
 
                 return (
                   <ApprovalRequestCard
@@ -253,6 +258,7 @@ const ApprovalsPanel = () => {
                     formatDateTime={formatDateTime}
                     estimatedCostValue={estimatedCostValue}
                     costTag={costTag}
+                    approvalStatus={approvalStatus}
                   >
                     <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
                       <div className="space-y-4">
@@ -318,6 +324,20 @@ const ApprovalsPanel = () => {
                           </div>
                         )}
                         <div className="space-y-3">
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              toggleApprovalHoldStatus(req.approval_id, req.request_id, !isOnHold)
+                            }
+                            isLoading={holdLoading}
+                          >
+                            {isOnHold ? 'Resume Approval' : 'Put On Hold'}
+                          </Button>
+                          {isOnHold && (
+                            <p className="text-xs text-amber-700">
+                              This approval is currently on hold. Resume it to approve or reject the request.
+                            </p>
+                          )}
                           {user?.role === 'SCM' && (
                             <Button variant="secondary" onClick={() => openHodModal(req.request_id)}>
                               Send to Department HOD
@@ -329,12 +349,16 @@ const ApprovalsPanel = () => {
                             </Button>
                           ) : (
                             <>
-                              <Button onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}>
+                              <Button
+                                onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
+                                disabled={isOnHold}
+                              >
                                 Approve
                               </Button>
                               <Button
                                 variant="destructive"
                                 onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
+                                disabled={isOnHold}
                               >
                                 Reject
                               </Button>

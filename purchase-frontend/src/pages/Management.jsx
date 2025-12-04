@@ -2408,149 +2408,206 @@ const Management = () => {
   return (
     <>
       <Navbar />
-      <div className="max-w-5xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-4">System Management</h2>
-        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              Active users
-            </p>
-            <p className="mt-2 text-2xl font-bold text-blue-900">{activeUserCount}</p>
-            <p className="text-xs text-blue-700">of {users.length} total</p>
+      <div className="min-h-screen bg-slate-50">
+        <div className="mx-auto max-w-6xl px-6 py-8">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 shadow-lg">
+            <div className="absolute inset-0 opacity-10" aria-hidden>
+              <div className="h-full w-full bg-[radial-gradient(circle_at_20%_20%,white,transparent_35%),radial-gradient(circle_at_80%_0%,white,transparent_25%),radial-gradient(circle_at_40%_80%,white,transparent_30%)]" />
+            </div>
+            <div className="relative flex flex-col gap-2 text-white sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-wide text-blue-100">Control Center</p>
+                <h2 className="text-3xl font-bold">System Management</h2>
+                <p className="mt-2 max-w-3xl text-sm text-blue-100">
+                  Monitor usage, manage approvals, and keep your operational teams aligned from a single dashboard.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 backdrop-blur">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-lg font-bold">
+                  ⚙️
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-blue-100">Quick insight</p>
+                  <p className="text-sm font-semibold">{availableTabs.length} active modules</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-              Pending account requests
-            </p>
-            <p className="mt-2 text-2xl font-bold text-emerald-900">
-              {pendingRequestsCount}
-            </p>
-            <p className="text-xs text-emerald-700">Awaiting review</p>
-          </div>
-          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-              Departments
-            </p>
-            <p className="mt-2 text-2xl font-bold text-indigo-900">{departments.length}</p>
-            <p className="text-xs text-indigo-700">Across all types</p>
-          </div>
-          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-              Warehouses
-            </p>
-            <p className="mt-2 text-2xl font-bold text-amber-900">{warehouses.length}</p>
-            <p className="text-xs text-amber-700">Available locations</p>
-          </div>
-          <div className="rounded-lg border border-amber-100 bg-amber-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-              Active projects
-            </p>
-            <p className="mt-2 text-2xl font-bold text-amber-900">{activeProjectCount}</p>
-            <p className="text-xs text-amber-700">Management overview</p>
-          </div>
-        </div>
-        <div className="flex gap-4 mb-4 flex-wrap">
-          {canViewUsers && (
-            <button
-              onClick={() => setTab('users')}
-              className={`px-3 py-1 rounded ${
-                tab === 'users' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Users
-            </button>
-          )}
-          {canManageAccountRequests && (
-            <button
-              onClick={() => setTab('accountRequests')}
-              className={`px-3 py-1 rounded ${
-                tab === 'accountRequests' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Account Requests
-            </button>
-          )}
-          {canManageDepartments && (
-            <button
-              onClick={() => setTab('departments')}
-              className={`px-3 py-1 rounded ${
-                tab === 'departments' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Departments
-            </button>
-          )}
-          {canManageDepartments && (
-            <button
-              onClick={() => setTab('warehouses')}
-              className={`px-3 py-1 rounded ${
-                tab === 'warehouses' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Warehouses
-            </button>
-          )}
-          {canManageRoutes && (
-            <button
-              onClick={() => setTab('routes')}
-              className={`px-3 py-1 rounded ${
-                tab === 'routes' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Approval Routes
-            </button>
-          )}
-          {canManageProjects && (
-            <button
-              onClick={() => setTab('projects')}
-              className={`px-3 py-1 rounded ${
-                tab === 'projects' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Projects
-            </button>
-          )}
-          {canManageRoles && (
-            <button
-              onClick={() => setTab('roles')}
-              className={`px-3 py-1 rounded ${
-                tab === 'roles' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-              }`}
-            >
-              Roles
-            </button>
-          )}
-          {canManagePermissions && (
-            <>
-              <button
-                onClick={() => setTab('permissions')}
-                className={`px-3 py-1 rounded ${
-                  tab === 'permissions' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-                }`}
-              >
-                Permissions
-              </button>
-              <button
-                onClick={() => setTab('interfaceAccess')}
-                className={`px-3 py-1 rounded ${
-                  tab === 'interfaceAccess' ? 'bg-blue-600 text-white' : 'bg-gray-200'
-                }`}
-              >
-                Interface Access
-              </button>
-            </>
-          )}
-        </div>
 
-        {tab === 'users' && renderUsers()}
-        {tab === 'accountRequests' && renderAccountRequests()}
-        {tab === 'departments' && renderDepartments()}
-        {tab === 'warehouses' && renderWarehouses()}
-        {tab === 'routes' && renderRoutes()}
-        {tab === 'projects' && renderProjects()}
-        {tab === 'roles' && renderRoles()}
-        {tab === 'permissions' && renderPermissions()}
-        {tab === 'interfaceAccess' && renderInterfaceAccess()}
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="group relative overflow-hidden rounded-xl border border-blue-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Active users</p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">{activeUserCount}</p>
+                  <p className="text-xs text-slate-500">of {users.length} total</p>
+                </div>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Live</span>
+              </div>
+            </div>
+            <div className="group relative overflow-hidden rounded-xl border border-emerald-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">Departments</p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">{departments.length}</p>
+                  <p className="text-xs text-slate-500">Across all types</p>
+                </div>
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Org</span>
+              </div>
+            </div>
+            <div className="group relative overflow-hidden rounded-xl border border-amber-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-yellow-400" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">Warehouses</p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">{warehouses.length}</p>
+                  <p className="text-xs text-slate-500">Available locations</p>
+                </div>
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Stock</span>
+              </div>
+            </div>
+            <div className="group relative overflow-hidden rounded-xl border border-indigo-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-400 via-blue-400 to-sky-400" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Active projects</p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">{activeProjectCount}</p>
+                  <p className="text-xs text-slate-500">Management overview</p>
+                </div>
+                <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">Ops</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 overflow-hidden rounded-xl bg-white shadow-sm">
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {canViewUsers && (
+                  <button
+                    onClick={() => setTab('users')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'users'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Users
+                  </button>
+                )}
+                {canManageAccountRequests && (
+                  <button
+                    onClick={() => setTab('accountRequests')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'accountRequests'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Account Requests
+                  </button>
+                )}
+                {canManageDepartments && (
+                  <button
+                    onClick={() => setTab('departments')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'departments'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Departments
+                  </button>
+                )}
+                {canManageDepartments && (
+                  <button
+                    onClick={() => setTab('warehouses')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'warehouses'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Warehouses
+                  </button>
+                )}
+                {canManageRoutes && (
+                  <button
+                    onClick={() => setTab('routes')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'routes'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Approval Routes
+                  </button>
+                )}
+                {canManageProjects && (
+                  <button
+                    onClick={() => setTab('projects')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'projects'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Projects
+                  </button>
+                )}
+                {canManageRoles && (
+                  <button
+                    onClick={() => setTab('roles')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'roles'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Roles
+                  </button>
+                )}
+                {canManagePermissions && (
+                  <>
+                    <button
+                      onClick={() => setTab('permissions')}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        tab === 'permissions'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                      }`}
+                    >
+                      Permissions
+                    </button>
+                    <button
+                      onClick={() => setTab('interfaceAccess')}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                        tab === 'interfaceAccess'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                      }`}
+                    >
+                      Interface Access
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4">
+              {tab === 'users' && renderUsers()}
+              {tab === 'accountRequests' && renderAccountRequests()}
+              {tab === 'departments' && renderDepartments()}
+              {tab === 'warehouses' && renderWarehouses()}
+              {tab === 'routes' && renderRoutes()}
+              {tab === 'projects' && renderProjects()}
+              {tab === 'roles' && renderRoles()}
+              {tab === 'permissions' && renderPermissions()}
+              {tab === 'interfaceAccess' && renderInterfaceAccess()}
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );

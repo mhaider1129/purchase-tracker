@@ -33,6 +33,7 @@ const WarehouseInventoryPage = () => {
   });
   const [issueForm, setIssueForm] = useState({
     department_id: '',
+    section_id: '',
     notes: '',
     warehouse_id: '',
   });
@@ -65,6 +66,20 @@ const WarehouseInventoryPage = () => {
     () => warehouses.find((wh) => String(wh.id) === String(inventoryWarehouseId)),
     [inventoryWarehouseId, warehouses],
   );
+  const selectedIssueDepartment = useMemo(
+    () => departments.find((dept) => String(dept.id) === String(issueForm.department_id)),
+    [departments, issueForm.department_id],
+  );
+  const availableSections = useMemo(() => selectedIssueDepartment?.sections || [], [selectedIssueDepartment]);
+
+  useEffect(() => {
+    if (
+      issueForm.section_id &&
+      !availableSections.some((section) => String(section.id) === String(issueForm.section_id))
+    ) {
+      setIssueForm((prev) => ({ ...prev, section_id: '' }));
+    }
+  }, [availableSections, issueForm.section_id]);
 
   const {
     items: inventoryItems,
@@ -342,6 +357,11 @@ const WarehouseInventoryPage = () => {
 
   const handleIssueFormChange = (key) => (event) => {
     const value = event.target.value;
+    if (key === 'department_id') {
+      setIssueForm((prev) => ({ ...prev, department_id: value, section_id: '' }));
+      return;
+    }
+
     setIssueForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -499,6 +519,7 @@ const WarehouseInventoryPage = () => {
     try {
       await api.post('/api/warehouse-inventory/stock/issue', {
         department_id: Number(issueForm.department_id),
+        section_id: issueForm.section_id ? Number(issueForm.section_id) : undefined,
         notes: issueForm.notes?.trim() || undefined,
         warehouse_id: issueForm.warehouse_id ? Number(issueForm.warehouse_id) : undefined,
         items: normalizedItems.map((item) => ({
@@ -509,6 +530,7 @@ const WarehouseInventoryPage = () => {
       setIssueFormStatus({ state: 'success', message: tr('alerts.issueSubmitSuccess') });
       setIssueForm((prev) => ({
         department_id: '',
+        section_id: '',
         notes: '',
         warehouse_id: prev.warehouse_id,
       }));
@@ -1570,6 +1592,27 @@ const WarehouseInventoryPage = () => {
                 {departmentsStatus.state === 'error' && (
                   <p className="text-xs text-red-600">{departmentsStatus.message}</p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="issue-section">
+                  {tr('issueForm.fields.section')}
+                  <span className="text-gray-500 dark:text-gray-400"> ({tr('issueForm.fields.optional')})</span>
+                </label>
+                <select
+                  id="issue-section"
+                  value={issueForm.section_id}
+                  onChange={handleIssueFormChange('section_id')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  disabled={!issueForm.department_id || availableSections.length === 0}
+                >
+                  <option value="">{tr('issueForm.fields.sectionPlaceholder')}</option>
+                  {availableSections.map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-3">

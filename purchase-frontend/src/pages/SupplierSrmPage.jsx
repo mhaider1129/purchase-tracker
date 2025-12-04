@@ -13,6 +13,7 @@ import {
   updateSupplierIssue,
 } from "../api/supplierSrm";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -23,6 +24,7 @@ const formatDate = (value) => {
 
 const SupplierSrmPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
@@ -116,6 +118,15 @@ const SupplierSrmPage = () => {
     () => suppliers.find((supplier) => String(supplier.id) === String(selectedSupplierId)),
     [selectedSupplierId, suppliers],
   );
+
+  const handleOpenEvaluations = () => {
+    if (!selectedSupplier) return;
+
+    const supplierName = selectedSupplier?.name?.trim();
+    if (!supplierName) return;
+
+    navigate(`/supplier-evaluations?supplier=${encodeURIComponent(supplierName)}`);
+  };
 
   const handleScorecardSubmit = async (event) => {
     event.preventDefault();
@@ -212,25 +223,36 @@ const SupplierSrmPage = () => {
               Track performance scorecards, issues/CAPA, and compliance health for suppliers.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="supplier-select">
-              Supplier
-            </label>
-            <select
-              id="supplier-select"
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
-              value={selectedSupplierId}
-              onChange={(event) => setSelectedSupplierId(event.target.value)}
-            >
-              <option value="" disabled>
-                Select supplier
-              </option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.name}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="supplier-select">
+                Supplier
+              </label>
+              <select
+                id="supplier-select"
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
+                value={selectedSupplierId}
+                onChange={(event) => setSelectedSupplierId(event.target.value)}
+              >
+                <option value="" disabled>
+                  Select supplier
                 </option>
-              ))}
-            </select>
+                {suppliers.map((supplier) => (
+                  <option key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={handleOpenEvaluations}
+              disabled={!selectedSupplier}
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-700 shadow-sm transition-colors hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-emerald-700/60 dark:bg-gray-900 dark:text-emerald-200 dark:hover:bg-gray-800"
+            >
+              <ClipboardList className="h-4 w-4" />
+              Open evaluations
+            </button>
           </div>
         </div>
 

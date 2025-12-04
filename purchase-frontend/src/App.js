@@ -60,6 +60,7 @@ import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import SupplierSrmPage from "./pages/SupplierSrmPage";
 import PlanningWorkbench from "./pages/PlanningWorkbench";
+import HistoricalRequestsImportPage from "./pages/HistoricalRequestsImportPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -154,6 +155,17 @@ const AppRoutes = () => (
     <Route
       path="/requests/warehouse-supply"
       element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />}
+    />
+    <Route
+      path="/requests/historical"
+      element={
+        <ProtectedRoute
+          element={<HistoricalRequestsImportPage />}
+          resourceKey="feature.historicalRequests"
+          requiredPermissions={["requests.manage"]}
+          allowedRoles={["admin", "scm"]}
+        />
+      }
     />
     <Route
       path="/item-recalls"

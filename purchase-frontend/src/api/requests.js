@@ -21,8 +21,18 @@ export const updateRequest = async (id, payload, options = {}) => {
   return res.data;
 };
 
+export const createHistoricalRequest = async (payload, options = {}) => {
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Payload is required");
+  }
+
+  const res = await api.post("/api/requests/historical", payload, options);
+  return res.data;
+};
+
 export default {
   printRequest,
   getRequestDetails,
   updateRequest,
+  createHistoricalRequest,
 };

@@ -9,6 +9,7 @@ const ApprovalRequestCard = ({
   formatDateTime,
   estimatedCostValue,
   costTag,
+  approvalStatus,
   children,
   labels = {},
 }) => {
@@ -19,9 +20,30 @@ const ApprovalRequestCard = ({
     submittedLabel = 'Submitted',
     estimatedCostLabel = 'Estimated Cost',
     urgentLabel = 'Urgent',
+    approvalStatusLabel = 'Approval Status',
   } = labels;
 
   const isUrgentRequest = Boolean(request?.is_urgent);
+
+  const getApprovalStatusChip = () => {
+    if (!approvalStatus) return null;
+
+    const normalized = approvalStatus.toLowerCase();
+    const styleMap = {
+      pending: 'bg-slate-100 text-slate-700',
+      'on hold': 'bg-amber-100 text-amber-800',
+      approved: 'bg-emerald-100 text-emerald-800',
+      rejected: 'bg-rose-100 text-rose-800',
+    };
+
+    const chipClasses = styleMap[normalized] || 'bg-slate-100 text-slate-700';
+
+    return (
+      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${chipClasses}`}>
+        {approvalStatusLabel}: {approvalStatus}
+      </span>
+    );
+  };
 
   return (
     <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -44,6 +66,7 @@ const ApprovalRequestCard = ({
                 {urgentLabel}
               </span>
             )}
+            {getApprovalStatusChip()}
           </div>
           <p className="text-base font-semibold text-slate-900">
             {request.justification || 'No justification provided.'}

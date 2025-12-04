@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 import {
@@ -146,17 +147,28 @@ const initialFiltersState = {
 };
 
 const SupplierEvaluationsPage = () => {
+  const [searchParams] = useSearchParams();
+  const supplierFromParams = searchParams.get('supplier')?.trim() || '';
+  const startDateFromParams = searchParams.get('start_date') || '';
+  const endDateFromParams = searchParams.get('end_date') || '';
   const { user } = useCurrentUser();
 
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const [filters, setFilters] = useState(initialFiltersState);
-  const [searchInput, setSearchInput] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [filters, setFilters] = useState({
+    ...initialFiltersState,
+    start_date: startDateFromParams,
+    end_date: endDateFromParams,
+  });
+  const [searchInput, setSearchInput] = useState(supplierFromParams);
+  const [debouncedSearch, setDebouncedSearch] = useState(supplierFromParams);
 
-  const [formState, setFormState] = useState(initialFormState);
+  const [formState, setFormState] = useState({
+    ...initialFormState,
+    supplier_name: supplierFromParams || initialFormState.supplier_name,
+  });
   const [editingId, setEditingId] = useState(null);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -166,7 +178,7 @@ const SupplierEvaluationsPage = () => {
   const [benchmarksLoading, setBenchmarksLoading] = useState(false);
   const [benchmarksError, setBenchmarksError] = useState('');
   const [benchmarkInterval, setBenchmarkInterval] = useState('quarter');
-  const [benchmarkSupplier, setBenchmarkSupplier] = useState('');
+  const [benchmarkSupplier, setBenchmarkSupplier] = useState(supplierFromParams);
   const [suppliers, setSuppliers] = useState([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
   const [suppliersError, setSuppliersError] = useState('');
@@ -225,6 +237,33 @@ const SupplierEvaluationsPage = () => {
   useEffect(() => {
     fetchSuppliers();
   }, [fetchSuppliers]);
+
+  useEffect(() => {
+    const supplierFromQuery = searchParams.get('supplier')?.trim() || '';
+    const startDateParam = searchParams.get('start_date') || '';
+    const endDateParam = searchParams.get('end_date') || '';
+
+    if (supplierFromQuery && supplierFromQuery !== searchInput) {
+      setSearchInput(supplierFromQuery);
+      setDebouncedSearch(supplierFromQuery);
+    }
+
+    if (!editingId && supplierFromQuery && formState.supplier_name !== supplierFromQuery) {
+      setFormState((prev) => ({ ...prev, supplier_name: supplierFromQuery }));
+    }
+
+    if (supplierFromQuery && benchmarkSupplier !== supplierFromQuery) {
+      setBenchmarkSupplier(supplierFromQuery);
+    }
+
+    if (startDateParam !== filters.start_date || endDateParam !== filters.end_date) {
+      setFilters((prev) => ({
+        ...prev,
+        start_date: startDateParam,
+        end_date: endDateParam,
+      }));
+    }
+  }, [benchmarkSupplier, editingId, filters.end_date, filters.start_date, formState.supplier_name, searchInput, searchParams]);
 
   const activeFilters = useMemo(
     () => ({

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { printWarehouseSupplyRequest } from '../api/warehouseSupply';
 import Navbar from '../components/Navbar';
 import usePageTranslation from '../utils/usePageTranslation';
 import { extractItems } from '../utils/itemUtils';
@@ -38,7 +39,9 @@ const WarehouseSupplyRequestsPage = () => {
   const [itemsCache, setItemsCache] = useState({});
   const [itemsError, setItemsError] = useState({});
   const [itemsLoadingId, setItemsLoadingId] = useState(null);
+  const [closingRequestId, setClosingRequestId] = useState(null);
   const [sortOption, setSortOption] = useState('newest');
+  const [printingId, setPrintingId] = useState(null);
   const navigate = useNavigate();
 
   const normalizeItems = (items = []) =>
@@ -103,6 +106,39 @@ const WarehouseSupplyRequestsPage = () => {
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  const closeRequest = async (requestId) => {
+    const confirmMessage = tr(
+      'requestCard.closeRequestConfirm',
+      'Close this warehouse supply request even if it is not fully supplied?',
+    );
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      setClosingRequestId(requestId);
+      const res = await api.post(`/api/warehouse-supply/${requestId}/close`);
+
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.id === requestId
+            ? {
+                ...req,
+                status: res.data?.status || 'Completed',
+              }
+            : req,
+        ),
+      );
+    } catch (err) {
+      console.error('Failed to close request:', err);
+      alert(
+        err.response?.data?.message ||
+          tr('alerts.closeFailed', 'Failed to close the request. Please try again.'),
+      );
+    } finally {
+      setClosingRequestId(null);
+    }
+  };
 
   const handleFilterChange = (key) => (event) => {
     const value = event.target.value;
@@ -346,6 +382,121 @@ const WarehouseSupplyRequestsPage = () => {
     );
   };
 
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const handlePrint = async (requestId) => {
+    setPrintingId(requestId);
+    try {
+      const data = await printWarehouseSupplyRequest(requestId);
+      const { request, items = [], print_count: printCount } = data;
+
+      const popup = window.open('', '_blank');
+      if (!popup) {
+        alert(tr('alerts.enablePopups', 'Please enable popups to print this request.'));
+        return;
+      }
+
+      const formattedCreatedAt = formatDateTime(request?.created_at);
+      const rowsHtml = items
+        .map(
+          (item, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(item.item_name)}</td>
+            <td>${escapeHtml(item.quantity)}</td>
+            <td>${escapeHtml(item.supplied_quantity)}</td>
+            <td>${escapeHtml(Math.max(Number(item.quantity || 0) - Number(item.supplied_quantity || 0), 0))}</td>
+          </tr>
+        `,
+        )
+        .join('');
+
+      popup.document.write(`<!doctype html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8" />
+            <title>${tr('print.title', 'Warehouse Supply Request')} #${escapeHtml(requestId)}</title>
+            <style>
+              body { font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #1f2937; padding: 24px; }
+              h1 { font-size: 24px; margin-bottom: 4px; }
+              h2 { font-size: 18px; margin: 24px 0 8px; }
+              .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin: 12px 0; }
+              .meta div { padding: 8px 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; }
+              .meta span { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+              th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+              th { background: #f3f4f6; font-weight: 600; }
+              tfoot td { font-weight: 700; background: #f9fafb; }
+              .badge { display: inline-block; background: #eff6ff; color: #1d4ed8; padding: 4px 10px; border-radius: 9999px; font-size: 12px; margin-top: 8px; }
+              @media print { body { padding: 0; } .no-print { display: none; } }
+            </style>
+          </head>
+          <body>
+            <div class="no-print" style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+              <button onclick="window.print()" style="padding: 8px 12px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;">${tr('actions.print', 'Print')}</button>
+            </div>
+            <h1>${tr('print.heading', 'Warehouse Supply Request')} #${escapeHtml(requestId)}</h1>
+            <div class="badge">${tr('print.printCount', 'Print count')}: ${escapeHtml(printCount)}</div>
+            <div class="meta">
+              <div><span>${tr('requestCard.department', 'Department')}</span>${escapeHtml(request?.department_name || '—')}</div>
+              <div><span>${tr('requestCard.section', 'Section')}</span>${escapeHtml(request?.section_name || '—')}</div>
+              <div><span>${tr('requestCard.warehouse', 'Warehouse')}</span>${escapeHtml(request?.warehouse_name || '—')}</div>
+              <div><span>${tr('requestCard.submitted', 'Submitted')}</span>${escapeHtml(formattedCreatedAt)}</div>
+              <div><span>${tr('print.requester', 'Requester')}</span>${escapeHtml(request?.requester_name || '—')}</div>
+              <div><span>${tr('print.role', 'Role')}</span>${escapeHtml(request?.requester_role || '—')}</div>
+              <div><span>${tr('requestCard.status', 'Status')}</span>${escapeHtml(request?.status || '—')}</div>
+            </div>
+            <h2>${tr('requestCard.justification', 'Justification')}</h2>
+            <p style="white-space: pre-line; background: #f9fafb; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px;">${escapeHtml(
+              request?.justification || tr('requestCard.noJustification', 'No justification provided.'),
+            )}</p>
+            <h2>${tr('print.items', 'Requested items')}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>${tr('print.itemName', 'Item')}</th>
+                  <th>${tr('items.requestedQuantity', 'Requested: {{quantity}}', { quantity: '' }).replace(': ', '')}</th>
+                  <th>${tr('items.suppliedQuantity', 'Supplied: {{quantity}}', { quantity: '' }).replace(': ', '')}</th>
+                  <th>${tr('print.outstanding', 'Outstanding')}</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml || `<tr><td colspan="5">${tr('items.empty', 'No requested items available.')}</td></tr>`}</tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2">${tr('print.totals', 'Totals')}</td>
+                  <td>${items.reduce((sum, item) => sum + Number(item.quantity || 0), 0)}</td>
+                  <td>${items.reduce((sum, item) => sum + Number(item.supplied_quantity || 0), 0)}</td>
+                  <td>${items.reduce(
+                    (sum, item) => sum + Math.max(Number(item.quantity || 0) - Number(item.supplied_quantity || 0), 0),
+                    0,
+                  )}</td>
+                </tr>
+              </tfoot>
+            </table>
+            <p style="margin-top: 16px; font-size: 12px; color: #6b7280;">${tr(
+              'print.footer',
+              'Generated for warehouse fulfillment tracking.',
+            )}</p>
+          </body>
+        </html>`);
+      popup.document.close();
+      popup.focus();
+      popup.print();
+    } catch (err) {
+      console.error('Failed to print warehouse supply request:', err);
+      alert(tr('alerts.printFailed', 'Failed to print warehouse supply request.'));
+    } finally {
+      setPrintingId(null);
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -545,6 +696,7 @@ const WarehouseSupplyRequestsPage = () => {
             sortedRequests.map((req) => {
               const items = itemsCache[req.id] || normalizeItems(req.items || []);
               const stats = getFulfillmentStats({ ...req, items });
+              const isCompleted = (req.status || '').toLowerCase() === 'completed';
 
               return (
                 <article key={req.id} className="rounded border border-gray-200 bg-white p-5 shadow-sm">
@@ -637,7 +789,7 @@ const WarehouseSupplyRequestsPage = () => {
                         ? tr('requestCard.fullySupplied', 'All requested quantities have been supplied.')
                         : tr(
                           'requestCard.fulfillmentHint',
-                          'Record supplied quantities to complete this request.',
+                          'Record supplied quantities or close the request when you are done.',
                         )}
                     </p>
                   </div>
@@ -646,9 +798,20 @@ const WarehouseSupplyRequestsPage = () => {
                     <button
                       type="button"
                       onClick={() => navigate(`/warehouse-supply/${req.id}`)}
-                      className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                      className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isCompleted}
                     >
                       {tr('requestCard.recordSupplied', 'Record Supplied Items')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePrint(req.id)}
+                      disabled={printingId === req.id}
+                      className="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {printingId === req.id
+                        ? tr('actions.printing', 'Printing…')
+                        : tr('actions.print', 'Print')}
                     </button>
                     <button
                       type="button"
@@ -659,17 +822,31 @@ const WarehouseSupplyRequestsPage = () => {
                         ? tr('requestCard.hideItems', 'Hide Requested Items')
                         : tr('requestCard.viewItems', 'View Requested Items')}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => closeRequest(req.id)}
+                      disabled={isCompleted || closingRequestId === req.id}
+                      className={`rounded border px-4 py-2 text-sm font-medium ${
+                        isCompleted
+                          ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500'
+                          : 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100'
+                      }`}
+                    >
+                      {closingRequestId === req.id
+                        ? tr('requestCard.closing', 'Closing…')
+                        : tr('requestCard.closeRequest', 'Close Request')}
+                    </button>
                     <span
                       className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-                        stats.fullySupplied
-                          ? 'bg-green-50 text-green-700'
+                        isCompleted
+                          ? 'bg-gray-100 text-gray-700'
                           : stats.outstanding > 0
                             ? 'bg-amber-50 text-amber-700'
                             : 'bg-blue-50 text-blue-700'
                       }`}
                     >
-                      {stats.fullySupplied
-                        ? tr('requestCard.badges.fullySupplied', 'Ready to close')
+                      {isCompleted
+                        ? tr('requestCard.badges.closed', 'Closed')
                         : stats.outstanding > 0
                           ? tr('requestCard.badges.needsAttention', 'Needs supply attention')
                           : tr('requestCard.badges.inProgress', 'In progress')}

@@ -158,6 +158,11 @@ const Navbar = () => {
     const canViewAllRequests = hasAccess(currentUser, "feature.allRequests", [
       "requests.view-all",
     ]);
+    const canImportHistorical = hasAccess(
+      currentUser,
+      "feature.historicalRequests",
+      ["requests.manage"],
+    );
     const canManageProcurement = hasAccess(
       currentUser,
       "feature.procurementPlans",
@@ -271,6 +276,12 @@ const Navbar = () => {
             t("navbar.allRequests"),
             "/all-requests",
             "text-indigo-600",
+          ),
+          createItem(
+            canImportHistorical,
+            t("navbar.historicalRequests"),
+            "/requests/historical",
+            "text-blue-700",
           ),
           createItem(
             canManageProcurement,
