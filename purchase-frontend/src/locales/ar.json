@@ -864,6 +864,12 @@
         "reason": "السبب",
         "departmentNotes": "ملاحظات القسم",
         "warehouseNotes": "ملاحظات المخزن",
+        "recordKeeping": "توثيق الاستدعاء",
+        "recallNotice": "إشعار الاستدعاء",
+        "supplierLetters": "خطابات الموردين",
+        "ncrReference": "NCR",
+        "capaReference": "CAPA",
+        "finalReport": "التقرير النهائي",
         "departmentFallback": "القسم رقم {{id}}",
         "unknownDepartment": "قسم غير معروف"
       },
@@ -918,6 +924,29 @@
       "notes": {
         "label": "ملاحظات إضافية",
         "placeholder": "أضف أي تفاصيل مساندة (اختياري)"
+      },
+      "recallNotice": {
+        "label": "إشعار الاستدعاء",
+        "placeholder": "أضف رابط أو ملخص للإشعار الرسمي",
+        "help": "احتفظ برقم المرجع أو الرابط أو ملخص قصير للإشعار."
+      },
+      "supplierLetters": {
+        "label": "خطابات الموردين",
+        "placeholder": "أضف ردود أو مراسلات الموردين",
+        "help": "سجل كل المراسلات الواردة من المورد حول هذا الاستدعاء."
+      },
+      "ncrReference": {
+        "label": "مرجع NCR",
+        "placeholder": "مثال: NCR-2024-015"
+      },
+      "capaReference": {
+        "label": "مرجع CAPA",
+        "placeholder": "مثال: CAPA-2024-044"
+      },
+      "finalReport": {
+        "label": "التقرير النهائي",
+        "placeholder": "أين يُحفظ التقرير النهائي للاستدعاء؟",
+        "help": "سجل مكان حفظ التقرير النهائي أو ملخص إغلاق الاستدعاء."
       },
       "warehouseNotes": {
         "label": "ملاحظات المخزن للمشتريات",
@@ -1843,6 +1872,10 @@
       "attachments": {
         "title": "مرفقات العنصر",
         "loading": "جارٍ تحميل المرفقات…",
+        "uploadLabel": "تحميل مرفق",
+        "uploading": "جارٍ التحميل…",
+        "uploadFailed": "فشل تحميل المرفق.",
+        "uploadSuccess": "تم تحميل المرفق بنجاح.",
         "empty": "لا توجد مرفقات مرفوعة لهذا العنصر.",
         "error": "فشل في تحميل المرفقات.",
         "missing": "ملف المرفق مفقود.",

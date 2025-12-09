@@ -97,6 +97,10 @@
     "attachments": {
       "title": "Item Attachments",
       "loading": "Loading attachments…",
+      "uploadLabel": "Upload attachment",
+      "uploading": "Uploading…",
+      "uploadFailed": "Failed to upload attachment.",
+      "uploadSuccess": "Attachment uploaded successfully.",
       "empty": "No attachments uploaded for this item.",
       "error": "Failed to load attachments.",
       "missing": "Attachment file is missing.",
@@ -865,6 +869,12 @@
         "reason": "Reason",
         "departmentNotes": "Department notes",
         "warehouseNotes": "Warehouse notes",
+        "recordKeeping": "Record keeping",
+        "recallNotice": "Recall notice",
+        "supplierLetters": "Supplier letters",
+        "ncrReference": "NCR",
+        "capaReference": "CAPA",
+        "finalReport": "Final report",
         "departmentFallback": "Department #{{id}}",
         "unknownDepartment": "Unknown department"
       },
@@ -919,6 +929,29 @@
       "notes": {
         "label": "Additional notes",
         "placeholder": "Provide any supporting context (optional)"
+      },
+      "recallNotice": {
+        "label": "Recall notice details",
+        "placeholder": "Link to or summarize the official recall notice",
+        "help": "Paste reference numbers, URLs, or a short summary so the full notice is tracked."
+      },
+      "supplierLetters": {
+        "label": "Supplier letters",
+        "placeholder": "Add supplier responses or references",
+        "help": "Keep track of all supplier correspondence related to this recall."
+      },
+      "ncrReference": {
+        "label": "NCR reference",
+        "placeholder": "e.g. NCR-2024-015"
+      },
+      "capaReference": {
+        "label": "CAPA reference",
+        "placeholder": "e.g. CAPA-2024-044"
+      },
+      "finalReport": {
+        "label": "Final report",
+        "placeholder": "Where is the final recall report stored?",
+        "help": "Note the storage location or summary once the recall is closed."
       },
       "warehouseNotes": {
         "label": "Warehouse notes for procurement",

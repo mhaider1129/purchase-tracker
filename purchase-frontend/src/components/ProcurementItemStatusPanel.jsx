@@ -1,5 +1,5 @@
 // src/components/ProcurementItemStatusPanel.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "../api/axios";
 import usePageTranslation from "../utils/usePageTranslation";
 
@@ -17,6 +17,10 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [attachmentsError, setAttachmentsError] = useState("");
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadSuccess, setUploadSuccess] = useState("");
+  const attachmentInputRef = useRef(null);
   const itemId = item?.id;
   const tr = usePageTranslation("assignedRequests");
 
@@ -55,32 +59,72 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     setComment(item.procurement_comment || "");
   }, [item.procurement_status, item.procurement_comment]);
 
-  useEffect(() => {
-    const fetchItemAttachments = async () => {
-      if (!itemId) {
-        setAttachments([]);
-        return;
-      }
+  const fetchItemAttachments = useCallback(async () => {
+    if (!itemId) {
+      setAttachments([]);
+      return;
+    }
 
-      setLoadingAttachments(true);
-      setAttachmentsError("");
+    setLoadingAttachments(true);
+    setAttachmentsError("");
 
-      try {
-        const res = await axios.get(`/api/attachments/item/${itemId}`);
-        setAttachments(res.data || []);
-      } catch (err) {
-        console.error(`❌ Error fetching attachments for item ${itemId}:`, err);
-        setAttachments([]);
-        setAttachmentsError(
-          tr("itemPanel.attachments.error", "Failed to load attachments."),
-        );
-      } finally {
-        setLoadingAttachments(false);
-      }
-    };
-
-    fetchItemAttachments();
+    try {
+      const res = await axios.get(`/api/attachments/item/${itemId}`);
+      setAttachments(res.data || []);
+    } catch (err) {
+      console.error(`❌ Error fetching attachments for item ${itemId}:`, err);
+      setAttachments([]);
+      setAttachmentsError(
+        tr("itemPanel.attachments.error", "Failed to load attachments."),
+      );
+    } finally {
+      setLoadingAttachments(false);
+    }
   }, [itemId, tr]);
+
+  useEffect(() => {
+    fetchItemAttachments();
+  }, [fetchItemAttachments]);
+
+  const handleUploadAttachment = async (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !itemId) {
+      return;
+    }
+
+    setUploadingAttachment(true);
+    setUploadError("");
+    setUploadSuccess("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      await axios.post(`/api/attachments/item/${itemId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setUploadSuccess(
+        tr(
+          "itemPanel.attachments.uploadSuccess",
+          "Attachment uploaded successfully.",
+        ),
+      );
+      await fetchItemAttachments();
+    } catch (err) {
+      console.error(`❌ Failed to upload attachment for item ${itemId}:`, err);
+      setUploadError(
+        tr(
+          "itemPanel.attachments.uploadFailed",
+          "Failed to upload attachment.",
+        ),
+      );
+    } finally {
+      setUploadingAttachment(false);
+      event.target.value = "";
+    }
+  };
 
   const handleDownloadAttachment = async (attachment) => {
     const storedPath = attachment?.file_path || "";
@@ -539,6 +583,30 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           <h4 className="text-sm font-semibold text-slate-700">
             {tr("itemPanel.attachments.title", "Item Attachments")}
           </h4>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <input
+              ref={attachmentInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleUploadAttachment}
+            />
+            <button
+              type="button"
+              onClick={() => attachmentInputRef.current?.click()}
+              className="rounded bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+              disabled={uploadingAttachment || !itemId}
+            >
+              {uploadingAttachment
+                ? tr("itemPanel.attachments.uploading", "Uploading…")
+                : tr("itemPanel.attachments.uploadLabel", "Upload attachment")}
+            </button>
+            {uploadSuccess && (
+              <span className="text-xs text-green-600">{uploadSuccess}</span>
+            )}
+            {uploadError && (
+              <span className="text-xs text-rose-600">{uploadError}</span>
+            )}
+          </div>
           {loadingAttachments ? (
             <p className="text-xs text-slate-500">
               {tr("itemPanel.attachments.loading", "Loading attachments…")}

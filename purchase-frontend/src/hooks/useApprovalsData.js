@@ -578,7 +578,7 @@ const useApprovalsData = (user) => {
     setHoldLoadingMap((prev) => ({ ...prev, [approvalId]: true }));
 
     try {
-      const res = await axios.put(`/api/approvals/${approvalId}/hold`, {
+      const res = await axios.patch(`/api/approvals/${approvalId}/hold`, {
         on_hold: placeOnHold,
       });
 

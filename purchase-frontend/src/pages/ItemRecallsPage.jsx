@@ -33,6 +33,11 @@ const ItemRecallsPage = () => {
     quantity: '',
     reason: '',
     notes: '',
+    recallNotice: '',
+    supplierLetters: '',
+    ncrReference: '',
+    capaReference: '',
+    finalReport: '',
   });
   const [departmentStatus, setDepartmentStatus] = useState({ submitting: false, success: '', error: '' });
 
@@ -43,6 +48,11 @@ const ItemRecallsPage = () => {
     reason: '',
     notes: '',
     warehouseNotes: '',
+    recallNotice: '',
+    supplierLetters: '',
+    ncrReference: '',
+    capaReference: '',
+    finalReport: '',
   });
   const [warehouseStatus, setWarehouseStatus] = useState({ submitting: false, success: '', error: '' });
 
@@ -166,8 +176,24 @@ const ItemRecallsPage = () => {
         quantity: departmentForm.quantity.trim(),
         reason: departmentForm.reason.trim(),
         notes: departmentForm.notes.trim(),
+        recallNotice: departmentForm.recallNotice.trim(),
+        supplierLetters: departmentForm.supplierLetters.trim(),
+        ncrReference: departmentForm.ncrReference.trim(),
+        capaReference: departmentForm.capaReference.trim(),
+        finalReport: departmentForm.finalReport.trim(),
       });
-      setDepartmentForm({ itemId: '', itemName: '', quantity: '', reason: '', notes: '' });
+      setDepartmentForm({
+        itemId: '',
+        itemName: '',
+        quantity: '',
+        reason: '',
+        notes: '',
+        recallNotice: '',
+        supplierLetters: '',
+        ncrReference: '',
+        capaReference: '',
+        finalReport: '',
+      });
       setDepartmentStatus({
         submitting: false,
         success: t('itemRecalls.department.success', { item: response?.recall?.item_name ?? '' }),
@@ -191,8 +217,25 @@ const ItemRecallsPage = () => {
         reason: warehouseForm.reason.trim(),
         notes: warehouseForm.notes.trim(),
         warehouseNotes: warehouseForm.warehouseNotes.trim(),
+        recallNotice: warehouseForm.recallNotice.trim(),
+        supplierLetters: warehouseForm.supplierLetters.trim(),
+        ncrReference: warehouseForm.ncrReference.trim(),
+        capaReference: warehouseForm.capaReference.trim(),
+        finalReport: warehouseForm.finalReport.trim(),
       });
-      setWarehouseForm({ itemId: '', itemName: '', quantity: '', reason: '', notes: '', warehouseNotes: '' });
+      setWarehouseForm({
+        itemId: '',
+        itemName: '',
+        quantity: '',
+        reason: '',
+        notes: '',
+        warehouseNotes: '',
+        recallNotice: '',
+        supplierLetters: '',
+        ncrReference: '',
+        capaReference: '',
+        finalReport: '',
+      });
       setWarehouseStatus({
         submitting: false,
         success: t('itemRecalls.warehouse.success', { item: response?.recall?.item_name ?? '' }),
@@ -474,6 +517,59 @@ const ItemRecallsPage = () => {
                                       )}
                                     </ul>
                                   )}
+                                  {(recall.recall_notice ||
+                                    recall.supplier_letters ||
+                                    recall.ncr_reference ||
+                                    recall.capa_reference ||
+                                    recall.final_report) && (
+                                    <div className="mt-3 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                                      <p className="font-medium text-gray-700 dark:text-gray-200">
+                                        {t('itemRecalls.list.labels.recordKeeping')}
+                                      </p>
+                                      <ul className="space-y-1">
+                                        {recall.recall_notice && (
+                                          <li>
+                                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                                              {t('itemRecalls.list.labels.recallNotice')}:
+                                            </span>{' '}
+                                            {recall.recall_notice}
+                                          </li>
+                                        )}
+                                        {recall.supplier_letters && (
+                                          <li>
+                                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                                              {t('itemRecalls.list.labels.supplierLetters')}:
+                                            </span>{' '}
+                                            {recall.supplier_letters}
+                                          </li>
+                                        )}
+                                        {recall.ncr_reference && (
+                                          <li>
+                                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                                              {t('itemRecalls.list.labels.ncrReference')}:
+                                            </span>{' '}
+                                            {recall.ncr_reference}
+                                          </li>
+                                        )}
+                                        {recall.capa_reference && (
+                                          <li>
+                                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                                              {t('itemRecalls.list.labels.capaReference')}:
+                                            </span>{' '}
+                                            {recall.capa_reference}
+                                          </li>
+                                        )}
+                                        {recall.final_report && (
+                                          <li>
+                                            <span className="font-medium text-gray-600 dark:text-gray-300">
+                                              {t('itemRecalls.list.labels.finalReport')}:
+                                            </span>{' '}
+                                            {recall.final_report}
+                                          </li>
+                                        )}
+                                      </ul>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             );
@@ -574,13 +670,101 @@ const ItemRecallsPage = () => {
                   />
                 </div>
 
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="flex flex-col">
+                    <label htmlFor="department-recall-notice" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {t('itemRecalls.fields.recallNotice.label')}
+                    </label>
+                    <textarea
+                      id="department-recall-notice"
+                      value={departmentForm.recallNotice}
+                      onChange={handleDepartmentChange('recallNotice')}
+                      className="mt-1 h-20 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      placeholder={t('itemRecalls.fields.recallNotice.placeholder')}
+                    />
+                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {t('itemRecalls.fields.recallNotice.help')}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="department-supplier-letters" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {t('itemRecalls.fields.supplierLetters.label')}
+                    </label>
+                    <textarea
+                      id="department-supplier-letters"
+                      value={departmentForm.supplierLetters}
+                      onChange={handleDepartmentChange('supplierLetters')}
+                      className="mt-1 h-20 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      placeholder={t('itemRecalls.fields.supplierLetters.placeholder')}
+                    />
+                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {t('itemRecalls.fields.supplierLetters.help')}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="flex flex-col">
+                    <label htmlFor="department-ncr" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {t('itemRecalls.fields.ncrReference.label')}
+                    </label>
+                    <input
+                      id="department-ncr"
+                      type="text"
+                      value={departmentForm.ncrReference}
+                      onChange={handleDepartmentChange('ncrReference')}
+                      className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      placeholder={t('itemRecalls.fields.ncrReference.placeholder')}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="department-capa" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {t('itemRecalls.fields.capaReference.label')}
+                    </label>
+                    <input
+                      id="department-capa"
+                      type="text"
+                      value={departmentForm.capaReference}
+                      onChange={handleDepartmentChange('capaReference')}
+                      className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      placeholder={t('itemRecalls.fields.capaReference.placeholder')}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label htmlFor="department-final-report" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {t('itemRecalls.fields.finalReport.label')}
+                    </label>
+                    <textarea
+                      id="department-final-report"
+                      value={departmentForm.finalReport}
+                      onChange={handleDepartmentChange('finalReport')}
+                      className="mt-1 h-20 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      placeholder={t('itemRecalls.fields.finalReport.placeholder')}
+                    />
+                    <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {t('itemRecalls.fields.finalReport.help')}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="flex items-center justify-end gap-3">
                   <button
-                    type="button"
-                    onClick={() => {
-                      setDepartmentForm({ itemId: '', itemName: '', quantity: '', reason: '', notes: '' });
-                      setDepartmentStatus({ submitting: false, success: '', error: '' });
-                    }}
+                        type="button"
+                        onClick={() => {
+                          setDepartmentForm({
+                            itemId: '',
+                            itemName: '',
+                            quantity: '',
+                            reason: '',
+                            notes: '',
+                            recallNotice: '',
+                            supplierLetters: '',
+                            ncrReference: '',
+                            capaReference: '',
+                            finalReport: '',
+                          });
+                          setDepartmentStatus({ submitting: false, success: '', error: '' });
+                        }}
                     className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
                     {t('itemRecalls.actions.reset')}
@@ -690,6 +874,83 @@ const ItemRecallsPage = () => {
                       />
                     </div>
 
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="flex flex-col">
+                        <label htmlFor="warehouse-recall-notice" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                          {t('itemRecalls.fields.recallNotice.label')}
+                        </label>
+                        <textarea
+                          id="warehouse-recall-notice"
+                          value={warehouseForm.recallNotice}
+                          onChange={handleWarehouseChange('recallNotice')}
+                          className="mt-1 h-20 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                          placeholder={t('itemRecalls.fields.recallNotice.placeholder')}
+                        />
+                        <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {t('itemRecalls.fields.recallNotice.help')}
+                        </span>
+                      </div>
+                      <div className="flex flex-col">
+                        <label htmlFor="warehouse-supplier-letters" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                          {t('itemRecalls.fields.supplierLetters.label')}
+                        </label>
+                        <textarea
+                          id="warehouse-supplier-letters"
+                          value={warehouseForm.supplierLetters}
+                          onChange={handleWarehouseChange('supplierLetters')}
+                          className="mt-1 h-20 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                          placeholder={t('itemRecalls.fields.supplierLetters.placeholder')}
+                        />
+                        <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {t('itemRecalls.fields.supplierLetters.help')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div className="flex flex-col">
+                        <label htmlFor="warehouse-ncr" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                          {t('itemRecalls.fields.ncrReference.label')}
+                        </label>
+                        <input
+                          id="warehouse-ncr"
+                          type="text"
+                          value={warehouseForm.ncrReference}
+                          onChange={handleWarehouseChange('ncrReference')}
+                          className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                          placeholder={t('itemRecalls.fields.ncrReference.placeholder')}
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <label htmlFor="warehouse-capa" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                          {t('itemRecalls.fields.capaReference.label')}
+                        </label>
+                        <input
+                          id="warehouse-capa"
+                          type="text"
+                          value={warehouseForm.capaReference}
+                          onChange={handleWarehouseChange('capaReference')}
+                          className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                          placeholder={t('itemRecalls.fields.capaReference.placeholder')}
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <label htmlFor="warehouse-final-report" className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                          {t('itemRecalls.fields.finalReport.label')}
+                        </label>
+                        <textarea
+                          id="warehouse-final-report"
+                          value={warehouseForm.finalReport}
+                          onChange={handleWarehouseChange('finalReport')}
+                          className="mt-1 h-20 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                          placeholder={t('itemRecalls.fields.finalReport.placeholder')}
+                        />
+                        <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {t('itemRecalls.fields.finalReport.help')}
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="flex flex-col">
                       <label htmlFor="warehouse-warehouse-notes" className="text-sm font-medium text-gray-700 dark:text-gray-200">
                         {t('itemRecalls.fields.warehouseNotes.label')}
@@ -710,7 +971,19 @@ const ItemRecallsPage = () => {
                       <button
                         type="button"
                         onClick={() => {
-                          setWarehouseForm({ itemId: '', itemName: '', quantity: '', reason: '', notes: '', warehouseNotes: '' });
+                          setWarehouseForm({
+                            itemId: '',
+                            itemName: '',
+                            quantity: '',
+                            reason: '',
+                            notes: '',
+                            warehouseNotes: '',
+                            recallNotice: '',
+                            supplierLetters: '',
+                            ncrReference: '',
+                            capaReference: '',
+                            finalReport: '',
+                          });
                           setWarehouseStatus({ submitting: false, success: '', error: '' });
                         }}
                         className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"

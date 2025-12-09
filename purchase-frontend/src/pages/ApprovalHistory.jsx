@@ -74,7 +74,7 @@ const ApprovalHistory = () => {
 
     return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'GBP',
+      currency: 'IQD',
       minimumFractionDigits: 2,
     }).format(numberValue);
   };
@@ -155,7 +155,7 @@ const ApprovalHistory = () => {
         Department: item.department_name,
         Project: item.project_name || '—',
         Justification: item.justification,
-        Cost: item.estimated_cost,
+        Cost: formatCurrency(item.estimated_cost),
         'Final Status': item.status,
         'Your Decision': item.decision,
         'Your Comment': item.comments || '—',
@@ -186,7 +186,7 @@ const ApprovalHistory = () => {
       item.department_name,
       item.project_name || '—',
       item.justification,
-      item.estimated_cost,
+      formatCurrency(item.estimated_cost),
       item.status,
       item.decision,
       item.comments || '—',

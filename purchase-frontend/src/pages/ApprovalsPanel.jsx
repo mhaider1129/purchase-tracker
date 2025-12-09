@@ -1,5 +1,5 @@
 //src/pages/ApprovalsPanel.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   Building2,
@@ -17,6 +17,7 @@ import ApprovalRequestCard from '../components/approvals/ApprovalRequestCard';
 import AttachmentsPanel from '../components/approvals/AttachmentsPanel';
 import ItemDecisionTable from '../components/approvals/ItemDecisionTable';
 import { getRequesterDisplay } from '../utils/requester';
+import axios from '../api/axios';
 
 const ApprovalsPanel = () => {
   const { user } = useCurrentUser();
@@ -90,6 +91,13 @@ const ApprovalsPanel = () => {
     urgencyFilter,
   } = useApprovalsData(user);
 
+  const [communicationList, setCommunicationList] = useState({});
+  const [communicationDrafts, setCommunicationDrafts] = useState({});
+  const [communicationLoading, setCommunicationLoading] = useState({});
+  const [communicationError, setCommunicationError] = useState({});
+  const [communicationSuccess, setCommunicationSuccess] = useState({});
+  const [communicationSending, setCommunicationSending] = useState({});
+
   const filterLabels = {
     searchPlaceholder: 'Search by ID, justification, department or section',
     typeLabel: 'Request Type',
@@ -119,6 +127,83 @@ const ApprovalsPanel = () => {
     hodDescription: 'Add a department HOD approval step before continuing the workflow.',
     hodSelect: 'Select department HOD',
   };
+
+  const normalizedRole = (user?.role || '').toUpperCase();
+  const canSendCommunication = ['HOD', 'CMO', 'COO'].includes(normalizedRole);
+  const canViewCommunication = canSendCommunication || normalizedRole === 'SCM';
+
+  const refreshCommunications = async (requestId) => {
+    if (!requestId || !canViewCommunication) return;
+
+    setCommunicationLoading((prev) => ({ ...prev, [requestId]: true }));
+    setCommunicationError((prev) => ({ ...prev, [requestId]: '' }));
+
+    try {
+      const res = await axios.get(`/api/requests/${requestId}/status-communications`);
+      setCommunicationList((prev) => ({ ...prev, [requestId]: res.data || [] }));
+    } catch (err) {
+      console.error('❌ Failed to load communications', err);
+      setCommunicationError((prev) => ({
+        ...prev,
+        [requestId]: 'Failed to load communications. Please try again.',
+      }));
+    } finally {
+      setCommunicationLoading((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
+  const handleSendCommunication = async (requestId, statusLabel) => {
+    const draft = (communicationDrafts[requestId] || '').trim();
+    if (!draft) {
+      setCommunicationError((prev) => ({
+        ...prev,
+        [requestId]: 'Enter a message before sending.',
+      }));
+      return;
+    }
+
+    setCommunicationSending((prev) => ({ ...prev, [requestId]: true }));
+    setCommunicationError((prev) => ({ ...prev, [requestId]: '' }));
+    setCommunicationSuccess((prev) => ({ ...prev, [requestId]: '' }));
+
+    try {
+      const res = await axios.post(`/api/requests/${requestId}/status-communications`, {
+        message: draft,
+        status: statusLabel,
+      });
+
+      setCommunicationDrafts((prev) => ({ ...prev, [requestId]: '' }));
+      setCommunicationSuccess((prev) => ({
+        ...prev,
+        [requestId]: res.data?.message || 'Message sent.',
+      }));
+
+      const newEntry = res.data?.communication;
+      if (newEntry) {
+        setCommunicationList((prev) => ({
+          ...prev,
+          [requestId]: [newEntry, ...(prev[requestId] || [])],
+        }));
+      } else {
+        await refreshCommunications(requestId);
+      }
+    } catch (err) {
+      console.error('❌ Failed to send communication', err);
+      setCommunicationError((prev) => ({
+        ...prev,
+        [requestId]:
+          err?.response?.data?.message || 'Failed to send message. Please try again.',
+      }));
+    } finally {
+      setCommunicationSending((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
+  useEffect(() => {
+    if (!expandedId || !canViewCommunication) return;
+    if (communicationList[expandedId] || communicationLoading[expandedId]) return;
+    refreshCommunications(expandedId);
+  }, [expandedId, canViewCommunication]);
 
   return (
     <>
@@ -323,9 +408,9 @@ const ApprovalsPanel = () => {
                             Requires immediate attention
                           </div>
                         )}
-                        <div className="space-y-3">
-                          <Button
-                            variant="outline"
+      <div className="space-y-3">
+        <Button
+          variant="outline"
                             onClick={() =>
                               toggleApprovalHoldStatus(req.approval_id, req.request_id, !isOnHold)
                             }
@@ -363,10 +448,81 @@ const ApprovalsPanel = () => {
                                 Reject
                               </Button>
                             </>
-                          )}
-                        </div>
-                      </div>
+          )}
+
+          {canViewCommunication && (
+            <div className="rounded-md border border-indigo-100 bg-indigo-50 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold text-indigo-900">SCM Status Communication</p>
+                  <p className="text-xs text-indigo-700">
+                    Share updates with SCM about this request status ({req.status || approvalStatus}).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-indigo-700 underline"
+                  onClick={() => refreshCommunications(req.request_id)}
+                  disabled={communicationLoading[req.request_id]}
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {communicationLoading[req.request_id] && (
+                  <p className="text-xs text-indigo-700">Loading communications...</p>
+                )}
+                {communicationError[req.request_id] && (
+                  <p className="text-xs text-rose-600">{communicationError[req.request_id]}</p>
+                )}
+                {communicationSuccess[req.request_id] && (
+                  <p className="text-xs text-emerald-700">{communicationSuccess[req.request_id]}</p>
+                )}
+
+                {(communicationList[req.request_id] || []).slice(0, 4).map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded border border-indigo-100 bg-white px-3 py-2 text-xs text-slate-700"
+                  >
+                    <div className="flex flex-wrap justify-between gap-1">
+                      <span className="font-semibold text-indigo-900">{entry.actor_name || 'Unknown'}</span>
+                      <span className="text-slate-500">{entry.status_at_time || 'Pending'}</span>
+                      <span className="text-slate-400">{formatDateTime(entry.timestamp)}</span>
                     </div>
+                    <p className="mt-1 whitespace-pre-wrap text-slate-700">{entry.comments}</p>
+                  </div>
+                ))}
+
+                {canSendCommunication && (
+                  <div className="space-y-2">
+                    <textarea
+                      className="w-full rounded border border-indigo-200 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      rows={3}
+                      placeholder="Share an update with the SCM team..."
+                      value={communicationDrafts[req.request_id] || ''}
+                      onChange={(event) =>
+                        setCommunicationDrafts((prev) => ({
+                          ...prev,
+                          [req.request_id]: event.target.value,
+                        }))
+                      }
+                    />
+                    <Button
+                      onClick={() => handleSendCommunication(req.request_id, req.status || approvalStatus)}
+                      isLoading={!!communicationSending[req.request_id]}
+                      disabled={!!communicationSending[req.request_id]}
+                    >
+                      Send to SCM
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
                   </ApprovalRequestCard>
                 );
               })}
