@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import saveAs from 'file-saver';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ContractForm from '../components/ContractForm';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
@@ -167,6 +168,7 @@ const initialFormState = {
   title: '',
   vendor: '',
   reference_number: '',
+  signing_date: '',
   start_date: '',
   end_date: '',
   status: 'active',
@@ -184,6 +186,7 @@ const initialFormState = {
 };
 
 const ContractsPage = () => {
+  const navigate = useNavigate();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -200,10 +203,14 @@ const ContractsPage = () => {
   const [formError, setFormError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [archivingId, setArchivingId] = useState(null);
+  const [unarchivingId, setUnarchivingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [renewingId, setRenewingId] = useState(null);
 
   const [attachments, setAttachments] = useState([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
   const [attachmentsError, setAttachmentsError] = useState('');
+  const [deletingAttachmentId, setDeletingAttachmentId] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
@@ -222,6 +229,7 @@ const ContractsPage = () => {
   const [evaluations, setEvaluations] = useState([]);
   const [evaluationsLoading, setEvaluationsLoading] = useState(false);
   const [evaluationsError, setEvaluationsError] = useState('');
+  const [deletingEvaluationId, setDeletingEvaluationId] = useState(null);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
 
   const { user } = useAuth();
@@ -428,6 +436,35 @@ const ContractsPage = () => {
     }
   }, []);
 
+  const handleViewEvaluation = (evaluationId) => {
+    if (!evaluationId) return;
+    navigate(`/evaluation-details/${evaluationId}`);
+  };
+
+  const handleDeleteEvaluation = async (evaluationId) => {
+    if (!evaluationId || !(editingId || viewingContract?.id)) return;
+
+    if (!window.confirm('Delete this evaluation from the contract?')) {
+      return;
+    }
+
+    setDeletingEvaluationId(evaluationId);
+    setEvaluationsError('');
+
+    try {
+      await api.delete(`/api/contract-evaluations/${evaluationId}`);
+      const activeContractId = editingId || viewingContract?.id;
+      if (activeContractId) {
+        await fetchEvaluations(activeContractId);
+      }
+    } catch (err) {
+      console.error('Failed to delete evaluation', err);
+      setEvaluationsError(err?.response?.data?.message || 'Unable to delete evaluation.');
+    } finally {
+      setDeletingEvaluationId(null);
+    }
+  };
+
   useEffect(() => {
     const contractId = editingId || viewingContract?.id;
     if (contractId) {
@@ -465,6 +502,7 @@ const ContractsPage = () => {
       supplier_id: contract.supplier_id ? String(contract.supplier_id) : '',
       source_request_id: contract.source_request_id ? String(contract.source_request_id) : '',
       reference_number: contract.reference_number || '',
+      signing_date: contract.signing_date || '',
       start_date: contract.start_date || '',
       end_date: contract.end_date || '',
       status: contract.status || 'active',
@@ -515,6 +553,30 @@ const ContractsPage = () => {
       setAttachmentsError(err?.response?.data?.message || 'Failed to upload attachment.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId) => {
+    if (!viewingContract && !editingId) return;
+
+    const activeContractId = editingId || viewingContract?.id;
+    if (!activeContractId) return;
+
+    if (!window.confirm('Remove this attachment from the contract?')) {
+      return;
+    }
+
+    setDeletingAttachmentId(attachmentId);
+    setAttachmentsError('');
+
+    try {
+      await api.delete(`/api/contracts/${activeContractId}/attachments/${attachmentId}`);
+      await fetchAttachments(activeContractId);
+    } catch (err) {
+      console.error('Failed to delete attachment', err);
+      setAttachmentsError(err?.response?.data?.message || 'Failed to delete attachment.');
+    } finally {
+      setDeletingAttachmentId(null);
     }
   };
 
@@ -571,6 +633,7 @@ const ContractsPage = () => {
       title: formState.title.trim(),
       vendor: formState.vendor.trim(),
       reference_number: formState.reference_number.trim() || null,
+      signing_date: formState.signing_date || null,
       start_date: formState.start_date || null,
       end_date: formState.end_date || null,
       status: formState.status,
@@ -660,6 +723,16 @@ const ContractsPage = () => {
       payload.source_request_id = parsedRequest;
     }
 
+    if (payload.signing_date && payload.start_date && payload.signing_date > payload.start_date) {
+      setFormError('Signing date must be on or before the start date.');
+      return;
+    }
+
+    if (payload.signing_date && payload.end_date && payload.signing_date > payload.end_date) {
+      setFormError('Signing date must be on or before the end date.');
+      return;
+    }
+
     const technicalIds = Array.isArray(formState.technical_department_ids)
       ? formState.technical_department_ids
           .map((id) => Number(id))
@@ -710,6 +783,89 @@ const ContractsPage = () => {
       setFormError(err?.response?.data?.message || 'Unable to archive this contract.');
     } finally {
       setArchivingId(null);
+    }
+  };
+
+  const handleUnarchive = async (contractId) => {
+    setUnarchivingId(contractId);
+    setFormError('');
+    setSuccessMessage('');
+
+    try {
+      await api.patch(`/api/contracts/${contractId}/unarchive`);
+      if (editingId === contractId) {
+        resetForm();
+      }
+      setSuccessMessage('Contract unarchived successfully.');
+      await fetchContracts();
+    } catch (err) {
+      console.error('Failed to unarchive contract', err);
+      setFormError(err?.response?.data?.message || 'Unable to unarchive this contract.');
+    } finally {
+      setUnarchivingId(null);
+    }
+  };
+
+  const handleRenew = async (contract) => {
+    if (!contract) return;
+
+    const proposedEnd = window.prompt(
+      'Enter the new contract end date (YYYY-MM-DD)',
+      contract.end_date || ''
+    );
+
+    if (!proposedEnd) {
+      return;
+    }
+
+    const proposedStart = window.prompt(
+      'Enter the new contract start date (leave blank to keep current)',
+      contract.start_date || ''
+    );
+
+    setRenewingId(contract.id);
+    setFormError('');
+    setSuccessMessage('');
+
+    try {
+      await api.post(`/api/contracts/${contract.id}/renew`, {
+        start_date: proposedStart || null,
+        end_date: proposedEnd,
+        contract_value: contract.contract_value,
+        amount_paid: contract.amount_paid,
+      });
+
+      setSuccessMessage('Contract renewed successfully.');
+      await fetchContracts();
+    } catch (err) {
+      console.error('Failed to renew contract', err);
+      setFormError(err?.response?.data?.message || 'Unable to renew this contract.');
+    } finally {
+      setRenewingId(null);
+    }
+  };
+
+  const handleDeleteContract = async (contractId) => {
+    if (!window.confirm('Delete this contract and its related evaluations and attachments?')) {
+      return;
+    }
+
+    setDeletingId(contractId);
+    setFormError('');
+    setSuccessMessage('');
+
+    try {
+      await api.delete(`/api/contracts/${contractId}`);
+      if (editingId === contractId) {
+        resetForm();
+      }
+      setSuccessMessage('Contract deleted successfully.');
+      await fetchContracts();
+    } catch (err) {
+      console.error('Failed to delete contract', err);
+      setFormError(err?.response?.data?.message || 'Unable to delete this contract.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -813,6 +969,115 @@ const ContractsPage = () => {
     });
   }, [filteredContracts]);
 
+  const exportContractsToCsv = useCallback(() => {
+    if (sortedContracts.length === 0) {
+      setError('No contracts available to export with the current filters.');
+      return;
+    }
+
+    const headers = [
+      'Title',
+      'Vendor',
+      'Reference #',
+      'Signing date',
+      'Start date',
+      'End date',
+      'Status',
+      'Contract value',
+      'Amount paid',
+    ];
+
+    const escapeCsv = (value) => {
+      if (value === null || value === undefined) {
+        return '""';
+      }
+      const stringValue = String(value).replace(/"/g, '""');
+      return `"${stringValue}"`;
+    };
+
+    const rows = sortedContracts.map((contract) => [
+      contract.title || '',
+      contract.vendor || '',
+      contract.reference_number || '',
+      contract.signing_date || '',
+      contract.start_date || '',
+      contract.end_date || '',
+      contract.status || '',
+      contract.contract_value ?? '',
+      contract.amount_paid ?? '',
+    ]);
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map(escapeCsv).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, 'contracts-export.csv');
+  }, [sortedContracts]);
+
+  const handlePrintContracts = useCallback(() => {
+    const printWindow = window.open('', '', 'width=1100,height=800');
+    if (!printWindow) {
+      return;
+    }
+
+    const rows = sortedContracts
+      .map(
+        (contract) => `
+          <tr>
+            <td>${contract.title || ''}</td>
+            <td>${contract.vendor || ''}</td>
+            <td>${contract.reference_number || ''}</td>
+            <td>${contract.signing_date || ''}</td>
+            <td>${contract.start_date || ''}</td>
+            <td>${contract.end_date || ''}</td>
+            <td>${(contract.status || '').toUpperCase()}</td>
+            <td>${formatCurrency(contract.contract_value) ?? ''}</td>
+            <td>${formatCurrency(contract.amount_paid) ?? ''}</td>
+          </tr>
+        `
+      )
+      .join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Contracts snapshot</title>
+          <style>
+            body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; padding: 16px; color: #111827; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px; font-size: 12px; }
+            th { background: #f3f4f6; text-align: left; }
+            caption { font-weight: 700; margin-bottom: 8px; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <caption>Contracts export (${new Date().toLocaleString()})</caption>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Vendor</th>
+                <th>Reference #</th>
+                <th>Signing date</th>
+                <th>Start date</th>
+                <th>End date</th>
+                <th>Status</th>
+                <th>Contract value</th>
+                <th>Amount paid</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  }, [sortedContracts]);
+
   const renderStatusBadge = (status) => {
     const normalized = (status || '').toLowerCase();
     const classes = statusStyles[normalized] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
@@ -879,6 +1144,70 @@ const ContractsPage = () => {
       percent: percent !== null ? Number(percent.toFixed(1)) : null,
     };
   };
+
+  const selectedContractInsights = useMemo(() => {
+    if (!viewingContract) {
+      return null;
+    }
+
+    const now = new Date();
+    const parseDate = (value) => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const signingDate = parseDate(viewingContract.signing_date);
+    const startDate = parseDate(viewingContract.start_date);
+    const endDate = parseDate(viewingContract.end_date);
+    const msPerDay = 1000 * 60 * 60 * 24;
+
+    const daysUntil = (date) => (date ? Math.round((date.getTime() - now.getTime()) / msPerDay) : null);
+    const describeRelative = (date) => {
+      const delta = daysUntil(date);
+      if (delta === null) return 'Date not set';
+      if (delta === 0) return 'Today';
+      return delta > 0 ? `${delta} day${delta === 1 ? '' : 's'} from now` : `${Math.abs(delta)} day${
+        Math.abs(delta) === 1 ? '' : 's'
+      } ago`;
+    };
+
+    const progressValue = startDate && endDate ? (now - startDate) / (endDate - startDate) : null;
+    const coverage = getPaidSummary(viewingContract);
+
+    return {
+      timeline: [
+        {
+          label: 'Signed',
+          date: signingDate,
+          detail: describeRelative(signingDate),
+        },
+        {
+          label: 'Start',
+          date: startDate,
+          detail: describeRelative(startDate),
+        },
+        {
+          label: 'End',
+          date: endDate,
+          detail: describeRelative(endDate),
+        },
+      ],
+      progress: Number.isFinite(progressValue) ? Math.min(Math.max(progressValue * 100, 0), 100) : null,
+      expirySummary:
+        daysUntil(endDate) !== null
+          ? daysUntil(endDate) >= 0
+            ? `Expires in ${daysUntil(endDate)} day${daysUntil(endDate) === 1 ? '' : 's'}`
+            : `Expired ${Math.abs(daysUntil(endDate))} day${Math.abs(daysUntil(endDate)) === 1 ? '' : 's'} ago`
+          : 'No end date on record',
+      renewalHint: viewingContract.is_expired
+        ? 'This contract is expired and ready for renewal or archiving.'
+        : isExpiringSoon(viewingContract)
+        ? 'Expiring soon—initiate renewal or confirm end-of-life.'
+        : 'Healthy timeline—monitor renewal cadence.',
+      paidCoverage: coverage.percent,
+    };
+  }, [getPaidSummary, isExpiringSoon, viewingContract]);
 
   const getRowHighlight = (contract) => {
     if (contract.is_expired) {
@@ -1118,13 +1447,29 @@ const ContractsPage = () => {
                     </select>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={fetchContracts}
-                  className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Refresh
-                </button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={exportContractsToCsv}
+                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrintContracts}
+                    className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    Print
+                  </button>
+                  <button
+                    type="button"
+                    onClick={fetchContracts}
+                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Refresh
+                  </button>
+                </div>
               </div>
               {error && (
                 <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
@@ -1253,7 +1598,18 @@ const ContractsPage = () => {
                                 >
                                   Edit
                                 </button>
-                                {contract.status !== 'archived' && (
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleRenew(contract);
+                                  }}
+                                  disabled={renewingId === contract.id}
+                                  className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                                >
+                                  {renewingId === contract.id ? 'Renewing...' : 'Renew'}
+                                </button>
+                                {contract.status !== 'archived' ? (
                                   <button
                                     type="button"
                                     onClick={(event) => {
@@ -1265,7 +1621,30 @@ const ContractsPage = () => {
                                   >
                                     {archivingId === contract.id ? 'Archiving...' : 'Archive'}
                                   </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      handleUnarchive(contract.id);
+                                    }}
+                                    disabled={unarchivingId === contract.id}
+                                    className="rounded-md border border-transparent bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 dark:bg-emerald-900/30 dark:text-emerald-200 dark:hover:bg-emerald-900/50"
+                                  >
+                                    {unarchivingId === contract.id ? 'Restoring...' : 'Unarchive'}
+                                  </button>
                                 )}
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleDeleteContract(contract.id);
+                                  }}
+                                  disabled={deletingId === contract.id}
+                                  className="rounded-md border border-transparent bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:opacity-60 dark:bg-rose-900/30 dark:text-rose-200 dark:hover:bg-rose-900/50"
+                                >
+                                  {deletingId === contract.id ? 'Deleting...' : 'Delete'}
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -1332,6 +1711,58 @@ const ContractsPage = () => {
                 />
               ) : (
                 <div className="mt-4 space-y-4">
+                  {selectedContractInsights && (
+                    <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900/40 dark:bg-blue-950/30">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-200">
+                            Lifecycle snapshot
+                          </p>
+                          <p className="text-sm text-blue-900 dark:text-blue-100">{selectedContractInsights.renewalHint}</p>
+                        </div>
+                        {selectedContractInsights.paidCoverage !== null && (
+                          <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm ring-1 ring-blue-100 dark:bg-blue-900 dark:text-blue-100 dark:ring-blue-800">
+                            {selectedContractInsights.paidCoverage}% paid coverage
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        {selectedContractInsights.timeline.map((milestone) => (
+                          <div
+                            key={milestone.label}
+                            className="rounded-md border border-blue-100 bg-white/70 px-3 py-2 shadow-sm dark:border-blue-900/50 dark:bg-blue-900/30"
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-200">
+                              {milestone.label}
+                            </p>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                              {formatDate(milestone.date?.toISOString()) || 'Not set'}
+                            </p>
+                            <p className="text-xs text-gray-600 dark:text-gray-300">{milestone.detail}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      {selectedContractInsights.progress !== null && (
+                        <div className="mt-4 space-y-1">
+                          <div className="flex items-center justify-between text-xs text-gray-700 dark:text-gray-200">
+                            <span className="font-semibold">Timeline progress</span>
+                            <span>{selectedContractInsights.progress.toFixed(0)}%</span>
+                          </div>
+                          <div className="h-2.5 rounded-full bg-blue-100 dark:bg-blue-900/40">
+                            <div
+                              className="h-2.5 rounded-full bg-blue-600 dark:bg-blue-400"
+                              style={{ width: `${selectedContractInsights.progress}%` }}
+                            />
+                          </div>
+                          <p className="text-[11px] text-gray-600 dark:text-gray-300">
+                            {selectedContractInsights.expirySummary}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</h3>
@@ -1363,6 +1794,12 @@ const ContractsPage = () => {
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Start date</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
                         {viewingContract.start_date || <span className="italic text-gray-500">Not set</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Signing date</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.signing_date || <span className="italic text-gray-500">Not set</span>}
                       </p>
                     </div>
                     <div>
@@ -1505,19 +1942,28 @@ const ContractsPage = () => {
                     <ul className="space-y-2">
                       {attachments.map((att) => (
                         <li key={att.id} className="flex items-center justify-between text-sm">
-                          <a
-                            href={att.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            {att.fileName}
-                          </a>
+                          <div className="flex items-center gap-3">
+                            <a
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {att.fileName}
+                            </a>
+                            <button
+                              onClick={() => handleDownload(att)}
+                              className="rounded-md bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-300"
+                            >
+                              Download
+                            </button>
+                          </div>
                           <button
-                            onClick={() => handleDownload(att)}
-                            className="rounded-md bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-300"
+                            onClick={() => handleDeleteAttachment(att.id)}
+                            disabled={deletingAttachmentId === att.id}
+                            className="rounded-md bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
                           >
-                            Download
+                            {deletingAttachmentId === att.id ? 'Removing...' : 'Delete'}
                           </button>
                         </li>
                       ))}
@@ -1571,6 +2017,21 @@ const ContractsPage = () => {
                             <p className="text-xs text-gray-600 dark:text-gray-300">
                               Overall score: {evaluation.evaluation_criteria?.overallScore ?? '—'}
                             </p>
+                            <div className="mt-2 flex justify-end gap-2">
+                              <button
+                                onClick={() => handleViewEvaluation(evaluation.id)}
+                                className="rounded-md bg-blue-600 px-2 py-1 text-xs font-semibold text-white hover:bg-blue-700"
+                              >
+                                View / Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEvaluation(evaluation.id)}
+                                disabled={deletingEvaluationId === evaluation.id}
+                                className="rounded-md bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
+                              >
+                                {deletingEvaluationId === evaluation.id ? 'Removing...' : 'Delete'}
+                              </button>
+                            </div>
                           </div>
                         </li>
                       ))}
