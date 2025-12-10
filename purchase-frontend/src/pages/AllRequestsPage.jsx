@@ -10,6 +10,8 @@ import { getRequesterDisplay } from '../utils/requester';
 import Card from '../components/Card';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
+import useCurrentUser from '../hooks/useCurrentUser';
+import useStatusCommunications from '../hooks/useStatusCommunications';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -130,11 +132,24 @@ const getStepColor = (step) => {
   }
 };
 
+const isPostApprovalStatus = (status) => {
+  const normalized = (status || '').toLowerCase();
+  return [
+    'approved',
+    'assigned',
+    'technical_inspection_pending',
+    'completed',
+    'received',
+  ].includes(normalized);
+};
+
 const AllRequestsPage = () => {
+  const { user } = useCurrentUser();
   const [requests, setRequests] = useState([]);
   const [expandedAssignId, setExpandedAssignId] = useState(null);
   const [expandedItemsId, setExpandedItemsId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
+  const [expandedCommunicationId, setExpandedCommunicationId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingItemsId, setLoadingItemsId] = useState(null);
   const [filter, setFilter] = useState('');
@@ -169,6 +184,19 @@ const AllRequestsPage = () => {
     handleDownloadAttachment,
     resetAttachments,
   } = useRequestAttachments();
+  const {
+    canSendCommunication,
+    canViewCommunication,
+    communicationDrafts,
+    communicationError,
+    communicationList,
+    communicationLoading,
+    communicationSending,
+    communicationSuccess,
+    handleSendCommunication,
+    refreshCommunications,
+    setCommunicationDrafts,
+  } = useStatusCommunications(user?.role);
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -863,6 +891,20 @@ const AllRequestsPage = () => {
               ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70'
               : '';
             const requesterDisplay = getRequesterDisplay(request);
+            const showCommunication =
+              canViewCommunication && isPostApprovalStatus(request.status);
+            const isCommunicationExpanded = expandedCommunicationId === request.id;
+            const statusLabel = request.status || step;
+
+            const toggleCommunication = (requestId) => {
+              const nextId = expandedCommunicationId === requestId ? null : requestId;
+              setExpandedCommunicationId(nextId);
+
+              if (nextId && !communicationList[requestId] && !communicationLoading[requestId]) {
+                refreshCommunications(requestId);
+              }
+            };
+
             return (
               <Card key={request.id} className={`transition ${cardClasses}`}>
                 <div className="flex justify-between items-start gap-4 flex-wrap">
@@ -935,6 +977,15 @@ const AllRequestsPage = () => {
                     >
                       {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
                     </button>
+                    {showCommunication && (
+                      <button
+                        className="text-indigo-700 underline"
+                        onClick={() => toggleCommunication(request.id)}
+                        disabled={communicationLoading[request.id]}
+                      >
+                        {isCommunicationExpanded ? 'Hide Status Chat' : 'View Status Chat'}
+                      </button>
+                    )}
                     {request.status === 'Approved' && (
                       <button
                         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -1016,6 +1067,79 @@ const AllRequestsPage = () => {
                     isLoading={loadingApprovalsId === request.id}
                     isUrgent={Boolean(request?.is_urgent)}
                   />
+                </div>
+              )}
+
+              {showCommunication && isCommunicationExpanded && (
+                <div className="mt-4 border-t pt-3 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-indigo-900">SCM Status Communication</p>
+                      <p className="text-xs text-indigo-700">
+                        Discuss the status of this approved request (current status: {statusLabel}).
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-indigo-700 underline"
+                      onClick={() => refreshCommunications(request.id)}
+                      disabled={communicationLoading[request.id]}
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    {communicationLoading[request.id] && (
+                      <p className="text-xs text-indigo-700">Loading communications...</p>
+                    )}
+                    {communicationError[request.id] && (
+                      <p className="text-xs text-rose-600">{communicationError[request.id]}</p>
+                    )}
+                    {communicationSuccess[request.id] && (
+                      <p className="text-xs text-emerald-700">{communicationSuccess[request.id]}</p>
+                    )}
+
+                    {(communicationList[request.id] || []).slice(0, 6).map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="rounded border border-indigo-100 bg-white px-3 py-2 text-xs text-slate-700"
+                      >
+                        <div className="flex flex-wrap justify-between gap-1">
+                          <span className="font-semibold text-indigo-900">{entry.actor_name || 'Unknown'}</span>
+                          <span className="text-slate-500">{entry.status_at_time || 'Pending'}</span>
+                          <span className="text-slate-400">
+                            {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
+                          </span>
+                        </div>
+                        <p className="mt-1 whitespace-pre-wrap text-slate-700">{entry.comments}</p>
+                      </div>
+                    ))}
+
+                    {canSendCommunication && (
+                      <div className="space-y-2">
+                        <textarea
+                          className="w-full rounded border border-indigo-200 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                          rows={3}
+                          placeholder="Share an update with the SCM team..."
+                          value={communicationDrafts[request.id] || ''}
+                          onChange={(event) =>
+                            setCommunicationDrafts((prev) => ({
+                              ...prev,
+                              [request.id]: event.target.value,
+                            }))
+                          }
+                        />
+                        <button
+                          className="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 disabled:opacity-70"
+                          onClick={() => handleSendCommunication(request.id, statusLabel)}
+                          disabled={!!communicationSending[request.id]}
+                        >
+                          {communicationSending[request.id] ? 'Sending...' : 'Send to SCM'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </Card>

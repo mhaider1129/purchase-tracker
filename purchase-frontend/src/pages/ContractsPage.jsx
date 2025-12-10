@@ -1331,7 +1331,7 @@ const ContractsPage = () => {
   return (
     <>
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <header className="mb-8">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
@@ -1394,8 +1394,7 @@ const ContractsPage = () => {
           />
         </div>
 
-        <section className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
-          <div className="space-y-4">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(420px,0.95fr)] xl:grid-cols-[minmax(0,2fr)_minmax(500px,1fr)]">          <div className="space-y-4">
             <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-1 gap-3">
@@ -1478,10 +1477,10 @@ const ContractsPage = () => {
               )}
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-              <div className="max-h-[480px] overflow-y-auto">
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm ring-1 ring-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:ring-gray-800/60">
+              <div className="max-h-[640px] overflow-y-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700" aria-label="Contracts table">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
+                  <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur dark:bg-gray-800/90">
                     <tr>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Contract
@@ -1509,7 +1508,7 @@ const ContractsPage = () => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="divide-y divide-gray-200 bg-white/60 dark:divide-gray-800 dark:bg-gray-900/70">
                     {loading ? (
                       <tr>
                         <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
@@ -1523,7 +1522,7 @@ const ContractsPage = () => {
                         </td>
                       </tr>
                     ) : (
-                      sortedContracts.map((contract) => {
+                      sortedContracts.map((contract, index) => {
                         const isSelected = viewingContract?.id === contract.id;
                         const contractValue = formatCurrency(contract.contract_value);
                         const paidSummary = getPaidSummary(contract);
@@ -1541,7 +1540,7 @@ const ContractsPage = () => {
                             key={contract.id}
                             className={`cursor-pointer transition hover:-translate-y-[1px] hover:shadow-sm hover:ring-1 hover:ring-blue-100 dark:hover:ring-blue-800 ${
                               isSelected ? 'bg-blue-50/70 dark:bg-blue-900/20' : ''
-                            } ${getRowHighlight(contract)}`}
+                            } ${index % 2 === 1 ? 'bg-gray-50/70 dark:bg-gray-800/60' : ''} ${getRowHighlight(contract)}`}
                             onClick={() => handleViewContract(contract)}
                           >
                             <td className="px-4 py-3 align-top">
@@ -1658,7 +1657,7 @@ const ContractsPage = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-white via-white to-blue-50/60 p-6 shadow-lg ring-1 ring-blue-50 dark:border-blue-900/50 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 dark:ring-blue-900/40">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">

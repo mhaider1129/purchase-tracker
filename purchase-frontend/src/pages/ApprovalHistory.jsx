@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar';
 import Papa from 'papaparse';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import useCurrentUser from '../hooks/useCurrentUser';
+import useStatusCommunications from '../hooks/useStatusCommunications';
 
 const ApprovalHistory = () => {
   const [history, setHistory] = useState([]);
@@ -19,6 +21,21 @@ const ApprovalHistory = () => {
   const [department, setDepartment] = useState('');
   const [departments, setDepartments] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCommunicationId, setExpandedCommunicationId] = useState(null);
+  const { user } = useCurrentUser();
+  const {
+    canSendCommunication,
+    canViewCommunication,
+    communicationDrafts,
+    communicationError,
+    communicationList,
+    communicationLoading,
+    communicationSending,
+    communicationSuccess,
+    handleSendCommunication,
+    refreshCommunications,
+    setCommunicationDrafts,
+  } = useStatusCommunications(user?.role);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,6 +100,17 @@ const ApprovalHistory = () => {
     Approved: 'text-green-700 bg-green-100 border-green-200',
     Rejected: 'text-red-700 bg-red-100 border-red-200',
     Pending: 'text-yellow-700 bg-yellow-100 border-yellow-200',
+  };
+
+  const isPostApprovalStatus = (status) => {
+    const normalized = (status || '').toLowerCase();
+    return [
+      'approved',
+      'assigned',
+      'technical_inspection_pending',
+      'completed',
+      'received',
+    ].includes(normalized);
   };
 
   const resetFilters = () => {
@@ -355,63 +383,174 @@ const ApprovalHistory = () => {
                     <th className="border-b border-gray-200 p-3 font-semibold">Your Comment</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Level</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Date</th>
+                    {canViewCommunication && (
+                      <th className="border-b border-gray-200 p-3 font-semibold">SCM Comms</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedItems.map((item, idx) => (
-                    <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="border-r p-2 align-top text-gray-900 font-medium">{item.request_id}</td>
-                      <td className="border-r p-2 align-top text-gray-700">{item.request_type}</td>
-                      <td className="border-r p-2 align-top text-gray-700">{item.department_name}</td>
-                      <td className="border-r p-2 align-top text-gray-700">
-                        {item.requester_name}
-                        {item.requester_role && ` (${item.requester_role})`}
-                      </td>
-                      <td className="border-r p-2 align-top text-gray-700">{item.project_name || '—'}</td>
-                      <td className="border-r p-2 align-top text-gray-600 max-w-xs">
-                        <p className="whitespace-pre-wrap leading-snug">{item.justification}</p>
-                      </td>
-                      <td className="border-r p-2 align-top text-gray-700">{formatCurrency(item.estimated_cost)}</td>
-                      <td className="border-r p-2 align-top">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                            statusVariant[item.status] || 'text-blue-700 bg-blue-100 border-blue-200'
-                          }`}
-                        >
-                          {item.status || '—'}
-                        </span>
-                      </td>
-                      <td className="border-r p-2 align-top">
-                        <span
-                          className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                            statusVariant[item.decision] || 'text-gray-700 bg-gray-100 border-gray-200'
-                          }`}
-                        >
-                          {item.decision || '—'}
-                        </span>
-                      </td>
-                      <td className="border-r p-2 align-top text-gray-600">
-                        {item.comments ? (
-                          <span className="block truncate max-w-[180px]" title={item.comments}>
-                            {item.comments}
+                    <React.Fragment key={item.request_id || idx}>
+                      <tr className="border-b last:border-b-0 hover:bg-gray-50">
+                        <td className="border-r p-2 align-top text-gray-900 font-medium">{item.request_id}</td>
+                        <td className="border-r p-2 align-top text-gray-700">{item.request_type}</td>
+                        <td className="border-r p-2 align-top text-gray-700">{item.department_name}</td>
+                        <td className="border-r p-2 align-top text-gray-700">
+                          {item.requester_name}
+                          {item.requester_role && ` (${item.requester_role})`}
+                        </td>
+                        <td className="border-r p-2 align-top text-gray-700">{item.project_name || '—'}</td>
+                        <td className="border-r p-2 align-top text-gray-600 max-w-xs">
+                          <p className="whitespace-pre-wrap leading-snug">{item.justification}</p>
+                        </td>
+                        <td className="border-r p-2 align-top text-gray-700">{formatCurrency(item.estimated_cost)}</td>
+                        <td className="border-r p-2 align-top">
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                              statusVariant[item.status] || 'text-blue-700 bg-blue-100 border-blue-200'
+                            }`}
+                          >
+                            {item.status || '—'}
                           </span>
-                        ) : (
-                          '—'
+                        </td>
+                        <td className="border-r p-2 align-top">
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                              statusVariant[item.decision] || 'text-gray-700 bg-gray-100 border-gray-200'
+                            }`}
+                          >
+                            {item.decision || '—'}
+                          </span>
+                        </td>
+                        <td className="border-r p-2 align-top text-gray-600">
+                          {item.comments ? (
+                            <span className="block truncate max-w-[180px]" title={item.comments}>
+                              {item.comments}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="border-r p-2 align-top text-gray-600">{item.approval_level || '—'}</td>
+                        <td className="p-2 align-top text-gray-600">
+                          {item.approved_at
+                            ? new Date(item.approved_at).toLocaleString('en-GB', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '—'}
+                        </td>
+                        {canViewCommunication && (
+                          <td className="p-2 align-top text-gray-600">
+                            {isPostApprovalStatus(item.status) ? (
+                              <button
+                                type="button"
+                                className="text-indigo-700 underline"
+                                onClick={() => {
+                                  const nextId =
+                                    expandedCommunicationId === item.request_id
+                                      ? null
+                                      : item.request_id;
+                                  setExpandedCommunicationId(nextId);
+
+                                  if (
+                                    nextId &&
+                                    !communicationList[item.request_id] &&
+                                    !communicationLoading[item.request_id]
+                                  ) {
+                                    refreshCommunications(item.request_id);
+                                  }
+                                }}
+                                disabled={communicationLoading[item.request_id]}
+                              >
+                                {expandedCommunicationId === item.request_id ? 'Hide' : 'View'} updates
+                              </button>
+                            ) : (
+                              <span className="text-xs text-gray-400">Not available</span>
+                            )}
+                          </td>
                         )}
-                      </td>
-                      <td className="border-r p-2 align-top text-gray-600">{item.approval_level || '—'}</td>
-                      <td className="p-2 align-top text-gray-600">
-                        {item.approved_at
-                          ? new Date(item.approved_at).toLocaleString('en-GB', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                          : '—'}
-                      </td>
-                    </tr>
+                      </tr>
+
+                      {canViewCommunication &&
+                        expandedCommunicationId === item.request_id && (
+                          <tr className="bg-indigo-50/40">
+                            <td colSpan={13} className="p-3 align-top">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="text-sm font-semibold text-indigo-900">SCM Status Communication</p>
+                                  <p className="text-xs text-indigo-700">
+                                    Discuss the status of this approved request (current status: {item.status || 'Unknown'}).
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="text-xs font-medium text-indigo-700 underline"
+                                  onClick={() => refreshCommunications(item.request_id)}
+                                  disabled={communicationLoading[item.request_id]}
+                                >
+                                  Refresh
+                                </button>
+                              </div>
+
+                              <div className="mt-3 space-y-2">
+                                {communicationLoading[item.request_id] && (
+                                  <p className="text-xs text-indigo-700">Loading communications...</p>
+                                )}
+                                {communicationError[item.request_id] && (
+                                  <p className="text-xs text-rose-600">{communicationError[item.request_id]}</p>
+                                )}
+                                {communicationSuccess[item.request_id] && (
+                                  <p className="text-xs text-emerald-700">{communicationSuccess[item.request_id]}</p>
+                                )}
+
+                                {(communicationList[item.request_id] || []).slice(0, 6).map((entry) => (
+                                  <div
+                                    key={entry.id}
+                                    className="rounded border border-indigo-100 bg-white px-3 py-2 text-xs text-slate-700"
+                                  >
+                                    <div className="flex flex-wrap justify-between gap-1">
+                                      <span className="font-semibold text-indigo-900">{entry.actor_name || 'Unknown'}</span>
+                                      <span className="text-slate-500">{entry.status_at_time || 'Pending'}</span>
+                                      <span className="text-slate-400">
+                                        {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
+                                      </span>
+                                    </div>
+                                    <p className="mt-1 whitespace-pre-wrap text-slate-700">{entry.comments}</p>
+                                  </div>
+                                ))}
+
+                                {canSendCommunication && (
+                                  <div className="space-y-2">
+                                    <textarea
+                                      className="w-full rounded border border-indigo-200 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                      rows={3}
+                                      placeholder="Share an update with the SCM team..."
+                                      value={communicationDrafts[item.request_id] || ''}
+                                      onChange={(event) =>
+                                        setCommunicationDrafts((prev) => ({
+                                          ...prev,
+                                          [item.request_id]: event.target.value,
+                                        }))
+                                      }
+                                    />
+                                    <button
+                                      className="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 disabled:opacity-70"
+                                      onClick={() => handleSendCommunication(item.request_id, item.status)}
+                                      disabled={!!communicationSending[item.request_id]}
+                                    >
+                                      {communicationSending[item.request_id] ? 'Sending...' : 'Send to SCM'}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
