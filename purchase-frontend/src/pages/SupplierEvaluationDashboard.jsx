@@ -1,0 +1,338 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  CartesianGrid,
+} from 'recharts';
+import { AlertTriangle, CheckCircle2, PhoneCall, Users } from 'lucide-react';
+import Navbar from '../components/Navbar';
+import Card from '../components/Card';
+import { getSuppliersDashboard } from '../api/suppliers';
+import { getSupplierEvaluationDashboard } from '../api/supplierEvaluations';
+
+const formatNumber = (value, fallback = 0) =>
+  Number.isFinite(Number(value))
+    ? Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 })
+    : fallback;
+
+const formatDate = (value) => {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const Metric = ({ label, value, icon: Icon, tone = 'text-slate-700' }) => (
+  <div className="flex items-center gap-3">
+    {Icon ? (
+      <span
+        className={`flex h-10 w-10 items-center justify-center rounded-lg bg-white/70 shadow-sm ${tone.replace(
+          'text',
+          'border',
+        )}`}
+      >
+        <Icon className={`h-5 w-5 ${tone}`} />
+      </span>
+    ) : null}
+    <div>
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="text-2xl font-semibold text-slate-900">{value}</p>
+    </div>
+  </div>
+);
+
+const SupplierEvaluationDashboard = () => {
+  const [supplierStats, setSupplierStats] = useState(null);
+  const [evaluationStats, setEvaluationStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const [suppliers, evaluations] = await Promise.all([
+          getSuppliersDashboard(),
+          getSupplierEvaluationDashboard(),
+        ]);
+        setSupplierStats(suppliers || {});
+        setEvaluationStats(evaluations || {});
+      } catch (err) {
+        console.error('❌ Failed to load supplier dashboards:', err);
+        setError('Unable to load supplier dashboards. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const trendData = useMemo(() => {
+    const trends = evaluationStats?.trends || [];
+    return trends.map((item) => ({
+      ...item,
+      label: item.period_start
+        ? new Date(item.period_start).toLocaleDateString(undefined, {
+            month: 'short',
+            year: 'numeric',
+          })
+        : 'n/a',
+    }));
+  }, [evaluationStats]);
+
+  if (loading) {
+    return <p className="p-6">Loading supplier dashboards...</p>;
+  }
+
+  return (
+    <>
+      <Navbar />
+      <div className="mx-auto max-w-7xl p-6 space-y-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-wide text-slate-500">Suppliers</p>
+            <h1 className="text-2xl font-bold text-slate-900">Supplier Performance Dashboard</h1>
+            <p className="text-sm text-slate-500">
+              Monitor supplier coverage, evaluation cadence, and performance trends in one place.
+            </p>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
+        ) : null}
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="bg-gradient-to-br from-indigo-50 via-white to-white shadow-sm">
+            <Metric
+              label="Total suppliers"
+              value={formatNumber(supplierStats?.totals?.suppliers, '0')}
+              icon={Users}
+              tone="text-indigo-600"
+            />
+          </Card>
+          <Card className="bg-gradient-to-br from-emerald-50 via-white to-white shadow-sm">
+            <Metric
+              label="With contact info"
+              value={formatNumber(supplierStats?.totals?.with_contact, '0')}
+              icon={PhoneCall}
+              tone="text-emerald-600"
+            />
+          </Card>
+          <Card className="bg-gradient-to-br from-amber-50 via-white to-white shadow-sm">
+            <Metric
+              label="Evaluations (90 days)"
+              value={formatNumber(evaluationStats?.totals?.evaluations_last_90_days, '0')}
+              icon={CheckCircle2}
+              tone="text-amber-600"
+            />
+          </Card>
+          <Card className="bg-gradient-to-br from-purple-50 via-white to-white shadow-sm">
+            <Metric
+              label="Average weighted score"
+              value={formatNumber(evaluationStats?.totals?.avg_weighted_score, '0')}
+              icon={AlertTriangle}
+              tone="text-purple-700"
+            />
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-lg font-semibold text-slate-900">Evaluation trend</h2>
+              <p className="text-sm text-slate-500">Rolling 12 months</p>
+            </div>
+            <div className="mt-4 h-72">
+              {trendData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trendData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                    <YAxis
+                      yAxisId="left"
+                      label={{ value: 'Avg score', angle: -90, position: 'insideLeft' }}
+                      domain={[0, 100]}
+                    />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      label={{ value: 'Evaluations', angle: 90, position: 'insideRight' }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="avg_overall_score"
+                      name="Average score"
+                      stroke="#8b5cf6"
+                      strokeWidth={2}
+                      yAxisId="left"
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="avg_weighted_score"
+                      name="Weighted score"
+                      stroke="#0ea5e9"
+                      strokeWidth={2}
+                      yAxisId="left"
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="evaluation_count"
+                      name="Evaluations"
+                      stroke="#22c55e"
+                      strokeWidth={2}
+                      yAxisId="right"
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-slate-500">No evaluation trend data available yet.</p>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <h2 className="text-lg font-semibold text-slate-900">KPI averages</h2>
+            <div className="mt-4 space-y-3">
+              <Metric
+                label="On-time / in-full (OTIF)"
+                value={formatNumber(evaluationStats?.kpi_averages?.otif_score, '0')}
+                tone="text-sky-600"
+              />
+              <Metric
+                label="Corrective actions"
+                value={formatNumber(evaluationStats?.kpi_averages?.corrective_actions_score, '0')}
+                tone="text-amber-600"
+              />
+              <Metric
+                label="ESG compliance"
+                value={formatNumber(evaluationStats?.kpi_averages?.esg_compliance_score, '0')}
+                tone="text-emerald-600"
+              />
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Top suppliers</h3>
+              <p className="text-sm text-slate-500">By weighted score</p>
+            </div>
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
+                    <th className="px-3 py-2">Supplier</th>
+                    <th className="px-3 py-2">Evaluations</th>
+                    <th className="px-3 py-2">Last evaluation</th>
+                    <th className="px-3 py-2">Avg weighted</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {(evaluationStats?.top_suppliers || []).map((supplier) => (
+                    <tr key={supplier.supplier_name} className="hover:bg-slate-50">
+                      <td className="px-3 py-2 font-medium text-slate-900">{supplier.supplier_name}</td>
+                      <td className="px-3 py-2 text-slate-700">{supplier.evaluation_count}</td>
+                      <td className="px-3 py-2 text-slate-700">{formatDate(supplier.last_evaluation_date)}</td>
+                      <td className="px-3 py-2 text-slate-700">
+                        {formatNumber(supplier.avg_weighted_score, '0')}
+                      </td>
+                    </tr>
+                  ))}
+                  {!evaluationStats?.top_suppliers?.length ? (
+                    <tr>
+                      <td colSpan={4} className="px-3 py-4 text-center text-slate-500">
+                        No suppliers have been evaluated yet.
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+
+          <Card>
+            <h3 className="text-lg font-semibold text-slate-900">Recent evaluations</h3>
+            <div className="mt-3 space-y-2">
+              {(evaluationStats?.recent_evaluations || []).map((evaluation) => (
+                <div
+                  key={evaluation.id}
+                  className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{evaluation.supplier_name}</p>
+                    <p className="text-xs text-slate-500">{formatDate(evaluation.evaluation_date)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Weighted</p>
+                    <p className="text-lg font-semibold text-slate-900">
+                      {formatNumber(evaluation.weighted_overall_score, '0')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {!evaluationStats?.recent_evaluations?.length ? (
+                <p className="text-sm text-slate-500">No evaluations recorded yet.</p>
+              ) : null}
+            </div>
+          </Card>
+        </div>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900">Supplier coverage</h3>
+            <p className="text-sm text-slate-500">Evaluation cadence and contacts</p>
+          </div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
+                  <th className="px-3 py-2">Supplier</th>
+                  <th className="px-3 py-2">Email</th>
+                  <th className="px-3 py-2">Phone</th>
+                  <th className="px-3 py-2">Evaluations</th>
+                  <th className="px-3 py-2">Last evaluation</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {(supplierStats?.coverage || []).map((supplier) => (
+                  <tr key={supplier.id} className="hover:bg-slate-50">
+                    <td className="px-3 py-2 font-medium text-slate-900">{supplier.name}</td>
+                    <td className="px-3 py-2 text-slate-700">{supplier.contact_email || '—'}</td>
+                    <td className="px-3 py-2 text-slate-700">{supplier.contact_phone || '—'}</td>
+                    <td className="px-3 py-2 text-slate-700">{supplier.evaluation_count}</td>
+                    <td className="px-3 py-2 text-slate-700">{formatDate(supplier.last_evaluation_date)}</td>
+                  </tr>
+                ))}
+                {!supplierStats?.coverage?.length ? (
+                  <tr>
+                    <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
+                      No supplier records found yet.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+    </>
+  );
+};
+
+export default SupplierEvaluationDashboard;

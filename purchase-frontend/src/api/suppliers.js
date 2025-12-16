@@ -19,9 +19,15 @@ export const deleteSupplier = async (id, options = {}) => {
   await api.delete(`/api/suppliers/${id}`, options);
 };
 
+export const getSuppliersDashboard = async (options = {}) => {
+  const response = await api.get('/api/suppliers/dashboard', options);
+  return response.data || {};
+};
+
 export default {
   listSuppliers,
   createSupplier,
   updateSupplier,
   deleteSupplier,
+  getSuppliersDashboard,
 };

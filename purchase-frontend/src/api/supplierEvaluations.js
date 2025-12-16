@@ -38,6 +38,14 @@ export const deleteSupplierEvaluation = async (id, options = {}) => {
   await api.delete(`${RESOURCE}/${id}`, options);
 };
 
+export const getSupplierEvaluationDashboard = async (params = {}, options = {}) => {
+  const { data } = await api.get(`${RESOURCE}/dashboard`, {
+    params,
+    ...options,
+  });
+  return data || {};
+};
+
 export default {
   listSupplierEvaluations,
   listSupplierEvaluationBenchmarks,
@@ -45,4 +53,5 @@ export default {
   createSupplierEvaluation,
   updateSupplierEvaluation,
   deleteSupplierEvaluation,
+  getSupplierEvaluationDashboard,
 };

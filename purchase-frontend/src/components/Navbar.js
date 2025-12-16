@@ -426,6 +426,12 @@ const Navbar = () => {
             "text-emerald-700",
           ),
           createItem(
+            canManageEvaluations,
+            t("navbar.supplierDashboard"),
+            "/supplier-dashboard",
+            "text-emerald-700",
+          ),
+          createItem(
             canViewIncompleteQueues,
             t("navbar.viewIncomplete"),
             incompletePath,

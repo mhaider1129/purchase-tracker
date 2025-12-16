@@ -59,6 +59,7 @@ import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import SupplierSrmPage from "./pages/SupplierSrmPage";
+import SupplierEvaluationDashboard from "./pages/SupplierEvaluationDashboard";
 import PlanningWorkbench from "./pages/PlanningWorkbench";
 import HistoricalRequestsImportPage from "./pages/HistoricalRequestsImportPage";
 import RfxPortalPage from "./pages/RfxPortalPage";
@@ -424,6 +425,23 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<SupplierEvaluationsPage />}
+          allowedRoles={[
+            "admin",
+            "SCM",
+            "Contract_Manager",
+            "ProcurementSpecialist",
+            "ProcurementManager",
+          ]}
+          requiredPermissions={["evaluations.manage"]}
+          resourceKey="feature.supplierEvaluations"
+        />
+      }
+    />
+    <Route
+      path="/supplier-dashboard"
+      element={
+        <ProtectedRoute
+          element={<SupplierEvaluationDashboard />}
           allowedRoles={[
             "admin",
             "SCM",
