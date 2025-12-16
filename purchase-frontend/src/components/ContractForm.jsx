@@ -138,6 +138,41 @@ const ContractForm = ({
         <div>
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="contract_type"
+          >
+            Contract type
+          </label>
+          <select
+            id="contract_type"
+            name="contract_type"
+            value={formState.contract_type}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          >
+            <option value="purchasing">Purchasing</option>
+            <option value="leasing">Leasing</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="signing_date"
+          >
+            Signing date
+          </label>
+          <input
+            id="signing_date"
+            name="signing_date"
+            type="date"
+            value={formState.signing_date}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          />
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="start_date"
           >
             Start date
@@ -147,6 +182,22 @@ const ContractForm = ({
             name="start_date"
             type="date"
             value={formState.start_date}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          />
+        </div>
+        <div>
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="signing_date"
+          >
+            Signing date
+          </label>
+          <input
+            id="signing_date"
+            name="signing_date"
+            type="date"
+            value={formState.signing_date}
             onChange={handleInputChange}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           />

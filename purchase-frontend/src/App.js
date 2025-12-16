@@ -61,6 +61,7 @@ import SuppliersPage from "./pages/SuppliersPage";
 import SupplierSrmPage from "./pages/SupplierSrmPage";
 import PlanningWorkbench from "./pages/PlanningWorkbench";
 import HistoricalRequestsImportPage from "./pages/HistoricalRequestsImportPage";
+import RfxPortalPage from "./pages/RfxPortalPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -406,6 +407,15 @@ const AppRoutes = () => (
           ]}
           requiredPermissions={["contracts.manage"]}
           resourceKey="feature.suppliers"
+        />
+      }
+    />
+    <Route
+      path="/rfx-portal"
+      element={
+        <ProtectedRoute
+          element={<RfxPortalPage />}
+          requiredPermissions={["rfx.manage", "rfx.respond"]}
         />
       }
     />

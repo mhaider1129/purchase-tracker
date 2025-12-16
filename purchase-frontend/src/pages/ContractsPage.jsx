@@ -171,6 +171,7 @@ const initialFormState = {
   signing_date: '',
   start_date: '',
   end_date: '',
+  contract_type: 'purchasing',
   status: 'active',
   contract_value: '',
   amount_paid: '',
@@ -516,6 +517,7 @@ const ContractsPage = () => {
       delivery_terms: contract.delivery_terms || '',
       warranty_terms: contract.warranty_terms || '',
       performance_management: contract.performance_management || '',
+      contract_type: contract.contract_type || 'purchasing',
       end_user_department_id: contract.end_user_department_id
         ? String(contract.end_user_department_id)
         : '',
@@ -632,6 +634,7 @@ const ContractsPage = () => {
     const payload = {
       title: formState.title.trim(),
       vendor: formState.vendor.trim(),
+      contract_type: formState.contract_type,
       reference_number: formState.reference_number.trim() || null,
       signing_date: formState.signing_date || null,
       start_date: formState.start_date || null,
@@ -650,6 +653,12 @@ const ContractsPage = () => {
 
     if (!payload.vendor) {
       setFormError('A vendor name is required.');
+      return;
+    }
+
+    const allowedContractTypes = ['purchasing', 'leasing', 'other'];
+    if (!allowedContractTypes.includes(payload.contract_type)) {
+      setFormError('Select a valid contract type.');
       return;
     }
 
@@ -1766,6 +1775,14 @@ const ContractsPage = () => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">{viewingContract.vendor}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Contract type</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {(viewingContract.contract_type || 'purchasing')
+                          .toString()
+                          .replace(/^[a-z]/, (char) => char.toUpperCase())}
+                      </p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Supplier record</h3>

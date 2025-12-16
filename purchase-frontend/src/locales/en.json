@@ -155,6 +155,7 @@
     "supplierSrm": "Supplier SRM",
     "contracts": "Contracts",
     "supplierEvaluations": "Supplier Evaluations",
+    "rfxPortal": "RFX Portal",
     "demandPlanning": "Demand Planning",
     "viewIncomplete": "View Incomplete Requests",
     "registerUser": "Register User",
@@ -2081,6 +2082,63 @@
       "rejected": "Rejected",
       "completed": "Completed",
       "unknown": "Unknown"
+    }
+  },
+  "rfxPortal": {
+    "title": "RFX Collaboration Portal",
+    "subtitle": "Publish RFQs or RFPs and collect supplier bids for review.",
+    "eventList": "Published events",
+    "loading": "Loading events…",
+    "eventCount": "{{count}} event(s)",
+    "noDescription": "No description provided.",
+    "dueDate": "Due by {{date}}",
+    "responseCount": "{{count}} responses",
+    "empty": "No RFX events published yet.",
+    "publishTitle": "Publish a new event",
+    "publishHint": "Share scope, deadlines, and requirements with suppliers.",
+    "respondTitle": "Respond to {{title}}",
+    "respondHint": "Submit pricing and commercial notes for this event.",
+    "responsesTitle": "Supplier responses",
+    "responsesEmpty": "No suppliers have responded yet.",
+    "noNotes": "No notes provided.",
+    "noBid": "No bid amount shared.",
+    "bidLabel": "Bid: {{amount}}",
+    "actions": {
+      "close": "Close event",
+      "reopen": "Reopen",
+      "saving": "Publishing…",
+      "publish": "Publish event",
+      "sending": "Submitting…",
+      "submitResponse": "Submit response"
+    },
+    "fields": {
+      "title": "Title",
+      "type": "RFX Type",
+      "dueDate": "Due date",
+      "description": "Description",
+      "supplierName": "Supplier name",
+      "bidAmount": "Bid amount",
+      "notes": "Notes"
+    },
+    "placeholders": {
+      "title": "Enter a clear headline",
+      "description": "Share scope, timelines, or deliverables",
+      "supplier": "Registered supplier name",
+      "bidAmount": "Optional bid amount",
+      "notes": "Optional clarifications"
+    },
+    "errors": {
+      "loadEvents": "Unable to load RFX events.",
+      "createEvent": "Could not publish the event.",
+      "submitResponse": "Unable to submit the response.",
+      "updateStatus": "Could not update status."
+    },
+    "validation": {
+      "title": "A title is required before publishing."
+    },
+    "success": {
+      "eventCreated": "Event published",
+      "responseSubmitted": "Response submitted"
     }
   }
 }

@@ -534,6 +534,16 @@ const SupplierEvaluationsPage = () => {
       return acc;
     }, {});
 
+    const invalidRating = CRITERIA_RATING_QUESTIONS.find((question) => {
+      const value = ratingResponses[question.key];
+      return value === null || value < 1 || value > 5;
+    });
+
+    if (invalidRating) {
+      setFormError('Performance indicator scores must be between 1 (lowest) and 5 (best).');
+      return;
+    }
+
     const payload = {
       supplier_name: formState.supplier_name.trim(),
       evaluation_date: formState.evaluation_date || undefined,

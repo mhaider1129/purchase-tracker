@@ -152,6 +152,7 @@
     "supplierSrm": "إدارة علاقة المورد",
     "contracts": "العقود",
     "supplierEvaluations": "تقييمات الموردين",
+    "rfxPortal": "بوابة العطاءات",
     "demandPlanning": "تخطيط الطلب",
     "viewIncomplete": "عرض الطلبات غير المكتملة",
     "registerUser": "تسجيل مستخدم",
@@ -2009,6 +2010,63 @@
       "pending": "قيد الانتظار",
       "rejected": "مرفوض",
       "unknown": "غير معروف"
+    }
+  },
+  "rfxPortal": {
+    "title": "بوابة طلبات العروض",
+    "subtitle": "انشر طلبات عروض الأسعار أو العروض الفنية واستقبل ردود الموردين لإدارة المنافسات.",
+    "eventList": "الفعاليات المنشورة",
+    "loading": "جاري تحميل الفعاليات…",
+    "eventCount": "{{count}} فعالية",
+    "noDescription": "لا يوجد وصف.",
+    "dueDate": "تاريخ الاستحقاق {{date}}",
+    "responseCount": "{{count}} رد",
+    "empty": "لم يتم نشر أي فعاليات RFX بعد.",
+    "publishTitle": "نشر فعالية جديدة",
+    "publishHint": "شارك نطاق العمل والمواعيد النهائية مع الموردين.",
+    "respondTitle": "الرد على {{title}}",
+    "respondHint": "أرسل التسعير والملاحظات التجارية لهذا الطلب.",
+    "responsesTitle": "ردود الموردين",
+    "responsesEmpty": "لم تصل أي ردود حتى الآن.",
+    "noNotes": "لا توجد ملاحظات.",
+    "noBid": "لم يتم تقديم سعر.",
+    "bidLabel": "السعر: {{amount}}",
+    "actions": {
+      "close": "إغلاق الفعالية",
+      "reopen": "إعادة فتح",
+      "saving": "جاري النشر…",
+      "publish": "نشر الفعالية",
+      "sending": "جاري الإرسال…",
+      "submitResponse": "إرسال الرد"
+    },
+    "fields": {
+      "title": "العنوان",
+      "type": "نوع الطلب",
+      "dueDate": "تاريخ الاستحقاق",
+      "description": "الوصف",
+      "supplierName": "اسم المورد",
+      "bidAmount": "قيمة العرض",
+      "notes": "ملاحظات"
+    },
+    "placeholders": {
+      "title": "أدخل عنواناً واضحاً",
+      "description": "اذكر النطاق أو المتطلبات",
+      "supplier": "اسم المورد",
+      "bidAmount": "قيمة العرض (اختياري)",
+      "notes": "ملاحظات إضافية"
+    },
+    "errors": {
+      "loadEvents": "تعذر تحميل فعاليات RFX.",
+      "createEvent": "تعذر نشر الفعالية.",
+      "submitResponse": "تعذر إرسال الرد.",
+      "updateStatus": "تعذر تحديث الحالة."
+    },
+    "validation": {
+      "title": "يجب إدخال عنوان قبل النشر."
+    },
+    "success": {
+      "eventCreated": "تم نشر الفعالية",
+      "responseSubmitted": "تم إرسال الرد"
     }
   }
 }
