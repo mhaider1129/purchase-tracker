@@ -2,6 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
   XAxis,
   YAxis,
   Tooltip,
@@ -88,6 +95,97 @@ const SupplierEvaluationDashboard = () => {
     }));
   }, [evaluationStats]);
 
+  const coverageStats = useMemo(() => {
+    const totalSuppliers = Number(supplierStats?.totals?.suppliers) || 0;
+    const withContact = Number(supplierStats?.totals?.with_contact) || 0;
+    const evaluatedSuppliers = Number(evaluationStats?.totals?.suppliers_evaluated) || 0;
+    const withoutContact = Math.max(totalSuppliers - withContact, 0);
+    const evaluationCoverage = totalSuppliers
+      ? Math.round((evaluatedSuppliers / totalSuppliers) * 100)
+      : 0;
+    const contactCoverage = totalSuppliers ? Math.round((withContact / totalSuppliers) * 100) : 0;
+
+    const recentThreshold = new Date();
+    recentThreshold.setDate(recentThreshold.getDate() - 90);
+
+    let recent = 0;
+    let stale = 0;
+    let none = 0;
+
+    (supplierStats?.coverage || []).forEach((supplier) => {
+      if (supplier.last_evaluation_date) {
+        const parsed = new Date(supplier.last_evaluation_date);
+
+        if (!Number.isNaN(parsed.getTime())) {
+          if (parsed >= recentThreshold) {
+            recent += 1;
+          } else {
+            stale += 1;
+          }
+          return;
+        }
+      }
+
+      none += 1;
+    });
+
+    const cadenceTotal = recent + stale + none || 0;
+
+    return {
+      totalSuppliers,
+      withContact,
+      withoutContact,
+      evaluatedSuppliers,
+      evaluationCoverage,
+      contactCoverage,
+      cadence: {
+        recent,
+        stale,
+        none,
+        total: cadenceTotal,
+      },
+    };
+  }, [evaluationStats?.totals?.suppliers_evaluated, supplierStats]);
+
+  const indicatorData = useMemo(() => {
+    const indicators = evaluationStats?.rating_insights?.indicator_averages || [];
+
+    return indicators
+      .map((item) => ({
+        indicator: item.indicator,
+        score: Number(item.average_score) || 0,
+      }))
+      .filter((item) => item.score > 0);
+  }, [evaluationStats?.rating_insights?.indicator_averages]);
+
+  const supplierAverageData = useMemo(() => {
+    const suppliers = evaluationStats?.rating_insights?.supplier_averages || [];
+
+    return suppliers
+      .filter((supplier) => Number.isFinite(Number(supplier.avg_overall_score)))
+      .sort((a, b) => (Number(b.avg_overall_score) || 0) - (Number(a.avg_overall_score) || 0))
+      .slice(0, 8)
+      .map((supplier) => ({
+        name: supplier.supplier_name,
+        score: Number(supplier.avg_overall_score) || 0,
+      }));
+  }, [evaluationStats?.rating_insights?.supplier_averages]);
+
+  const yearlyAverageData = useMemo(() => {
+    const years = evaluationStats?.rating_insights?.yearly_averages || [];
+
+    return years
+      .filter((entry) => Number.isFinite(Number(entry.avg_overall_score)))
+      .sort((a, b) => (Number(a.year) || 0) - (Number(b.year) || 0))
+      .map((entry) => ({
+        year: entry.year,
+        score: Number(entry.avg_overall_score) || 0,
+      }));
+  }, [evaluationStats?.rating_insights?.yearly_averages]);
+
+  const formatPercent = (value) =>
+    Number.isFinite(value) ? `${Math.max(0, Math.min(100, value)).toFixed(0)}%` : '0%';
+
   if (loading) {
     return <p className="p-6">Loading supplier dashboards...</p>;
   }
@@ -144,6 +242,63 @@ const SupplierEvaluationDashboard = () => {
             />
           </Card>
         </div>
+
+        <Card>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Contact coverage</p>
+              <p className="text-3xl font-semibold text-slate-900">
+                {formatPercent(coverageStats.contactCoverage)}
+              </p>
+              <p className="text-sm text-slate-600">
+                {formatNumber(coverageStats.withContact)} of {formatNumber(coverageStats.totalSuppliers)} suppliers
+                have an email or phone on record.
+              </p>
+              <div className="h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-2 rounded-full bg-emerald-500"
+                  style={{ width: `${coverageStats.contactCoverage || 0}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Evaluation coverage</p>
+              <p className="text-3xl font-semibold text-slate-900">
+                {formatPercent(coverageStats.evaluationCoverage)}
+              </p>
+              <p className="text-sm text-slate-600">
+                {formatNumber(coverageStats.evaluatedSuppliers)} of {formatNumber(coverageStats.totalSuppliers)}
+                suppliers have been evaluated.
+              </p>
+              <div className="h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-2 rounded-full bg-indigo-500"
+                  style={{ width: `${coverageStats.evaluationCoverage || 0}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Ready for outreach</p>
+              <p className="text-3xl font-semibold text-slate-900">{formatNumber(coverageStats.withoutContact)}</p>
+              <p className="text-sm text-slate-600">
+                Suppliers missing contact details. Prioritize adding email or phone before the next evaluation.
+              </p>
+              <div className="h-2 rounded-full bg-slate-100">
+                <div
+                  className="h-2 rounded-full bg-amber-500"
+                  style={{
+                    width:
+                      coverageStats.totalSuppliers > 0
+                        ? `${Math.round((coverageStats.withoutContact / coverageStats.totalSuppliers) * 100)}%`
+                        : '0%',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
@@ -227,6 +382,80 @@ const SupplierEvaluationDashboard = () => {
           </Card>
         </div>
 
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Average rating by indicator</h3>
+              <p className="text-sm text-slate-500">Across all suppliers</p>
+            </div>
+            <div className="mt-4 h-80">
+              {indicatorData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={indicatorData} outerRadius="70%">
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis dataKey="indicator" tick={{ fontSize: 12 }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
+                    <Radar
+                      name="Average score"
+                      dataKey="score"
+                      stroke="#ef4444"
+                      fill="#ef4444"
+                      fillOpacity={0.25}
+                    />
+                    <Tooltip />
+                  </RadarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-slate-500">No indicator averages available yet.</p>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Average rating by supplier</h3>
+              <p className="text-sm text-slate-500">Top performers</p>
+            </div>
+            <div className="mt-4 h-80">
+              {supplierAverageData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={supplierAverageData} layout="vertical" margin={{ left: 80 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} />
+                    <YAxis dataKey="name" type="category" tick={{ fontSize: 12 }} width={120} />
+                    <Tooltip formatter={(value) => formatNumber(value, '0')} />
+                    <Bar dataKey="score" fill="#ef4444" radius={[4, 4, 4, 4]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-slate-500">No supplier averages available yet.</p>
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Average rating by year</h3>
+              <p className="text-sm text-slate-500">Overall scores</p>
+            </div>
+            <div className="mt-4 h-80">
+              {yearlyAverageData.length ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={yearlyAverageData} margin={{ left: 12, right: 12 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
+                    <Tooltip formatter={(value) => formatNumber(value, '0')} />
+                    <Bar dataKey="score" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-sm text-slate-500">No yearly averages available yet.</p>
+              )}
+            </div>
+          </Card>
+        </div>
+
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
             <div className="flex items-center justify-between">
@@ -292,6 +521,48 @@ const SupplierEvaluationDashboard = () => {
             </div>
           </Card>
         </div>
+
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Evaluation cadence</h3>
+              <p className="text-sm text-slate-500">Recency of the latest supplier evaluations</p>
+            </div>
+            <p className="text-sm text-slate-500">Last 90 days</p>
+          </div>
+          <div className="mt-4 space-y-3">
+            {[
+              { label: 'Evaluated in the last 90 days', key: 'recent', tone: 'bg-emerald-500' },
+              { label: 'Evaluated >90 days ago', key: 'stale', tone: 'bg-amber-500' },
+              { label: 'No evaluations yet', key: 'none', tone: 'bg-slate-300' },
+            ].map((segment) => {
+              const value = coverageStats.cadence[segment.key];
+              const percent = coverageStats.cadence.total
+                ? Math.round((value / coverageStats.cadence.total) * 100)
+                : 0;
+
+              return (
+                <div key={segment.key} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm text-slate-600">
+                    <p className="font-medium text-slate-900">{segment.label}</p>
+                    <p>
+                      {formatNumber(value, '0')} ({percent}%)
+                    </p>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100">
+                    <div
+                      className={`h-2 rounded-full ${segment.tone}`}
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {!coverageStats.cadence.total ? (
+              <p className="text-sm text-slate-500">No supplier records available to calculate cadence yet.</p>
+            ) : null}
+          </div>
+        </Card>
 
         <Card>
           <div className="flex items-center justify-between">

@@ -50,6 +50,7 @@ import RequestSubmittedPage from "./pages/requests/RequestSubmittedPage";
 import WarehouseSupplyTemplatesPage from "./pages/WarehouseSupplyTemplatesPage";
 import AuditRequestsPage from "./pages/AuditRequestsPage";
 import LifecycleAnalytics from "./pages/LifecycleAnalytics";
+import MonthlyDispensing from "./pages/MonthlyDispensing";
 import ContractsPage from "./pages/ContractsPage";
 import SupplierEvaluationsPage from "./pages/SupplierEvaluationsPage";
 import MyEvaluationsPage from "./pages/MyEvaluationsPage";
@@ -63,6 +64,7 @@ import SupplierEvaluationDashboard from "./pages/SupplierEvaluationDashboard";
 import PlanningWorkbench from "./pages/PlanningWorkbench";
 import HistoricalRequestsImportPage from "./pages/HistoricalRequestsImportPage";
 import RfxPortalPage from "./pages/RfxPortalPage";
+import RiskManagementPage from "./pages/RiskManagementPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -411,15 +413,7 @@ const AppRoutes = () => (
         />
       }
     />
-    <Route
-      path="/rfx-portal"
-      element={
-        <ProtectedRoute
-          element={<RfxPortalPage />}
-          requiredPermissions={["rfx.manage", "rfx.respond"]}
-        />
-      }
-    />
+    <Route path="/rfx-portal" element={<RfxPortalPage />} />
     <Route
       path="/supplier-evaluations"
       element={
@@ -451,6 +445,16 @@ const AppRoutes = () => (
           ]}
           requiredPermissions={["evaluations.manage"]}
           resourceKey="feature.supplierEvaluations"
+        />
+      }
+    />
+    <Route
+      path="/risk-management"
+      element={
+        <ProtectedRoute
+          element={<RiskManagementPage />}
+          requiredPermissions={["risks.view", "risks.manage"]}
+          resourceKey="feature.riskManagement"
         />
       }
     />
@@ -532,6 +536,15 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<LifecycleAnalytics />}
           resourceKey="feature.analytics"
+        />
+      }
+    />
+    <Route
+      path="/dispensing"
+      element={
+        <ProtectedRoute
+          element={<MonthlyDispensing />}
+          resourceKey="feature.dispensing"
         />
       }
     />

@@ -10,6 +10,7 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import { hasPermission } from "../utils/permissions";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 const defaultEventForm = {
   title: "",
@@ -46,7 +47,7 @@ const formatDate = (value) => {
 
 const RfxPortalPage = () => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [events, setEvents] = useState([]);
   const [responses, setResponses] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -63,8 +64,11 @@ const RfxPortalPage = () => {
     [user],
   );
   const canRespond = useMemo(
-    () => hasPermission(user, "rfx.respond") || user?.role?.toLowerCase?.() === "supplier",
-    [user],
+    () =>
+      !isAuthenticated ||
+      hasPermission(user, "rfx.respond") ||
+      user?.role?.toLowerCase?.() === "supplier",
+    [isAuthenticated, user],
   );
 
   const loadEvents = async () => {
@@ -192,12 +196,34 @@ const RfxPortalPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Navbar />
+      {isAuthenticated ? (
+        <Navbar />
+      ) : (
+        <div className="border-b bg-white/90">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-emerald-700">
+                {t("rfxPortal.publicTag")}
+              </p>
+              <h1 className="text-lg font-semibold text-gray-900">{t("rfxPortal.title")}</h1>
+            </div>
+            <Link
+              to="/login"
+              className="rounded-md border border-blue-200 px-3 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              {t("rfxPortal.loginCta")}
+            </Link>
+          </div>
+        </div>
+      )}
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{t("rfxPortal.title")}</h1>
             <p className="text-sm text-gray-600">{t("rfxPortal.subtitle")}</p>
+            {!isAuthenticated ? (
+              <p className="mt-1 text-sm text-emerald-700">{t("rfxPortal.publicSubtitle")}</p>
+            ) : null}
           </div>
           {successMessage ? (
             <span className="rounded bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">

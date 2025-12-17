@@ -886,7 +886,14 @@ const PlanningWorkbench = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Forecast output</h2>
-                <p className="text-sm text-gray-600">History and projected monthly demand for {forecastResult.item_name}.</p>
+                <p className="text-sm text-gray-600">
+                  History and projected monthly demand for {forecastResult.item_name}.
+                </p>
+                {forecastResult.history_source && (
+                  <p className="text-xs text-indigo-700">
+                    History source: {forecastResult.history_source === 'monthly_dispensing' ? 'Monthly dispensing feeds' : 'Request demand logs'}
+                  </p>
+                )}
               </div>
               <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Output</span>
             </div>

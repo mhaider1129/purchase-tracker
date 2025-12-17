@@ -211,6 +211,10 @@ const Navbar = () => {
     const canViewAnalytics = hasAccess(currentUser, "feature.analytics", [
       "dashboard.view",
     ]);
+    const canViewDispensing = hasAccess(currentUser, "feature.dispensing", [
+      "dashboard.view",
+      "warehouse.manage-supply",
+    ]);
     const canRunPlanning =
       ["scm", "admin"].includes(normalizedRole) &&
       hasAccess(currentUser, "feature.demandPlanning", []);
@@ -219,6 +223,10 @@ const Navbar = () => {
     ]);
     const canViewSuppliers = hasAccess(currentUser, "feature.suppliers", [
       "contracts.manage",
+    ]);
+    const canManageRisks = hasAccess(currentUser, "feature.riskManagement", [
+      "risks.view",
+      "risks.manage",
     ]);
     const canAccessRfxPortal = hasAccess(currentUser, "feature.rfxPortal", [
       "rfx.manage",
@@ -378,6 +386,12 @@ const Navbar = () => {
             "text-pink-600",
           ),
           createItem(
+            canViewDispensing,
+            t("navbar.monthlyDispensing"),
+            "/dispensing",
+            "text-purple-600",
+          ),
+          createItem(
             canRunPlanning,
             t("navbar.demandPlanning"),
             "/planning",
@@ -406,6 +420,12 @@ const Navbar = () => {
             t("navbar.suppliers"),
             "/suppliers",
             "text-emerald-700",
+          ),
+          createItem(
+            canManageRisks,
+            t("navbar.riskManagement"),
+            "/risk-management",
+            "text-rose-700",
           ),
           createItem(
             canAccessRfxPortal,
