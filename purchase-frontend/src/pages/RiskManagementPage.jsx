@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { createRisk, listRisks, updateRisk } from "../api/riskManagement";
+import { listSuppliers } from "../api/suppliers";
+
+const PAGE_SIZE = 50;
 
 const likelihoodOptions = [
   { value: "rare", label: "Rare" },
@@ -67,11 +70,15 @@ const RiskManagementPage = () => {
   const [risks, setRisks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savingRiskId, setSavingRiskId] = useState(null);
   const [savingMedication, setSavingMedication] = useState(false);
   const [savingHighRisk, setSavingHighRisk] = useState(false);
   const [savingSupplier, setSavingSupplier] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const [form, setForm] = useState({
     title: "",
@@ -111,6 +118,7 @@ const RiskManagementPage = () => {
   });
 
   const [supplierForm, setSupplierForm] = useState({
+    supplier_id: "",
     supplier_name: "",
     criticality_level: "",
     financial_likelihood: "",
@@ -138,6 +146,11 @@ const RiskManagementPage = () => {
     [risks],
   );
 
+  const visibleRisks = useMemo(
+    () => sortedRisks.slice(0, Math.max(PAGE_SIZE, visibleCount)),
+    [sortedRisks, visibleCount],
+  );
+
   const loadRisks = async () => {
     setLoading(true);
     setError("");
@@ -155,6 +168,27 @@ const RiskManagementPage = () => {
 
   useEffect(() => {
     loadRisks();
+  }, []);
+
+  useEffect(() => {
+    setVisibleCount((current) => Math.min(Math.max(current, PAGE_SIZE), sortedRisks.length || PAGE_SIZE));
+  }, [sortedRisks.length]);
+
+  useEffect(() => {
+    const loadSuppliers = async () => {
+      setLoadingSuppliers(true);
+      try {
+        const data = await listSuppliers();
+        setSuppliers(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("❌ Failed to load suppliers", err);
+        setError((current) => current || "Unable to load suppliers");
+      } finally {
+        setLoadingSuppliers(false);
+      }
+    };
+
+    loadSuppliers();
   }, []);
 
   const updateDraft = (riskId, field, value) => {
@@ -259,6 +293,24 @@ const RiskManagementPage = () => {
       total: financial + operational + compliance + supplyContinuity,
     };
   }, [supplierForm]);
+
+  const selectedSupplier = useMemo(
+    () => suppliers.find((supplier) => String(supplier.id) === String(selectedSupplierId)),
+    [selectedSupplierId, suppliers],
+  );
+
+  useEffect(() => {
+    if (!selectedSupplier) {
+      setSupplierForm((current) => ({ ...current, supplier_id: "" }));
+      return;
+    }
+
+    setSupplierForm((current) => ({
+      ...current,
+      supplier_id: selectedSupplier.id,
+      supplier_name: selectedSupplier.name || current.supplier_name,
+    }));
+  }, [selectedSupplier]);
 
   const handleMedicationSubmit = async (event) => {
     event.preventDefault();
@@ -402,6 +454,7 @@ const RiskManagementPage = () => {
         likelihood: "possible",
         impact: "moderate",
         supplier_risk: {
+          supplier_id: supplierForm.supplier_id ? Number(supplierForm.supplier_id) : undefined,
           supplier_name: supplierForm.supplier_name,
           criticality_level: supplierForm.criticality_level,
           last_assessment_date: supplierForm.last_assessment_date,
@@ -426,6 +479,7 @@ const RiskManagementPage = () => {
         },
       });
       setSupplierForm({
+        supplier_id: "",
         supplier_name: "",
         criticality_level: "",
         financial_likelihood: "",
@@ -439,6 +493,7 @@ const RiskManagementPage = () => {
         last_assessment_date: "",
         risk_mitigation_actions: "",
       });
+      setSelectedSupplierId("");
       await loadRisks();
     } catch (err) {
       console.error("❌ Failed to create supplier risk", err);
@@ -446,6 +501,10 @@ const RiskManagementPage = () => {
     } finally {
       setSavingSupplier(false);
     }
+  };
+
+  const handleLoadMoreRisks = () => {
+    setVisibleCount((current) => Math.min(current + PAGE_SIZE, sortedRisks.length));
   };
 
   const renderRiskCard = (risk) => {
@@ -581,6 +640,11 @@ const RiskManagementPage = () => {
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <p className="font-semibold text-emerald-900 dark:text-emerald-100">Supplier risk profile</p>
               <div className="flex gap-2 text-xs">
+                {supplier.supplier_id && (
+                  <span className="rounded-full bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100">
+                    Linked ID: {supplier.supplier_id}
+                  </span>
+                )}
                 {supplier.criticality_level && (
                   <span className="rounded-full bg-emerald-100 px-2 py-1 font-semibold text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100">
                     Criticality: {supplier.criticality_level}
@@ -862,9 +926,26 @@ const RiskManagementPage = () => {
           </form>
 
           <div className="lg:col-span-2 flex flex-col gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
-              <span>Active risk register</span>
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-600 dark:text-gray-300">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                <span>Active risk register</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+                <span className="rounded-md bg-emerald-50 px-2 py-1 font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100">
+                  Showing {visibleRisks.length} of {sortedRisks.length || 0} risks
+                </span>
+                {visibleRisks.length < sortedRisks.length && (
+                  <button
+                    type="button"
+                    onClick={handleLoadMoreRisks}
+                    className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-white px-2 py-1 font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:border-emerald-700 dark:bg-gray-800 dark:text-emerald-100 dark:hover:bg-emerald-900/20"
+                  >
+                    <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+                    Load more
+                  </button>
+                )}
+              </div>
             </div>
 
             {loading ? (
@@ -879,7 +960,17 @@ const RiskManagementPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4">
-                {sortedRisks.map((risk) => renderRiskCard(risk))}
+                {visibleRisks.map((risk) => renderRiskCard(risk))}
+                {visibleRisks.length < sortedRisks.length && (
+                  <button
+                    type="button"
+                    onClick={handleLoadMoreRisks}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-700/70 dark:bg-emerald-900/30 dark:text-emerald-100 dark:hover:bg-emerald-900/50"
+                  >
+                    <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+                    Load {Math.min(PAGE_SIZE, sortedRisks.length - visibleRisks.length)} more
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -1104,15 +1195,43 @@ const RiskManagementPage = () => {
             <span className="text-xs text-gray-500 dark:text-gray-400">Total score: {supplierScores.total}</span>
           </div>
 
+          <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
+            Linked supplier
+            <select
+              value={selectedSupplierId}
+              onChange={(event) => setSelectedSupplierId(event.target.value)}
+              className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+            >
+              <option value="" disabled>
+                {loadingSuppliers ? "Loading suppliers..." : "Select supplier from list"}
+              </option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Link the risk profile to a supplier from your master list for traceability.
+            </span>
+          </label>
+
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
               Supplier name
               <input
                 type="text"
+                required
                 value={supplierForm.supplier_name}
                 onChange={(event) => setSupplierForm((current) => ({ ...current, supplier_name: event.target.value }))}
                 className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                placeholder="Acme Medical Supplies"
+                disabled={savingSupplier}
+                aria-describedby="supplier-name-helper"
               />
+              <span id="supplier-name-helper" className="text-xs text-gray-500 dark:text-gray-400">
+                {selectedSupplier ? "Prefilled from linked supplier" : "You can still enter a custom supplier name."}
+              </span>
             </label>
             <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
               Criticality level

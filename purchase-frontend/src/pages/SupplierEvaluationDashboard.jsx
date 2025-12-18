@@ -58,6 +58,7 @@ const SupplierEvaluationDashboard = () => {
   const [evaluationStats, setEvaluationStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedSupplier, setSelectedSupplier] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -158,6 +159,11 @@ const SupplierEvaluationDashboard = () => {
       .filter((item) => item.score > 0);
   }, [evaluationStats?.rating_insights?.indicator_averages]);
 
+  const supplierIndicatorAverages = useMemo(
+    () => evaluationStats?.rating_insights?.supplier_indicator_averages || [],
+    [evaluationStats?.rating_insights?.supplier_indicator_averages]
+  );
+
   const supplierAverageData = useMemo(() => {
     const suppliers = evaluationStats?.rating_insights?.supplier_averages || [];
 
@@ -170,6 +176,40 @@ const SupplierEvaluationDashboard = () => {
         score: Number(supplier.avg_overall_score) || 0,
       }));
   }, [evaluationStats?.rating_insights?.supplier_averages]);
+
+  useEffect(() => {
+    if (!selectedSupplier && supplierIndicatorAverages.length) {
+      const topPerformer = supplierAverageData[0]?.name;
+      const fallbackSupplier = supplierIndicatorAverages[0]?.supplier_name;
+      setSelectedSupplier(topPerformer || fallbackSupplier || '');
+    }
+  }, [selectedSupplier, supplierAverageData, supplierIndicatorAverages]);
+
+  const indicatorComparisonData = useMemo(() => {
+    const overallAverages = indicatorData.reduce((acc, item) => {
+      acc[item.indicator] = item.score;
+      return acc;
+    }, {});
+
+    const supplierIndicators = supplierIndicatorAverages.find(
+      (entry) => entry.supplier_name === selectedSupplier
+    );
+
+    const supplierScores = (supplierIndicators?.indicators || []).reduce((acc, item) => {
+      acc[item.indicator] = Number(item.average_score) || 0;
+      return acc;
+    }, {});
+
+    const indicatorKeys = Array.from(
+      new Set([...Object.keys(overallAverages), ...Object.keys(supplierScores)])
+    );
+
+    return indicatorKeys.map((indicator) => ({
+      indicator,
+      averageScore: overallAverages[indicator] || 0,
+      supplierScore: supplierScores[indicator] || 0,
+    }));
+  }, [indicatorData, selectedSupplier, supplierIndicatorAverages]);
 
   const yearlyAverageData = useMemo(() => {
     const years = evaluationStats?.rating_insights?.yearly_averages || [];
@@ -384,25 +424,58 @@ const SupplierEvaluationDashboard = () => {
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card>
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Average rating by indicator</h3>
-              <p className="text-sm text-slate-500">Across all suppliers</p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Average rating by indicator</h3>
+                <p className="text-sm text-slate-500">Compare a supplier to the overall average</p>
+              </div>
+              {supplierIndicatorAverages.length ? (
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <span>Supplier</span>
+                  <select
+                    className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none"
+                    value={selectedSupplier}
+                    onChange={(event) => setSelectedSupplier(event.target.value)}
+                  >
+                    {supplierIndicatorAverages.map((supplier) => (
+                      <option key={supplier.supplier_name} value={supplier.supplier_name}>
+                        {supplier.supplier_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <p className="text-sm text-slate-500">Across all suppliers</p>
+              )}
             </div>
             <div className="mt-4 h-80">
-              {indicatorData.length ? (
+              {indicatorComparisonData.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={indicatorData} outerRadius="70%">
+                  <RadarChart data={indicatorComparisonData} outerRadius="70%">
                     <PolarGrid stroke="#e2e8f0" />
                     <PolarAngleAxis dataKey="indicator" tick={{ fontSize: 12 }} />
                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
                     <Radar
                       name="Average score"
-                      dataKey="score"
+                      dataKey="averageScore"
                       stroke="#ef4444"
                       fill="#ef4444"
-                      fillOpacity={0.25}
+                      fillOpacity={0.2}
                     />
-                    <Tooltip />
+                    {selectedSupplier ? (
+                      <Radar
+                        name={`${selectedSupplier} score`}
+                        dataKey="supplierScore"
+                        stroke="#0ea5e9"
+                        fill="#0ea5e9"
+                        fillOpacity={0.2}
+                      />
+                    ) : null}
+                    <Tooltip
+                      formatter={(value) => `${formatNumber(value, '0')} pts`}
+                      labelStyle={{ fontSize: 12 }}
+                    />
+                    <Legend verticalAlign="top" height={36} />
                   </RadarChart>
                 </ResponsiveContainer>
               ) : (
