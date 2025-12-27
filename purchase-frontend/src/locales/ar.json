@@ -10,6 +10,9 @@
     "errorCredentials": "فشل تسجيل الدخول. يرجى التحقق من البيانات.",
     "requestAccessPrompt": "ليس لديك حساب؟",
     "requestAccessLink": "اطلب إنشاء حساب",
+    "supplierPortalTitle": "بوابة المورّدين",
+    "supplierPortalDescription": "اطلع على طلبات عروض الأسعار وقدّم عروضك مباشرة من بوابة المورّدين دون تسجيل الدخول.",
+    "supplierPortalCta": "فتح بوابة المورّدين",
     "copyright": "© {{year}} مؤسسة وارث الدولية لعلاج الأورام"
   },
   "register": {
@@ -1840,7 +1843,9 @@
       "statusOptions": {
         "pending": "قيد الشراء",
         "purchased": "تم الشراء",
-        "notProcured": "لم يتم التوريد"
+        "notProcured": "لم يتم التوريد",
+        "completed": "مكتمل",
+        "canceled": "أُلغي"
       },
       "lastUpdated": "آخر تحديث بواسطة {{name}} في {{time}}",
       "lastUpdatedUnknown": "غير معروف",
@@ -1857,7 +1862,9 @@
         "purchasedQuantity": "الكمية المشتراة",
         "procurementStatus": "حالة الشراء",
         "selectStatus": "-- اختر الحالة --",
-        "comment": "تعليق"
+        "comment": "تعليق",
+        "poIssuanceMethod": "طريقة إصدار أمر الشراء",
+        "poIssuancePlaceholder": "مثال: بريد إلكتروني، بوابة المورد، مندوب"
       },
       "recordedLineTotal": "إجمالي السطر المسجل:",
       "buttons": {

@@ -18,7 +18,7 @@ const getEmptyItem = () => ({
   item_name: '',
   quantity: 1,
   specs: '',
-  unit_cost: '',
+  unit_cost: 0,
 });
 
 const MAX_ATTACHMENTS = 5;

@@ -6,6 +6,9 @@ import usePageTranslation from "../utils/usePageTranslation";
 const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [status, setStatus] = useState(item.procurement_status || "");
   const [comment, setComment] = useState(item.procurement_comment || "");
+  const [poIssuanceMethod, setPoIssuanceMethod] = useState(
+    item.po_issuance_method || "",
+  );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [updaterName, setUpdaterName] = useState("");
@@ -57,7 +60,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   useEffect(() => {
     setStatus(item.procurement_status || "");
     setComment(item.procurement_comment || "");
-  }, [item.procurement_status, item.procurement_comment]);
+    setPoIssuanceMethod(item.po_issuance_method || "");
+  }, [item.procurement_status, item.procurement_comment, item.po_issuance_method]);
 
   const fetchItemAttachments = useCallback(async () => {
     if (!itemId) {
@@ -261,6 +265,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         value: "not_procured",
         label: tr("itemPanel.statusOptions.notProcured", "Not Procured"),
       },
+      {
+        value: "completed",
+        label: tr("itemPanel.statusOptions.completed", "Completed"),
+      },
+      {
+        value: "canceled",
+        label: tr("itemPanel.statusOptions.canceled", "Canceled"),
+      },
     ],
     [tr],
   );
@@ -342,6 +354,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       await axios.put(`/api/requested-items/${item.id}/procurement-status`, {
         procurement_status: status,
         procurement_comment: comment,
+        po_issuance_method: poIssuanceMethod,
       });
 
       setMessage({
@@ -527,6 +540,23 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
                 </option>
               ))}
             </select>
+
+            <label className="mt-4 block text-sm font-medium text-slate-700">
+              {tr(
+                "itemPanel.inputs.poIssuanceMethod",
+                "PO Issuance Method",
+              )}
+            </label>
+            <input
+              type="text"
+              value={poIssuanceMethod}
+              onChange={(e) => setPoIssuanceMethod(e.target.value)}
+              placeholder={tr(
+                "itemPanel.inputs.poIssuancePlaceholder",
+                "e.g., email, supplier portal, courier",
+              )}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
 
           <div>

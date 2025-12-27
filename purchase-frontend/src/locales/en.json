@@ -10,6 +10,9 @@
     "errorCredentials": "Login failed. Please check your credentials.",
     "requestAccessPrompt": "Don't have an account?",
     "requestAccessLink": "Request access",
+    "supplierPortalTitle": "Supplier portal",
+    "supplierPortalDescription": "Access RFQs and submit bids directly from the supplier portal without signing in.",
+    "supplierPortalCta": "Open supplier portal",
     "copyright": "© {{year}} Warith International Cancer Institute"
   },
   "register": {
@@ -1863,7 +1866,9 @@
       "statusOptions": {
         "pending": "Pending Purchase",
         "purchased": "Purchased",
-        "notProcured": "Not Procured"
+        "notProcured": "Not Procured",
+        "completed": "Completed",
+        "canceled": "Canceled"
       },
       "lastUpdated": "Last updated by {{name}} at {{time}}",
       "lastUpdatedUnknown": "Unknown",
@@ -1880,7 +1885,9 @@
         "purchasedQuantity": "Purchased Quantity",
         "procurementStatus": "Procurement Status",
         "selectStatus": "-- Select Status --",
-        "comment": "Comment"
+        "comment": "Comment",
+        "poIssuanceMethod": "PO Issuance Method",
+        "poIssuancePlaceholder": "e.g., email, supplier portal, courier"
       },
       "recordedLineTotal": "Recorded Line Total:",
       "buttons": {
@@ -2104,6 +2111,10 @@
     "publishHint": "Share scope, deadlines, and requirements with suppliers.",
     "respondTitle": "Respond to {{title}}",
     "respondHint": "Submit pricing and commercial notes for this event.",
+    "analyzeTitle": "Analyze quotations",
+    "analyzeHint": "Add multiple quotations to compare safety, value, delivery, and JCI-approved factors.",
+    "bestQuotation": "Best quotation",
+    "bestQuotationScore": "Composite score: {{score}}",
     "responsesTitle": "Supplier responses",
     "responsesEmpty": "No suppliers have responded yet.",
     "noNotes": "No notes provided.",
@@ -2115,7 +2126,12 @@
       "saving": "Publishing…",
       "publish": "Publish event",
       "sending": "Submitting…",
-      "submitResponse": "Submit response"
+      "submitResponse": "Submit response",
+      "analyze": "Analyze quotations",
+      "analyzing": "Analyzing…",
+      "addQuotation": "Add quotation",
+      "remove": "Remove",
+      "clearAnalysis": "Clear analysis"
     },
     "fields": {
       "title": "Title",
@@ -2124,27 +2140,37 @@
       "description": "Description",
       "supplierName": "Supplier name",
       "bidAmount": "Bid amount",
-      "notes": "Notes"
+      "priceScore": "Price score",
+      "notes": "Notes",
+      "safetyScore": "Safety score",
+      "valueScore": "Value score",
+      "jciScore": "JCI compliance score",
+      "deliveryScore": "Delivery score",
+      "compositeScore": "Composite score"
     },
     "placeholders": {
       "title": "Enter a clear headline",
       "description": "Share scope, timelines, or deliverables",
       "supplier": "Registered supplier name",
       "bidAmount": "Optional bid amount",
-      "notes": "Optional clarifications"
+      "notes": "Optional clarifications",
+      "score": "0-100"
     },
     "errors": {
       "loadEvents": "Unable to load RFX events.",
       "createEvent": "Could not publish the event.",
       "submitResponse": "Unable to submit the response.",
+      "analyze": "Unable to analyze quotations.",
       "updateStatus": "Could not update status."
     },
     "validation": {
-      "title": "A title is required before publishing."
+      "title": "A title is required before publishing.",
+      "analysisRequired": "Add at least one quotation to analyze"
     },
     "success": {
       "eventCreated": "Event published",
-      "responseSubmitted": "Response submitted"
+      "responseSubmitted": "Response submitted",
+      "analysisCompleted": "Quotations analyzed successfully"
     }
   }
 }

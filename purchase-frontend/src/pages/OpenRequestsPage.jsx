@@ -397,7 +397,7 @@ const OpenRequestsPage = () => {
       ...prev,
       items: [
         ...prev.items,
-        { item_name: '', brand: '', quantity: '', unit_cost: '', specs: '' },
+        { item_name: '', brand: '', quantity: '', unit_cost: 0, specs: '' },
       ],
     }));
   };

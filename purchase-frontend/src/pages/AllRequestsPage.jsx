@@ -12,6 +12,7 @@ import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useStatusCommunications from '../hooks/useStatusCommunications';
+import useDirectPurchaseCommunications from '../hooks/useDirectPurchaseCommunications';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -150,6 +151,7 @@ const AllRequestsPage = () => {
   const [expandedItemsId, setExpandedItemsId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [expandedCommunicationId, setExpandedCommunicationId] = useState(null);
+  const [expandedDirectCommId, setExpandedDirectCommId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingItemsId, setLoadingItemsId] = useState(null);
   const [filter, setFilter] = useState('');
@@ -197,6 +199,18 @@ const AllRequestsPage = () => {
     refreshCommunications,
     setCommunicationDrafts,
   } = useStatusCommunications(user?.role);
+  const {
+    canDocumentDirectPurchase,
+    drafts: directPurchaseDrafts,
+    urgencyNotes: directPurchaseUrgency,
+    sending: directPurchaseSending,
+    error: directPurchaseError,
+    success: directPurchaseSuccess,
+    entries: directPurchaseEntries,
+    setDrafts: setDirectPurchaseDrafts,
+    setUrgencyNotes: setDirectPurchaseUrgency,
+    handleSendDirectCommunication,
+  } = useDirectPurchaseCommunications(user?.role);
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -894,6 +908,8 @@ const AllRequestsPage = () => {
             const showCommunication =
               canViewCommunication && isPostApprovalStatus(request.status);
             const isCommunicationExpanded = expandedCommunicationId === request.id;
+            const showDirectPurchaseSection = canDocumentDirectPurchase && isUrgent;
+            const isDirectPurchaseExpanded = expandedDirectCommId === request.id;
             const statusLabel = request.status || step;
 
             const toggleCommunication = (requestId) => {
@@ -986,6 +1002,21 @@ const AllRequestsPage = () => {
                         {isCommunicationExpanded ? 'Hide Status Chat' : 'View Status Chat'}
                       </button>
                     )}
+                    {showDirectPurchaseSection && (
+                      <button
+                        className="text-amber-700 underline"
+                        onClick={() =>
+                          setExpandedDirectCommId(
+                            isDirectPurchaseExpanded ? null : request.id
+                          )
+                        }
+                        disabled={directPurchaseSending[request.id]}
+                      >
+                        {isDirectPurchaseExpanded
+                          ? 'Hide Direct Purchase Note'
+                          : 'Document Direct Purchase'}
+                      </button>
+                    )}
                     {request.status === 'Approved' && (
                       <button
                         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -1067,6 +1098,98 @@ const AllRequestsPage = () => {
                     isLoading={loadingApprovalsId === request.id}
                     isUrgent={Boolean(request?.is_urgent)}
                   />
+                </div>
+              )}
+
+              {showDirectPurchaseSection && isDirectPurchaseExpanded && (
+                <div className="mt-4 border-t pt-3 space-y-3 rounded border-amber-200 bg-amber-50 px-3 py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-amber-900">
+                        Urgent Direct Purchase Communication
+                      </p>
+                      <p className="text-xs text-amber-700">
+                        Document urgent department-led purchasing so supply chain can align and follow up.
+                      </p>
+                    </div>
+                    <p className="text-xs text-amber-800 font-medium">
+                      Recipients: Supply Chain + Requesting Department
+                    </p>
+                  </div>
+
+                  {directPurchaseError[request.id] && (
+                    <p className="text-xs text-rose-700">{directPurchaseError[request.id]}</p>
+                  )}
+                  {directPurchaseSuccess[request.id] && (
+                    <p className="text-xs text-emerald-700">{directPurchaseSuccess[request.id]}</p>
+                  )}
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold text-amber-900">
+                        What is being purchased directly?
+                      </label>
+                      <textarea
+                        className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                        rows={3}
+                        placeholder="Describe the items or services procured directly and who initiated it."
+                        value={directPurchaseDrafts[request.id] || ''}
+                        onChange={(event) =>
+                          setDirectPurchaseDrafts((prev) => ({
+                            ...prev,
+                            [request.id]: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-semibold text-amber-900">
+                        Urgency / policy alignment notes (optional)
+                      </label>
+                      <textarea
+                        className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                        rows={3}
+                        placeholder="Share the urgency reason, risk, or policy guidance needed from supply chain."
+                        value={directPurchaseUrgency[request.id] || ''}
+                        onChange={(event) =>
+                          setDirectPurchaseUrgency((prev) => ({
+                            ...prev,
+                            [request.id]: event.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 disabled:opacity-70"
+                      onClick={() => handleSendDirectCommunication(request.id)}
+                      disabled={!!directPurchaseSending[request.id]}
+                    >
+                      {directPurchaseSending[request.id] ? 'Sending...' : 'Send update'}
+                    </button>
+                    <p className="text-xs text-amber-800">
+                      These notes are logged to the request and shared with supply chain stakeholders.
+                    </p>
+                  </div>
+
+                  {(directPurchaseEntries[request.id] || []).slice(0, 3).map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="rounded border border-amber-100 bg-white px-3 py-2 text-xs text-slate-700"
+                    >
+                      <div className="flex flex-wrap justify-between gap-1">
+                        <span className="font-semibold text-amber-900">
+                          Direct purchase documented
+                        </span>
+                        <span className="text-slate-500">
+                          {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
+                        </span>
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap text-slate-700">{entry.comments}</p>
+                    </div>
+                  ))}
                 </div>
               )}
 

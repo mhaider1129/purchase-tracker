@@ -127,7 +127,7 @@ const MedicalDeviceRequestForm = () => {
     return {
       item_name: '',
       quantity: 1,
-      unit_cost: '',
+      unit_cost: 0,
       intended_use: '',
       specs: '',
       device_info: '',

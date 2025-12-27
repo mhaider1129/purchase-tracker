@@ -85,7 +85,7 @@ const NonStockRequestForm = () => {
     return {
       item_name: '',
       quantity: 1,
-      unit_cost: '',
+      unit_cost: 0,
       brand: '',
       available_quantity: '',
       intended_use: '',
