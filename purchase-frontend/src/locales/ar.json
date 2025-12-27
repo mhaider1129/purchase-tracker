@@ -2038,6 +2038,10 @@
     "publishHint": "شارك نطاق العمل والمواعيد النهائية مع الموردين.",
     "respondTitle": "الرد على {{title}}",
     "respondHint": "أرسل التسعير والملاحظات التجارية لهذا الطلب.",
+    "analyzeTitle": "تحليل العروض",
+    "analyzeHint": "أضف عدة عروض لمقارنة السلامة والقيمة والتسليم والالتزام بالجودة.",
+    "bestQuotation": "أفضل عرض",
+    "bestQuotationScore": "التقييم المجمع: {{score}}",
     "responsesTitle": "ردود الموردين",
     "responsesEmpty": "لم تصل أي ردود حتى الآن.",
     "noNotes": "لا توجد ملاحظات.",
@@ -2049,36 +2053,67 @@
       "saving": "جاري النشر…",
       "publish": "نشر الفعالية",
       "sending": "جاري الإرسال…",
-      "submitResponse": "إرسال الرد"
+      "submitResponse": "إرسال الرد",
+      "analyze": "تحليل العروض",
+      "analyzing": "جارٍ التحليل…",
+      "addQuotation": "إضافة عرض",
+      "remove": "حذف",
+      "clearAnalysis": "مسح التحليل",
+      "award": "ترسية وإصدار أمر شراء",
+      "awarding": "جاري إصدار أمر الشراء…"
     },
     "fields": {
       "title": "العنوان",
       "type": "نوع الطلب",
       "dueDate": "تاريخ الاستحقاق",
       "description": "الوصف",
+      "requestIdOptional": "رقم الطلب (اختياري)",
+      "poNumber": "رقم أمر الشراء",
+      "awardNotes": "ملاحظات الترسية",
       "supplierName": "اسم المورد",
       "bidAmount": "قيمة العرض",
-      "notes": "ملاحظات"
+      "priceScore": "تقييم السعر",
+      "notes": "ملاحظات",
+      "safetyScore": "تقييم السلامة",
+      "valueScore": "تقييم القيمة",
+      "jciScore": "تقييم الالتزام بالجودة",
+      "deliveryScore": "تقييم التسليم",
+      "compositeScore": "التقييم المجمع"
     },
     "placeholders": {
       "title": "أدخل عنواناً واضحاً",
       "description": "اذكر النطاق أو المتطلبات",
+      "requestId": "ربط بطلب معتمد",
+      "poNumber": "رقم أمر شراء (اختياري)",
+      "awardNotes": "ملاحظات الترسية (اختياري)",
       "supplier": "اسم المورد",
       "bidAmount": "قيمة العرض (اختياري)",
-      "notes": "ملاحظات إضافية"
+      "notes": "ملاحظات إضافية",
+      "score": "0-100"
+    },
+    "hints": {
+      "requestId": "اربط المناقصة بطلب معتمد حتى يتم تحديث الطلب بعد الترسية.",
+      "award": "سيتم استخدام رقم أمر الشراء والملاحظات عند ترسية أحد العروض."
     },
     "errors": {
       "loadEvents": "تعذر تحميل فعاليات RFX.",
       "createEvent": "تعذر نشر الفعالية.",
       "submitResponse": "تعذر إرسال الرد.",
-      "updateStatus": "تعذر تحديث الحالة."
+      "analyze": "تعذر تحليل العروض.",
+      "updateStatus": "تعذر تحديث الحالة.",
+      "award": "تعذر الترسية أو إصدار أمر الشراء."
     },
     "validation": {
-      "title": "يجب إدخال عنوان قبل النشر."
+      "title": "يجب إدخال عنوان قبل النشر.",
+      "analysisRequired": "أضف عرضاً واحداً على الأقل للتحليل"
     },
     "success": {
       "eventCreated": "تم نشر الفعالية",
-      "responseSubmitted": "تم إرسال الرد"
-    }
+      "responseSubmitted": "تم إرسال الرد",
+      "analysisCompleted": "تم تحليل العروض بنجاح",
+      "awardIssued": "تمت الترسية وإصدار أمر الشراء"
+    },
+    "requestBadge": "طلب رقم {{id}}",
+    "linkedRequest": "مرتبط بطلب رقم {{id}}"
   }
 }

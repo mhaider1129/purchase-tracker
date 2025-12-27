@@ -2131,13 +2131,18 @@
       "analyzing": "Analyzing…",
       "addQuotation": "Add quotation",
       "remove": "Remove",
-      "clearAnalysis": "Clear analysis"
+      "clearAnalysis": "Clear analysis",
+      "award": "Award & issue PO",
+      "awarding": "Issuing PO…"
     },
     "fields": {
       "title": "Title",
       "type": "RFX Type",
       "dueDate": "Due date",
       "description": "Description",
+      "requestIdOptional": "Request ID (optional)",
+      "poNumber": "PO number",
+      "awardNotes": "Award notes",
       "supplierName": "Supplier name",
       "bidAmount": "Bid amount",
       "priceScore": "Price score",
@@ -2151,17 +2156,25 @@
     "placeholders": {
       "title": "Enter a clear headline",
       "description": "Share scope, timelines, or deliverables",
+      "requestId": "Link to an existing requisition",
+      "poNumber": "Optional PO number",
+      "awardNotes": "Optional award notes",
       "supplier": "Registered supplier name",
       "bidAmount": "Optional bid amount",
       "notes": "Optional clarifications",
       "score": "0-100"
+    },
+    "hints": {
+      "requestId": "Link the RFX to an approved request so an award can update the requisition.",
+      "award": "PO number and notes will be applied when awarding a supplier response."
     },
     "errors": {
       "loadEvents": "Unable to load RFX events.",
       "createEvent": "Could not publish the event.",
       "submitResponse": "Unable to submit the response.",
       "analyze": "Unable to analyze quotations.",
-      "updateStatus": "Could not update status."
+      "updateStatus": "Could not update status.",
+      "award": "Could not award the supplier or issue a PO."
     },
     "validation": {
       "title": "A title is required before publishing.",
@@ -2170,7 +2183,10 @@
     "success": {
       "eventCreated": "Event published",
       "responseSubmitted": "Response submitted",
-      "analysisCompleted": "Quotations analyzed successfully"
-    }
+      "analysisCompleted": "Quotations analyzed successfully",
+      "awardIssued": "Award issued and PO created"
+    },
+    "requestBadge": "Request #{{id}}",
+    "linkedRequest": "Linked to request #{{id}}"
   }
 }

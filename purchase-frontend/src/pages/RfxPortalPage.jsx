@@ -7,6 +7,7 @@ import {
   analyzeRfxQuotations,
   submitRfxResponse,
   updateRfxStatus,
+  awardRfxResponse,
 } from "../api/rfxPortal";
 import { useAuth } from "../hooks/useAuth";
 import { hasPermission } from "../utils/permissions";
@@ -18,6 +19,7 @@ const defaultEventForm = {
   rfx_type: "rfq",
   description: "",
   due_date: "",
+  request_id: "",
 };
 
 const defaultResponseForm = {
@@ -73,6 +75,8 @@ const RfxPortalPage = () => {
   const [savingResponse, setSavingResponse] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [awardForm, setAwardForm] = useState({ po_number: "", notes: "" });
+  const [awardingResponseId, setAwardingResponseId] = useState(null);
 
   const canManage = useMemo(
     () => hasPermission(user, "rfx.manage"),
@@ -164,9 +168,12 @@ const RfxPortalPage = () => {
     setSavingEvent(true);
 
     try {
+      const normalizedRequestId =
+        eventForm.request_id !== "" ? Number(eventForm.request_id) : undefined;
       const payload = {
         ...eventForm,
         rfx_type: eventForm.rfx_type.toLowerCase(),
+        request_id: Number.isFinite(normalizedRequestId) ? normalizedRequestId : undefined,
       };
       await createRfxEvent(payload);
       setEventForm(defaultEventForm);
@@ -234,10 +241,42 @@ const RfxPortalPage = () => {
     }
   };
 
+  const handleAwardFieldChange = (event) => {
+    const { name, value } = event.target;
+    setAwardForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAwardResponse = async (responseId) => {
+    if (!selectedEventId || !responseId) return;
+    setError("");
+    setSuccessMessage("");
+    setAwardingResponseId(responseId);
+
+    const payload = {
+      response_id: responseId,
+      po_number: awardForm.po_number?.trim() || undefined,
+      notes: awardForm.notes?.trim() || undefined,
+    };
+
+    try {
+      await awardRfxResponse(selectedEventId, payload);
+      setSuccessMessage(t("rfxPortal.success.awardIssued"));
+      setAwardForm({ po_number: "", notes: "" });
+      await loadEvents();
+      await loadResponses(selectedEventId);
+    } catch (err) {
+      console.error("❌ Failed to award response", err);
+      setError(err?.response?.data?.message || t("rfxPortal.errors.award"));
+    } finally {
+      setAwardingResponseId(null);
+    }
+  };
+
   const handleSelectEvent = (eventId) => {
     setSelectedEventId(eventId);
     setResponses([]);
     setSuccessMessage("");
+    setAwardForm({ po_number: "", notes: "" });
   };
 
   const handleStatusChange = async (eventId, status) => {
@@ -299,6 +338,12 @@ const RfxPortalPage = () => {
           <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
         ) : null}
 
+        {selectedEvent?.request_id ? (
+          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {t("rfxPortal.linkedRequest", { id: selectedEvent.request_id })}
+          </div>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="rounded-lg bg-white shadow-sm">
@@ -318,21 +363,26 @@ const RfxPortalPage = () => {
                       selectedEventId === event.id ? "bg-blue-50" : ""
                     }`}
                   >
-                    <div className="flex items-start justify-between px-4 py-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-base font-semibold text-gray-900">{event.title}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge(event.status)}`}>
-                            {event.status || "open"}
-                          </span>
-                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium uppercase text-gray-700">
-                            {event.rfx_type}
-                          </span>
-                        </div>
-                        <p className="mt-1 line-clamp-2 text-sm text-gray-600">{event.description || t("rfxPortal.noDescription")}</p>
-                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                          <span>
-                            {t("rfxPortal.dueDate", { date: formatDate(event.due_date) })}
+                        <div className="flex items-start justify-between px-4 py-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-base font-semibold text-gray-900">{event.title}</p>
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge(event.status)}`}>
+                                {event.status || "open"}
+                              </span>
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium uppercase text-gray-700">
+                                {event.rfx_type}
+                              </span>
+                              {event.request_id ? (
+                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                                  {t("rfxPortal.requestBadge", { id: event.request_id })}
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-1 line-clamp-2 text-sm text-gray-600">{event.description || t("rfxPortal.noDescription")}</p>
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                              <span>
+                                {t("rfxPortal.dueDate", { date: formatDate(event.due_date) })}
                           </span>
                           <span>•</span>
                           <span>
@@ -416,6 +466,24 @@ const RfxPortalPage = () => {
                       onChange={handleEventFormChange}
                       className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700" htmlFor="request_id">
+                      {t("rfxPortal.fields.requestIdOptional")}
+                    </label>
+                    <input
+                      id="request_id"
+                      name="request_id"
+                      type="number"
+                      min="1"
+                      value={eventForm.request_id}
+                      onChange={handleEventFormChange}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder={t("rfxPortal.placeholders.requestId")}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {t("rfxPortal.hints.requestId")}
+                    </p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700" htmlFor="description">
@@ -697,6 +765,37 @@ const RfxPortalPage = () => {
             {selectedEvent && canManage ? (
               <div className="rounded-lg bg-white p-4 shadow-sm">
                 <h3 className="text-lg font-semibold text-gray-900">{t("rfxPortal.responsesTitle")}</h3>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700" htmlFor="po_number">
+                      {t("rfxPortal.fields.poNumber")}
+                    </label>
+                    <input
+                      id="po_number"
+                      name="po_number"
+                      value={awardForm.po_number}
+                      onChange={handleAwardFieldChange}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder={t("rfxPortal.placeholders.poNumber")}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700" htmlFor="award_notes">
+                      {t("rfxPortal.fields.awardNotes")}
+                    </label>
+                    <input
+                      id="award_notes"
+                      name="notes"
+                      value={awardForm.notes}
+                      onChange={handleAwardFieldChange}
+                      className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder={t("rfxPortal.placeholders.awardNotes")}
+                    />
+                  </div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  {t("rfxPortal.hints.award")}
+                </p>
                 {responses.length === 0 ? (
                   <p className="mt-2 text-sm text-gray-600">{t("rfxPortal.responsesEmpty")}</p>
                 ) : (
@@ -717,6 +816,25 @@ const RfxPortalPage = () => {
                           {response.bid_amount
                             ? t("rfxPortal.bidLabel", { amount: response.bid_amount })
                             : t("rfxPortal.noBid")}
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+                          {response.status ? (
+                            <span className="rounded bg-gray-100 px-2 py-0.5 font-medium text-gray-700">
+                              {response.status}
+                            </span>
+                          ) : (
+                            <span />
+                          )}
+                          <button
+                            type="button"
+                            disabled={selectedEvent?.status === "awarded" || awardingResponseId === response.id}
+                            onClick={() => handleAwardResponse(response.id)}
+                            className="rounded-md bg-emerald-600 px-2 py-1 text-[13px] font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {awardingResponseId === response.id
+                              ? t("rfxPortal.actions.awarding")
+                              : t("rfxPortal.actions.award")}
+                          </button>
                         </div>
                       </div>
                     ))}
