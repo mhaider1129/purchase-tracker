@@ -396,7 +396,7 @@ const getEvaluationCandidates = async (req, res, next) => {
     client = await pool.connect();
 
     const contractResult = await client.query(
-      `SELECT id, title, vendor, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
+      `SELECT id, title, vendor, contract_type, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
               delivery_terms, warranty_terms, performance_management,
               end_user_department_id, contract_manager_id, technical_department_ids,
               created_by, created_at, updated_at
@@ -479,6 +479,7 @@ const ensureContractsTable = (() => {
   let requestForeignKeyEnsured = false;
   let amountPaidColumnEnsured = false;
   let signingDateColumnEnsured = false;
+  let contractTypeColumnEnsured = false;
   let ensuringPromise = null;
 
   const ensureTableStructure = async () => {
@@ -494,6 +495,7 @@ const ensureContractsTable = (() => {
         contract_value NUMERIC(14, 2),
         amount_paid NUMERIC(14, 2) DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'active',
+        contract_type TEXT DEFAULT 'purchasing',
         description TEXT,
         delivery_terms TEXT,
         warranty_terms TEXT,
@@ -538,6 +540,19 @@ const ensureContractsTable = (() => {
     `);
 
     signingDateColumnEnsured = true;
+  };
+
+  const ensureContractTypeColumn = async () => {
+    if (contractTypeColumnEnsured) {
+      return;
+    }
+
+    await pool.query(`
+      ALTER TABLE contracts
+        ADD COLUMN IF NOT EXISTS contract_type TEXT DEFAULT 'purchasing'
+    `);
+
+    contractTypeColumnEnsured = true;
   };
 
   const ensureAmountPaidColumn = async () => {
@@ -727,6 +742,7 @@ const ensureContractsTable = (() => {
       assignmentColumnsEnsured &&
       amountPaidColumnEnsured &&
       signingDateColumnEnsured &&
+      contractTypeColumnEnsured &&
       endUserForeignKeyEnsured &&
       contractManagerForeignKeyEnsured &&
       linkageColumnsEnsured &&
@@ -754,6 +770,10 @@ const ensureContractsTable = (() => {
 
           if (!signingDateColumnEnsured) {
             await ensureSigningDateColumn();
+          }
+
+          if (!contractTypeColumnEnsured) {
+            await ensureContractTypeColumn();
           }
 
           if (!linkageColumnsEnsured) {
@@ -926,6 +946,7 @@ const serializeContract = (row, compliance = null) => {
     id: row.id,
     title: row.title,
     vendor: row.vendor,
+    contract_type: row.contract_type || 'purchasing',
     supplier_id: supplierId,
     source_request_id: sourceRequestId,
     reference_number: row.reference_number,
@@ -984,7 +1005,7 @@ const listContracts = async (req, res, next) => {
 
     const whereClause = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
     const { rows } = await pool.query(
-      `SELECT id, title, vendor, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date,
+      `SELECT id, title, vendor, contract_type, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date,
               contract_value, amount_paid, status, description, delivery_terms, warranty_terms, performance_management,
               end_user_department_id, contract_manager_id, technical_department_ids,
               created_by, created_at, updated_at
@@ -1024,7 +1045,7 @@ const getContractById = async (req, res, next) => {
   try {
     await ensureContractsTable();
     const { rows } = await pool.query(
-      `SELECT id, title, vendor, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date,
+      `SELECT id, title, vendor, contract_type, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date,
               contract_value, amount_paid, status, description, delivery_terms, warranty_terms, performance_management,
               end_user_department_id, contract_manager_id, technical_department_ids,
               created_by, created_at, updated_at
@@ -1042,6 +1063,7 @@ const getContractById = async (req, res, next) => {
     res.json(serializeContract(rows[0], complianceMap.get(rows[0].supplier_id) || null));
   } catch (err) {
     console.error('❌ Failed to fetch contract:', err);
+    if (err.statusCode) return next(err);
     next(createHttpError(500, 'Failed to fetch contract'));
   }
 };
@@ -1053,6 +1075,7 @@ const createContract = async (req, res, next) => {
 
   const title = normalizeText(req.body?.title);
   const vendor = normalizeText(req.body?.vendor);
+  const contractType = normalizeText(req.body?.contract_type) || 'purchasing';
   const referenceNumber = normalizeText(req.body?.reference_number) || null;
   const description = normalizeText(req.body?.description) || null;
   const deliveryTerms = normalizeText(req.body?.delivery_terms) || null;
@@ -1128,11 +1151,11 @@ const createContract = async (req, res, next) => {
     await assertRequestExists(client, sourceRequestId);
     const { rows } = await client.query(
       `INSERT INTO contracts (
-         title, vendor, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
+         title, vendor, contract_type, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
          delivery_terms, warranty_terms, performance_management, created_by,
          end_user_department_id, contract_manager_id, technical_department_ids
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
-       RETURNING id, title, vendor, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+       RETURNING id, title, vendor, contract_type, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
                  delivery_terms, warranty_terms, performance_management,
                  supplier_id, source_request_id,
                  end_user_department_id, contract_manager_id, technical_department_ids,
@@ -1140,6 +1163,7 @@ const createContract = async (req, res, next) => {
       [
         title,
         supplier.name,
+        contractType,
         supplier.id,
         sourceRequestId,
         referenceNumber,
@@ -1198,7 +1222,10 @@ const createContract = async (req, res, next) => {
     await client.query('COMMIT');
     res.status(201).json(contract);
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
+    if (err.statusCode) return next(err);
     if (err?.code === '23505') {
       return next(createHttpError(409, 'A contract with this reference number already exists'));
     }
@@ -1258,6 +1285,7 @@ const updateContract = async (req, res, next) => {
 
     const title = req.body?.title !== undefined ? normalizeText(req.body.title) : undefined;
     const vendor = req.body?.vendor !== undefined ? normalizeText(req.body.vendor) : undefined;
+    const contractType = req.body?.contract_type !== undefined ? normalizeText(req.body.contract_type) : undefined;
     const referenceNumber =
       req.body?.reference_number !== undefined ? normalizeText(req.body.reference_number) || null : undefined;
     const description = req.body?.description !== undefined ? normalizeText(req.body.description) || null : undefined;
@@ -1277,6 +1305,10 @@ const updateContract = async (req, res, next) => {
 
     if (vendor !== undefined && !vendor) {
       return next(createHttpError(400, 'vendor is required'));
+    }
+
+    if (contractType !== undefined) {
+      pushAssignment('contract_type', contractType || 'purchasing');
     }
 
     if (referenceNumber !== undefined) {
@@ -1434,18 +1466,25 @@ const updateContract = async (req, res, next) => {
       `UPDATE contracts
           SET ${assignments.join(', ')}
         WHERE id = $${values.length + 1}
-        RETURNING id, title, vendor, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
+        RETURNING id, title, vendor, contract_type, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
                   delivery_terms, warranty_terms, performance_management,
                   end_user_department_id, contract_manager_id, technical_department_ids,
                   created_by, created_at, updated_at`,
       [...values, contractId]
     );
 
+    if (rows.length === 0) {
+      throw createHttpError(404, 'Contract not found or could not be updated');
+    }
+
     await client.query('COMMIT');
     const complianceMap = await getComplianceStatusBySupplierIds([rows[0].supplier_id]);
     res.json(serializeContract(rows[0], complianceMap.get(rows[0].supplier_id) || null));
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    if (client) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
+    if (err.statusCode) return next(err);
     if (err?.code === '23505') {
       return next(createHttpError(409, 'A contract with this reference number already exists'));
     }
@@ -1472,7 +1511,7 @@ const archiveContract = async (req, res, next) => {
       `UPDATE contracts
           SET status = 'archived', updated_at = NOW()
         WHERE id = $1
-        RETURNING id, title, vendor, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
+        RETURNING id, title, vendor, contract_type, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
                   delivery_terms, warranty_terms, performance_management,
                   end_user_department_id, contract_manager_id, technical_department_ids,
                   created_by, created_at, updated_at`,
@@ -1487,6 +1526,7 @@ const archiveContract = async (req, res, next) => {
     res.json(serializeContract(rows[0], complianceMap.get(rows[0].supplier_id) || null));
   } catch (err) {
     console.error('❌ Failed to archive contract:', err);
+    if (err.statusCode) return next(err);
     next(createHttpError(500, 'Failed to archive contract'));
   }
 };
@@ -1529,6 +1569,7 @@ const getContractAttachments = async (req, res, next) => {
   const { contractId } = req.params;
 
   try {
+    await ensureContractsTable();
     await ensureAttachmentsContractIdColumn(pool);
 
     const supportsContractAttachments = await attachmentsHasContractIdColumn(pool);
@@ -1557,6 +1598,7 @@ const uploadContractAttachment = async (req, res, next) => {
   if (!file) return next(createHttpError(400, 'No file uploaded'));
 
   try {
+    await ensureContractsTable();
     await ensureAttachmentsContractIdColumn(pool);
 
     const supportsContractAttachments = await attachmentsHasContractIdColumn(pool);
@@ -1619,6 +1661,7 @@ const deleteContractAttachment = async (req, res, next) => {
   let client;
 
   try {
+    await ensureContractsTable();
     client = await pool.connect();
     await ensureAttachmentsContractIdColumn(client);
 
@@ -1710,7 +1753,7 @@ const renewContract = async (req, res, next) => {
               amount_paid = COALESCE($5, amount_paid),
               updated_at = NOW()
         WHERE id = $6
-        RETURNING id, title, vendor, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
+        RETURNING id, title, vendor, contract_type, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
                   delivery_terms, warranty_terms, performance_management,
                   end_user_department_id, contract_manager_id, technical_department_ids,
                   created_by, created_at, updated_at`,
@@ -1725,6 +1768,7 @@ const renewContract = async (req, res, next) => {
     res.json(serializeContract(rows[0], complianceMap.get(rows[0].supplier_id) || null));
   } catch (err) {
     console.error('❌ Failed to renew contract:', err);
+    if (err.statusCode) return next(err);
     next(createHttpError(500, 'Failed to renew contract'));
   }
 };
@@ -1746,7 +1790,7 @@ const unarchiveContract = async (req, res, next) => {
           SET status = 'active',
               updated_at = NOW()
         WHERE id = $1
-        RETURNING id, title, vendor, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
+        RETURNING id, title, vendor, contract_type, supplier_id, source_request_id, reference_number, start_date, signing_date, end_date, contract_value, amount_paid, status, description,
                   delivery_terms, warranty_terms, performance_management,
                   end_user_department_id, contract_manager_id, technical_department_ids,
                   created_by, created_at, updated_at`,
@@ -1761,6 +1805,7 @@ const unarchiveContract = async (req, res, next) => {
     res.json(serializeContract(rows[0], complianceMap.get(rows[0].supplier_id) || null));
   } catch (err) {
     console.error('❌ Failed to unarchive contract:', err);
+    if (err.statusCode) return next(err);
     next(createHttpError(500, 'Failed to unarchive contract'));
   }
 };
@@ -1815,6 +1860,7 @@ const deleteContract = async (req, res, next) => {
       await client.query('ROLLBACK').catch(() => {});
     }
     console.error('❌ Failed to delete contract:', err);
+    if (err.statusCode) return next(err);
     next(createHttpError(500, 'Failed to delete contract'));
   } finally {
     if (client) {
