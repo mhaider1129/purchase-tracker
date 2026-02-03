@@ -20,12 +20,21 @@ const defaultEventForm = {
   description: "",
   due_date: "",
   request_id: "",
+  items: [
+    {
+      item_name: "",
+      specs: "",
+      quantity: "",
+      notes: "",
+    },
+  ],
 };
 
 const defaultResponseForm = {
   supplier_name: "",
   bid_amount: "",
   notes: "",
+  item_responses: [],
 };
 
 const createEmptyQuotation = () => ({
@@ -38,6 +47,44 @@ const createEmptyQuotation = () => ({
 });
 
 const defaultAnalysisQuotations = [createEmptyQuotation()];
+
+const createEmptyEventItem = () => ({
+  item_name: "",
+  specs: "",
+  quantity: "",
+  notes: "",
+});
+
+const createResponseItem = (item = {}) => ({
+  item_name: item.item_name || "",
+  requested_specs: item.specs || "",
+  requested_quantity: item.quantity ?? "",
+  requested_notes: item.notes || "",
+  unit_cost: "",
+  quantity: "",
+  specs: "",
+  brand: "",
+  notes: "",
+  free_quantity: "",
+});
+
+const parseNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
+const safeParseJson = (value) => {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch (error) {
+      return null;
+    }
+  }
+  return null;
+};
 
 const statusBadge = (status) => {
   const normalized = (status || "").toLowerCase();
@@ -77,6 +124,11 @@ const RfxPortalPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [awardForm, setAwardForm] = useState({ po_number: "", notes: "" });
   const [awardingResponseId, setAwardingResponseId] = useState(null);
+
+  const selectedEvent = useMemo(
+    () => events.find((event) => event.id === selectedEventId) || null,
+    [events, selectedEventId],
+  );
 
   const canManage = useMemo(
     () => hasPermission(user, "rfx.manage"),
@@ -129,14 +181,60 @@ const RfxPortalPage = () => {
     setAnalysisQuotations([createEmptyQuotation()]);
   }, [selectedEventId]);
 
+  useEffect(() => {
+    if (!selectedEvent) {
+      setResponseForm((prev) => ({ ...prev, item_responses: [] }));
+      return;
+    }
+
+    const eventItems = selectedEvent.details?.items || [];
+    const mappedItems = Array.isArray(eventItems)
+      ? eventItems.map((item) => createResponseItem(item))
+      : [];
+    setResponseForm((prev) => ({
+      ...prev,
+      item_responses: mappedItems,
+    }));
+  }, [selectedEvent]);
+
   const handleEventFormChange = (event) => {
     const { name, value } = event.target;
     setEventForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleEventItemChange = (index, field, value) => {
+    setEventForm((prev) => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, items };
+    });
+  };
+
+  const addEventItem = () => {
+    setEventForm((prev) => ({
+      ...prev,
+      items: [...prev.items, createEmptyEventItem()],
+    }));
+  };
+
+  const removeEventItem = (index) => {
+    setEventForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, idx) => idx !== index),
+    }));
+  };
+
   const handleResponseFormChange = (event) => {
     const { name, value } = event.target;
     setResponseForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleResponseItemChange = (index, field, value) => {
+    setResponseForm((prev) => {
+      const items = [...(prev.item_responses || [])];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, item_responses: items };
+    });
   };
 
   const handleQuotationChange = (index, field, value) => {
@@ -170,10 +268,19 @@ const RfxPortalPage = () => {
     try {
       const normalizedRequestId =
         eventForm.request_id !== "" ? Number(eventForm.request_id) : undefined;
+      const trimmedItems = eventForm.items
+        .map((item) => ({
+          item_name: item.item_name?.trim(),
+          specs: item.specs?.trim(),
+          quantity: item.quantity === "" ? null : Number(item.quantity),
+          notes: item.notes?.trim(),
+        }))
+        .filter((item) => item.item_name || item.specs || item.quantity || item.notes);
       const payload = {
         ...eventForm,
         rfx_type: eventForm.rfx_type.toLowerCase(),
         request_id: Number.isFinite(normalizedRequestId) ? normalizedRequestId : undefined,
+        details: trimmedItems.length ? { items: trimmedItems } : undefined,
       };
       await createRfxEvent(payload);
       setEventForm(defaultEventForm);
@@ -195,12 +302,37 @@ const RfxPortalPage = () => {
     setError("");
 
     try {
+      const totalCost = responseForm.item_responses?.reduce((sum, item) => {
+        const qty = parseNumber(item.quantity);
+        const unit = parseNumber(item.unit_cost);
+        return sum + qty * unit;
+      }, 0);
+      const totalQuantity = responseForm.item_responses?.reduce(
+        (sum, item) => sum + parseNumber(item.quantity),
+        0,
+      );
+      const totalFreeQuantity = responseForm.item_responses?.reduce(
+        (sum, item) => sum + parseNumber(item.free_quantity),
+        0,
+      );
       const payload = {
         ...responseForm,
         bid_amount: responseForm.bid_amount ? Number(responseForm.bid_amount) : undefined,
+        response_data: {
+          items: responseForm.item_responses || [],
+          totals: {
+            total_cost: totalCost,
+            total_quantity: totalQuantity,
+            total_free_quantity: totalFreeQuantity,
+          },
+        },
       };
       await submitRfxResponse(selectedEventId, payload);
-      setResponseForm(defaultResponseForm);
+      const eventItems = selectedEvent?.details?.items || [];
+      setResponseForm({
+        ...defaultResponseForm,
+        item_responses: Array.isArray(eventItems) ? eventItems.map((item) => createResponseItem(item)) : [],
+      });
       setSuccessMessage(t("rfxPortal.success.responseSubmitted"));
       await loadResponses(selectedEventId);
     } catch (err) {
@@ -291,10 +423,17 @@ const RfxPortalPage = () => {
     }
   };
 
-  const selectedEvent = useMemo(
-    () => events.find((event) => event.id === selectedEventId) || null,
-    [events, selectedEventId],
-  );
+  const responseTotals = useMemo(() => {
+    const items = responseForm.item_responses || [];
+    const totalCost = items.reduce((sum, item) => {
+      const qty = parseNumber(item.quantity);
+      const unit = parseNumber(item.unit_cost);
+      return sum + qty * unit;
+    }, 0);
+    const totalQuantity = items.reduce((sum, item) => sum + parseNumber(item.quantity), 0);
+    const totalFreeQuantity = items.reduce((sum, item) => sum + parseNumber(item.free_quantity), 0);
+    return { totalCost, totalQuantity, totalFreeQuantity };
+  }, [responseForm.item_responses]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -380,6 +519,13 @@ const RfxPortalPage = () => {
                               ) : null}
                             </div>
                             <p className="mt-1 line-clamp-2 text-sm text-gray-600">{event.description || t("rfxPortal.noDescription")}</p>
+                            {event.details?.items?.length ? (
+                              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                                <span className="rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700">
+                                  {t("rfxPortal.itemCount", { count: event.details.items.length })}
+                                </span>
+                              </div>
+                            ) : null}
                             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-gray-500">
                               <span>
                                 {t("rfxPortal.dueDate", { date: formatDate(event.due_date) })}
@@ -498,6 +644,105 @@ const RfxPortalPage = () => {
                       className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       placeholder={t("rfxPortal.placeholders.description")}
                     />
+                  </div>
+                  <div className="space-y-3 rounded-md border border-dashed border-gray-200 p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{t("rfxPortal.itemsTitle")}</p>
+                        <p className="text-xs text-gray-500">{t("rfxPortal.itemsHint")}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addEventItem}
+                        className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+                      >
+                        {t("rfxPortal.actions.addItem")}
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {eventForm.items.map((item, index) => (
+                        <div key={`event-item-${index}`} className="rounded-md border border-gray-200 p-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-semibold text-gray-900">
+                              {t("rfxPortal.fields.itemName")} #{index + 1}
+                            </p>
+                            {eventForm.items.length > 1 ? (
+                              <button
+                                type="button"
+                                onClick={() => removeEventItem(index)}
+                                className="text-xs text-red-600 hover:text-red-700"
+                              >
+                                {t("rfxPortal.actions.remove")}
+                              </button>
+                            ) : null}
+                          </div>
+                          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                              <label
+                                className="block text-xs font-medium text-gray-700"
+                                htmlFor={`event-item-name-${index}`}
+                              >
+                                {t("rfxPortal.fields.itemName")}
+                              </label>
+                              <input
+                                id={`event-item-name-${index}`}
+                                value={item.item_name}
+                                onChange={(e) => handleEventItemChange(index, "item_name", e.target.value)}
+                                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder={t("rfxPortal.placeholders.itemName")}
+                              />
+                            </div>
+                            <div>
+                              <label
+                                className="block text-xs font-medium text-gray-700"
+                                htmlFor={`event-item-qty-${index}`}
+                              >
+                                {t("rfxPortal.fields.requestedQty")}
+                              </label>
+                              <input
+                                id={`event-item-qty-${index}`}
+                                type="number"
+                                min="0"
+                                value={item.quantity}
+                                onChange={(e) => handleEventItemChange(index, "quantity", e.target.value)}
+                                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder={t("rfxPortal.placeholders.quantity")}
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label
+                                className="block text-xs font-medium text-gray-700"
+                                htmlFor={`event-item-specs-${index}`}
+                              >
+                                {t("rfxPortal.fields.specs")}
+                              </label>
+                              <input
+                                id={`event-item-specs-${index}`}
+                                value={item.specs}
+                                onChange={(e) => handleEventItemChange(index, "specs", e.target.value)}
+                                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder={t("rfxPortal.placeholders.specs")}
+                              />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label
+                                className="block text-xs font-medium text-gray-700"
+                                htmlFor={`event-item-notes-${index}`}
+                              >
+                                {t("rfxPortal.fields.itemNotes")}
+                              </label>
+                              <input
+                                id={`event-item-notes-${index}`}
+                                value={item.notes}
+                                onChange={(e) => handleEventItemChange(index, "notes", e.target.value)}
+                                className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                placeholder={t("rfxPortal.placeholders.itemNotes")}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   <button
                     type="submit"
@@ -722,6 +967,137 @@ const RfxPortalPage = () => {
                       required
                     />
                   </div>
+                  <div className="rounded-md border border-gray-200 p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{t("rfxPortal.respondItemsTitle")}</p>
+                        <p className="text-xs text-gray-500">{t("rfxPortal.respondItemsHint")}</p>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {t("rfxPortal.itemCount", { count: responseForm.item_responses?.length || 0 })}
+                      </span>
+                    </div>
+                    {responseForm.item_responses?.length ? (
+                      <div className="mt-3 space-y-4">
+                        {responseForm.item_responses.map((item, index) => {
+                          const lineTotal = parseNumber(item.quantity) * parseNumber(item.unit_cost);
+                          return (
+                            <div key={`response-item-${index}`} className="rounded-md border border-gray-100 p-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+                                <p className="text-sm font-semibold text-gray-900">
+                                  {item.item_name || t("rfxPortal.fields.itemName")}
+                                </p>
+                                <span>
+                                  {t("rfxPortal.requestedQtyLabel", {
+                                    qty: item.requested_quantity || "-",
+                                  })}
+                                </span>
+                              </div>
+                              {item.requested_specs ? (
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {t("rfxPortal.requestedSpecsLabel", { specs: item.requested_specs })}
+                                </p>
+                              ) : null}
+                              <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700" htmlFor={`response-unit-${index}`}>
+                                    {t("rfxPortal.fields.unitCost")}
+                                  </label>
+                                  <input
+                                    id={`response-unit-${index}`}
+                                    type="number"
+                                    step="0.01"
+                                    value={item.unit_cost}
+                                    onChange={(e) => handleResponseItemChange(index, "unit_cost", e.target.value)}
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder={t("rfxPortal.placeholders.unitCost")}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700" htmlFor={`response-qty-${index}`}>
+                                    {t("rfxPortal.fields.responseQty")}
+                                  </label>
+                                  <input
+                                    id={`response-qty-${index}`}
+                                    type="number"
+                                    min="0"
+                                    value={item.quantity}
+                                    onChange={(e) => handleResponseItemChange(index, "quantity", e.target.value)}
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder={t("rfxPortal.placeholders.quantity")}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700" htmlFor={`response-free-${index}`}>
+                                    {t("rfxPortal.fields.freeQty")}
+                                  </label>
+                                  <input
+                                    id={`response-free-${index}`}
+                                    type="number"
+                                    min="0"
+                                    value={item.free_quantity}
+                                    onChange={(e) => handleResponseItemChange(index, "free_quantity", e.target.value)}
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder={t("rfxPortal.placeholders.freeQty")}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-medium text-gray-700" htmlFor={`response-brand-${index}`}>
+                                    {t("rfxPortal.fields.brand")}
+                                  </label>
+                                  <input
+                                    id={`response-brand-${index}`}
+                                    value={item.brand}
+                                    onChange={(e) => handleResponseItemChange(index, "brand", e.target.value)}
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder={t("rfxPortal.placeholders.brand")}
+                                  />
+                                </div>
+                                <div className="md:col-span-2">
+                                  <label className="block text-xs font-medium text-gray-700" htmlFor={`response-specs-${index}`}>
+                                    {t("rfxPortal.fields.specs")}
+                                  </label>
+                                  <input
+                                    id={`response-specs-${index}`}
+                                    value={item.specs}
+                                    onChange={(e) => handleResponseItemChange(index, "specs", e.target.value)}
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder={t("rfxPortal.placeholders.specs")}
+                                  />
+                                </div>
+                                <div className="md:col-span-3">
+                                  <label className="block text-xs font-medium text-gray-700" htmlFor={`response-notes-${index}`}>
+                                    {t("rfxPortal.fields.itemNotes")}
+                                  </label>
+                                  <input
+                                    id={`response-notes-${index}`}
+                                    value={item.notes}
+                                    onChange={(e) => handleResponseItemChange(index, "notes", e.target.value)}
+                                    className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    placeholder={t("rfxPortal.placeholders.itemNotes")}
+                                  />
+                                </div>
+                              </div>
+                              <div className="mt-2 text-xs text-gray-500">
+                                {t("rfxPortal.lineTotal", { total: lineTotal.toFixed(2) })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-gray-500">{t("rfxPortal.itemsEmpty")}</p>
+                    )}
+                    <div className="mt-3 rounded-md bg-gray-50 p-3 text-xs text-gray-600">
+                      <div className="flex flex-wrap justify-between gap-2">
+                        <span>{t("rfxPortal.totalQuantity", { qty: responseTotals.totalQuantity })}</span>
+                        <span>{t("rfxPortal.totalFreeQuantity", { qty: responseTotals.totalFreeQuantity })}</span>
+                        <span className="font-semibold text-gray-900">
+                          {t("rfxPortal.totalCost", { amount: responseTotals.totalCost.toFixed(2) })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700" htmlFor="bid_amount">
                       {t("rfxPortal.fields.bidAmount")}
@@ -809,6 +1185,44 @@ const RfxPortalPage = () => {
                           <p className="font-semibold text-gray-900">{response.supplier_name || t("rfxPortal.fields.supplierName")}</p>
                           <span className="text-xs text-gray-500">{formatDate(response.created_at)}</span>
                         </div>
+                        {(() => {
+                          const responseData = safeParseJson(response.response_data);
+                          const responseItems = responseData?.items || [];
+                          const totals = responseData?.totals || {};
+                          return responseItems.length ? (
+                            <div className="mt-2 rounded-md bg-gray-50 p-2 text-xs text-gray-600">
+                              <p className="font-semibold text-gray-700">{t("rfxPortal.itemsSummaryTitle")}</p>
+                              <ul className="mt-1 space-y-1">
+                                {responseItems.map((item, index) => (
+                                  <li key={`response-item-summary-${response.id}-${index}`} className="flex justify-between gap-2">
+                                    <span className="truncate">
+                                      {item.item_name || t("rfxPortal.fields.itemName")}
+                                    </span>
+                                    <span>
+                                      {t("rfxPortal.summaryQtyCost", {
+                                        qty: item.quantity || "-",
+                                        amount: item.unit_cost || "-",
+                                      })}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-gray-500">
+                                {totals.total_quantity !== undefined ? (
+                                  <span>{t("rfxPortal.totalQuantity", { qty: totals.total_quantity })}</span>
+                                ) : null}
+                                {totals.total_free_quantity !== undefined ? (
+                                  <span>{t("rfxPortal.totalFreeQuantity", { qty: totals.total_free_quantity })}</span>
+                                ) : null}
+                                {totals.total_cost !== undefined ? (
+                                  <span className="font-semibold text-gray-700">
+                                    {t("rfxPortal.totalCost", { amount: Number(totals.total_cost).toFixed(2) })}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          ) : null;
+                        })()}
                         <p className="mt-1 text-gray-700">
                           {response.notes || t("rfxPortal.noNotes")}
                         </p>

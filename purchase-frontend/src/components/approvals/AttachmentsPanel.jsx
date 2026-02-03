@@ -27,9 +27,15 @@ const AttachmentsPanel = ({
         <ul className="mt-2 space-y-2 text-sm text-slate-700">
           {attachments.map((att) => {
             const filename = att.file_name || (att.file_path || '').split(/[\\/]/).pop();
+            const itemName = att.item_name || att.itemName;
             return (
               <li key={att.id} className="flex flex-wrap items-center gap-3">
                 <span className="break-all">{filename}</span>
+                {itemName ? (
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">
+                    {itemName}
+                  </span>
+                ) : null}
                 {att.file_url && (
                   <button
                     type="button"

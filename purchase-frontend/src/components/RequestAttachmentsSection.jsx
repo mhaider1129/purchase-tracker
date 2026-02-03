@@ -52,6 +52,7 @@ const RequestAttachmentsSection = ({
           {attachments.map((attachment) => {
             const filename = getFilenameFromAttachment(attachment);
             const viewUrl = attachment.file_url || attachment.view_url || null;
+            const itemName = attachment.item_name || attachment.itemName;
 
             return (
               <li
@@ -59,6 +60,11 @@ const RequestAttachmentsSection = ({
                 className="flex flex-wrap items-center gap-3"
               >
                 <span className="break-all">{filename}</span>
+                {itemName ? (
+                  <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                    {itemName}
+                  </span>
+                ) : null}
                 {viewUrl && (
                   <a
                     href={viewUrl}

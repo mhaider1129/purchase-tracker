@@ -27,6 +27,48 @@ const createEmptyRow = () => ({
   notes: '',
 });
 
+const isRowEmpty = (row) =>
+  !row.itemName && !row.quantity && !row.unit && !row.facility && !row.notes;
+
+const parsePastedRows = (text) => {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return [];
+
+  const cells = lines.map((line) => line.split('\t').map((cell) => cell.trim()));
+  const header = cells[0].map((cell) => cell.toLowerCase());
+  const headerMatches = [
+    'month',
+    'item',
+    'item name',
+    'quantity',
+    'unit',
+    'facility',
+    'notes',
+  ];
+  const hasHeader = header.some((cell) => headerMatches.includes(cell));
+  const dataRows = hasHeader ? cells.slice(1) : cells;
+
+  return dataRows
+    .map((rowCells) => {
+      const [month, itemName, quantity, unit, facility, notes] = rowCells;
+      const baseRow = createEmptyRow();
+      return {
+        ...baseRow,
+        month: month || baseRow.month,
+        itemName: itemName || '',
+        quantity: quantity || '',
+        unit: unit || '',
+        facility: facility || '',
+        notes: notes || '',
+      };
+    })
+    .filter((row) => !isRowEmpty(row));
+};
+
 const NumberBadge = ({ value }) => (
   <span className="text-lg font-semibold text-indigo-700">{value}</span>
 );
@@ -83,6 +125,28 @@ const MonthlyDispensing = () => {
 
   const removeRow = (index) => {
     setRows((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+  };
+
+  const handlePaste = (event) => {
+    const pastedText = event.clipboardData.getData('text');
+    if (!pastedText) return;
+
+    event.preventDefault();
+    const pastedRows = parsePastedRows(pastedText);
+
+    if (pastedRows.length === 0) {
+      setError('No valid rows found in pasted data.');
+      return;
+    }
+
+    setRows((prev) => {
+      if (prev.length === 1 && isRowEmpty(prev[0])) {
+        return pastedRows;
+      }
+      return [...prev, ...pastedRows];
+    });
+    setMessage(`Added ${pastedRows.length} row${pastedRows.length === 1 ? '' : 's'} from clipboard.`);
+    setError('');
   };
 
   const submitRows = async (event) => {
@@ -166,6 +230,24 @@ const MonthlyDispensing = () => {
 
           {error && <div className="text-sm text-red-600">{error}</div>}
           {message && <div className="text-sm text-green-700">{message}</div>}
+
+          <div className="rounded-lg border border-dashed border-indigo-200 bg-indigo-50/30 p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-indigo-800">Paste from Excel</p>
+                <p className="text-xs text-gray-500">
+                  Copy columns in order: Month, Item, Quantity, Unit, Facility, Notes.
+                </p>
+              </div>
+              <span className="text-xs text-gray-400">Ctrl/Cmd + V</span>
+            </div>
+            <textarea
+              onPaste={handlePaste}
+              className="w-full rounded border border-indigo-100 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              rows={3}
+              placeholder="2024-08	Amoxicillin 500mg	1200	caps	Main Pharmacy	Dispensed for OPD"
+            />
+          </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">

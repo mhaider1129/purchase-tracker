@@ -50,6 +50,7 @@ import RequestSubmittedPage from "./pages/requests/RequestSubmittedPage";
 import WarehouseSupplyTemplatesPage from "./pages/WarehouseSupplyTemplatesPage";
 import AuditRequestsPage from "./pages/AuditRequestsPage";
 import LifecycleAnalytics from "./pages/LifecycleAnalytics";
+import WorkloadAnalysis from "./pages/WorkloadAnalysis";
 import MonthlyDispensing from "./pages/MonthlyDispensing";
 import ContractsPage from "./pages/ContractsPage";
 import SupplierEvaluationsPage from "./pages/SupplierEvaluationsPage";
@@ -65,6 +66,7 @@ import PlanningWorkbench from "./pages/PlanningWorkbench";
 import HistoricalRequestsImportPage from "./pages/HistoricalRequestsImportPage";
 import RfxPortalPage from "./pages/RfxPortalPage";
 import RiskManagementPage from "./pages/RiskManagementPage";
+import ItemMasterPage from "./pages/ItemMasterPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -204,6 +206,15 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<WarehouseInventoryPage />}
           resourceKey="feature.warehouseInventory"
+        />
+      }
+    />
+    <Route
+      path="/item-master"
+      element={
+        <ProtectedRoute
+          element={<ItemMasterPage />}
+          resourceKey="feature.itemMaster"
         />
       }
     />
@@ -535,6 +546,15 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<LifecycleAnalytics />}
+          resourceKey="feature.analytics"
+        />
+      }
+    />
+    <Route
+      path="/workload"
+      element={
+        <ProtectedRoute
+          element={<WorkloadAnalysis />}
           resourceKey="feature.analytics"
         />
       }

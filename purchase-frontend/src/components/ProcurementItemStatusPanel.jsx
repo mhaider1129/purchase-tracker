@@ -9,6 +9,21 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [poIssuanceMethod, setPoIssuanceMethod] = useState(
     item.po_issuance_method || "",
   );
+  const [poNumber, setPoNumber] = useState(item.po_number || "");
+  const [invoiceNumber, setInvoiceNumber] = useState(item.invoice_number || "");
+  const [currency, setCurrency] = useState(item.currency || "");
+  const [committedCost, setCommittedCost] = useState(
+    item.committed_cost ?? "",
+  );
+  const [paidCost, setPaidCost] = useState(item.paid_cost ?? "");
+  const [savingsDriver, setSavingsDriver] = useState(
+    item.savings_driver || "",
+  );
+  const [savingsNotes, setSavingsNotes] = useState(item.savings_notes || "");
+  const [contractId, setContractId] = useState(item.contract_id ?? "");
+  const [contractValueSnapshot, setContractValueSnapshot] = useState(
+    item.contract_value_snapshot ?? "",
+  );
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
   const [updaterName, setUpdaterName] = useState("");
@@ -62,6 +77,28 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     setComment(item.procurement_comment || "");
     setPoIssuanceMethod(item.po_issuance_method || "");
   }, [item.procurement_status, item.procurement_comment, item.po_issuance_method]);
+
+  useEffect(() => {
+    setPoNumber(item.po_number || "");
+    setInvoiceNumber(item.invoice_number || "");
+    setCurrency(item.currency || "");
+    setCommittedCost(item.committed_cost ?? "");
+    setPaidCost(item.paid_cost ?? "");
+    setSavingsDriver(item.savings_driver || "");
+    setSavingsNotes(item.savings_notes || "");
+    setContractId(item.contract_id ?? "");
+    setContractValueSnapshot(item.contract_value_snapshot ?? "");
+  }, [
+    item.po_number,
+    item.invoice_number,
+    item.currency,
+    item.committed_cost,
+    item.paid_cost,
+    item.savings_driver,
+    item.savings_notes,
+    item.contract_id,
+    item.contract_value_snapshot,
+  ]);
 
   const fetchItemAttachments = useCallback(async () => {
     if (!itemId) {
@@ -288,6 +325,45 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     [],
   );
 
+  const savingsDriverOptions = useMemo(
+    () => [
+      {
+        value: "",
+        label: tr("itemPanel.savingsDrivers.none", "-- Select Driver --"),
+      },
+      {
+        value: "negotiated_vs_list",
+        label: tr(
+          "itemPanel.savingsDrivers.negotiated",
+          "Negotiated vs. list price",
+        ),
+      },
+      {
+        value: "contract_vs_spot",
+        label: tr(
+          "itemPanel.savingsDrivers.contract",
+          "Contract price vs. spot",
+        ),
+      },
+      {
+        value: "volume_discount",
+        label: tr("itemPanel.savingsDrivers.volume", "Volume/scale discount"),
+      },
+      {
+        value: "spec_change",
+        label: tr("itemPanel.savingsDrivers.specChange", "Specification change"),
+      },
+      {
+        value: "alternative_supplier",
+        label: tr(
+          "itemPanel.savingsDrivers.altSupplier",
+          "Alternative supplier",
+        ),
+      },
+    ],
+    [tr],
+  );
+
   const handleSave = async () => {
     if (!status) {
       setMessage({
@@ -337,6 +413,73 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       }
     }
 
+    const numericCommitted =
+      committedCost === "" || committedCost === null
+        ? null
+        : Number(committedCost);
+    if (
+      numericCommitted !== null &&
+      (Number.isNaN(numericCommitted) || numericCommitted < 0)
+    ) {
+      setMessage({
+        type: "error",
+        text: tr(
+          "itemPanel.messages.committedCostInvalid",
+          "Enter a valid committed cost (zero or above).",
+        ),
+      });
+      return;
+    }
+
+    const numericPaid =
+      paidCost === "" || paidCost === null ? null : Number(paidCost);
+    if (numericPaid !== null && (Number.isNaN(numericPaid) || numericPaid < 0)) {
+      setMessage({
+        type: "error",
+        text: tr(
+          "itemPanel.messages.paidCostInvalid",
+          "Enter a valid paid amount (zero or above).",
+        ),
+      });
+      return;
+    }
+
+    const numericContractId =
+      contractId === "" || contractId === null ? null : Number(contractId);
+    if (
+      numericContractId !== null &&
+      (Number.isNaN(numericContractId) ||
+        !Number.isInteger(numericContractId) ||
+        numericContractId <= 0)
+    ) {
+      setMessage({
+        type: "error",
+        text: tr(
+          "itemPanel.messages.contractIdInvalid",
+          "Contract ID must be a positive integer.",
+        ),
+      });
+      return;
+    }
+
+    const numericContractSnapshot =
+      contractValueSnapshot === "" || contractValueSnapshot === null
+        ? null
+        : Number(contractValueSnapshot);
+    if (
+      numericContractSnapshot !== null &&
+      (Number.isNaN(numericContractSnapshot) || numericContractSnapshot < 0)
+    ) {
+      setMessage({
+        type: "error",
+        text: tr(
+          "itemPanel.messages.contractSnapshotInvalid",
+          "Enter a valid contract value snapshot (zero or above).",
+        ),
+      });
+      return;
+    }
+
     setSaving(true);
     setMessage(null);
 
@@ -355,6 +498,15 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         procurement_status: status,
         procurement_comment: comment,
         po_issuance_method: poIssuanceMethod,
+        po_number: poNumber || null,
+        invoice_number: invoiceNumber || null,
+        currency: currency || null,
+        committed_cost: numericCommitted,
+        paid_cost: numericPaid,
+        savings_driver: savingsDriver || null,
+        savings_notes: savingsNotes || null,
+        contract_id: numericContractId,
+        contract_value_snapshot: numericContractSnapshot,
       });
 
       setMessage({
@@ -566,6 +718,142 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
+              rows={3}
+              className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                {tr("itemPanel.inputs.poNumber", "PO Number")}
+              </label>
+              <input
+                type="text"
+                value={poNumber}
+                onChange={(e) => setPoNumber(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                {tr("itemPanel.inputs.invoiceNumber", "Invoice Number")}
+              </label>
+              <input
+                type="text"
+                value={invoiceNumber}
+                onChange={(e) => setInvoiceNumber(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                {tr("itemPanel.inputs.currency", "Currency")}
+              </label>
+              <input
+                type="text"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+                placeholder={tr("itemPanel.inputs.currencyPlaceholder", "e.g., USD")}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                {tr("itemPanel.inputs.committedCost", "Committed Cost")}
+              </label>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={committedCost}
+                onChange={(e) => setCommittedCost(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700">
+                {tr("itemPanel.inputs.paidCost", "Paid Cost")}
+              </label>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                value={paidCost}
+                onChange={(e) => setPaidCost(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">
+                  {tr("itemPanel.inputs.contractId", "Contract ID")}
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  step="1"
+                  value={contractId}
+                  onChange={(e) => setContractId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">
+                  {tr(
+                    "itemPanel.inputs.contractSnapshot",
+                    "Contract Value Snapshot",
+                  )}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={contractValueSnapshot}
+                  onChange={(e) => setContractValueSnapshot(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-700">
+              {tr("itemPanel.inputs.savingsDriver", "Savings Driver")}
+            </label>
+            <select
+              value={savingsDriver}
+              onChange={(e) => setSavingsDriver(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {savingsDriverOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              {tr(
+                "itemPanel.inputs.savingsHelper",
+                "Track whether savings came from negotiation, contract coverage, or other drivers.",
+              )}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700">
+              {tr("itemPanel.inputs.savingsNotes", "Savings Notes")}
+            </label>
+            <textarea
+              value={savingsNotes}
+              onChange={(e) => setSavingsNotes(e.target.value)}
               rows={3}
               className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />

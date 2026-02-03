@@ -8,6 +8,7 @@ const defaultForm = {
   email: '',
   password: '',
   confirmPassword: '',
+  institute_id: '',
   department_id: '',
   section_id: '',
   employee_id: '',
@@ -16,16 +17,43 @@ const defaultForm = {
 const RequestAccount = () => {
   const { t } = useTranslation();
   const [form, setForm] = useState(defaultForm);
+  const [institutes, setInstitutes] = useState([]);
+  const [loadingInstitutes, setLoadingInstitutes] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
 
   useEffect(() => {
+    const fetchInstitutes = async () => {
+      setLoadingInstitutes(true);
+      try {
+        const res = await api.get('/auth/register-request/institutes');
+        const data = res.data?.institutes || [];
+        setInstitutes(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to load institutes', error);
+        setMessage({ type: 'error', text: t('requestAccount.loadInstitutesError') });
+      } finally {
+        setLoadingInstitutes(false);
+      }
+    };
+
+    fetchInstitutes();
+  }, [t]);
+
+  useEffect(() => {
     const fetchDepartments = async () => {
+      if (!form.institute_id) {
+        setDepartments([]);
+        return;
+      }
+
       setLoadingDepartments(true);
       try {
-        const res = await api.get('/auth/register-request/departments');
+        const res = await api.get('/auth/register-request/departments', {
+          params: { institute_id: form.institute_id },
+        });
         const data = res.data?.departments || [];
         setDepartments(
           Array.isArray(data)
@@ -44,11 +72,22 @@ const RequestAccount = () => {
     };
 
     fetchDepartments();
-  }, [t]);
+  }, [form.institute_id, t]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleInstituteChange = (event) => {
+    const { value } = event.target;
+    setForm((prev) => ({
+      ...prev,
+      institute_id: value,
+      department_id: '',
+      section_id: '',
+    }));
+    setDepartments([]);
   };
 
   const handleDepartmentChange = (event) => {
@@ -76,6 +115,11 @@ const RequestAccount = () => {
 
     if (form.password !== form.confirmPassword) {
       setMessage({ type: 'error', text: t('requestAccount.passwordMismatch') });
+      return;
+    }
+
+    if (!form.institute_id) {
+      setMessage({ type: 'error', text: t('requestAccount.instituteRequired') });
       return;
     }
 
@@ -220,6 +264,28 @@ const RequestAccount = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+            {t('requestAccount.institute')}
+          </label>
+          <select
+            name="institute_id"
+            value={form.institute_id}
+            onChange={handleInstituteChange}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 dark:bg-gray-900"
+            required
+          >
+            <option value="">
+              {loadingInstitutes ? t('requestAccount.loadingInstitutes') : t('requestAccount.selectInstitute')}
+            </option>
+            {institutes.map((institute) => (
+              <option key={institute.id} value={institute.id}>
+                {institute.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
             {t('requestAccount.department')}
           </label>
           <select
@@ -227,9 +293,16 @@ const RequestAccount = () => {
             value={form.department_id}
             onChange={handleDepartmentChange}
             className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 dark:bg-gray-900"
+            disabled={!form.institute_id || loadingDepartments}
             required
           >
-            <option value="">{loadingDepartments ? t('requestAccount.loading') : t('requestAccount.selectDepartment')}</option>
+            <option value="">
+              {!form.institute_id
+                ? t('requestAccount.selectInstituteFirst')
+                : loadingDepartments
+                  ? t('requestAccount.loading')
+                  : t('requestAccount.selectDepartment')}
+            </option>
             {departments.map((dep) => (
               <option key={dep.id} value={dep.id}>
                 {dep.name}

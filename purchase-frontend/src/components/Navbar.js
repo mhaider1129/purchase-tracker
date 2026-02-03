@@ -192,6 +192,7 @@ const Navbar = () => {
       ["warehouse.manage-supply", "warehouse.view-supply"],
       true,
     );
+    const canViewItemMaster = hasAccess(currentUser, "feature.itemMaster", []);
     const canViewRecalls = hasAccess(currentUser, "feature.itemRecalls", [
       "recalls.view",
       "recalls.manage",
@@ -350,6 +351,12 @@ const Navbar = () => {
             "text-blue-700",
           ),
           createItem(
+            canViewItemMaster,
+            t("navbar.itemMaster"),
+            "/item-master",
+            "text-slate-700",
+          ),
+          createItem(
             canReviewStockItems,
             t("navbar.stockItemApprovals"),
             "/stock-item-approvals",
@@ -384,6 +391,12 @@ const Navbar = () => {
             t("navbar.lifecycleAnalytics"),
             "/analytics",
             "text-pink-600",
+          ),
+          createItem(
+            canViewAnalytics,
+            t("navbar.workloadAnalysis"),
+            "/workload",
+            "text-orange-600",
           ),
           createItem(
             canViewDispensing,
