@@ -60,6 +60,7 @@ import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
 import SuppliersPage from "./pages/SuppliersPage";
+import SuppliersPrequalificationPage from "./pages/SuppliersPrequalificationPage";
 import SupplierSrmPage from "./pages/SupplierSrmPage";
 import SupplierEvaluationDashboard from "./pages/SupplierEvaluationDashboard";
 import PlanningWorkbench from "./pages/PlanningWorkbench";
@@ -155,6 +156,15 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<StockItemRequestForm />}
           resourceKey="feature.stockItemRequests"
+        />
+      }
+    />
+    <Route
+      path="/supplier-prequalification"
+      element={
+        <ProtectedRoute
+          element={<SuppliersPrequalificationPage />}
+          resourceKey="feature.suppliers"
         />
       }
     />
@@ -596,13 +606,31 @@ const AppRoutes = () => (
   </Routes>
 );
 
+const AppShell = ({ children }) => {
+  const location = useLocation();
+  const authRoutes = ["/login", "/register", "/request-account"];
+  const isAuthRoute = authRoutes.includes(location.pathname);
+
+  if (isAuthRoute) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="app-shell">
+      <main className="app-main">{children}</main>
+    </div>
+  );
+};
+
 function App() {
   return (
     <Router>
       <AuthProvider>
         <NotificationProvider>
           <AccessControlProvider>
-            <AppRoutes />
+            <AppShell>
+              <AppRoutes />
+            </AppShell>
           </AccessControlProvider>
         </NotificationProvider>
       </AuthProvider>

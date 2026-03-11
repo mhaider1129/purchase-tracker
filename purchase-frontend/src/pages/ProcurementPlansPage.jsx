@@ -14,6 +14,18 @@ const ProcurementPlansPage = () => {
   const [success, setSuccess] = useState('');
   const [filterYear, setFilterYear] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [planItems, setPlanItems] = useState([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(false);
+  const [itemsError, setItemsError] = useState('');
+  const [itemForm, setItemForm] = useState({
+    item_name: '',
+    planned_quantity: '',
+    planned_unit_cost: '',
+    unit_of_measure: '',
+    currency: 'USD',
+    needed_by_date: '',
+  });
   const fileInputRef = useRef(null);
 
   const fetchPlans = useCallback(
@@ -73,6 +85,79 @@ const ProcurementPlansPage = () => {
       setError('Failed to upload plan. Please check the file and try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPlanItems = useCallback(
+    async (planId) => {
+      if (!planId) {
+        setPlanItems([]);
+        return;
+      }
+
+      try {
+        setIsLoadingItems(true);
+        setItemsError('');
+        const res = await api.get(`/api/procurement-plans/${planId}/items/variance`);
+        setPlanItems(res.data || []);
+      } catch (err) {
+        console.error('Failed to load plan items', err);
+        setItemsError('Unable to load plan line items. Please try again.');
+      } finally {
+        setIsLoadingItems(false);
+      }
+    },
+    []
+  );
+
+  const handlePlanSelection = (value) => {
+    setSelectedPlanId(value);
+    fetchPlanItems(value);
+  };
+
+  const handleItemFieldChange = (field, value) => {
+    setItemForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const resetItemForm = () => {
+    setItemForm({
+      item_name: '',
+      planned_quantity: '',
+      planned_unit_cost: '',
+      unit_of_measure: '',
+      currency: 'USD',
+      needed_by_date: '',
+    });
+  };
+
+  const handleItemSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedPlanId) {
+      setItemsError('Select a plan before adding items.');
+      return;
+    }
+
+    const payload = {
+      items: [
+        {
+          item_name: itemForm.item_name.trim(),
+          planned_quantity: itemForm.planned_quantity,
+          planned_unit_cost: itemForm.planned_unit_cost || undefined,
+          unit_of_measure: itemForm.unit_of_measure || undefined,
+          currency: itemForm.currency || undefined,
+          needed_by_date: itemForm.needed_by_date || undefined,
+        },
+      ],
+    };
+
+    try {
+      setItemsError('');
+      await api.post(`/api/procurement-plans/${selectedPlanId}/items`, payload);
+      resetItemForm();
+      fetchPlanItems(selectedPlanId);
+    } catch (err) {
+      console.error('Failed to add plan item', err);
+      setItemsError('Unable to add plan item. Check the form and try again.');
     }
   };
 
@@ -169,6 +254,56 @@ const ProcurementPlansPage = () => {
       {filteredPlans.length === 0 && (
         <div className="px-4 py-6 text-sm text-gray-500 text-center">
           No procurement plans match the selected filters.
+        </div>
+      )}
+    </div>
+  );
+
+  const varianceTable = (
+    <div className="overflow-x-auto rounded border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-full divide-y divide-gray-200" aria-label="Plan item variance table">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Item
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Planned Qty
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Requested Qty
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Consumed Qty
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Request Variance
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              Consumption Variance
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {planItems.map((item) => (
+            <tr key={item.id} className="hover:bg-gray-50">
+              <td className="px-4 py-3 text-sm text-gray-700">{item.item_name}</td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">{item.planned_quantity}</td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">{item.requested_quantity}</td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">{item.consumed_quantity}</td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">
+                {item.request_quantity_variance}
+              </td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">
+                {item.consumption_quantity_variance}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {planItems.length === 0 && !isLoadingItems && (
+        <div className="px-4 py-6 text-center text-sm text-gray-500">
+          No structured plan items found for this plan yet.
         </div>
       )}
     </div>
@@ -295,6 +430,133 @@ const ProcurementPlansPage = () => {
               )}
             </div>
           </div>
+        </section>
+
+        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Structured plan items</h2>
+            <p className="mt-1 text-sm text-gray-600">
+              Add line items to connect plans with requests and inventory consumption for variance tracking.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-[240px,1fr]">
+            <div>
+              <label className="block text-sm font-medium text-gray-700" htmlFor="plan-select">
+                Select plan
+              </label>
+              <select
+                id="plan-select"
+                value={selectedPlanId}
+                onChange={(e) => handlePlanSelection(e.target.value)}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Choose a plan</option>
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.plan_year} · {plan.file_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <form onSubmit={handleItemSubmit} className="grid gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700" htmlFor="item-name">
+                  Item name
+                </label>
+                <input
+                  id="item-name"
+                  type="text"
+                  value={itemForm.item_name}
+                  onChange={(e) => handleItemFieldChange('item_name', e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="planned-quantity">
+                  Planned quantity
+                </label>
+                <input
+                  id="planned-quantity"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={itemForm.planned_quantity}
+                  onChange={(e) => handleItemFieldChange('planned_quantity', e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="planned-unit-cost">
+                  Planned unit cost
+                </label>
+                <input
+                  id="planned-unit-cost"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={itemForm.planned_unit_cost}
+                  onChange={(e) => handleItemFieldChange('planned_unit_cost', e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="unit-of-measure">
+                  Unit of measure
+                </label>
+                <input
+                  id="unit-of-measure"
+                  type="text"
+                  value={itemForm.unit_of_measure}
+                  onChange={(e) => handleItemFieldChange('unit_of_measure', e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="currency">
+                  Currency
+                </label>
+                <input
+                  id="currency"
+                  type="text"
+                  value={itemForm.currency}
+                  onChange={(e) => handleItemFieldChange('currency', e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="needed-by">
+                  Needed by date
+                </label>
+                <input
+                  id="needed-by"
+                  type="date"
+                  value={itemForm.needed_by_date}
+                  onChange={(e) => handleItemFieldChange('needed_by_date', e.target.value)}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="md:col-span-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Add line item
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {itemsError && (
+            <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+              {itemsError}
+            </div>
+          )}
+
+          {isLoadingItems ? <p className="text-sm text-gray-500">Loading plan items…</p> : varianceTable}
         </section>
       </div>
     </>

@@ -163,11 +163,12 @@
     "auditRequests": "Audit Requests",
     "procurementPlans": "Procurement Plans",
     "historicalRequests": "Import Historical Requests",
-    "suppliers": "Suppliers",
+    "suppliers": "Suppliers Master",
     "supplierSrm": "Supplier SRM",
     "contracts": "Contracts",
     "supplierEvaluations": "Supplier Evaluations",
     "supplierDashboard": "Supplier Dashboard",
+    "supplierPrequalification": "Supplier Prequalification",
     "riskManagement": "Risk Management",
     "rfxPortal": "RFX Portal",
     "demandPlanning": "Demand Planning",
@@ -406,8 +407,8 @@
     "emptyState": "No maintenance approvals match the current filters."
   },
   "suppliersPage": {
-    "title": "Suppliers",
-    "subtitle": "Manage supplier records, contacts, and readiness for procurement.",
+    "title": "Suppliers Master",
+    "subtitle": "Centralize supplier records, engagement, and qualification workflows in one workspace.",
     "refresh": "Refresh",
     "loading": "Loading suppliers…",
     "error": "Failed to load suppliers. Please try again.",
@@ -456,6 +457,92 @@
       "manage": "Manage",
       "delete": "Delete",
       "confirmDelete": "Delete {{name}}? This cannot be undone."
+    },
+    "modules": {
+      "title": "Suppliers workspace",
+      "subtitle": "Jump into SRM, evaluations, dashboards, or prequalification from the same master hub.",
+      "view": "Open module",
+      "current": "Current view",
+      "master": {
+        "title": "Master records",
+        "description": "Maintain supplier profiles, contact details, and onboarding notes."
+      },
+      "srm": {
+        "title": "Supplier SRM",
+        "description": "Track relationship health, risk notes, and engagement actions."
+      },
+      "evaluations": {
+        "title": "Supplier evaluations",
+        "description": "Capture performance reviews, scorecards, and corrective actions."
+      },
+      "dashboard": {
+        "title": "Supplier dashboard",
+        "description": "Monitor coverage, evaluation progress, and engagement KPIs."
+      },
+      "prequalification": {
+        "title": "Prequalification",
+        "description": "Log readiness checks, documentation status, and approval timelines."
+      }
+    }
+  },
+  "suppliersPrequalification": {
+    "title": "Supplier Prequalification",
+    "subtitle": "Track readiness checks, risk tiers, and approval timelines before onboarding.",
+    "refresh": "Refresh",
+    "loading": "Loading suppliers…",
+    "error": "Failed to load suppliers. Please try again.",
+    "retry": "Retry",
+    "empty": "No suppliers found.",
+    "note": "Prequalification entries are stored locally in this session. Connect to a backend service to persist these updates.",
+    "stats": {
+      "total": "Total suppliers",
+      "prequalified": "Prequalified",
+      "inReview": "In review",
+      "onHold": "On hold",
+      "rejected": "Rejected"
+    },
+    "search": {
+      "label": "Search suppliers",
+      "placeholder": "Search by supplier name"
+    },
+    "form": {
+      "title": "Prequalification intake",
+      "subtitle": "Record documentation status, risk tier, and approval dates.",
+      "supplier": "Supplier",
+      "selectSupplier": "Select a supplier",
+      "status": "Status",
+      "risk": "Risk tier",
+      "prequalifiedOn": "Prequalified on",
+      "expiresOn": "Valid until",
+      "notes": "Notes",
+      "notesPlaceholder": "Document gaps, approvals, or follow-up requirements.",
+      "save": "Save prequalification",
+      "success": "{{name}} prequalification updated.",
+      "validation": {
+        "supplier": "Please select a supplier before saving."
+      }
+    },
+    "table": {
+      "supplier": "Supplier",
+      "status": "Status",
+      "risk": "Risk tier",
+      "prequalifiedOn": "Prequalified",
+      "expiresOn": "Expires",
+      "actions": "Actions",
+      "manage": "Manage",
+      "clear": "Clear"
+    },
+    "status": {
+      "notStarted": "Not started",
+      "inReview": "In review",
+      "prequalified": "Prequalified",
+      "onHold": "On hold",
+      "rejected": "Rejected"
+    },
+    "risk": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
     }
   },
   "language": {
@@ -1244,6 +1331,7 @@
       "lastUpdated": "Last updated {{timestamp}}",
       "columns": {
         "item": "Item",
+        "batch": "Lot / expiry / serial",
         "quantity": "Quantity available"
       },
       "fields": {
@@ -1287,6 +1375,10 @@
         "noWarehouse": "No warehouse selected",
         "restock": "Restock",
         "itemCode": "Item #{{code}}",
+        "batchMeta": "Lot: {{lot}} • Exp: {{expiry}} • Serial: {{serial}}",
+        "lotLabel": "Lot: {{value}}",
+        "expiryLabel": "Exp: {{value}}",
+        "serialLabel": "Serial: {{value}}",
         "showingRange": "Showing {{start}}-{{end}} of {{total}} items",
         "pageSummary": "Page {{page}} of {{pages}}",
         "previousPage": "Previous",
@@ -1322,6 +1414,11 @@
         "available": "Available: {{count}}",
         "quantity": "Quantity received",
         "quantityPlaceholder": "Enter quantity received",
+        "lotNumber": "Lot number (optional)",
+        "lotNumberPlaceholder": "Enter lot number",
+        "expiryDate": "Expiry date (optional)",
+        "serialNumber": "Serial number (optional)",
+        "serialNumberPlaceholder": "Enter serial number",
         "notes": "Notes (optional)",
         "notesPlaceholder": "Reference, batch, or delivery details"
       }
@@ -1348,6 +1445,11 @@
         "removeItem": "Remove",
         "quantity": "Quantity issued",
         "quantityPlaceholder": "Enter quantity issued",
+        "pickingStrategy": "Picking strategy",
+        "pickingOptions": {
+          "fefo": "FEFO (first-expiry, first-out)",
+          "fifo": "FIFO (first-in, first-out)"
+        },
         "notes": "Notes (optional)",
         "notesPlaceholder": "Reference, ticket, or requester details"
       }
@@ -1364,6 +1466,11 @@
         "selectPlaceholder": "Choose a stock item",
         "quantity": "Quantity discarded",
         "quantityPlaceholder": "Enter quantity discarded",
+        "lotNumber": "Lot number (optional)",
+        "lotNumberPlaceholder": "Enter lot number",
+        "expiryDate": "Expiry date (optional)",
+        "serialNumber": "Serial number (optional)",
+        "serialNumberPlaceholder": "Enter serial number",
         "reason": "Reason",
         "reasons": {
           "expired": "Expired",

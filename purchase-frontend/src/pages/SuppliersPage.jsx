@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Pencil, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ClipboardCheck,
+  LayoutDashboard,
+  Pencil,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+  UsersRound,
+} from "lucide-react";
 import Navbar from "../components/Navbar";
 import {
   createSupplier,
@@ -8,6 +16,7 @@ import {
   updateSupplier,
 } from "../api/suppliers";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -31,6 +40,48 @@ const SuppliersPage = () => {
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const supplierModules = useMemo(
+    () => [
+      {
+        key: "master",
+        label: t("suppliersPage.modules.master.title"),
+        description: t("suppliersPage.modules.master.description"),
+        to: "/suppliers",
+        icon: UsersRound,
+        current: true,
+      },
+      {
+        key: "srm",
+        label: t("suppliersPage.modules.srm.title"),
+        description: t("suppliersPage.modules.srm.description"),
+        to: "/supplier-srm",
+        icon: ShieldCheck,
+      },
+      {
+        key: "evaluations",
+        label: t("suppliersPage.modules.evaluations.title"),
+        description: t("suppliersPage.modules.evaluations.description"),
+        to: "/supplier-evaluations",
+        icon: ClipboardCheck,
+      },
+      {
+        key: "dashboard",
+        label: t("suppliersPage.modules.dashboard.title"),
+        description: t("suppliersPage.modules.dashboard.description"),
+        to: "/supplier-dashboard",
+        icon: LayoutDashboard,
+      },
+      {
+        key: "prequalification",
+        label: t("suppliersPage.modules.prequalification.title"),
+        description: t("suppliersPage.modules.prequalification.description"),
+        to: "/supplier-prequalification",
+        icon: UsersRound,
+      },
+    ],
+    [t],
+  );
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -293,6 +344,54 @@ const SuppliersPage = () => {
             {t("suppliersPage.refresh")}
           </button>
         </div>
+
+        <section className="mb-6 rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {t("suppliersPage.modules.title")}
+            </h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+              {t("suppliersPage.modules.subtitle")}
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {supplierModules.map((module) => {
+              const Icon = module.icon;
+              return (
+                <div
+                  key={module.key}
+                  className="flex h-full flex-col justify-between rounded-lg border border-gray-200 bg-gray-50 p-4 shadow-sm dark:border-gray-800 dark:bg-gray-950"
+                >
+                  <div>
+                    <div className="mb-3 flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                      <Icon className="h-5 w-5" />
+                      <span className="text-sm font-semibold uppercase tracking-wide">
+                        {module.label}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {module.description}
+                    </p>
+                  </div>
+                  <div className="mt-4">
+                    {module.current ? (
+                      <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+                        {t("suppliersPage.modules.current")}
+                      </span>
+                    ) : (
+                      <Link
+                        to={module.to}
+                        className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-white px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:border-blue-800 dark:bg-gray-900 dark:text-blue-200 dark:hover:bg-blue-900/30"
+                      >
+                        {t("suppliersPage.modules.view")}
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard

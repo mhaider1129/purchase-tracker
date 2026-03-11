@@ -4,6 +4,28 @@
 
 @layer base {
   body {
-    @apply bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100 font-sans antialiased;
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  }
+
+  .app-main {
+    @apply mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 sm:px-6 lg:px-8;
+  }
+
+  .app-section {
+    @apply rounded-2xl border border-slate-200 bg-white/90 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/80;
+  }
+
+  .app-title {
+    @apply text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100;
+  }
+
+  .app-subtitle {
+    @apply text-sm text-slate-500 dark:text-slate-400;
   }
 }

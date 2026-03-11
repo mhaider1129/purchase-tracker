@@ -7,6 +7,12 @@ import useWarehouses from '../hooks/useWarehouses';
 import useWarehouseStockItems from '../hooks/useWarehouseStockItems';
 
 const numberFormatter = new Intl.NumberFormat();
+const formatExpiryDate = (value) => {
+  if (!value) return '—';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString();
+};
 
 const WarehouseInventoryPage = () => {
   const { t } = useTranslation();
@@ -20,12 +26,20 @@ const WarehouseInventoryPage = () => {
   const [discardItemSearch, setDiscardItemSearch] = useState('');
   const [form, setForm] = useState({
     stock_item_id: '',
+    batch_id: '',
+    lot_number: '',
+    expiry_date: '',
+    serial_number: '',
     quantity: '',
     notes: '',
     warehouse_id: '',
   });
   const [discardForm, setDiscardForm] = useState({
     stock_item_id: '',
+    batch_id: '',
+    lot_number: '',
+    expiry_date: '',
+    serial_number: '',
     quantity: '',
     reason: '',
     notes: '',
@@ -34,6 +48,7 @@ const WarehouseInventoryPage = () => {
   const [issueForm, setIssueForm] = useState({
     department_id: '',
     section_id: '',
+    picking_strategy: 'fefo',
     notes: '',
     warehouse_id: '',
   });
@@ -48,6 +63,16 @@ const WarehouseInventoryPage = () => {
     allocations: [{ warehouse_id: '', quantity: '' }],
   });
   const [allocationStatus, setAllocationStatus] = useState({ state: 'idle', message: '' });
+  const [transferForm, setTransferForm] = useState({
+    origin_warehouse_id: '',
+    destination_warehouse_id: '',
+    notes: '',
+  });
+  const [transferItems, setTransferItems] = useState([{ stock_item_id: '', quantity: '', notes: '' }]);
+  const [transferStatus, setTransferStatus] = useState({ state: 'idle', message: '' });
+  const [transferActionForm, setTransferActionForm] = useState({ transfer_id: '', reason: '' });
+  const [transferActionStatus, setTransferActionStatus] = useState({ state: 'idle', message: '' });
+  const [transferDetails, setTransferDetails] = useState(null);
 
   const [departments, setDepartments] = useState([]);
   const [departmentsStatus, setDepartmentsStatus] = useState({ state: 'idle', message: '' });
@@ -165,9 +190,20 @@ const WarehouseInventoryPage = () => {
         if (!inventoryWarehouseId) {
           setInventoryWarehouseId(String(preferred));
         }
+        if (!transferForm.origin_warehouse_id) {
+          setTransferForm((prev) => ({ ...prev, origin_warehouse_id: String(preferred) }));
+        }
       }
     }
-  }, [discardForm.warehouse_id, form.warehouse_id, inventoryWarehouseId, issueForm.warehouse_id, warehouses, user]);
+  }, [
+    discardForm.warehouse_id,
+    form.warehouse_id,
+    inventoryWarehouseId,
+    issueForm.warehouse_id,
+    transferForm.origin_warehouse_id,
+    warehouses,
+    user,
+  ]);
 
   useEffect(() => {
     if (formStatus.state === 'success') {
@@ -200,6 +236,14 @@ const WarehouseInventoryPage = () => {
     }
     return undefined;
   }, [allocationStatus]);
+
+  useEffect(() => {
+    if (transferStatus.state === 'success') {
+      const timer = setTimeout(() => setTransferStatus({ state: 'idle', message: '' }), 3000);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, [transferStatus]);
 
   useEffect(() => {
     if (inventoryWarehouseId && !inventoryLoading) {
@@ -379,6 +423,10 @@ const WarehouseInventoryPage = () => {
     setIssueItems((prev) => [...prev, { stock_item_id: '', quantity: '' }]);
   };
 
+  const addTransferItemRow = () => {
+    setTransferItems((prev) => [...prev, { stock_item_id: '', quantity: '', notes: '' }]);
+  };
+
   const addAllocationRow = () => {
     setAllocationForm((prev) => ({
       ...prev,
@@ -388,6 +436,10 @@ const WarehouseInventoryPage = () => {
 
   const removeIssueItemRow = (index) => {
     setIssueItems((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)));
+  };
+
+  const removeTransferItemRow = (index) => {
+    setTransferItems((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)));
   };
 
   const removeAllocationRow = (index) => {
@@ -423,6 +475,16 @@ const WarehouseInventoryPage = () => {
     }));
   };
 
+  const handleTransferFormChange = (key) => (event) => {
+    const value = event.target.value;
+    setTransferForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleTransferItemChange = (index, key) => (event) => {
+    const value = event.target.value;
+    setTransferItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, [key]: value } : item)));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     const parsedQuantity = Number(form.quantity);
@@ -442,9 +504,22 @@ const WarehouseInventoryPage = () => {
         quantity: parsedQuantity,
         notes: form.notes?.trim() || undefined,
         warehouse_id: form.warehouse_id ? Number(form.warehouse_id) : undefined,
+        batch_id: form.batch_id ? Number(form.batch_id) : undefined,
+        lot_number: form.lot_number?.trim() || undefined,
+        expiry_date: form.expiry_date || undefined,
+        serial_number: form.serial_number?.trim() || undefined,
       });
       setFormStatus({ state: 'success', message: tr('alerts.submitSuccess') });
-      setForm({ stock_item_id: '', quantity: '', notes: '', warehouse_id: form.warehouse_id });
+      setForm({
+        stock_item_id: '',
+        batch_id: '',
+        lot_number: '',
+        expiry_date: '',
+        serial_number: '',
+        quantity: '',
+        notes: '',
+        warehouse_id: form.warehouse_id,
+      });
       setItemSearch('');
       loadReport();
     } catch (err) {
@@ -477,11 +552,19 @@ const WarehouseInventoryPage = () => {
         reason: discardForm.reason,
         notes: discardForm.notes?.trim() || undefined,
         warehouse_id: discardForm.warehouse_id ? Number(discardForm.warehouse_id) : undefined,
+        batch_id: discardForm.batch_id ? Number(discardForm.batch_id) : undefined,
+        lot_number: discardForm.lot_number?.trim() || undefined,
+        expiry_date: discardForm.expiry_date || undefined,
+        serial_number: discardForm.serial_number?.trim() || undefined,
       });
 
       setDiscardFormStatus({ state: 'success', message: tr('alerts.discardSubmitSuccess') });
       setDiscardForm((prev) => ({
         stock_item_id: '',
+        batch_id: '',
+        lot_number: '',
+        expiry_date: '',
+        serial_number: '',
         quantity: '',
         reason: '',
         notes: '',
@@ -521,6 +604,7 @@ const WarehouseInventoryPage = () => {
         department_id: Number(issueForm.department_id),
         section_id: issueForm.section_id ? Number(issueForm.section_id) : undefined,
         notes: issueForm.notes?.trim() || undefined,
+        picking_strategy: issueForm.picking_strategy,
         warehouse_id: issueForm.warehouse_id ? Number(issueForm.warehouse_id) : undefined,
         items: normalizedItems.map((item) => ({
           stock_item_id: item.stock_item_id,
@@ -531,6 +615,7 @@ const WarehouseInventoryPage = () => {
       setIssueForm((prev) => ({
         department_id: '',
         section_id: '',
+        picking_strategy: prev.picking_strategy,
         notes: '',
         warehouse_id: prev.warehouse_id,
       }));
@@ -597,6 +682,99 @@ const WarehouseInventoryPage = () => {
     }
   };
 
+  const loadTransferRequest = async (transferId) => {
+    if (!transferId) return;
+    const res = await api.get(`/api/warehouse-transfers/${transferId}`);
+    setTransferDetails(res.data || null);
+  };
+
+  const handleTransferSubmit = async (event) => {
+    event.preventDefault();
+    const normalizedItems = transferItems.map((item) => ({
+      stock_item_id: Number(item.stock_item_id),
+      quantity: Number(item.quantity),
+      notes: item.notes?.trim() || undefined,
+    }));
+
+    const hasInvalidItems =
+      normalizedItems.length === 0 ||
+      normalizedItems.some(
+        (item) => !Number.isInteger(item.stock_item_id) || !Number.isFinite(item.quantity) || item.quantity <= 0,
+      );
+
+    if (!transferForm.origin_warehouse_id || !transferForm.destination_warehouse_id || hasInvalidItems) {
+      setTransferStatus({ state: 'error', message: tr('transfer.alerts.validation', 'Fill all required fields and item quantities.') });
+      return;
+    }
+
+    if (String(transferForm.origin_warehouse_id) === String(transferForm.destination_warehouse_id)) {
+      setTransferStatus({ state: 'error', message: tr('transfer.alerts.sameWarehouse', 'Origin and destination warehouses must be different.') });
+      return;
+    }
+
+    setTransferStatus({ state: 'loading', message: '' });
+    try {
+      const res = await api.post('/api/warehouse-transfers', {
+        origin_warehouse_id: Number(transferForm.origin_warehouse_id),
+        destination_warehouse_id: Number(transferForm.destination_warehouse_id),
+        notes: transferForm.notes?.trim() || undefined,
+        items: normalizedItems,
+      });
+
+      const createdId = res.data?.transfer?.id;
+      setTransferStatus({
+        state: 'success',
+        message: tr('transfer.alerts.created', 'Transfer request created successfully.') + (createdId ? ` #${createdId}` : ''),
+      });
+      setTransferActionForm((prev) => ({ ...prev, transfer_id: createdId ? String(createdId) : prev.transfer_id }));
+      setTransferForm((prev) => ({ ...prev, destination_warehouse_id: '', notes: '' }));
+      setTransferItems([{ stock_item_id: '', quantity: '', notes: '' }]);
+
+      if (createdId) {
+        await loadTransferRequest(createdId);
+      }
+    } catch (err) {
+      console.error('Failed to create warehouse transfer request:', err);
+      const message = err?.response?.data?.message || tr('transfer.alerts.createFailed', 'Failed to create transfer request.');
+      setTransferStatus({ state: 'error', message });
+    }
+  };
+
+  const handleTransferAction = async (action) => {
+    const transferId = Number(transferActionForm.transfer_id);
+    if (!Number.isInteger(transferId)) {
+      setTransferActionStatus({ state: 'error', message: tr('transfer.alerts.transferId', 'Enter a valid transfer request ID.') });
+      return;
+    }
+
+    setTransferActionStatus({ state: 'loading', message: '' });
+    try {
+      if (action === 'load') {
+        await loadTransferRequest(transferId);
+        setTransferActionStatus({ state: 'success', message: tr('transfer.alerts.loaded', 'Transfer request loaded.') });
+        return;
+      }
+
+      await api.post(`/api/warehouse-transfers/${transferId}/${action}`, {
+        reason: action === 'reject' ? transferActionForm.reason?.trim() || undefined : undefined,
+      });
+
+      await Promise.all([loadTransferRequest(transferId), refreshInventory(), loadReport()]);
+
+      setTransferActionStatus({
+        state: 'success',
+        message:
+          action === 'approve'
+            ? tr('transfer.alerts.approved', 'Transfer request approved.')
+            : tr('transfer.alerts.rejected', 'Transfer request rejected.'),
+      });
+    } catch (err) {
+      console.error(`Failed to ${action} transfer request:`, err);
+      const message = err?.response?.data?.message || tr('transfer.alerts.actionFailed', 'Transfer action failed.');
+      setTransferActionStatus({ state: 'error', message });
+    }
+  };
+
   const reportRange = useMemo(() => {
     if (!report.window_start || !report.window_end) return '';
     try {
@@ -639,6 +817,166 @@ const WarehouseInventoryPage = () => {
             >
               {tr('report.refresh')}
             </button>
+          </div>
+        </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {tr('transfer.title', 'Inter-warehouse transfers')}
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {tr('transfer.description', 'Create transfer requests from an origin warehouse to a destination warehouse, then approve or reject by transfer ID.')}
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <form onSubmit={handleTransferSubmit} className="space-y-4 rounded-md border border-gray-200 p-4 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tr('transfer.requestTitle', 'Create transfer request')}</h3>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="transfer-origin">
+                    {tr('transfer.origin', 'Origin warehouse')}
+                  </label>
+                  <select
+                    id="transfer-origin"
+                    value={transferForm.origin_warehouse_id}
+                    onChange={handleTransferFormChange('origin_warehouse_id')}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                    required
+                  >
+                    <option value="">{tr('transfer.selectWarehouse', 'Choose a warehouse')}</option>
+                    {warehouses.map((wh) => (
+                      <option key={wh.id} value={wh.id}>{wh.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="transfer-destination">
+                    {tr('transfer.destination', 'Destination warehouse')}
+                  </label>
+                  <select
+                    id="transfer-destination"
+                    value={transferForm.destination_warehouse_id}
+                    onChange={handleTransferFormChange('destination_warehouse_id')}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                    required
+                  >
+                    <option value="">{tr('transfer.selectWarehouse', 'Choose a warehouse')}</option>
+                    {warehouses.map((wh) => (
+                      <option key={wh.id} value={wh.id}>{wh.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200">{tr('transfer.items', 'Transfer items')}</p>
+                  <button type="button" onClick={addTransferItemRow} className="text-xs font-semibold text-blue-600 hover:underline dark:text-blue-300">
+                    {tr('transfer.addItem', 'Add item')}
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {transferItems.map((item, index) => (
+                    <div key={`transfer-item-${index}`} className="grid gap-2 sm:grid-cols-12 rounded-md bg-gray-50 p-2 dark:bg-gray-900">
+                      <select
+                        value={item.stock_item_id}
+                        onChange={handleTransferItemChange(index, 'stock_item_id')}
+                        className="sm:col-span-5 rounded-md border border-gray-300 bg-white px-2 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                        required
+                      >
+                        <option value="">{tr('transfer.selectItem', 'Choose stock item')}</option>
+                        {stockItems.map((stockItem) => (
+                          <option key={stockItem.id} value={stockItem.id}>{stockItem.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.quantity}
+                        onChange={handleTransferItemChange(index, 'quantity')}
+                        placeholder={tr('transfer.quantity', 'Quantity')}
+                        className="sm:col-span-3 rounded-md border border-gray-300 px-2 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                        required
+                      />
+                      <input
+                        type="text"
+                        value={item.notes}
+                        onChange={handleTransferItemChange(index, 'notes')}
+                        placeholder={tr('transfer.itemNotes', 'Item notes (optional)')}
+                        className="sm:col-span-3 rounded-md border border-gray-300 px-2 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      />
+                      <button type="button" onClick={() => removeTransferItemRow(index)} className="sm:col-span-1 text-xs font-semibold text-red-600 dark:text-red-300">
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <textarea
+                value={transferForm.notes}
+                onChange={handleTransferFormChange('notes')}
+                rows="2"
+                placeholder={tr('transfer.notes', 'Request notes (optional)')}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+              />
+
+              {transferStatus.message && (
+                <div className={`rounded-md px-3 py-2 text-sm ${transferStatus.state === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-100' : transferStatus.state === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-100' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100'}`}>
+                  {transferStatus.message}
+                </div>
+              )}
+
+              <button type="submit" disabled={transferStatus.state === 'loading'} className="inline-flex rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-300">
+                {transferStatus.state === 'loading' ? tr('transfer.submitting', 'Submitting...') : tr('transfer.submit', 'Create transfer request')}
+              </button>
+            </form>
+
+            <div className="space-y-4 rounded-md border border-gray-200 p-4 dark:border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tr('transfer.reviewTitle', 'Review / approve transfer')}</h3>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="transfer-id">{tr('transfer.transferId', 'Transfer ID')}</label>
+                <input
+                  id="transfer-id"
+                  type="number"
+                  min="1"
+                  value={transferActionForm.transfer_id}
+                  onChange={(event) => setTransferActionForm((prev) => ({ ...prev, transfer_id: event.target.value }))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  placeholder={tr('transfer.transferIdPlaceholder', 'Enter transfer request ID')}
+                />
+                <textarea
+                  rows="2"
+                  value={transferActionForm.reason}
+                  onChange={(event) => setTransferActionForm((prev) => ({ ...prev, reason: event.target.value }))}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  placeholder={tr('transfer.rejectionReason', 'Rejection reason (optional)')}
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => handleTransferAction('load')} className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold dark:border-gray-700">{tr('transfer.load', 'Load')}</button>
+                <button type="button" onClick={() => handleTransferAction('approve')} className="rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white">{tr('transfer.approve', 'Approve')}</button>
+                <button type="button" onClick={() => handleTransferAction('reject')} className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white">{tr('transfer.reject', 'Reject')}</button>
+              </div>
+
+              {transferActionStatus.message && (
+                <div className={`rounded-md px-3 py-2 text-sm ${transferActionStatus.state === 'success' ? 'bg-green-50 text-green-700 dark:bg-green-900/40 dark:text-green-100' : transferActionStatus.state === 'error' ? 'bg-red-50 text-red-700 dark:bg-red-900/40 dark:text-red-100' : 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100'}`}>
+                  {transferActionStatus.message}
+                </div>
+              )}
+
+              {transferDetails?.transfer && (
+                <div className="rounded-md bg-gray-50 p-3 text-sm dark:bg-gray-900">
+                  <p><span className="font-semibold">{tr('transfer.status', 'Status')}:</span> {transferDetails.transfer.status}</p>
+                  <p><span className="font-semibold">{tr('transfer.route', 'Route')}:</span> {transferDetails.transfer.origin_warehouse_id} → {transferDetails.transfer.destination_warehouse_id}</p>
+                  <p><span className="font-semibold">{tr('transfer.itemsCount', 'Items')}:</span> {transferDetails.items?.length || 0}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1106,13 +1444,20 @@ const WarehouseInventoryPage = () => {
 
                       return (
                         <div
-                          key={`${item.stock_item_id}-${item.item_name}`}
+                          key={`${item.stock_item_id}-${item.item_name}-${item.lot_number || ''}-${item.expiry_date || ''}-${item.serial_number || ''}`}
                           className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-700 dark:bg-gray-900/50"
                         >
                           <div className="space-y-1">
                             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.item_name}</p>
                             <p className="text-xs text-gray-600 dark:text-gray-300">
                               {tr('inventory.labels.itemCode', { code: item.stock_item_id || '—' })}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {tr('inventory.labels.batchMeta', {
+                                lot: item.lot_number || '—',
+                                expiry: formatExpiryDate(item.expiry_date),
+                                serial: item.serial_number || '—',
+                              })}
                             </p>
                           </div>
                           <span
@@ -1135,6 +1480,7 @@ const WarehouseInventoryPage = () => {
                       <thead className="bg-gray-50 dark:bg-gray-900">
                         <tr>
                           <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.item')}</th>
+                          <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.batch')}</th>
                           <th className="px-3 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">{tr('inventory.columns.quantity')}</th>
                         </tr>
                       </thead>
@@ -1144,8 +1490,15 @@ const WarehouseInventoryPage = () => {
                           const isZeroQuantity = quantityValue <= 0;
 
                           return (
-                            <tr key={`${item.stock_item_id}-${item.item_name}`} className={isZeroQuantity ? 'bg-amber-50/60 dark:bg-amber-900/10' : ''}>
+                            <tr key={`${item.stock_item_id}-${item.item_name}-${item.lot_number || ''}-${item.expiry_date || ''}-${item.serial_number || ''}`} className={isZeroQuantity ? 'bg-amber-50/60 dark:bg-amber-900/10' : ''}>
                               <td className="px-3 py-2 text-gray-800 dark:text-gray-100">{item.item_name}</td>
+                              <td className="px-3 py-2 text-gray-700 dark:text-gray-200">
+                                <div className="text-xs">
+                                  <div>{tr('inventory.labels.lotLabel', { value: item.lot_number || '—' })}</div>
+                                  <div>{tr('inventory.labels.expiryLabel', { value: formatExpiryDate(item.expiry_date) })}</div>
+                                  <div>{tr('inventory.labels.serialLabel', { value: item.serial_number || '—' })}</div>
+                                </div>
+                              </td>
                               <td className="px-3 py-2 text-gray-800 dark:text-gray-100">
                                 <span
                                   className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ${
@@ -1286,6 +1639,48 @@ const WarehouseInventoryPage = () => {
                 />
               </div>
 
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="lot-number">
+                    {tr('form.fields.lotNumber')}
+                  </label>
+                  <input
+                    id="lot-number"
+                    type="text"
+                    value={form.lot_number}
+                    onChange={handleFormChange('lot_number')}
+                    placeholder={tr('form.fields.lotNumberPlaceholder')}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="expiry-date">
+                    {tr('form.fields.expiryDate')}
+                  </label>
+                  <input
+                    id="expiry-date"
+                    type="date"
+                    value={form.expiry_date}
+                    onChange={handleFormChange('expiry_date')}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="serial-number">
+                  {tr('form.fields.serialNumber')}
+                </label>
+                <input
+                  id="serial-number"
+                  type="text"
+                  value={form.serial_number}
+                  onChange={handleFormChange('serial_number')}
+                  placeholder={tr('form.fields.serialNumberPlaceholder')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="notes">
                   {tr('form.fields.notes')}
@@ -1409,6 +1804,48 @@ const WarehouseInventoryPage = () => {
                   placeholder={tr('discardForm.fields.quantityPlaceholder')}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
                   required
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-lot-number">
+                    {tr('discardForm.fields.lotNumber')}
+                  </label>
+                  <input
+                    id="discard-lot-number"
+                    type="text"
+                    value={discardForm.lot_number}
+                    onChange={handleDiscardFormChange('lot_number')}
+                    placeholder={tr('discardForm.fields.lotNumberPlaceholder')}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-expiry-date">
+                    {tr('discardForm.fields.expiryDate')}
+                  </label>
+                  <input
+                    id="discard-expiry-date"
+                    type="date"
+                    value={discardForm.expiry_date}
+                    onChange={handleDiscardFormChange('expiry_date')}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="discard-serial-number">
+                  {tr('discardForm.fields.serialNumber')}
+                </label>
+                <input
+                  id="discard-serial-number"
+                  type="text"
+                  value={discardForm.serial_number}
+                  onChange={handleDiscardFormChange('serial_number')}
+                  placeholder={tr('discardForm.fields.serialNumberPlaceholder')}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900"
                 />
               </div>
 
@@ -1726,6 +2163,21 @@ const WarehouseInventoryPage = () => {
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="issue-picking-strategy">
+                  {tr('issueForm.fields.pickingStrategy')}
+                </label>
+                <select
+                  id="issue-picking-strategy"
+                  value={issueForm.picking_strategy}
+                  onChange={handleIssueFormChange('picking_strategy')}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                >
+                  <option value="fefo">{tr('issueForm.fields.pickingOptions.fefo')}</option>
+                  <option value="fifo">{tr('issueForm.fields.pickingOptions.fifo')}</option>
+                </select>
               </div>
 
               <div className="space-y-2">

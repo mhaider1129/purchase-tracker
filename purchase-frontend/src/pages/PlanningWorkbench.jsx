@@ -4,6 +4,8 @@ import Navbar from "../components/Navbar";
 import {
   calculateSafetyStock as calculateSafetyStockApi,
   fetchDemandForecast,
+  runReplenishmentPlanner,
+  saveReplenishmentPolicy,
   runMrp,
 } from "../api/planning";
 import formatNumber from "../utils/formatNumber";
@@ -36,6 +38,20 @@ const defaultMrpItem = {
   bucket_days: 7,
 };
 
+const SAFETY_SCHEMA_NOTE =
+  "Warehouse stock levels track quantity only. Min/max targets, safety stock, and reorder thresholds are advisory outputs and are not stored in the inventory schema.";
+
+const defaultReplenishmentPolicy = {
+  warehouse_id: "",
+  stock_item_id: "",
+  reorder_point: 0,
+  safety_stock: 0,
+  lead_time_days: 14,
+  review_period_days: 7,
+  lot_size: 0,
+  is_active: true,
+};
+
 const PlanningWorkbench = () => {
   const [forecastForm, setForecastForm] = useState(defaultForecastForm);
   const [sopRows, setSopRows] = useState([]);
@@ -54,6 +70,14 @@ const PlanningWorkbench = () => {
   const [mrpResult, setMrpResult] = useState(null);
   const [mrpLoading, setMrpLoading] = useState(false);
   const [mrpError, setMrpError] = useState("");
+
+  const [policyForm, setPolicyForm] = useState(defaultReplenishmentPolicy);
+  const [policyLoading, setPolicyLoading] = useState(false);
+  const [policyResult, setPolicyResult] = useState(null);
+  const [policyError, setPolicyError] = useState("");
+  const [replenishmentLoading, setReplenishmentLoading] = useState(false);
+  const [replenishmentTasks, setReplenishmentTasks] = useState([]);
+  const [replenishmentError, setReplenishmentError] = useState("");
 
   const addSopRow = () => {
     setSopRows((rows) => [...rows, { period: "", adjustment: 0 }]);
@@ -139,6 +163,52 @@ const PlanningWorkbench = () => {
       );
     } finally {
       setMrpLoading(false);
+    }
+  };
+
+  const handlePolicySubmit = async (event) => {
+    event.preventDefault();
+    setPolicyLoading(true);
+    setPolicyError("");
+    setPolicyResult(null);
+
+    try {
+      const payload = {
+        ...policyForm,
+        warehouse_id: Number(policyForm.warehouse_id),
+        stock_item_id: Number(policyForm.stock_item_id),
+      };
+      const res = await saveReplenishmentPolicy(payload);
+      setPolicyResult(res.data.policy);
+    } catch (err) {
+      console.error("Failed to save replenishment policy", err);
+      setPolicyError(
+        err?.response?.data?.message ||
+          "Unable to save the replenishment policy. Please try again.",
+      );
+    } finally {
+      setPolicyLoading(false);
+    }
+  };
+
+  const handleReplenishmentRun = async () => {
+    setReplenishmentLoading(true);
+    setReplenishmentError("");
+    setReplenishmentTasks([]);
+
+    try {
+      const res = await runReplenishmentPlanner({
+        warehouse_id: Number(policyForm.warehouse_id),
+      });
+      setReplenishmentTasks(res.data.tasks || []);
+    } catch (err) {
+      console.error("Failed to run replenishment planner", err);
+      setReplenishmentError(
+        err?.response?.data?.message ||
+          "Unable to generate replenishment tasks. Please try again.",
+      );
+    } finally {
+      setReplenishmentLoading(false);
     }
   };
 
@@ -452,6 +522,7 @@ const PlanningWorkbench = () => {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Safety stock policy</h2>
                 <p className="text-sm text-gray-600">Calculate reorder point and buffer based on daily volatility.</p>
+                <p className="mt-1 text-xs text-gray-500">{SAFETY_SCHEMA_NOTE}</p>
               </div>
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Safety</span>
             </div>
@@ -594,12 +665,252 @@ const PlanningWorkbench = () => {
                   <p>Safety stock: {formatNumber(safetyResult.safety_stock)}</p>
                   <p>Recommended order (gap): {formatNumber(safetyResult.reorder_recommendation)}</p>
                   <p className="mt-2 text-xs text-emerald-700">
+                    {safetyResult.advisory_note || SAFETY_SCHEMA_NOTE}
+                  </p>
+                  <p className="mt-2 text-xs text-emerald-700">
                     Avg daily demand {formatNumber(safetyResult.average_daily_demand)} · Std dev {formatNumber(safetyResult.demand_std_dev)} · Z {safetyResult.z_value}
                   </p>
                 </div>
               )}
             </form>
           </div>
+        </section>
+
+        <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Replenishment policies</h2>
+              <p className="text-sm text-gray-600">
+                Define reorder thresholds per warehouse and generate replenishment tasks when stock falls below policy.
+              </p>
+            </div>
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+              Replenishment
+            </span>
+          </div>
+
+          <form className="space-y-4" onSubmit={handlePolicySubmit}>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="policy-warehouse">
+                  Warehouse ID
+                </label>
+                <input
+                  id="policy-warehouse"
+                  type="number"
+                  min="1"
+                  value={policyForm.warehouse_id}
+                  onChange={(e) =>
+                    setPolicyForm((form) => ({ ...form, warehouse_id: e.target.value }))
+                  }
+                  required
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="policy-item">
+                  Stock item ID
+                </label>
+                <input
+                  id="policy-item"
+                  type="number"
+                  min="1"
+                  value={policyForm.stock_item_id}
+                  onChange={(e) =>
+                    setPolicyForm((form) => ({ ...form, stock_item_id: e.target.value }))
+                  }
+                  required
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="policy-reorder">
+                  Reorder point
+                </label>
+                <input
+                  id="policy-reorder"
+                  type="number"
+                  min="0"
+                  value={policyForm.reorder_point}
+                  onChange={(e) =>
+                    setPolicyForm((form) => ({
+                      ...form,
+                      reorder_point: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="policy-safety">
+                  Safety stock
+                </label>
+                <input
+                  id="policy-safety"
+                  type="number"
+                  min="0"
+                  value={policyForm.safety_stock}
+                  onChange={(e) =>
+                    setPolicyForm((form) => ({
+                      ...form,
+                      safety_stock: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="policy-lot">
+                  Lot size
+                </label>
+                <input
+                  id="policy-lot"
+                  type="number"
+                  min="0"
+                  value={policyForm.lot_size}
+                  onChange={(e) =>
+                    setPolicyForm((form) => ({
+                      ...form,
+                      lot_size: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="policy-lead">
+                  Lead time (days)
+                </label>
+                <input
+                  id="policy-lead"
+                  type="number"
+                  min="1"
+                  value={policyForm.lead_time_days}
+                  onChange={(e) =>
+                    setPolicyForm((form) => ({
+                      ...form,
+                      lead_time_days: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="policy-review">
+                  Review period (days)
+                </label>
+                <input
+                  id="policy-review"
+                  type="number"
+                  min="1"
+                  value={policyForm.review_period_days}
+                  onChange={(e) =>
+                    setPolicyForm((form) => ({
+                      ...form,
+                      review_period_days: Number(e.target.value),
+                    }))
+                  }
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+              <div className="flex items-end gap-3">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={policyForm.is_active}
+                    onChange={(e) =>
+                      setPolicyForm((form) => ({ ...form, is_active: e.target.checked }))
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  Active policy
+                </label>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                disabled={policyLoading}
+              >
+                {policyLoading ? "Saving…" : "Save policy"}
+              </button>
+              <button
+                type="button"
+                onClick={handleReplenishmentRun}
+                className="inline-flex items-center justify-center rounded border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                disabled={replenishmentLoading || !policyForm.warehouse_id}
+              >
+                {replenishmentLoading ? "Generating…" : "Run replenishment"}
+              </button>
+            </div>
+
+            {policyError && (
+              <p className="text-sm text-red-600" role="alert">
+                {policyError}
+              </p>
+            )}
+
+            {policyResult && (
+              <div className="rounded border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p className="font-semibold">
+                  Policy saved for warehouse {policyResult.warehouse_id} · item {policyResult.stock_item_id}
+                </p>
+                <p>
+                  Reorder point {formatNumber(policyResult.reorder_point)} · Safety stock {formatNumber(policyResult.safety_stock)} · Lead time{" "}
+                  {policyResult.lead_time_days} days
+                </p>
+              </div>
+            )}
+          </form>
+
+          {replenishmentError && (
+            <p className="text-sm text-red-600" role="alert">
+              {replenishmentError}
+            </p>
+          )}
+
+          {replenishmentTasks.length > 0 && (
+            <div className="overflow-x-auto rounded border border-amber-100">
+              <table className="min-w-full divide-y divide-amber-100 text-sm">
+                <thead className="bg-amber-50 text-amber-700">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide">Item</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide">Current qty</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide">Reorder point</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide">Suggested qty</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide">Due date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-amber-100">
+                  {replenishmentTasks.map((task) => (
+                    <tr key={task.id}>
+                      <td className="px-4 py-2 text-sm text-amber-900">{task.stock_item_id}</td>
+                      <td className="px-4 py-2 text-sm text-amber-900">
+                        {formatNumber(task.current_quantity)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-amber-900">
+                        {formatNumber(task.reorder_point)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-amber-900">
+                        {formatNumber(task.suggested_quantity)}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-amber-900">
+                        {task.due_date ? new Date(task.due_date).toLocaleDateString() : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

@@ -340,6 +340,18 @@ const SupplierEvaluationDashboard = () => {
           </div>
         </Card>
 
+        <Card>
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wide text-slate-500">Next step</p>
+            <h2 className="text-lg font-semibold text-slate-900">Outcome-linked supplier scorecards</h2>
+            <p className="text-sm text-slate-600">
+              Automate scorecards by aggregating actual delivery timeliness, quality incidents, and recall data, then
+              link those outcomes to contract renewals and sourcing decisions to turn evaluations into continuous
+              performance management.
+            </p>
+          </div>
+        </Card>
+
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <div className="flex items-center justify-between gap-2">

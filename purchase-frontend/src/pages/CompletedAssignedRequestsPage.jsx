@@ -642,95 +642,28 @@ const CompletedAssignedRequestsPage = () => {
   return (
     <>
       <Navbar />
-      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold text-gray-900">My Completed Requests</h1>
-          <p className="text-gray-600">
-            Review the purchases you have completed, apply quick filters, and dive into the
-            fulfillment details for each request.
-          </p>
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">My Completed Requests</h1>
+            <p className="text-sm text-gray-600">
+              Review the purchases you have completed, apply quick filters, and dive into the
+              fulfillment details for each request.
+            </p>
+          </div>
         </div>
 
-        <section className="bg-white shadow-sm border border-gray-100 rounded-lg p-4 md:p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Find a specific request</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-gray-700">Search</span>
-              <input
-                type="search"
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Search by requester, justification, or ID"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-gray-700">Request type</span>
-              <select
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-              >
-                <option value="all">All types</option>
-                {requestTypeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-gray-700">Completion date</span>
-              <select
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-              >
-                <option value="all">Any time</option>
-                <option value="7">Last 7 days</option>
-                <option value="30">Last 30 days</option>
-                <option value="90">Last 90 days</option>
-              </select>
-            </label>
-
-            <div className="flex items-end">
-
-              <button
-                type="button"
-                className="w-full inline-flex justify-center items-center gap-2 border border-gray-300 text-gray-700 rounded-md px-3 py-2 hover:bg-gray-100"
-                onClick={handleResetFilters}
-              >
-                Reset filters
-              </button>
-            </div>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-gray-700">{PRINT_TRANSLATIONS[printLanguage].printLanguage}</span>
-              <select
-                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={printLanguage}
-                onChange={(e) => setPrintLanguage(e.target.value)}
-              >
-                <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
-                <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
-              </select>
-            </label>
-          </div>
-        </section>
-
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="bg-white border border-blue-100 rounded-lg p-5 shadow-sm">
-            <p className="text-sm uppercase tracking-wide text-blue-600 font-semibold">Completed</p>
-            <p className="mt-2 text-3xl font-bold text-gray-900">{filteredRequests.length}</p>
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Completed</p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900">{filteredRequests.length}</p>
             <p className="text-sm text-gray-500 mt-1">
               Requests that match your current filters.
             </p>
           </div>
 
-          <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-sm md:col-span-2">
-            <p className="text-sm font-semibold text-gray-700">Breakdown by request type</p>
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:col-span-2">
+            <p className="text-xs uppercase tracking-wide text-gray-500">Breakdown by request type</p>
             {Object.keys(typeBreakdown).length === 0 ? (
               <p className="text-sm text-gray-500 mt-2">No data available for the selected filters.</p>
             ) : (
@@ -738,10 +671,10 @@ const CompletedAssignedRequestsPage = () => {
                 {Object.entries(typeBreakdown).map(([type, count]) => (
                   <li
                     key={type}
-                    className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-100 rounded-full px-3 py-1 text-sm"
+                    className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm text-blue-700"
                   >
                     <span className="font-medium">{type}</span>
-                    <span className="text-xs bg-white border border-blue-200 rounded-full px-2 py-0.5">
+                    <span className="text-xs rounded-full border border-blue-200 bg-white px-2 py-0.5">
                       {count}
                     </span>
                   </li>
@@ -751,10 +684,75 @@ const CompletedAssignedRequestsPage = () => {
           </div>
         </section>
 
+        <section className="flex flex-col gap-3 md:flex-row md:items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700">Search</label>
+            <input
+              type="search"
+              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Search by requester, justification, or ID"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="md:w-48">
+            <label className="block text-sm font-medium text-gray-700">Request type</label>
+            <select
+              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+            >
+              <option value="all">All types</option>
+              {requestTypeOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:w-48">
+            <label className="block text-sm font-medium text-gray-700">Completion date</label>
+            <select
+              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            >
+              <option value="all">Any time</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </div>
+
+          <div className="md:w-48">
+            <label className="block text-sm font-medium text-gray-700">
+              {PRINT_TRANSLATIONS[printLanguage].printLanguage}
+            </label>
+            <select
+              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              value={printLanguage}
+              onChange={(e) => setPrintLanguage(e.target.value)}
+            >
+              <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
+              <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className="md:self-start inline-flex h-10 items-center justify-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            onClick={handleResetFilters}
+          >
+            Reset filters
+          </button>
+        </section>
+
         {loading ? (
           renderLoadingState()
         ) : filteredRequests.length === 0 ? (
-          <div className="bg-white border border-gray-100 rounded-lg p-8 text-center text-gray-500 shadow-sm">
+          <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm">
             <p className="text-lg font-medium text-gray-700">No completed requests found.</p>
             <p className="mt-2 text-sm text-gray-500">
               Try adjusting your search or filter selections to see more results.
@@ -766,7 +764,7 @@ const CompletedAssignedRequestsPage = () => {
               const isUrgent = Boolean(req?.is_urgent);
               const requesterDisplay = getRequesterDisplay(req);
               const articleClasses = [
-                'bg-white border border-gray-100 rounded-lg shadow-sm p-5 transition hover:border-blue-200',
+                'rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-200',
                 isUrgent ? 'border-red-300 hover:border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
               ]
                 .filter(Boolean)

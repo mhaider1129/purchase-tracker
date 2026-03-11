@@ -1236,6 +1236,7 @@
       "lastUpdated": "آخر تحديث {{timestamp}}",
       "columns": {
         "item": "العنصر",
+        "batch": "اللوط / الصلاحية / التسلسل",
         "quantity": "الكمية المتاحة"
       },
       "fields": {
@@ -1279,6 +1280,10 @@
         "noWarehouse": "لم يتم اختيار مخزن",
         "restock": "إعادة التزويد",
         "itemCode": "رمز العنصر #{{code}}",
+        "batchMeta": "اللوط: {{lot}} • الانتهاء: {{expiry}} • التسلسل: {{serial}}",
+        "lotLabel": "اللوط: {{value}}",
+        "expiryLabel": "الانتهاء: {{value}}",
+        "serialLabel": "التسلسل: {{value}}",
         "showingRange": "عرض {{start}}-{{end}} من أصل {{total}} عنصر",
         "pageSummary": "الصفحة {{page}} من {{pages}}",
         "previousPage": "السابق",
@@ -1314,6 +1319,11 @@
         "available": "المتوفر: {{count}}",
         "quantity": "الكمية المستلمة",
         "quantityPlaceholder": "أدخل الكمية المستلمة",
+        "lotNumber": "رقم اللوط (اختياري)",
+        "lotNumberPlaceholder": "أدخل رقم اللوط",
+        "expiryDate": "تاريخ الانتهاء (اختياري)",
+        "serialNumber": "الرقم التسلسلي (اختياري)",
+        "serialNumberPlaceholder": "أدخل الرقم التسلسلي",
         "notes": "ملاحظات (اختياري)",
         "notesPlaceholder": "مرجع أو دفعة أو تفاصيل التسليم"
       }
@@ -1337,6 +1347,11 @@
         "removeItem": "إزالة",
         "quantity": "الكمية المصروفة",
         "quantityPlaceholder": "أدخل الكمية المصروفة",
+        "pickingStrategy": "إستراتيجية السحب",
+        "pickingOptions": {
+          "fefo": "الأقرب انتهاءً أولاً (FEFO)",
+          "fifo": "الأقدم دخولاً أولاً (FIFO)"
+        },
         "notes": "ملاحظات (اختياري)",
         "notesPlaceholder": "مرجع أو طلب أو تفاصيل المستفيد"
       }
@@ -1353,6 +1368,11 @@
         "selectPlaceholder": "اختر صنفًا مخزنيًا",
         "quantity": "الكمية المُتلفة",
         "quantityPlaceholder": "أدخل الكمية المُتلفة",
+        "lotNumber": "رقم اللوط (اختياري)",
+        "lotNumberPlaceholder": "أدخل رقم اللوط",
+        "expiryDate": "تاريخ الانتهاء (اختياري)",
+        "serialNumber": "الرقم التسلسلي (اختياري)",
+        "serialNumberPlaceholder": "أدخل الرقم التسلسلي",
         "reason": "السبب",
         "reasons": {
           "expired": "منتهي الصلاحية",

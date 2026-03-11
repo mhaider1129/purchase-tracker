@@ -8,8 +8,16 @@ export const calculateSafetyStock = (payload) =>
 
 export const runMrp = (payload) => api.post("/api/planning/mrp", payload);
 
+export const saveReplenishmentPolicy = (payload) =>
+  api.post("/api/planning/replenishment/policies", payload);
+
+export const runReplenishmentPlanner = (payload) =>
+  api.post("/api/planning/replenishment/run", payload);
+
 export default {
   fetchDemandForecast,
   calculateSafetyStock,
   runMrp,
+  saveReplenishmentPolicy,
+  runReplenishmentPlanner,
 };

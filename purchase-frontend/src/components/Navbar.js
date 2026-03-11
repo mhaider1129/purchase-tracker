@@ -465,6 +465,12 @@ const Navbar = () => {
             "text-emerald-700",
           ),
           createItem(
+            canViewSuppliers,
+            t("navbar.supplierPrequalification"),
+            "/supplier-prequalification",
+            "text-emerald-700",
+          ),
+          createItem(
             canViewIncompleteQueues,
             t("navbar.viewIncomplete"),
             incompletePath,
