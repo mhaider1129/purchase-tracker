@@ -2,6 +2,40 @@ import React, { useMemo, useState } from "react";
 import { Database, Lock, Search } from "lucide-react";
 import Navbar from "../components/Navbar";
 
+const mdmMasterDomains = [
+  {
+    name: "Suppliers",
+    baseline:
+      "Normalized legal name, contact channel standards, and contract-ready supplier references.",
+  },
+  {
+    name: "Departments",
+    baseline:
+      "Controlled department types (Medical or Operational) with institute-scoped ownership.",
+  },
+  {
+    name: "Warehouses",
+    baseline:
+      "Standardized warehouse naming, location metadata, and institute alignment for stock governance.",
+  },
+  {
+    name: "Item taxonomy",
+    baseline:
+      "Shared item categories, sub-categories, and generic-first naming patterns across catalogs and requests.",
+  },
+  {
+    name: "Contract vendor references",
+    baseline:
+      "Contracts map vendors to supplier master references to avoid duplicate vendor identities.",
+  },
+];
+
+const mdmDataQualityRules = [
+  "Required fields: master name, owning scope, and mandatory relationship fields (for example vendor-to-supplier reference).",
+  "Uniqueness checks: case-insensitive duplicate prevention for names and reference numbers where applicable.",
+  "Controlled vocabularies: approved values for department type, item class/category labels, and contract status dimensions.",
+];
+
 const itemMasterCatalog = [
   {
     id: "MED-001",
@@ -137,6 +171,39 @@ const ItemMasterPage = () => {
         </section>
 
         <section className="mb-6 grid gap-4 md:grid-cols-2">
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 shadow-sm md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              Master Data Management (MDM) baseline
+            </p>
+            <p className="mt-2 text-sm text-indigo-900">
+              Shared masters are normalized across suppliers, departments, warehouses, item
+              taxonomy, and contract vendor references to keep procurement and inventory workflows
+              consistent.
+            </p>
+            <div className="mt-3 overflow-x-auto">
+              <table className="min-w-full divide-y divide-indigo-200 rounded-md border border-indigo-100 bg-white">
+                <thead className="bg-indigo-100/70">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-indigo-800">
+                      Master domain
+                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-indigo-800">
+                      Baseline normalization
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-indigo-100">
+                  {mdmMasterDomains.map((domain) => (
+                    <tr key={domain.name}>
+                      <td className="px-3 py-2 text-sm font-semibold text-indigo-900">{domain.name}</td>
+                      <td className="px-3 py-2 text-sm text-indigo-900">{domain.baseline}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               Controls captured
@@ -149,20 +216,13 @@ const ItemMasterPage = () => {
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Categories covered
+              Data quality rules
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {categories
-                .filter((category) => category !== "All")
-                .map((category) => (
-                  <span
-                    key={category}
-                    className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
-                  >
-                    {category}
-                  </span>
-                ))}
-            </div>
+            <ul className="mt-2 grid gap-2 text-sm text-gray-700">
+              {mdmDataQualityRules.map((rule) => (
+                <li key={rule}>{rule}</li>
+              ))}
+            </ul>
           </div>
         </section>
 

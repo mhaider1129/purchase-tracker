@@ -68,6 +68,7 @@ import HistoricalRequestsImportPage from "./pages/HistoricalRequestsImportPage";
 import RfxPortalPage from "./pages/RfxPortalPage";
 import RiskManagementPage from "./pages/RiskManagementPage";
 import ItemMasterPage from "./pages/ItemMasterPage";
+import ProcureToPayLifecyclePage from "./pages/ProcureToPayLifecyclePage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -225,6 +226,16 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<ItemMasterPage />}
           resourceKey="feature.itemMaster"
+        />
+      }
+    />
+    <Route
+      path="/requests/:requestId/procure-to-pay"
+      element={
+        <ProtectedRoute
+          element={<ProcureToPayLifecyclePage />}
+          requiredPermissions={["procure-to-pay.lifecycle.view"]}
+          allowedRoles={["scm", "admin", "finance", "financeapprover", "warehousekeeper", "warehousemanager", "procurementspecialist"]}
         />
       }
     />

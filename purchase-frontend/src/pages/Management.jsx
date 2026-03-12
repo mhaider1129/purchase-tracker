@@ -37,6 +37,7 @@ const Management = () => {
   const [editingRole, setEditingRole] = useState({ id: null, name: '' });
   const [deletingRoleId, setDeletingRoleId] = useState(null);
   const [routes, setRoutes] = useState([]);
+  const [routesVersionLabel, setRoutesVersionLabel] = useState('');
   const [accountRequests, setAccountRequests] = useState([]);
   const [projects, setProjects] = useState([]);
   const [warehouseForm, setWarehouseForm] = useState({ name: '' });
@@ -58,6 +59,8 @@ const Management = () => {
   const [usersError, setUsersError] = useState('');
   const [departmentsError, setDepartmentsError] = useState('');
   const [routesError, setRoutesError] = useState('');
+  const [simulationInput, setSimulationInput] = useState('{\n  "changes": [],\n  "scenarios": []\n}');
+  const [simulationResult, setSimulationResult] = useState(null);
   const [requestsError, setRequestsError] = useState('');
 
   const [tab, setTab] = useState('users');
@@ -340,12 +343,40 @@ const Management = () => {
     setRoutesError('');
     try {
       const res = await api.get('/api/approval-routes');
-      setRoutes(res.data || []);
+      const responseData = res.data || {};
+      if (Array.isArray(responseData)) {
+        setRoutes(responseData);
+        setRoutesVersionLabel('legacy');
+      } else {
+        setRoutes(responseData.routes || []);
+        setRoutesVersionLabel(responseData.active_version?.version_label || '');
+      }
     } catch (err) {
       console.error('Failed to load approval routes', err);
       setRoutesError('Failed to load approval routes.');
     } finally {
       setLoadingRoutes(false);
+    }
+  };
+
+
+  const runRouteSimulation = async () => {
+    if (!canManageRoutes) return;
+
+    setRoutesError('');
+    setSimulationResult(null);
+
+    try {
+      const payload = JSON.parse(simulationInput || '{}');
+      const res = await api.post('/api/approval-routes/simulate', payload);
+      setSimulationResult(res.data);
+    } catch (err) {
+      const parseError = err instanceof SyntaxError;
+      setRoutesError(
+        parseError
+          ? 'Simulation payload must be valid JSON.'
+          : err?.response?.data?.message || 'Failed to run simulation.',
+      );
     }
   };
 
@@ -1546,6 +1577,31 @@ const Management = () => {
     return (
       <div className="overflow-x-auto">
         {routesError && <p className="mb-2 text-sm text-red-600">{routesError}</p>}
+        {routesVersionLabel && (
+          <p className="mb-2 text-xs text-gray-500">Active route version: {routesVersionLabel}</p>
+        )}
+        <div className="mb-4 rounded border border-blue-100 bg-blue-50 p-3">
+          <p className="mb-2 text-sm font-medium text-blue-900">Simulation mode (safe preview)</p>
+          <p className="mb-2 text-xs text-blue-800">
+            Submit JSON with <code>changes</code> and <code>scenarios</code> to preview route impact without publishing.
+          </p>
+          <textarea
+            className="mb-2 h-32 w-full rounded border p-2 font-mono text-xs"
+            value={simulationInput}
+            onChange={(e) => setSimulationInput(e.target.value)}
+          />
+          <button
+            onClick={runRouteSimulation}
+            className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+          >
+            Run simulation
+          </button>
+          {simulationResult && (
+            <pre className="mt-2 overflow-auto rounded bg-white p-2 text-xs">
+              {JSON.stringify(simulationResult, null, 2)}
+            </pre>
+          )}
+        </div>
         {loadingRoutes ? (
           <p>Loading routes...</p>
         ) : (
