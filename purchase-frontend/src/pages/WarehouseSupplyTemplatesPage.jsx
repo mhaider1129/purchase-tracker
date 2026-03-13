@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 
 const WarehouseSupplyTemplatesPage = () => {
@@ -121,8 +120,7 @@ const WarehouseSupplyTemplatesPage = () => {
   if (loading || !user) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-gray-600">Loading...</div>
+          <div className="p-6 text-gray-600">Loading...</div>
       </>
     );
   }
@@ -132,15 +130,13 @@ const WarehouseSupplyTemplatesPage = () => {
   if (!isAuthorized) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-red-600">Access denied</div>
+          <div className="p-6 text-red-600">Access denied</div>
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <div>

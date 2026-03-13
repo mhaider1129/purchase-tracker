@@ -2,7 +2,6 @@
 import React from 'react';
 import { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
 import { Button } from '../../components/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { deriveItemPurchaseState } from '../../utils/itemPurchaseStatus';
@@ -70,7 +69,6 @@ const RequestSubmittedPage = () => {
 
   return (
     <>
-      <Navbar />
       <main className="flex flex-col items-center justify-center min-h-[80vh] px-4 text-center">
         <section>
           <h1 className="text-3xl font-bold text-green-700 mb-4">

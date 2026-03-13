@@ -205,7 +205,6 @@ const HistoricalRequestsImportPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <main className="mx-auto max-w-6xl p-6">
         <div className="mb-6">
           <p className="text-sm uppercase tracking-wide text-gray-500">

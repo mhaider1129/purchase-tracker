@@ -8,7 +8,6 @@ import {
   PackageCheck,
   RefreshCcw,
 } from 'lucide-react';
-import Navbar from '../components/Navbar';
 import { Button } from '../components/ui/Button';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useApprovalsData from '../hooks/useApprovalsData';
@@ -122,7 +121,6 @@ const ApprovalsPanel = () => {
 
   return (
     <>
-      <Navbar />
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

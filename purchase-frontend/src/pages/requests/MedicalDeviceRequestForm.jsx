@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
@@ -327,15 +326,13 @@ const MedicalDeviceRequestForm = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
-        <div className="p-6">Loading form...</div>
+          <div className="p-6">Loading form...</div>
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           Medical Device Request Form

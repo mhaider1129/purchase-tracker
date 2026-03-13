@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Navbar from '../../components/Navbar';
 import {
   getPendingCustodyApprovals,
   submitCustodyDecision,
@@ -70,7 +69,6 @@ const CustodyApprovals = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar />
       <div className="max-w-5xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold">{t('pageTitles.custodyApprovals')}</h1>

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/axios';
-import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 
 const ProcurementPlansPage = () => {
@@ -311,7 +310,6 @@ const ProcurementPlansPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="mx-auto w-full max-w-5xl p-6 space-y-8">
         <header>
           <h1 className="text-3xl font-bold text-gray-900">Procurement Plans</h1>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import api from '../api/axios';
 
 const parseJson = (value) => {
@@ -108,7 +107,6 @@ const MyEvaluationsPage = () => {
 
   return (
     <>
-      <Navbar />
       <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">My Evaluations</h1>

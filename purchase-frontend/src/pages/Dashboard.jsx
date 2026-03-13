@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
-import Navbar from '../components/Navbar';
 import {
   BarChart,
   Bar,
@@ -177,7 +176,6 @@ const Dashboard = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-2xl font-bold text-purple-700 mb-6">
           {translate('overviewTitle', { defaultValue: '📊 Dashboard Overview' })}

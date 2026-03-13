@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
@@ -393,8 +392,7 @@ ${templateText}`
   if (loading) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-gray-600 text-center">{tr('loadingUser')}</div>
+          <div className="p-6 text-gray-600 text-center">{tr('loadingUser')}</div>
       </>
     );
   }
@@ -402,15 +400,13 @@ ${templateText}`
   if (error || !user) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-red-600 text-center">{tr('loadUserError')}</div>
+          <div className="p-6 text-red-600 text-center">{tr('loadUserError')}</div>
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           {t('pageTitles.nonStockRequestForm')}

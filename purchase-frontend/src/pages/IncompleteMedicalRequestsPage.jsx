@@ -1,7 +1,6 @@
 // src/pages/IncompleteMedicalRequestsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
-import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 
 const IncompleteMedicalRequestsPage = () => {
@@ -68,7 +67,6 @@ const IncompleteMedicalRequestsPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-7xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-6 text-blue-800">Medical Incomplete Requests</h1>
 

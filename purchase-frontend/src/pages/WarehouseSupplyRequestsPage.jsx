@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { printWarehouseSupplyRequest } from '../api/warehouseSupply';
-import Navbar from '../components/Navbar';
 import usePageTranslation from '../utils/usePageTranslation';
 import { extractItems } from '../utils/itemUtils';
 
@@ -499,7 +498,6 @@ const WarehouseSupplyRequestsPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>

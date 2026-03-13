@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
@@ -60,7 +59,6 @@ const StockItemRequestForm = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-md mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           Stock List Addition Request

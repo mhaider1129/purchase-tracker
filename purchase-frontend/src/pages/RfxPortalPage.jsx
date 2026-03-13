@@ -437,9 +437,7 @@ const RfxPortalPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {isAuthenticated ? (
-        <Navbar />
-      ) : (
+      {isAuthenticated ? null : (
         <div className="border-b bg-white/90">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
             <div>

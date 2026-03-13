@@ -1,7 +1,6 @@
 // src/pages/AdminTools.jsx
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -310,7 +309,6 @@ const AdminTools = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-4xl mx-auto p-6">
         <h2 className="text-2xl font-bold mb-6">{tr('title', 'Admin Tools')}</h2>
 

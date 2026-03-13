@@ -1,7 +1,6 @@
 // src/pages/CompletedAssignedRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
-import Navbar from '../components/Navbar';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import { printRequest } from '../api/requests';
@@ -641,7 +640,6 @@ const CompletedAssignedRequestsPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>

@@ -1,7 +1,6 @@
 //src/pages/ApprovalHistory.js
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
-import Navbar from '../components/Navbar';
 import Papa from 'papaparse';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -238,7 +237,6 @@ const ApprovalHistory = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">Approval History</h1>
 

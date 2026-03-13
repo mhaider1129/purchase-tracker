@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
@@ -220,8 +219,7 @@ const MedicationRequestForm = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-gray-600 text-center">Loading user information...</div>
+          <div className="p-6 text-gray-600 text-center">Loading user information...</div>
       </>
     );
   }
@@ -229,8 +227,7 @@ const MedicationRequestForm = () => {
   if (error || !user) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-red-600 text-center">
+          <div className="p-6 text-red-600 text-center">
           ❌ Unable to load user info. Please log in again or contact admin.
         </div>
       </>
@@ -240,7 +237,6 @@ const MedicationRequestForm = () => {
   if (!user.can_request_medication && !isScm) {
     return (
       <>
-        <Navbar />
         <div className="p-6 text-red-600 text-center">
           ❌ You are not authorized to submit medication requests.
         </div>
@@ -250,7 +246,6 @@ const MedicationRequestForm = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           Medication Request Form

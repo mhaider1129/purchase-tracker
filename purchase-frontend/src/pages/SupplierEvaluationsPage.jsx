@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 import {
   listSupplierEvaluations,
@@ -801,7 +800,6 @@ const SupplierEvaluationsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <Navbar />
       <main className="max-w-7xl mx-auto px-4 py-6">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>

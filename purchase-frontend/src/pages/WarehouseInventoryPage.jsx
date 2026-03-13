@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
-import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useWarehouses from '../hooks/useWarehouses';
 import useWarehouseStockItems from '../hooks/useWarehouseStockItems';
@@ -789,15 +788,13 @@ const WarehouseInventoryPage = () => {
   if (userLoading || !user) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-gray-600">{tr('loading')}</div>
+          <div className="p-6 text-gray-600">{tr('loading')}</div>
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>

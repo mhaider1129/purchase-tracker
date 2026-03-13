@@ -76,6 +76,7 @@ import ProcureToPayMatchingPage from "./pages/ProcureToPayMatchingPage";
 import ProcureToPayAccountsPayablePage from "./pages/ProcureToPayAccountsPayablePage";
 import ProcureToPayPaymentsPage from "./pages/ProcureToPayPaymentsPage";
 import ProcureToPayDocumentFlowPage from "./pages/ProcureToPayDocumentFlowPage";
+import ProcureToPayDashboardPage from "./pages/ProcureToPayDashboardPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -248,6 +249,16 @@ const AppRoutes = () => (
       }
     />
 
+    <Route
+      path="/procure-to-pay"
+      element={
+        <ProtectedRoute
+          element={<ProcureToPayDashboardPage />}
+          requiredPermissions={["procure-to-pay.lifecycle.view"]}
+          allowedRoles={["scm", "admin", "finance", "financeapprover", "warehousekeeper", "warehousemanager", "procurementspecialist"]}
+        />
+      }
+    />
     <Route
       path="/procure-to-pay/receipts"
       element={

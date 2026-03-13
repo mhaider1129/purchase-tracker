@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
-import Navbar from '../components/Navbar';
 import { useAuth } from '../hooks/useAuth';
 import { useAccessControl } from '../hooks/useAccessControl';
 import { hasPermission, hasAnyPermission } from '../utils/permissions';
@@ -2463,7 +2462,6 @@ const Management = () => {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen bg-slate-50">
         <div className="mx-auto max-w-6xl px-6 py-8">
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-6 shadow-lg">

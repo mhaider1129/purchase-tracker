@@ -1,32 +1,33 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getDocumentFlow } from '../api/procureToPay';
+import { listDocumentFlow } from '../api/procureToPay';
 
 export default function ProcureToPayDocumentFlowPage() {
-  const { requestId } = useParams();
-  const navigate = useNavigate();
-  const [requestIdInput, setRequestIdInput] = useState(requestId || '');
-  const [links, setLinks] = useState([]);
+  const [rows, setRows] = useState([]);
+  const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    if (!requestId) return;
-    getDocumentFlow(requestId).then((res) => setLinks(res?.data || []));
-  }, [requestId]);
+  const load = async () => {
+    const res = await listDocumentFlow({ search: search || undefined });
+    setRows(res?.data || []);
+  };
 
-  if (!requestId) {
-    return (
-      <div className="p-6 space-y-3">
-        <h2 className="text-xl font-semibold">Document Flow</h2>
-        <p className="text-sm text-gray-600">Enter a request ID to inspect its full document flow.</p>
-        <div className="flex gap-2">
-          <input className="border rounded px-2 py-1" value={requestIdInput} onChange={(e) => setRequestIdInput(e.target.value)} placeholder="Request ID" />
-          <button className="px-3 py-1 bg-purple-700 text-white rounded" onClick={() => navigate(`/requests/${Number(requestIdInput)}/procure-to-pay/document-flow`)}>
-            Open
-          </button>
-        </div>
+  useEffect(() => { load(); }, []);
+
+  return (
+    <div className="p-6 space-y-4">
+      <h1 className="text-2xl font-bold">Document Flow</h1>
+      <div className="bg-white p-4 rounded shadow flex gap-2">
+        <input className="border rounded px-2 py-1 w-full" placeholder="Search request/PO/invoice/supplier/payment reference" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button className="bg-purple-700 text-white rounded px-3 py-1" onClick={load}>Search</button>
       </div>
-    );
-  }
-
-  return <div className="p-6 space-y-3"><Link className="text-blue-600" to={`/requests/${requestId}/procure-to-pay`}>← Back</Link><h2 className="text-xl font-semibold">Document Flow</h2><div className="bg-white rounded shadow p-3">{links.map((l)=><div key={l.id} className="text-sm border-b py-1">{l.source_document_type} #{l.source_document_id} → {l.target_document_type} #{l.target_document_id}</div>)}{links.length===0 && <p className="text-sm text-gray-500">No links yet.</p>}</div></div>;
+      <div className="bg-white rounded shadow p-3 space-y-2">
+        {rows.map((row) => (
+          <div key={row.id} className="border rounded p-2 text-sm">
+            <div>{row.source_document_type} #{row.source_document_id} → {row.target_document_type} #{row.target_document_id}</div>
+            <div className="text-gray-500">Request #{row.request_id} · {row.po_number || row.invoice_number || row.payment_reference || row.supplier_name || '-'}</div>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="text-sm text-gray-500">No document chain results.</p>}
+      </div>
+    </div>
+  );
 }

@@ -16,7 +16,6 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import axios from '../../api/axios';
-import Navbar from '../Navbar';
 import ApprovalTimeline from '../ApprovalTimeline';
 import { Button } from '../ui/Button';
 import useApprovalTimeline from '../../hooks/useApprovalTimeline';
@@ -732,7 +731,6 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
 
   return (
     <>
-      <Navbar />
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
-import Navbar from '../components/Navbar';
 import useCurrentUser from '../hooks/useCurrentUser';
 
 const MaintenanceStockPage = () => {
@@ -123,8 +122,7 @@ const MaintenanceStockPage = () => {
   if (loading || !user) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-gray-600">{tr('loading')}</div>
+          <div className="p-6 text-gray-600">{tr('loading')}</div>
       </>
     );
   }
@@ -134,7 +132,6 @@ const MaintenanceStockPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-4xl mx-auto p-6 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

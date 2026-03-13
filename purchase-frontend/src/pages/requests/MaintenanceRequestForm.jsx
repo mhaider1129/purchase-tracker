@@ -3,7 +3,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
 import { Button } from '../../components/ui/Button';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
@@ -195,7 +194,6 @@ const MaintenanceRequestForm = () => {
 
   return (
     <>
-      <Navbar />
       <div className="p-6 max-w-4xl mx-auto">
         <h2 className="text-2xl font-semibold mb-4">
           {t('pageTitles.maintenanceRequestForm')}

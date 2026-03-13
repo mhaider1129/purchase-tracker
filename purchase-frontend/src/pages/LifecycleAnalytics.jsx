@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../api/axios';
-import Navbar from '../components/Navbar';
 import {
   BarChart,
   Bar,
@@ -48,7 +47,6 @@ const LifecycleAnalytics = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="text-2xl font-bold text-purple-700 mb-6">Lifecycle Analytics</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

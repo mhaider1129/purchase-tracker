@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import Navbar from '../../components/Navbar';
 import api from '../../api/axios';
 import {
   createCustodyRecord,
@@ -178,7 +177,6 @@ const CustodyIssueForm = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar />
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-semibold mb-6">Issue Custody Record</h1>
         <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">

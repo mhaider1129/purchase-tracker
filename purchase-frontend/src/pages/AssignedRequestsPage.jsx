@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel';
-import Navbar from '../components/Navbar';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import { getRequesterDisplay } from '../utils/requester';
@@ -602,7 +601,6 @@ const AssignedRequestsPage = () => {
 
   return (
     <>
-      <Navbar />
 
       <div className="p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">

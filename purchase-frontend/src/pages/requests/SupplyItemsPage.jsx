@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import useWarehouses from '../../hooks/useWarehouses';
 import useWarehouseStockItems from '../../hooks/useWarehouseStockItems';
-import Navbar from '../../components/Navbar';
 
 const SupplyItemsPage = () => {
   const { id } = useParams();
@@ -116,8 +115,7 @@ const SupplyItemsPage = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
-        <div className="mx-auto max-w-3xl p-6">
+          <div className="mx-auto max-w-3xl p-6">
           <p className="text-gray-700">Loading supply request…</p>
         </div>
       </>
@@ -127,8 +125,7 @@ const SupplyItemsPage = () => {
   if (error) {
     return (
       <>
-        <Navbar />
-        <div className="mx-auto max-w-3xl p-6">
+          <div className="mx-auto max-w-3xl p-6">
           <p className="text-red-600">{error}</p>
         </div>
       </>
@@ -137,7 +134,6 @@ const SupplyItemsPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="mx-auto max-w-4xl p-6 space-y-6">
         <header className="flex flex-col gap-2">
           <p className="text-sm text-gray-500">Request ID #{id}</p>

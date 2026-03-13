@@ -201,7 +201,7 @@ const Navbar = () => {
       "feature.procureToPayInvoices",
       ["finance.payment.manage"],
     );
-    const canAccessProcureToPayDocumentFlow = hasAccess(
+    const canAccessProcureToPayLifecycle = hasAccess(
       currentUser,
       "feature.procureToPayInvoices",
       ["procure-to-pay.lifecycle.view"],
@@ -342,16 +342,34 @@ const Navbar = () => {
             "text-purple-600",
           ),
           createItem(
-            canAccessProcureToPayReceipts,
-            t("navbar.procureToPayReceipts"),
-            "/procure-to-pay/receipts",
-            "text-blue-700",
+            canHandleProcurementQueues,
+            t("navbar.completedRequests"),
+            "/completed-assigned",
+            "text-gray-700",
+          ),
+        ].filter(Boolean),
+      },
+      {
+        id: "procureToPay",
+        label: t("navbar.groups.procureToPay"),
+        items: [
+          createItem(
+            canAccessProcureToPayLifecycle,
+            "Procure-to-Pay Lifecycle",
+            "/procure-to-pay/lifecycle",
+            "text-violet-700",
           ),
           createItem(
             canAccessProcureToPayPurchaseOrders,
             "Procure-to-Pay PO",
             "/procure-to-pay/purchase-orders",
             "text-slate-700",
+          ),
+          createItem(
+            canAccessProcureToPayReceipts,
+            t("navbar.procureToPayReceipts"),
+            "/procure-to-pay/receipts",
+            "text-blue-700",
           ),
           createItem(
             canAccessProcureToPayInvoices,
@@ -378,16 +396,10 @@ const Navbar = () => {
             "text-emerald-700",
           ),
           createItem(
-            canAccessProcureToPayDocumentFlow,
+            canAccessProcureToPayLifecycle,
             "Procure-to-Pay Document Flow",
             "/procure-to-pay/document-flow",
             "text-purple-700",
-          ),
-          createItem(
-            canHandleProcurementQueues,
-            t("navbar.completedRequests"),
-            "/completed-assigned",
-            "text-gray-700",
           ),
         ].filter(Boolean),
       },

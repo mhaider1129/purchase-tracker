@@ -17,7 +17,6 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { AlertTriangle, CheckCircle2, PhoneCall, Users } from 'lucide-react';
-import Navbar from '../components/Navbar';
 import Card from '../components/Card';
 import { getSuppliersDashboard } from '../api/suppliers';
 import { getSupplierEvaluationDashboard } from '../api/supplierEvaluations';
@@ -232,7 +231,6 @@ const SupplierEvaluationDashboard = () => {
 
   return (
     <>
-      <Navbar />
       <div className="mx-auto max-w-7xl p-6 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>

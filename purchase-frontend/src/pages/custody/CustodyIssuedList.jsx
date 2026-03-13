@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Navbar from '../../components/Navbar';
 import { getIssuedCustodies } from '../../api/custody';
 import { Button } from '../../components/ui/Button';
 
@@ -102,7 +101,6 @@ const CustodyIssuedList = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
           <div>

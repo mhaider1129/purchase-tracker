@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import saveAs from 'file-saver';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import ContractForm from '../components/ContractForm';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
@@ -1339,7 +1338,6 @@ const ContractsPage = () => {
 
   return (
     <>
-      <Navbar />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <header className="mb-8">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

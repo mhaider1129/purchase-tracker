@@ -21,7 +21,6 @@ import {
   Users,
   Wrench,
 } from 'lucide-react';
-import Navbar from '../../components/Navbar';
 import axios from '../../api/axios';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
@@ -384,7 +383,6 @@ const RequestTypeSelector = () => {
 
   return (
     <>
-      <Navbar />
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-white">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-10 top-8 h-32 w-32 rounded-full bg-indigo-200/40 blur-3xl" aria-hidden="true" />

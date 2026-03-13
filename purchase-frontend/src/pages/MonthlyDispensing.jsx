@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import Navbar from '../components/Navbar';
 import axios from '../api/axios';
 import {
   Area,
@@ -193,7 +192,6 @@ const MonthlyDispensing = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6 space-y-8">
         <div className="bg-white shadow rounded-lg p-6 space-y-3">
           <h1 className="text-2xl font-bold text-indigo-700">Monthly Dispensing</h1>

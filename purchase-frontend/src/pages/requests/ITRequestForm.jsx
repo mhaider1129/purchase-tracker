@@ -2,7 +2,6 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
@@ -217,8 +216,7 @@ const ITRequestForm = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
-        <div className="p-6">{tr('loadingForm')}</div>
+          <div className="p-6">{tr('loadingForm')}</div>
       </>
     );
   }
@@ -226,15 +224,13 @@ const ITRequestForm = () => {
   if (error || !user) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-red-600 text-center">{tr('loadUserError')}</div>
+          <div className="p-6 text-red-600 text-center">{tr('loadUserError')}</div>
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold">{t('pageTitles.itRequest')}</h1>

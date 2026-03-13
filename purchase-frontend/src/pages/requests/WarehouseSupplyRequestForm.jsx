@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
@@ -166,8 +165,7 @@ const WarehouseSupplyRequestForm = () => {
   if (loading) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-center text-gray-600">Loading...</div>
+          <div className="p-6 text-center text-gray-600">Loading...</div>
       </>
     );
   }
@@ -175,15 +173,13 @@ const WarehouseSupplyRequestForm = () => {
   if (error || !user) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-center text-red-600">Unable to load user info.</div>
+          <div className="p-6 text-center text-red-600">Unable to load user info.</div>
       </>
     );
   }
 
   return (
     <>
-      <Navbar />
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           Warehouse Supply Request

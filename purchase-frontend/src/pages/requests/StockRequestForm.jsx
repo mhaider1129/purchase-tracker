@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axios';
-import Navbar from '../../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
@@ -319,8 +318,7 @@ const StockRequestForm = () => {
   if (userLoading) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-gray-600 text-center">Loading your profile...</div>
+          <div className="p-6 text-gray-600 text-center">Loading your profile...</div>
       </>
     );
   }
@@ -328,8 +326,7 @@ const StockRequestForm = () => {
   if (userError) {
     return (
       <>
-        <Navbar />
-        <div className="p-6 text-red-600 text-center">
+          <div className="p-6 text-red-600 text-center">
           {userError || 'Unable to load your account'}
         </div>
       </>
@@ -338,7 +335,6 @@ const StockRequestForm = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           Stock Request Form

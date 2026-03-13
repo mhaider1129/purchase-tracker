@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
-import Navbar from '../components/Navbar';
 import { saveAs } from 'file-saver';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
@@ -536,7 +535,6 @@ const MyMaintenanceRequests = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>

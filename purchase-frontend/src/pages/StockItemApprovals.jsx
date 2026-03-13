@@ -1,7 +1,6 @@
 // src/pages/StockItemApprovals.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
-import Navbar from '../components/Navbar';
 import {
   fetchStockItemRequests,
   updateStockItemRequestStatus,
@@ -76,7 +75,6 @@ const StockItemApprovals = () => {
 
   return (
     <>
-      <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-6">
         <header className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <div>

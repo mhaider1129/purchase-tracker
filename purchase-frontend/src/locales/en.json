@@ -201,7 +201,8 @@
       "operations": "Operations",
       "insights": "Insights & Analytics",
       "governance": "Governance",
-      "account": "Account"
+      "account": "Account",
+      "procureToPay": "Procure-to-Pay"
     },
     "notifications": "Notifications",
     "noNotifications": "You're all caught up!",

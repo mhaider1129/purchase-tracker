@@ -2,7 +2,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
-import Navbar from '../components/Navbar';
 import { printRequest } from '../api/requests';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -780,7 +779,6 @@ const AllRequestsPage = () => {
 
   return (
     <>
-      <Navbar />
       <div className="p-6">
       <h1 className="text-2xl font-semibold mb-4">All Purchase Requests</h1>
 
