@@ -214,13 +214,14 @@ const ProcureToPayLifecyclePage = () => {
     <div className="p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">Procurement Lifecycle · Request #{requestId}</h1>
-        <div className="flex gap-2">
-          <Link to={`/requests/${requestId}/procure-to-pay/receipts`} className="rounded bg-blue-600 px-3 py-1 text-white">
-            Goods receipts page
-          </Link>
-          <Link to={`/requests/${requestId}/procure-to-pay/invoices`} className="rounded bg-indigo-600 px-3 py-1 text-white">
-            Invoices page
-          </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} className="rounded bg-slate-700 px-3 py-1 text-white">PO</Link>
+          <Link to={`/requests/${requestId}/procure-to-pay/receipts`} className="rounded bg-blue-600 px-3 py-1 text-white">GRPO</Link>
+          <Link to={`/requests/${requestId}/procure-to-pay/invoices`} className="rounded bg-indigo-600 px-3 py-1 text-white">A/P Invoice</Link>
+          <Link to={`/requests/${requestId}/procure-to-pay/matching`} className="rounded bg-amber-600 px-3 py-1 text-white">Matching</Link>
+          <Link to={`/requests/${requestId}/procure-to-pay/accounts-payable`} className="rounded bg-cyan-700 px-3 py-1 text-white">Accounts Payable</Link>
+          <Link to={`/requests/${requestId}/procure-to-pay/payments`} className="rounded bg-emerald-700 px-3 py-1 text-white">Payments</Link>
+          <Link to={`/requests/${requestId}/procure-to-pay/document-flow`} className="rounded bg-purple-700 px-3 py-1 text-white">Document Flow</Link>
         </div>
       </div>
       {error && <div className="rounded bg-red-50 px-3 py-2 text-red-700">{error}</div>}
