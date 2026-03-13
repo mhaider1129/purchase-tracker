@@ -69,6 +69,8 @@ import RfxPortalPage from "./pages/RfxPortalPage";
 import RiskManagementPage from "./pages/RiskManagementPage";
 import ItemMasterPage from "./pages/ItemMasterPage";
 import ProcureToPayLifecyclePage from "./pages/ProcureToPayLifecyclePage";
+import ProcureToPayGoodsReceiptsPage from "./pages/ProcureToPayGoodsReceiptsPage";
+import ProcureToPayInvoicesPage from "./pages/ProcureToPayInvoicesPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -236,6 +238,51 @@ const AppRoutes = () => (
           element={<ProcureToPayLifecyclePage />}
           requiredPermissions={["procure-to-pay.lifecycle.view"]}
           allowedRoles={["scm", "admin", "finance", "financeapprover", "warehousekeeper", "warehousemanager", "procurementspecialist"]}
+        />
+      }
+    />
+
+    <Route
+      path="/procure-to-pay/receipts"
+      element={
+        <ProtectedRoute
+          element={<ProcureToPayGoodsReceiptsPage />}
+          resourceKey="feature.procureToPayReceipts"
+          requiredPermissions={["procure-to-pay.receipts.manage"]}
+          allowedRoles={["scm", "admin", "warehousekeeper", "warehousemanager"]}
+        />
+      }
+    />
+    <Route
+      path="/procure-to-pay/invoices"
+      element={
+        <ProtectedRoute
+          element={<ProcureToPayInvoicesPage />}
+          resourceKey="feature.procureToPayInvoices"
+          requiredPermissions={["procure-to-pay.invoices.manage"]}
+          allowedRoles={["scm", "admin", "procurementspecialist"]}
+        />
+      }
+    />
+    <Route
+      path="/requests/:requestId/procure-to-pay/receipts"
+      element={
+        <ProtectedRoute
+          element={<ProcureToPayGoodsReceiptsPage />}
+          resourceKey="feature.procureToPayReceipts"
+          requiredPermissions={["procure-to-pay.receipts.manage"]}
+          allowedRoles={["scm", "admin", "warehousekeeper", "warehousemanager"]}
+        />
+      }
+    />
+    <Route
+      path="/requests/:requestId/procure-to-pay/invoices"
+      element={
+        <ProtectedRoute
+          element={<ProcureToPayInvoicesPage />}
+          resourceKey="feature.procureToPayInvoices"
+          requiredPermissions={["procure-to-pay.invoices.manage"]}
+          allowedRoles={["scm", "admin", "procurementspecialist"]}
         />
       }
     />

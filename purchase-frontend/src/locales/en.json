@@ -175,6 +175,8 @@
     "viewIncomplete": "View Incomplete Requests",
     "registerUser": "Register User",
     "myAssigned": "My Assigned Requests",
+    "procureToPayReceipts": "Goods Receipts (P2P)",
+    "procureToPayInvoices": "Invoices Input (P2P)",
     "completedRequests": "Completed Requests",
     "custodyIssue": "Issue Custody",
     "custodyIssued": "Issued Custodies",

@@ -170,6 +170,8 @@
     "viewIncomplete": "عرض الطلبات غير المكتملة",
     "registerUser": "تسجيل مستخدم",
     "myAssigned": "طلباتي المسندة",
+    "procureToPayReceipts": "استلام الأصناف (المشتريات إلى الدفع)",
+    "procureToPayInvoices": "إدخال الفواتير (المشتريات إلى الدفع)",
     "completedRequests": "الطلبات المكتملة",
     "custodyIssue": "إصدار ذمة",
     "custodyIssued": "الذمم المصدرة",

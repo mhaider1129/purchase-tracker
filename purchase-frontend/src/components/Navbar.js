@@ -173,6 +173,16 @@ const Navbar = () => {
       "feature.procurementQueues",
       ["procurement.update-status"],
     );
+    const canAccessProcureToPayReceipts = hasAccess(
+      currentUser,
+      "feature.procureToPayReceipts",
+      ["procure-to-pay.receipts.manage"],
+    );
+    const canAccessProcureToPayInvoices = hasAccess(
+      currentUser,
+      "feature.procureToPayInvoices",
+      ["procure-to-pay.invoices.manage"],
+    );
     const canAccessCustody = hasAccess(currentUser, "feature.custody", [
       "warehouse.manage-supply",
     ]);
@@ -307,6 +317,18 @@ const Navbar = () => {
             t("navbar.myAssigned"),
             "/assigned-requests",
             "text-purple-600",
+          ),
+          createItem(
+            canAccessProcureToPayReceipts,
+            t("navbar.procureToPayReceipts"),
+            "/procure-to-pay/receipts",
+            "text-blue-700",
+          ),
+          createItem(
+            canAccessProcureToPayInvoices,
+            t("navbar.procureToPayInvoices"),
+            "/procure-to-pay/invoices",
+            "text-indigo-700",
           ),
           createItem(
             canHandleProcurementQueues,
