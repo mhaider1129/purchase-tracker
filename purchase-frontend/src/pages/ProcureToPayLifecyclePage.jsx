@@ -14,9 +14,11 @@ import {
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
 import { hasAnyPermission } from '../utils/permissions';
+import { useSuppliers } from '../hooks/useSuppliers';
 
 const ProcureToPayLifecyclePage = () => {
   const { requestId } = useParams();
+  const hasRequestContext = Number.isInteger(Number(requestId)) && Number(requestId) > 0;
   const { user } = useAuth();
   const [data, setData] = useState(null);
   const [warehouses, setWarehouses] = useState([]);
@@ -33,6 +35,7 @@ const ProcureToPayLifecyclePage = () => {
   });
 
   const [invoiceForm, setInvoiceForm] = useState({
+    supplier_id: '',
     supplier: '',
     invoice_number: '',
     invoice_date: new Date().toISOString().slice(0, 10),
@@ -49,6 +52,13 @@ const ProcureToPayLifecyclePage = () => {
   const canManageReceipts = hasAnyPermission(user, ['procure-to-pay.receipts.manage', 'warehouse.manage-supply']);
   const canManageInvoices = hasAnyPermission(user, ['procure-to-pay.invoices.manage']);
   const canRunMatch = hasAnyPermission(user, ['procure-to-pay.match.manage']);
+
+  const { suppliers, suppliersError } = useSuppliers();
+
+  const selectedInvoiceSupplier = useMemo(
+    () => suppliers.find((entry) => String(entry.id) === String(invoiceForm.supplier_id)),
+    [suppliers, invoiceForm.supplier_id]
+  );
 
   const hydrateFormsFromData = useCallback((payload) => {
     const requestItems = payload?.request_items || [];
@@ -79,11 +89,19 @@ const ProcureToPayLifecyclePage = () => {
         unit_price: item.unit_cost ? Number(item.unit_cost) : 0,
         line_total: (Number(item.quantity) || 0) * (item.unit_cost ? Number(item.unit_cost) : 0),
       })),
+      supplier_id: payload?.invoices?.[0]?.supplier_id ? String(payload.invoices[0].supplier_id) : '',
+      supplier: payload?.invoices?.[0]?.supplier || prev.supplier || '',
       receipt_id: payload?.receipts?.[0]?.id ? String(payload.receipts[0].id) : '',
     }));
   }, [user?.warehouse_id]);
 
   const refresh = useCallback(async () => {
+    if (!hasRequestContext) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await getLifecycleDetail(requestId);
@@ -95,7 +113,7 @@ const ProcureToPayLifecyclePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [requestId, hydrateFormsFromData]);
+  }, [requestId, hydrateFormsFromData, hasRequestContext]);
 
   useEffect(() => {
     refresh();
@@ -186,7 +204,8 @@ const ProcureToPayLifecyclePage = () => {
       : Number(invoiceForm.total_amount);
 
     const payload = {
-      supplier: invoiceForm.supplier,
+      supplier_id: invoiceForm.supplier_id ? Number(invoiceForm.supplier_id) : undefined,
+      supplier: selectedInvoiceSupplier?.name || invoiceForm.supplier,
       invoice_number: invoiceForm.invoice_number,
       invoice_date: invoiceForm.invoice_date,
       subtotal_amount: subtotal,
@@ -207,6 +226,21 @@ const ProcureToPayLifecyclePage = () => {
 
     quickActions(() => submitInvoice(requestId, payload), 'Invoice submitted successfully');
   };
+
+  if (!hasRequestContext) {
+    return (
+      <div className="p-6 space-y-4">
+        <h1 className="text-2xl font-bold">Procure-to-Pay Lifecycle</h1>
+        <div className="rounded border bg-white p-4 space-y-2">
+          <p className="text-sm text-gray-700">Open a specific request lifecycle from request pages, or start from the Procure-to-Pay dashboard.</p>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/procure-to-pay" className="rounded bg-violet-700 px-3 py-1 text-white">Go to Procure-to-Pay Dashboard</Link>
+            <Link to="/open-requests" className="rounded border px-3 py-1">Open Requests</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) return <div className="p-6">Loading lifecycle...</div>;
 
@@ -287,12 +321,35 @@ const ProcureToPayLifecyclePage = () => {
           </ul>
         </form>
 
+
+        <div className="bg-white shadow rounded p-4 space-y-2">
+          <h3 className="font-semibold">Warehouse Inventory Linkage</h3>
+          <p className="text-sm text-gray-600">Stock levels below are linked to this request's warehouse and requested items after goods receipt posting.</p>
+          <ul className="text-sm list-disc ml-5">
+            {(data?.linked_inventory || []).map((entry, index) => (
+              <li key={`${entry.stock_item_id || entry.item_name}-${index}`}>
+                {entry.item_name} · On hand: {Number(entry.quantity || 0).toFixed(2)} · Warehouse: {entry.warehouse_name || `#${entry.warehouse_id}`}
+              </li>
+            ))}
+          </ul>
+          {(!data?.linked_inventory || data.linked_inventory.length === 0) && (
+            <p className="text-sm text-gray-500">No linked stock levels found yet for this request items.</p>
+          )}
+        </div>
+
         <form className="bg-white shadow rounded p-4 space-y-3" onSubmit={handleSubmitInvoice}>
           <h3 className="font-semibold">Invoice Entry</h3>
           {!canManageInvoices && <p className="text-sm text-amber-700">You have read-only access to this section.</p>}
 
           <div className="grid md:grid-cols-2 gap-3">
-            <input className="rounded border px-2 py-1" placeholder="Supplier" value={invoiceForm.supplier} onChange={(e) => setInvoiceForm((prev) => ({ ...prev, supplier: e.target.value }))} disabled={!canManageInvoices} />
+            <select className="rounded border px-2 py-1" value={invoiceForm.supplier_id} onChange={(e) => {
+              const supplierId = e.target.value;
+              const found = suppliers.find((entry) => String(entry.id) === supplierId);
+              setInvoiceForm((prev) => ({ ...prev, supplier_id: supplierId, supplier: found?.name || '' }));
+            }} disabled={!canManageInvoices}>
+              <option value="">Select supplier from master list</option>
+              {suppliers.map((supplier) => <option value={supplier.id} key={supplier.id}>{supplier.name}</option>)}
+            </select>
             <input className="rounded border px-2 py-1" placeholder="Invoice number" value={invoiceForm.invoice_number} onChange={(e) => setInvoiceForm((prev) => ({ ...prev, invoice_number: e.target.value }))} disabled={!canManageInvoices} />
             <input className="rounded border px-2 py-1" type="date" value={invoiceForm.invoice_date} onChange={(e) => setInvoiceForm((prev) => ({ ...prev, invoice_date: e.target.value }))} disabled={!canManageInvoices} />
             <select className="rounded border px-2 py-1" value={invoiceForm.receipt_id} onChange={(e) => setInvoiceForm((prev) => ({ ...prev, receipt_id: e.target.value }))} disabled={!canManageInvoices}>
@@ -300,6 +357,9 @@ const ProcureToPayLifecyclePage = () => {
               {availableReceipts.map((receipt) => <option value={receipt.id} key={receipt.id}>{receipt.receipt_number}</option>)}
             </select>
           </div>
+
+          <input className="rounded border px-2 py-1 w-full" placeholder="Supplier (fallback if master list has no match)" value={invoiceForm.supplier} onChange={(e) => setInvoiceForm((prev) => ({ ...prev, supplier: e.target.value, supplier_id: prev.supplier_id || '' }))} disabled={!canManageInvoices} />
+          {suppliersError && <p className="text-sm text-amber-700">{suppliersError}</p>}
 
           <div className="space-y-2">
             {(invoiceForm.items || []).map((item, index) => (

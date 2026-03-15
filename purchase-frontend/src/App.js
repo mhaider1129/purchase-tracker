@@ -249,6 +249,18 @@ const AppRoutes = () => (
       }
     />
 
+
+    <Route
+      path="/procure-to-pay/lifecycle"
+      element={
+        <ProtectedRoute
+          element={<ProcureToPayLifecyclePage />}
+          requiredPermissions={["procure-to-pay.lifecycle.view"]}
+          allowedRoles={["scm", "admin", "finance", "financeapprover", "warehousekeeper", "warehousemanager", "procurementspecialist"]}
+        />
+      }
+    />
+
     <Route
       path="/procure-to-pay"
       element={

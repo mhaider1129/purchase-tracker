@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { listApInvoices, submitInvoice } from '../api/procureToPay';
-import { createSupplier, listSuppliers } from '../api/suppliers';
+import { createSupplier } from '../api/suppliers';
+import { useSuppliers } from '../hooks/useSuppliers';
 
 const EMPTY_SUPPLIER_FORM = { name: '', contact_email: '', contact_phone: '' };
 
 const ProcureToPayInvoicesPage = () => {
   const [rows, setRows] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [filters, setFilters] = useState({ search: '', supplier: '', status: 'ALL' });
   const [form, setForm] = useState({
     request_id: '',
@@ -29,14 +29,10 @@ const ProcureToPayInvoicesPage = () => {
     setRows(res?.data || []);
   };
 
-  const loadSuppliers = async () => {
-    const supplierRows = await listSuppliers();
-    setSuppliers(supplierRows);
-  };
+  const { suppliers, reloadSuppliers, suppliersError } = useSuppliers();
 
   useEffect(() => {
     loadInvoices();
-    loadSuppliers();
   }, []);
 
   const selectedSupplier = suppliers.find((entry) => Number(entry.id) === Number(form.supplier_id));
@@ -64,7 +60,7 @@ const ProcureToPayInvoicesPage = () => {
     try {
       setError('');
       const created = await createSupplier(supplierForm);
-      await loadSuppliers();
+      await reloadSuppliers();
       setForm((prev) => ({ ...prev, supplier_id: String(created.id), supplier: created.name }));
       setSupplierForm(EMPTY_SUPPLIER_FORM);
       setShowSupplierForm(false);
@@ -86,6 +82,7 @@ const ProcureToPayInvoicesPage = () => {
       <div className="bg-white p-4 rounded shadow space-y-3">
         <h2 className="font-semibold">Create invoice</h2>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {suppliersError ? <p className="text-sm text-amber-700">{suppliersError}</p> : null}
         <div className="grid md:grid-cols-5 gap-2">
           <input className="border rounded px-2 py-1" placeholder="Request ID" value={form.request_id} onChange={(e) => setForm((p) => ({ ...p, request_id: e.target.value }))} />
           <select className="border rounded px-2 py-1" value={form.supplier_id} onChange={(e) => {
