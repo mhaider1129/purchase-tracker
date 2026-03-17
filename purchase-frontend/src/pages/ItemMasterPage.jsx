@@ -1,333 +1,332 @@
-import React, { useMemo, useState } from "react";
-import { Database, Lock, Search } from "lucide-react";
-import Navbar from "../components/Navbar";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  approveItemMaster,
+  attachItemMasterDocument,
+  createItemMaster,
+  getItemMasterById,
+  listItemMaster,
+  rejectItemMaster,
+  submitItemMaster,
+  updateItemMaster,
+} from '../api/itemMaster';
 
-const mdmMasterDomains = [
-  {
-    name: "Suppliers",
-    baseline:
-      "Normalized legal name, contact channel standards, and contract-ready supplier references.",
-  },
-  {
-    name: "Departments",
-    baseline:
-      "Controlled department types (Medical or Operational) with institute-scoped ownership.",
-  },
-  {
-    name: "Warehouses",
-    baseline:
-      "Standardized warehouse naming, location metadata, and institute alignment for stock governance.",
-  },
-  {
-    name: "Item taxonomy",
-    baseline:
-      "Shared item categories, sub-categories, and generic-first naming patterns across catalogs and requests.",
-  },
-  {
-    name: "Contract vendor references",
-    baseline:
-      "Contracts map vendors to supplier master references to avoid duplicate vendor identities.",
-  },
+const CLASSIFICATIONS = [
+  'medication',
+  'medical_supply',
+  'medical_device',
+  'laboratory_item',
+  'maintenance_spare_part',
+  'it_item',
+  'stationery',
+  'general_item',
 ];
 
-const mdmDataQualityRules = [
-  "Required fields: master name, owning scope, and mandatory relationship fields (for example vendor-to-supplier reference).",
-  "Uniqueness checks: case-insensitive duplicate prevention for names and reference numbers where applicable.",
-  "Controlled vocabularies: approved values for department type, item class/category labels, and contract status dimensions.",
-];
+const emptyForm = {
+  item_code: '',
+  item_name: '',
+  generic_name: '',
+  brand_name: '',
+  category: '',
+  subcategory: '',
+  item_classification: 'general_item',
+  unit_of_measure: '',
+  pack_size: '',
+  specifications: '',
+  storage_condition: '',
+  batch_controlled: false,
+  expiry_controlled: false,
+  serial_controlled: false,
+  standard_cost: '',
+  preferred_suppliers: '',
+  contract_eligibility: false,
+  reorder_level: '',
+  safety_stock: '',
+  institute_applicability: '',
+};
 
-const itemMasterCatalog = [
-  {
-    id: "MED-001",
-    category: "Medications",
-    itemName: "Paracetamol 500 mg tablet",
-    genericName: "Paracetamol",
-    approvedBrands: ["Panadol", "Tylenol"],
-    alternatives: ["Ibuprofen 400 mg tablet"],
-    specs: ["500 mg", "Oral tablet", "Blister pack"],
-    storageConditions: "Store at 15-25°C, protect from moisture.",
-    criticalityClass: "Class A (Essential)",
-  },
-  {
-    id: "MED-002",
-    category: "Medications",
-    itemName: "Amoxicillin 500 mg capsule",
-    genericName: "Amoxicillin",
-    approvedBrands: ["Amoxil", "Moxatag"],
-    alternatives: ["Cefalexin 500 mg capsule"],
-    specs: ["500 mg", "Oral capsule", "30-count bottle"],
-    storageConditions: "Store below 25°C; keep tightly closed.",
-    criticalityClass: "Class A (Essential)",
-  },
-  {
-    id: "SUP-001",
-    category: "Medical supplies",
-    itemName: "Sterile nitrile examination gloves",
-    approvedBrands: ["Ansell", "Medline"],
-    alternatives: ["Latex-free vinyl gloves"],
-    specs: ["Powder-free", "Size S-XL", "Box of 100"],
-    storageConditions: "Cool, dry storage; avoid direct sunlight.",
-    criticalityClass: "Class A (Critical)",
-  },
-  {
-    id: "DEV-001",
-    category: "Medical devices",
-    itemName: "Infusion pump (volumetric)",
-    approvedBrands: ["Baxter Sigma", "BD Alaris"],
-    alternatives: ["Syringe pump"],
-    specs: ["Battery backup 6 hrs", "Flow rate 0.1-1200 ml/hr"],
-    storageConditions: "Store indoors; calibrate every 12 months.",
-    criticalityClass: "Class A (Life-support)",
-  },
-  {
-    id: "GAS-001",
-    category: "Gases",
-    itemName: "Medical oxygen cylinder (50L)",
-    approvedBrands: ["Air Liquide", "Linde"],
-    alternatives: ["On-site oxygen concentrator"],
-    specs: ["99.5% purity", "Pin index safety system"],
-    storageConditions: "Secure upright; keep away from heat sources.",
-    criticalityClass: "Class A (Critical)",
-  },
-  {
-    id: "ITS-001",
-    category: "IT & services",
-    itemName: "Workstation support service",
-    approvedBrands: ["Dell ProSupport", "HP Care Pack"],
-    alternatives: ["On-site managed services"],
-    specs: ["NBD on-site response", "24/7 phone support"],
-    storageConditions: "Service-based; no storage required.",
-    criticalityClass: "Class B (Operational)",
-  },
-];
+const mapFormToPayload = form => ({
+  ...form,
+  preferred_suppliers: form.preferred_suppliers
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean),
+  institute_applicability: form.institute_applicability
+    .split(',')
+    .map(value => value.trim())
+    .filter(Boolean),
+  standard_cost: form.standard_cost === '' ? null : Number(form.standard_cost),
+  reorder_level: form.reorder_level === '' ? null : Number(form.reorder_level),
+  safety_stock: form.safety_stock === '' ? null : Number(form.safety_stock),
+});
 
-const ItemMasterPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+const mapItemToForm = item => ({
+  ...emptyForm,
+  ...item,
+  preferred_suppliers: (item.preferred_suppliers || []).join(', '),
+  institute_applicability: (item.institute_applicability || []).join(', '),
+  standard_cost: item.standard_cost ?? '',
+  reorder_level: item.reorder_level ?? '',
+  safety_stock: item.safety_stock ?? '',
+});
 
-  const categories = useMemo(() => {
-    const uniqueCategories = new Set(itemMasterCatalog.map((item) => item.category));
-    return ["All", ...Array.from(uniqueCategories)];
+export default function ItemMasterPage() {
+  const [items, setItems] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  const [filters, setFilters] = useState({ q: '', status: '', item_classification: '' });
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState(null);
+  const [docForm, setDocForm] = useState({ document_type: 'catalogue', document_name: '', file_path: '' });
+
+  const loadItems = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await listItemMaster(filters);
+      setItems(data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load item master records.');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  const loadItemDetails = useCallback(async id => {
+    try {
+      const data = await getItemMasterById(id);
+      setSelectedItem(data);
+    } catch {
+      setSelectedItem(null);
+    }
   }, []);
 
-  const filteredItems = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
-    return itemMasterCatalog.filter((item) => {
-      const matchesCategory =
-        selectedCategory === "All" || item.category === selectedCategory;
-      const matchesSearch =
-        !normalizedSearch ||
-        [
-          item.itemName,
-          item.genericName,
-          item.category,
-          item.approvedBrands.join(" "),
-          item.alternatives.join(" "),
-          item.specs.join(" "),
-          item.storageConditions,
-          item.criticalityClass,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase()
-          .includes(normalizedSearch);
-      return matchesCategory && matchesSearch;
-    });
-  }, [searchTerm, selectedCategory]);
+  useEffect(() => {
+    loadItems();
+  }, [loadItems]);
+
+  const startCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setMessage('');
+  };
+
+  const startEdit = item => {
+    setEditingId(item.id);
+    setForm(mapItemToForm(item));
+    setMessage('');
+  };
+
+  const onFormChange = event => {
+    const { name, type, checked, value } = event.target;
+    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const submitForm = async event => {
+    event.preventDefault();
+    setSaving(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const payload = mapFormToPayload(form);
+      if (editingId) {
+        await updateItemMaster(editingId, payload);
+        setMessage('Item updated successfully.');
+      } else {
+        await createItemMaster(payload);
+        setMessage('Item created successfully.');
+      }
+      await loadItems();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to save item.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runAction = async (action, successMessage) => {
+    setSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      await action();
+      setMessage(successMessage);
+      await loadItems();
+      if (selectedItem?.id) {
+        await loadItemDetails(selectedItem.id);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Action failed.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const submitDocument = async event => {
+    event.preventDefault();
+    if (!selectedItem?.id) return;
+
+    setSaving(true);
+    setError('');
+    try {
+      await attachItemMasterDocument(selectedItem.id, docForm);
+      setDocForm({ document_type: 'catalogue', document_name: '', file_path: '' });
+      await loadItemDetails(selectedItem.id);
+      setMessage('Document attached successfully.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to attach document.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const summary = useMemo(() => {
+    const active = items.filter(item => item.status === 'active').length;
+    const pending = items.filter(item => item.status === 'pending_approval').length;
+    return { total: items.length, active, pending };
+  }, [items]);
 
   return (
     <>
-      <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-6">
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+        <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-sm text-gray-500 font-semibold uppercase tracking-wide">
-              Central Item Master
-            </p>
-            <h1 className="text-3xl font-bold text-gray-900">Item Master Data</h1>
-            <p className="text-gray-600 mt-1">
-              Single catalog for medications (generic-first), medical supplies, medical devices,
-              gases, and IT & services.
-            </p>
+            <h1 className="text-2xl font-bold text-slate-900">Item Master</h1>
+            <p className="text-sm text-slate-600">Create, validate, approve, and activate standardized items across institutes.</p>
           </div>
-          <div className="flex items-center gap-3 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-blue-800 shadow-sm">
-            <Database size={20} />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide">Catalog items</p>
-              <p className="text-2xl font-bold">{itemMasterCatalog.length}</p>
+          <button type="button" onClick={startCreate} className="px-4 py-2 rounded bg-blue-600 text-white">New Item</button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">Total</div><div className="text-2xl font-semibold">{summary.total}</div></div>
+          <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">Pending Approval</div><div className="text-2xl font-semibold text-amber-700">{summary.pending}</div></div>
+          <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">Active</div><div className="text-2xl font-semibold text-emerald-700">{summary.active}</div></div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <section className="lg:col-span-2 bg-white border rounded p-4 space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <input className="border rounded px-3 py-2" placeholder="Search code/name/generic/brand/spec" value={filters.q} onChange={e => setFilters(prev => ({ ...prev, q: e.target.value }))} />
+              <select className="border rounded px-3 py-2" value={filters.status} onChange={e => setFilters(prev => ({ ...prev, status: e.target.value }))}>
+                <option value="">All status</option>
+                <option value="draft">Draft</option>
+                <option value="pending_approval">Pending approval</option>
+                <option value="active">Active</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <select className="border rounded px-3 py-2" value={filters.item_classification} onChange={e => setFilters(prev => ({ ...prev, item_classification: e.target.value }))}>
+                <option value="">All classifications</option>
+                {CLASSIFICATIONS.map(value => <option key={value} value={value}>{value}</option>)}
+              </select>
             </div>
-          </div>
-        </header>
+            <button type="button" onClick={loadItems} className="px-3 py-1.5 border rounded">Apply filters</button>
 
-        <section className="mb-6 rounded-lg border border-amber-100 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2">
-            <Lock size={18} />
-            <p className="text-sm font-semibold">Read-only for institutes.</p>
-            <p className="text-sm text-amber-800">
-              No institute can create items; submit additions or changes through the central SCM
-              workflow.
-            </p>
-          </div>
-        </section>
+            {loading && <p className="text-sm text-slate-500">Loading...</p>}
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            {message && <p className="text-sm text-emerald-700">{message}</p>}
 
-        <section className="mb-6 grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 shadow-sm md:col-span-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-              Master Data Management (MDM) baseline
-            </p>
-            <p className="mt-2 text-sm text-indigo-900">
-              Shared masters are normalized across suppliers, departments, warehouses, item
-              taxonomy, and contract vendor references to keep procurement and inventory workflows
-              consistent.
-            </p>
-            <div className="mt-3 overflow-x-auto">
-              <table className="min-w-full divide-y divide-indigo-200 rounded-md border border-indigo-100 bg-white">
-                <thead className="bg-indigo-100/70">
+            <div className="overflow-auto border rounded">
+              <table className="min-w-full text-sm">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-indigo-800">
-                      Master domain
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-indigo-800">
-                      Baseline normalization
-                    </th>
+                    <th className="text-left p-2">Code</th>
+                    <th className="text-left p-2">Name</th>
+                    <th className="text-left p-2">Classification</th>
+                    <th className="text-left p-2">Status</th>
+                    <th className="text-left p-2">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-indigo-100">
-                  {mdmMasterDomains.map((domain) => (
-                    <tr key={domain.name}>
-                      <td className="px-3 py-2 text-sm font-semibold text-indigo-900">{domain.name}</td>
-                      <td className="px-3 py-2 text-sm text-indigo-900">{domain.baseline}</td>
+                <tbody>
+                  {items.map(item => (
+                    <tr key={item.id} className="border-t">
+                      <td className="p-2">{item.item_code}</td>
+                      <td className="p-2">{item.item_name}</td>
+                      <td className="p-2">{item.item_classification}</td>
+                      <td className="p-2">{item.status}</td>
+                      <td className="p-2 space-x-2">
+                        <button type="button" className="underline" onClick={() => loadItemDetails(item.id)}>View</button>
+                        {(item.status === 'draft' || item.status === 'rejected') && (
+                          <button type="button" className="underline" onClick={() => startEdit(item)}>Edit</button>
+                        )}
+                        {(item.status === 'draft' || item.status === 'rejected') && (
+                          <button type="button" className="underline" onClick={() => runAction(() => submitItemMaster(item.id), 'Submitted for approval.')}>Submit</button>
+                        )}
+                        {item.status === 'pending_approval' && (
+                          <>
+                            <button type="button" className="underline text-emerald-700" onClick={() => runAction(() => approveItemMaster(item.id), 'Item approved and activated.')}>Approve</button>
+                            <button type="button" className="underline text-red-700" onClick={() => {
+                              const reason = window.prompt('Enter rejection reason');
+                              if (reason) runAction(() => rejectItemMaster(item.id, reason), 'Item rejected.');
+                            }}>Reject</button>
+                          </>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Controls captured
-            </p>
-            <ul className="mt-2 grid gap-2 text-sm text-gray-700">
-              <li>Approved brands &amp; alternatives</li>
-              <li>Specifications &amp; storage conditions</li>
-              <li>Criticality class assignments</li>
-            </ul>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Data quality rules
-            </p>
-            <ul className="mt-2 grid gap-2 text-sm text-gray-700">
-              {mdmDataQualityRules.map((rule) => (
-                <li key={rule}>{rule}</li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Catalog overview</h2>
-              <p className="text-sm text-gray-600">
-                Search and filter to review approved items and controls.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
-                <Search size={16} className="text-gray-500" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Search items, brands, or specs"
-                  className="w-48 bg-transparent text-sm text-gray-700 focus:outline-none"
-                />
-              </div>
-              <select
-                value={selectedCategory}
-                onChange={(event) => setSelectedCategory(event.target.value)}
-                className="rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700"
-              >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
+          <section className="bg-white border rounded p-4 space-y-3">
+            <h2 className="font-semibold">{editingId ? `Edit Item #${editingId}` : 'Create Item'}</h2>
+            <form className="space-y-2" onSubmit={submitForm}>
+              <input className="w-full border rounded px-3 py-2" name="item_code" value={form.item_code} onChange={onFormChange} placeholder="Item code" required />
+              <input className="w-full border rounded px-3 py-2" name="item_name" value={form.item_name} onChange={onFormChange} placeholder="Item name" required />
+              <input className="w-full border rounded px-3 py-2" name="generic_name" value={form.generic_name} onChange={onFormChange} placeholder="Generic name" />
+              <input className="w-full border rounded px-3 py-2" name="brand_name" value={form.brand_name} onChange={onFormChange} placeholder="Brand name" />
+              <input className="w-full border rounded px-3 py-2" name="category" value={form.category} onChange={onFormChange} placeholder="Category" required />
+              <input className="w-full border rounded px-3 py-2" name="subcategory" value={form.subcategory} onChange={onFormChange} placeholder="Subcategory" />
+              <select className="w-full border rounded px-3 py-2" name="item_classification" value={form.item_classification} onChange={onFormChange}>
+                {CLASSIFICATIONS.map(value => <option key={value} value={value}>{value}</option>)}
               </select>
-            </div>
-          </div>
+              <input className="w-full border rounded px-3 py-2" name="unit_of_measure" value={form.unit_of_measure} onChange={onFormChange} placeholder="UOM" required />
+              <input className="w-full border rounded px-3 py-2" name="pack_size" value={form.pack_size} onChange={onFormChange} placeholder="Pack size" />
+              <input className="w-full border rounded px-3 py-2" name="storage_condition" value={form.storage_condition} onChange={onFormChange} placeholder="Storage condition" />
+              <input className="w-full border rounded px-3 py-2" name="specifications" value={form.specifications} onChange={onFormChange} placeholder="Specifications" />
+              <input className="w-full border rounded px-3 py-2" name="preferred_suppliers" value={form.preferred_suppliers} onChange={onFormChange} placeholder="Preferred suppliers (comma separated)" />
+              <input className="w-full border rounded px-3 py-2" name="institute_applicability" value={form.institute_applicability} onChange={onFormChange} placeholder="Institute applicability (comma separated)" />
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <input className="border rounded px-2 py-1" type="number" min="0" step="0.01" name="standard_cost" value={form.standard_cost} onChange={onFormChange} placeholder="Standard cost" />
+                <input className="border rounded px-2 py-1" type="number" min="0" step="0.01" name="reorder_level" value={form.reorder_level} onChange={onFormChange} placeholder="Reorder level" />
+                <input className="border rounded px-2 py-1" type="number" min="0" step="0.01" name="safety_stock" value={form.safety_stock} onChange={onFormChange} placeholder="Safety stock" />
+              </div>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="batch_controlled" checked={form.batch_controlled} onChange={onFormChange} /> Batch controlled</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="expiry_controlled" checked={form.expiry_controlled} onChange={onFormChange} /> Expiry controlled</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="serial_controlled" checked={form.serial_controlled} onChange={onFormChange} /> Serial controlled</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="contract_eligibility" checked={form.contract_eligibility} onChange={onFormChange} /> Contract eligible</label>
+              <button disabled={saving} className="w-full rounded bg-slate-900 text-white py-2" type="submit">{saving ? 'Saving...' : editingId ? 'Update item' : 'Create item'}</button>
+            </form>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Item (generic-first)
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Category
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Approved brands
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Alternatives
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Specs
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Storage
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Criticality
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900">
-                        {item.genericName || item.itemName}
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        {item.genericName ? item.itemName : item.id}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{item.category}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {item.approvedBrands.join(", ")}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {item.alternatives.join(", ")}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {item.specs.join(", ")}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {item.storageConditions}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-800">
-                      {item.criticalityClass}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredItems.length === 0 && (
-            <div className="px-4 py-6 text-center text-sm text-gray-500">
-              No catalog items match the current filters.
-            </div>
-          )}
-        </section>
+            {selectedItem && (
+              <div className="border-t pt-3 space-y-2">
+                <h3 className="font-semibold">Attach Document - {selectedItem.item_code}</h3>
+                <form className="space-y-2" onSubmit={submitDocument}>
+                  <select className="w-full border rounded px-3 py-2" value={docForm.document_type} onChange={e => setDocForm(prev => ({ ...prev, document_type: e.target.value }))}>
+                    <option value="catalogue">Catalogue</option>
+                    <option value="coa_coc">COA/COC</option>
+                    <option value="msds">MSDS</option>
+                    <option value="registration_certificate">Registration Certificate</option>
+                    <option value="technical_datasheet">Technical Datasheet</option>
+                  </select>
+                  <input className="w-full border rounded px-3 py-2" value={docForm.document_name} onChange={e => setDocForm(prev => ({ ...prev, document_name: e.target.value }))} placeholder="Document name" required />
+                  <input className="w-full border rounded px-3 py-2" value={docForm.file_path} onChange={e => setDocForm(prev => ({ ...prev, file_path: e.target.value }))} placeholder="File path or URL" />
+                  <button disabled={saving} className="w-full rounded border py-2" type="submit">Attach document</button>
+                </form>
+                <ul className="text-xs text-slate-600 list-disc pl-4">
+                  {(selectedItem.documents || []).map(doc => (
+                    <li key={doc.id}>{doc.document_type}: {doc.document_name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        </div>
       </main>
     </>
   );
-};
-
-export default ItemMasterPage;
+}

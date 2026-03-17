@@ -1,5 +1,6 @@
 // src/pages/AssignedRequestsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel';
@@ -698,6 +699,12 @@ const AssignedRequestsPage = () => {
                         ? tr('requestCard.hideItems', 'Hide Items')
                         : tr('requestCard.viewItems', 'View Items')}
                     </button>
+                    <Link
+                      to={`/requests/${request.id}/procure-to-pay/purchase-orders`}
+                      className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 text-center"
+                    >
+                      {tr('requestCard.viewPo', 'View PO')}
+                    </Link>
                     <button
                       className="text-blue-600 underline"
                       onClick={() => toggleApprovals(request.id)}

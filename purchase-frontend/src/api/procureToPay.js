@@ -4,7 +4,13 @@ export const getProcureToPayDashboard = async () => (await api.get('/api/procure
 
 export const getLifecycleDetail = async (requestId) => (await api.get(`/api/procure-to-pay/requests/${requestId}/lifecycle`)).data;
 
-export const createPurchaseOrder = async (requestId, payload) => (await api.post(`/api/procure-to-pay/requests/${requestId}/purchase-orders`, payload)).data;
+export const createPurchaseOrder = async (requestId, payload) => {
+  if (requestId) {
+    return (await api.post(`/api/procure-to-pay/requests/${requestId}/purchase-orders`, payload)).data;
+  }
+
+  return (await api.post('/api/procure-to-pay/purchase-orders', payload)).data;
+};
 export const listPurchaseOrders = async (params = {}) => (await api.get('/api/procure-to-pay/purchase-orders', { params })).data;
 export const listPoSourceRequests = async (params = {}) => (await api.get('/api/procure-to-pay/po-source-requests', { params })).data;
 export const getPurchaseOrderDetail = async (poId) => (await api.get(`/api/procure-to-pay/purchase-orders/${poId}`)).data;
