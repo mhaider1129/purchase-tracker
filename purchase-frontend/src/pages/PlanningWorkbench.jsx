@@ -1,6 +1,5 @@
 
 import React, { useMemo, useState } from "react";
-import Navbar from "../components/Navbar";
 import {
   calculateSafetyStock as calculateSafetyStockApi,
   fetchDemandForecast,
@@ -9,6 +8,7 @@ import {
   runMrp,
 } from "../api/planning";
 import formatNumber from "../utils/formatNumber";
+import ForecastingDemandModuleCard from "../components/planning/ForecastingDemandModuleCard";
 
 const defaultForecastForm = {
   item_name: "",
@@ -344,7 +344,6 @@ const PlanningWorkbench = () => {
 
   return (
     <>
-      <Navbar />
       <main className="mx-auto w-full max-w-6xl space-y-10 p-6">
         <header className="space-y-2">
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Demand planning</p>
@@ -353,6 +352,8 @@ const PlanningWorkbench = () => {
             Use the new planning services to build statistical forecasts, compute safety stock policies, and net demand into dated planned orders.
           </p>
         </header>
+
+        <ForecastingDemandModuleCard />
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

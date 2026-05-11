@@ -486,6 +486,101 @@
         "title": "Prequalification",
         "description": "Log readiness checks, documentation status, and approval timelines."
       }
+    },
+    "lifecycle": {
+      "title": "Supplier master module",
+      "subtitle": "Official supplier database for controlled, legally valid, and auditable supplier records.",
+      "mainPurposeTitle": "Main purpose",
+      "mainPurpose": "Create a controlled, legally valid, auditable supplier file.",
+      "permissionsTitle": "Permissions involved",
+      "permissions": [
+        "Procurement",
+        "Vendor registration",
+        "Legal",
+        "Finance",
+        "Compliance / audit"
+      ],
+      "steps": {
+        "registration": {
+          "title": "A. Supplier registration initiated",
+          "points": [
+            "Procurement",
+            "Supplier self-registration",
+            "Management decision",
+            "Emergency procurement need"
+          ]
+        },
+        "documents": {
+          "title": "B. User collects supplier documents",
+          "points": [
+            "Company registration",
+            "Tax documents",
+            "Bank details",
+            "Authorized signatory",
+            "Licenses",
+            "GMP / ISO certificates",
+            "Medical regulatory approvals",
+            "Distributor authorization"
+          ]
+        },
+        "profile": {
+          "title": "C. User creates supplier profile",
+          "points": [
+            "Supplier code",
+            "Legal name",
+            "Trade name",
+            "Address",
+            "Contacts",
+            "Bank details",
+            "Payment terms",
+            "Allowed item categories",
+            "Contract eligibility",
+            "Blacklisting / suspension status"
+          ]
+        },
+        "compliance": {
+          "title": "D. User verifies compliance",
+          "points": [
+            "Legal, compliance, and finance confirm document validity",
+            "Supplier is not duplicated",
+            "Supplier is eligible for payment"
+          ]
+        },
+        "classification": {
+          "title": "E. User assigns supplier classification",
+          "points": [
+            "Local supplier",
+            "International supplier",
+            "Sole agent",
+            "Manufacturer",
+            "Distributor",
+            "Service provider"
+          ]
+        },
+        "activation": {
+          "title": "F. Supplier is approved and activated",
+          "points": [
+            "Available in RFQs",
+            "Available in contracts",
+            "Available in purchase orders",
+            "Available in invoice entry",
+            "Available in payment runs"
+          ]
+        }
+      },
+      "completionPointTitle": "Completion point",
+      "completionPoint": "Supplier is validated, approved, active, and usable in procurement and finance modules.",
+      "linksTitle": "Links to other modules",
+      "links": [
+        "Sourcing / RFQ",
+        "Contracts",
+        "Purchase orders",
+        "Invoices",
+        "Accounts payable",
+        "Supplier performance reporting",
+        "Legal compliance",
+        "Audit"
+      ]
     }
   },
   "suppliersPrequalification": {

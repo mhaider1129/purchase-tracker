@@ -49,6 +49,7 @@ import ProcurementPlansPage from "./pages/ProcurementPlansPage";
 import RequestSubmittedPage from "./pages/requests/RequestSubmittedPage";
 import WarehouseSupplyTemplatesPage from "./pages/WarehouseSupplyTemplatesPage";
 import AuditRequestsPage from "./pages/AuditRequestsPage";
+import AuditRegistryPage from "./pages/AuditRegistryPage";
 import LifecycleAnalytics from "./pages/LifecycleAnalytics";
 import WorkloadAnalysis from "./pages/WorkloadAnalysis";
 import MonthlyDispensing from "./pages/MonthlyDispensing";
@@ -201,6 +202,10 @@ const AppRoutes = () => (
           resourceKey="feature.itemRecalls"
         />
       }
+    />
+    <Route
+      path="/audit-registry"
+      element={<ProtectedRoute element={<AuditRegistryPage />} />}
     />
     <Route
       path="/requests/maintenance-warehouse-supply"

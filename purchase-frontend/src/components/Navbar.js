@@ -318,6 +318,12 @@ const Navbar = () => {
             "text-gray-600",
           ),
           createItem(
+            true,
+            "My Audit Registry",
+            "/audit-registry",
+            "text-blue-600",
+          ),
+          createItem(
             canViewAllRequests,
             t("navbar.allRequests"),
             "/all-requests",

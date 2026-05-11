@@ -15,6 +15,12 @@ export const listPurchaseOrders = async (params = {}) => (await api.get('/api/pr
 export const listPoSourceRequests = async (params = {}) => (await api.get('/api/procure-to-pay/po-source-requests', { params })).data;
 export const getPurchaseOrderDetail = async (poId) => (await api.get(`/api/procure-to-pay/purchase-orders/${poId}`)).data;
 
+export const submitPurchaseOrderForApproval = async (poId, payload = {}) => (await api.post(`/api/procure-to-pay/purchase-orders/${poId}/submit-approval`, payload)).data;
+export const approvePurchaseOrder = async (poId, payload = {}) => (await api.post(`/api/procure-to-pay/purchase-orders/${poId}/approve`, payload)).data;
+export const issuePurchaseOrder = async (poId, payload = {}) => (await api.post(`/api/procure-to-pay/purchase-orders/${poId}/issue`, payload)).data;
+export const cancelPurchaseOrder = async (poId, payload) => (await api.post(`/api/procure-to-pay/purchase-orders/${poId}/cancel`, payload)).data;
+export const closePurchaseOrder = async (poId, payload = {}) => (await api.post(`/api/procure-to-pay/purchase-orders/${poId}/close`, payload)).data;
+
 export const createGoodsReceipt = async (requestId, payload) => (await api.post(`/api/procure-to-pay/requests/${requestId}/receipts`, payload)).data;
 export const listReceiptsByRequest = async (requestId) => (await api.get(`/api/procure-to-pay/requests/${requestId}/receipts`)).data;
 export const listGoodsReceipts = async (params = {}) => (await api.get('/api/procure-to-pay/goods-receipts', { params })).data;

@@ -106,6 +106,48 @@ const formatDate = (value) => {
   return date.toLocaleDateString();
 };
 
+const sourcingWorkflowSteps = [
+  {
+    phase: "A",
+    title: "Buyer receives approved procurement need",
+    details: [
+      "Approved PR and item details",
+      "Supplier options and contract availability",
+      "Historical price visibility",
+    ],
+  },
+  {
+    phase: "B",
+    title: "Buyer decides sourcing method",
+    details: ["Direct purchase", "RFQ", "Tender", "Framework call-off", "Emergency sourcing"],
+  },
+  {
+    phase: "C",
+    title: "Buyer invites suppliers",
+    details: ["Automatic invitation from approved supplier master"],
+  },
+  {
+    phase: "D",
+    title: "Buyer records quotations",
+    details: ["Price", "Delivery lead time", "Validity", "Technical compliance", "Payment terms"],
+  },
+  {
+    phase: "E",
+    title: "Technical and commercial evaluation",
+    details: ["Quote comparison sheet", "Compliance matrix", "Ranking"],
+  },
+  {
+    phase: "F",
+    title: "Award recommendation generated",
+    details: ["Submitted for approval when required"],
+  },
+  {
+    phase: "G",
+    title: "Selected supplier moves to PO or contract",
+    details: ["Sourcing decision documented and event completed"],
+  },
+];
+
 const RfxPortalPage = () => {
   const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
@@ -480,6 +522,46 @@ const RfxPortalPage = () => {
             {t("rfxPortal.linkedRequest", { id: selectedEvent.request_id })}
           </div>
         ) : null}
+
+        <div className="mb-6 rounded-lg border border-indigo-100 bg-indigo-50/70 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-indigo-900">Sourcing / RFQ / Tender Module</h2>
+              <p className="text-sm text-indigo-800">
+                Obtain offers, evaluate suppliers, and select the sourcing outcome.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs font-medium text-indigo-800">
+              {["procurement", "tender", "technical evaluator", "legal"].map((role) => (
+                <span key={role} className="rounded-full border border-indigo-200 bg-white px-2 py-1">
+                  {role}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {sourcingWorkflowSteps.map((step) => (
+              <div key={step.phase} className="rounded-md border border-indigo-100 bg-white p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Step {step.phase}</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">{step.title}</p>
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-gray-700">
+                  {step.details.map((detail) => (
+                    <li key={detail}>{detail}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-md border border-indigo-100 bg-white p-3 text-xs text-gray-700">
+            <p className="font-semibold text-indigo-900">Module integrations</p>
+            <p className="mt-1">
+              Uses supplier master, item master, PR, contract history, and budget. Outputs to contract,
+              PO, audit trail, and reporting modules.
+            </p>
+          </div>
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">

@@ -8,7 +8,6 @@ import {
   Trash2,
   UsersRound,
 } from "lucide-react";
-import Navbar from "../components/Navbar";
 import {
   createSupplier,
   deleteSupplier,
@@ -78,6 +77,54 @@ const SuppliersPage = () => {
         description: t("suppliersPage.modules.prequalification.description"),
         to: "/supplier-prequalification",
         icon: UsersRound,
+      },
+    ],
+    [t],
+  );
+
+  const supplierLifecycle = useMemo(
+    () => [
+      {
+        key: "registration",
+        title: t("suppliersPage.lifecycle.steps.registration.title"),
+        points: t("suppliersPage.lifecycle.steps.registration.points", {
+          returnObjects: true,
+        }),
+      },
+      {
+        key: "documents",
+        title: t("suppliersPage.lifecycle.steps.documents.title"),
+        points: t("suppliersPage.lifecycle.steps.documents.points", {
+          returnObjects: true,
+        }),
+      },
+      {
+        key: "profile",
+        title: t("suppliersPage.lifecycle.steps.profile.title"),
+        points: t("suppliersPage.lifecycle.steps.profile.points", {
+          returnObjects: true,
+        }),
+      },
+      {
+        key: "compliance",
+        title: t("suppliersPage.lifecycle.steps.compliance.title"),
+        points: t("suppliersPage.lifecycle.steps.compliance.points", {
+          returnObjects: true,
+        }),
+      },
+      {
+        key: "classification",
+        title: t("suppliersPage.lifecycle.steps.classification.title"),
+        points: t("suppliersPage.lifecycle.steps.classification.points", {
+          returnObjects: true,
+        }),
+      },
+      {
+        key: "activation",
+        title: t("suppliersPage.lifecycle.steps.activation.title"),
+        points: t("suppliersPage.lifecycle.steps.activation.points", {
+          returnObjects: true,
+        }),
       },
     ],
     [t],
@@ -323,7 +370,6 @@ const SuppliersPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors dark:bg-gray-950 dark:text-gray-100">
-      <Navbar />
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -390,6 +436,86 @@ const SuppliersPage = () => {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        <section className="mb-6 rounded-lg border border-blue-100 bg-blue-50/60 p-5 shadow-sm dark:border-blue-900/60 dark:bg-blue-950/30">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              {t("suppliersPage.lifecycle.title")}
+            </h2>
+            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+              {t("suppliersPage.lifecycle.subtitle")}
+            </p>
+          </div>
+
+          <div className="mb-4 rounded-md border border-blue-200 bg-white px-4 py-3 text-sm text-gray-700 dark:border-blue-900/80 dark:bg-gray-900 dark:text-gray-200">
+            <p className="font-semibold text-gray-900 dark:text-gray-100">
+              {t("suppliersPage.lifecycle.mainPurposeTitle")}
+            </p>
+            <p className="mt-1">{t("suppliersPage.lifecycle.mainPurpose")}</p>
+          </div>
+
+          <div className="mb-4">
+            <p className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {t("suppliersPage.lifecycle.permissionsTitle")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {t("suppliersPage.lifecycle.permissions", { returnObjects: true }).map((permission) => (
+                <span
+                  key={permission}
+                  className="inline-flex items-center rounded-full border border-blue-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:border-blue-900/70 dark:bg-blue-900/20 dark:text-blue-200"
+                >
+                  {permission}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {supplierLifecycle.map((step) => (
+              <article
+                key={step.key}
+                className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+              >
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{step.title}</h3>
+                <ul className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                  {step.points.map((point) => (
+                    <li key={point} className="flex items-start gap-2">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden="true" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/80 dark:bg-emerald-900/20">
+              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+                {t("suppliersPage.lifecycle.completionPointTitle")}
+              </p>
+              <p className="mt-1 text-sm text-emerald-800 dark:text-emerald-200">
+                {t("suppliersPage.lifecycle.completionPoint")}
+              </p>
+            </div>
+
+            <div className="rounded-md border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                {t("suppliersPage.lifecycle.linksTitle")}
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
+                {t("suppliersPage.lifecycle.links", { returnObjects: true }).map((item) => (
+                  <li
+                    key={item}
+                    className="rounded-full border border-gray-300 px-3 py-1 text-gray-700 dark:border-gray-700 dark:text-gray-300"
+                  >
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </section>
 
