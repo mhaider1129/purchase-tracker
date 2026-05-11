@@ -35,6 +35,15 @@ const SuppliersPage = () => {
     name: "",
     contact_email: "",
     contact_phone: "",
+    supplier_type: "",
+    tax_number: "",
+    bank_info: "",
+    currency: "",
+    payment_terms: "",
+    lead_time_days: "",
+    credit_limit: "",
+    status: "",
+    country: "",
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -171,18 +180,35 @@ const SuppliersPage = () => {
       const name = supplier?.name?.toLowerCase?.() || "";
       const email = supplier?.contact_email?.toLowerCase?.() || "";
       const phone = supplier?.contact_phone?.toLowerCase?.() || "";
+      const supplierType = supplier?.supplier_type?.toLowerCase?.() || "";
+      const country = supplier?.country?.toLowerCase?.() || "";
 
       return (
         name.includes(term) ||
         email.includes(term) ||
-        phone.includes(term)
+        phone.includes(term) ||
+        supplierType.includes(term) ||
+        country.includes(term)
       );
     });
   }, [search, suppliers]);
 
   const resetForm = () => {
     setSelectedSupplierId(null);
-    setFormValues({ name: "", contact_email: "", contact_phone: "" });
+    setFormValues({
+      name: "",
+      contact_email: "",
+      contact_phone: "",
+      supplier_type: "",
+      tax_number: "",
+      bank_info: "",
+      currency: "",
+      payment_terms: "",
+      lead_time_days: "",
+      credit_limit: "",
+      status: "",
+      country: "",
+    });
   };
 
   const handleEditSelect = (supplier) => {
@@ -191,6 +217,15 @@ const SuppliersPage = () => {
       name: supplier.name || "",
       contact_email: supplier.contact_email || "",
       contact_phone: supplier.contact_phone || "",
+      supplier_type: supplier.supplier_type || "",
+      tax_number: supplier.tax_number || "",
+      bank_info: supplier.bank_info ? JSON.stringify(supplier.bank_info) : "",
+      currency: supplier.currency || "",
+      payment_terms: supplier.payment_terms || "",
+      lead_time_days: supplier.lead_time_days ?? "",
+      credit_limit: supplier.credit_limit ?? "",
+      status: supplier.status || "",
+      country: supplier.country || "",
     });
     setFormError("");
     setFormSuccess("");
@@ -215,10 +250,18 @@ const SuppliersPage = () => {
 
     try {
       if (selectedSupplierId) {
-        await updateSupplier(selectedSupplierId, formValues);
+        const payload = {
+          ...formValues,
+          bank_info: formValues.bank_info ? JSON.parse(formValues.bank_info) : null,
+        };
+        await updateSupplier(selectedSupplierId, payload);
         setFormSuccess(t("suppliersPage.form.updated"));
       } else {
-        await createSupplier(formValues);
+        const payload = {
+          ...formValues,
+          bank_info: formValues.bank_info ? JSON.parse(formValues.bank_info) : null,
+        };
+        await createSupplier(payload);
         setFormSuccess(t("suppliersPage.form.created"));
       }
 
@@ -310,6 +353,15 @@ const SuppliersPage = () => {
                 {t("suppliersPage.table.phone")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">
+                {t("suppliersPage.table.type")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">
+                {t("suppliersPage.table.status")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">
+                {t("suppliersPage.table.country")}
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">
                 {t("suppliersPage.table.createdAt")}
               </th>
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">
@@ -335,6 +387,15 @@ const SuppliersPage = () => {
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {supplier.contact_phone || "-"}
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                  {supplier.supplier_type || "-"}
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                  {supplier.status || "-"}
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                  {supplier.country || "-"}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
                   {formatDate(supplier.created_at)}
@@ -599,6 +660,22 @@ const SuppliersPage = () => {
                     />
                   </div>
                 </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <InputField t={t} id="supplier-type" name="supplier_type" value={formValues.supplier_type} onChange={handleFormChange} labelKey="suppliersPage.form.supplierType" />
+                  <InputField t={t} id="supplier-tax-number" name="tax_number" value={formValues.tax_number} onChange={handleFormChange} labelKey="suppliersPage.form.taxNumber" />
+                  <InputField t={t} id="supplier-currency" name="currency" value={formValues.currency} onChange={handleFormChange} labelKey="suppliersPage.form.currency" />
+                  <InputField t={t} id="supplier-payment-terms" name="payment_terms" value={formValues.payment_terms} onChange={handleFormChange} labelKey="suppliersPage.form.paymentTerms" />
+                  <InputField t={t} id="supplier-lead-time-days" name="lead_time_days" value={formValues.lead_time_days} onChange={handleFormChange} labelKey="suppliersPage.form.leadTimeDays" type="number" min="0" />
+                  <InputField t={t} id="supplier-credit-limit" name="credit_limit" value={formValues.credit_limit} onChange={handleFormChange} labelKey="suppliersPage.form.creditLimit" type="number" min="0" step="0.01" />
+                  <InputField t={t} id="supplier-status" name="status" value={formValues.status} onChange={handleFormChange} labelKey="suppliersPage.form.status" />
+                  <InputField t={t} id="supplier-country" name="country" value={formValues.country} onChange={handleFormChange} labelKey="suppliersPage.form.country" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="supplier-bank-info">
+                    {t("suppliersPage.form.bankInfo")}
+                  </label>
+                  <textarea id="supplier-bank-info" name="bank_info" value={formValues.bank_info} onChange={handleFormChange} rows={3} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950" />
+                </div>
 
                 {formError && (
                   <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/40 dark:text-red-100">
@@ -663,6 +740,23 @@ const StatCard = ({ label, value }) => (
   <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900">
     <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{label}</p>
     <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{value}</p>
+  </div>
+);
+
+const InputField = ({ t, id, name, value, onChange, labelKey, type = "text", ...props }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor={id}>
+      {t(labelKey)}
+    </label>
+    <input
+      id={id}
+      name={name}
+      type={type}
+      value={value}
+      onChange={onChange}
+      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
+      {...props}
+    />
   </div>
 );
 

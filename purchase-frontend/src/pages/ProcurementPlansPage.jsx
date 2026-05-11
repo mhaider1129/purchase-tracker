@@ -17,6 +17,8 @@ const ProcurementPlansPage = () => {
   const [planItems, setPlanItems] = useState([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [itemsError, setItemsError] = useState('');
+  const [integrationInsights, setIntegrationInsights] = useState([]);
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false);
   const [itemForm, setItemForm] = useState({
     item_name: '',
     planned_quantity: '',
@@ -96,14 +98,20 @@ const ProcurementPlansPage = () => {
 
       try {
         setIsLoadingItems(true);
+        setIsLoadingInsights(true);
         setItemsError('');
-        const res = await api.get(`/api/procurement-plans/${planId}/items/variance`);
-        setPlanItems(res.data || []);
+        const [varianceRes, insightsRes] = await Promise.all([
+          api.get(`/api/procurement-plans/${planId}/items/variance`),
+          api.get(`/api/procurement-plans/${planId}/integration-insights`),
+        ]);
+        setPlanItems(varianceRes.data || []);
+        setIntegrationInsights(insightsRes.data?.items || []);
       } catch (err) {
         console.error('Failed to load plan items', err);
         setItemsError('Unable to load plan line items. Please try again.');
       } finally {
         setIsLoadingItems(false);
+        setIsLoadingInsights(false);
       }
     },
     []
@@ -253,6 +261,38 @@ const ProcurementPlansPage = () => {
       {filteredPlans.length === 0 && (
         <div className="px-4 py-6 text-sm text-gray-500 text-center">
           No procurement plans match the selected filters.
+        </div>
+      )}
+    </div>
+  );
+
+  const integrationTable = (
+    <div className="overflow-x-auto rounded border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-full divide-y divide-gray-200" aria-label="Integrated planning insights table">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Item</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Demand/mo</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Lead time (days)</th>
+            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Seasonal index</th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Recommended action</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {integrationInsights.map((item) => (
+            <tr key={item.plan_item_id} className="hover:bg-gray-50">
+              <td className="px-4 py-3 text-sm text-gray-700">{item.item_name}</td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">{item.demand_monthly_avg ?? 0}</td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">{item.lead_time_days ?? 0}</td>
+              <td className="px-4 py-3 text-sm text-right text-gray-700">{item.seasonal_index ?? 1}</td>
+              <td className="px-4 py-3 text-sm text-gray-700">{(item.recommended_actions || []).join(' ') || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {integrationInsights.length === 0 && !isLoadingInsights && (
+        <div className="px-4 py-6 text-center text-sm text-gray-500">
+          No integration insights available for this plan yet.
         </div>
       )}
     </div>
@@ -555,6 +595,16 @@ const ProcurementPlansPage = () => {
           )}
 
           {isLoadingItems ? <p className="text-sm text-gray-500">Loading plan items…</p> : varianceTable}
+
+          <div className="pt-4">
+            <h3 className="text-md font-semibold text-gray-900">Integrated planning insights</h3>
+            <p className="mt-1 text-sm text-gray-600">
+              Connect plan items to consumption history, demand planning, reorder policy, lead time, and seasonal usage.
+            </p>
+            <div className="mt-3">
+              {isLoadingItems ? <p className="text-sm text-gray-500">Loading insights…</p> : integrationTable}
+            </div>
+          </div>
         </section>
       </div>
     </>

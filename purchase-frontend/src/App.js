@@ -67,6 +67,7 @@ import SupplierEvaluationDashboard from "./pages/SupplierEvaluationDashboard";
 import PlanningWorkbench from "./pages/PlanningWorkbench";
 import HistoricalRequestsImportPage from "./pages/HistoricalRequestsImportPage";
 import RfxPortalPage from "./pages/RfxPortalPage";
+import SupplierPortalReadinessPage from "./pages/SupplierPortalReadinessPage";
 import RiskManagementPage from "./pages/RiskManagementPage";
 import ItemMasterPage from "./pages/ItemMasterPage";
 import ProcureToPayLifecyclePage from "./pages/ProcureToPayLifecyclePage";
@@ -635,6 +636,7 @@ const AppRoutes = () => (
       }
     />
     <Route path="/rfx-portal" element={<RfxPortalPage />} />
+    <Route path="/supplier-portal-readiness" element={<ProtectedRoute element={<SupplierPortalReadinessPage />} />} />
     <Route
       path="/supplier-evaluations"
       element={

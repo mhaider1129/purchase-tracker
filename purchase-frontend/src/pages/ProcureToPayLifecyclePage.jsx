@@ -423,7 +423,7 @@ const ProcureToPayLifecyclePage = () => {
           <ul className="text-sm list-disc ml-5">
             {(data?.gl_postings || []).map((posting) => (
               <li key={posting.id}>
-                {posting.posting_reference} · {posting.total_amount} {posting.currency} · {posting.posting_status}
+                {posting.posting_reference} · {posting.total_amount} {posting.currency} · {posting.posting_status}{posting.journal_entry_id ? ` · journal #${posting.journal_entry_id}` : ''}
               </li>
             ))}
           </ul>
@@ -432,6 +432,21 @@ const ProcureToPayLifecyclePage = () => {
           )}
         </div>
       </div>
+
+        <div className="bg-white shadow rounded p-4 space-y-2">
+          <h3 className="font-semibold">Journal Entry Trace</h3>
+          <p className="text-sm text-gray-600">Canonical accounting journals created by voucher/payment/adjustment/accrual actions.</p>
+          <ul className="text-sm list-disc ml-5">
+            {(data?.journal_entries || []).map((journal) => (
+              <li key={journal.id}>
+                {journal.journal_reference} · {journal.journal_type} · {journal.total_amount} {journal.currency} · {journal.entry_status}
+              </li>
+            ))}
+          </ul>
+          {(!data?.journal_entries || data.journal_entries.length === 0) && (
+            <p className="text-sm text-gray-500">No journal entries yet.</p>
+          )}
+        </div>
 
       <div className="bg-white shadow rounded p-4 space-y-2">
         <h3 className="font-semibold">Finance Review / Voucher Section</h3>

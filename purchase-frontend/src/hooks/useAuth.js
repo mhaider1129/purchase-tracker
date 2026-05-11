@@ -13,6 +13,24 @@ import axios from "../api/axios";
 
 const AuthContext = createContext(null);
 
+const normalizeDataScopes = (dataScopes) => {
+  if (!dataScopes || typeof dataScopes !== "object" || Array.isArray(dataScopes)) {
+    return {};
+  }
+
+  return Object.entries(dataScopes).reduce((acc, [code, values]) => {
+    const normalizedCode = typeof code === "string" ? code.trim().toLowerCase() : "";
+    if (!normalizedCode) return acc;
+    acc[normalizedCode] = Array.isArray(values)
+      ? values
+          .map((value) => (value === null || typeof value === "undefined" ? "" : String(value).trim()))
+          .filter(Boolean)
+      : [];
+    return acc;
+  }, {});
+};
+
+
 const useProvideAuth = () => {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(null);
@@ -56,6 +74,7 @@ const useProvideAuth = () => {
         profile.permissions = Array.isArray(profile.permissions)
           ? profile.permissions
           : [];
+        profile.data_scopes = normalizeDataScopes(profile.data_scopes);
         setUser(profile);
       } catch (err) {
         console.error("❌ Failed to fetch user profile:", err);

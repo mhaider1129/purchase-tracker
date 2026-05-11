@@ -29,7 +29,9 @@ export default function TaskManagementPage() {
       ]);
 
       setMyTasks(myRes.data?.tasks || []);
-      setEmployees(usersRes.data?.users || []);
+      const usersPayload = usersRes?.data;
+      const usersList = Array.isArray(usersPayload) ? usersPayload : (usersPayload?.users || []);
+      setEmployees(usersList);
       setAssignedByMe(assignedRes.data?.tasks || []);
     } catch (err) {
       setMessage(err?.response?.data?.message || 'Failed to load tasks.');

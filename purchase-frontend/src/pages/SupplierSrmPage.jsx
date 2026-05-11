@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, ClipboardList, Plus, Shield, X } from "lucide-react";
-import Navbar from "../components/Navbar";
 import { listSuppliers } from "../api/suppliers";
 import {
   createComplianceArtifact,
@@ -214,7 +213,6 @@ const SupplierSrmPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors dark:bg-gray-950 dark:text-gray-100">
-      <Navbar />
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
