@@ -197,6 +197,7 @@ export default function ItemMasterPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Item Master</h1>
             <p className="text-sm text-slate-600">Create, validate, approve, and activate standardized items across institutes.</p>
+            <p className="text-xs text-amber-700">Current UI is using legacy item master fields. Normalized hierarchy screens (categories, UOM, manufacturers, brands, variants, conversions) will be wired through new reference endpoints.</p>
           </div>
           <button type="button" onClick={startCreate} className="px-4 py-2 rounded bg-blue-600 text-white">New Item</button>
         </div>

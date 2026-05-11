@@ -39,3 +39,29 @@ export const attachItemMasterDocument = async (id, payload) => {
   const { data } = await api.post(`/api/item-master/${id}/documents`, payload);
   return data;
 };
+
+// Normalized item-master reference data (additive, for new hierarchy UI wiring)
+export const listItemCategories = async () => {
+  const { data } = await api.get('/api/item-master/reference/categories');
+  return data;
+};
+
+export const listItemUom = async () => {
+  const { data } = await api.get('/api/item-master/reference/uom');
+  return data;
+};
+
+export const listItemManufacturers = async () => {
+  const { data } = await api.get('/api/item-master/reference/manufacturers');
+  return data;
+};
+
+export const listItemBrands = async (params = {}) => {
+  const { data } = await api.get('/api/item-master/reference/brands', { params });
+  return data;
+};
+
+export const listItemVariants = async (itemMasterId) => {
+  const { data } = await api.get(`/api/item-master/${itemMasterId}/variants`);
+  return data;
+};

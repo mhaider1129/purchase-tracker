@@ -589,6 +589,12 @@ const Navbar = () => {
         items: [
           createItem(
             true,
+            'My Tasks',
+            '/tasks',
+            'text-blue-600',
+          ),
+          createItem(
+            true,
             t("navbar.myEvaluations"),
             "/my-evaluations",
             "text-blue-600",

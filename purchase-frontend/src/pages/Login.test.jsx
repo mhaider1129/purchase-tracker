@@ -15,7 +15,7 @@ jest.mock('react-router-dom', () => {
 
 describe('Login page', () => {
   const renderPage = () => render(
-    <MemoryRouter>
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Login />
       </AuthProvider>

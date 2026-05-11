@@ -17,7 +17,7 @@ describe('ChangePassword page', () => {
 
   const renderPage = () =>
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ChangePassword />
       </MemoryRouter>
     );

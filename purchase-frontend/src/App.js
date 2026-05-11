@@ -78,6 +78,7 @@ import ProcureToPayAccountsPayablePage from "./pages/ProcureToPayAccountsPayable
 import ProcureToPayPaymentsPage from "./pages/ProcureToPayPaymentsPage";
 import ProcureToPayDocumentFlowPage from "./pages/ProcureToPayDocumentFlowPage";
 import ProcureToPayDashboardPage from "./pages/ProcureToPayDashboardPage";
+import TaskManagementPage from "./pages/TaskManagementPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -240,6 +241,7 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<ItemMasterPage />}
           resourceKey="feature.itemMaster"
+          requiredPermissions={["item-master.view"]}
         />
       }
     />
@@ -255,6 +257,10 @@ const AppRoutes = () => (
     />
 
 
+    <Route
+      path="/tasks"
+      element={<ProtectedRoute element={<TaskManagementPage />} />}
+    />
     <Route
       path="/procure-to-pay/lifecycle"
       element={
@@ -811,7 +817,7 @@ const AppShell = ({ children }) => {
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <NotificationProvider>
           <AccessControlProvider>
