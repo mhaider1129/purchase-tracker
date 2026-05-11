@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Navbar from "../components/Navbar";
 
 const readinessCards = [
   {
@@ -23,7 +22,6 @@ const readinessCards = [
 export default function SupplierPortalReadinessPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <section className="rounded-xl border border-indigo-100 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-semibold text-gray-900">Supplier Portal Readiness</h1>

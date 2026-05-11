@@ -266,6 +266,11 @@ const Navbar = () => {
       "rfx.manage",
       "rfx.respond",
     ]);
+    const canAccessSupplierPortalReadiness = hasAccess(
+      currentUser,
+      "feature.suppliers",
+      ["contracts.manage"],
+    );
     const canManageEvaluations = hasAccess(
       currentUser,
       "feature.supplierEvaluations",
@@ -304,6 +309,18 @@ const Navbar = () => {
             t("navbar.openRequests"),
             "/open-requests",
             "text-green-600",
+          ),
+          createItem(
+            true,
+            "Approvals",
+            "/approvals",
+            "text-sky-700",
+          ),
+          createItem(
+            true,
+            "Approval History",
+            "/approval-history",
+            "text-sky-600",
           ),
           createItem(
             normalizedRole === "technician",
@@ -359,6 +376,12 @@ const Navbar = () => {
         id: "procureToPay",
         label: t("navbar.groups.procureToPay"),
         items: [
+          createItem(
+            canAccessProcureToPayLifecycle,
+            "Procure-to-Pay Dashboard",
+            "/procure-to-pay",
+            "text-violet-800",
+          ),
           createItem(
             canAccessProcureToPayLifecycle,
             "Procure-to-Pay Lifecycle",
@@ -537,6 +560,12 @@ const Navbar = () => {
             canAccessRfxPortal,
             t("navbar.rfxPortal"),
             "/rfx-portal",
+            "text-emerald-700",
+          ),
+          createItem(
+            canAccessSupplierPortalReadiness,
+            "Supplier Portal Readiness",
+            "/supplier-portal-readiness",
             "text-emerald-700",
           ),
           createItem(
