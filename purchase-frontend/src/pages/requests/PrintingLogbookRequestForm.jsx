@@ -18,6 +18,7 @@ const PrintingLogbookRequestForm = () => {
     printSided: 'single_sided',
     ncr: false,
     tearOffPages: false,
+    logbookName: '',
     otherDetails: '',
   });
 
@@ -27,8 +28,10 @@ const PrintingLogbookRequestForm = () => {
     e.preventDefault();
     if (!user?.department_id) return alert('Department is required for submitting requests.');
     if (!formFile) return alert('Please upload the approved form (PDF or Word).');
+    if (!form.logbookName.trim()) return alert('Please enter the logbook name.');
 
     const specs = [
+      `Logbook name: ${form.logbookName.trim()}`,
       `Orientation: ${form.orientation}`,
       `Number of pages: ${form.numberOfPages}`,
       `Page direction: ${form.pageDirection}`,
@@ -77,6 +80,18 @@ const PrintingLogbookRequestForm = () => {
             accept=".pdf,.doc,.docx"
             onChange={(e) => setFormFile(e.target.files?.[0] || null)}
             className="w-full border rounded p-2"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block font-semibold mb-1">Logbook Name</label>
+          <input
+            type="text"
+            className="w-full border rounded p-2"
+            value={form.logbookName}
+            onChange={(e) => onChange('logbookName', e.target.value)}
+            placeholder="Enter the name of the logbook"
             required
           />
         </div>
