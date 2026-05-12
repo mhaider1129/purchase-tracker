@@ -1021,6 +1021,11 @@
         "label": "Register New User",
         "aria": "Register New User",
         "description": "Onboard a colleague with the correct access role."
+      },
+      "printingLogbook": {
+        "label": "Printing Logbook Request",
+        "aria": "Open printing logbook request form",
+        "description": "Submit approved forms for printing as serial logbooks."
       }
     },
     "emptyState": "No available actions were found for your role. Please contact an administrator if you believe this is an error.",

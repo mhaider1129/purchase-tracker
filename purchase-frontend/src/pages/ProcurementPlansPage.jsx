@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
+import PageShell from '../components/layout/PageShell';
 
 const ProcurementPlansPage = () => {
   const { user } = useCurrentUser();
@@ -202,6 +203,19 @@ const ProcurementPlansPage = () => {
 
   const statusType = loading ? 'info' : success ? 'success' : error ? 'error' : '';
 
+  const kpis = useMemo(() => {
+    const total = plans.length;
+    const visible = filteredPlans.length;
+    const latestYear = availableYears[0] || '—';
+    const totalItems = planItems.length;
+    return [
+      { label: 'Plans total', value: total },
+      { label: 'Plans in view', value: visible },
+      { label: 'Latest plan year', value: latestYear },
+      { label: 'Line items loaded', value: totalItems },
+    ];
+  }, [plans.length, filteredPlans.length, availableYears, planItems.length]);
+
   const planTable = (
     <div className="overflow-x-auto rounded border border-gray-200 shadow-sm bg-white">
       <table className="min-w-full divide-y divide-gray-200" aria-label="Procurement plans table">
@@ -349,17 +363,46 @@ const ProcurementPlansPage = () => {
   );
 
   return (
-    <>
-      <div className="mx-auto w-full max-w-5xl p-6 space-y-8">
-        <header>
-          <h1 className="text-3xl font-bold text-gray-900">Procurement Plans</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            Upload and review annual procurement plans for your department. Use the filters to quickly
-            find historical plans and confirm compliance.
-          </p>
-        </header>
-
-        <section className="grid gap-6 md:grid-cols-2">
+    <PageShell
+      title="Procurement Plans"
+      description="Upload and review annual procurement plans for your department. Use the filters to quickly find historical plans and confirm compliance."
+      actions={
+        <button
+          type="button"
+          onClick={() => fetchPlans({ year: filterYear })}
+          className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          Refresh plans
+        </button>
+      }
+      filters={
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="text-sm font-medium text-gray-700">Year
+            <select
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="all">All years</option>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>{yr}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-gray-700 md:col-span-2">Search
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              placeholder="Search by file name or year"
+            />
+          </label>
+        </div>
+      }
+      kpis={kpis}
+    >
+      <section className="grid gap-6 md:grid-cols-2">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900">Upload a plan</h2>
             <p className="mt-1 text-sm text-gray-600">
@@ -396,37 +439,6 @@ const ProcurementPlansPage = () => {
                   onChange={(e) => setFile(e.target.files[0])}
                   className="mt-1 block w-full text-sm text-gray-700 file:mr-4 file:rounded file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-blue-600 hover:file:bg-blue-100"
                   required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700" htmlFor="plan-year-filter">
-                  Filter plans by year
-                </label>
-                <select
-                  id="plan-year-filter"
-                  value={filterYear}
-                  onChange={(e) => setFilterYear(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="all">All years</option>
-                  {availableYears.map((yr) => (
-                    <option key={yr} value={yr}>
-                      {yr}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700" htmlFor="plan-search">
-                  Search plans
-                </label>
-                <input
-                  id="plan-search"
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Search by file name or year"
                 />
               </div>
               <button
@@ -606,8 +618,7 @@ const ProcurementPlansPage = () => {
             </div>
           </div>
         </section>
-      </div>
-    </>
+    </PageShell>
   );
 };
 

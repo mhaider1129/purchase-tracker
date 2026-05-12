@@ -2,11 +2,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useDarkMode from "../hooks/useDarkMode";
-import { Menu, X, Sun, Moon, ChevronDown, Search, XCircle } from "lucide-react";
+import { Menu, X, Sun, Moon, Contrast, ChevronDown, Search, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./ui/NotificationBell";
 import { useAuth } from "../hooks/useAuth";
 import { useAccessControl } from "../hooks/useAccessControl";
+import { useTheme } from "../theme/ThemeProvider";
+import { featureRegistry } from "../config/featureRegistry";
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -15,6 +17,7 @@ const Navbar = () => {
   const { user, logout, isLoading } = useAuth();
   const { hasAccess } = useAccessControl();
   const [darkMode, toggleDarkMode] = useDarkMode();
+  const { theme, themes } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [openGroup, setOpenGroup] = useState(null);
   const [isTouchInteraction, setIsTouchInteraction] = useState(false);
@@ -299,29 +302,37 @@ const Navbar = () => {
     const createItem = (condition, label, path, color) =>
       condition ? { label, path, color } : null;
 
+
+  const resolveFeatureNavItem = (featureKey, conditionOverride = null) => {
+    const feature = featureRegistry[featureKey];
+    if (!feature?.nav) return null;
+
+    const condition =
+      conditionOverride ??
+      hasAccess(
+        currentUser,
+        feature.resourceKey,
+        feature.requiredPermissions ?? [],
+        feature.requireAllPermissions,
+      );
+
+    if (!condition) return null;
+
+    return {
+      label: feature.nav.labelKey ? t(feature.nav.labelKey) : feature.nav.label,
+      path: feature.path,
+      color: feature.nav.color ?? "text-black",
+    };
+  };
+
     const navGroups = [
       {
         id: "requests",
         label: t("navbar.groups.requests"),
         items: [
-          createItem(
-            true,
-            t("navbar.openRequests"),
-            "/open-requests",
-            "text-green-600",
-          ),
-          createItem(
-            true,
-            "Approvals",
-            "/approvals",
-            "text-sky-700",
-          ),
-          createItem(
-            true,
-            "Approval History",
-            "/approval-history",
-            "text-sky-600",
-          ),
+          resolveFeatureNavItem("openRequests", true),
+          resolveFeatureNavItem("approvals", true),
+          resolveFeatureNavItem("approvalHistory", true),
           createItem(
             normalizedRole === "technician",
             t("navbar.myMaintenance"),
@@ -340,36 +351,11 @@ const Navbar = () => {
             "/audit-registry",
             "text-blue-600",
           ),
-          createItem(
-            canViewAllRequests,
-            t("navbar.allRequests"),
-            "/all-requests",
-            "text-indigo-600",
-          ),
-          createItem(
-            canImportHistorical,
-            t("navbar.historicalRequests"),
-            "/requests/historical",
-            "text-blue-700",
-          ),
-          createItem(
-            canManageProcurement,
-            t("navbar.procurementPlans"),
-            "/procurement-plans",
-            "text-teal-600",
-          ),
-          createItem(
-            canHandleProcurementQueues,
-            t("navbar.myAssigned"),
-            "/assigned-requests",
-            "text-purple-600",
-          ),
-          createItem(
-            canHandleProcurementQueues,
-            t("navbar.completedRequests"),
-            "/completed-assigned",
-            "text-gray-700",
-          ),
+          resolveFeatureNavItem("allRequests", canViewAllRequests),
+          resolveFeatureNavItem("historicalRequests", canImportHistorical),
+          resolveFeatureNavItem("procurementPlans", canManageProcurement),
+          resolveFeatureNavItem("assignedRequests", canHandleProcurementQueues),
+          resolveFeatureNavItem("completedAssigned", canHandleProcurementQueues),
         ].filter(Boolean),
       },
       {
@@ -843,10 +829,14 @@ const Navbar = () => {
               onClick={toggleDarkMode}
               className="text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-300"
               aria-label={
-                darkMode ? t("navbar.lightMode") : t("navbar.darkMode")
+                theme === themes.light
+                  ? t("navbar.darkMode")
+                  : theme === themes.dark
+                    ? t("navbar.highContrastMode")
+                    : t("navbar.lightMode")
               }
             >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === themes.highContrast ? <Contrast size={18} /> : darkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
           </div>
 

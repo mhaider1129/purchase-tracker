@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
-import Navbar from "../components/Navbar";
 import { createRisk, listRisks, updateRisk } from "../api/riskManagement";
 import { listSuppliers } from "../api/suppliers";
 
@@ -769,8 +768,7 @@ const RiskManagementPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-      <Navbar />
+    <div className="pb-10">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6 md:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>

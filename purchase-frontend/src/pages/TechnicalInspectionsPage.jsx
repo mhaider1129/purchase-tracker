@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import Navbar from "../components/Navbar";
 import {
   createTechnicalInspection,
   deleteTechnicalInspection,
@@ -452,8 +451,7 @@ const TechnicalInspectionsPage = () => {
   }, [inspections]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-      <Navbar />
+    <div>
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-6">
           <header className="rounded-xl bg-white/70 p-6 shadow-sm backdrop-blur dark:bg-gray-800/70">

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "../api/axios";
-import Navbar from "../components/Navbar";
 import {
   Bar,
   BarChart,
@@ -73,7 +72,6 @@ const WorkloadAnalysis = () => {
 
   return (
     <>
-      <Navbar />
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-between gap-4 mb-6">
           <div>

@@ -21,6 +21,7 @@ import MaintenanceRequestForm from "./pages/requests/MaintenanceRequestForm";
 import WarehouseSupplyRequestForm from "./pages/requests/WarehouseSupplyRequestForm";
 import MaintenanceWarehouseSupplyRequestForm from "./pages/requests/MaintenanceWarehouseSupplyRequestForm";
 import MedicationRequestForm from "./pages/requests/MedicationRequestForm";
+import PrintingLogbookRequestForm from "./pages/requests/PrintingLogbookRequestForm";
 import SupplyItemsPage from "./pages/requests/SupplyItemsPage";
 import WarehouseSupplyRequestsPage from "./pages/WarehouseSupplyRequestsPage";
 import CustodyIssueForm from "./pages/custody/CustodyIssueForm";
@@ -89,6 +90,7 @@ import {
 import { NotificationProvider } from "./components/ui/NotificationProvider";
 import { hasAnyPermission, hasAllPermissions } from "./utils/permissions";
 import Navbar from "./components/Navbar";
+import { featureRegistry } from "./config/featureRegistry";
 
 const ProtectedRoute = ({
   element,
@@ -96,6 +98,7 @@ const ProtectedRoute = ({
   requiredPermissions = [],
   requireAllPermissions = false,
   resourceKey,
+  routeKey,
 }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { resolvePermissions } = useAccessControl();
@@ -109,15 +112,26 @@ const ProtectedRoute = ({
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const { permissions: effectivePermissions, requireAll } = resourceKey
+  const registryConfig = routeKey ? featureRegistry[routeKey] ?? {} : {};
+  const mergedResourceKey = resourceKey ?? registryConfig.resourceKey;
+  const mergedRequiredPermissions =
+    requiredPermissions.length > 0
+      ? requiredPermissions
+      : registryConfig.requiredPermissions ?? [];
+  const mergedRequireAllPermissions =
+    requireAllPermissions || registryConfig.requireAllPermissions === true;
+  const mergedAllowedRoles =
+    allowedRoles.length > 0 ? allowedRoles : registryConfig.allowedRoles ?? [];
+
+  const { permissions: effectivePermissions, requireAll } = mergedResourceKey
     ? resolvePermissions(
-        resourceKey,
-        requiredPermissions,
-        requireAllPermissions,
+        mergedResourceKey,
+        mergedRequiredPermissions,
+        mergedRequireAllPermissions,
       )
     : {
-        permissions: requiredPermissions,
-        requireAll: requireAllPermissions,
+        permissions: mergedRequiredPermissions,
+        requireAll: mergedRequireAllPermissions,
       };
 
   let hasPermissionAccess = true;
@@ -128,9 +142,9 @@ const ProtectedRoute = ({
   }
 
   let hasRoleAccess = true;
-  if (allowedRoles.length > 0) {
+  if (mergedAllowedRoles.length > 0) {
     const normalizedRole = user?.role?.toLowerCase?.() ?? "";
-    hasRoleAccess = allowedRoles.some(
+    hasRoleAccess = mergedAllowedRoles.some(
       (role) => String(role).toLowerCase() === normalizedRole,
     );
   }
@@ -184,6 +198,10 @@ const AppRoutes = () => (
     <Route
       path="/requests/warehouse-supply"
       element={<ProtectedRoute element={<WarehouseSupplyRequestForm />} />}
+    />
+    <Route
+      path="/requests/printing-logbook"
+      element={<ProtectedRoute element={<PrintingLogbookRequestForm />} />}
     />
     <Route
       path="/requests/historical"
@@ -474,11 +492,11 @@ const AppRoutes = () => (
     />
     <Route
       path="/approvals"
-      element={<ProtectedRoute element={<ApprovalsPanel />} />}
+      element={<ProtectedRoute routeKey="approvals" element={<ApprovalsPanel />} />}
     />
     <Route
       path="/open-requests"
-      element={<ProtectedRoute element={<OpenRequestsPage />} />}
+      element={<ProtectedRoute routeKey="openRequests" element={<OpenRequestsPage />} />}
     />
     <Route
       path="/request-submitted"
@@ -486,7 +504,7 @@ const AppRoutes = () => (
     />
     <Route
       path="/approval-history"
-      element={<ProtectedRoute element={<ApprovalHistory />} />}
+      element={<ProtectedRoute routeKey="approvalHistory" element={<ApprovalHistory />} />}
     />
 
     {/* ✅ Maintenance Routes */}
@@ -810,7 +828,7 @@ const AppRoutes = () => (
 
 const AppShell = ({ children }) => {
   return (
-    <div className="app-shell min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="app-shell">
       <Navbar />
       <main className="app-main">{children}</main>
     </div>

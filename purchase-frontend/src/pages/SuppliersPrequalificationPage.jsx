@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ClipboardList, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Navbar from "../components/Navbar";
 import { listSuppliers } from "../api/suppliers";
 
 const STATUS_OPTIONS = [
@@ -200,8 +199,7 @@ const SuppliersPrequalificationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors dark:bg-gray-950 dark:text-gray-100">
-      <Navbar />
+    <div className="transition-colors">
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>

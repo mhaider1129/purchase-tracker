@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import Navbar from "../components/Navbar";
 import { useTranslation } from "react-i18next";
 import apiRequests from "../api/requests";
 import Card from "../components/Card";

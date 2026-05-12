@@ -152,6 +152,14 @@ const ACTION_GROUPS = [
         icon: Pill,
       },
       {
+        labelKey: 'requestTypeSelector.actions.printingLogbook.label',
+        ariaLabelKey: 'requestTypeSelector.actions.printingLogbook.aria',
+        descriptionKey: 'requestTypeSelector.actions.printingLogbook.description',
+        path: '/requests/printing-logbook',
+        buttonClassName: 'bg-cyan-600 hover:bg-cyan-700 focus:ring-cyan-400',
+        icon: FileBox,
+      },
+      {
         labelKey: 'requestTypeSelector.actions.itRequest.label',
         ariaLabelKey: 'requestTypeSelector.actions.itRequest.aria',
         descriptionKey: 'requestTypeSelector.actions.itRequest.description',

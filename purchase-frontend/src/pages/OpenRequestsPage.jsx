@@ -253,7 +253,7 @@ const OpenRequestsPage = () => {
   const getCurrentStage = (req) => {
     const normalizedStatus = req.status?.toLowerCase();
 
-    if (!req.status) return tr('stageUnknown', 'Status unavailable');
+    if (!req.status) return tr('stageUnknown', { defaultValue: 'Status unavailable' });
 
     if (['approved', 'rejected', 'completed'].includes(normalizedStatus)) {
       return tr('stageFinalized', { status: req.status });
@@ -261,18 +261,17 @@ const OpenRequestsPage = () => {
 
     if (req.current_approver_role) {
       const step = req.current_approver_role;
-      return tr('awaitingStep', 'Awaiting {{step}}', { step });
+      return tr('awaitingStep', { defaultValue: 'Awaiting {{step}}', step });
     }
 
     if (req.current_approval_level) {
-      return tr(
-        'awaitingLevelOnly',
-        'Awaiting approval level {{level}}',
-        { level: req.current_approval_level }
-      );
+      return tr('awaitingLevelOnly', {
+        defaultValue: 'Awaiting approval level {{level}}',
+        level: req.current_approval_level,
+      });
     }
 
-    return tr('stageUnknown', 'Status unavailable');
+    return tr('stageUnknown', { defaultValue: 'Status unavailable' });
   };
 
   const openRequestDetails = useCallback(

@@ -1,37 +1,31 @@
-import { useCallback, useEffect, useState } from "react";
-import api from "../api/axios";
+import { useCallback } from 'react';
+import api from '../api/axios';
+import { useDataQuery } from './useDataQuery';
 
 const useWarehouseStockItems = (warehouseId) => {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
   const fetchItems = useCallback(async () => {
     if (!warehouseId) {
-      setItems([]);
-      setError("");
-      return;
+      return [];
     }
 
-    setLoading(true);
-    setError("");
-    try {
-      const res = await api.get(`/api/warehouse-inventory/${warehouseId}/items`);
-      setItems(res.data || []);
-    } catch (err) {
-      console.error("Failed to load warehouse items", err);
-      setError(err?.response?.data?.message || "Failed to load warehouse items");
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
+    const res = await api.get(`/api/warehouse-inventory/${warehouseId}/items`);
+    return res.data || [];
   }, [warehouseId]);
 
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  const { data, error, isLoading, isFetching, refetch } = useDataQuery({
+    queryKey: ['warehouse-items', warehouseId],
+    queryFn: fetchItems,
+    enabled: Boolean(warehouseId),
+    staleTime: 60_000,
+    retry: 1,
+  });
 
-  return { items, loading, error, refresh: fetchItems };
+  return {
+    items: data || [],
+    loading: isLoading || isFetching,
+    error: error?.response?.data?.message || (error ? 'Failed to load warehouse items' : ''),
+    refresh: refetch,
+  };
 };
 
 export default useWarehouseStockItems;

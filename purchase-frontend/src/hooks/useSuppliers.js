@@ -1,44 +1,33 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { listSuppliers } from '../api/suppliers';
+import { useDataQuery } from './useDataQuery';
 
 export const useSuppliers = ({ autoLoad = true } = {}) => {
-  const [suppliers, setSuppliers] = useState([]);
-  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
-  const [suppliersError, setSuppliersError] = useState('');
-
-  const reloadSuppliers = useCallback(async () => {
-    setLoadingSuppliers(true);
-    try {
-      const rows = await listSuppliers();
-      setSuppliers(rows || []);
-      setSuppliersError('');
-      return rows || [];
-    } catch (err) {
-      setSuppliersError(err?.response?.data?.message || 'Failed to load suppliers');
-      throw err;
-    } finally {
-      setLoadingSuppliers(false);
-    }
+  const fetchSuppliers = useCallback(async () => {
+    const rows = await listSuppliers();
+    return rows || [];
   }, []);
 
-  useEffect(() => {
-    if (!autoLoad) {
-      return;
-    }
+  const { data, error, isLoading, isFetching, refetch } = useDataQuery({
+    queryKey: ['suppliers'],
+    queryFn: fetchSuppliers,
+    enabled: autoLoad,
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
 
-    reloadSuppliers().catch(() => {});
-  }, [autoLoad, reloadSuppliers]);
+  const suppliers = useMemo(() => data || [], [data]);
 
   const supplierOptions = useMemo(
     () => suppliers.map((supplier) => ({ id: String(supplier.id), name: supplier.name || '-' })),
-    [suppliers]
+    [suppliers],
   );
 
   return {
     suppliers,
     supplierOptions,
-    loadingSuppliers,
-    suppliersError,
-    reloadSuppliers,
+    loadingSuppliers: isLoading || isFetching,
+    suppliersError: error?.response?.data?.message || (error ? 'Failed to load suppliers' : ''),
+    reloadSuppliers: refetch,
   };
 };

@@ -23,6 +23,7 @@ import useCurrentUser from '../../hooks/useCurrentUser';
 
 const ITEMS_PER_PAGE = 8;
 const ITEM_STATUS_OPTIONS = ['Pending', 'Approved', 'Rejected'];
+const TABLE_COLUMNS = ['name', 'quantity', 'status', 'comments'];
 
 const FEEDBACK_TONE_CLASSES = {
   success: 'text-emerald-600',
@@ -64,6 +65,18 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
   const [urgentSelections, setUrgentSelections] = useState({});
   const [estimatedCostDrafts, setEstimatedCostDrafts] = useState({});
   const [estimatedCostErrors, setEstimatedCostErrors] = useState({});
+  const [densityMode, setDensityMode] = useState(() => localStorage.getItem('approvals-density') || 'comfortable');
+  const [groupBy, setGroupBy] = useState(() => localStorage.getItem('approvals-group-by') || 'none');
+  const [visibleColumns, setVisibleColumns] = useState(() => {
+    const saved = localStorage.getItem('approvals-visible-columns');
+    if (!saved) return TABLE_COLUMNS;
+    try {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed : TABLE_COLUMNS;
+    } catch {
+      return TABLE_COLUMNS;
+    }
+  });
 
   const {
     approvalsMap,
@@ -729,6 +742,34 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
     [t],
   );
 
+  useEffect(() => {
+    localStorage.setItem('approvals-density', densityMode);
+  }, [densityMode]);
+
+  useEffect(() => {
+    localStorage.setItem('approvals-group-by', groupBy);
+  }, [groupBy]);
+
+  useEffect(() => {
+    localStorage.setItem('approvals-visible-columns', JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  const groupedRequests = useMemo(() => {
+    if (groupBy === 'none') return [{ key: 'all', label: null, requests: paginatedRequests }];
+    const groups = new Map();
+    paginatedRequests.forEach((req) => {
+      const key =
+        groupBy === 'department'
+          ? req.department_name || t('maintenanceHODApprovals.labels.notApplicable')
+          : req.project_name || t('maintenanceHODApprovals.labels.notApplicable');
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(req);
+    });
+    return Array.from(groups.entries()).map(([key, reqs]) => ({ key, label: key, requests: reqs }));
+  }, [groupBy, paginatedRequests, t]);
+
+  const rowSpacingClass = densityMode === 'compact' ? 'py-1.5' : densityMode === 'comfortable' ? 'py-3' : 'py-4';
+
   return (
     <>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -893,9 +934,49 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
             </div>
           </div>
           <div className="mt-4 flex justify-end">
+            <div className="mr-3 flex items-center gap-2 text-xs">
+              <span className="font-medium text-slate-600">Density</span>
+              <select
+                value={densityMode}
+                onChange={(event) => setDensityMode(event.target.value)}
+                className="rounded border border-slate-200 px-2 py-1 text-slate-700"
+              >
+                <option value="compact">Compact</option>
+                <option value="comfortable">Comfortable</option>
+                <option value="spacious">Spacious</option>
+              </select>
+              <span className="ml-2 font-medium text-slate-600">Group</span>
+              <select
+                value={groupBy}
+                onChange={(event) => setGroupBy(event.target.value)}
+                className="rounded border border-slate-200 px-2 py-1 text-slate-700"
+              >
+                <option value="none">None</option>
+                <option value="department">Department</option>
+                <option value="project">Project</option>
+              </select>
+            </div>
             <Button variant="secondary" onClick={resetFilters} aria-label={t('maintenanceHODApprovals.filters.resetAria')}>
               {t('maintenanceHODApprovals.filters.reset')}
             </Button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-600">
+            {TABLE_COLUMNS.map((column) => (
+              <label key={column} className="inline-flex items-center gap-1">
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes(column)}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      setVisibleColumns((prev) => Array.from(new Set([...prev, column])));
+                    } else {
+                      setVisibleColumns((prev) => prev.filter((item) => item !== column));
+                    }
+                  }}
+                />
+                <span className="capitalize">{column}</span>
+              </label>
+            ))}
           </div>
         </div>
 
@@ -913,9 +994,16 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
 
         <div className="mt-6">
           {loading ? (
-            <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white py-16">
-              <Loader2 className="mr-3 h-6 w-6 animate-spin text-blue-600" aria-hidden />
-              <span className="text-sm text-slate-600">{t('common.loading')}</span>
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6">
+              <div className="animate-pulse space-y-4">
+                {[1, 2, 3].map((row) => (
+                  <div key={row} className="rounded-lg border border-slate-200 p-4">
+                    <div className="h-4 w-1/3 rounded bg-slate-200" />
+                    <div className="mt-3 h-3 w-3/4 rounded bg-slate-100" />
+                    <div className="mt-2 h-3 w-1/2 rounded bg-slate-100" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : error ? (
             <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">
@@ -927,7 +1015,14 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
             </div>
           ) : (
             <div className="space-y-5">
-              {paginatedRequests.map((request) => {
+              {groupedRequests.map((group) => (
+                <div key={group.key} className="space-y-3">
+                  {group.label && (
+                    <div className="sticky top-0 z-10 rounded bg-slate-100 px-3 py-1 text-xs font-semibold uppercase text-slate-700">
+                      {group.label}
+                    </div>
+                  )}
+                  {group.requests.map((request) => {
                 const isExpanded = expandedRequestId === request.request_id;
                 const attachments = attachmentsMap[request.request_id] || [];
                 const attachmentsLoading = attachmentLoadingMap[request.request_id];
@@ -1035,22 +1130,22 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                       </span>
                                     </div>
                                   )}
-                                  <div className="overflow-x-auto rounded border border-slate-200">
+                                  <div className="max-h-[420px] overflow-auto rounded border border-slate-200">
                                     <table className="min-w-full divide-y divide-slate-200 text-sm">
-                                      <thead className="bg-slate-50">
+                                      <thead className="sticky top-0 z-10 bg-slate-50">
                                         <tr>
-                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                          {visibleColumns.includes('name') && <th className="px-3 py-2 text-left font-medium text-slate-600">
                                             {t('maintenanceHODApprovals.itemsColumns.name')}
-                                          </th>
-                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                          </th>}
+                                          {visibleColumns.includes('quantity') && <th className="px-3 py-2 text-left font-medium text-slate-600">
                                             {t('maintenanceHODApprovals.itemsColumns.quantity')}
-                                          </th>
-                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                          </th>}
+                                          {visibleColumns.includes('status') && <th className="px-3 py-2 text-left font-medium text-slate-600">
                                             {t('maintenanceHODApprovals.itemsColumns.status')}
-                                          </th>
-                                          <th className="px-3 py-2 text-left font-medium text-slate-600">
+                                          </th>}
+                                          {visibleColumns.includes('comments') && <th className="px-3 py-2 text-left font-medium text-slate-600">
                                             {t('maintenanceHODApprovals.itemsColumns.comments')}
-                                          </th>
+                                          </th>}
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-slate-100">
@@ -1072,7 +1167,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                               key={item.id || `${request.request_id}-${item.item_name}`}
                                               className={`${rowHighlight} transition-colors`}
                                             >
-                                              <td className="px-3 py-3 text-slate-800">
+                                              {visibleColumns.includes('name') && <td className={`px-3 ${rowSpacingClass} text-slate-800`}>
                                                 <div className="font-medium">{item.item_name || '—'}</div>
                                                 {(item.brand || item.specs) && (
                                                   <div className="mt-1 text-xs text-slate-500">
@@ -1080,8 +1175,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                                     {item.specs && <span>{item.specs}</span>}
                                                   </div>
                                                 )}
-                                              </td>
-                                              <td className="px-3 py-3 text-slate-600">
+                                              </td>}
+                                              {visibleColumns.includes('quantity') && <td className={`px-3 ${rowSpacingClass} text-slate-600`}>
                                                 <div>{item.quantity ?? '—'}</div>
                                                 {item.available_quantity != null && (
                                                   <div className="text-xs text-slate-500">
@@ -1090,8 +1185,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                                     })}
                                                   </div>
                                                 )}
-                                              </td>
-                                              <td className="px-3 py-3 text-slate-600">
+                                              </td>}
+                                              {visibleColumns.includes('status') && <td className={`px-3 ${rowSpacingClass} text-slate-600`}>
                                                 <label htmlFor={selectId} className="sr-only">
                                                   {t('maintenanceHODApprovals.itemsColumns.status')}
                                                 </label>
@@ -1114,8 +1209,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                                     </option>
                                                   ))}
                                                 </select>
-                                              </td>
-                                              <td className="px-3 py-3 text-slate-600">
+                                              </td>}
+                                              {visibleColumns.includes('comments') && <td className={`px-3 ${rowSpacingClass} text-slate-600`}>
                                                 <label htmlFor={commentId} className="sr-only">
                                                   {t('maintenanceHODApprovals.itemsColumns.comments')}
                                                 </label>
@@ -1136,7 +1231,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                                   }
                                                   disabled={isSavingItems}
                                                 />
-                                              </td>
+                                              </td>}
                                             </tr>
                                           );
                                         })}
@@ -1163,7 +1258,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                           reference: request.maintenance_ref_number,
                                         })}
                                       >
-                                        {t('maintenanceHODApprovals.itemActions.save')}
+                                        {isSavingItems ? 'Saving...' : t('maintenanceHODApprovals.itemActions.save')}
                                       </Button>
                                     </div>
                                   </div>
@@ -1327,7 +1422,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                   reference: request.maintenance_ref_number,
                                 })}
                               >
-                                {t('maintenanceHODApprovals.actions.approve')}
+                                {isProcessing && processingDecision === 'Approved' ? 'Approving…' : t('maintenanceHODApprovals.actions.approve')}
                               </Button>
                               <Button
                                 variant="destructive"
@@ -1338,7 +1433,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                   reference: request.maintenance_ref_number,
                                 })}
                               >
-                                {t('maintenanceHODApprovals.actions.reject')}
+                                {isProcessing && processingDecision === 'Rejected' ? 'Submitting…' : t('maintenanceHODApprovals.actions.reject')}
                               </Button>
                             </div>
                           </div>
@@ -1348,6 +1443,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                   </div>
                 );
               })}
+                </div>
+              ))}
 
               {filteredRequests.length > ITEMS_PER_PAGE && (
                 <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
