@@ -1,5 +1,5 @@
 //src/pages/ApprovalsPanel.js
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   AlertTriangle,
   Building2,
@@ -16,8 +16,10 @@ import ApprovalRequestCard from '../components/approvals/ApprovalRequestCard';
 import AttachmentsPanel from '../components/approvals/AttachmentsPanel';
 import ItemDecisionTable from '../components/approvals/ItemDecisionTable';
 import { getRequesterDisplay } from '../utils/requester';
+import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
 
 const ApprovalsPanel = () => {
+  const [onboardingVersion, setOnboardingVersion] = useState(0);
   const { user } = useCurrentUser();
   const {
     availableRequestTypes,
@@ -139,6 +141,20 @@ const ApprovalsPanel = () => {
               Refresh
             </Button>
           </div>
+        </div>
+        <div className="mt-4">
+          <GuidedWorkflowPanel
+            key={onboardingVersion}
+            title="First-run walkthrough: Approvals"
+            subtitle="Use this guide to process approvals consistently and quickly."
+            storageKey="onboarding-approvals"
+            onCompleteStep={() => setOnboardingVersion((v) => v + 1)}
+            steps={[
+              { id: 'filter_queue', title: 'Filter your pending queue', tip: 'Start with urgent and newest requests first.' },
+              { id: 'review_items', title: 'Review item-level details', tip: 'Check quantity, notes, and attachments before deciding.' },
+              { id: 'submit_decision', title: 'Submit approval decision', tip: 'Leave concise comments for audit clarity.' },
+            ]}
+          />
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -144,6 +144,8 @@ const isPostApprovalStatus = (status) => {
 };
 
 const AllRequestsPage = () => {
+  const PRINT_TEMPLATE_URL_STORAGE_KEY = 'print_template_background_url';
+  const PRINT_TEMPLATE_FILE_STORAGE_KEY = 'print_template_background_file';
   const { user } = useCurrentUser();
   const [requests, setRequests] = useState([]);
   const [expandedAssignId, setExpandedAssignId] = useState(null);
@@ -168,6 +170,10 @@ const AllRequestsPage = () => {
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [printLanguage, setPrintLanguage] = useState('en');
+  const [printTemplateUrl, setPrintTemplateUrl] = useState(() => localStorage.getItem(PRINT_TEMPLATE_URL_STORAGE_KEY) || '');
+  const [printTemplateFileData, setPrintTemplateFileData] = useState(
+    () => localStorage.getItem(PRINT_TEMPLATE_FILE_STORAGE_KEY) || '',
+  );
   const limit = 10;
   const {
     expandedApprovalsId,
@@ -210,6 +216,13 @@ const AllRequestsPage = () => {
     setUrgencyNotes: setDirectPurchaseUrgency,
     handleSendDirectCommunication,
   } = useDirectPurchaseCommunications(user?.role);
+
+  useEffect(() => {
+    localStorage.setItem(PRINT_TEMPLATE_URL_STORAGE_KEY, printTemplateUrl.trim());
+  }, [printTemplateUrl]);
+  useEffect(() => {
+    localStorage.setItem(PRINT_TEMPLATE_FILE_STORAGE_KEY, printTemplateFileData);
+  }, [printTemplateFileData]);
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -360,6 +373,22 @@ const AllRequestsPage = () => {
     } finally {
       setLoadingExport(false);
     }
+  };
+
+  const handleTemplateFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Template file is too large. Please use a file under 10MB.');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      alert('Word files are not supported directly. Please export your Word template as PNG/JPG first.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setPrintTemplateFileData(typeof reader.result === 'string' ? reader.result : '');
+    reader.readAsDataURL(file);
   };
 
   const handlePrint = async (requestId) => {
@@ -514,6 +543,20 @@ const AllRequestsPage = () => {
             <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
           </section>`
         : '';
+      const templateBackground = printTemplateFileData || printTemplateUrl.trim();
+      const templateCss = templateBackground
+        ? `
+              body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: url('${escapeHtml(templateBackground)}') center / contain no-repeat;
+                opacity: 0.28;
+                pointer-events: none;
+                z-index: 0;
+              }
+              .page { position: relative; z-index: 1; }`
+        : '';
 
       const body = `
         <!DOCTYPE html>
@@ -538,6 +581,7 @@ const AllRequestsPage = () => {
                 background: #f9fafb;
                 direction: ${direction};
               }
+              ${templateCss}
               .page {
                 background: #ffffff;
                 border-radius: 12px;
@@ -865,6 +909,36 @@ const AllRequestsPage = () => {
             <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
             <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
           </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-700" htmlFor="print-template-file">
+            Template File
+          </label>
+          <input
+            id="print-template-file"
+            type="file"
+            accept="image/png,image/jpeg,image/jpg,image/webp"
+            className="border p-2 rounded"
+            onChange={handleTemplateFileChange}
+          />
+          {printTemplateFileData ? (
+            <button type="button" className="border px-2 py-1 rounded text-sm" onClick={() => setPrintTemplateFileData('')}>
+              Clear file
+            </button>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-700" htmlFor="print-template-url">
+            Print Template URL
+          </label>
+          <input
+            id="print-template-url"
+            type="url"
+            className="border p-2 rounded min-w-72"
+            placeholder="https://example.com/internal-form-template.png"
+            value={printTemplateUrl}
+            onChange={(e) => setPrintTemplateUrl(e.target.value)}
+          />
         </div>
 
         <button

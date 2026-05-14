@@ -45,6 +45,30 @@ const { primary: browserPrimary } = resolveBrowserBase();
 const API_BASE = normalizedEnvBase || browserPrimary;
 
 // ✅ Create axios instance
+
+const normalizeApiPath = (url) => {
+  if (typeof url !== "string") return url;
+
+  if (!API_BASE) return url;
+
+  const basePath = (() => {
+    try {
+      if (/^https?:\/\//i.test(API_BASE)) {
+        return new URL(API_BASE).pathname.replace(/\/+$/, "");
+      }
+      return API_BASE.replace(/\/+$/, "");
+    } catch {
+      return "";
+    }
+  })();
+
+  if (basePath === "/api" && url.startsWith("/api/")) {
+    return url.replace(/^\/api/, "");
+  }
+
+  return url;
+};
+
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 15000, // ⏱️ optional: 15s timeout to catch network issues
@@ -56,6 +80,8 @@ const api = axios.create({
 // ✅ Attach token automatically
 api.interceptors.request.use(
   (config) => {
+    config.url = normalizeApiPath(config.url);
+
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

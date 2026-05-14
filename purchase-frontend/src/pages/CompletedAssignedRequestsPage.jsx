@@ -84,6 +84,8 @@ const PRINT_TRANSLATIONS = {
 };
 
 const CompletedAssignedRequestsPage = () => {
+  const PRINT_TEMPLATE_URL_STORAGE_KEY = 'print_template_background_url';
+  const PRINT_TEMPLATE_FILE_STORAGE_KEY = 'print_template_background_file';
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
@@ -93,6 +95,10 @@ const CompletedAssignedRequestsPage = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [printLanguage, setPrintLanguage] = useState('en');
+  const [printTemplateUrl, setPrintTemplateUrl] = useState(() => localStorage.getItem(PRINT_TEMPLATE_URL_STORAGE_KEY) || '');
+  const [printTemplateFileData, setPrintTemplateFileData] = useState(
+    () => localStorage.getItem(PRINT_TEMPLATE_FILE_STORAGE_KEY) || '',
+  );
 
   const {
     attachmentsMap,
@@ -119,6 +125,13 @@ const CompletedAssignedRequestsPage = () => {
       setLoading(false);
     }
   }, [resetAttachments, search]);
+
+  useEffect(() => {
+    localStorage.setItem(PRINT_TEMPLATE_URL_STORAGE_KEY, printTemplateUrl.trim());
+  }, [printTemplateUrl]);
+  useEffect(() => {
+    localStorage.setItem(PRINT_TEMPLATE_FILE_STORAGE_KEY, printTemplateFileData);
+  }, [printTemplateFileData]);
 
   const toggleItems = async (requestId) => {
     if (expandedRequestId === requestId) {
@@ -227,6 +240,22 @@ const CompletedAssignedRequestsPage = () => {
     setSearch('');
     setTypeFilter('all');
     setDateFilter('all');
+  };
+
+  const handleTemplateFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Template file is too large. Please use a file under 10MB.');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      alert('Word files are not supported directly. Please export your Word template as PNG/JPG first.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setPrintTemplateFileData(typeof reader.result === 'string' ? reader.result : '');
+    reader.readAsDataURL(file);
   };
 
   const handlePrint = async (requestId) => {
@@ -359,6 +388,20 @@ const CompletedAssignedRequestsPage = () => {
             <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
           </section>`
         : '';
+      const templateBackground = printTemplateFileData || printTemplateUrl.trim();
+      const templateCss = templateBackground
+        ? `
+              body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: url('${escapeHtml(templateBackground)}') center / contain no-repeat;
+                opacity: 0.28;
+                pointer-events: none;
+                z-index: 0;
+              }
+              .page { position: relative; z-index: 1; }`
+        : '';
 
       const body = `
         <!DOCTYPE html>
@@ -382,6 +425,7 @@ const CompletedAssignedRequestsPage = () => {
                 padding: 32px;
                 background: #f9fafb;
               }
+              ${templateCss}
               .page {
                 background: #ffffff;
                 border-radius: 12px;
@@ -708,6 +752,36 @@ const CompletedAssignedRequestsPage = () => {
                 </option>
               ))}
             </select>
+          </div>
+          <div className="md:min-w-80">
+            <label className="block text-sm font-medium text-gray-700">Template File</label>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                onChange={handleTemplateFileChange}
+              />
+              {printTemplateFileData ? (
+                <button
+                  type="button"
+                  className="inline-flex h-9 items-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  onClick={() => setPrintTemplateFileData('')}
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="md:min-w-80">
+            <label className="block text-sm font-medium text-gray-700">Print Template URL</label>
+            <input
+              type="url"
+              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="https://example.com/internal-form-template.png"
+              value={printTemplateUrl}
+              onChange={(e) => setPrintTemplateUrl(e.target.value)}
+            />
           </div>
 
           <div className="md:w-48">

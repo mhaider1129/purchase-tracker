@@ -7,6 +7,10 @@ export const calculateSafetyStock = (payload) =>
   api.post("/api/planning/safety-stock", payload);
 
 export const runMrp = (payload) => api.post("/api/planning/mrp", payload);
+export const fetchPlanningDefaults = (warehouseId) =>
+  api.get("/api/planning/defaults", { params: warehouseId ? { warehouse_id: warehouseId } : {} });
+export const savePlanningDefaults = (payload) =>
+  api.post("/api/planning/defaults", payload);
 
 export const saveReplenishmentPolicy = (payload) =>
   api.post("/api/planning/replenishment/policies", payload);
@@ -18,6 +22,8 @@ export default {
   fetchDemandForecast,
   calculateSafetyStock,
   runMrp,
+  fetchPlanningDefaults,
+  savePlanningDefaults,
   saveReplenishmentPolicy,
   runReplenishmentPlanner,
 };

@@ -2,8 +2,10 @@
 import React, { useMemo, useState } from "react";
 import {
   calculateSafetyStock as calculateSafetyStockApi,
+  fetchPlanningDefaults,
   fetchDemandForecast,
   runReplenishmentPlanner,
+  savePlanningDefaults as savePlanningDefaultsApi,
   saveReplenishmentPolicy,
   runMrp,
 } from "../api/planning";
@@ -78,6 +80,32 @@ const PlanningWorkbench = () => {
   const [replenishmentLoading, setReplenishmentLoading] = useState(false);
   const [replenishmentTasks, setReplenishmentTasks] = useState([]);
   const [replenishmentError, setReplenishmentError] = useState("");
+  const [defaultsWarehouseId, setDefaultsWarehouseId] = useState("");
+  const [defaultsMessage, setDefaultsMessage] = useState("");
+
+  const loadPlanningDefaults = async () => {
+    const warehouseId = defaultsWarehouseId ? Number(defaultsWarehouseId) : undefined;
+    const res = await fetchPlanningDefaults(warehouseId);
+    const s = res.data.settings || {};
+    setForecastForm((f) => ({ ...f, horizon_months: Number(s.forecast_horizon_months || 6), window_size: Number(s.forecast_window_size || 3) }));
+    setSafetyForm((f) => ({ ...f, lead_time_days: Number(s.safety_lead_time_days || 14), review_period_days: Number(s.safety_review_period_days || 7) }));
+    setMrpItem((f) => ({ ...f, horizon_days: Number(s.mrp_horizon_days || 84), bucket_days: Number(s.mrp_bucket_days || 7), lead_time_days: Number(s.safety_lead_time_days || 14) }));
+    setPolicyForm((f) => ({ ...f, lead_time_days: Number(s.safety_lead_time_days || 14), review_period_days: Number(s.safety_review_period_days || 7), warehouse_id: warehouseId || f.warehouse_id }));
+    setDefaultsMessage("Defaults loaded.");
+  };
+
+  const savePlanningDefaults = async () => {
+    await savePlanningDefaultsApi({
+      warehouse_id: defaultsWarehouseId ? Number(defaultsWarehouseId) : null,
+      forecast_horizon_months: forecastForm.horizon_months,
+      forecast_window_size: forecastForm.window_size,
+      safety_lead_time_days: safetyForm.lead_time_days,
+      safety_review_period_days: safetyForm.review_period_days,
+      mrp_horizon_days: mrpItem.horizon_days,
+      mrp_bucket_days: mrpItem.bucket_days,
+    });
+    setDefaultsMessage("Defaults saved.");
+  };
 
   const addSopRow = () => {
     setSopRows((rows) => [...rows, { period: "", adjustment: 0 }]);
@@ -354,6 +382,17 @@ const PlanningWorkbench = () => {
         </header>
 
         <ForecastingDemandModuleCard />
+        <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-end gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Warehouse override (optional)</label>
+              <input className="mt-1 rounded border border-gray-300 px-3 py-2 text-sm" value={defaultsWarehouseId} onChange={(e) => setDefaultsWarehouseId(e.target.value)} placeholder="Global defaults when blank" />
+            </div>
+            <button type="button" onClick={loadPlanningDefaults} className="rounded bg-slate-700 px-3 py-2 text-sm font-medium text-white">Load defaults</button>
+            <button type="button" onClick={savePlanningDefaults} className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white">Save current as defaults</button>
+          </div>
+          {defaultsMessage && <p className="mt-2 text-sm text-green-700">{defaultsMessage}</p>}
+        </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

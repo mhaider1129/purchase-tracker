@@ -36,18 +36,29 @@ const formatDays = (value) => {
   return Number.isFinite(numeric) ? `${numeric.toFixed(1)}d` : "N/A";
 };
 
+
+const DEFAULT_FILTERS = { pendingStatuses: ["Pending", "On Hold"], approvedStatus: "Approved", completionWindowDays: 30 };
+const GLOBAL_KEY = "workload-dashboard-default-filters";
+const viewsKeyForUser = (userId) => `workload-dashboard-views:${userId || "anon"}`;
+
 const WorkloadAnalysis = () => {
   const translate = usePageTranslation("workload");
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const userId = localStorage.getItem("userId") || "anon";
+  const [filters, setFilters] = useState(() => {
+    const globalDefaults = JSON.parse(localStorage.getItem(GLOBAL_KEY) || "null") || DEFAULT_FILTERS;
+    return { ...DEFAULT_FILTERS, ...globalDefaults };
+  });
+  const [viewName, setViewName] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get("/api/dashboard/workload");
+        const res = await axios.get("/api/dashboard/workload", { params: { pending_statuses: filters.pendingStatuses.join(","), approved_status: filters.approvedStatus, completion_window_days: filters.completionWindowDays } });
         setData(res.data);
       } catch (err) {
         console.error("❌ Failed to load workload analysis:", err);
@@ -59,7 +70,7 @@ const WorkloadAnalysis = () => {
       }
     };
     fetchData();
-  }, [translate]);
+  }, [translate, filters]);
 
   const topUsers = useMemo(() => {
     if (!data?.workload_by_user) return [];
@@ -74,6 +85,16 @@ const WorkloadAnalysis = () => {
     <>
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex items-center justify-between gap-4 mb-6">
+
+          <div className="flex items-center gap-2 text-xs">
+            <input className="border rounded px-2 py-1" value={filters.pendingStatuses.join(", ")} onChange={(e) => setFilters((f) => ({ ...f, pendingStatuses: e.target.value.split(",").map((v) => v.trim()).filter(Boolean) }))} placeholder="Pending statuses" />
+            <input className="border rounded px-2 py-1" value={filters.approvedStatus} onChange={(e) => setFilters((f) => ({ ...f, approvedStatus: e.target.value }))} placeholder="Approved status" />
+            <input className="border rounded px-2 py-1 w-20" type="number" min="1" max="365" value={filters.completionWindowDays} onChange={(e) => setFilters((f) => ({ ...f, completionWindowDays: Number(e.target.value) || 30 }))} />
+            <button className="border rounded px-2 py-1" onClick={() => localStorage.setItem(GLOBAL_KEY, JSON.stringify(filters))}>Save defaults</button>
+            <input className="border rounded px-2 py-1" value={viewName} onChange={(e)=>setViewName(e.target.value)} placeholder="View name" />
+            <button className="border rounded px-2 py-1" onClick={() => { const key = viewsKeyForUser(userId); const views = JSON.parse(localStorage.getItem(key) || '{}'); views[viewName || `view-${Date.now()}`] = filters; localStorage.setItem(key, JSON.stringify(views)); }}>Save view</button>
+          </div>
+
           <div>
             <p className="text-sm text-slate-500">{translate("subtitle", { defaultValue: "Monitor approval queues" })}</p>
             <h1 className="text-2xl font-bold text-indigo-700">

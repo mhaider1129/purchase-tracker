@@ -1,5 +1,5 @@
 // src/pages/requests/NonStockRequestForm.jsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
@@ -36,6 +36,32 @@ const NonStockRequestForm = () => {
   const MAX_ATTACHMENT_SIZE_MB = 20;
   const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
   const MAX_ITEMS_PER_REQUEST = 50;
+  const DRAFT_STORAGE_KEY = 'non_stock_request_draft_v1';
+  const fieldRefs = useRef({});
+
+  const focusFirstError = useCallback((errorsByItem, hasJustificationError = false) => {
+    if (hasJustificationError) {
+      const node = fieldRefs.current['justification'];
+      if (node) {
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        node.focus();
+      }
+      return;
+    }
+
+    for (let i = 0; i < errorsByItem.length; i += 1) {
+      const fields = Object.keys(errorsByItem[i] || {});
+      if (fields.length > 0) {
+        const node = fieldRefs.current[`item-${i}-${fields[0]}`];
+        if (node) {
+          node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          node.focus();
+        }
+        return;
+      }
+    }
+  }, []);
+
 
   const specTemplates = useMemo(
     () => [
@@ -84,7 +110,7 @@ const NonStockRequestForm = () => {
     return {
       item_name: '',
       quantity: 1,
-      unit_cost: 0,
+      unit_cost: '0',
       brand: '',
       available_quantity: '',
       intended_use: '',
@@ -145,6 +171,15 @@ const NonStockRequestForm = () => {
     return { validFiles, error: errors.join(' ') };
   };
 
+
+  const validateSingleItemField = useCallback((item, field) => {
+    if (field === 'item_name' && !item.item_name.trim()) return tr('errors.itemNameRequired');
+    if (field === 'quantity' && (!item.quantity || Number(item.quantity) < 1)) return tr('errors.quantityRequired');
+    if (field === 'intended_use' && !item.intended_use.trim()) return tr('errors.intendedUseRequired');
+    if (field === 'specs' && !item.specs.trim()) return tr('errors.specsRequired');
+    return '';
+  }, [tr]);
+
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
     const numericFields = ['quantity', 'unit_cost', 'available_quantity'];
@@ -158,9 +193,11 @@ const NonStockRequestForm = () => {
 
     setItemErrors((prev) => {
       const next = [...prev];
-      const cleaned = { ...next[index] };
-      delete cleaned[field];
-      next[index] = cleaned;
+      const updatedErrors = { ...(next[index] || {}) };
+      const fieldError = validateSingleItemField(updated[index], field);
+      if (fieldError) updatedErrors[field] = fieldError;
+      else delete updatedErrors[field];
+      next[index] = updatedErrors;
       return next;
     });
   };
@@ -287,6 +324,46 @@ ${templateText}`
     setRequestAttachmentsError(attachmentsError);
   };
 
+
+  useEffect(() => {
+    if (!user) return;
+
+    const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.justification) setJustification(parsed.justification);
+        if (parsed.projectId) setProjectId(parsed.projectId);
+        if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+          setItems(parsed.items.map((it) => ({ ...getEmptyItem(), ...it, attachments: [] })));
+        }
+      } catch (e) {
+        console.warn('Unable to parse saved non-stock draft.', e);
+      }
+      return;
+    }
+
+    const recentRaw = window.localStorage.getItem('non_stock_recent_item_defaults');
+    if (recentRaw) {
+      try {
+        const recent = JSON.parse(recentRaw);
+        setItems([{ ...getEmptyItem(), brand: recent.brand || '', intended_use: recent.intended_use || '' }]);
+      } catch (e) {
+        console.warn('Unable to parse recent defaults.', e);
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const payload = {
+      justification,
+      projectId,
+      items: items.map(({ attachments: _attachments, ...rest }) => rest),
+      updatedAt: new Date().toISOString(),
+    };
+    window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
+  }, [justification, projectId, items]);
+
   const validateItems = () => {
     let hasErrors = false;
     const nextErrors = items.map((item) => {
@@ -341,6 +418,7 @@ ${templateText}`
 
     if (!justification.trim()) {
       alert(tr('alerts.justificationRequired'));
+      focusFirstError([], true);
       return;
     }
 
@@ -350,7 +428,13 @@ ${templateText}`
     }
 
     if (!validateItems()) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const nextErrors = items.map((item) => ({
+        item_name: validateSingleItemField(item, 'item_name'),
+        quantity: validateSingleItemField(item, 'quantity'),
+        intended_use: validateSingleItemField(item, 'intended_use'),
+        specs: validateSingleItemField(item, 'specs'),
+      }));
+      focusFirstError(nextErrors);
       return;
     }
 
@@ -379,6 +463,9 @@ ${templateText}`
       });
       const state = buildRequestSubmissionState('Non-Stock', res.data);
       navigate('/request-submitted', { state });
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+      const recentItem = items[items.length - 1] || {};
+      window.localStorage.setItem('non_stock_recent_item_defaults', JSON.stringify({ brand: recentItem.brand || '', intended_use: recentItem.intended_use || '' }));
       setRequestAttachmentsError('');
       setItemErrors([{}]);
     } catch (err) {
@@ -427,6 +514,7 @@ ${templateText}`
           <div>
             <label className="block font-semibold mb-1">{tr('fields.justificationLabel')}</label>
             <textarea
+              ref={(node) => { fieldRefs.current.justification = node; }}
               className="w-full p-2 border rounded"
               rows={3}
               value={justification}
@@ -466,16 +554,22 @@ ${templateText}`
             {items.map((item, index) => (
               <div
                 key={index}
-                className="w-full border border-gray-200 rounded-lg p-4 mb-4 bg-white shadow-sm"
-              >
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex-1 min-w-[200px]">
+                className="w-full border border-gray-200 rounded-xl p-5 mb-4 bg-white shadow-sm"
+             >
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-700">Item line {index + 1}</p>
+                  <p className="text-xs text-gray-500">Fill quantity and expected cost to estimate total spend.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                  <div className="md:col-span-5">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Item name</label>
                     <input
                       type="text"
                       placeholder={tr('fields.itemNamePlaceholder')}
                       aria-label={t('nonStockRequestPage.fields.itemNameAria', { index: index + 1 })}
                       value={item.item_name}
                       onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
+                      ref={(node) => { fieldRefs.current[`item-${index}-item_name`] = node; }}
                       className="w-full p-2 border rounded"
                       required
                       disabled={isSubmitting}
@@ -484,7 +578,8 @@ ${templateText}`
                       <p className="text-sm text-red-600 mt-1">{itemErrors[index].item_name}</p>
                     )}
                   </div>
-                  <div className="w-32">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Expected cost</label>
                     <input
                       type="number"
                       min={0}
@@ -493,12 +588,16 @@ ${templateText}`
                       aria-label={t('nonStockRequestPage.fields.unitCostAria', { index: index + 1 })}
                       value={item.unit_cost}
                       onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
+                      ref={(node) => { fieldRefs.current[`item-${index}-unit_cost`] = node; }}
                       className="w-full p-2 border rounded"
                       required
                       disabled={isSubmitting}
                     />
                   </div>
-                  <div className="flex-1 min-w-[180px]">
+                  <div className="md:col-span-5">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Brand <span className="text-gray-400">(optional)</span>
+                    </label>
                     <input
                       type="text"
                       placeholder={tr('fields.brandPlaceholder')}
@@ -509,7 +608,10 @@ ${templateText}`
                       disabled={isSubmitting}
                     />
                   </div>
-                  <div className="w-40 min-w-[160px]">
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Available qty <span className="text-gray-400">(optional)</span>
+                    </label>
                     <input
                       type="number"
                       min={0}
@@ -523,13 +625,15 @@ ${templateText}`
                       disabled={isSubmitting}
                     />
                   </div>
-                  <div className="w-24">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
                     <input
                       type="number"
                       min={1}
                       aria-label={t('nonStockRequestPage.fields.quantityAria', { index: index + 1 })}
                       value={item.quantity}
                       onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                      ref={(node) => { fieldRefs.current[`item-${index}-quantity`] = node; }}
                       className="w-full p-2 border rounded"
                       required
                       disabled={isSubmitting}
@@ -538,13 +642,15 @@ ${templateText}`
                       <p className="text-sm text-red-600 mt-1">{itemErrors[index].quantity}</p>
                     )}
                   </div>
-                  <div className="flex-1 min-w-[200px]">
+                  <div className="md:col-span-7">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Intended use</label>
                     <input
                       type="text"
                       placeholder={tr('fields.intendedUsePlaceholder')}
                       aria-label={t('nonStockRequestPage.fields.intendedUseAria', { index: index + 1 })}
                       value={item.intended_use}
                       onChange={(e) => handleItemChange(index, 'intended_use', e.target.value)}
+                      ref={(node) => { fieldRefs.current[`item-${index}-intended_use`] = node; }}
                       className="w-full p-2 border rounded"
                       disabled={isSubmitting}
                     />
@@ -552,7 +658,8 @@ ${templateText}`
                       <p className="text-sm text-red-600 mt-1">{itemErrors[index].intended_use}</p>
                     )}
                   </div>
-                  <div className="flex-1 min-w-[220px]">
+                  <div className="md:col-span-12">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Specifications</label>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
@@ -560,6 +667,7 @@ ${templateText}`
                         aria-label={t('nonStockRequestPage.fields.specsAria', { index: index + 1 })}
                         value={item.specs}
                         onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
+                        ref={(node) => { fieldRefs.current[`item-${index}-specs`] = node; }}
                         className="flex-1 p-2 border rounded"
                         disabled={isSubmitting}
                       />

@@ -15,6 +15,7 @@ import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
 import { hasAnyPermission } from '../utils/permissions';
 import { useSuppliers } from '../hooks/useSuppliers';
+import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
 
 const ProcureToPayLifecyclePage = () => {
   const { requestId } = useParams();
@@ -25,6 +26,7 @@ const ProcureToPayLifecyclePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [onboardingVersion, setOnboardingVersion] = useState(0);
 
   const [receiptForm, setReceiptForm] = useState({
     warehouse_id: '',
@@ -246,6 +248,18 @@ const ProcureToPayLifecyclePage = () => {
 
   return (
     <div className="p-6 space-y-4">
+      <GuidedWorkflowPanel
+        key={onboardingVersion}
+        title="First-run walkthrough: Procure-to-pay lifecycle"
+        subtitle="Track each operational handoff from goods receipt through payment."
+        storageKey="onboarding-procure-to-pay"
+        onCompleteStep={() => setOnboardingVersion((v) => v + 1)}
+        steps={[
+          { id: 'goods_receipt', title: 'Capture goods receipt (GRPO)', tip: 'Record received, damaged, and short quantities accurately.' },
+          { id: 'invoice_entry', title: 'Submit supplier invoice', tip: 'Use the same supplier and cross-reference PO-equivalent details.' },
+          { id: 'match_and_pay', title: 'Run match and complete payment', tip: 'Verify ledger posting before marking invoices as paid.' },
+        ]}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">Procurement Lifecycle · Request #{requestId}</h1>
         <div className="flex flex-wrap gap-2">

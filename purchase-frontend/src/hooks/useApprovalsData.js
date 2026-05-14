@@ -120,6 +120,10 @@ const useApprovalsData = (user) => {
       const res = await axios.get('/api/requests/hod-approvers');
       setHodOptions(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
+      if (err?.response?.status === 403) {
+        setHodOptions([]);
+        return;
+      }
       console.error('❌ Failed to load HOD approvers:', err);
       setHodOptions([]);
       setHodOptionsError('Failed to load HOD approvers. Please try again.');

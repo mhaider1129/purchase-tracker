@@ -2,11 +2,27 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 
 const statusColors = {
-  PENDING_AUDIT: 'bg-yellow-100 text-yellow-800',
+  COO_REVIEW_PENDING: 'bg-yellow-100 text-yellow-800',
+  AUDIT_REVIEW_PENDING: 'bg-blue-100 text-blue-700',
   ACTION_REQUIRED: 'bg-red-100 text-red-700',
-  READY_FOR_FINANCE: 'bg-blue-100 text-blue-700',
-  FINANCE_PROCESSING: 'bg-indigo-100 text-indigo-700',
-  COMPLETED: 'bg-green-100 text-green-700',
+  REGISTERED: 'bg-indigo-100 text-indigo-700',
+  CLOSED: 'bg-green-100 text-green-700',
+};
+
+const statusLabels = {
+  COO_REVIEW_PENDING: 'Pending COO Approval',
+  AUDIT_REVIEW_PENDING: 'Pending Audit Approval',
+  ACTION_REQUIRED: 'Action Required',
+  REGISTERED: 'Registered',
+  CLOSED: 'Closed',
+};
+
+const workflowHintByStatus = {
+  COO_REVIEW_PENDING: 'Waiting for COO approval before audit review.',
+  AUDIT_REVIEW_PENDING: 'COO approved. Waiting for audit approval and registration.',
+  ACTION_REQUIRED: 'Audit has listed requirements that must be fulfilled by requester.',
+  REGISTERED: 'Amount registered on requester account. Awaiting settlement/closure.',
+  CLOSED: 'Registry closed after obligations were fulfilled.',
 };
 
 export default function AuditRegistryPage() {
@@ -81,7 +97,12 @@ export default function AuditRegistryPage() {
                 <tr key={row.id} className="border-t align-top">
                   <td className="px-3 py-2">#{row.request_id}<div className="text-gray-500">{row.request_title || '-'}</div></td>
                   <td className="px-3 py-2">{row.requester_type}</td>
-                  <td className="px-3 py-2"><span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[row.audit_status] || 'bg-gray-100 text-gray-700'}`}>{row.audit_status}</span></td>
+                  <td className="px-3 py-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[row.audit_status] || 'bg-gray-100 text-gray-700'}`}>
+                      {statusLabels[row.audit_status] || row.audit_status}
+                    </span>
+                    <div className="text-gray-500 text-xs mt-1">{workflowHintByStatus[row.audit_status] || '-'}</div>
+                  </td>
                   <td className="px-3 py-2 whitespace-pre-wrap">{row.required_before_payment || '-'}</td>
                   <td className="px-3 py-2 whitespace-pre-wrap">{row.required_after_payment || '-'}</td>
                   <td className="px-3 py-2">{Number(row.finance_issued_amount || 0).toFixed(2)} {row.currency}</td>

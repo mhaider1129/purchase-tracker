@@ -1,5 +1,6 @@
 // src/pages/requests/RequestTypeSelector.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import GuidedWorkflowPanel from '../../components/GuidedWorkflowPanel';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -258,6 +259,14 @@ const RequestTypeSelector = () => {
     (key, options) => t(`requestTypeSelector.${key}`, options),
     [t]
   );
+  const [onboardingVersion, setOnboardingVersion] = useState(0);
+
+  const onboardingSteps = [
+    { id: 'pick_form', title: 'Choose the right request form', tip: 'Start with Non-stock or Warehouse Supply depending on item type.' },
+    { id: 'add_items', title: 'Complete items and justification', tip: 'Clear specs and business purpose speed up approvals.' },
+    { id: 'submit_request', title: 'Submit and track approvals', tip: 'Use Open Requests and Approval History to monitor progress.' },
+  ];
+
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
     role: '',
@@ -398,6 +407,14 @@ const RequestTypeSelector = () => {
         </div>
 
         <div className="relative mx-auto max-w-6xl space-y-7 px-6 py-10">
+          <GuidedWorkflowPanel
+            key={onboardingVersion}
+            title="First-run walkthrough: Request creation"
+            subtitle="Follow this checklist to complete your first request faster."
+            steps={onboardingSteps}
+            storageKey="onboarding-request-creation"
+            onCompleteStep={() => setOnboardingVersion((v) => v + 1)}
+          />
           <header className="flex flex-col gap-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-white to-blue-50/60 p-6 shadow-md ring-1 ring-indigo-100">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -531,10 +548,6 @@ const RequestTypeSelector = () => {
                       {t(group.titleKey)}
                     </h2>
                     <p className="text-sm text-gray-600">{t(group.descriptionKey)}</p>
-                  </div>
-                  <div className="hidden items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 md:inline-flex">
-                    <span className="inline-block h-2 w-2 rounded-full bg-indigo-400" aria-hidden="true" />
-                    {t('recommended.subtitle')}
                   </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
