@@ -10,6 +10,7 @@ const SupplyItemsPage = () => {
   const [items, setItems] = useState([]);
   const [suppliedMap, setSuppliedMap] = useState({});
   const [qtyMap, setQtyMap] = useState({});
+  const [batchSelectionMap, setBatchSelectionMap] = useState({});
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -27,16 +28,19 @@ const SupplyItemsPage = () => {
       setLoading(true);
       setError('');
       try {
-        const [requestRes, supplyListRes] = await Promise.all([
-          api.get(`/api/requests/${id}`),
-          api.get('/api/warehouse-supply'),
-        ]);
-
-        setRequest(requestRes.data.request);
-        const requestItems = requestRes.data.items || [];
-        setItems(requestItems);
-
+        const supplyListRes = await api.get('/api/warehouse-supply');
         const supplyRequest = (supplyListRes.data || []).find((req) => req.id === Number(id));
+
+        if (!supplyRequest) {
+          setRequest(null);
+          setItems([]);
+          setError('Request not found or no longer available for this warehouse.');
+          return;
+        }
+
+        setRequest(supplyRequest);
+        const requestItems = supplyRequest.items || [];
+        setItems(requestItems);
         const supplied = {};
         if (supplyRequest?.items) {
           supplyRequest.items.forEach((item) => {
@@ -52,7 +56,6 @@ const SupplyItemsPage = () => {
         });
         setQtyMap(defaultQuantities);
       } catch (err) {
-        console.error('Failed to load supply request:', err);
         setError(err.response?.data?.message || 'Failed to load supply request.');
       } finally {
         setLoading(false);
@@ -67,6 +70,13 @@ const SupplyItemsPage = () => {
     setQtyMap((prev) => ({ ...prev, [itemId]: Number.isNaN(parsed) ? 0 : parsed }));
   };
 
+  const formatExpiry = (value) => {
+    if (!value) return 'No expiry';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString();
+  };
+
   const handleSave = async () => {
     if (!window.confirm('Save supplied quantities?')) return;
 
@@ -75,6 +85,7 @@ const SupplyItemsPage = () => {
         .map((it) => ({
           item_id: it.id,
           supplied_quantity: Number(qtyMap[it.id]) || 0,
+          ...(batchSelectionMap[it.id] || {}),
         }))
         .filter((entry) => entry.supplied_quantity > 0),
     };
@@ -102,6 +113,22 @@ const SupplyItemsPage = () => {
     return match?.name || `Warehouse #${supplyWarehouseId}`;
   }, [supplyWarehouseId, warehouses]);
 
+  const batchOptionsByItem = useMemo(() => {
+    const map = {};
+    items.forEach((requestItem) => {
+      const options = warehouseItems
+        .filter((stockRow) => stockRow.item_name?.toLowerCase() === requestItem.item_name?.toLowerCase() && Number(stockRow.quantity || 0) > 0)
+        .map((stockRow) => ({
+          batch_id: stockRow.batch_id,
+          lot_number: stockRow.lot_number || '',
+          expiry_date: stockRow.expiry_date || '',
+          quantity: Number(stockRow.quantity || 0),
+        }));
+      map[requestItem.id] = options;
+    });
+    return map;
+  }, [items, warehouseItems]);
+
   const availableMap = useMemo(() => {
     const map = {};
     warehouseItems.forEach((item) => {
@@ -111,6 +138,22 @@ const SupplyItemsPage = () => {
     });
     return map;
   }, [warehouseItems]);
+
+
+  const handleBatchSelectionChange = (itemId, optionIndex) => {
+    const options = batchOptionsByItem[itemId] || [];
+    const selected = options[Number(optionIndex)] || null;
+    setBatchSelectionMap((prev) => ({
+      ...prev,
+      [itemId]: selected
+        ? {
+            batch_id: selected.batch_id,
+            lot_number: selected.lot_number || null,
+            expiry_date: selected.expiry_date || null,
+          }
+        : {},
+    }));
+  };
 
   if (loading) {
     return (
@@ -142,10 +185,10 @@ const SupplyItemsPage = () => {
             <span className="rounded-full bg-blue-50 px-3 py-1 text-blue-700">
               Fulfilling warehouse: {warehousesLoading ? 'Loading…' : supplyWarehouseName}
             </span>
-            {request?.department_id && (
+            {(request?.department_name || request?.section_name) && (
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                Department ID: {request.department_id}
-                {request.section_id ? ` · Section ${request.section_id}` : ''}
+                Department: {request.department_name || '—'}
+                {request.section_name ? ` · Section ${request.section_name}` : ''}
               </span>
             )}
             <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700">
@@ -185,6 +228,19 @@ const SupplyItemsPage = () => {
                     {availableByName !== null && (
                       <p className="text-gray-600">Available in warehouse: {availableByName}</p>
                     )}
+                    <label className="mt-2 block text-xs font-medium text-gray-700">Batch/Lot to supply</label>
+                    <select
+                      className="mt-1 w-full rounded border border-gray-300 p-2 text-sm"
+                      value={(batchOptionsByItem[it.id] || []).findIndex((opt) => opt.batch_id === batchSelectionMap[it.id]?.batch_id && (opt.lot_number || '') === (batchSelectionMap[it.id]?.lot_number || '') && (opt.expiry_date || '') === (batchSelectionMap[it.id]?.expiry_date || ''))}
+                      onChange={(e) => handleBatchSelectionChange(it.id, e.target.value)}
+                    >
+                      <option value={-1}>Select batch/lot</option>
+                      {(batchOptionsByItem[it.id] || []).map((opt, index) => (
+                        <option key={`${opt.batch_id || 'none'}-${opt.lot_number || 'none'}-${opt.expiry_date || 'none'}-${index}`} value={index}>
+                          Lot: {opt.lot_number || '—'} · Exp: {formatExpiry(opt.expiry_date)} · Avail: {opt.quantity}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="md:col-span-3">
                     <label className="text-sm font-medium text-gray-700" htmlFor={`supply-${it.id}`}>

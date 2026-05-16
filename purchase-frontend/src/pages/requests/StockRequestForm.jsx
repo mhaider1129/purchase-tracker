@@ -19,6 +19,11 @@ const createEmptyItem = (overrides = {}) => ({
   attachments: [],
 });
 
+const hasWarehouseAssignment = (value) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0;
+};
+
 const StockRequestForm = () => {
   const [itemsList, setItemsList] = useState([]);
   const [selectedItems, setSelectedItems] = useState([createEmptyItem()]);
@@ -83,31 +88,24 @@ const StockRequestForm = () => {
     setSelectedItems((items) => items.map((it) => ({ ...it, sub_category: value })));
   };
 
-  // ✅ Validate and restrict access based on role
-  const getUserRoleFromToken = (token) => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload?.role?.toLowerCase() || '';
-    } catch (error) {
-      console.error('❌ Failed to decode token:', error);
-      return '';
-    }
-  };
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       alert('🔒 Please log in first.');
       navigate('/login');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    if (userLoading || !user) {
       return;
     }
 
-    const role = getUserRoleFromToken(token);
-    if (!['warehousemanager', 'warehouse_keeper'].includes(role)) {
+    if (!hasWarehouseAssignment(user.warehouse_id)) {
       alert('🚫 Access Denied: Only warehouse users can submit stock requests.');
       navigate('/');
     }
-  }, [navigate]);
+  }, [navigate, user, userLoading]);
 
   useEffect(() => {
     if (user) {

@@ -161,7 +161,12 @@ const resolveNotificationDestination = (notification) => {
   }
 
   if (
-    action === "request_completed" ||
+    action === "request_completed"
+  ) {
+    return withRequestFocus("/closed-requests");
+  }
+
+  if (
     action === "maintenance_completed" ||
     action === "request_approved" ||
     action === "request_rejected"

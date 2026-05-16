@@ -240,6 +240,16 @@ const ClosedRequestsPage = () => {
     return i18n.language?.startsWith('ar') ? 'ar' : undefined;
   }, [i18n.language]);
 
+  const pendingReceiptRequests = useMemo(() => {
+    if (!currentUser?.id) return [];
+    return requests.filter((req) => {
+      const normalizedStatus = (req.status || '').toLowerCase();
+      const isRequester = Number(req.requester_id) === Number(currentUser.id);
+      const hasPendingItems = (req.items || []).some((item) => !item.is_received);
+      return normalizedStatus === 'completed' && isRequester && hasPendingItems;
+    });
+  }, [currentUser?.id, requests]);
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     const normalizedStatus = statusFilter === 'all' ? '' : statusFilter.toLowerCase();
@@ -345,6 +355,31 @@ const ClosedRequestsPage = () => {
             {tr('exportCSV')}
           </button>
         </div>
+
+        {pendingReceiptRequests.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm dark:border-amber-700/70 dark:bg-amber-900/30 dark:text-amber-100">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold">
+                  {tr('receiptPromptTitle', { defaultValue: 'Receipt confirmation required' })}
+                </p>
+                <p className="text-sm">
+                  {tr('receiptPromptMessage', {
+                    defaultValue:
+                      'You have completed requests with items pending receipt confirmation. Open the items and mark them as received.',
+                  })}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpandedItemsId(pendingReceiptRequests[0]?.id || null)}
+                className="inline-flex items-center justify-center rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 dark:border-amber-500 dark:bg-transparent dark:text-amber-100 dark:hover:bg-amber-900/40"
+              >
+                {tr('reviewPendingReceipts', { defaultValue: 'Review pending receipt items' })}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {statusCards.map(({ key, label, count, isTotal }) => {

@@ -346,7 +346,7 @@ const Navbar = () => {
             "text-gray-600",
           ),
           createItem(
-            true,
+            hasAccess(currentUser, "feature.auditRequests", ["requests.view-audit"]),
             "My Audit Registry",
             "/audit-registry",
             "text-blue-600",

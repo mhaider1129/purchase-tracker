@@ -6,6 +6,11 @@ export const buildRequestSubmissionState = (
   const safeData =
     responseData && typeof responseData === "object" ? responseData : {};
   const merged = { ...safeData, ...overrides };
+  const payload =
+    merged && typeof merged.data === "object" && merged.data !== null
+      ? { ...merged.data, ...merged }
+      : merged;
+
 
   const resolveCandidate = (candidate) => {
     if (typeof candidate === "function") {
@@ -17,11 +22,11 @@ export const buildRequestSubmissionState = (
         if (acc === null || acc === undefined) return undefined;
         if (typeof acc !== "object") return undefined;
         return acc[key];
-      }, merged);
+      }, payload);
     }
 
     if (typeof candidate === "string") {
-      return merged[candidate];
+      return payload[candidate];
     }
 
     return undefined;

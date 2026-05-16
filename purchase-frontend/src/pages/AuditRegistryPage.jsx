@@ -27,8 +27,19 @@ const workflowHintByStatus = {
 
 export default function AuditRegistryPage() {
   const [entries, setEntries] = useState([]);
+  const [form, setForm] = useState({
+    request_id: '',
+    requester_type: 'INDIVIDUAL',
+    account_name: '',
+    notes: '',
+    required_before_payment: '',
+    required_after_payment: '',
+    currency: 'USD',
+  });
+  const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [submitError, setSubmitError] = useState('');
 
   const loadEntries = async () => {
     setLoading(true);
@@ -46,6 +57,47 @@ export default function AuditRegistryPage() {
   useEffect(() => {
     loadEntries();
   }, []);
+
+  const onFormChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const submitRegistryRequest = async (e) => {
+    e.preventDefault();
+    setSubmitError('');
+    const requestId = Number(form.request_id);
+    if (!Number.isInteger(requestId) || requestId <= 0) {
+      setSubmitError('Please provide a valid request id.');
+      return;
+    }
+
+    try {
+      setSubmitLoading(true);
+      await axios.post(`/api/audit-registry/requests/${requestId}/entries`, {
+        requester_type: form.requester_type,
+        account_name: form.account_name || null,
+        notes: form.notes || null,
+        required_before_payment: form.required_before_payment || null,
+        required_after_payment: form.required_after_payment || null,
+        currency: form.currency || 'USD',
+      });
+
+      setForm({
+        request_id: '',
+        requester_type: 'INDIVIDUAL',
+        account_name: '',
+        notes: '',
+        required_before_payment: '',
+        required_after_payment: '',
+        currency: 'USD',
+      });
+      await loadEntries();
+    } catch (err) {
+      setSubmitError(err?.response?.data?.message || 'Failed to submit registry request.');
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
 
   const totals = useMemo(() => {
     return entries.reduce(
@@ -65,6 +117,70 @@ export default function AuditRegistryPage() {
         <h1 className="text-2xl font-semibold">My Audit Registry</h1>
         <button onClick={loadEntries} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Refresh</button>
       </div>
+
+      <form onSubmit={submitRegistryRequest} className="bg-white border rounded p-4 space-y-3">
+        <h2 className="text-lg font-semibold">Request Advance Finance Approval</h2>
+        <p className="text-sm text-gray-600">
+          Submit a digital request for advance spending before final invoices/receipts are available.
+          It starts at COO review, then moves to Audit review.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className="text-sm">
+            <span className="block text-gray-700 mb-1">Request ID *</span>
+            <input
+              type="number"
+              min="1"
+              value={form.request_id}
+              onChange={(e) => onFormChange('request_id', e.target.value)}
+              className="w-full border rounded px-3 py-2"
+              placeholder="Existing procurement request id"
+              required
+            />
+          </label>
+          <label className="text-sm">
+            <span className="block text-gray-700 mb-1">Requester Type</span>
+            <select
+              value={form.requester_type}
+              onChange={(e) => onFormChange('requester_type', e.target.value)}
+              className="w-full border rounded px-3 py-2"
+            >
+              <option value="INDIVIDUAL">Individual</option>
+              <option value="COMMITTEE">Committee</option>
+            </select>
+          </label>
+          <label className="text-sm">
+            <span className="block text-gray-700 mb-1">Account / Cost Center</span>
+            <input value={form.account_name} onChange={(e) => onFormChange('account_name', e.target.value)} className="w-full border rounded px-3 py-2" />
+          </label>
+          <label className="text-sm">
+            <span className="block text-gray-700 mb-1">Currency</span>
+            <input value={form.currency} onChange={(e) => onFormChange('currency', e.target.value.toUpperCase())} className="w-full border rounded px-3 py-2" maxLength={6} />
+          </label>
+        </div>
+
+        <label className="text-sm block">
+          <span className="block text-gray-700 mb-1">Business Justification</span>
+          <textarea value={form.notes} onChange={(e) => onFormChange('notes', e.target.value)} className="w-full border rounded px-3 py-2" rows={3} placeholder="Purpose of advance payment and activity details" />
+        </label>
+
+        <label className="text-sm block">
+          <span className="block text-gray-700 mb-1">Known Pre-payment Requirements</span>
+          <textarea value={form.required_before_payment} onChange={(e) => onFormChange('required_before_payment', e.target.value)} className="w-full border rounded px-3 py-2" rows={2} placeholder="e.g., quotation, draft contract, proforma invoice" />
+        </label>
+
+        <label className="text-sm block">
+          <span className="block text-gray-700 mb-1">Expected Post-payment Requirements</span>
+          <textarea value={form.required_after_payment} onChange={(e) => onFormChange('required_after_payment', e.target.value)} className="w-full border rounded px-3 py-2" rows={2} placeholder="e.g., final invoice, receipt, GRN, PO" />
+        </label>
+
+        {submitError ? <p className="text-red-600 text-sm">{submitError}</p> : null}
+        <div>
+          <button type="submit" disabled={submitLoading} className="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60">
+            {submitLoading ? 'Submitting...' : 'Submit Request'}
+          </button>
+        </div>
+      </form>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="border rounded p-3 bg-white"><p className="text-sm text-gray-500">Issued</p><p className="text-xl font-semibold">{totals.issued.toFixed(2)}</p></div>

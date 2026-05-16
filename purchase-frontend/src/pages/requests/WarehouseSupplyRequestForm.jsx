@@ -95,6 +95,13 @@ const WarehouseSupplyRequestForm = () => {
     setItems([{ stock_item_id: '', item_name: '', quantity: 1 }]);
   };
 
+  const formatExpiry = (value) => {
+    if (!value) return 'No expiry';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString();
+  };
+
   const handleItemSelection = (index, stockItemId) => {
     const selected = warehouseItems.find(
       (it) => String(it.stock_item_id) === String(stockItemId),
@@ -279,7 +286,7 @@ const WarehouseSupplyRequestForm = () => {
                   <option value="">Select item</option>
                   {warehouseItems.map((item) => (
                     <option key={item.stock_item_id} value={item.stock_item_id}>
-                      {item.item_name}
+                      {item.item_name} (Exp: {formatExpiry(item.expiry_date)})
                     </option>
                   ))}
                 </select>

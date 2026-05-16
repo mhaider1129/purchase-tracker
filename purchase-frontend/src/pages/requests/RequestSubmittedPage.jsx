@@ -5,16 +5,35 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { deriveItemPurchaseState } from '../../utils/itemPurchaseStatus';
+import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const RequestSubmittedPage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const requestType = location.state?.requestType || 'Purchase';
-  const summary = location.state?.summary || null;
+  const normalizedSubmission = useMemo(
+    () => buildRequestSubmissionState(requestType, location.state || {}),
+    [location.state, requestType],
+  );
+
+  const summary =
+    location.state?.summary ||
+    normalizedSubmission.summary ||
+    (location.state?.requestId || location.state?.statusMessage
+      ? {
+          requestId: location.state?.requestId ?? null,
+          estimatedCost: null,
+          attachmentsUploaded: 0,
+          nextApproval: null,
+          duplicateDetected: false,
+          message: location.state?.statusMessage || location.state?.message || '',
+        }
+      : null);
+
   const items = Array.isArray(location.state?.items)
     ? location.state.items
-    : [];
+    : normalizedSubmission.items;
 
   const formattedCost = useMemo(() => {
     if (!summary || summary.estimatedCost === null || summary.estimatedCost === undefined) {

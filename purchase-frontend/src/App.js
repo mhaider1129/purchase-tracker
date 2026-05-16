@@ -225,7 +225,13 @@ const AppRoutes = () => (
     />
     <Route
       path="/audit-registry"
-      element={<ProtectedRoute element={<AuditRegistryPage />} />}
+      element={
+        <ProtectedRoute
+          element={<AuditRegistryPage />}
+          resourceKey="feature.auditRequests"
+          requiredPermissions={["requests.view-audit"]}
+        />
+      }
     />
     <Route
       path="/requests/maintenance-warehouse-supply"

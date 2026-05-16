@@ -28,6 +28,10 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const BASE_BUTTON_STYLE =
   'block w-full py-2 px-4 rounded text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm';
+const hasWarehouseAssignment = (value) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0;
+};
 const ACTION_GROUPS = [
   {
     titleKey: 'requestTypeSelector.groups.warehouse.title',
@@ -38,7 +42,7 @@ const ACTION_GROUPS = [
         ariaLabelKey: 'requestTypeSelector.actions.stockRequest.aria',
         descriptionKey: 'requestTypeSelector.actions.stockRequest.description',
         path: '/requests/stock',
-        roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
+        predicate: ({ warehouse_id }) => hasWarehouseAssignment(warehouse_id),
         buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
         icon: Package,
         featured: true,
@@ -273,6 +277,7 @@ const RequestTypeSelector = () => {
     department_id: null,
     department_name: '',
     section_id: null,
+    warehouse_id: null,
     can_request_medication: false,
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -289,6 +294,7 @@ const RequestTypeSelector = () => {
         department_id: res.data.department_id ?? null,
         department_name: res.data.department_name?.toLowerCase() || '',
         section_id: res.data.section_id ?? null,
+        warehouse_id: res.data.warehouse_id ?? null,
         can_request_medication: Boolean(res.data.can_request_medication),
       });
     } catch (err) {
