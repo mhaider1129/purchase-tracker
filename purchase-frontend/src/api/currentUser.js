@@ -36,7 +36,7 @@ export const fetchCurrentUser = async (config = {}) => {
 
   for (const endpoint of CURRENT_USER_ENDPOINTS) {
     try {
-      return await api.get(endpoint, config);
+      return await api.get(endpoint, { ...config, suppressNotFoundLog: true });
     } catch (error) {
       if (!isNotFoundError(error)) {
         throw error;

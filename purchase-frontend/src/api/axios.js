@@ -62,7 +62,12 @@ api.interceptors.response.use(
     }
 
     if (error.response) {
-      console.error(`❌ ${error.response.status}: ${error.response.data.message}`);
+      const suppressNotFoundLog =
+        error.response.status === 404 && error.config?.suppressNotFoundLog;
+
+      if (!suppressNotFoundLog) {
+        console.error(`❌ ${error.response.status}: ${error.response.data.message}`);
+      }
     } else {
       console.error("❌ Network or Server error:", error.message);
     }
