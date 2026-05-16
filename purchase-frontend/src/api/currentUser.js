@@ -17,34 +17,25 @@ const normalizeBasePath = () => {
   }
 };
 
-const buildCandidateEndpoints = () => {
+const resolveCurrentUserEndpoint = () => {
+  const configuredEndpoint = process.env.REACT_APP_CURRENT_USER_ENDPOINT?.trim();
+  if (configuredEndpoint) {
+    return configuredEndpoint.startsWith("/")
+      ? configuredEndpoint
+      : `/${configuredEndpoint}`;
+  }
+
   const basePath = normalizeBasePath();
 
+  // If the API base already includes `/api`, avoid double-prefixing.
   if (/(^|\/)api(\/|$)/i.test(basePath)) {
-    return ["/users/me", "/api/users/me", "/auth/me", "/api/auth/me"];
+    return "/users/me";
   }
 
-  return ["/api/users/me", "/users/me", "/auth/me", "/api/auth/me"];
+  return "/api/users/me";
 };
 
-const CURRENT_USER_ENDPOINTS = buildCandidateEndpoints();
+const CURRENT_USER_ENDPOINT = resolveCurrentUserEndpoint();
 
-const isNotFoundError = (error) => error?.response?.status === 404;
-
-export const fetchCurrentUser = async (config = {}) => {
-  let lastError;
-
-  for (const endpoint of CURRENT_USER_ENDPOINTS) {
-    try {
-      return await api.get(endpoint, config);
-    } catch (error) {
-      if (!isNotFoundError(error)) {
-        throw error;
-      }
-
-      lastError = error;
-    }
-  }
-
-  throw lastError;
-};
+export const fetchCurrentUser = async (config = {}) =>
+  api.get(CURRENT_USER_ENDPOINT, config);
