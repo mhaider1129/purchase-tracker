@@ -1,5 +1,5 @@
 // src/pages/AllRequestsPage.jsx
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
 import { printRequest } from '../api/requests';
@@ -144,8 +144,6 @@ const isPostApprovalStatus = (status) => {
 };
 
 const AllRequestsPage = () => {
-  const PRINT_TEMPLATE_URL_STORAGE_KEY = 'print_template_background_url';
-  const PRINT_TEMPLATE_FILE_STORAGE_KEY = 'print_template_background_file';
   const { user } = useCurrentUser();
   const [requests, setRequests] = useState([]);
   const [expandedAssignId, setExpandedAssignId] = useState(null);
@@ -169,11 +167,8 @@ const AllRequestsPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [printLanguage, setPrintLanguage] = useState('en');
-  const [printTemplateUrl, setPrintTemplateUrl] = useState(() => localStorage.getItem(PRINT_TEMPLATE_URL_STORAGE_KEY) || '');
-  const [printTemplateFileData, setPrintTemplateFileData] = useState(
-    () => localStorage.getItem(PRINT_TEMPLATE_FILE_STORAGE_KEY) || '',
-  );
   const limit = 10;
   const {
     expandedApprovalsId,
@@ -217,12 +212,25 @@ const AllRequestsPage = () => {
     handleSendDirectCommunication,
   } = useDirectPurchaseCommunications(user?.role);
 
-  useEffect(() => {
-    localStorage.setItem(PRINT_TEMPLATE_URL_STORAGE_KEY, printTemplateUrl.trim());
-  }, [printTemplateUrl]);
-  useEffect(() => {
-    localStorage.setItem(PRINT_TEMPLATE_FILE_STORAGE_KEY, printTemplateFileData);
-  }, [printTemplateFileData]);
+  const requestSummary = useMemo(() => {
+    const summary = requests.reduce(
+      (acc, req) => {
+        const normalizedStatus = (req?.status || '').toLowerCase();
+        if (req?.is_urgent) acc.urgent += 1;
+        if (normalizedStatus === 'approved') acc.approved += 1;
+        if (normalizedStatus === 'pending') acc.pending += 1;
+        return acc;
+      },
+      { urgent: 0, approved: 0, pending: 0 },
+    );
+
+    return [
+      { label: 'Total requests', value: requests.length },
+      { label: 'Urgent requests', value: summary.urgent },
+      { label: 'Approved', value: summary.approved },
+      { label: 'Pending', value: summary.pending },
+    ];
+  }, [requests]);
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -237,6 +245,7 @@ const AllRequestsPage = () => {
   }, []);
 
   const fetchRequests = useCallback(async () => {
+    setLoading(true);
     resetAttachments();
     try {
       const res = await axios.get('/api/requests', {
@@ -274,6 +283,8 @@ const AllRequestsPage = () => {
     } catch (err) {
       console.error(err);
       alert('❌ Failed to fetch requests.');
+    } finally {
+      setLoading(false);
     }
     }, [
     department,
@@ -302,6 +313,20 @@ const AllRequestsPage = () => {
   }, [fetchRequests]);
 
   const applyFilters = () => {
+    setPage(1);
+    setFiltersChanged(true);
+  };
+
+  const clearFilters = () => {
+    setFilter('');
+    setSort('');
+    setRequestType('');
+    setSearch('');
+    setRequestId('');
+    setFromDate('');
+    setToDate('');
+    setStatus('');
+    setDepartment('');
     setPage(1);
     setFiltersChanged(true);
   };
@@ -373,22 +398,6 @@ const AllRequestsPage = () => {
     } finally {
       setLoadingExport(false);
     }
-  };
-
-  const handleTemplateFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Template file is too large. Please use a file under 10MB.');
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      alert('Word files are not supported directly. Please export your Word template as PNG/JPG first.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setPrintTemplateFileData(typeof reader.result === 'string' ? reader.result : '');
-    reader.readAsDataURL(file);
   };
 
   const handlePrint = async (requestId) => {
@@ -543,20 +552,6 @@ const AllRequestsPage = () => {
             <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
           </section>`
         : '';
-      const templateBackground = printTemplateFileData || printTemplateUrl.trim();
-      const templateCss = templateBackground
-        ? `
-              body::before {
-                content: '';
-                position: fixed;
-                inset: 0;
-                background: url('${escapeHtml(templateBackground)}') center / contain no-repeat;
-                opacity: 0.28;
-                pointer-events: none;
-                z-index: 0;
-              }
-              .page { position: relative; z-index: 1; }`
-        : '';
 
       const body = `
         <!DOCTYPE html>
@@ -581,7 +576,6 @@ const AllRequestsPage = () => {
                 background: #f9fafb;
                 direction: ${direction};
               }
-              ${templateCss}
               .page {
                 background: #ffffff;
                 border-radius: 12px;
@@ -824,10 +818,41 @@ const AllRequestsPage = () => {
   return (
     <>
       <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">All Purchase Requests</h1>
+      <Card className="mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold mb-1">All Purchase Requests</h1>
+            <p className="text-sm text-gray-600">Track all submitted requests, filter quickly, and take actions by request.</p>
+          </div>
+          <button
+            type="button"
+            className="self-start rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={fetchRequests}
+            disabled={loading}
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+      </Card>
+
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {requestSummary.map((item) => (
+          <Card key={item.label}>
+            <p className="text-xs uppercase tracking-wide text-slate-500">{item.label}</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">{item.value}</p>
+          </Card>
+        ))}
+      </div>
 
       <Card className="mb-4">
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+          <p className="text-sm font-medium text-gray-700">Filters & export</p>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span>Showing <strong className="text-gray-700">{requests.length}</strong> request(s)</span>
+            {filtersChanged && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">Unsaved filter changes</span>}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-3 items-end">
           <select className="border p-2 rounded" value={filter} onChange={(e) => setFilter(e.target.value)}>
             <option value="">All Requests</option>
             <option value="unassigned">Unassigned Only</option>
@@ -910,42 +935,19 @@ const AllRequestsPage = () => {
             <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
           </select>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-700" htmlFor="print-template-file">
-            Template File
-          </label>
-          <input
-            id="print-template-file"
-            type="file"
-            accept="image/png,image/jpeg,image/jpg,image/webp"
-            className="border p-2 rounded"
-            onChange={handleTemplateFileChange}
-          />
-          {printTemplateFileData ? (
-            <button type="button" className="border px-2 py-1 rounded text-sm" onClick={() => setPrintTemplateFileData('')}>
-              Clear file
-            </button>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-700" htmlFor="print-template-url">
-            Print Template URL
-          </label>
-          <input
-            id="print-template-url"
-            type="url"
-            className="border p-2 rounded min-w-72"
-            placeholder="https://example.com/internal-form-template.png"
-            value={printTemplateUrl}
-            onChange={(e) => setPrintTemplateUrl(e.target.value)}
-          />
-        </div>
 
         <button
           onClick={applyFilters}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Apply
+          Apply Filters
+        </button>
+
+        <button
+          onClick={clearFilters}
+          className="bg-white text-gray-700 border px-4 py-2 rounded hover:bg-gray-50"
+        >
+          Clear Filters
         </button>
 
         <button
@@ -966,8 +968,10 @@ const AllRequestsPage = () => {
         </div>
       </Card>
 
-      {requests.length === 0 ? (
-        <p>No requests found.</p>
+      {loading ? (
+        <p className="text-gray-600">Loading requests...</p>
+      ) : requests.length === 0 ? (
+        <Card><p className="text-sm text-gray-600">No requests found for the selected filters. Try adjusting or clearing filters.</p></Card>
       ) : (
         <div className="space-y-4">
           {requests.map((request) => {

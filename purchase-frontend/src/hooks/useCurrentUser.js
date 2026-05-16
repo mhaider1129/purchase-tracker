@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from 'react';
-import api from '../api/axios';
+import { fetchCurrentUser } from '../api/currentUser';
 import { useDataQuery } from './useDataQuery';
 
 const useCurrentUser = () => {
   const fetchUser = useCallback(async () => {
-    const res = await api.get('/api/users/me');
+    const res = await fetchCurrentUser();
     return res.data;
   }, []);
 

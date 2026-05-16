@@ -23,11 +23,11 @@ import {
   Wrench,
 } from 'lucide-react';
 import axios from '../../api/axios';
+import { fetchCurrentUser } from '../../api/currentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const BASE_BUTTON_STYLE =
   'block w-full py-2 px-4 rounded text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm';
-
 const ACTION_GROUPS = [
   {
     titleKey: 'requestTypeSelector.groups.warehouse.title',
@@ -283,7 +283,7 @@ const RequestTypeSelector = () => {
     setError('');
 
     try {
-      const res = await axios.get('/api/users/me');
+      const res = await fetchCurrentUser();
       setUserInfo({
         role: res.data.role?.toLowerCase() || '',
         department_id: res.data.department_id ?? null,

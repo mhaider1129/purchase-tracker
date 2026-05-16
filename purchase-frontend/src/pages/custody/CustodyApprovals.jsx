@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   getPendingCustodyApprovals,
   submitCustodyDecision,
@@ -9,6 +10,7 @@ import { Button } from '../../components/ui/Button';
 const CustodyApprovals = () => {
   const { t } = useTranslation();
   const tr = (key, options) => t(`custodyApprovalsPage.${key}`, options);
+  const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,9 +47,21 @@ const CustodyApprovals = () => {
     try {
       await submitCustodyDecision(recordId, decision);
       setRecords((prev) => prev.filter((record) => record.id !== recordId));
+      const successMessage = tr('success.decision', { decision: tr(`decisions.past.${decision}`) });
       setBanner({
         type: 'success',
-        message: tr('success.decision', { decision: tr(`decisions.past.${decision}`) }),
+        message: successMessage,
+      });
+      navigate('/request-submitted', {
+        state: {
+          title: tr('completionScreen.title', 'Request Action Completed Successfully!'),
+          message: successMessage,
+          requestId: recordId,
+          requestType: tr('completionScreen.requestType', 'Custody Approval'),
+          statusMessage: successMessage,
+          nextApprover: tr('completionScreen.none', 'N/A'),
+          pendingLevel: tr('completionScreen.none', 'N/A'),
+        },
       });
     } catch (err) {
       console.error('❌ Failed to update custody record:', err);

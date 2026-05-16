@@ -669,6 +669,7 @@ const Management = () => {
       alert('Select the warehouse this user manages before saving.');
       return;
     }
+
     try {
       await api.patch(`/api/users/${id}/assign`, {
         role: editData.role,

@@ -39,9 +39,9 @@ const WarehouseSupplyRequestsPage = () => {
   const [itemsError, setItemsError] = useState({});
   const [itemsLoadingId, setItemsLoadingId] = useState(null);
   const [closingRequestId, setClosingRequestId] = useState(null);
+  const navigate = useNavigate();
   const [sortOption, setSortOption] = useState('newest');
   const [printingId, setPrintingId] = useState(null);
-  const navigate = useNavigate();
 
   const normalizeItems = (items = []) =>
     items.map((item) => ({
@@ -128,6 +128,18 @@ const WarehouseSupplyRequestsPage = () => {
             : req,
         ),
       );
+
+      navigate('/request-submitted', {
+        state: {
+          title: tr('completionScreen.title', 'Request Action Completed Successfully!'),
+          message: tr('completionScreen.message', 'Warehouse supply request closed successfully.'),
+          requestId,
+          requestType: tr('completionScreen.requestType', 'Warehouse Supply'),
+          statusMessage: res.data?.message || tr('completionScreen.message', 'Warehouse supply request closed successfully.'),
+          nextApprover: tr('completionScreen.none', 'N/A'),
+          pendingLevel: tr('completionScreen.none', 'N/A'),
+        },
+      });
     } catch (err) {
       console.error('Failed to close request:', err);
       alert(

@@ -928,9 +928,9 @@
     "actions": {
       "retry": "Retry",
       "stockRequest": {
-        "label": "Stock Request",
-        "aria": "Stock Request",
-        "description": "Request items from existing warehouse stock levels."
+        "label": "Stock Purchase Request",
+        "aria": "Stock Purchase Request",
+        "description": "Request purchasing stock items."
       },
       "newStockItem": {
         "label": "Add Stock Item to List",

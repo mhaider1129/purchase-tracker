@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import axios from "../api/axios";
+import { fetchCurrentUser } from "../api/currentUser";
 
 const AuthContext = createContext(null);
 
@@ -67,7 +67,7 @@ const useProvideAuth = () => {
 
       setIsLoading(true);
       try {
-        const res = await axios.get("/api/users/me", {
+        const res = await fetchCurrentUser({
           headers: { Authorization: `Bearer ${activeToken}` },
         });
         const profile = res.data || {};

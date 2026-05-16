@@ -1,9 +1,10 @@
 // src/pages/AssignedRequestsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel';
+import PageShell from '../components/layout/PageShell';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import { getRequesterDisplay } from '../utils/requester';
@@ -245,6 +246,7 @@ const ITEM_SECTION_CONFIG = [
 
 const AssignedRequestsPage = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const tr = usePageTranslation('assignedRequests');
   const itemSections = useMemo(
     () =>
@@ -280,6 +282,7 @@ const AssignedRequestsPage = () => {
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
   const [bulkUpdatingRequestId, setBulkUpdatingRequestId] = useState(null);
   const [completionStates, setCompletionStates] = useState({});
+  const [completionFeedback, setCompletionFeedback] = useState('');
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -289,6 +292,7 @@ const AssignedRequestsPage = () => {
   } = useApprovalTimeline();
 
   const handleRefresh = () => {
+    setCompletionFeedback('');
     setExpandedRequestId(null);
     setItems([]);
     setGroupedItems(createEmptyGroups());
@@ -396,10 +400,29 @@ const AssignedRequestsPage = () => {
       const response = await axios.patch(
         `/api/requests/${requestId}/mark-completed`,
       );
-      const successMessage =
+      const selectedRequest = requests.find((request) => request.id === requestId);
+      const message =
         response?.data?.message ||
-        tr('alerts.markCompletedSuccess', '✅ Request marked as completed.');
-      alert(successMessage);
+        tr('alerts.markCompletedSuccess', 'Request marked as completed.');
+
+      navigate('/request-submitted', {
+        state: {
+          title: tr('completionScreen.title', 'Request Action Completed Successfully!'),
+          message,
+          requestId,
+          requestType: selectedRequest?.request_type || tr('completionScreen.requestType', 'Request'),
+          statusMessage: message,
+          nextApprover: tr('completionScreen.none', 'N/A'),
+          pendingLevel: tr('completionScreen.none', 'N/A'),
+        },
+      });
+      
+      setCompletionFeedback(
+        tr(
+          'completion.postActionNotice',
+          'Action completed successfully. Depending on your browser flow, you may see a popup window or be taken to a completion card.',
+        ),
+      );
       setExpandedRequestId(null);
       setItems([]);
       setGroupedItems(createEmptyGroups());
@@ -583,6 +606,21 @@ const AssignedRequestsPage = () => {
     }
   };
 
+
+  const pageKpis = useMemo(() => {
+    const totalRequests = requests.length;
+    const urgentRequests = requests.filter((req) => Boolean(req?.is_urgent)).length;
+    const readyToComplete = requests.filter((req) => completionStates[req.id]?.canComplete).length;
+    const pendingCompletion = Math.max(totalRequests - readyToComplete, 0);
+
+    return [
+      { label: tr('kpis.totalRequests', 'Total Assigned Requests'), value: totalRequests },
+      { label: tr('kpis.urgentRequests', 'Urgent Requests'), value: urgentRequests },
+      { label: tr('kpis.readyToComplete', 'Ready to Complete'), value: readyToComplete },
+      { label: tr('kpis.pendingCompletion', 'Needs Attention'), value: pendingCompletion },
+    ];
+  }, [completionStates, requests, tr]);
+
   useEffect(() => {
     fetchAssignedRequests();
   }, [resetApprovals]);
@@ -601,28 +639,32 @@ const AssignedRequestsPage = () => {
   };
 
   return (
-    <>
-
-      <div className="p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <h1 className="text-2xl font-semibold">{tr('title', 'Assigned Requests')}</h1>
-          <button
-            type="button"
-            className="self-start rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
-            {loading
-              ? tr('actions.refreshing', 'Refreshing...')
-              : tr('actions.refresh', 'Refresh')}
-          </button>
+    <PageShell
+      title={tr('title', 'Assigned Requests')}
+      description={tr('description', 'Track procurement progress, update item statuses, and complete requests once all items are finalized.')}
+      actions={(
+        <button
+          type="button"
+          className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={handleRefresh}
+          disabled={loading}
+        >
+          {loading
+            ? tr('actions.refreshing', 'Refreshing...')
+            : tr('actions.refresh', 'Refresh')}
+        </button>
+      )}
+      kpis={pageKpis}
+    >
+      {loading ? (
+        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600 shadow-sm">
+          {tr('loading', 'Loading assigned requests...')}
         </div>
-
-        {loading ? (
-          <p className="text-gray-600">{tr('loading', 'Loading assigned requests...')}</p>
-        ) : requests.length === 0 ? (
-          <p>{tr('empty', 'No requests assigned to you.')}</p>
-        ) : (
+      ) : requests.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+          <p className="text-sm text-slate-600">{tr('empty', 'No requests assigned to you.')}</p>
+        </div>
+      ) : (
           requests.map((request) => {
             const summary = request.status_summary || {};
             const autoTotal =
@@ -937,8 +979,7 @@ const AssignedRequestsPage = () => {
             );
           })
         )}
-      </div>
-    </>
+    </PageShell>
   );
 };
 

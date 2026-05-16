@@ -1,5 +1,6 @@
 // src/pages/StockItemApprovals.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
 import {
   fetchStockItemRequests,
@@ -29,6 +30,7 @@ const StockItemApprovals = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actioningId, setActioningId] = useState(null);
+  const navigate = useNavigate();
 
   const pendingCount = useMemo(
     () => requests.filter((req) => (req.status ?? 'pending') === 'pending').length,
@@ -65,6 +67,17 @@ const StockItemApprovals = () => {
       setActioningId(id);
       const updated = await updateStockItemRequestStatus(id, status);
       setRequests((prev) => prev.map((req) => (req.id === id ? updated : req)));
+      navigate('/request-submitted', {
+        state: {
+          title: 'Request Action Completed Successfully!',
+          message: status === 'approved' ? 'Stock item request approved.' : 'Stock item request rejected.',
+          requestId: id,
+          requestType: 'Stock Item',
+          statusMessage: updated?.message || (status === 'approved' ? 'Approved successfully.' : 'Rejected successfully.'),
+          nextApprover: 'N/A',
+          pendingLevel: 'N/A',
+        },
+      });
     } catch (err) {
       console.error('❌ Failed to update stock item request status:', err);
       alert(err.response?.data?.message || 'Failed to update status');

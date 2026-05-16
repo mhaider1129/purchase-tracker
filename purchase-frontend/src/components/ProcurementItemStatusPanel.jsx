@@ -38,6 +38,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
   const attachmentInputRef = useRef(null);
   const itemId = item?.id;
   const tr = usePageTranslation("assignedRequests");
@@ -630,7 +631,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700">
               {tr("itemPanel.inputs.unitCost", "Unit Cost")}
@@ -673,7 +674,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700">
               {tr("itemPanel.inputs.procurementStatus", "Procurement Status")}
@@ -693,7 +694,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               ))}
             </select>
 
-            <label className="mt-4 block text-sm font-medium text-slate-700">
+            <label className="mt-3 block text-sm font-medium text-slate-700">
               {tr(
                 "itemPanel.inputs.poIssuanceMethod",
                 "PO Issuance Method",
@@ -718,13 +719,39 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              rows={3}
+              rows={2}
               className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <button
+            type="button"
+            onClick={() => setShowMoreDetails((prev) => !prev)}
+            className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-700"
+            aria-expanded={showMoreDetails}
+          >
+            <span>
+              {tr("itemPanel.moreDetails.title", "Additional procurement details")}
+            </span>
+            <span className="text-xs text-slate-500">
+              {showMoreDetails
+                ? tr("itemPanel.moreDetails.hide", "Hide")
+                : tr("itemPanel.moreDetails.show", "Show")}
+            </span>
+          </button>
+          <p className="mt-1 text-xs text-slate-500">
+            {tr(
+              "itemPanel.moreDetails.helper",
+              "Includes PO, invoice, contract, savings, and attachment information.",
+            )}
+          </p>
+        </div>
+
+        {showMoreDetails && (
+          <>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-slate-700">
@@ -823,7 +850,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
           <div>
             <label className="block text-sm font-medium text-slate-700">
               {tr("itemPanel.inputs.savingsDriver", "Savings Driver")}
@@ -854,11 +881,13 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             <textarea
               value={savingsNotes}
               onChange={(e) => setSavingsNotes(e.target.value)}
-              rows={3}
+              rows={2}
               className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
+          </>
+        )}
 
         <div className="mt-6 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-600">
@@ -897,7 +926,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
         )}
 
-        <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+        {showMoreDetails && (
+        <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
           <h4 className="text-sm font-semibold text-slate-700">
             {tr("itemPanel.attachments.title", "Item Attachments")}
           </h4>
@@ -965,6 +995,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             </ul>
           )}
         </div>
+        )}
       </div>
     </div>
   );

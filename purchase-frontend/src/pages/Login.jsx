@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
+import { fetchCurrentUser } from '../api/currentUser';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useAuth } from '../hooks/useAuth';
 
@@ -47,7 +48,7 @@ const Login = () => {
       persistToken(token);
 
       try {
-        const userRes = await api.get('/api/users/me');
+        const userRes = await fetchCurrentUser();
         const user = userRes.data;
 
         if (!user || user.is_active === false) {

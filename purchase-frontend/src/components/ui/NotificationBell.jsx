@@ -91,6 +91,20 @@ const formatTimestamp = (value) => {
   if (Number.isNaN(date.getTime())) {
     return null;
   }
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  if (diffMs >= 0 && diffMs < 24 * 60 * 60 * 1000) {
+    const relative = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+    const diffMinutes = Math.round(diffMs / (60 * 1000));
+
+    if (diffMinutes < 1) return "just now";
+    if (diffMinutes < 60) return relative.format(-diffMinutes, "minute");
+
+    const diffHours = Math.round(diffMinutes / 60);
+    return relative.format(-diffHours, "hour");
+  }
+
   return date.toLocaleString();
 };
 
@@ -116,13 +130,6 @@ const resolveNotificationDestination = (notification) => {
     metadata.requestId ?? metadata.request_id ?? linkRequestId ?? null;
   const action =
     typeof metadata.action === "string" ? metadata.action.toLowerCase() : "";
-  const requestType =
-    typeof metadata.requestType === "string"
-      ? metadata.requestType.toLowerCase()
-      : typeof metadata.request_type === "string"
-        ? metadata.request_type.toLowerCase()
-        : "";
-
   const withRequestFocus = (path) => {
     const hasRequestId =
       requestId !== null && requestId !== undefined && requestId !== "";
@@ -190,7 +197,7 @@ const resolveNotificationDestination = (notification) => {
 const NotificationBell = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { notifications, remove, clearAll, refresh, isLoading, unreadCount } =
+  const { notifications, remove, clearAll, refresh, isLoading, unreadCount, error } =
     useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef(null);
@@ -212,9 +219,19 @@ const NotificationBell = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleClick);
+    const handleEsc = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
 
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleEsc);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleEsc);
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -298,7 +315,7 @@ const NotificationBell = () => {
         <Bell className="h-5 w-5" aria-hidden="true" />
         {unreadCount > 0 ? (
           <span className="absolute -right-0.5 -top-0.5 inline-flex min-h-[1.25rem] min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white shadow">
-            {unreadCount}
+            {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         ) : null}
       </button>
@@ -310,10 +327,13 @@ const NotificationBell = () => {
           role="dialog"
           aria-label={t("navbar.notifications")}
         >
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               {t("navbar.notifications")}
             </p>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+              {unreadCount} unread
+            </span>
             {hasNotifications ? (
               <button
                 type="button"
@@ -330,6 +350,19 @@ const NotificationBell = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {t("navbar.loadingNotifications", "Loading notifications…")}
             </p>
+          ) : null}
+
+          {!!error && !isLoading ? (
+            <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-200">
+              {t("navbar.notificationsLoadFailed", "Could not refresh notifications.")}
+              <button
+                type="button"
+                onClick={() => refresh()}
+                className="ml-2 font-semibold underline"
+              >
+                {t("navbar.retry", "Retry")}
+              </button>
+            </div>
           ) : null}
 
           {!isLoading && hasNotifications ? (
