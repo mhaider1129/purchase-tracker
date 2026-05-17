@@ -49,6 +49,7 @@ const PRINT_TRANSLATIONS = {
     arabic: 'Arabic',
     yes: 'Yes',
     no: 'No',
+    printConfirm: 'Printing this request will increase its print count. Do you want to continue?',
   },
   ar: {
     purchaseSummary: 'ملخص طلب الشراء',
@@ -85,6 +86,7 @@ const PRINT_TRANSLATIONS = {
     arabic: 'العربية',
     yes: 'نعم',
     no: 'لا',
+    printConfirm: 'طباعة هذا الطلب ستزيد عداد الطباعة. هل تريد المتابعة؟',
   },
 };
 
@@ -401,15 +403,18 @@ const AllRequestsPage = () => {
   };
 
   const handlePrint = async (requestId) => {
+    const translate = (key) =>
+      PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
+
+    const shouldPrint = window.confirm(translate('printConfirm'));
+    if (!shouldPrint) return;
+
     try {
       const data = await printRequest(requestId);
       const { request, items, message = 'Request ready for printing.', print_count } = data;
 
       const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
       const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';
-      const translate = (key) =>
-        PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
-
       const win = window.open('', '_blank');
       if (!win) {
         alert('Please enable popups to print the request.');
@@ -488,10 +493,8 @@ const AllRequestsPage = () => {
       const detailFields = [
         { label: translate('requestId'), value: request.id },
         { label: translate('status'), value: request.status },
-        { label: translate('requestType'), value: request.request_type },
         { label: translate('createdOn'), value: formatDate(request.created_at) },
         { label: translate('neededBy'), value: formatDate(request.needed_by) },
-        { label: translate('estimatedCost'), value: formatAmount(request.estimated_cost) },
         { label: translate('maintenanceRef'), value: request.maintenance_ref_number },
         { label: translate('project'), value: request.project_name },
         { label: translate('department'), value: request.department_name },

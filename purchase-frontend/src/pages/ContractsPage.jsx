@@ -178,6 +178,40 @@ const initialFormState = {
   delivery_terms: '',
   warranty_terms: '',
   performance_management: '',
+  commercial_terms: '',
+  compliance_legal_terms: '',
+  financial_payment_control: '',
+  risk_dispute_management: '',
+  digital_attachments_tracking: '',
+  institute: '',
+  contract_category: '',
+  renewal_type: '',
+  renewal_notice_days: '',
+  contract_owner: '',
+  currency: 'IQD',
+  estimated_contract_value: '',
+  actual_consumed_value: '',
+  first_party: '',
+  second_party: '',
+  authorized_signatory: '',
+  vendor_contact_person: '',
+  vendor_contact_email: '',
+  vendor_contact_phone: '',
+  vendor_tax_id: '',
+  vendor_address: '',
+  scope_summary: '',
+  deliverables: '',
+  technical_specifications: '',
+  service_coverage: '',
+  exclusions: '',
+  sla_requirements: '',
+  payment_terms_details: '',
+  delivery_logistics_details: '',
+  sla_details: '',
+  penalties_incentives: '',
+  change_management_terms: '',
+  termination_exit_terms: '',
+  alert_rules: '',
   end_user_department_id: '',
   contract_manager_id: '',
   technical_department_ids: [],
@@ -516,6 +550,49 @@ const ContractsPage = () => {
       delivery_terms: contract.delivery_terms || '',
       warranty_terms: contract.warranty_terms || '',
       performance_management: contract.performance_management || '',
+      commercial_terms: contract.commercial_terms || '',
+      compliance_legal_terms: contract.compliance_legal_terms || '',
+      financial_payment_control: contract.financial_payment_control || '',
+      risk_dispute_management: contract.risk_dispute_management || '',
+      digital_attachments_tracking: contract.digital_attachments_tracking || '',
+      institute: contract.institute || '',
+      contract_category: contract.contract_category || '',
+      renewal_type: contract.renewal_type || '',
+      renewal_notice_days:
+        contract.renewal_notice_days === null || contract.renewal_notice_days === undefined
+          ? ''
+          : String(contract.renewal_notice_days),
+      contract_owner: contract.contract_owner || '',
+      currency: contract.currency || 'IQD',
+      estimated_contract_value:
+        contract.estimated_contract_value === null || contract.estimated_contract_value === undefined
+          ? ''
+          : String(contract.estimated_contract_value),
+      actual_consumed_value:
+        contract.actual_consumed_value === null || contract.actual_consumed_value === undefined
+          ? ''
+          : String(contract.actual_consumed_value),
+      first_party: contract.first_party || '',
+      second_party: contract.second_party || '',
+      authorized_signatory: contract.authorized_signatory || '',
+      vendor_contact_person: contract.vendor_contact_person || '',
+      vendor_contact_email: contract.vendor_contact_email || '',
+      vendor_contact_phone: contract.vendor_contact_phone || '',
+      vendor_tax_id: contract.vendor_tax_id || '',
+      vendor_address: contract.vendor_address || '',
+      scope_summary: contract.scope_summary || '',
+      deliverables: contract.deliverables || '',
+      technical_specifications: contract.technical_specifications || '',
+      service_coverage: contract.service_coverage || '',
+      exclusions: contract.exclusions || '',
+      sla_requirements: contract.sla_requirements || '',
+      payment_terms_details: contract.payment_terms_details || '',
+      delivery_logistics_details: contract.delivery_logistics_details || '',
+      sla_details: contract.sla_details || '',
+      penalties_incentives: contract.penalties_incentives || '',
+      change_management_terms: contract.change_management_terms || '',
+      termination_exit_terms: contract.termination_exit_terms || '',
+      alert_rules: contract.alert_rules || '',
       contract_type: contract.contract_type || 'purchasing',
       end_user_department_id: contract.end_user_department_id
         ? String(contract.end_user_department_id)
@@ -643,7 +720,45 @@ const ContractsPage = () => {
       delivery_terms: formState.delivery_terms.trim() || null,
       warranty_terms: formState.warranty_terms.trim() || null,
       performance_management: formState.performance_management.trim() || null,
+      commercial_terms: formState.commercial_terms.trim() || null,
+      compliance_legal_terms: formState.compliance_legal_terms.trim() || null,
+      financial_payment_control: formState.financial_payment_control.trim() || null,
+      risk_dispute_management: formState.risk_dispute_management.trim() || null,
+      digital_attachments_tracking: formState.digital_attachments_tracking.trim() || null,
+      institute: formState.institute.trim() || null,
+      contract_category: formState.contract_category.trim() || null,
+      renewal_type: formState.renewal_type.trim() || null,
+      contract_owner: formState.contract_owner.trim() || null,
+      currency: formState.currency.trim() || null,
+      first_party: formState.first_party.trim() || null,
+      second_party: formState.second_party.trim() || null,
+      authorized_signatory: formState.authorized_signatory.trim() || null,
+      vendor_contact_person: formState.vendor_contact_person.trim() || null,
+      vendor_contact_email: formState.vendor_contact_email.trim() || null,
+      vendor_contact_phone: formState.vendor_contact_phone.trim() || null,
+      vendor_tax_id: formState.vendor_tax_id.trim() || null,
+      vendor_address: formState.vendor_address.trim() || null,
+      scope_summary: formState.scope_summary.trim() || null,
+      deliverables: formState.deliverables.trim() || null,
+      technical_specifications: formState.technical_specifications.trim() || null,
+      service_coverage: formState.service_coverage.trim() || null,
+      exclusions: formState.exclusions.trim() || null,
+      sla_requirements: formState.sla_requirements.trim() || null,
+      payment_terms_details: formState.payment_terms_details.trim() || null,
+      delivery_logistics_details: formState.delivery_logistics_details.trim() || null,
+      sla_details: formState.sla_details.trim() || null,
+      penalties_incentives: formState.penalties_incentives.trim() || null,
+      change_management_terms: formState.change_management_terms.trim() || null,
+      termination_exit_terms: formState.termination_exit_terms.trim() || null,
+      alert_rules: formState.alert_rules.trim() || null,
     };
+
+    payload.renewal_notice_days =
+      formState.renewal_notice_days === '' ? null : Number(formState.renewal_notice_days);
+    payload.estimated_contract_value =
+      formState.estimated_contract_value === '' ? null : Number(formState.estimated_contract_value);
+    payload.actual_consumed_value =
+      formState.actual_consumed_value === '' ? null : Number(formState.actual_consumed_value);
 
     if (!payload.title) {
       setFormError('A contract title is required.');
@@ -689,6 +804,25 @@ const ContractsPage = () => {
       payload.amount_paid = numericPaid;
     } else {
       payload.amount_paid = null;
+    }
+
+    if (payload.renewal_notice_days !== null && !Number.isFinite(payload.renewal_notice_days)) {
+      setFormError('Renewal notice period must be a valid number of days.');
+      return;
+    }
+    if (
+      payload.estimated_contract_value !== null &&
+      !Number.isFinite(payload.estimated_contract_value)
+    ) {
+      setFormError('Estimated contract value must be a valid number.');
+      return;
+    }
+    if (
+      payload.actual_consumed_value !== null &&
+      !Number.isFinite(payload.actual_consumed_value)
+    ) {
+      setFormError('Actual consumed value must be a valid number.');
+      return;
     }
 
     if (formState.end_user_department_id) {

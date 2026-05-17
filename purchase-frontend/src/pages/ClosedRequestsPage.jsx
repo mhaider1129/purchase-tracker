@@ -68,6 +68,7 @@ const ClosedRequestsPage = () => {
   } = useApprovalTimeline();
   const { user: currentUser } = useCurrentUser();
   const [markingItemReceived, setMarkingItemReceived] = useState(null);
+  const [receiptQuantityByItem, setReceiptQuantityByItem] = useState({});
   const [expandedItemsId, setExpandedItemsId] = useState(null);
   const {
     attachmentsMap,
@@ -79,12 +80,25 @@ const ClosedRequestsPage = () => {
     resetAttachments,
   } = useRequestAttachments();
 
-  const handleMarkItemReceived = async (requestId, itemId) => {
+  const handleMarkItemReceived = async (requestId, item) => {
+    const itemId = item?.id;
     const trackingKey = `${requestId}-${itemId}`;
+    const requestedQtyRaw = receiptQuantityByItem[trackingKey];
+    const requestedQty =
+      requestedQtyRaw === undefined || requestedQtyRaw === ''
+        ? null
+        : Number(requestedQtyRaw);
+
+    if (requestedQty !== null && (!Number.isFinite(requestedQty) || requestedQty <= 0)) {
+      alert(tr('invalidReceiveQty', { defaultValue: 'Enter a valid quantity to receive.' }));
+      return;
+    }
+
     setMarkingItemReceived(trackingKey);
     try {
       const response = await api.patch(`/api/requests/${requestId}/mark-received`, {
         item_id: itemId,
+        received_quantity: requestedQty,
       });
 
       setRequests((prevRequests) =>
@@ -93,15 +107,25 @@ const ClosedRequestsPage = () => {
             return req;
           }
 
+          const itemPurchasedQty = Number(item?.purchased_quantity ?? item?.quantity ?? 0);
           const updatedItems = (req.items || []).map((item) =>
             item.id === itemId
-              ? {
-                  ...item,
-                  is_received: true,
-                  received_at: new Date().toISOString(),
-                  received_by: currentUser?.id || item.received_by,
-                }
-              : item
+              ? (() => {
+                  const currentReceived = Number(item.received_quantity || 0);
+                  const incrementQty =
+                    requestedQty === null
+                      ? Math.max(itemPurchasedQty - currentReceived, 0)
+                      : requestedQty;
+                  const totalReceived = currentReceived + incrementQty;
+                  return {
+                    ...item,
+                    received_quantity: totalReceived,
+                    is_received: totalReceived >= itemPurchasedQty,
+                    received_at: new Date().toISOString(),
+                    received_by: currentUser?.id || item.received_by,
+                  };
+                })()
+              : item,
           );
 
           const updatedStatus = response?.data?.request_status || req.status;
@@ -113,6 +137,10 @@ const ClosedRequestsPage = () => {
           };
         })
       );
+      setReceiptQuantityByItem((prev) => ({
+        ...prev,
+        [trackingKey]: '',
+      }));
     } catch (err) {
       console.error('Failed to mark item as received:', err);
       const serverMessage = err?.response?.data?.message;
@@ -671,6 +699,9 @@ const ClosedRequestsPage = () => {
                                             ['completed', 'received'].includes(normalizedStatus) &&
                                             currentUser?.id === req.requester_id &&
                                             !isReceived;
+                                          const purchasedQty = Number(item.purchased_quantity ?? item.quantity ?? 0);
+                                          const receivedQty = Number(item.received_quantity || 0);
+                                          const remainingQty = Math.max(purchasedQty - receivedQty, 0);
 
                                           return (
                                             <tr key={item.id} className="bg-white dark:bg-gray-900">
@@ -679,6 +710,9 @@ const ClosedRequestsPage = () => {
                                               </td>
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
                                                 {item.quantity ?? '—'}
+                                                <div className="text-xs text-gray-500 dark:text-gray-300">
+                                                  {tr('receivedProgress', { defaultValue: 'Received' })}: {receivedQty}/{purchasedQty}
+                                                </div>
                                               </td>
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
                                                 {item.procurement_status || tr('notAvailable')}
@@ -698,16 +732,33 @@ const ClosedRequestsPage = () => {
                                               </td>
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
                                                 {canMarkItem ? (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleMarkItemReceived(req.id, item.id)}
-                                                    disabled={markingItemReceived === trackingKey}
-                                                    className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
-                                                  >
-                                                    {markingItemReceived === trackingKey
-                                                      ? tr('markingItem', { defaultValue: 'Marking…' })
-                                                      : tr('markItemReceived', { defaultValue: 'Mark as Received' })}
-                                                  </button>
+                                                  <div className="flex items-center gap-2">
+                                                    <input
+                                                      type="number"
+                                                      min="0.01"
+                                                      step="0.01"
+                                                      max={remainingQty || undefined}
+                                                      value={receiptQuantityByItem[trackingKey] ?? ''}
+                                                      onChange={(event) =>
+                                                        setReceiptQuantityByItem((prev) => ({
+                                                          ...prev,
+                                                          [trackingKey]: event.target.value,
+                                                        }))
+                                                      }
+                                                      placeholder={String(remainingQty)}
+                                                      className="w-24 rounded-md border border-gray-300 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-900"
+                                                    />
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleMarkItemReceived(req.id, item)}
+                                                      disabled={markingItemReceived === trackingKey}
+                                                      className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
+                                                    >
+                                                      {markingItemReceived === trackingKey
+                                                        ? tr('markingItem', { defaultValue: 'Marking…' })
+                                                        : tr('markItemReceived', { defaultValue: 'Receive Batch' })}
+                                                    </button>
+                                                  </div>
                                                 ) : isTechnicalInspectionPending ? (
                                                   <button
                                                     type="button"
@@ -900,6 +951,9 @@ const ClosedRequestsPage = () => {
                                 ['completed', 'received'].includes(normalizedStatus) &&
                                 currentUser?.id === req.requester_id &&
                                 !isReceived;
+                              const purchasedQty = Number(item.purchased_quantity ?? item.quantity ?? 0);
+                              const receivedQty = Number(item.received_quantity || 0);
+                              const remainingQty = Math.max(purchasedQty - receivedQty, 0);
 
                               return (
                                 <div
@@ -913,6 +967,9 @@ const ClosedRequestsPage = () => {
                                       </p>
                                       <p className="text-xs text-gray-500 dark:text-gray-300">
                                         {tr('quantity', { defaultValue: 'Quantity' })}: {item.quantity ?? '—'}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-300">
+                                        {tr('receivedProgress', { defaultValue: 'Received' })}: {receivedQty}/{purchasedQty}
                                       </p>
                                       {item.procurement_status && (
                                         <p className="text-xs text-gray-500 dark:text-gray-300">
@@ -936,15 +993,30 @@ const ClosedRequestsPage = () => {
                                   </div>
                                   {canMarkItem && (
                                     <div className="mt-3 flex justify-end">
+                                      <input
+                                        type="number"
+                                        min="0.01"
+                                        step="0.01"
+                                        max={remainingQty || undefined}
+                                        value={receiptQuantityByItem[trackingKey] ?? ''}
+                                        onChange={(event) =>
+                                          setReceiptQuantityByItem((prev) => ({
+                                            ...prev,
+                                            [trackingKey]: event.target.value,
+                                          }))
+                                        }
+                                        placeholder={String(remainingQty)}
+                                        className="mr-2 w-24 rounded-md border border-gray-300 px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-900"
+                                      />
                                       <button
                                         type="button"
-                                        onClick={() => handleMarkItemReceived(req.id, item.id)}
+                                        onClick={() => handleMarkItemReceived(req.id, item)}
                                         disabled={markingItemReceived === trackingKey}
                                         className="inline-flex items-center gap-2 rounded-md border border-green-300 px-3 py-1 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-green-600 dark:text-green-200 dark:hover:bg-green-800"
                                       >
                                         {markingItemReceived === trackingKey
                                           ? tr('markingItem', { defaultValue: 'Marking…' })
-                                          : tr('markItemReceived', { defaultValue: 'Mark as Received' })}
+                                          : tr('markItemReceived', { defaultValue: 'Receive Batch' })}
                                       </button>
                                     </div>
                                   )}

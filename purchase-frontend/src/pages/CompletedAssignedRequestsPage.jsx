@@ -45,6 +45,7 @@ const PRINT_TRANSLATIONS = {
     printSuccess: 'Request printed successfully (Print Count: {count})',
     yes: 'Yes',
     no: 'No',
+    printConfirm: 'Printing this request will increase its print count. Do you want to continue?',
   },
   ar: {
     purchaseSummary: 'ملخص طلب الشراء',
@@ -84,6 +85,7 @@ const PRINT_TRANSLATIONS = {
     printSuccess: 'تم طباعة الطلب بنجاح (عدد الطباعة: {count})',
     yes: 'نعم',
     no: 'لا',
+    printConfirm: 'طباعة هذا الطلب ستزيد عداد الطباعة. هل تريد المتابعة؟',
   },
 };
 
@@ -263,15 +265,18 @@ const CompletedAssignedRequestsPage = () => {
   };
 
   const handlePrint = async (requestId) => {
+    const translate = (key) =>
+      PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
+
+    const shouldPrint = window.confirm(translate('printConfirm'));
+    if (!shouldPrint) return;
+
     try {
       const data = await printRequest(requestId);
       const { request, items, assigned_user, message, print_count } = data;
 
       const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
       const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';
-      const translate = (key) =>
-        PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
-
       const win = window.open('', '_blank');
       if (!win) {
         alert('Please enable popups to print the request.');
@@ -329,22 +334,13 @@ const CompletedAssignedRequestsPage = () => {
       const detailFields = [
         { label: translate('requestId'), value: request.id },
         { label: translate('status'), value: request.status },
-        { label: translate('requestType'), value: request.request_type },
-        { label: translate('requestDomain'), value: request.request_domain },
         { label: translate('createdOn'), value: formatDate(request.created_at) },
         { label: translate('neededBy'), value: formatDate(request.needed_by) },
-        { label: translate('estimatedCost'), value: formatAmount(request.estimated_cost) },
         { label: translate('maintenanceRef'), value: request.maintenance_ref_number },
         { label: translate('project'), value: request.project_name },
         { label: translate('department'), value: request.department_name },
         { label: translate('section'), value: request.section_name },
         { label: translate('requester'), value: requesterName },
-        {
-          label: translate('assignedTo'),
-          value: assigned_user
-            ? `${assigned_user.name}${assigned_user.role ? ` (${assigned_user.role})` : ''}`
-            : null,
-        },
         { label: translate('printCount'), value: print_count },
         { label: translate('lastUpdated'), value: lastUpdated },
       ]

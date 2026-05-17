@@ -25,6 +25,61 @@ const ContractForm = ({
     <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Core Contract Header</h3>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="institute">Institute</label>
+          <input id="institute" name="institute" type="text" value={formState.institute} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="contract_category">Contract Category</label>
+          <input id="contract_category" name="contract_category" type="text" value={formState.contract_category} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="renewal_type">Renewal Type</label>
+          <input id="renewal_type" name="renewal_type" type="text" value={formState.renewal_type} onChange={handleInputChange} placeholder="Auto / Manual" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="renewal_notice_days">Renewal Notice Days</label>
+          <input id="renewal_notice_days" name="renewal_notice_days" type="number" min="0" value={formState.renewal_notice_days} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="currency">Currency</label>
+          <input id="currency" name="currency" type="text" value={formState.currency} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="estimated_contract_value">Estimated Value</label>
+          <input id="estimated_contract_value" name="estimated_contract_value" type="number" value={formState.estimated_contract_value} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="actual_consumed_value">Actual Consumed</label>
+          <input id="actual_consumed_value" name="actual_consumed_value" type="number" value={formState.actual_consumed_value} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="contract_owner">Contract Owner</label>
+          <input id="contract_owner" name="contract_owner" type="text" value={formState.contract_owner} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div className="sm:col-span-2">
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Parties Information</h3>
+        </div>
+        <div><input name="first_party" value={formState.first_party} onChange={handleInputChange} placeholder="First party" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="second_party" value={formState.second_party} onChange={handleInputChange} placeholder="Second party" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="authorized_signatory" value={formState.authorized_signatory} onChange={handleInputChange} placeholder="Authorized signatory" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="vendor_contact_person" value={formState.vendor_contact_person} onChange={handleInputChange} placeholder="Vendor contact person" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="vendor_contact_email" value={formState.vendor_contact_email} onChange={handleInputChange} placeholder="Vendor email" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="vendor_contact_phone" value={formState.vendor_contact_phone} onChange={handleInputChange} placeholder="Vendor phone" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="vendor_tax_id" value={formState.vendor_tax_id} onChange={handleInputChange} placeholder="Tax ID / registration" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="vendor_address" value={formState.vendor_address} onChange={handleInputChange} placeholder="Legal address" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div className="sm:col-span-2">
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Scope / SLA / Operations</h3>
+          <textarea name="scope_summary" rows={2} value={formState.scope_summary} onChange={handleInputChange} placeholder="Scope summary" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="deliverables" rows={2} value={formState.deliverables} onChange={handleInputChange} placeholder="Deliverables" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="technical_specifications" rows={2} value={formState.technical_specifications} onChange={handleInputChange} placeholder="Technical specifications" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="service_coverage" rows={2} value={formState.service_coverage} onChange={handleInputChange} placeholder="Service coverage" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="exclusions" rows={2} value={formState.exclusions} onChange={handleInputChange} placeholder="Exclusions" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="sla_requirements" rows={2} value={formState.sla_requirements} onChange={handleInputChange} placeholder="SLA requirements" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+        </div>
+        <div className="sm:col-span-2">
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="title"
@@ -455,6 +510,100 @@ const ContractForm = ({
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             placeholder="Define KPIs, performance metrics, and review processes."
           />
+        </div>
+        <div className="sm:col-span-2">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="commercial_terms"
+          >
+            Commercial Terms
+          </label>
+          <textarea
+            id="commercial_terms"
+            name="commercial_terms"
+            rows={4}
+            value={formState.commercial_terms}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Contract value, pricing model, tax, FX clause, discount structure, MOQ, delivery charges."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="compliance_legal_terms"
+          >
+            Compliance &amp; Legal
+          </label>
+          <textarea
+            id="compliance_legal_terms"
+            name="compliance_legal_terms"
+            rows={4}
+            value={formState.compliance_legal_terms}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="JCI/MOH requirements, confidentiality, data protection, insurance, licenses, anti-corruption."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="financial_payment_control"
+          >
+            Financial &amp; Payment Control
+          </label>
+          <textarea
+            id="financial_payment_control"
+            name="financial_payment_control"
+            rows={4}
+            value={formState.financial_payment_control}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Payment method and terms, milestones, retention, invoice requirements, outstanding liability controls."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="risk_dispute_management"
+          >
+            Risk &amp; Dispute Management
+          </label>
+          <textarea
+            id="risk_dispute_management"
+            name="risk_dispute_management"
+            rows={4}
+            value={formState.risk_dispute_management}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Risk level, criticality, backup supplier, force majeure, penalties, dispute and termination clauses."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <label
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
+            htmlFor="digital_attachments_tracking"
+          >
+            Digital Attachments &amp; Tracking
+          </label>
+          <textarea
+            id="digital_attachments_tracking"
+            name="digital_attachments_tracking"
+            rows={4}
+            value={formState.digital_attachments_tracking}
+            onChange={handleInputChange}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            placeholder="Required attachments, amendment history, approval workflow log, alerts, and monitoring notes."
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <textarea name="payment_terms_details" rows={3} value={formState.payment_terms_details} onChange={handleInputChange} placeholder="Payment terms details (method, period, advance, retention, milestones, invoice requirements)." className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="delivery_logistics_details" rows={3} value={formState.delivery_logistics_details} onChange={handleInputChange} placeholder="Delivery & logistics details (incoterms, lead time, emergency terms, customs, transport)." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="sla_details" rows={3} value={formState.sla_details} onChange={handleInputChange} placeholder="Detailed SLA (response/resolution time, uptime, escalation)." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="penalties_incentives" rows={3} value={formState.penalties_incentives} onChange={handleInputChange} placeholder="Penalties & incentives." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="change_management_terms" rows={3} value={formState.change_management_terms} onChange={handleInputChange} placeholder="Change management / amendment terms." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="termination_exit_terms" rows={3} value={formState.termination_exit_terms} onChange={handleInputChange} placeholder="Termination & exit clauses." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="alert_rules" rows={3} value={formState.alert_rules} onChange={handleInputChange} placeholder="Alerts & automation notes (expiry windows, SLA breach alerts)." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
         </div>
       </div>
 
