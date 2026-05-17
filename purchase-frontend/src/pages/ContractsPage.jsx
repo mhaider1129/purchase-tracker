@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import saveAs from 'file-saver';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import ContractForm from '../components/ContractForm';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
@@ -191,7 +191,7 @@ const initialFormState = {
   currency: 'IQD',
   estimated_contract_value: '',
   actual_consumed_value: '',
-  first_party: '',
+  first_party: 'Warith International Cancer Institute',
   second_party: '',
   authorized_signatory: '',
   vendor_contact_person: '',
@@ -221,6 +221,8 @@ const initialFormState = {
 
 const ContractsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isCreatePage = location.pathname === '/contracts/new';
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -1488,6 +1490,7 @@ const ContractsPage = () => {
           </div>
         </header>
 
+        {!isCreatePage && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <StatCard
             tone="active"
@@ -1534,7 +1537,9 @@ const ContractsPage = () => {
             }
           />
         </div>
+        )}
 
+        {!isCreatePage ? (
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(420px,0.95fr)] xl:grid-cols-[minmax(0,2fr)_minmax(500px,1fr)]">          <div className="space-y-4">
             <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1636,6 +1641,9 @@ const ContractsPage = () => {
                         Value
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                        Estimated value
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Paid
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
@@ -1652,13 +1660,13 @@ const ContractsPage = () => {
                   <tbody className="divide-y divide-gray-200 bg-white/60 dark:divide-gray-800 dark:bg-gray-900/70">
                     {loading ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           Loading contracts...
                         </td>
                       </tr>
                     ) : sortedContracts.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           No contracts match your current filters.
                         </td>
                       </tr>
@@ -1666,6 +1674,7 @@ const ContractsPage = () => {
                       sortedContracts.map((contract, index) => {
                         const isSelected = viewingContract?.id === contract.id;
                         const contractValue = formatCurrency(contract.contract_value);
+                        const estimatedValue = formatCurrency(contract.estimated_contract_value);
                         const paidSummary = getPaidSummary(contract);
                         const paidBarTone =
                           paidSummary.percent === null
@@ -1695,6 +1704,7 @@ const ContractsPage = () => {
                               {contract.source_request_id ? `#${contract.source_request_id}` : '—'}
                             </td>
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{contractValue ?? '—'}</td>
+                            <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{estimatedValue ?? '—'}</td>
                             <td className="px-4 py-3 align-top">
                               <div className="space-y-1">
                                 <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
@@ -1798,36 +1808,57 @@ const ContractsPage = () => {
           </div>
 
           <div className="space-y-4">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewingContract(null);
+                  setEditingId(null);
+                  setFormState(initialFormState);
+                  navigate('/contracts/new');
+                }}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Create new contract
+              </button>
+            </div>
             <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-white via-white to-blue-50/60 p-6 shadow-lg ring-1 ring-blue-50 dark:border-blue-900/50 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 dark:ring-blue-900/40">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                    {editingId
+                    {isCreatePage
+                      ? 'Create a new contract'
+                      : editingId
                       ? 'Edit contract'
                       : viewingContract
                       ? 'Contract details'
                       : 'Create a new contract'}
                   </h2>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                    {editingId
+                    {isCreatePage
+                      ? 'Capture supplier agreements, contract periods, and renewal information.'
+                      : editingId
                       ? 'Update the selected contract. All changes are tracked with timestamps.'
                       : viewingContract
                       ? 'Review the contract details below. Click Edit to make changes.'
                       : 'Capture supplier agreements, contract periods, and renewal information.'}
                   </p>
                 </div>
-                {editingId && (
+                {(editingId || isCreatePage) && (
                   <button
                     type="button"
-                    onClick={cancelEditing}
+                    onClick={() => {
+                      cancelEditing();
+                      navigate('/contracts');
+                    }}
                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 focus:outline-none focus:underline"
                   >
-                    Cancel editing
+                    Back to contracts
                   </button>
                 )}
               </div>
 
-              {editingId || !viewingContract ? (
+              {editingId ? (
                 <ContractForm
                   formState={formState}
                   handleInputChange={handleInputChange}
@@ -1851,6 +1882,11 @@ const ContractsPage = () => {
                 />
               ) : (
                 <div className="mt-4 space-y-4">
+                  {!viewingContract && (
+                    <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                      Select a contract from the list to view details, or use <span className="font-semibold">Create new contract</span> to add one.
+                    </div>
+                  )}
                   {selectedContractInsights && (
                     <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900/40 dark:bg-blue-950/30">
                       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -2217,6 +2253,51 @@ const ContractsPage = () => {
             </div>
           </div>
         </section>
+        ) : (
+          <section className="mx-auto max-w-4xl">
+            <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-white via-white to-blue-50/60 p-6 shadow-lg ring-1 ring-blue-50 dark:border-blue-900/50 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 dark:ring-blue-900/40">
+              <div className="mb-4 flex items-start justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Create a new contract</h2>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                    Capture supplier agreements, contract periods, and renewal information.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    cancelEditing();
+                    navigate('/contracts');
+                  }}
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-700 focus:outline-none focus:underline"
+                >
+                  Back to contracts
+                </button>
+              </div>
+              <ContractForm
+                formState={formState}
+                handleInputChange={handleInputChange}
+                handleSubmit={handleSubmit}
+                saving={saving}
+                editingId={editingId}
+                handleArchive={handleArchive}
+                archivingId={archivingId}
+                formError={formError}
+                successMessage={successMessage}
+                statusOptions={statusOptions}
+                departments={departments}
+                departmentsLoading={departmentsLoading}
+                departmentsError={departmentsError}
+                users={users}
+                usersLoading={usersLoading}
+                usersError={usersError}
+                suppliers={suppliers}
+                suppliersLoading={suppliersLoading}
+                suppliersError={suppliersError}
+              />
+            </div>
+          </section>
+        )}
       </main>
     </>
   );

@@ -21,6 +21,17 @@ const ContractForm = ({
   suppliersLoading,
   suppliersError,
 }) => {
+  const formatCurrencyPreview = (value) => {
+    if (value === "" || value === null || value === undefined) return "—";
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return "—";
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: formState.currency || "USD",
+      maximumFractionDigits: 2,
+    }).format(numericValue);
+  };
+
   return (
     <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -50,6 +61,7 @@ const ContractForm = ({
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="estimated_contract_value">Estimated Value</label>
           <input id="estimated_contract_value" name="estimated_contract_value" type="number" value={formState.estimated_contract_value} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Preview: {formatCurrencyPreview(formState.estimated_contract_value)}</p>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="actual_consumed_value">Actual Consumed</label>
@@ -57,7 +69,17 @@ const ContractForm = ({
         </div>
         <div className="sm:col-span-2">
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="contract_owner">Contract Owner</label>
-          <input id="contract_owner" name="contract_owner" type="text" value={formState.contract_owner} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <select id="contract_owner" name="contract_owner" value={formState.contract_owner} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+            <option value="">Select contract owner</option>
+            {users.map((user) => {
+              const label = user.name || user.email || `User #${user.id}`;
+              return (
+                <option key={user.id} value={label}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
         </div>
         <div className="sm:col-span-2">
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Parties Information</h3>
@@ -208,22 +230,6 @@ const ContractForm = ({
             <option value="leasing">Leasing</option>
             <option value="other">Other</option>
           </select>
-        </div>
-        <div>
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="signing_date"
-          >
-            Signing date
-          </label>
-          <input
-            id="signing_date"
-            name="signing_date"
-            type="date"
-            value={formState.signing_date}
-            onChange={handleInputChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-          />
         </div>
         <div>
           <label
