@@ -147,6 +147,18 @@ const ProcureToPayLifecyclePage = () => {
   };
 
   const availableReceipts = data?.receipts || [];
+  const autoCompletedOnboardingSteps = useMemo(() => {
+    const invoices = data?.invoices || [];
+    const payments = data?.payments || [];
+    const financeState = String(data?.lifecycle?.finance_state || '').toLowerCase();
+
+    return [
+      availableReceipts.length > 0 ? 'goods_receipt' : null,
+      invoices.length > 0 ? 'invoice_entry' : null,
+      (payments.length > 0 || financeState.includes('paid')) ? 'match_and_pay' : null,
+    ].filter(Boolean);
+  }, [availableReceipts.length, data?.invoices, data?.lifecycle?.finance_state, data?.payments]);
+
 
   const computedInvoiceTotal = useMemo(() => {
     return (invoiceForm.items || []).reduce((sum, item) => {
@@ -254,6 +266,7 @@ const ProcureToPayLifecyclePage = () => {
         subtitle="Track each operational handoff from goods receipt through payment."
         storageKey="onboarding-procure-to-pay"
         onCompleteStep={() => setOnboardingVersion((v) => v + 1)}
+        autoCompleteStepIds={autoCompletedOnboardingSteps}
         steps={[
           { id: 'goods_receipt', title: 'Capture goods receipt (GRPO)', tip: 'Record received, damaged, and short quantities accurately.' },
           { id: 'invoice_entry', title: 'Submit supplier invoice', tip: 'Use the same supplier and cross-reference PO-equivalent details.' },

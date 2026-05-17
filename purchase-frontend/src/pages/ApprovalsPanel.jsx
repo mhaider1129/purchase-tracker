@@ -120,6 +120,12 @@ const ApprovalsPanel = () => {
     hodDescription: 'Add a department HOD approval step before continuing the workflow.',
     hodSelect: 'Select department HOD',
   };
+  const autoCompletedOnboardingSteps = [
+    hasActiveFilters ? 'filter_queue' : null,
+    expandedId ? 'review_items' : null,
+    selectedDecision ? 'submit_decision' : null,
+  ].filter(Boolean);
+
 
   return (
     <>
@@ -149,6 +155,7 @@ const ApprovalsPanel = () => {
             subtitle="Use this guide to process approvals consistently and quickly."
             storageKey="onboarding-approvals"
             onCompleteStep={() => setOnboardingVersion((v) => v + 1)}
+            autoCompleteStepIds={autoCompletedOnboardingSteps}
             steps={[
               { id: 'filter_queue', title: 'Filter your pending queue', tip: 'Start with urgent and newest requests first.' },
               { id: 'review_items', title: 'Review item-level details', tip: 'Check quantity, notes, and attachments before deciding.' },

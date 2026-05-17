@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
-const GuidedWorkflowPanel = ({ title, subtitle, steps = [], storageKey, onCompleteStep }) => {
+const GuidedWorkflowPanel = ({ title, subtitle, steps = [], storageKey, onCompleteStep, autoCompleteStepIds = [] }) => {
   const completedSteps = useMemo(() => {
     if (!storageKey) return [];
     try {
@@ -12,8 +12,25 @@ const GuidedWorkflowPanel = ({ title, subtitle, steps = [], storageKey, onComple
     }
   }, [storageKey]);
 
+
+  useEffect(() => {
+    if (!storageKey || !Array.isArray(autoCompleteStepIds) || autoCompleteStepIds.length === 0) return;
+
+    const validAutoCompletedSteps = autoCompleteStepIds.filter((stepId) =>
+      steps.some((step) => step.id === stepId)
+    );
+
+    if (validAutoCompletedSteps.length === 0) return;
+
+    const merged = Array.from(new Set([...completedSteps, ...validAutoCompletedSteps]));
+    if (merged.length === completedSteps.length) return;
+
+    localStorage.setItem(storageKey, JSON.stringify(merged));
+    if (onCompleteStep) onCompleteStep(merged);
+  }, [autoCompleteStepIds, completedSteps, onCompleteStep, steps, storageKey]);
   const completionCount = steps.filter((step) => completedSteps.includes(step.id)).length;
   const progress = steps.length > 0 ? Math.round((completionCount / steps.length) * 100) : 0;
+  const isComplete = steps.length > 0 && completionCount >= steps.length;
 
   const handleToggle = (stepId) => {
     if (!storageKey || !onCompleteStep) return;
@@ -23,6 +40,10 @@ const GuidedWorkflowPanel = ({ title, subtitle, steps = [], storageKey, onComple
     localStorage.setItem(storageKey, JSON.stringify(next));
     onCompleteStep(next);
   };
+
+  if (isComplete) {
+    return null;
+  }
 
   return (
     <section className="rounded-lg border border-indigo-200 bg-indigo-50/70 p-4">

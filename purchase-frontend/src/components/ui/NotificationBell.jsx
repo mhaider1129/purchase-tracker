@@ -200,7 +200,7 @@ const resolveNotificationDestination = (notification) => {
 };
 
 const NotificationBell = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { notifications, remove, clearAll, refresh, isLoading, unreadCount, error } =
     useNotificationContext();
@@ -328,7 +328,9 @@ const NotificationBell = () => {
       {isOpen ? (
         <div
           ref={panelRef}
-          className="absolute right-0 z-[1001] mt-2 w-80 max-w-xs origin-top-right rounded-lg border border-gray-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/95"
+          className={`absolute z-[1001] mt-2 w-80 max-w-xs rounded-lg border border-gray-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 ${
+            i18n.dir() === "rtl" ? "left-0 origin-top-left" : "right-0 origin-top-right"
+          }`}
           role="dialog"
           aria-label={t("navbar.notifications")}
         >
@@ -337,7 +339,7 @@ const NotificationBell = () => {
               {t("navbar.notifications")}
             </p>
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
-              {unreadCount} unread
+              {t("navbar.unreadCount", { count: unreadCount })}
             </span>
             {hasNotifications ? (
               <button

@@ -210,7 +210,8 @@
     "openNotifications": "Open notifications",
     "dismissNotification": "Dismiss notification",
     "loadingNotifications": "Loading notifications…",
-    "viewDetails": "View details"
+    "viewDetails": "View details",
+    "unreadCount": "{{count}} unread"
   },
   "pageTitles": {
     "nonStockRequestForm": "Non-Stock Request Form",
@@ -753,7 +754,17 @@
       "selectedItemAttachments": "Item attachments",
       "additionalAttachmentsLabel": "Additional Attachments",
       "additionalAttachmentsHint": "Accepted: {{allowed}} • Max {{max}}MB per file",
-      "selectedRequestAttachments": "Request attachments"
+      "selectedRequestAttachments": "Request attachments",
+      "itemLineLabel": "Item line {{index}}",
+      "itemLineHint": "Fill quantity and expected cost to estimate total spend.",
+      "itemNameLabel": "Item name",
+      "expectedCostLabel": "Expected cost",
+      "brandLabel": "Brand",
+      "optionalLabel": "optional",
+      "availableQuantityLabel": "Available qty",
+      "quantityLabel": "Quantity",
+      "intendedUseLabel": "Intended use",
+      "specificationsLabel": "Specifications"
     },
     "buttons": {
       "addItem": "+ Add Another Item",

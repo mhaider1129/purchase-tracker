@@ -557,12 +557,12 @@ ${templateText}`
                 className="w-full border border-gray-200 rounded-xl p-5 mb-4 bg-white shadow-sm"
              >
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-gray-700">Item line {index + 1}</p>
-                  <p className="text-xs text-gray-500">Fill quantity and expected cost to estimate total spend.</p>
+                  <p className="text-sm font-semibold text-gray-700">{tr('fields.itemLineLabel', { index: index + 1 })}</p>
+                  <p className="text-xs text-gray-500">{tr('fields.itemLineHint')}</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-5">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Item name</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.itemNameLabel')}</label>
                     <input
                       type="text"
                       placeholder={tr('fields.itemNamePlaceholder')}
@@ -579,7 +579,7 @@ ${templateText}`
                     )}
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Expected cost</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.expectedCostLabel')}</label>
                     <input
                       type="number"
                       min={0}
@@ -596,7 +596,7 @@ ${templateText}`
                   </div>
                   <div className="md:col-span-5">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Brand <span className="text-gray-400">(optional)</span>
+                      {tr('fields.brandLabel')} <span className="text-gray-400">({tr('fields.optionalLabel')})</span>
                     </label>
                     <input
                       type="text"
@@ -610,7 +610,7 @@ ${templateText}`
                   </div>
                   <div className="md:col-span-3">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
-                      Available qty <span className="text-gray-400">(optional)</span>
+                      {tr('fields.availableQuantityLabel')} <span className="text-gray-400">({tr('fields.optionalLabel')})</span>
                     </label>
                     <input
                       type="number"
@@ -626,7 +626,7 @@ ${templateText}`
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Quantity</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.quantityLabel')}</label>
                     <input
                       type="number"
                       min={1}
@@ -643,7 +643,7 @@ ${templateText}`
                     )}
                   </div>
                   <div className="md:col-span-7">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Intended use</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.intendedUseLabel')}</label>
                     <input
                       type="text"
                       placeholder={tr('fields.intendedUsePlaceholder')}
@@ -659,7 +659,7 @@ ${templateText}`
                     )}
                   </div>
                   <div className="md:col-span-12">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Specifications</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.specificationsLabel')}</label>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"

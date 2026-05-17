@@ -205,7 +205,8 @@
     "openNotifications": "عرض الإشعارات",
     "dismissNotification": "إغلاق الإشعار",
     "loadingNotifications": "جاري تحميل الإشعارات...",
-    "viewDetails": "عرض التفاصيل"
+    "viewDetails": "عرض التفاصيل",
+    "unreadCount": "{{count}} غير مقروء"
   },
   "pageTitles": {
     "nonStockRequestForm": "نموذج طلب مواد غير مخزنية",
@@ -661,7 +662,17 @@
       "selectedItemAttachments": "مرفقات الصنف",
       "additionalAttachmentsLabel": "مرفقات إضافية",
       "additionalAttachmentsHint": "الملفات المسموح بها: {{allowed}} • الحد الأقصى {{max}} م.ب لكل ملف",
-      "selectedRequestAttachments": "مرفقات الطلب"
+      "selectedRequestAttachments": "مرفقات الطلب",
+      "itemLineLabel": "بند الصنف {{index}}",
+      "itemLineHint": "أدخل الكمية والتكلفة المتوقعة لتقدير إجمالي الإنفاق.",
+      "itemNameLabel": "اسم الصنف",
+      "expectedCostLabel": "التكلفة المتوقعة",
+      "brandLabel": "العلامة التجارية",
+      "optionalLabel": "اختياري",
+      "availableQuantityLabel": "الكمية المتاحة",
+      "quantityLabel": "الكمية",
+      "intendedUseLabel": "الغرض من الاستخدام",
+      "specificationsLabel": "المواصفات"
     },
     "buttons": {
       "addItem": "+ إضافة صنف آخر",

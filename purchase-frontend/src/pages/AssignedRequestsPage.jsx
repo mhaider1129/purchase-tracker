@@ -140,7 +140,7 @@ const evaluateCompletionState = (request = {}, itemsOverride = null) => {
   const savedCost = request?.estimated_cost;
   const numericSavedCost =
     savedCost !== undefined && savedCost !== null ? Number(savedCost) : NaN;
-  const hasRecordedCost = !Number.isNaN(numericSavedCost) && numericSavedCost > 0;
+  const hasRecordedCost = !Number.isNaN(numericSavedCost) && numericSavedCost >= 0;
 
   let itemsComplete = false;
 
@@ -435,14 +435,34 @@ const AssignedRequestsPage = () => {
 
   const handleCostChange = (requestId, value) => {
     setRequestCosts((prev) => ({ ...prev, [requestId]: value }));
+
+    const selectedRequest = requests.find((req) => req.id === requestId);
+    if (!selectedRequest) {
+      return;
+    }
+
+    const isBlank = value === '' || value === null || value === undefined;
+    const parsedCost = isBlank ? 0 : Number(value);
+    const normalizedCost = Number.isNaN(parsedCost) || parsedCost < 0 ? null : parsedCost;
+    const requestWithDraftCost = {
+      ...selectedRequest,
+      estimated_cost: normalizedCost,
+    };
+    const itemsOverride = expandedRequestId === requestId && items.length > 0 ? items : null;
+
+    setCompletionStates((prev) => ({
+      ...prev,
+      [requestId]: evaluateCompletionState(requestWithDraftCost, itemsOverride),
+    }));
   };
 
   const handleSaveTotalCost = async (requestId) => {
     const rawValue = requestCosts[requestId];
-    const cost = Number(rawValue);
+    const isBlank = rawValue === '' || rawValue === null || rawValue === undefined;
+    const cost = isBlank ? 0 : Number(rawValue);
 
-    if (Number.isNaN(cost) || cost <= 0) {
-      alert(tr('alerts.invalidCost', 'Enter a total cost greater than zero.'));
+    if (Number.isNaN(cost) || cost < 0) {
+      alert(tr('alerts.invalidCost', 'Enter a valid total cost of zero or more.'));
       return;
     }
 

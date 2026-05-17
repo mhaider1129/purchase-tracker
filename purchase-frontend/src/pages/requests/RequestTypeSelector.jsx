@@ -364,6 +364,46 @@ const RequestTypeSelector = () => {
     return flattened.slice(0, 3);
   }, [visibleGroups]);
 
+  const completeOnboardingForPath = useCallback((path) => {
+    const creationPaths = [
+      '/requests/stock',
+      '/requests/warehouse-supply',
+      '/requests/non-stock',
+      '/requests/medical-device',
+      '/requests/medication',
+      '/requests/printing-logbook',
+      '/requests/it-items',
+      '/requests/maintenance',
+      '/requests/maintenance-warehouse-supply',
+    ];
+
+    const trackingPaths = ['/open-requests', '/approval-history', '/approvals'];
+
+    const autoStepIds = [];
+    if (creationPaths.includes(path)) {
+      autoStepIds.push('pick_form');
+    }
+    if (trackingPaths.includes(path)) {
+      autoStepIds.push('submit_request');
+    }
+
+    if (autoStepIds.length === 0) return;
+
+    try {
+      const storageKey = 'onboarding-request-creation';
+      const raw = localStorage.getItem(storageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      const existing = Array.isArray(parsed) ? parsed : [];
+      const merged = Array.from(new Set([...existing, ...autoStepIds]));
+      if (merged.length !== existing.length) {
+        localStorage.setItem(storageKey, JSON.stringify(merged));
+        setOnboardingVersion((v) => v + 1);
+      }
+    } catch {
+      // ignore localStorage errors
+    }
+  }, []);
+
   const renderActionCard = (action, isFeatured = false) => {
     const Icon = action.icon;
     const description = action.descriptionKey ? t(action.descriptionKey) : '';
@@ -372,7 +412,10 @@ const RequestTypeSelector = () => {
       <button
         key={action.path}
         type="button"
-        onClick={() => handleNavigate(action.path)}
+        onClick={() => {
+          completeOnboardingForPath(action.path);
+          handleNavigate(action.path);
+        }}
         className={`${BASE_BUTTON_STYLE} ${action.buttonClassName} text-left transition-transform duration-150 hover:-translate-y-0.5`}
         aria-label={t(action.ariaLabelKey)}
       >
