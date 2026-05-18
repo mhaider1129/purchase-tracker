@@ -77,7 +77,7 @@ const PrintingLogbookRequestForm = () => {
           <label className="block font-semibold mb-1">Approved Form (PDF/Word)</label>
           <input
             type="file"
-            accept=".pdf,.doc,.docx"
+            accept=".pdf,.doc,.docx,image/*,.heic,.heif"
             onChange={(e) => setFormFile(e.target.files?.[0] || null)}
             className="w-full border rounded p-2"
             required

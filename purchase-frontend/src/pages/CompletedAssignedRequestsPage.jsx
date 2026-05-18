@@ -768,7 +768,7 @@ const CompletedAssignedRequestsPage = () => {
             <div className="mt-1 flex items-center gap-2">
               <input
                 type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp"
+                accept="image/*,.heic,.heif"
                 className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 onChange={handleTemplateFileChange}
               />

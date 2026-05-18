@@ -28,15 +28,22 @@ const buildCandidateEndpoints = () => {
 };
 
 const CURRENT_USER_ENDPOINTS = buildCandidateEndpoints();
+let resolvedCurrentUserEndpoint = null;
 
 const isNotFoundError = (error) => error?.response?.status === 404;
 
 export const fetchCurrentUser = async (config = {}) => {
+  if (resolvedCurrentUserEndpoint) {
+    return api.get(resolvedCurrentUserEndpoint, config);
+  }
+
   let lastError;
 
   for (const endpoint of CURRENT_USER_ENDPOINTS) {
     try {
-      return await api.get(endpoint, { ...config, suppressNotFoundLog: true });
+      const response = await api.get(endpoint, { ...config, suppressNotFoundLog: true });
+      resolvedCurrentUserEndpoint = endpoint;
+      return response;
     } catch (error) {
       if (!isNotFoundError(error)) {
         throw error;
