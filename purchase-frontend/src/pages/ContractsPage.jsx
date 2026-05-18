@@ -183,7 +183,7 @@ const initialFormState = {
   financial_payment_control: '',
   risk_dispute_management: '',
   digital_attachments_tracking: '',
-  institute: '',
+  institute: 'Warith International Cancer Institute',
   contract_category: '',
   renewal_type: '',
   renewal_notice_days: '',
