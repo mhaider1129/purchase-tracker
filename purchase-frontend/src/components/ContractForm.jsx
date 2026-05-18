@@ -518,21 +518,18 @@ const ContractForm = ({
           />
         </div>
         <div className="sm:col-span-2">
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="commercial_terms"
-          >
-            Commercial Terms
-          </label>
-          <textarea
-            id="commercial_terms"
-            name="commercial_terms"
-            rows={4}
-            value={formState.commercial_terms}
-            onChange={handleInputChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            placeholder="Contract value, pricing model, tax, FX clause, discount structure, MOQ, delivery charges."
-          />
+          <h4 className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">Commercial Terms</h4>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input name="commercial_contract_value" value={formState.commercial_contract_value} onChange={handleInputChange} placeholder="Contract Value" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_unit_pricing" value={formState.commercial_unit_pricing} onChange={handleInputChange} placeholder="Unit Pricing" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_price_validity" value={formState.commercial_price_validity} onChange={handleInputChange} placeholder="Price Validity" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_discount_structure" value={formState.commercial_discount_structure} onChange={handleInputChange} placeholder="Discount Structure" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_vat_tax" value={formState.commercial_vat_tax} onChange={handleInputChange} placeholder="VAT / Tax" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_currency_exchange_clause" value={formState.commercial_currency_exchange_clause} onChange={handleInputChange} placeholder="Currency Exchange Clause" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_escalation_clause" value={formState.commercial_escalation_clause} onChange={handleInputChange} placeholder="Escalation Clause" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_minimum_order_quantity" value={formState.commercial_minimum_order_quantity} onChange={handleInputChange} placeholder="Minimum Order Quantity" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="commercial_delivery_charges" value={formState.commercial_delivery_charges} onChange={handleInputChange} placeholder="Delivery Charges" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 sm:col-span-2" />
+          </div>
         </div>
         <div className="sm:col-span-2">
           <label
@@ -603,9 +600,14 @@ const ContractForm = ({
           />
         </div>
         <div className="sm:col-span-2">
-          <textarea name="payment_terms_details" rows={3} value={formState.payment_terms_details} onChange={handleInputChange} placeholder="Payment terms details (method, period, advance, retention, milestones, invoice requirements)." className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="delivery_logistics_details" rows={3} value={formState.delivery_logistics_details} onChange={handleInputChange} placeholder="Delivery & logistics details (incoterms, lead time, emergency terms, customs, transport)." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="sla_details" rows={3} value={formState.sla_details} onChange={handleInputChange} placeholder="Detailed SLA (response/resolution time, uptime, escalation)." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <select name="payment_methods" multiple value={formState.payment_methods} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"><option>Cash</option><option>Transfer</option><option>LC</option></select>
+            <input name="payment_period" value={formState.payment_period} onChange={handleInputChange} placeholder="Payment Period" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <input name="payment_advance_percentage" value={formState.payment_advance_percentage} onChange={handleInputChange} placeholder="Advance Payment %" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <select name="payment_retention" value={formState.payment_retention} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"><option value="">Retention</option><option>Yes</option><option>No</option></select>
+            <textarea name="payment_milestone_details" rows={2} value={formState.payment_milestone_details} onChange={handleInputChange} placeholder="Milestone Payments" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+            <textarea name="payment_invoice_requirements" rows={2} value={formState.payment_invoice_requirements} onChange={handleInputChange} placeholder="Invoice Requirements" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          </div>
           <textarea name="penalties_incentives" rows={3} value={formState.penalties_incentives} onChange={handleInputChange} placeholder="Penalties & incentives." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
           <textarea name="change_management_terms" rows={3} value={formState.change_management_terms} onChange={handleInputChange} placeholder="Change management / amendment terms." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
           <textarea name="termination_exit_terms" rows={3} value={formState.termination_exit_terms} onChange={handleInputChange} placeholder="Termination & exit clauses." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
