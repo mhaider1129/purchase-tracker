@@ -54,7 +54,7 @@ export const submitDepartmentRecall = async ({
   appendIfPresent("capa_reference", capaReference);
   appendIfPresent("final_report", finalReport);
 
-  const { data } = await api.post("/api/item-recalls/department", payload);
+  const { data } = await api.post("/item-recalls/department", payload);
   return data;
 };
 
@@ -100,7 +100,7 @@ export const submitWarehouseRecall = async ({
   appendIfPresent("capa_reference", capaReference);
   appendIfPresent("final_report", finalReport);
 
-  const { data } = await api.post("/api/item-recalls/warehouse", payload);
+  const { data } = await api.post("/item-recalls/warehouse", payload);
   return data;
 };
 
@@ -110,7 +110,7 @@ export const fetchRecallWorkspaceItems = async ({ signal } = {}) => {
     config.signal = signal;
   }
 
-  const { data } = await api.get("/api/item-recalls", config);
+  const { data } = await api.get("/item-recalls", config);
   return data;
 };
 
@@ -129,7 +129,7 @@ export const escalateRecallToProcurement = async ({
   }
 
   const { data } = await api.post(
-    `/api/item-recalls/${parsedRecallId}/escalate`,
+    `/item-recalls/${parsedRecallId}/escalate`,
     payload,
   );
   return data;

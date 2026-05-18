@@ -237,7 +237,7 @@ const AllRequestsPage = () => {
   useEffect(() => {
     const fetchDeps = async () => {
       try {
-        const res = await axios.get('/api/departments');
+        const res = await axios.get('/departments');
         setDepartments(res.data);
       } catch (err) {
         console.error('❌ Failed to load departments:', err);
@@ -250,7 +250,7 @@ const AllRequestsPage = () => {
     setLoading(true);
     resetAttachments();
     try {
-      const res = await axios.get('/api/requests', {
+      const res = await axios.get('/requests', {
         params: {
           filter,
           sort,
@@ -341,7 +341,7 @@ const AllRequestsPage = () => {
     if (!itemsMap[requestId]) {
       try {
         setLoadingItemsId(requestId);
-        const res = await axios.get(`/api/requests/${requestId}/items`);
+        const res = await axios.get(`/requests/${requestId}/items`);
         setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
       } catch (err) {
         console.error(`❌ Failed to load items for request ${requestId}:`, err);
@@ -366,7 +366,7 @@ const AllRequestsPage = () => {
   const handleExport = async (type) => {
     setLoadingExport(true);
     try {
-      const res = await axios.get(`/api/requests/export/${type}`, {
+      const res = await axios.get(`/requests/export/${type}`, {
         params: {
           filter,
           sort,

@@ -46,7 +46,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
       setCriteriaLoading(true);
       setFormError("");
       try {
-        const { data } = await api.get("/api/contract-evaluations/criteria");
+        const { data } = await api.get("/contract-evaluations/criteria");
         if (!isMounted) return;
         const criteriaData = Array.isArray(data) ? data : [];
         setCriteriaOptions(criteriaData);
@@ -82,7 +82,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
       setCandidatesLoading(true);
       try {
         const { data } = await api.get(
-          `/api/contracts/${contractId}/evaluation-candidates`,
+          `/contracts/${contractId}/evaluation-candidates`,
           {
             params: { criterionId: selectedCriterionId },
           },
@@ -155,7 +155,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
     setSaving(true);
 
     try {
-      await api.post("/api/contract-evaluations", {
+      await api.post("/contract-evaluations", {
         contract_id: contractId,
         evaluator_id: evaluatorId,
         criterion_id: criterionId || null,

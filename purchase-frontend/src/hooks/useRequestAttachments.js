@@ -44,7 +44,7 @@ const useRequestAttachments = () => {
       setAttachmentErrorMap((prev) => ({ ...prev, [requestId]: "" }));
 
       try {
-        const res = await axios.get(`/api/attachments/${requestId}`);
+        const res = await axios.get(`/attachments/${requestId}`);
         const attachments = Array.isArray(res.data) ? res.data : [];
         setAttachmentsMap((prev) => ({ ...prev, [requestId]: attachments }));
         loadedRequestsRef.current.add(requestId);
@@ -79,7 +79,7 @@ const useRequestAttachments = () => {
     const downloadEndpoint =
       attachment.download_url ||
       (fallbackName
-        ? `/api/attachments/download/${encodeURIComponent(fallbackName)}`
+        ? `/attachments/download/${encodeURIComponent(fallbackName)}`
         : null);
 
     if (!downloadEndpoint) {

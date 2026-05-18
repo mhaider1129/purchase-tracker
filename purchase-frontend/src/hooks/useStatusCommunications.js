@@ -28,7 +28,7 @@ const useStatusCommunications = (role) => {
     setCommunicationError((prev) => ({ ...prev, [requestId]: '' }));
 
     try {
-      const res = await axios.get(`/api/requests/${requestId}/status-communications`);
+      const res = await axios.get(`/requests/${requestId}/status-communications`);
       setCommunicationList((prev) => ({ ...prev, [requestId]: res.data || [] }));
     } catch (err) {
       console.error('❌ Failed to load communications', err);
@@ -58,7 +58,7 @@ const useStatusCommunications = (role) => {
     setCommunicationSuccess((prev) => ({ ...prev, [requestId]: '' }));
 
     try {
-      const res = await axios.post(`/api/requests/${requestId}/status-communications`, {
+      const res = await axios.post(`/requests/${requestId}/status-communications`, {
         message: draft,
         status: statusLabel,
       });

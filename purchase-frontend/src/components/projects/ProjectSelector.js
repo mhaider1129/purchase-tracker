@@ -21,7 +21,7 @@ const ProjectSelector = ({ value, onChange, disabled = false, user }) => {
     setLoading(true);
     setError("");
     try {
-      const { data } = await api.get("/api/projects");
+      const { data } = await api.get("/projects");
       setProjects(sortProjectsByName(data || []));
     } catch (err) {
       console.error("❌ Failed to load projects:", err);
@@ -41,7 +41,7 @@ const ProjectSelector = ({ value, onChange, disabled = false, user }) => {
       return;
     }
     try {
-      const { data } = await api.post("/api/projects", { name: name.trim() });
+      const { data } = await api.post("/projects", { name: name.trim() });
       setProjects((prev) => sortProjectsByName([...prev, data]));
       if (onChange) {
         onChange(String(data.id));

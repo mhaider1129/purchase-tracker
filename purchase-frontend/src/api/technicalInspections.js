@@ -1,7 +1,7 @@
 // src/api/technicalInspections.js
 import api from "./axios";
 
-const RESOURCE = "/api/technical-inspections";
+const RESOURCE = "/technical-inspections";
 
 export const listTechnicalInspections = async (params = {}, options = {}) => {
   const { data } = await api.get(RESOURCE, { params, ...options });

@@ -31,7 +31,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
 
     setLoading(true);
     try {
-      await axios.put("/api/requests/assign-procurement", {
+      await axios.put("/requests/assign-procurement", {
         request_id: requestId,
         user_id: selectedUser,
       });

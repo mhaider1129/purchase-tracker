@@ -8,7 +8,7 @@ const useWarehouseStockItems = (warehouseId) => {
       return [];
     }
 
-    const res = await api.get(`/api/warehouse-inventory/${warehouseId}/items`);
+    const res = await api.get(`/warehouse-inventory/${warehouseId}/items`);
     return res.data || [];
   }, [warehouseId]);
 

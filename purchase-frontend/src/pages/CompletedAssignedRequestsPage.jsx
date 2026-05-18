@@ -120,7 +120,7 @@ const CompletedAssignedRequestsPage = () => {
     setLoading(true);
     try {
       resetAttachments();
-      const res = await axios.get('/api/requests/completed-assigned', {
+      const res = await axios.get('/requests/completed-assigned', {
         params: { search },
       });
       setRequests(res.data.data || []);
@@ -150,7 +150,7 @@ const CompletedAssignedRequestsPage = () => {
 
     if (!itemsCache[requestId]) {
       try {
-        const res = await axios.get(`/api/requests/${requestId}/items`);
+        const res = await axios.get(`/requests/${requestId}/items`);
         setItemsCache((prev) => ({ ...prev, [requestId]: res.data.items }));
       } catch (err) {
         console.error(`❌ Failed to fetch items for request ${requestId}:`, err);

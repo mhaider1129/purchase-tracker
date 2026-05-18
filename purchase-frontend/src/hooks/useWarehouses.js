@@ -12,7 +12,7 @@ const normalizeWarehouses = (rawList) => {
 
 const useWarehouses = () => {
   const fetchWarehouses = useCallback(async () => {
-    const res = await api.get('/api/warehouses');
+    const res = await api.get('/warehouses');
     return normalizeWarehouses(res.data);
   }, []);
 

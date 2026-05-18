@@ -17,7 +17,7 @@ const useApprovalTimeline = () => {
         try {
           setLoadingApprovalsId(requestId);
           const res = await axios.get(
-            `/api/approvals/request/${requestId}/approvals`,
+            `/approvals/request/${requestId}/approvals`,
           );
           setApprovalsMap((prev) => ({ ...prev, [requestId]: res.data || [] }));
         } catch (err) {

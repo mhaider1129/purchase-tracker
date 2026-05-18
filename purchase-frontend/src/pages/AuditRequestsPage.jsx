@@ -116,7 +116,7 @@ const AuditRequestsPage = () => {
     const fetchRequests = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/api/requests/audit/approved-rejected');
+        const res = await axios.get('/requests/audit/approved-rejected');
         setRequests(res.data);
         setFiltered(res.data);
         resetApprovals();
@@ -142,7 +142,7 @@ const AuditRequestsPage = () => {
     if (!itemsMap[requestId]) {
       try {
         setLoadingItemsId(requestId);
-        const res = await axios.get(`/api/requests/${requestId}/items`);
+        const res = await axios.get(`/requests/${requestId}/items`);
         setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
       } catch (err) {
         console.error(`❌ Failed to load items for request ${requestId}:`, err);

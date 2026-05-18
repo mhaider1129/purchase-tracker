@@ -52,7 +52,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       if (item.procurement_updated_by) {
         try {
           const res = await axios.get(
-            `/api/users/${item.procurement_updated_by}`,
+            `/users/${item.procurement_updated_by}`,
           );
           setUpdaterName(
             res.data.name || tr("itemPanel.lastUpdatedUnknown", "Unknown"),
@@ -111,7 +111,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     setAttachmentsError("");
 
     try {
-      const res = await axios.get(`/api/attachments/item/${itemId}`);
+      const res = await axios.get(`/attachments/item/${itemId}`);
       setAttachments(res.data || []);
     } catch (err) {
       console.error(`❌ Error fetching attachments for item ${itemId}:`, err);
@@ -143,7 +143,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post(`/api/attachments/item/${itemId}`, formData, {
+      await axios.post(`/attachments/item/${itemId}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -174,7 +174,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     const downloadEndpoint =
       attachment?.download_url ||
       (filename
-        ? `/api/attachments/download/${encodeURIComponent(filename)}`
+        ? `/attachments/download/${encodeURIComponent(filename)}`
         : null);
 
     if (!downloadEndpoint) {
@@ -486,16 +486,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
     try {
       if (hasUnitCost) {
-        await axios.put(`/api/requested-items/${item.id}/cost`, {
+        await axios.put(`/requested-items/${item.id}/cost`, {
           unit_cost: numericUnitCost,
         });
       }
 
-      await axios.put(`/api/requested-items/${item.id}/purchased-quantity`, {
+      await axios.put(`/requested-items/${item.id}/purchased-quantity`, {
         purchased_quantity: numericQty,
       });
 
-      await axios.put(`/api/requested-items/${item.id}/procurement-status`, {
+      await axios.put(`/requested-items/${item.id}/procurement-status`, {
         procurement_status: status,
         procurement_comment: comment,
         po_issuance_method: poIssuanceMethod,

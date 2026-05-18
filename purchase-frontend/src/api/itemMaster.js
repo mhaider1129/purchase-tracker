@@ -1,67 +1,67 @@
 import api from './axios';
 
 export const listItemMaster = async (params = {}) => {
-  const { data } = await api.get('/api/item-master', { params });
+  const { data } = await api.get('/item-master', { params });
   return data;
 };
 
 export const getItemMasterById = async (id) => {
-  const { data } = await api.get(`/api/item-master/${id}`);
+  const { data } = await api.get(`/item-master/${id}`);
   return data;
 };
 
 export const createItemMaster = async (payload) => {
-  const { data } = await api.post('/api/item-master', payload);
+  const { data } = await api.post('/item-master', payload);
   return data;
 };
 
 export const updateItemMaster = async (id, payload) => {
-  const { data } = await api.put(`/api/item-master/${id}`, payload);
+  const { data } = await api.put(`/item-master/${id}`, payload);
   return data;
 };
 
 export const submitItemMaster = async (id) => {
-  const { data } = await api.post(`/api/item-master/${id}/submit`);
+  const { data } = await api.post(`/item-master/${id}/submit`);
   return data;
 };
 
 export const approveItemMaster = async (id) => {
-  const { data } = await api.post(`/api/item-master/${id}/approve`);
+  const { data } = await api.post(`/item-master/${id}/approve`);
   return data;
 };
 
 export const rejectItemMaster = async (id, reason) => {
-  const { data } = await api.post(`/api/item-master/${id}/reject`, { reason });
+  const { data } = await api.post(`/item-master/${id}/reject`, { reason });
   return data;
 };
 
 export const attachItemMasterDocument = async (id, payload) => {
-  const { data } = await api.post(`/api/item-master/${id}/documents`, payload);
+  const { data } = await api.post(`/item-master/${id}/documents`, payload);
   return data;
 };
 
 // Normalized item-master reference data (additive, for new hierarchy UI wiring)
 export const listItemCategories = async () => {
-  const { data } = await api.get('/api/item-master/reference/categories');
+  const { data } = await api.get('/item-master/reference/categories');
   return data;
 };
 
 export const listItemUom = async () => {
-  const { data } = await api.get('/api/item-master/reference/uom');
+  const { data } = await api.get('/item-master/reference/uom');
   return data;
 };
 
 export const listItemManufacturers = async () => {
-  const { data } = await api.get('/api/item-master/reference/manufacturers');
+  const { data } = await api.get('/item-master/reference/manufacturers');
   return data;
 };
 
 export const listItemBrands = async (params = {}) => {
-  const { data } = await api.get('/api/item-master/reference/brands', { params });
+  const { data } = await api.get('/item-master/reference/brands', { params });
   return data;
 };
 
 export const listItemVariants = async (itemMasterId) => {
-  const { data } = await api.get(`/api/item-master/${itemMasterId}/variants`);
+  const { data } = await api.get(`/item-master/${itemMasterId}/variants`);
   return data;
 };

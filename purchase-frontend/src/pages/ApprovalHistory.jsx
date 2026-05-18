@@ -54,7 +54,7 @@ const ApprovalHistory = () => {
   useEffect(() => {
     const fetchDeps = async () => {
       try {
-        const res = await axios.get('/api/departments');
+        const res = await axios.get('/departments');
         setDepartments(res.data);
       } catch (err) {
         console.error('❌ Failed to load departments:', err);
@@ -146,7 +146,7 @@ const ApprovalHistory = () => {
     const fetchHistory = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/api/requests/approval-history', {
+        const res = await axios.get('/requests/approval-history', {
           params: {
             status: statusFilter,
             from_date: fromDate,

@@ -21,10 +21,10 @@ const buildCandidateEndpoints = () => {
   const basePath = normalizeBasePath();
 
   if (/(^|\/)api(\/|$)/i.test(basePath)) {
-    return ["/users/me", "/api/users/me", "/auth/me", "/api/auth/me"];
+    return ["/users/me", "/users/me", "/auth/me", "/auth/me"];
   }
 
-  return ["/api/users/me", "/users/me", "/auth/me", "/api/auth/me"];
+  return ["/users/me", "/users/me", "/auth/me", "/auth/me"];
 };
 
 const CURRENT_USER_ENDPOINTS = buildCandidateEndpoints();

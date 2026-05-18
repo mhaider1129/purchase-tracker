@@ -37,7 +37,7 @@ const useDirectPurchaseCommunications = (role) => {
     setSuccess((prev) => ({ ...prev, [requestId]: '' }));
 
     try {
-      const res = await axios.post(`/api/requests/${requestId}/direct-purchase-communications`, {
+      const res = await axios.post(`/requests/${requestId}/direct-purchase-communications`, {
         message,
         urgency_reason: urgency_reason || undefined,
       });

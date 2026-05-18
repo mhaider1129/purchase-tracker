@@ -92,7 +92,7 @@ const useApprovalsData = (user) => {
   const fetchApprovals = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/requests/pending-approvals');
+      const res = await axios.get('/requests/pending-approvals');
       const normalized = Array.isArray(res.data)
         ? res.data.map((row) => ({
             ...row,
@@ -117,7 +117,7 @@ const useApprovalsData = (user) => {
     setHodOptionsError('');
 
     try {
-      const res = await axios.get('/api/requests/hod-approvers');
+      const res = await axios.get('/requests/hod-approvers');
       setHodOptions(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       if (err?.response?.status === 403) {
@@ -173,7 +173,7 @@ const useApprovalsData = (user) => {
     setAttachmentErrorMap((prev) => ({ ...prev, [requestId]: null }));
 
     try {
-      const res = await axios.get(`/api/attachments/${requestId}`);
+      const res = await axios.get(`/attachments/${requestId}`);
       const attachments = Array.isArray(res.data) ? res.data : [];
       setAttachmentsMap((prev) => ({ ...prev, [requestId]: attachments }));
     } catch (err) {
@@ -218,7 +218,7 @@ const useApprovalsData = (user) => {
     }
     if (!itemsMap[requestId]) {
       try {
-        const res = await axios.get(`/api/requests/${requestId}/items`);
+        const res = await axios.get(`/requests/${requestId}/items`);
         const fetchedItems = extractItems(res.data);
         setItemsMap((prev) => ({ ...prev, [requestId]: fetchedItems }));
         setItemDecisions((prev) => ({
@@ -409,7 +409,7 @@ const useApprovalsData = (user) => {
     setSavingItems((prev) => ({ ...prev, [requestId]: true }));
 
     try {
-      const res = await axios.patch(`/api/approvals/${approvalId}/items`, { items: payloadItems });
+      const res = await axios.patch(`/approvals/${approvalId}/items`, { items: payloadItems });
       const currentItems = itemsMap[requestId] || [];
       let mergedItems = currentItems;
 
@@ -550,7 +550,7 @@ const useApprovalsData = (user) => {
         }
       }
 
-      await axios.put(`/api/requests/approval/${selectedApprovalId}`, {
+      await axios.put(`/requests/approval/${selectedApprovalId}`, {
         ...payload,
       });
 
@@ -582,7 +582,7 @@ const useApprovalsData = (user) => {
     setHoldLoadingMap((prev) => ({ ...prev, [approvalId]: true }));
 
     try {
-      const res = await axios.patch(`/api/approvals/${approvalId}/hold`, {
+      const res = await axios.patch(`/approvals/${approvalId}/hold`, {
         on_hold: placeOnHold,
       });
 
@@ -607,7 +607,7 @@ const useApprovalsData = (user) => {
     if (!confirmed) return;
 
     try {
-      await axios.put(`/api/requests/maintenance/reassign-to-requester`, {
+      await axios.put(`/requests/maintenance/reassign-to-requester`, {
         request_id: requestId,
         approval_id: approvalId,
       });
@@ -650,7 +650,7 @@ const useApprovalsData = (user) => {
     setHodSubmitLoading(true);
 
     try {
-      await axios.post(`/api/requests/${hodModalRequestId}/request-hod-approval`, {
+      await axios.post(`/requests/${hodModalRequestId}/request-hod-approval`, {
         hod_user_id: Number(selectedHodId),
       });
 
@@ -721,7 +721,7 @@ const useApprovalsData = (user) => {
     const storedPath = attachment?.file_path || '';
     const filename = storedPath.split(/[\\/]/).pop();
     const downloadEndpoint =
-      attachment?.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
+      attachment?.download_url || (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null);
 
     if (!downloadEndpoint) {
       alert('Attachment file is missing.');

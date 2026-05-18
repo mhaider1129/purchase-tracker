@@ -331,7 +331,7 @@ const ContractsPage = () => {
     }
 
     try {
-      const { data } = await api.get('/api/contracts', { params });
+      const { data } = await api.get('/contracts', { params });
       setContracts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load contracts', err);
@@ -352,7 +352,7 @@ const ContractsPage = () => {
       setDepartmentsLoading(true);
       setDepartmentsError('');
       try {
-        const { data } = await api.get('/api/departments');
+        const { data } = await api.get('/departments');
         if (!isMounted) return;
         setDepartments(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -383,7 +383,7 @@ const ContractsPage = () => {
       setUsersLoading(true);
       setUsersError('');
       try {
-        const { data } = await api.get('/api/users');
+        const { data } = await api.get('/users');
         if (!isMounted) return;
         const activeUsers = Array.isArray(data)
           ? data.filter((userRecord) => userRecord?.is_active)
@@ -421,7 +421,7 @@ const ContractsPage = () => {
       setSuppliersLoading(true);
       setSuppliersError('');
       try {
-        const { data } = await api.get('/api/suppliers');
+        const { data } = await api.get('/suppliers');
         if (!isMounted) return;
         setSuppliers(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -447,7 +447,7 @@ const ContractsPage = () => {
 
   const refreshSuppliers = useCallback(async () => {
     try {
-      const { data } = await api.get('/api/suppliers');
+      const { data } = await api.get('/suppliers');
       setSuppliers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to refresh suppliers', err);
@@ -468,7 +468,7 @@ const ContractsPage = () => {
     setAttachmentsLoading(true);
     setAttachmentsError('');
     try {
-      const { data } = await api.get(`/api/contracts/${contractId}/attachments`);
+      const { data } = await api.get(`/contracts/${contractId}/attachments`);
       setAttachments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load attachments', err);
@@ -495,7 +495,7 @@ const ContractsPage = () => {
     setEvaluationsLoading(true);
     setEvaluationsError('');
     try {
-      const { data } = await api.get('/api/contract-evaluations', {
+      const { data } = await api.get('/contract-evaluations', {
         params: { contract_id: contractId },
       });
       const normalized = Array.isArray(data) ? data.map(normalizeEvaluation) : [];
@@ -524,7 +524,7 @@ const ContractsPage = () => {
     setEvaluationsError('');
 
     try {
-      await api.delete(`/api/contract-evaluations/${evaluationId}`);
+      await api.delete(`/contract-evaluations/${evaluationId}`);
       const activeContractId = editingId || viewingContract?.id;
       if (activeContractId) {
         await fetchEvaluations(activeContractId);
@@ -692,7 +692,7 @@ const ContractsPage = () => {
     const formData = new FormData();
     formData.append('file', selectedFile);
     try {
-      await api.post(`/api/contracts/${editingId}/attachments`, formData, {
+      await api.post(`/contracts/${editingId}/attachments`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -721,7 +721,7 @@ const ContractsPage = () => {
     setAttachmentsError('');
 
     try {
-      await api.delete(`/api/contracts/${activeContractId}/attachments/${attachmentId}`);
+      await api.delete(`/contracts/${activeContractId}/attachments/${attachmentId}`);
       await fetchAttachments(activeContractId);
     } catch (err) {
       console.error('Failed to delete attachment', err);
@@ -994,10 +994,10 @@ const ContractsPage = () => {
 
     try {
       if (editingId) {
-        await api.patch(`/api/contracts/${editingId}`, payload);
+        await api.patch(`/contracts/${editingId}`, payload);
         setSuccessMessage('Contract updated successfully.');
       } else {
-        const { data: newContract } = await api.post('/api/contracts', payload);
+        const { data: newContract } = await api.post('/contracts', payload);
         setSuccessMessage('Contract created successfully.');
         handleSelectContract(newContract);
       }
@@ -1022,7 +1022,7 @@ const ContractsPage = () => {
     setSuccessMessage('');
 
     try {
-      await api.patch(`/api/contracts/${contractId}/archive`);
+      await api.patch(`/contracts/${contractId}/archive`);
       if (editingId === contractId) {
         resetForm();
       }
@@ -1042,7 +1042,7 @@ const ContractsPage = () => {
     setSuccessMessage('');
 
     try {
-      await api.patch(`/api/contracts/${contractId}/unarchive`);
+      await api.patch(`/contracts/${contractId}/unarchive`);
       if (editingId === contractId) {
         resetForm();
       }
@@ -1078,7 +1078,7 @@ const ContractsPage = () => {
     setSuccessMessage('');
 
     try {
-      await api.post(`/api/contracts/${contract.id}/renew`, {
+      await api.post(`/contracts/${contract.id}/renew`, {
         start_date: proposedStart || null,
         end_date: proposedEnd,
         contract_value: contract.contract_value,
@@ -1105,7 +1105,7 @@ const ContractsPage = () => {
     setSuccessMessage('');
 
     try {
-      await api.delete(`/api/contracts/${contractId}`);
+      await api.delete(`/contracts/${contractId}`);
       if (editingId === contractId) {
         resetForm();
       }

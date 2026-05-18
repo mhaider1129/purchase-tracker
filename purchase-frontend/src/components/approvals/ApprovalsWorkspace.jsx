@@ -136,8 +136,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
     setError(null);
     try {
       const endpoint = requestType
-        ? `/api/requests/pending-${requestType}-approvals`
-        : '/api/requests/pending-maintenance-approvals';
+        ? `/requests/pending-${requestType}-approvals`
+        : '/requests/pending-maintenance-approvals';
       const res = await axios.get(endpoint);
       const payload = Array.isArray(res.data) ? res.data : [];
       const normalized = payload.map((req) => ({

@@ -45,7 +45,7 @@ export default function AuditRegistryPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get('/api/audit-registry/my-requests');
+      const res = await axios.get('/audit-registry/my-requests');
       setEntries(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to load audit registry entries.');
@@ -73,7 +73,7 @@ export default function AuditRegistryPage() {
 
     try {
       setSubmitLoading(true);
-      await axios.post(`/api/audit-registry/requests/${requestId}/entries`, {
+      await axios.post(`/audit-registry/requests/${requestId}/entries`, {
         requester_type: form.requester_type,
         account_name: form.account_name || null,
         notes: form.notes || null,

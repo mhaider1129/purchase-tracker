@@ -96,7 +96,7 @@ const ClosedRequestsPage = () => {
 
     setMarkingItemReceived(trackingKey);
     try {
-      const response = await api.patch(`/api/requests/${requestId}/mark-received`, {
+      const response = await api.patch(`/requests/${requestId}/mark-received`, {
         item_id: itemId,
         received_quantity: requestedQty,
       });
@@ -200,7 +200,7 @@ const ClosedRequestsPage = () => {
 
       try {
         resetAttachments();
-        const response = await api.get('/api/requests/closed');
+        const response = await api.get('/requests/closed');
         setRequests((response.data || []).map((req) => ({
           ...req,
           items: req.items || [],

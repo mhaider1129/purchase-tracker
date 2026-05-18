@@ -151,7 +151,7 @@ export const NotificationProvider = ({
       }
 
       try {
-        const response = await axios.get("/api/notifications", {
+        const response = await axios.get("/notifications", {
           params: { unreadOnly: true, limit: 50 },
         });
 
@@ -187,7 +187,7 @@ export const NotificationProvider = ({
       }
 
       try {
-        await axios.patch(`/api/notifications/${id}/read`);
+        await axios.patch(`/notifications/${id}/read`);
       } catch (err) {
         console.error("❌ Failed to mark notification as read:", err);
       } finally {
@@ -206,7 +206,7 @@ export const NotificationProvider = ({
     }
 
     try {
-      await axios.patch("/api/notifications/read-all");
+      await axios.patch("/notifications/read-all");
     } catch (err) {
       console.error("❌ Failed to mark all notifications as read:", err);
     } finally {

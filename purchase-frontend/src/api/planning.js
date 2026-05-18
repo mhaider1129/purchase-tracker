@@ -1,22 +1,22 @@
 import api from "./axios";
 
 export const fetchDemandForecast = (payload) =>
-  api.post("/api/planning/forecast", payload);
+  api.post("/planning/forecast", payload);
 
 export const calculateSafetyStock = (payload) =>
-  api.post("/api/planning/safety-stock", payload);
+  api.post("/planning/safety-stock", payload);
 
-export const runMrp = (payload) => api.post("/api/planning/mrp", payload);
+export const runMrp = (payload) => api.post("/planning/mrp", payload);
 export const fetchPlanningDefaults = (warehouseId) =>
-  api.get("/api/planning/defaults", { params: warehouseId ? { warehouse_id: warehouseId } : {} });
+  api.get("/planning/defaults", { params: warehouseId ? { warehouse_id: warehouseId } : {} });
 export const savePlanningDefaults = (payload) =>
-  api.post("/api/planning/defaults", payload);
+  api.post("/planning/defaults", payload);
 
 export const saveReplenishmentPolicy = (payload) =>
-  api.post("/api/planning/replenishment/policies", payload);
+  api.post("/planning/replenishment/policies", payload);
 
 export const runReplenishmentPlanner = (payload) =>
-  api.post("/api/planning/replenishment/run", payload);
+  api.post("/planning/replenishment/run", payload);
 
 export default {
   fetchDemandForecast,

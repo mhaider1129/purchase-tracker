@@ -44,7 +44,7 @@ export const AccessControlProvider = ({ children }) => {
     setError("");
 
     try {
-      const res = await api.get("/api/ui-access");
+      const res = await api.get("/ui-access");
       const payload = Array.isArray(res.data?.resources)
         ? res.data.resources
         : Array.isArray(res.data)

@@ -303,7 +303,7 @@ const AssignedRequestsPage = () => {
   const fetchAssignedRequests = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/requests/assigned');
+      const res = await axios.get('/requests/assigned');
       const fetched = res.data.data || [];
       setRequests(fetched);
 
@@ -340,7 +340,7 @@ const AssignedRequestsPage = () => {
   const fetchItems = async (requestId) => {
     setLoadingItems(true);
     try {
-      const res = await axios.get(`/api/requests/${requestId}/items`);
+      const res = await axios.get(`/requests/${requestId}/items`);
       const fetchedItems = res.data.items || [];
       setItems(fetchedItems);
       const groups = categorizeItems(fetchedItems);
@@ -378,7 +378,7 @@ const AssignedRequestsPage = () => {
   const fetchAttachments = async (requestId) => {
     setLoadingAttachments(true);
     try {
-      const res = await axios.get(`/api/attachments/${requestId}`);
+      const res = await axios.get(`/attachments/${requestId}`);
       setAttachments(res.data || []);
     } catch (err) {
       console.error(`❌ Error fetching attachments for request ${requestId}:`, err);
@@ -398,7 +398,7 @@ const AssignedRequestsPage = () => {
 
     try {
       const response = await axios.patch(
-        `/api/requests/${requestId}/mark-completed`,
+        `/requests/${requestId}/mark-completed`,
       );
       const selectedRequest = requests.find((request) => request.id === requestId);
       const message =
@@ -467,7 +467,7 @@ const AssignedRequestsPage = () => {
     }
 
     try {
-      await axios.put(`/api/requests/${requestId}/cost`, { estimated_cost: cost });
+      await axios.put(`/requests/${requestId}/cost`, { estimated_cost: cost });
       alert(tr('alerts.costUpdated', 'Total cost updated.'));
       let updatedRequestRef = null;
       setRequests((prev) =>
@@ -496,7 +496,7 @@ const AssignedRequestsPage = () => {
 
   const handleGenerateDoc = async (requestId, type) => {
     try {
-      const response = await axios.get(`/api/requests/${requestId}/rfx`, {
+      const response = await axios.get(`/requests/${requestId}/rfx`, {
         params: { type },
         responseType: 'blob',
       });
@@ -522,7 +522,7 @@ const AssignedRequestsPage = () => {
     const storedPath = attachment.file_path || '';
     const filename = storedPath.split(/[\\/]/).pop();
     const downloadEndpoint =
-      attachment.download_url || (filename ? `/api/attachments/download/${encodeURIComponent(filename)}` : null);
+      attachment.download_url || (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null);
 
     if (!downloadEndpoint) {
       alert(tr('alerts.attachmentMissing', 'Attachment file is missing.'));
@@ -595,11 +595,11 @@ const AssignedRequestsPage = () => {
       for (const item of updatableItems) {
         const requestedQty = Number(item.quantity ?? 0);
 
-        await axios.put(`/api/requested-items/${item.id}/purchased-quantity`, {
+        await axios.put(`/requested-items/${item.id}/purchased-quantity`, {
           purchased_quantity: requestedQty,
         });
 
-        await axios.put(`/api/requested-items/${item.id}/procurement-status`, {
+        await axios.put(`/requested-items/${item.id}/procurement-status`, {
           procurement_status: 'purchased',
           procurement_comment: item.procurement_comment || '',
         });
