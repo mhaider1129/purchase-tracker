@@ -25,6 +25,20 @@ const resolveDefaultBase = () => {
 
 const API_BASE = normalizeBase(configuredBase || resolveDefaultBase());
 
+const dedupeApiPrefix = (base, path = "") => {
+  if (!base || !path || typeof path !== "string") return path;
+
+  const normalizedBase = base.replace(/\/+$/, "").toLowerCase();
+  const normalizedPath = path.trimStart().toLowerCase();
+
+  if (normalizedBase.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return path.replace(/^\/?api\//i, "/");
+  }
+
+  return path;
+};
+
+
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 15000,
@@ -35,6 +49,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    config.url = dedupeApiPrefix(API_BASE, config.url);
+
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
