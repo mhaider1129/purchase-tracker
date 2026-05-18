@@ -53,6 +53,26 @@ const api = axios.create({
   },
 });
 
+const isRouteNotFound = (error) =>
+  error?.response?.status === 404 &&
+  /route not found/i.test(error?.response?.data?.message || "");
+
+const buildApiPrefixFallbackUrl = (url = "") => {
+  if (typeof url !== "string" || !url.startsWith("/")) {
+    return null;
+  }
+
+  if (url === "/api") {
+    return "/";
+  }
+
+  if (url.startsWith("/api/")) {
+    return url.replace(/^\/api/, "") || "/";
+  }
+
+  return `/api${url}`;
+};
+
 // ✅ Attach token automatically
 api.interceptors.request.use(
   (config) => {
@@ -83,6 +103,18 @@ api.interceptors.response.use(
     if (axios.isCancel(error) || error.code === "ERR_CANCELED") {
       console.debug("⚠️ Request canceled:", error.message);
       return Promise.reject(error);
+    }
+
+    if (isRouteNotFound(error) && !error.config?._apiPrefixFallbackTried) {
+      const fallbackUrl = buildApiPrefixFallbackUrl(error.config?.url);
+
+      if (fallbackUrl) {
+        return api.request({
+          ...error.config,
+          url: fallbackUrl,
+          _apiPrefixFallbackTried: true,
+        });
+      }
     }
 
     // General logging
