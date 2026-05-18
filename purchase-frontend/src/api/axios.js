@@ -1,19 +1,32 @@
 // src/api/axios.js
 import axios from "axios";
 
+// Prefer explicit env configuration in production; allow legacy variable name.
 const configuredBase =
-  process.env.REACT_APP_API_BASE || process.env.REACT_APP_API_BASE_URL;
+  process.env.REACT_APP_API_BASE ?? process.env.REACT_APP_API_BASE_URL ?? "";
 
-const API_BASE =
-  configuredBase ||
-  (window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1" ||
-  /^(\d+\.){3}\d+$/.test(window.location.hostname)
-    ? `${window.location.protocol}//${window.location.hostname}:5000/api`
-    : `${window.location.origin}/api`);
+const normalizeBase = (value) => value.replace(/\/+$/, "");
+
+const resolveDefaultBase = () => {
+  if (typeof window === "undefined") return "";
+
+  const { protocol, hostname, origin } = window.location;
+  const localHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+  const isLocalNetworkHost =
+    localHosts.has(hostname) || hostname.endsWith(".local") || /^(\d+\.){3}\d+$/.test(hostname);
+
+  if (isLocalNetworkHost) {
+    return `${protocol}//${hostname}:5000`;
+  }
+
+  // In hosted environments, assume API is reverse-proxied on the same origin.
+  return origin;
+};
+
+const API_BASE = normalizeBase(configuredBase || resolveDefaultBase());
 
 const api = axios.create({
-  baseURL: API_BASE.replace(/\/+$/, ""),
+  baseURL: API_BASE,
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",
@@ -23,17 +36,15 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
     return config;
   },
   (error) => {
     console.error("🔴 Request Error:", error);
     return Promise.reject(error);
-  }
+  },
 );
 
 api.interceptors.response.use(
@@ -55,18 +66,14 @@ api.interceptors.response.use(
         error.response.status === 404 && error.config?.suppressNotFoundLog;
 
       if (!suppressNotFoundLog) {
-        console.error(
-          `❌ ${error.response.status}: ${
-            error.response.data?.message || error.message
-          }`
-        );
+        console.error(`❌ ${error.response.status}: ${error.response.data.message}`);
       }
     } else {
       console.error("❌ Network or Server error:", error.message);
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
