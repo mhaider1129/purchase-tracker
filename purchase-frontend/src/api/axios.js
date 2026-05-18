@@ -25,6 +25,18 @@ const resolveDefaultBase = () => {
 
 const API_BASE = normalizeBase(configuredBase || resolveDefaultBase());
 
+const hasApiSuffix = (value) => /\/api$/i.test(value);
+
+const normalizeRequestUrl = (baseURL, requestUrl) => {
+  if (!requestUrl || /^https?:\/\//i.test(requestUrl)) return requestUrl;
+
+  const normalizedBase = normalizeBase(baseURL || "");
+  if (!hasApiSuffix(normalizedBase)) return requestUrl;
+
+  return requestUrl.replace(/^\/api(?=\/|$)/i, "");
+};
+
+
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 15000,
@@ -35,6 +47,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    config.url = normalizeRequestUrl(config.baseURL, config.url);
+
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
