@@ -310,7 +310,7 @@ const MedicalDeviceRequestForm = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await api.post('/api/requests', formData, {
+      const res = await api.post('/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const state = buildRequestSubmissionState('Medical Device', res.data);

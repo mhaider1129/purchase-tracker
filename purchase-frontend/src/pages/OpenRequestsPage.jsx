@@ -119,7 +119,7 @@ const OpenRequestsPage = () => {
 
       try {
         resetAttachments();
-        const response = await api.get('/api/requests/my');
+        const response = await api.get('/requests/my');
         const open = response.data.filter(
           (r) => !['completed', 'received', 'rejected'].includes((r.status || '').toLowerCase())
         );
@@ -283,7 +283,7 @@ const OpenRequestsPage = () => {
       if (!itemsMap[requestId]) {
         try {
           setLoadingId(requestId);
-          const res = await api.get(`/api/requests/${requestId}/items`);
+          const res = await api.get(`/requests/${requestId}/items`);
           setItemsMap((prev) => ({ ...prev, [requestId]: extractItems(res.data) }));
         } catch (err) {
           console.error('❌ Failed to load items:', err);
@@ -352,7 +352,7 @@ const OpenRequestsPage = () => {
         return itemsMap[requestId];
       }
 
-      const res = await api.get(`/api/requests/${requestId}/items`);
+      const res = await api.get(`/requests/${requestId}/items`);
       const normalizedItems = extractItems(res.data);
       setItemsMap((prev) => ({ ...prev, [requestId]: normalizedItems }));
       return normalizedItems;

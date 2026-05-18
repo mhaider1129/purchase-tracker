@@ -37,7 +37,7 @@ const MaintenanceRequestForm = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await axios.get('/api/departments');
+        const res = await axios.get('/departments');
         setDepartments(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch departments:', err);
@@ -48,7 +48,7 @@ const MaintenanceRequestForm = () => {
 
     const fetchStock = async () => {
       try {
-        const res = await axios.get('/api/maintenance-stock');
+        const res = await axios.get('/maintenance-stock');
         setStockItems(res.data || []);
       } catch (err) {
         console.error('Failed to load maintenance stock:', err);
@@ -65,7 +65,7 @@ const MaintenanceRequestForm = () => {
       }
 
       try {
-        const res = await axios.get(`/api/departments/${targetDeptId}/sections`);
+        const res = await axios.get(`/departments/${targetDeptId}/sections`);
         setSections(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch sections:', err);
@@ -173,7 +173,7 @@ const MaintenanceRequestForm = () => {
         });
       });
 
-      const res = await axios.post('/api/requests', formData, {
+      const res = await axios.post('/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const state = buildRequestSubmissionState('Maintenance', res.data);

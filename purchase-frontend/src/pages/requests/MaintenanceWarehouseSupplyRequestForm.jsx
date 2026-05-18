@@ -33,7 +33,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const res = await api.get('/api/warehouse-supply-templates');
+        const res = await api.get('/warehouse-supply-templates');
         setTemplates(res.data || []);
       } catch (err) {
         console.error('Failed to load templates:', err);
@@ -54,7 +54,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await api.get('/api/departments');
+        const res = await api.get('/departments');
         setDepartments(res.data || []);
       } catch (err) {
         console.error('Failed to load departments:', err);
@@ -70,7 +70,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
         return;
       }
       try {
-        const res = await api.get(`/api/departments/${targetDeptId}/sections`);
+        const res = await api.get(`/departments/${targetDeptId}/sections`);
         setSections(res.data || []);
       } catch (err) {
         console.error('Failed to load sections:', err);
@@ -177,7 +177,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
 
     try {
       setSubmitting(true);
-      const res = await api.post('/api/requests', payload, {
+      const res = await api.post('/requests', payload, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const state = buildRequestSubmissionState('Warehouse Supply', res.data);

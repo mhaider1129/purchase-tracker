@@ -124,7 +124,7 @@ const ProcureToPayLifecyclePage = () => {
   useEffect(() => {
     const loadWarehouses = async () => {
       try {
-        const response = await api.get('/api/warehouses');
+        const response = await api.get('/warehouses');
         setWarehouses(response?.data?.data || response?.data || []);
       } catch (err) {
         console.warn('⚠️ Failed to load warehouses for procure-to-pay form', err);

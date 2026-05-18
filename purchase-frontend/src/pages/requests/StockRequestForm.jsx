@@ -119,7 +119,7 @@ const StockRequestForm = () => {
       setItemsLoading(true);
       setItemsError('');
       try {
-        const res = await api.get('/api/stock-items');
+        const res = await api.get('/stock-items');
         setItemsList(res.data || []);
       } catch (err) {
         console.error('Failed to load stock items:', err);
@@ -297,7 +297,7 @@ const StockRequestForm = () => {
 
     try {
       setIsSubmitting(true);
-      const res = await api.post('/api/requests', formData, {
+      const res = await api.post('/requests', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const state = buildRequestSubmissionState('Stock', res.data);

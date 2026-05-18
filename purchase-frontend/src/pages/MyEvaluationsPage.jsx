@@ -92,7 +92,7 @@ const MyEvaluationsPage = () => {
       setLoading(true);
       setError('');
       try {
-        const { data } = await api.get('/api/contract-evaluations/my-evaluations');
+        const { data } = await api.get('/contract-evaluations/my-evaluations');
         const normalized = Array.isArray(data) ? data.map(normalizeEvaluation) : [];
         setEvaluations(normalized);
       } catch (err) {

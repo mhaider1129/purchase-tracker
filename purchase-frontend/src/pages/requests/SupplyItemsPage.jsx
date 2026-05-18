@@ -28,7 +28,7 @@ const SupplyItemsPage = () => {
       setLoading(true);
       setError('');
       try {
-        const supplyListRes = await api.get('/api/warehouse-supply');
+        const supplyListRes = await api.get('/warehouse-supply');
         const supplyRequest = (supplyListRes.data || []).find((req) => req.id === Number(id));
 
         if (!supplyRequest) {
@@ -97,7 +97,7 @@ const SupplyItemsPage = () => {
 
     try {
       setSaving(true);
-      await api.post(`/api/warehouse-supply/${id}/items`, payload);
+      await api.post(`/warehouse-supply/${id}/items`, payload);
       alert('Supplied quantities saved');
     } catch (err) {
       console.error('Save failed:', err);

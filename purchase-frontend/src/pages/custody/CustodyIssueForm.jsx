@@ -32,7 +32,7 @@ const CustodyIssueForm = () => {
     const loadDepartments = async () => {
       try {
         setDepartmentsError('');
-        const { data } = await api.get('/api/departments');
+        const { data } = await api.get('/departments');
         if (!isMounted) return;
         setDepartments(data.map((dept) => ({ id: dept.id, name: dept.name })));
       } catch (err) {

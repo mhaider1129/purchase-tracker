@@ -292,7 +292,7 @@ const Management = () => {
     setLoadingUsers(true);
     setUsersError('');
     try {
-      const res = await api.get('/api/users');
+      const res = await api.get('/users');
       setUsers(res.data || []);
     } catch (err) {
       console.error('Failed to load users', err);
@@ -311,7 +311,7 @@ const Management = () => {
     setLoadingDepartments(true);
     setDepartmentsError('');
     try {
-      const res = await api.get('/api/departments');
+      const res = await api.get('/departments');
       setDepartments(res.data || []);
     } catch (err) {
       console.error('Failed to load departments', err);
@@ -326,7 +326,7 @@ const Management = () => {
     setRolesLoading(true);
     setRolesError('');
     try {
-      const res = await api.get('/api/roles');
+      const res = await api.get('/roles');
       setRoles(res.data || []);
     } catch (err) {
       console.error('Failed to load roles', err);
@@ -341,7 +341,7 @@ const Management = () => {
     setLoadingRoutes(true);
     setRoutesError('');
     try {
-      const res = await api.get('/api/approval-routes');
+      const res = await api.get('/approval-routes');
       const responseData = res.data || {};
       if (Array.isArray(responseData)) {
         setRoutes(responseData);
@@ -367,7 +367,7 @@ const Management = () => {
 
     try {
       const payload = JSON.parse(simulationInput || '{}');
-      const res = await api.post('/api/approval-routes/simulate', payload);
+      const res = await api.post('/approval-routes/simulate', payload);
       setSimulationResult(res.data);
     } catch (err) {
       const parseError = err instanceof SyntaxError;
@@ -400,7 +400,7 @@ const Management = () => {
     setProjectError('');
     setProjectMessage('');
     try {
-      const res = await api.get('/api/projects/management');
+      const res = await api.get('/projects/management');
       setProjects(res.data || []);
     } catch (err) {
       console.error('Failed to load projects', err);
@@ -423,7 +423,7 @@ const Management = () => {
     setRoleSuccess('');
 
     try {
-      await api.post('/api/roles', { name: newRoleName.trim() });
+      await api.post('/roles', { name: newRoleName.trim() });
       setNewRoleName('');
       setRoleSuccess('Role created successfully.');
       fetchRoles();
@@ -456,7 +456,7 @@ const Management = () => {
     setRoleSuccess('');
 
     try {
-      await api.put(`/api/roles/${editingRole.id}`, { name: editingRole.name.trim() });
+      await api.put(`/roles/${editingRole.id}`, { name: editingRole.name.trim() });
       setRoleSuccess('Role updated successfully.');
       setEditingRole({ id: null, name: '' });
       fetchRoles();
@@ -478,7 +478,7 @@ const Management = () => {
     setRoleSuccess('');
 
     try {
-      await api.delete(`/api/roles/${roleId}`);
+      await api.delete(`/roles/${roleId}`);
       setRoleSuccess('Role deleted.');
       fetchRoles();
     } catch (err) {
@@ -493,7 +493,7 @@ const Management = () => {
     setPermissionsLoading(true);
     setPermissionsError('');
     try {
-      const res = await api.get('/api/permissions');
+      const res = await api.get('/permissions');
       setAvailablePermissions(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Failed to load permissions', err);
@@ -509,7 +509,7 @@ const Management = () => {
     setPermissionsError('');
     setPermissionsSuccess('');
     try {
-      const res = await api.get(`/api/permissions/users/${userId}`);
+      const res = await api.get(`/permissions/users/${userId}`);
       setSelectedUserPermissions(res.data?.permissions || []);
     } catch (err) {
       console.error('Failed to load user permissions', err);
@@ -538,7 +538,7 @@ const Management = () => {
     setPermissionsError('');
     setPermissionsSuccess('');
     try {
-      await api.put(`/api/permissions/users/${selectedPermissionUserId}`, {
+      await api.put(`/permissions/users/${selectedPermissionUserId}`, {
         permissions: selectedUserPermissions,
       });
       setPermissionsSuccess('Permissions updated successfully.');
@@ -621,7 +621,7 @@ const Management = () => {
     setAccessConfigSuccess('');
 
     try {
-      await api.put(`/api/ui-access/${editingAccessKey}`, {
+      await api.put(`/ui-access/${editingAccessKey}`, {
         permissions: editingAccessPermissions,
         requireAll: editingAccessRequireAll,
       });
@@ -639,7 +639,7 @@ const Management = () => {
   const deactivateUser = async (id) => {
     if (!window.confirm('Deactivate this user?')) return;
     try {
-      await api.patch(`/api/users/${id}/deactivate`);
+      await api.patch(`/users/${id}/deactivate`);
       fetchUsers();
     } catch (err) {
       console.error('Failed to deactivate user', err);
@@ -671,7 +671,7 @@ const Management = () => {
     }
 
     try {
-      await api.patch(`/api/users/${id}/assign`, {
+      await api.patch(`/users/${id}/assign`, {
         role: editData.role,
         department_id: editData.department_id ? Number(editData.department_id) : null,
         section_id: editData.section_id ? Number(editData.section_id) : null,
@@ -725,7 +725,7 @@ const Management = () => {
     setProjectMessage('');
 
     try {
-      await api.post('/api/projects', { name: trimmed });
+      await api.post('/projects', { name: trimmed });
       setNewProjectName('');
       setProjectMessage(`Project "${trimmed}" added successfully`);
       fetchProjects();
@@ -742,7 +742,7 @@ const Management = () => {
     setProjectMessage('');
 
     try {
-      const res = await api.patch(`/api/projects/${project.id}/deactivate`);
+      const res = await api.patch(`/projects/${project.id}/deactivate`);
       const updatedProject = res.data?.project || { ...project, is_active: false };
       setProjects((prev) =>
         prev.map((item) => (item.id === project.id ? updatedProject : item))
@@ -761,7 +761,7 @@ const Management = () => {
     }
     if (!window.confirm('Add this department?')) return;
     try {
-      await api.post('/api/departments', newDept);
+      await api.post('/departments', newDept);
       setNewDept(initialNewDepartment);
       fetchDepartments();
     } catch (err) {
@@ -781,7 +781,7 @@ const Management = () => {
     }
     if (!window.confirm('Add this section?')) return;
     try {
-      await api.post(`/api/departments/${newSection.department_id}/sections`, {
+      await api.post(`/departments/${newSection.department_id}/sections`, {
         name: newSection.name,
       });
       setNewSection(initialNewSection);
@@ -817,7 +817,7 @@ const Management = () => {
     setWarehouseMessage('');
 
     try {
-      await api.post('/api/warehouses', { name: trimmed });
+      await api.post('/warehouses', { name: trimmed });
       setWarehouseForm({ name: '' });
       setWarehouseMessage('Warehouse added successfully.');
       await Promise.all([refreshWarehouses(), fetchDepartments()]);
@@ -842,7 +842,7 @@ const Management = () => {
     setWarehouseMessage('');
 
     try {
-      await api.put(`/api/warehouses/${editingWarehouseId}`, {
+      await api.put(`/warehouses/${editingWarehouseId}`, {
         name: trimmed,
       });
       setWarehouseMessage('Warehouse updated successfully.');
@@ -873,9 +873,9 @@ const Management = () => {
     const payload = normalizeRoutePayload(route);
     try {
       if (route.id) {
-        await api.put(`/api/approval-routes/${route.id}`, payload);
+        await api.put(`/approval-routes/${route.id}`, payload);
       } else {
-        await api.post('/api/approval-routes', payload);
+        await api.post('/approval-routes', payload);
         setNewRoute(initialNewRoute);
       }
       setEditRoutes((prev) => {
@@ -894,7 +894,7 @@ const Management = () => {
   const deleteRoute = async (id) => {
     if (!window.confirm('Delete this route?')) return;
     try {
-      await api.delete(`/api/approval-routes/${id}`);
+      await api.delete(`/approval-routes/${id}`);
       fetchRoutes();
     } catch (err) {
       console.error('Failed to delete route', err);

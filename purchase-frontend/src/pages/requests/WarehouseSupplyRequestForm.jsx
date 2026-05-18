@@ -33,7 +33,7 @@ const WarehouseSupplyRequestForm = () => {
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const res = await api.get('/api/warehouse-supply-templates');
+        const res = await api.get('/warehouse-supply-templates');
         setTemplates(res.data || []);
       } catch (err) {
         console.error('Failed to load templates:', err);
@@ -156,7 +156,7 @@ const WarehouseSupplyRequestForm = () => {
 
     try {
       setSubmitting(true);
-      const res = await api.post('/api/requests', payload, {
+      const res = await api.post('/requests', payload, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       const state = buildRequestSubmissionState('Warehouse Supply', res.data);

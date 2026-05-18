@@ -20,7 +20,7 @@ const WarehouseSupplyTemplatesPage = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await api.get('/api/warehouse-supply-templates');
+      const res = await api.get('/warehouse-supply-templates');
       const parsedTemplates = (res.data || []).map((template) => ({
         ...template,
         items:
@@ -78,9 +78,9 @@ const WarehouseSupplyTemplatesPage = () => {
     try {
       setIsSaving(true);
       if (editingTemplateId) {
-        await api.put(`/api/warehouse-supply-templates/${editingTemplateId}`, payload);
+        await api.put(`/warehouse-supply-templates/${editingTemplateId}`, payload);
       } else {
-        await api.post('/api/warehouse-supply-templates', payload);
+        await api.post('/warehouse-supply-templates', payload);
       }
       resetForm();
       fetchTemplates();
@@ -95,7 +95,7 @@ const WarehouseSupplyTemplatesPage = () => {
   const deleteTemplate = async (id) => {
     if (!window.confirm('Delete this template?')) return;
     try {
-      await api.delete(`/api/warehouse-supply-templates/${id}`);
+      await api.delete(`/warehouse-supply-templates/${id}`);
       if (editingTemplateId === id) {
         resetForm();
       }

@@ -28,7 +28,7 @@ const LifecycleAnalytics = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await axios.get('/api/dashboard/lifecycle');
+        const res = await axios.get('/dashboard/lifecycle');
         setData(res.data);
       } catch (err) {
         console.error('❌ Failed to load lifecycle analytics:', err);

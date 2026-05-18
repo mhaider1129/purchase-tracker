@@ -113,7 +113,7 @@ const EvaluationDetailsPage = () => {
       setError('');
       setSuccess('');
       try {
-        const { data } = await api.get(`/api/contract-evaluations/${id}`);
+        const { data } = await api.get(`/contract-evaluations/${id}`);
         const normalized = normalizeEvaluation(data);
         setEvaluation(normalized);
         setNotes(normalized?.evaluation_notes || '');
@@ -181,7 +181,7 @@ const EvaluationDetailsPage = () => {
         overallScore,
       };
 
-      const { data } = await api.patch(`/api/contract-evaluations/${evaluation.id}`, {
+      const { data } = await api.patch(`/contract-evaluations/${evaluation.id}`, {
         status: 'completed',
         evaluation_notes: notes,
         evaluation_criteria: payloadCriteria,

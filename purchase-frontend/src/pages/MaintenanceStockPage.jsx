@@ -15,7 +15,7 @@ const MaintenanceStockPage = () => {
 
   const fetchStock = async () => {
     try {
-      const res = await api.get('/api/maintenance-stock');
+      const res = await api.get('/maintenance-stock');
       setItems(res.data || []);
       setStatus({ type: 'idle', message: '' });
     } catch (err) {
@@ -55,12 +55,12 @@ const MaintenanceStockPage = () => {
 
     try {
       if (item.id) {
-        await api.put(`/api/maintenance-stock/${item.id}`, {
+        await api.put(`/maintenance-stock/${item.id}`, {
           item_name: item.item_name,
           quantity: parsedQuantity,
         });
       } else {
-        await api.post('/api/maintenance-stock', {
+        await api.post('/maintenance-stock', {
           item_name: item.item_name,
           quantity: parsedQuantity,
         });

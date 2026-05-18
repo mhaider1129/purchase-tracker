@@ -80,7 +80,7 @@ const WarehouseSupplyRequestsPage = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/api/warehouse-supply');
+      const res = await api.get('/warehouse-supply');
       const data = res.data || [];
       setRequests(data);
       setItemsCache((prev) => {
@@ -116,7 +116,7 @@ const WarehouseSupplyRequestsPage = () => {
 
     try {
       setClosingRequestId(requestId);
-      const res = await api.post(`/api/warehouse-supply/${requestId}/close`);
+      const res = await api.post(`/warehouse-supply/${requestId}/close`);
 
       setRequests((prev) =>
         prev.map((req) =>
@@ -353,7 +353,7 @@ const WarehouseSupplyRequestsPage = () => {
     if (!itemsCache[requestId] && !itemsError[requestId]) {
       try {
         setItemsLoadingId(requestId);
-        const res = await api.get(`/api/requests/${requestId}/items`);
+        const res = await api.get(`/requests/${requestId}/items`);
         setItemsCache((prev) => ({
           ...prev,
           [requestId]: normalizeItems(extractItems(res.data)),

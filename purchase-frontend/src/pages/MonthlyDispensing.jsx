@@ -100,8 +100,8 @@ const MonthlyDispensing = () => {
     const fetchAnalytics = async () => {
       try {
         const [analyticsRes, entriesRes] = await Promise.all([
-          axios.get('/api/dispensing/monthly/analytics'),
-          axios.get('/api/dispensing/monthly'),
+          axios.get('/dispensing/monthly/analytics'),
+          axios.get('/dispensing/monthly'),
         ]);
         setAnalytics(analyticsRes.data);
         setRecent(entriesRes.data || []);
@@ -172,13 +172,13 @@ const MonthlyDispensing = () => {
     }
 
     try {
-      await axios.post('/api/dispensing/monthly/import', { rows: payloadRows });
+      await axios.post('/dispensing/monthly/import', { rows: payloadRows });
       setMessage('Dispensing data saved successfully.');
       setRows([createEmptyRow()]);
 
       const [analyticsRes, entriesRes] = await Promise.all([
-        axios.get('/api/dispensing/monthly/analytics'),
-        axios.get('/api/dispensing/monthly'),
+        axios.get('/dispensing/monthly/analytics'),
+        axios.get('/dispensing/monthly'),
       ]);
       setAnalytics(analyticsRes.data);
       setRecent(entriesRes.data || []);

@@ -42,7 +42,7 @@ const StockItemRequestForm = () => {
         detailSections.push(`Suggested Supplier or Notes:\n${supplierNotes.trim()}`);
       }
 
-      const res = await api.post('/api/stock-item-requests', {
+      const res = await api.post('/stock-item-requests', {
         name: name.trim(),
         description: detailSections.join('\n\n'),
         unit: unit.trim() || undefined,

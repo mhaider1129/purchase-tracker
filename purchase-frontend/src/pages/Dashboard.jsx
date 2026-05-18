@@ -35,7 +35,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const res = await axios.get('/api/dashboard/summary');
+        const res = await axios.get('/dashboard/summary');
         setSummary(res.data);
       } catch (err) {
         console.error('❌ Failed to fetch dashboard data:', err);
@@ -50,7 +50,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchSpending = async () => {
       try {
-        const res = await axios.get('/api/dashboard/department-spending', {
+        const res = await axios.get('/dashboard/department-spending', {
           params: { year },
         });
         setDepartmentSpending(res.data);

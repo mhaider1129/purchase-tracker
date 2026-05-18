@@ -49,7 +49,7 @@ const Register = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await api.get('/api/departments'); // Backend returns sections within departments
+        const res = await api.get('/departments'); // Backend returns sections within departments
         setDepartments(res.data);
       } catch (err) {
         console.error('❌ Failed to load departments:', err);

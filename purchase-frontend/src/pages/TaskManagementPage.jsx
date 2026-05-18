@@ -23,9 +23,9 @@ export default function TaskManagementPage() {
     setLoading(true);
     try {
       const [myRes, usersRes, assignedRes] = await Promise.all([
-        api.get('/api/tasks/my'),
-        canAssign ? api.get('/api/users') : Promise.resolve({ data: { users: [] } }),
-        canAssign ? api.get(`/api/tasks/assigned-by-me${managerFilter ? `?status=${managerFilter}` : ''}`) : Promise.resolve({ data: { tasks: [] } }),
+        api.get('/tasks/my'),
+        canAssign ? api.get('/users') : Promise.resolve({ data: { users: [] } }),
+        canAssign ? api.get(`/tasks/assigned-by-me${managerFilter ? `?status=${managerFilter}` : ''}`) : Promise.resolve({ data: { tasks: [] } }),
       ]);
 
       setMyTasks(myRes.data?.tasks || []);
@@ -49,7 +49,7 @@ export default function TaskManagementPage() {
 
   const updateMyTask = async (taskId, payload) => {
     try {
-      await api.patch(`/api/tasks/${taskId}/status`, payload);
+      await api.patch(`/tasks/${taskId}/status`, payload);
       setMessage('Task updated successfully.');
       await load();
     } catch (err) {
@@ -62,7 +62,7 @@ export default function TaskManagementPage() {
     setSaving(true);
     setMessage('');
     try {
-      await api.post('/api/tasks', {
+      await api.post('/tasks', {
         title: assignForm.title,
         description: assignForm.description,
         assigned_to: Number(assignForm.assigned_to),
@@ -79,7 +79,7 @@ export default function TaskManagementPage() {
 
   const manageTask = async (taskId, payload) => {
     try {
-      await api.patch(`/api/tasks/${taskId}/manage`, payload);
+      await api.patch(`/tasks/${taskId}/manage`, payload);
       setMessage('Task updated by manager successfully.');
       await load();
     } catch (err) {
@@ -89,7 +89,7 @@ export default function TaskManagementPage() {
 
   const deleteTask = async (taskId) => {
     try {
-      await api.delete(`/api/tasks/${taskId}`);
+      await api.delete(`/tasks/${taskId}`);
       setMessage('Task deleted successfully.');
       await load();
     } catch (err) {

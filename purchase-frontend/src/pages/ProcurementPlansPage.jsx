@@ -42,7 +42,7 @@ const ProcurementPlansPage = () => {
       try {
         setIsFetching(true);
         setError('');
-        const res = await api.get('/api/procurement-plans', { params });
+        const res = await api.get('/procurement-plans', { params });
         setPlans(res.data || []);
       } catch (err) {
         console.error('Failed to load plans', err);
@@ -73,7 +73,7 @@ const ProcurementPlansPage = () => {
       setLoading(true);
       setSuccess('');
       setError('');
-      await api.post('/api/procurement-plans', formData, {
+      await api.post('/procurement-plans', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setFile(null);
@@ -102,8 +102,8 @@ const ProcurementPlansPage = () => {
         setIsLoadingInsights(true);
         setItemsError('');
         const [varianceRes, insightsRes] = await Promise.all([
-          api.get(`/api/procurement-plans/${planId}/items/variance`),
-          api.get(`/api/procurement-plans/${planId}/integration-insights`),
+          api.get(`/procurement-plans/${planId}/items/variance`),
+          api.get(`/procurement-plans/${planId}/integration-insights`),
         ]);
         setPlanItems(varianceRes.data || []);
         setIntegrationInsights(insightsRes.data?.items || []);
@@ -160,7 +160,7 @@ const ProcurementPlansPage = () => {
 
     try {
       setItemsError('');
-      await api.post(`/api/procurement-plans/${selectedPlanId}/items`, payload);
+      await api.post(`/procurement-plans/${selectedPlanId}/items`, payload);
       resetItemForm();
       fetchPlanItems(selectedPlanId);
     } catch (err) {

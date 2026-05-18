@@ -39,7 +39,7 @@ const IncompleteRequestsPage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/api/requests/incomplete', {
+        const res = await axios.get('/requests/incomplete', {
           params: { role: userRole },
         });
         const data = Array.isArray(res.data) ? res.data : [];
@@ -157,7 +157,7 @@ const IncompleteRequestsPage = () => {
   const handleExport = async (type) => {
     setLoadingExport(true);
     try {
-      const res = await axios.get(`/api/requests/incomplete/export/${type}`, {
+      const res = await axios.get(`/requests/incomplete/export/${type}`, {
         params: {
           request_type: requestType,
           department,

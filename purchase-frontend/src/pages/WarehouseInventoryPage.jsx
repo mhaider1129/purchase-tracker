@@ -114,7 +114,7 @@ const WarehouseInventoryPage = () => {
 
   const loadStockItems = async () => {
     try {
-      const res = await api.get('/api/stock-items');
+      const res = await api.get('/stock-items');
       setStockItems(res.data || []);
     } catch (err) {
       console.error('Failed to load stock items:', err);
@@ -125,7 +125,7 @@ const WarehouseInventoryPage = () => {
   const loadUnassignedStockItems = async () => {
     setUnassignedStatus({ state: 'loading', message: '' });
     try {
-      const res = await api.get('/api/stock-items/unassigned');
+      const res = await api.get('/stock-items/unassigned');
       setUnassignedItems(res.data || []);
       setUnassignedStatus({ state: 'idle', message: '' });
     } catch (err) {
@@ -138,7 +138,7 @@ const WarehouseInventoryPage = () => {
   const loadDepartments = async () => {
     setDepartmentsStatus({ state: 'loading', message: '' });
     try {
-      const res = await api.get('/api/departments');
+      const res = await api.get('/departments');
       setDepartments(res.data || []);
       setDepartmentsStatus({ state: 'idle', message: '' });
     } catch (err) {
@@ -150,7 +150,7 @@ const WarehouseInventoryPage = () => {
   const loadReport = async () => {
     setReportStatus({ state: 'loading', message: '' });
     try {
-      const res = await api.get('/api/warehouse-inventory/reports/weekly');
+      const res = await api.get('/warehouse-inventory/reports/weekly');
       setReport({
         departments: res.data?.departments || [],
         window_start: res.data?.window_start || '',
@@ -498,7 +498,7 @@ const WarehouseInventoryPage = () => {
 
     setFormStatus({ state: 'loading', message: '' });
     try {
-      await api.post('/api/warehouse-inventory/stock', {
+      await api.post('/warehouse-inventory/stock', {
         stock_item_id: Number(form.stock_item_id),
         quantity: parsedQuantity,
         notes: form.notes?.trim() || undefined,
@@ -545,7 +545,7 @@ const WarehouseInventoryPage = () => {
 
     setDiscardFormStatus({ state: 'loading', message: '' });
     try {
-      await api.post('/api/warehouse-inventory/stock/discard', {
+      await api.post('/warehouse-inventory/stock/discard', {
         stock_item_id: Number(discardForm.stock_item_id),
         quantity: parsedQuantity,
         reason: discardForm.reason,
@@ -599,7 +599,7 @@ const WarehouseInventoryPage = () => {
 
     setIssueFormStatus({ state: 'loading', message: '' });
     try {
-      await api.post('/api/warehouse-inventory/stock/issue', {
+      await api.post('/warehouse-inventory/stock/issue', {
         department_id: Number(issueForm.department_id),
         section_id: issueForm.section_id ? Number(issueForm.section_id) : undefined,
         notes: issueForm.notes?.trim() || undefined,
@@ -663,7 +663,7 @@ const WarehouseInventoryPage = () => {
 
     setAllocationStatus({ state: 'loading', message: '' });
     try {
-      await api.post('/api/stock-items/assign-warehouses', {
+      await api.post('/stock-items/assign-warehouses', {
         stock_item_id: stockItemId,
         allocations: normalizedAllocations.map((entry) => ({
           warehouse_id: entry.warehouse_id,
@@ -683,7 +683,7 @@ const WarehouseInventoryPage = () => {
 
   const loadTransferRequest = async (transferId) => {
     if (!transferId) return;
-    const res = await api.get(`/api/warehouse-transfers/${transferId}`);
+    const res = await api.get(`/warehouse-transfers/${transferId}`);
     setTransferDetails(res.data || null);
   };
 
@@ -713,7 +713,7 @@ const WarehouseInventoryPage = () => {
 
     setTransferStatus({ state: 'loading', message: '' });
     try {
-      const res = await api.post('/api/warehouse-transfers', {
+      const res = await api.post('/warehouse-transfers', {
         origin_warehouse_id: Number(transferForm.origin_warehouse_id),
         destination_warehouse_id: Number(transferForm.destination_warehouse_id),
         notes: transferForm.notes?.trim() || undefined,
@@ -754,7 +754,7 @@ const WarehouseInventoryPage = () => {
         return;
       }
 
-      await api.post(`/api/warehouse-transfers/${transferId}/${action}`, {
+      await api.post(`/warehouse-transfers/${transferId}/${action}`, {
         reason: action === 'reject' ? transferActionForm.reason?.trim() || undefined : undefined,
       });
 

@@ -12,7 +12,7 @@ const IncompleteOperationalRequestsPage = () => {
   useEffect(() => {
     const fetchOperationalRequests = async () => {
       try {
-        const res = await axios.get('/api/requests/incomplete/operational');
+        const res = await axios.get('/requests/incomplete/operational');
         setRequests(res.data || []);
         setLastUpdated(new Date().toLocaleString());
       } catch (err) {

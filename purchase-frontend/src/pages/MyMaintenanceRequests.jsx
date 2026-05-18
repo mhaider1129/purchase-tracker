@@ -65,7 +65,7 @@ const MyMaintenanceRequests = () => {
   useEffect(() => {
     const fetchRequests = async () => {
       try {
-        const res = await axios.get('/api/requests/my-maintenance');
+        const res = await axios.get('/requests/my-maintenance');
         const incoming = Array.isArray(res.data) ? res.data : [];
         const sorted = [...incoming].sort((a, b) => {
           const dateA = new Date(a.created_at).getTime();

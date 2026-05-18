@@ -12,7 +12,7 @@ const IncompleteMedicalRequestsPage = () => {
   useEffect(() => {
     const fetchMedicalRequests = async () => {
       try {
-        const res = await axios.get('/api/requests/incomplete/medical');
+        const res = await axios.get('/requests/incomplete/medical');
         setRequests(res.data || []);
         setLastUpdated(new Date().toLocaleString());
       } catch (err) {

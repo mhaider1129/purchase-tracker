@@ -58,7 +58,7 @@ const WorkloadAnalysis = () => {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get("/api/dashboard/workload", { params: { pending_statuses: filters.pendingStatuses.join(","), approved_status: filters.approvedStatus, completion_window_days: filters.completionWindowDays } });
+        const res = await axios.get("/dashboard/workload", { params: { pending_statuses: filters.pendingStatuses.join(","), approved_status: filters.approvedStatus, completion_window_days: filters.completionWindowDays } });
         setData(res.data);
       } catch (err) {
         console.error("❌ Failed to load workload analysis:", err);
