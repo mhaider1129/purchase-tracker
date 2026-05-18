@@ -44,7 +44,7 @@ const PrintingLogbookRequestForm = () => {
     ].filter(Boolean).join('\n');
 
     const payload = new FormData();
-    payload.append('request_type', 'Printing Logbook');
+    payload.append('request_type', 'Non-Stock');
     payload.append('justification', 'Request to print logbook from approved source document.');
     payload.append('target_department_id', user.department_id);
     payload.append('target_section_id', user.section_id || '');
@@ -56,7 +56,7 @@ const PrintingLogbookRequestForm = () => {
       const response = await api.post('/requests', payload, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      const state = buildRequestSubmissionState('Printing Logbook', response.data);
+      const state = buildRequestSubmissionState('Printing Logbook', { ...response.data, request_type: 'Printing Logbook' });
       navigate('/request-submitted', { state });
     } catch (submitError) {
       console.error(submitError);
