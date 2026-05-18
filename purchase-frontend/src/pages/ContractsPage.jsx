@@ -1540,7 +1540,14 @@ const ContractsPage = () => {
         )}
 
         {!isCreatePage ? (
-        <section className="grid gap-6 lg:grid-cols-[minmax(0,1.75fr)_minmax(420px,0.95fr)] xl:grid-cols-[minmax(0,2fr)_minmax(500px,1fr)]">          <div className="space-y-4">
+        <section
+          className={`grid gap-6 ${
+            editingId || viewingContract
+              ? 'lg:grid-cols-[minmax(0,1.75fr)_minmax(420px,0.95fr)] xl:grid-cols-[minmax(0,2fr)_minmax(500px,1fr)]'
+              : 'grid-cols-1'
+          }`}
+        >
+          <div className="space-y-4">
             <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-1 gap-3">
@@ -1614,6 +1621,18 @@ const ContractsPage = () => {
                   >
                     Refresh
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewingContract(null);
+                      setEditingId(null);
+                      setFormState(initialFormState);
+                      navigate('/contracts/new');
+                    }}
+                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                  >
+                    Create new contract
+                  </button>
                 </div>
               </div>
               {error && (
@@ -1624,8 +1643,68 @@ const ContractsPage = () => {
             </div>
 
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm ring-1 ring-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:ring-gray-800/60">
-              <div className="max-h-[640px] overflow-y-auto">
-                <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700" aria-label="Contracts table">
+              <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-2 text-xs font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-300">
+                <span>{sortedContracts.length} contract{sortedContracts.length === 1 ? '' : 's'} in view</span>
+                <span className="hidden sm:inline">Tip: Select a contract row to open full details.</span>
+              </div>
+
+              <div className="space-y-3 p-3 md:hidden">
+                {loading ? (
+                  <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    Loading contracts...
+                  </div>
+                ) : sortedContracts.length === 0 ? (
+                  <div className="rounded-md border border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    No contracts match your current filters.
+                  </div>
+                ) : (
+                  sortedContracts.map((contract) => {
+                    const isSelected = viewingContract?.id === contract.id;
+                    const paidSummary = getPaidSummary(contract);
+                    const contractValue = formatCurrency(contract.contract_value);
+                    return (
+                      <button
+                        key={contract.id}
+                        type="button"
+                        onClick={() => handleViewContract(contract)}
+                        className={`w-full rounded-lg border p-3 text-left shadow-sm transition ${
+                          isSelected
+                            ? 'border-blue-300 bg-blue-50/70 dark:border-blue-700 dark:bg-blue-900/20'
+                            : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/40 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{contract.title}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{contract.vendor}</p>
+                          </div>
+                          <div>{renderStatusBadge(contract.status)}</div>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Value</p>
+                            <p className="font-medium text-gray-800 dark:text-gray-100">{contractValue ?? '—'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 dark:text-gray-400">Renewal</p>
+                            <div className="font-medium text-gray-800 dark:text-gray-100">{renderExpiry(contract)}</div>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-gray-500 dark:text-gray-400">Paid progress</p>
+                            <p className="font-medium text-gray-800 dark:text-gray-100">
+                              {paidSummary.formattedPaid ?? '—'}
+                              {paidSummary.formattedTotal ? ` of ${paidSummary.formattedTotal}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className="hidden max-h-[640px] overflow-auto md:block">
+                <table className="min-w-[1120px] divide-y divide-gray-200 text-sm dark:divide-gray-700" aria-label="Contracts table">
                   <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur dark:bg-gray-800/90">
                     <tr>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
@@ -1808,20 +1887,7 @@ const ContractsPage = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setViewingContract(null);
-                  setEditingId(null);
-                  setFormState(initialFormState);
-                  navigate('/contracts/new');
-                }}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Create new contract
-              </button>
-            </div>
+            {(editingId || viewingContract) && (
             <div className="rounded-2xl border border-blue-100 bg-gradient-to-b from-white via-white to-blue-50/60 p-6 shadow-lg ring-1 ring-blue-50 dark:border-blue-900/50 dark:from-gray-900 dark:via-gray-900 dark:to-blue-950/20 dark:ring-blue-900/40">
               <div className="flex items-start justify-between">
                 <div>
@@ -1939,7 +2005,9 @@ const ContractsPage = () => {
                       )}
                     </div>
                   )}
-                  <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
+                  {viewingContract && (
+                    <>
+                      <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Vendor</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">{viewingContract.vendor}</p>
@@ -2091,26 +2159,29 @@ const ContractsPage = () => {
                         {viewingContract.performance_management || <span className="italic text-gray-500">Not specified</span>}
                       </p>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleSelectContract(viewingContract)}
-                      className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      Edit contract
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setViewingContract(null)}
-                      className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                    >
-                      Close
-                    </button>
-                  </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectContract(viewingContract)}
+                          className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        >
+                          Edit contract
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setViewingContract(null)}
+                          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
+            )}
 
             {(editingId || viewingContract) && (
               <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
@@ -2243,14 +2314,6 @@ const ContractsPage = () => {
               />
             )}
 
-            <div className="rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-              <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-gray-100">Contract tips</h3>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>Keep the reference number consistent with the signed agreement.</li>
-                <li>Use the notes section to track renewal discussions and milestones.</li>
-                <li>Archive contracts that are no longer active to keep the dashboard tidy.</li>
-              </ul>
-            </div>
           </div>
         </section>
         ) : (
@@ -2295,6 +2358,14 @@ const ContractsPage = () => {
                 suppliersLoading={suppliersLoading}
                 suppliersError={suppliersError}
               />
+              <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 text-sm text-gray-600 shadow-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                <h3 className="mb-2 text-base font-semibold text-gray-900 dark:text-gray-100">Contract tips</h3>
+                <ul className="list-disc space-y-1 pl-5">
+                  <li>Keep the reference number consistent with the signed agreement.</li>
+                  <li>Use the notes section to track renewal discussions and milestones.</li>
+                  <li>Archive contracts that are no longer active to keep the dashboard tidy.</li>
+                </ul>
+              </div>
             </div>
           </section>
         )}
