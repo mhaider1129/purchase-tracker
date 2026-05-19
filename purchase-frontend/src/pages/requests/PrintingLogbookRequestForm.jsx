@@ -53,9 +53,7 @@ const PrintingLogbookRequestForm = () => {
 
     try {
       setIsSubmitting(true);
-      const response = await api.post('/requests', payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = await api.post('/requests', payload);
       const state = buildRequestSubmissionState('Printing Logbook', { ...response.data, request_type: 'Printing Logbook' });
       navigate('/request-submitted', { state });
     } catch (submitError) {

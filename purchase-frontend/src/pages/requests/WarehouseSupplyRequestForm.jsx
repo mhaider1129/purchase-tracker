@@ -156,9 +156,7 @@ const WarehouseSupplyRequestForm = () => {
 
     try {
       setSubmitting(true);
-      const res = await api.post('/requests', payload, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await api.post('/requests', payload);
       const state = buildRequestSubmissionState('Warehouse Supply', res.data);
       navigate('/request-submitted', { state });
     } catch (err) {

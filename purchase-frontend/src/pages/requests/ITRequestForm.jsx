@@ -200,9 +200,7 @@ const ITRequestForm = () => {
 
     try {
       setIsSubmitting(true);
-      const res = await api.post('/requests', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await api.post('/requests', formData);
       const state = buildRequestSubmissionState('IT Item', res.data);
       navigate('/request-submitted', { state });
     } catch (err) {

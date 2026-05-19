@@ -73,9 +73,7 @@ const ProcurementPlansPage = () => {
       setLoading(true);
       setSuccess('');
       setError('');
-      await api.post('/procurement-plans', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      await api.post('/procurement-plans', formData);
       setFile(null);
       setSuccess('Procurement plan uploaded successfully.');
       if (fileInputRef.current) {

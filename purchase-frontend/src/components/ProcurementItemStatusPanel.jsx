@@ -143,9 +143,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       const formData = new FormData();
       formData.append("file", file);
 
-      await axios.post(`/attachments/item/${itemId}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await axios.post(`/attachments/item/${itemId}`, formData);
 
       setUploadSuccess(
         tr(

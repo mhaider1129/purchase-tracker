@@ -173,9 +173,7 @@ const MaintenanceRequestForm = () => {
         });
       });
 
-      const res = await axios.post('/requests', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const res = await axios.post('/requests', formData);
       const state = buildRequestSubmissionState('Maintenance', res.data);
       navigate('/request-submitted', { state });
     } catch (err) {
