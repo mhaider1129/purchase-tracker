@@ -282,7 +282,7 @@ const ApprovalsPanel = () => {
                     approvalStatus={approvalStatus}
                   >
                     <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-                      <div className="space-y-4">
+                      <div className="order-2 space-y-4 lg:order-1">
                         {user?.role === 'SCM' && (
                           <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
                             <label
@@ -338,7 +338,7 @@ const ApprovalsPanel = () => {
                         />
                       </div>
 
-                      <div className="space-y-4">
+                      <div className="order-1 space-y-4 lg:order-2">
                         {req.is_urgent && (
                           <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
                             Requires immediate attention
