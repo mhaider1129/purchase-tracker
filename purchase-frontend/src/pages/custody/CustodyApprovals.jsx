@@ -79,7 +79,7 @@ const CustodyApprovals = () => {
   );
 
   const getActingRoleLabel = (role) =>
-    role === 'hod' ? tr('roles.hod') : tr('roles.custodian');
+    role === 'hod' ? tr('roles.hod') : role === 'scm' ? tr('roles.scm') : tr('roles.custodian');
 
   return (
     <div className="min-h-screen bg-gray-100">

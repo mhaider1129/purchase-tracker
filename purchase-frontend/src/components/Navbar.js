@@ -435,6 +435,12 @@ const Navbar = () => {
             "text-indigo-500",
           ),
           createItem(
+            canAccessCustody,
+            t("navbar.custodyApprovals"),
+            "/custody/approvals",
+            "text-indigo-400",
+          ),
+          createItem(
             canAccessMaintenanceStock,
             t("navbar.maintenanceStock"),
             "/maintenance-stock",

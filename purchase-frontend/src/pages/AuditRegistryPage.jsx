@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
+import useCurrentUser from '../hooks/useCurrentUser';
 
 const statusColors = {
   COO_REVIEW_PENDING: 'bg-yellow-100 text-yellow-800',
@@ -26,6 +27,8 @@ const workflowHintByStatus = {
 };
 
 export default function AuditRegistryPage() {
+  const { user } = useCurrentUser();
+  const normalizedRole = String(user?.role || '').toUpperCase();
   const [entries, setEntries] = useState([]);
   const [form, setForm] = useState({
     request_id: '',
@@ -96,6 +99,21 @@ export default function AuditRegistryPage() {
       setSubmitError(err?.response?.data?.message || 'Failed to submit registry request.');
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+
+  const canCooApprove = (row) => normalizedRole === 'COO' && row.audit_status === 'COO_REVIEW_PENDING';
+  const canAuditRegister = (row) => normalizedRole === 'AUDIT' && row.audit_status === 'AUDIT_REVIEW_PENDING';
+
+  const canTakeAction = (row) => canCooApprove(row) || canAuditRegister(row);
+
+  const approveEntry = async (entryId, nextStatus) => {
+    try {
+      await axios.patch(`/audit-registry/entries/${entryId}`, { audit_status: nextStatus });
+      await loadEntries();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update audit registry status.');
     }
   };
 
@@ -206,6 +224,7 @@ export default function AuditRegistryPage() {
                 <th className="px-3 py-2">Issued</th>
                 <th className="px-3 py-2">Returned</th>
                 <th className="px-3 py-2">Remaining</th>
+                <th className="px-3 py-2">Review Action</th>
               </tr>
             </thead>
             <tbody>
@@ -224,6 +243,19 @@ export default function AuditRegistryPage() {
                   <td className="px-3 py-2">{Number(row.finance_issued_amount || 0).toFixed(2)} {row.currency}</td>
                   <td className="px-3 py-2">{Number(row.returned_amount || 0).toFixed(2)} {row.currency}</td>
                   <td className="px-3 py-2 font-semibold">{Number(row.remaining_amount || 0).toFixed(2)} {row.currency}</td>
+                  <td className="px-3 py-2">
+                    {canTakeAction(row) ? (
+                      <button
+                        type="button"
+                        onClick={() => approveEntry(row.id, canCooApprove(row) ? 'AUDIT_REVIEW_PENDING' : 'REGISTERED')}
+                        className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                      >
+                        {canCooApprove(row) ? 'Approve as COO' : 'Approve & Register (Audit)'}
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 text-xs">No action</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

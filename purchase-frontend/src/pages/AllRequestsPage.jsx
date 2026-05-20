@@ -12,6 +12,7 @@ import useRequestAttachments from '../hooks/useRequestAttachments';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useStatusCommunications from '../hooks/useStatusCommunications';
 import useDirectPurchaseCommunications from '../hooks/useDirectPurchaseCommunications';
+import { hasPermission } from '../utils/permissions';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -167,6 +168,7 @@ const AllRequestsPage = () => {
   const [departments, setDepartments] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalRequests, setTotalRequests] = useState(0);
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -227,12 +229,13 @@ const AllRequestsPage = () => {
     );
 
     return [
-      { label: 'Total requests', value: requests.length },
+      { label: 'Total requests', value: totalRequests },
       { label: 'Urgent requests', value: summary.urgent },
       { label: 'Approved', value: summary.approved },
       { label: 'Pending', value: summary.pending },
     ];
-  }, [requests]);
+  }, [requests, totalRequests]);
+  const canHardDeleteRequests = hasPermission(user || {}, 'requests.manage');
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -280,7 +283,8 @@ const AllRequestsPage = () => {
 
       setRequests([...urgentRequests, ...nonUrgentRequests]);
       resetApprovals();
-      const total = res?.data?.total || 0;
+      const total = Number(res?.data?.total) || 0;
+      setTotalRequests(total);
       setTotalPages(Math.ceil(total / limit));
     } catch (err) {
       console.error(err);
@@ -818,6 +822,27 @@ const AllRequestsPage = () => {
     }
   };
 
+  const handleHardDelete = async (requestId) => {
+    const confirmed = window.confirm(
+      `Delete request ${requestId} permanently? This removes the request and all related records.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      await axios.delete(`/requests/${requestId}/hard-delete`);
+      if (expandedAssignId === requestId) setExpandedAssignId(null);
+      if (expandedItemsId === requestId) setExpandedItemsId(null);
+      if (expandedAttachmentsId === requestId) setExpandedAttachmentsId(null);
+      if (expandedCommunicationId === requestId) setExpandedCommunicationId(null);
+      if (expandedDirectCommId === requestId) setExpandedDirectCommId(null);
+      alert('✅ Request deleted permanently.');
+      fetchRequests();
+    } catch (err) {
+      console.error(`❌ Failed to delete request ${requestId}:`, err);
+      alert(err?.response?.data?.message || 'Failed to delete request.');
+    }
+  };
+
   return (
     <>
       <div className="p-6">
@@ -851,7 +876,7 @@ const AllRequestsPage = () => {
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
           <p className="text-sm font-medium text-gray-700">Filters & export</p>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Showing <strong className="text-gray-700">{requests.length}</strong> request(s)</span>
+            <span>Showing <strong className="text-gray-700">{requests.length}</strong> of <strong className="text-gray-700">{totalRequests}</strong> request(s)</span>
             {filtersChanged && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">Unsaved filter changes</span>}
           </div>
         </div>
@@ -1051,6 +1076,14 @@ const AllRequestsPage = () => {
                     >
                       Print
                     </button>
+                    {canHardDeleteRequests && (
+                      <button
+                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                        onClick={() => handleHardDelete(request.id)}
+                      >
+                        Delete Permanently
+                      </button>
+                    )}
                     <button
                       className="text-blue-600 underline"
                       onClick={() => toggleItems(request.id)}

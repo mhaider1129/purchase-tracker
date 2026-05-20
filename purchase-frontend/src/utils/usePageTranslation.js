@@ -5,11 +5,22 @@ const usePageTranslation = (namespace) => {
   const { t } = useTranslation();
 
   return useCallback(
-    (key, defaultValue, options = {}) =>
-      t(`${namespace}.${key}`, {
-        defaultValue: defaultValue ?? key,
-        ...options,
-      }),
+    (key, defaultValueOrOptions, options = {}) => {
+      const usingOptionsAsSecondArg =
+        defaultValueOrOptions !== null && typeof defaultValueOrOptions === 'object';
+
+      const resolvedOptions = usingOptionsAsSecondArg
+        ? defaultValueOrOptions
+        : options;
+      const resolvedDefaultValue = usingOptionsAsSecondArg
+        ? defaultValueOrOptions.defaultValue ?? key
+        : defaultValueOrOptions ?? key;
+
+      return t(`${namespace}.${key}`, {
+        ...resolvedOptions,
+        defaultValue: resolvedDefaultValue,
+      });
+    },
     [namespace, t],
   );
 };

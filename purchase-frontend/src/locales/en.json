@@ -1652,6 +1652,7 @@
     "confirmDecision": "Are you sure you want to {{decision}} custody record #{{id}}?",
     "roles": {
       "hod": "Head of Department",
+      "scm": "Supply Chain Management",
       "custodian": "Custodian"
     },
     "fields": {
@@ -1712,7 +1713,7 @@
       "departmentCustody": "Department custody",
       "notSpecified": "Not specified",
       "notAssigned": "Not assigned",
-      "custodianApproval": "Custodian Approval",
+      "custodianApproval": "SCM Approval",
       "hodApproval": "HOD Approval"
     }
   },

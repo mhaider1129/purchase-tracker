@@ -25,7 +25,8 @@ const MaintenanceRequestForm = () => {
   const [sections, setSections] = useState([]);
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
-  const [temporaryRequesterName, setTemporaryRequesterName] = useState('');
+  const [requesters, setRequesters] = useState([]);
+  const [targetRequesterId, setTargetRequesterId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [formError, setFormError] = useState('');
@@ -132,7 +133,7 @@ const MaintenanceRequestForm = () => {
       !refNumber.trim() ||
       !targetDeptId ||
       !justification.trim() ||
-      !temporaryRequesterName.trim()
+      !targetRequesterId
     ) {
       return false;
     }
@@ -140,7 +141,31 @@ const MaintenanceRequestForm = () => {
       return false;
     }
     return validateItems() === '';
-  }, [justification, refNumber, sections.length, targetDeptId, targetSectionId, temporaryRequesterName, validateItems]);
+  }, [justification, refNumber, sections.length, targetDeptId, targetSectionId, targetRequesterId, validateItems]);
+
+  useEffect(() => {
+    const fetchRequesters = async () => {
+      if (!targetDeptId) {
+        setRequesters([]);
+        setTargetRequesterId('');
+        return;
+      }
+      if (sections.length > 0 && !targetSectionId) {
+        setRequesters([]);
+        setTargetRequesterId('');
+        return;
+      }
+      try {
+        const sectionQuery = targetSectionId ? `?section_id=${targetSectionId}` : '';
+        const res = await axios.get(`/departments/${targetDeptId}/requesters${sectionQuery}`);
+        setRequesters(res.data || []);
+      } catch (err) {
+        console.error('❌ Failed to fetch requesters:', err);
+        setRequesters([]);
+      }
+    };
+    fetchRequesters();
+  }, [sections.length, targetDeptId, targetSectionId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -160,7 +185,7 @@ const MaintenanceRequestForm = () => {
       formData.append('justification', justification);
       formData.append('target_department_id', targetDeptId);
       formData.append('target_section_id', targetSectionId);
-      formData.append('temporary_requester_name', temporaryRequesterName);
+      formData.append('target_requester_id', targetRequesterId);
       const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
       formData.append('items', JSON.stringify(itemsPayload));
       attachments.forEach((file) => formData.append('attachments', file));
@@ -258,15 +283,20 @@ const MaintenanceRequestForm = () => {
             required
           />
 
-          <input
-            type="text"
+          <select
             aria-label={tr('fields.requesterNameAria')}
-            placeholder={tr('fields.requesterNamePlaceholder')}
-            value={temporaryRequesterName}
-            onChange={(e) => setTemporaryRequesterName(e.target.value)}
+            value={targetRequesterId}
+            onChange={(e) => setTargetRequesterId(e.target.value)}
             className="w-full border p-2 rounded"
             required
-          />
+          >
+            <option value="">{tr('fields.requesterNamePlaceholder')}</option>
+            {requesters.map((requester) => (
+              <option key={requester.id} value={requester.id}>
+                {requester.name}
+              </option>
+            ))}
+          </select>
 
           <ProjectSelector
             value={projectId}
