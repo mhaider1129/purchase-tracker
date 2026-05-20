@@ -51,22 +51,9 @@ const CATEGORY_OPTIONS = [
 
 const ACCEPTANCE_STATUS_OPTIONS = [
   { value: "pending", label: "Pending acceptance" },
-  { value: "passed", label: "Passed / Accepted" },
-  { value: "failed", label: "Failed" },
+  { value: "passed", label: "✅ Accepted" },
+  { value: "failed", label: "❌ Rejected" },
 ];
-
-const emptyInspector = () => ({
-  name: "",
-  title: "",
-  contact_information: "",
-  department: "",
-});
-
-const emptySignature = () => ({
-  name: "",
-  date: "",
-  title: "",
-});
 
 const buildChecklistState = (items) =>
   items.map((item) => ({
@@ -96,11 +83,8 @@ const createInitialFormState = () => ({
     recommended_actions: "",
     additional_comments: "",
   },
-  inspectors: Array.from({ length: 3 }, () => emptyInspector()),
-  approvals: {
-    inspector_signatures: Array.from({ length: 3 }, () => emptySignature()),
-    procurement_supervisor: emptySignature(),
-  },
+  inspectors: [],
+  approvals: {},
   acceptance_status: "pending",
   acceptance_notes: "",
 });
@@ -127,27 +111,6 @@ const normalizeChecklistForForm = (entries, template) => {
       action_required: match?.action_required || "",
     };
   });
-};
-
-const normalizeInspectorSet = (inspectors = []) => {
-  const hydrated = Array.isArray(inspectors) ? inspectors.slice(0, 3) : [];
-  while (hydrated.length < 3) hydrated.push(emptyInspector());
-  return hydrated.map((inspector) => ({
-    name: inspector?.name || "",
-    title: inspector?.title || "",
-    contact_information: inspector?.contact_information || "",
-    department: inspector?.department || "",
-  }));
-};
-
-const normalizeSignatures = (signatures = [], fallbackCount = 3) => {
-  const hydrated = Array.isArray(signatures) ? signatures.slice(0, fallbackCount) : [];
-  while (hydrated.length < fallbackCount) hydrated.push(emptySignature());
-  return hydrated.map((signature) => ({
-    name: signature?.name || "",
-    date: signature?.date || "",
-    title: signature?.title || "",
-  }));
 };
 
 const TechnicalInspectionsPage = () => {
@@ -287,47 +250,6 @@ const TechnicalInspectionsPage = () => {
     });
   };
 
-  const handleInspectorChange = (index, field, value) => {
-    setFormState((prev) => {
-      const inspectors = [...prev.inspectors];
-      inspectors[index] = {
-        ...inspectors[index],
-        [field]: value,
-      };
-      return { ...prev, inspectors };
-    });
-  };
-
-  const handleSignatureChange = (index, field, value) => {
-    setFormState((prev) => {
-      const inspector_signatures = [...prev.approvals.inspector_signatures];
-      inspector_signatures[index] = {
-        ...inspector_signatures[index],
-        [field]: value,
-      };
-      return {
-        ...prev,
-        approvals: {
-          ...prev.approvals,
-          inspector_signatures,
-        },
-      };
-    });
-  };
-
-  const handleSupervisorChange = (field, value) => {
-    setFormState((prev) => ({
-      ...prev,
-      approvals: {
-        ...prev.approvals,
-        procurement_supervisor: {
-          ...prev.approvals.procurement_supervisor,
-          [field]: value,
-        },
-      },
-    }));
-  };
-
   const handleSummaryChange = (field, value) => {
     setFormState((prev) => ({
       ...prev,
@@ -404,14 +326,11 @@ const TechnicalInspectionsPage = () => {
         recommended_actions: inspection.summary?.recommended_actions || "",
         additional_comments: inspection.summary?.additional_comments || "",
       },
-      inspectors: normalizeInspectorSet(inspection.inspectors),
-      approvals: {
-        inspector_signatures: normalizeSignatures(
-          inspection.approvals?.inspector_signatures,
-        ),
-        procurement_supervisor:
-          inspection.approvals?.procurement_supervisor || emptySignature(),
-      },
+      inspectors: Array.isArray(inspection.inspectors) ? inspection.inspectors : [],
+      approvals:
+        inspection.approvals && typeof inspection.approvals === "object"
+          ? inspection.approvals
+          : {},
       acceptance_status: inspection.acceptance_status || "pending",
       acceptance_notes: inspection.acceptance_notes || "",
     });
@@ -614,7 +533,7 @@ const TechnicalInspectionsPage = () => {
                     </label>
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
                     <label className="flex flex-col gap-1 text-sm">
                       <span className="font-medium text-gray-700 dark:text-gray-200">
                         Linked request ID
@@ -647,25 +566,6 @@ const TechnicalInspectionsPage = () => {
                       </span>
                     </label>
 
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Acceptance status
-                      </span>
-                      <select
-                        value={formState.acceptance_status}
-                        onChange={(e) => handleFieldChange("acceptance_status", e.target.value)}
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      >
-                        {ACCEPTANCE_STATUS_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="text-xs text-gray-500 dark:text-gray-300">
-                        Mark as "Passed" once the inspection is cleared.
-                      </span>
-                    </label>
                   </div>
 
                   <label className="flex flex-col gap-1 text-sm">
@@ -755,93 +655,8 @@ const TechnicalInspectionsPage = () => {
                     )}
                   </div>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">Inspector 1</span>
-                      <input
-                        type="text"
-                        value={formState.inspectors[0]?.name || ""}
-                        onChange={(e) => handleInspectorChange(0, "name", e.target.value)}
-                        placeholder="Name"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <input
-                        type="text"
-                        value={formState.inspectors[0]?.title || ""}
-                        onChange={(e) => handleInspectorChange(0, "title", e.target.value)}
-                        placeholder="Title"
-                        className="rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <input
-                        type="text"
-                        value={formState.inspectors[0]?.department || ""}
-                        onChange={(e) => handleInspectorChange(0, "department", e.target.value)}
-                        placeholder="Department"
-                        className="rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">Inspector 2</span>
-                      <input
-                        type="text"
-                        value={formState.inspectors[1]?.name || ""}
-                        onChange={(e) => handleInspectorChange(1, "name", e.target.value)}
-                        placeholder="Name"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <input
-                        type="text"
-                        value={formState.inspectors[1]?.title || ""}
-                        onChange={(e) => handleInspectorChange(1, "title", e.target.value)}
-                        placeholder="Title"
-                        className="rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <input
-                        type="text"
-                        value={formState.inspectors[1]?.department || ""}
-                        onChange={(e) => handleInspectorChange(1, "department", e.target.value)}
-                        placeholder="Department"
-                        className="rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">Inspector 3</span>
-                      <input
-                        type="text"
-                        value={formState.inspectors[2]?.name || ""}
-                        onChange={(e) => handleInspectorChange(2, "name", e.target.value)}
-                        placeholder="Name"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <input
-                        type="text"
-                        value={formState.inspectors[2]?.title || ""}
-                        onChange={(e) => handleInspectorChange(2, "title", e.target.value)}
-                        placeholder="Title"
-                        className="rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <input
-                        type="text"
-                        value={formState.inspectors[2]?.department || ""}
-                        onChange={(e) => handleInspectorChange(2, "department", e.target.value)}
-                        placeholder="Department"
-                        className="rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Contact information
-                      </span>
-                      <textarea
-                        value={formState.inspectors[0]?.contact_information || ""}
-                        onChange={(e) => handleInspectorChange(0, "contact_information", e.target.value)}
-                        placeholder="Phone or email"
-                        className="h-full min-h-[96px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-100">
+                    Inspector identities are managed by the inspection assignment workflow and are not editable in this form.
                   </div>
                 </div>
 
@@ -1153,88 +968,37 @@ const TechnicalInspectionsPage = () => {
 
                 <div className="space-y-4 rounded-lg border border-gray-200 bg-white/60 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                    Approval and Signatures
+                    Final Inspector Decision
                   </h3>
-                  <div className="space-y-3 text-sm">
-                    {formState.approvals.inspector_signatures.map((signature, index) => (
-                      <div key={index} className="grid gap-2 sm:grid-cols-3">
-                        <label className="flex flex-col gap-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-200">
-                            Inspector {index + 1} name
-                          </span>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Select one overall decision for this inspected item.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {ACCEPTANCE_STATUS_OPTIONS.filter((option) => option.value !== "pending").map((option) => {
+                      const isAccepted = option.value === "passed";
+                      const selected = formState.acceptance_status === option.value;
+                      return (
+                        <label
+                          key={option.value}
+                          className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 text-sm font-medium shadow-sm transition ${
+                            selected
+                              ? isAccepted
+                                ? "border-green-500 bg-green-50 text-green-800 dark:border-green-400 dark:bg-green-900/40 dark:text-green-100"
+                                : "border-red-500 bg-red-50 text-red-800 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100"
+                              : "border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                          }`}
+                        >
                           <input
-                            type="text"
-                            value={signature.name}
-                            onChange={(e) =>
-                              handleSignatureChange(index, "name", e.target.value)
-                            }
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            type="radio"
+                            name="final-acceptance"
+                            value={option.value}
+                            checked={selected}
+                            onChange={(e) => handleFieldChange("acceptance_status", e.target.value)}
                           />
+                          <span>{option.label}</span>
                         </label>
-                        <label className="flex flex-col gap-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-200">
-                            Title
-                          </span>
-                          <input
-                            type="text"
-                            value={signature.title}
-                            onChange={(e) =>
-                              handleSignatureChange(index, "title", e.target.value)
-                            }
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                          />
-                        </label>
-                        <label className="flex flex-col gap-1">
-                          <span className="font-medium text-gray-700 dark:text-gray-200">
-                            Date
-                          </span>
-                          <input
-                            type="date"
-                            value={signature.date}
-                            onChange={(e) =>
-                              handleSignatureChange(index, "date", e.target.value)
-                            }
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                          />
-                        </label>
-                      </div>
-                    ))}
-
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <label className="flex flex-col gap-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          Procurement supervisor
-                        </span>
-                        <input
-                          type="text"
-                          value={formState.approvals.procurement_supervisor?.name || ""}
-                          onChange={(e) => handleSupervisorChange("name", e.target.value)}
-                          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          Title
-                        </span>
-                        <input
-                          type="text"
-                          value={formState.approvals.procurement_supervisor?.title || ""}
-                          onChange={(e) => handleSupervisorChange("title", e.target.value)}
-                          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                        />
-                      </label>
-                      <label className="flex flex-col gap-1">
-                        <span className="font-medium text-gray-700 dark:text-gray-200">
-                          Date
-                        </span>
-                        <input
-                          type="date"
-                          value={formState.approvals.procurement_supervisor?.date || ""}
-                          onChange={(e) => handleSupervisorChange("date", e.target.value)}
-                          className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                        />
-                      </label>
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

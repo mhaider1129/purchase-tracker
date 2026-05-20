@@ -245,6 +245,7 @@ const Navbar = () => {
     const canViewDashboard = hasAccess(currentUser, "feature.dashboard", [
       "dashboard.view",
     ]);
+    const canAccessBudgetControl = ["scm", "admin", "finance", "financeapprover", "cfo"].includes(normalizedRole);
     const canViewAnalytics = hasAccess(currentUser, "feature.analytics", [
       "dashboard.view",
     ]);
@@ -453,6 +454,12 @@ const Navbar = () => {
             "text-emerald-600",
           ),
           createItem(
+            canManageTechnicalInspections && ["scm", "admin"].includes(normalizedRole),
+            "SCM Inspections Review",
+            "/technical-inspections/review",
+            "text-emerald-700",
+          ),
+          createItem(
             canManageWarehouseInventory,
             t("navbar.warehouseInventory"),
             "/warehouse-inventory",
@@ -493,6 +500,12 @@ const Navbar = () => {
             t("navbar.dashboard"),
             "/dashboard",
             "text-cyan-600",
+          ),
+          createItem(
+            canAccessBudgetControl,
+            "Budget Control",
+            "/budget-control",
+            "text-emerald-800",
           ),
           createItem(
             canViewAnalytics,

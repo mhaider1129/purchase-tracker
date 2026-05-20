@@ -61,6 +61,7 @@ import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
 import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
+import ScmTechnicalInspectionsReviewPage from "./pages/ScmTechnicalInspectionsReviewPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import SuppliersPrequalificationPage from "./pages/SuppliersPrequalificationPage";
 import SupplierSrmPage from "./pages/SupplierSrmPage";
@@ -81,6 +82,7 @@ import ProcureToPayPaymentsPage from "./pages/ProcureToPayPaymentsPage";
 import ProcureToPayDocumentFlowPage from "./pages/ProcureToPayDocumentFlowPage";
 import ProcureToPayDashboardPage from "./pages/ProcureToPayDashboardPage";
 import TaskManagementPage from "./pages/TaskManagementPage";
+import BudgetControlPage from "./pages/BudgetControlPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -267,6 +269,16 @@ const AppRoutes = () => (
           element={<ItemMasterPage />}
           resourceKey="feature.itemMaster"
           requiredPermissions={["item-master.view"]}
+        />
+      }
+    />
+    <Route
+      path="/budget-control"
+      element={
+        <ProtectedRoute
+          element={<BudgetControlPage />}
+          requiredPermissions={["dashboard.view"]}
+          allowedRoles={["scm", "admin", "finance", "financeapprover", "cfo"]}
         />
       }
     />
@@ -458,6 +470,16 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<TechnicalInspectionsPage />}
+          resourceKey="feature.technicalInspections"
+        />
+      }
+    />
+    <Route
+      path="/technical-inspections/review"
+      element={
+        <ProtectedRoute
+          element={<ScmTechnicalInspectionsReviewPage />}
+          allowedRoles={["SCM", "scm", "admin"]}
           resourceKey="feature.technicalInspections"
         />
       }

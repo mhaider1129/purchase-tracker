@@ -22,6 +22,7 @@ const initialNewRoute = {
   role: '',
   min_amount: '',
   max_amount: '',
+  warehouse_id: '',
 };
 
 const Management = () => {
@@ -867,6 +868,10 @@ const Management = () => {
       route.max_amount === '' || route.max_amount === null
         ? null
         : Number(route.max_amount),
+    warehouse_id:
+      route.warehouse_id === '' || route.warehouse_id === null || route.warehouse_id === undefined
+        ? null
+        : Number(route.warehouse_id),
   });
 
   const saveRoute = async (route) => {
@@ -1614,6 +1619,7 @@ const Management = () => {
               <th className="p-2">Role</th>
               <th className="p-2">Min</th>
               <th className="p-2">Max</th>
+              <th className="p-2">Warehouse</th>
               <th className="p-2">Actions</th>
             </tr>
           </thead>
@@ -1734,6 +1740,27 @@ const Management = () => {
                   </td>
                   <td className="p-2">
                     {editing ? (
+                      <select
+                        className="border p-1"
+                        value={data.warehouse_id ?? ''}
+                        onChange={(e) =>
+                          setEditRoutes((prev) => ({
+                            ...prev,
+                            [route.id]: { ...data, warehouse_id: e.target.value },
+                          }))
+                        }
+                      >
+                        <option value="">Any</option>
+                        {warehouses.map((warehouse) => (
+                          <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      warehouses.find((w) => Number(w.id) === Number(route.warehouse_id))?.name || 'Any'
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {editing ? (
                       <>
                         <button
                           onClick={() => saveRoute({ id: route.id, ...data })}
@@ -1776,6 +1803,8 @@ const Management = () => {
                                   route.max_amount === null
                                     ? ''
                                     : String(route.max_amount),
+                                warehouse_id:
+                                  route.warehouse_id === null ? '' : String(route.warehouse_id),
                                 id: route.id,
                               },
                             }))
@@ -1861,6 +1890,34 @@ const Management = () => {
                     setNewRoute((prev) => ({ ...prev, max_amount: e.target.value }))
                   }
                 />
+              </td>
+              <td className="p-2">
+                <select
+                  className="border p-1"
+                  value={newRoute.warehouse_id}
+                  onChange={(e) =>
+                    setNewRoute((prev) => ({ ...prev, warehouse_id: e.target.value }))
+                  }
+                >
+                  <option value="">Any</option>
+                  {warehouses.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="p-2">
+                <select
+                  className="border p-1"
+                  value={newRoute.warehouse_id}
+                  onChange={(e) =>
+                    setNewRoute((prev) => ({ ...prev, warehouse_id: e.target.value }))
+                  }
+                >
+                  <option value="">Any</option>
+                  {warehouses.map((warehouse) => (
+                    <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+                  ))}
+                </select>
               </td>
               <td className="p-2">
                 <button
