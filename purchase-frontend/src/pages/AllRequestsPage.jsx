@@ -828,7 +828,15 @@ const AllRequestsPage = () => {
     );
     if (!confirmed) return;
 
+    const password = window.prompt('Enter your password to confirm this deletion:');
+    if (password === null) return;
+    if (!password.trim()) {
+      alert('Password is required to delete a request.');
+      return;
+    }
+
     try {
+      await axios.post('/auth/verify-password', { password });
       await axios.delete(`/requests/${requestId}/hard-delete`);
       if (expandedAssignId === requestId) setExpandedAssignId(null);
       if (expandedItemsId === requestId) setExpandedItemsId(null);

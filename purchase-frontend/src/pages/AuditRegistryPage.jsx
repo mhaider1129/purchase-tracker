@@ -37,6 +37,7 @@ export default function AuditRegistryPage() {
     notes: '',
     required_before_payment: '',
     required_after_payment: '',
+    finance_issued_amount: '',
     currency: 'USD',
   });
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -68,20 +69,28 @@ export default function AuditRegistryPage() {
   const submitRegistryRequest = async (e) => {
     e.preventDefault();
     setSubmitError('');
-    const requestId = Number(form.request_id);
-    if (!Number.isInteger(requestId) || requestId <= 0) {
-      setSubmitError('Please provide a valid request id.');
+    const hasRequestId = String(form.request_id || '').trim() !== '';
+    const requestId = hasRequestId ? Number(form.request_id) : null;
+    if (hasRequestId && (!Number.isInteger(requestId) || requestId <= 0)) {
+      setSubmitError('Please provide a valid request id, or leave it empty.');
+      return;
+    }
+    const requestedAmount = Number(form.finance_issued_amount);
+    if (!Number.isFinite(requestedAmount) || requestedAmount <= 0) {
+      setSubmitError('Please provide a valid requested payment amount.');
       return;
     }
 
     try {
       setSubmitLoading(true);
-      await axios.post(`/audit-registry/requests/${requestId}/entries`, {
+      await axios.post(requestId ? `/audit-registry/requests/${requestId}/entries` : '/audit-registry/entries', {
+        request_id: requestId,
         requester_type: form.requester_type,
         account_name: form.account_name || null,
         notes: form.notes || null,
         required_before_payment: form.required_before_payment || null,
         required_after_payment: form.required_after_payment || null,
+        finance_issued_amount: requestedAmount,
         currency: form.currency || 'USD',
       });
 
@@ -92,6 +101,7 @@ export default function AuditRegistryPage() {
         notes: '',
         required_before_payment: '',
         required_after_payment: '',
+        finance_issued_amount: '',
         currency: 'USD',
       });
       await loadEntries();
@@ -145,15 +155,14 @@ export default function AuditRegistryPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label className="text-sm">
-            <span className="block text-gray-700 mb-1">Request ID *</span>
+            <span className="block text-gray-700 mb-1">Request ID (Optional)</span>
             <input
               type="number"
               min="1"
               value={form.request_id}
               onChange={(e) => onFormChange('request_id', e.target.value)}
               className="w-full border rounded px-3 py-2"
-              placeholder="Existing procurement request id"
-              required
+              placeholder="Optional linked procurement request id"
             />
           </label>
           <label className="text-sm">
@@ -174,6 +183,10 @@ export default function AuditRegistryPage() {
           <label className="text-sm">
             <span className="block text-gray-700 mb-1">Currency</span>
             <input value={form.currency} onChange={(e) => onFormChange('currency', e.target.value.toUpperCase())} className="w-full border rounded px-3 py-2" maxLength={6} />
+          </label>
+          <label className="text-sm">
+            <span className="block text-gray-700 mb-1">Requested Payment Amount *</span>
+            <input type="number" min="0.01" step="0.01" value={form.finance_issued_amount} onChange={(e) => onFormChange('finance_issued_amount', e.target.value)} className="w-full border rounded px-3 py-2" required />
           </label>
         </div>
 
@@ -230,7 +243,7 @@ export default function AuditRegistryPage() {
             <tbody>
               {entries.map((row) => (
                 <tr key={row.id} className="border-t align-top">
-                  <td className="px-3 py-2">#{row.request_id}<div className="text-gray-500">{row.request_title || '-'}</div></td>
+                  <td className="px-3 py-2">{row.request_id ? `#${row.request_id}` : 'Unlinked'}<div className="text-gray-500">{row.request_title || '-'}</div></td>
                   <td className="px-3 py-2">{row.requester_type}</td>
                   <td className="px-3 py-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColors[row.audit_status] || 'bg-gray-100 text-gray-700'}`}>
@@ -245,13 +258,22 @@ export default function AuditRegistryPage() {
                   <td className="px-3 py-2 font-semibold">{Number(row.remaining_amount || 0).toFixed(2)} {row.currency}</td>
                   <td className="px-3 py-2">
                     {canTakeAction(row) ? (
-                      <button
-                        type="button"
-                        onClick={() => approveEntry(row.id, canCooApprove(row) ? 'AUDIT_REVIEW_PENDING' : 'REGISTERED')}
-                        className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
-                      >
-                        {canCooApprove(row) ? 'Approve as COO' : 'Approve & Register (Audit)'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => approveEntry(row.id, canCooApprove(row) ? 'AUDIT_REVIEW_PENDING' : 'REGISTERED')}
+                          className="px-3 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                        >
+                          {canCooApprove(row) ? 'Approve as COO' : 'Approve & Register (Audit)'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => approveEntry(row.id, 'ACTION_REQUIRED')}
+                          className="px-3 py-1 rounded bg-rose-600 text-white hover:bg-rose-700"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     ) : (
                       <span className="text-gray-400 text-xs">No action</span>
                     )}
