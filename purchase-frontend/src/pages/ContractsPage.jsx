@@ -291,18 +291,18 @@ const ContractsPage = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [renewingId, setRenewingId] = useState(null);
 
-  const [attachments, setAttachments] = useState([]);
-  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
-  const [attachmentsError, setAttachmentsError] = useState('');
-  const [deletingAttachmentId, setDeletingAttachmentId] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [checklistSavingId, setChecklistSavingId] = useState(null);
   const [detailTab, setDetailTab] = useState('documents');
   const [contractItems, setContractItems] = useState([]);
   const [approvals, setApprovals] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [consumption, setConsumption] = useState(null);
   const [risk, setRisk] = useState(null);
+  const [contractPayments, setContractPayments] = useState([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsError, setPaymentsError] = useState('');
+  const [addingPayment, setAddingPayment] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ amount: '', payment_date: '', notes: '' });
 
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
@@ -478,33 +478,6 @@ const ContractsPage = () => {
     return () => clearTimeout(timer);
   }, [successMessage]);
 
-  const fetchAttachments = useCallback(async (contractId) => {
-    if (!contractId) {
-      setAttachments([]);
-      return;
-    }
-    setAttachmentsLoading(true);
-    setAttachmentsError('');
-    try {
-      const { data } = await api.get(`/contracts/${contractId}/attachments`);
-      setAttachments(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error('Failed to load attachments', err);
-      setAttachmentsError('Unable to load attachments.');
-    } finally {
-      setAttachmentsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const contractId = editingId || viewingContract?.id;
-    if (contractId) {
-      fetchAttachments(contractId);
-    } else {
-      setAttachments([]);
-    }
-  }, [editingId, viewingContract, fetchAttachments]);
-
   useEffect(() => {
     const contractId = editingId || viewingContract?.id;
     if (!contractId) return;
@@ -592,6 +565,64 @@ const ContractsPage = () => {
     setEditingId(null);
     setFormState(initialFormState);
   };
+
+  const fetchContractPayments = useCallback(async (contractId) => {
+    if (!contractId) {
+      setContractPayments([]);
+      return;
+    }
+    setPaymentsLoading(true);
+    setPaymentsError('');
+    try {
+      const { data } = await api.get(`/contracts/${contractId}/payments`);
+      setContractPayments(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load contract payments', err);
+      setContractPayments([]);
+      setPaymentsError(err?.response?.data?.message || 'Failed to load contract payments.');
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, []);
+
+  const handleCreatePayment = async (event) => {
+    event.preventDefault();
+    if (!viewingContract?.id) return;
+    const amount = Number(paymentForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPaymentsError('Payment amount must be a positive number.');
+      return;
+    }
+    setAddingPayment(true);
+    setPaymentsError('');
+    try {
+      await api.post(`/contracts/${viewingContract.id}/payments`, {
+        amount,
+        payment_date: paymentForm.payment_date || undefined,
+        notes: paymentForm.notes.trim() || undefined,
+        currency: viewingContract.currency || undefined,
+      });
+      setPaymentForm({ amount: '', payment_date: '', notes: '' });
+      await Promise.all([fetchContractPayments(viewingContract.id), fetchContracts()]);
+      const { data: refreshedContract } = await api.get(`/contracts/${viewingContract.id}`);
+      setViewingContract(refreshedContract);
+    } catch (err) {
+      console.error('Failed to register payment', err);
+      setPaymentsError(err?.response?.data?.message || 'Failed to register payment.');
+    } finally {
+      setAddingPayment(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!viewingContract?.id) {
+      setContractPayments([]);
+      setPaymentForm({ amount: '', payment_date: '', notes: '' });
+      setPaymentsError('');
+      return;
+    }
+    fetchContractPayments(viewingContract.id);
+  }, [fetchContractPayments, viewingContract?.id]);
 
   const handleSelectContract = (contract) => {
     setEditingId(contract.id);
@@ -709,64 +740,19 @@ const ContractsPage = () => {
     setSuccessMessage('');
   };
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile || !editingId) return;
-    setUploading(true);
-    setAttachmentsError('');
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    try {
-      await api.post(`/contracts/${editingId}/attachments`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setSelectedFile(null);
-      await fetchAttachments(editingId);
-    } catch (err) {
-      console.error('Failed to upload attachment', err);
-      setAttachmentsError(err?.response?.data?.message || 'Failed to upload attachment.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDeleteAttachment = async (attachmentId) => {
-    if (!viewingContract && !editingId) return;
-
+  const handleChecklistToggle = async (documentId, checked) => {
     const activeContractId = editingId || viewingContract?.id;
-    if (!activeContractId) return;
-
-    if (!window.confirm('Remove this attachment from the contract?')) {
-      return;
-    }
-
-    setDeletingAttachmentId(attachmentId);
-    setAttachmentsError('');
-
+    if (!activeContractId || !documentId) return;
+    setChecklistSavingId(documentId);
     try {
-      await api.delete(`/contracts/${activeContractId}/attachments/${attachmentId}`);
-      await fetchAttachments(activeContractId);
-    } catch (err) {
-      console.error('Failed to delete attachment', err);
-      setAttachmentsError(err?.response?.data?.message || 'Failed to delete attachment.');
-    } finally {
-      setDeletingAttachmentId(null);
-    }
-  };
-
-  const handleDownload = async (attachment) => {
-    try {
-      const response = await api.get(attachment.url, {
-        responseType: 'blob',
+      const { data } = await api.patch(`/contracts/${activeContractId}/document-checklist/${documentId}`, {
+        is_uploaded: checked,
       });
-      saveAs(response.data, attachment.fileName);
+      setChecklist((prev) => prev.map((item) => (item.id === documentId ? data : item)));
     } catch (err) {
-      console.error('Failed to download attachment', err);
+      console.error('Failed to update checklist item', err);
+    } finally {
+      setChecklistSavingId(null);
     }
   };
 
@@ -2244,6 +2230,49 @@ const ContractsPage = () => {
                           : 'Not assigned'}
                       </p>
                     </div>
+                    <div className="sm:col-span-2 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Payment register</h3>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {contractPayments.length} payment{contractPayments.length === 1 ? '' : 's'}
+                        </span>
+                      </div>
+                      <form onSubmit={handleCreatePayment} className="grid gap-2 sm:grid-cols-4">
+                        <input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm((current) => ({ ...current, amount: event.target.value }))} placeholder="Amount" className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input type="date" value={paymentForm.payment_date} onChange={(event) => setPaymentForm((current) => ({ ...current, payment_date: event.target.value }))} className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input type="text" value={paymentForm.notes} onChange={(event) => setPaymentForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes (optional)" className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <button type="submit" disabled={addingPayment} className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
+                          {addingPayment ? 'Saving...' : 'Register payment'}
+                        </button>
+                      </form>
+                      {paymentsError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{paymentsError}</p>}
+                      <div className="mt-3 max-h-48 overflow-auto">
+                        {paymentsLoading ? (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Loading payments…</p>
+                        ) : contractPayments.length === 0 ? (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No payments registered yet.</p>
+                        ) : (
+                          <table className="min-w-full text-sm">
+                            <thead>
+                              <tr className="text-left text-xs uppercase text-gray-500 dark:text-gray-400">
+                                <th className="py-1">Date</th>
+                                <th className="py-1">Amount</th>
+                                <th className="py-1">Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {contractPayments.map((payment) => (
+                                <tr key={payment.id} className="border-t border-gray-200 dark:border-gray-700">
+                                  <td className="py-1">{formatDate(payment.payment_date) || '—'}</td>
+                                  <td className="py-1">{formatCurrency(payment.amount) ?? '—'}</td>
+                                  <td className="py-1 text-gray-600 dark:text-gray-300">{payment.notes || '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    </div>
                     <div className="sm:col-span-2">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Technical departments</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
@@ -2320,63 +2349,26 @@ const ContractsPage = () => {
                   ))}
                 </div>
                 {detailTab === 'documents' && <>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attachments & Checklist</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Required Documents Checklist</h3>
                 <div className="mt-4 space-y-4">
-                  {attachmentsLoading ? (
-                    <p className="text-sm text-gray-500">Loading attachments...</p>
-                  ) : attachmentsError ? (
-                    <p className="text-sm text-red-600">{attachmentsError}</p>
-                  ) : attachments.length === 0 ? (
-                    <p className="text-sm text-gray-500">No attachments for this contract.</p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {attachments.map((att) => (
-                        <li key={att.id} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-3">
-                            <a
-                              href={att.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
-                              {att.fileName}
-                            </a>
-                            <button
-                              onClick={() => handleDownload(att)}
-                              className="rounded-md bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-300"
-                            >
-                              Download
-                            </button>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteAttachment(att.id)}
-                            disabled={deletingAttachmentId === att.id}
-                            className="rounded-md bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
-                          >
-                            {deletingAttachmentId === att.id ? 'Removing...' : 'Delete'}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {editingId && (
-                    <div className="flex items-center space-x-2">
-                      <input type="file" onChange={handleFileChange} className="text-sm" />
-                      <button
-                        onClick={handleUpload}
-                        disabled={!selectedFile || uploading}
-                        className="rounded-md bg-blue-600 px-3 py-1 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        {uploading ? 'Uploading...' : 'Upload'}
-                      </button>
-                    </div>
-                  )}
-                  <div className="mt-4">
-                    <h4 className="font-semibold">Required Documents</h4>
-                    <ul className="mt-2 space-y-1 text-sm">
-                      {checklist.map((d) => <li key={d.id} className="flex items-center justify-between"><span>{d.document_type}</span><span className={d.is_uploaded ? 'text-green-600' : 'text-rose-600'}>{d.is_uploaded ? 'Uploaded' : 'Missing'}</span></li>)}
-                    </ul>
-                  </div>
+                  <ul className="space-y-2 text-sm">
+                    {checklist.map((document) => (
+                      <li key={document.id} className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 dark:border-gray-700">
+                        <label className="flex items-center gap-2 text-gray-800 dark:text-gray-200">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(document.is_uploaded)}
+                            disabled={checklistSavingId === document.id}
+                            onChange={(event) => handleChecklistToggle(document.id, event.target.checked)}
+                          />
+                          <span>{document.document_type}</span>
+                        </label>
+                        <span className={document.is_uploaded ? 'text-green-600' : 'text-rose-600'}>
+                          {document.is_uploaded ? 'Checked' : 'Unchecked'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 </>}
                 {detailTab === 'items' && <div className="space-y-2">{contractItems.map((it) => <div key={it.id} className="rounded border p-2 text-sm">{it.item_name} - {it.contracted_price || '—'} {it.currency || ''}</div>)}</div>}
