@@ -57,6 +57,11 @@ const defaultReplenishmentPolicy = {
 const PlanningWorkbench = () => {
   const [forecastForm, setForecastForm] = useState(defaultForecastForm);
   const [sopRows, setSopRows] = useState([]);
+  const [seasonalityRows, setSeasonalityRows] = useState([]);
+  const [departmentRows, setDepartmentRows] = useState([]);
+  const [oncologyRows, setOncologyRows] = useState([]);
+  const [stockOutRows, setStockOutRows] = useState([]);
+  const [forecastStockLimits, setForecastStockLimits] = useState({ min_monthly_stock: "", max_monthly_stock: "" });
   const [forecastResult, setForecastResult] = useState(null);
   const [forecastLoading, setForecastLoading] = useState(false);
   const [forecastError, setForecastError] = useState("");
@@ -121,6 +126,12 @@ const PlanningWorkbench = () => {
     setSopRows((rows) => rows.filter((_, idx) => idx !== index));
   };
 
+  const addFactorRow = (setter) => setter((rows) => [...rows, { period: "", factor: 1 }]);
+  const updateFactorRow = (setter, index, field, value) => {
+    setter((rows) => rows.map((row, idx) => (idx === index ? { ...row, [field]: value } : row)));
+  };
+  const removeFactorRow = (setter, index) => setter((rows) => rows.filter((_, idx) => idx !== index));
+
   const handleForecastSubmit = async (event) => {
     event.preventDefault();
     setForecastLoading(true);
@@ -128,7 +139,16 @@ const PlanningWorkbench = () => {
     setForecastResult(null);
 
     try {
-      const payload = { ...forecastForm, sop_adjustments: sopRows };
+      const payload = {
+        ...forecastForm,
+        sop_adjustments: sopRows,
+        seasonality: seasonalityRows,
+        department_activity: departmentRows,
+        oncology_protocols: oncologyRows,
+        stock_outs: stockOutRows,
+        min_monthly_stock: forecastStockLimits.min_monthly_stock === "" ? null : Number(forecastStockLimits.min_monthly_stock),
+        max_monthly_stock: forecastStockLimits.max_monthly_stock === "" ? null : Number(forecastStockLimits.max_monthly_stock),
+      };
       const res = await fetchDemandForecast(payload);
       setForecastResult(res.data);
     } catch (err) {
@@ -540,6 +560,42 @@ const PlanningWorkbench = () => {
                   ))}
                 </div>
               </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600">Min monthly stock (optional)</label>
+                  <input type="number" value={forecastStockLimits.min_monthly_stock} onChange={(e) => setForecastStockLimits((c) => ({ ...c, min_monthly_stock: e.target.value }))} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600">Max monthly stock (optional)</label>
+                  <input type="number" value={forecastStockLimits.max_monthly_stock} onChange={(e) => setForecastStockLimits((c) => ({ ...c, max_monthly_stock: e.target.value }))} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm" />
+                </div>
+              </div>
+
+              {[{ title: "Seasonality factors", rows: seasonalityRows, setter: setSeasonalityRows }, { title: "Department activity factors", rows: departmentRows, setter: setDepartmentRows }, { title: "Oncology protocol factors", rows: oncologyRows, setter: setOncologyRows }, { title: "Stock-out correction factors", rows: stockOutRows, setter: setStockOutRows }].map((group) => (
+                <div key={group.title} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-gray-800">{group.title}</h3>
+                    <button type="button" onClick={() => addFactorRow(group.setter)} className="text-sm font-semibold text-blue-600 hover:text-blue-700">Add factor</button>
+                  </div>
+                  {group.rows.length === 0 && <p className="text-xs text-gray-500">No monthly factors added.</p>}
+                  {group.rows.map((row, index) => (
+                    <div key={`${group.title}-${index}`} className="grid gap-3 sm:grid-cols-5 sm:items-end">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-gray-600">Period (YYYY-MM)</label>
+                        <input type="text" value={row.period} onChange={(e) => updateFactorRow(group.setter, index, "period", e.target.value)} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-medium text-gray-600">Factor</label>
+                        <input type="number" step="0.01" min="0" value={row.factor} onChange={(e) => updateFactorRow(group.setter, index, "factor", Number(e.target.value))} className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm" />
+                      </div>
+                      <div className="flex justify-end">
+                        <button type="button" onClick={() => removeFactorRow(group.setter, index)} className="text-sm font-semibold text-red-600 hover:text-red-700">Remove</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
 
               <button
                 type="submit"

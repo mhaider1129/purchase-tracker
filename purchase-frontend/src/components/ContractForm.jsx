@@ -21,6 +21,24 @@ const ContractForm = ({
   suppliersLoading,
   suppliersError,
 }) => {
+  const [activeStructuredSection, setActiveStructuredSection] = React.useState("scope_summary");
+
+  const structuredSections = [
+    { key: "scope_summary", label: "Scope", placeholder: "Define the contract scope and boundaries." },
+    { key: "deliverables", label: "Deliverables", placeholder: "List expected deliverables and acceptance criteria." },
+    { key: "technical_specifications", label: "Technical Specifications", placeholder: "Provide technical standards and specifications." },
+    { key: "exclusions", label: "Exclusions", placeholder: "State what is explicitly excluded from the contract." },
+    { key: "sla_requirements", label: "SLA", placeholder: "Define SLA metrics, response times, and service targets." },
+    { key: "warranty_terms", label: "Warranty", placeholder: "Outline warranty coverage, duration, and procedures." },
+    { key: "delivery_terms", label: "Delivery Terms", placeholder: "Specify delivery terms, timelines, and responsibilities." },
+    { key: "financial_payment_control", label: "Payment Terms", placeholder: "Define payment schedule, controls, and conditions." },
+    { key: "penalties_incentives", label: "Penalties", placeholder: "Define penalties, incentives, and remedies." },
+    { key: "termination_exit_terms", label: "Termination", placeholder: "Specify termination rights and exit obligations." },
+    { key: "risk_dispute_management", label: "Dispute Resolution", placeholder: "Define dispute escalation and resolution process." },
+    { key: "compliance_legal_terms", label: "Confidentiality", placeholder: "Capture confidentiality and legal compliance clauses." },
+    { key: "change_management_terms", label: "Change Control", placeholder: "Define amendment and change-control governance." },
+  ];
+
   const formatCurrencyPreview = (value) => {
     if (value === "" || value === null || value === undefined) return "—";
     const numericValue = Number(value);
@@ -93,13 +111,41 @@ const ContractForm = ({
         <div><input name="vendor_tax_id" value={formState.vendor_tax_id} onChange={handleInputChange} placeholder="Tax ID / registration" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="vendor_address" value={formState.vendor_address} onChange={handleInputChange} placeholder="Legal address" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div className="sm:col-span-2">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Scope / SLA / Operations</h3>
-          <textarea name="scope_summary" rows={2} value={formState.scope_summary} onChange={handleInputChange} placeholder="Scope summary" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="deliverables" rows={2} value={formState.deliverables} onChange={handleInputChange} placeholder="Deliverables" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="technical_specifications" rows={2} value={formState.technical_specifications} onChange={handleInputChange} placeholder="Technical specifications" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Structured Contract Sections</h3>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {structuredSections.map((section) => (
+              <button
+                key={section.key}
+                type="button"
+                onClick={() => setActiveStructuredSection(section.key)}
+                className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                  activeStructuredSection === section.key
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                }`}
+              >
+                {section.label}
+              </button>
+            ))}
+          </div>
+          {structuredSections.map((section) =>
+            activeStructuredSection === section.key ? (
+              <div key={section.key} className="mt-3">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  {section.label}
+                </label>
+                <textarea
+                  name={section.key}
+                  rows={4}
+                  value={formState[section.key] || ""}
+                  onChange={handleInputChange}
+                  placeholder={section.placeholder}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                />
+              </div>
+            ) : null
+          )}
           <textarea name="service_coverage" rows={2} value={formState.service_coverage} onChange={handleInputChange} placeholder="Service coverage" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="exclusions" rows={2} value={formState.exclusions} onChange={handleInputChange} placeholder="Exclusions" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="sla_requirements" rows={2} value={formState.sla_requirements} onChange={handleInputChange} placeholder="SLA requirements" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
         </div>
         <div className="sm:col-span-2">
           <label
@@ -469,40 +515,6 @@ const ContractForm = ({
         <div className="sm:col-span-2">
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="delivery_terms"
-          >
-            Delivery Terms
-          </label>
-          <textarea
-            id="delivery_terms"
-            name="delivery_terms"
-            rows={4}
-            value={formState.delivery_terms}
-            onChange={handleInputChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            placeholder="Specify delivery terms, including shipping, timelines, and responsibilities."
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="warranty_terms"
-          >
-            Warranty Terms
-          </label>
-          <textarea
-            id="warranty_terms"
-            name="warranty_terms"
-            rows={4}
-            value={formState.warranty_terms}
-            onChange={handleInputChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            placeholder="Outline warranty coverage, duration, and claim procedures."
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="performance_management"
           >
             Performance Management
@@ -534,57 +546,6 @@ const ContractForm = ({
         <div className="sm:col-span-2">
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="compliance_legal_terms"
-          >
-            Compliance &amp; Legal
-          </label>
-          <textarea
-            id="compliance_legal_terms"
-            name="compliance_legal_terms"
-            rows={4}
-            value={formState.compliance_legal_terms}
-            onChange={handleInputChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            placeholder="JCI/MOH requirements, confidentiality, data protection, insurance, licenses, anti-corruption."
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="financial_payment_control"
-          >
-            Financial &amp; Payment Control
-          </label>
-          <textarea
-            id="financial_payment_control"
-            name="financial_payment_control"
-            rows={4}
-            value={formState.financial_payment_control}
-            onChange={handleInputChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            placeholder="Payment method and terms, milestones, retention, invoice requirements, outstanding liability controls."
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="risk_dispute_management"
-          >
-            Risk &amp; Dispute Management
-          </label>
-          <textarea
-            id="risk_dispute_management"
-            name="risk_dispute_management"
-            rows={4}
-            value={formState.risk_dispute_management}
-            onChange={handleInputChange}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-            placeholder="Risk level, criticality, backup supplier, force majeure, penalties, dispute and termination clauses."
-          />
-        </div>
-        <div className="sm:col-span-2">
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="digital_attachments_tracking"
           >
             Digital Attachments &amp; Tracking
@@ -608,9 +569,6 @@ const ContractForm = ({
             <textarea name="payment_milestone_details" rows={2} value={formState.payment_milestone_details} onChange={handleInputChange} placeholder="Milestone Payments" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
             <textarea name="payment_invoice_requirements" rows={2} value={formState.payment_invoice_requirements} onChange={handleInputChange} placeholder="Invoice Requirements" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
           </div>
-          <textarea name="penalties_incentives" rows={3} value={formState.penalties_incentives} onChange={handleInputChange} placeholder="Penalties & incentives." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="change_management_terms" rows={3} value={formState.change_management_terms} onChange={handleInputChange} placeholder="Change management / amendment terms." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <textarea name="termination_exit_terms" rows={3} value={formState.termination_exit_terms} onChange={handleInputChange} placeholder="Termination & exit clauses." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
           <textarea name="alert_rules" rows={3} value={formState.alert_rules} onChange={handleInputChange} placeholder="Alerts & automation notes (expiry windows, SLA breach alerts)." className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
         </div>
       </div>

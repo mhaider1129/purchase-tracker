@@ -6,6 +6,7 @@ import useWarehouses from '../hooks/useWarehouses';
 import useWarehouseStockItems from '../hooks/useWarehouseStockItems';
 
 const numberFormatter = new Intl.NumberFormat();
+const DAY_MS = 24 * 60 * 60 * 1000;
 const formatExpiryDate = (value) => {
   if (!value) return '—';
   const parsed = new Date(value);
@@ -378,6 +379,41 @@ const WarehouseInventoryPage = () => {
       inventoryItems.filter((item) => (Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0) <= 0).length,
     [inventoryItems],
   );
+  const inventoryOptimization = useMemo(() => {
+    const rows = inventoryItems.map((item) => {
+      const quantity = Number.isFinite(Number(item.quantity)) ? Number(item.quantity) : 0;
+      const reorderLevel = Number.isFinite(Number(item.reorder_level)) ? Number(item.reorder_level) : 0;
+      const avgMonthlyUsage = Number.isFinite(Number(item.avg_monthly_usage)) ? Number(item.avg_monthly_usage) : Math.max(1, quantity * 0.2);
+      const leadTimeDays = Number.isFinite(Number(item.lead_time_days)) ? Number(item.lead_time_days) : 14;
+      const safetyStock = Math.max(0, Math.round(avgMonthlyUsage * 0.25));
+      const reorderPoint = Math.max(reorderLevel, Math.round((avgMonthlyUsage / 30) * leadTimeDays + safetyStock));
+      const expiryDays = item.expiry_date ? Math.ceil((new Date(item.expiry_date).getTime() - Date.now()) / DAY_MS) : null;
+      const monthlyDemand = Math.max(1, avgMonthlyUsage);
+      const monthsOnHand = quantity / monthlyDemand;
+      const annualValue = quantity * (Number(item.unit_cost) || 1);
+      return { ...item, quantity, reorderPoint, safetyStock, expiryDays, monthsOnHand, annualValue };
+    });
+    const totalAnnualValue = rows.reduce((sum, row) => sum + row.annualValue, 0) || 1;
+    const abc = { A: 0, B: 0, C: 0 };
+    const ven = { V: 0, E: 0, N: 0 };
+    const fsn = { F: 0, S: 0, N: 0 };
+    const alerts = [];
+    rows.forEach((row) => {
+      const valueShare = row.annualValue / totalAnnualValue;
+      const abcClass = valueShare >= 0.15 ? 'A' : valueShare >= 0.05 ? 'B' : 'C';
+      abc[abcClass] += 1;
+      const venClass = row.expiryDays !== null && row.expiryDays <= 60 ? 'V' : row.quantity <= row.reorderPoint ? 'E' : 'N';
+      ven[venClass] += 1;
+      const fsnClass = row.monthsOnHand < 1 ? 'F' : row.monthsOnHand <= 3 ? 'S' : 'N';
+      fsn[fsnClass] += 1;
+      if (row.quantity <= row.reorderPoint) alerts.push(`Reorder needed: ${row.item_name || row.stock_item_id} (${row.quantity} ≤ ${row.reorderPoint})`);
+      if (row.quantity <= row.safetyStock) alerts.push(`Safety stock breach: ${row.item_name || row.stock_item_id}`);
+      if (row.expiryDays !== null && row.expiryDays <= 30) alerts.push(`Expiry risk in ${row.expiryDays} days: ${row.item_name || row.stock_item_id}`);
+      if (row.monthsOnHand > 6) alerts.push(`Slow-moving/dead stock risk: ${row.item_name || row.stock_item_id}`);
+      if (row.quantity <= 0) alerts.push(`Stock-out risk: ${row.item_name || row.stock_item_id}`);
+    });
+    return { abc, ven, fsn, alerts: alerts.slice(0, 12) };
+  }, [inventoryItems]);
 
   const selectedUnassignedItem = useMemo(
     () => unassignedItems.find((item) => String(item.id) === String(allocationForm.stock_item_id)),
@@ -1278,6 +1314,36 @@ const WarehouseInventoryPage = () => {
                 </p>
                 <p className="text-xs text-amber-700 dark:text-amber-200">{tr('inventory.labels.attention')}</p>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-md border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Inventory Optimization</h3>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <div className="rounded-md bg-blue-50 p-3 text-sm dark:bg-blue-900/20">
+                <p className="font-semibold">ABC Analysis</p>
+                <p>A: {inventoryOptimization.abc.A} · B: {inventoryOptimization.abc.B} · C: {inventoryOptimization.abc.C}</p>
+              </div>
+              <div className="rounded-md bg-indigo-50 p-3 text-sm dark:bg-indigo-900/20">
+                <p className="font-semibold">VEN Analysis</p>
+                <p>V: {inventoryOptimization.ven.V} · E: {inventoryOptimization.ven.E} · N: {inventoryOptimization.ven.N}</p>
+              </div>
+              <div className="rounded-md bg-emerald-50 p-3 text-sm dark:bg-emerald-900/20">
+                <p className="font-semibold">FSN Analysis</p>
+                <p>F: {inventoryOptimization.fsn.F} · S: {inventoryOptimization.fsn.S} · N: {inventoryOptimization.fsn.N}</p>
+              </div>
+            </div>
+            <div className="mt-3 rounded-md bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-900/20 dark:text-amber-100">
+              <p className="font-semibold">Risk Alerts (reorder / safety stock / expiry / slow-moving / stock-out)</p>
+              {inventoryOptimization.alerts.length === 0 ? (
+                <p className="mt-1">No active alerts.</p>
+              ) : (
+                <ul className="mt-1 list-disc space-y-1 pl-5">
+                  {inventoryOptimization.alerts.map((alert) => (
+                    <li key={alert}>{alert}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
 
