@@ -88,14 +88,14 @@ const normalizeEvaluation = (evaluation) => {
 const statusOptions = [
   { value: 'all', label: 'All statuses' },
   { value: 'draft', label: 'Draft' },
-  { value: 'legal-review', label: 'Legal Review' },
-  { value: 'technical-review', label: 'Technical Review' },
-  { value: 'finance-review', label: 'Finance Review' },
-  { value: 'scm-review', label: 'SCM Review' },
-  { value: 'ceo-coo-approval', label: 'CEO/COO Approval' },
-  { value: 'signed', label: 'Signed' },
+  { value: 'under_review', label: 'Under Review' },
+  { value: 'legal_review', label: 'Legal Review' },
+  { value: 'finance_review', label: 'Finance Review' },
+  { value: 'technical_review', label: 'Technical Review' },
+  { value: 'pending_signature', label: 'Pending Signature' },
   { value: 'active', label: 'Active' },
-  { value: 'on-hold', label: 'On hold' },
+  { value: 'expiring', label: 'Expiring' },
+  { value: 'renewed', label: 'Renewed' },
   { value: 'expired', label: 'Expired' },
   { value: 'terminated', label: 'Terminated' },
   { value: 'archived', label: 'Archived' },
@@ -163,13 +163,13 @@ const statStyles = {
 const statusStyles = {
   active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   draft: 'bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-300',
-  'legal-review': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
-  'technical-review': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  'finance-review': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
-  'scm-review': 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-  'ceo-coo-approval': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-300',
-  signed: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
-  'on-hold': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  under_review: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+  legal_review: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+  technical_review: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  finance_review: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+  pending_signature: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
+  expiring: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  renewed: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300',
   expired: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
   terminated: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
   archived: 'bg-gray-200 text-gray-700 dark:bg-gray-800/70 dark:text-gray-300',
@@ -297,6 +297,12 @@ const ContractsPage = () => {
   const [deletingAttachmentId, setDeletingAttachmentId] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [detailTab, setDetailTab] = useState('documents');
+  const [contractItems, setContractItems] = useState([]);
+  const [approvals, setApprovals] = useState([]);
+  const [checklist, setChecklist] = useState([]);
+  const [consumption, setConsumption] = useState(null);
+  const [risk, setRisk] = useState(null);
 
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
@@ -498,6 +504,16 @@ const ContractsPage = () => {
       setAttachments([]);
     }
   }, [editingId, viewingContract, fetchAttachments]);
+
+  useEffect(() => {
+    const contractId = editingId || viewingContract?.id;
+    if (!contractId) return;
+    api.get(`/contracts/${contractId}/items`).then(r => setContractItems(r.data || [])).catch(() => setContractItems([]));
+    api.get(`/contracts/${contractId}/approvals`).then(r => setApprovals(r.data || [])).catch(() => setApprovals([]));
+    api.get(`/contracts/${contractId}/document-checklist`).then(r => setChecklist(r.data || [])).catch(() => setChecklist([]));
+    api.get(`/contracts/${contractId}/consumption`).then(r => setConsumption(r.data || null)).catch(() => setConsumption(null));
+    api.get(`/contracts/${contractId}/risk`).then(r => setRisk(r.data || null)).catch(() => setRisk(null));
+  }, [editingId, viewingContract]);
 
   const fetchEvaluations = useCallback(async (contractId) => {
     if (!contractId) {
@@ -2303,7 +2319,15 @@ const ContractsPage = () => {
 
             {(editingId || viewingContract) && (
               <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attachments</h3>
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {['documents', 'items', 'approvals', 'consumption', 'risk'].map((tab) => (
+                    <button key={tab} type="button" onClick={() => setDetailTab(tab)} className={`rounded px-3 py-1 text-sm ${detailTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
+                      {tab === 'documents' ? 'Documents' : tab === 'items' ? 'Items / Price Catalog' : tab === 'approvals' ? 'Approvals' : tab === 'consumption' ? 'Consumption' : 'Risk & Compliance'}
+                    </button>
+                  ))}
+                </div>
+                {detailTab === 'documents' && <>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Attachments & Checklist</h3>
                 <div className="mt-4 space-y-4">
                   {attachmentsLoading ? (
                     <p className="text-sm text-gray-500">Loading attachments...</p>
@@ -2354,7 +2378,18 @@ const ContractsPage = () => {
                       </button>
                     </div>
                   )}
+                  <div className="mt-4">
+                    <h4 className="font-semibold">Required Documents</h4>
+                    <ul className="mt-2 space-y-1 text-sm">
+                      {checklist.map((d) => <li key={d.id} className="flex items-center justify-between"><span>{d.document_type}</span><span className={d.is_uploaded ? 'text-green-600' : 'text-rose-600'}>{d.is_uploaded ? 'Uploaded' : 'Missing'}</span></li>)}
+                    </ul>
+                  </div>
                 </div>
+                </>}
+                {detailTab === 'items' && <div className="space-y-2">{contractItems.map((it) => <div key={it.id} className="rounded border p-2 text-sm">{it.item_name} - {it.contracted_price || '—'} {it.currency || ''}</div>)}</div>}
+                {detailTab === 'approvals' && <div className="space-y-2"><button type="button" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/submit-review`); const {data}=await api.get(`/contracts/${id}/approvals`); setApprovals(data||[]);}} className="rounded bg-blue-600 px-3 py-1 text-sm text-white">Submit for Review</button>{approvals.map((a)=><div key={a.id} className="rounded border p-2 text-sm">L{a.approval_level} {a.stage} - {a.status} {a.is_active ? '(Active)' : ''}</div>)}</div>}
+                {detailTab === 'consumption' && consumption && <div className="text-sm space-y-1"><p>Consumed: {consumption.actual_consumed_value}</p><p>Paid: {consumption.paid_amount}</p><p>Remaining: {consumption.remaining_balance}</p><p>Consumed %: {consumption.consumed_percentage}</p></div>}
+                {detailTab === 'risk' && risk && <div className="text-sm space-y-1"><p>Risk: {risk.risk_level} ({risk.risk_score})</p><ul className="list-disc pl-5">{(risk.risk_flags||[]).map((f,i)=><li key={i}>{f}</li>)}</ul></div>}
               </div>
             )}
 
