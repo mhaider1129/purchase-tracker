@@ -76,29 +76,6 @@ const ContractForm = ({
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="currency">Currency</label>
           <input id="currency" name="currency" type="text" value={formState.currency} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="estimated_contract_value">Estimated Value</label>
-          <input id="estimated_contract_value" name="estimated_contract_value" type="number" value={formState.estimated_contract_value} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Preview: {formatCurrencyPreview(formState.estimated_contract_value)}</p>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="actual_consumed_value">Actual Consumed</label>
-          <input id="actual_consumed_value" name="actual_consumed_value" type="number" value={formState.actual_consumed_value} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-        </div>
-        <div className="sm:col-span-2">
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="contract_owner">Contract Owner</label>
-          <select id="contract_owner" name="contract_owner" value={formState.contract_owner} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-            <option value="">Select contract owner</option>
-            {users.map((user) => {
-              const label = user.name || user.email || `User #${user.id}`;
-              return (
-                <option key={user.id} value={label}>
-                  {label}
-                </option>
-              );
-            })}
-          </select>
-        </div>
         <div className="sm:col-span-2">
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Parties Information</h3>
         </div>
@@ -345,26 +322,6 @@ const ContractForm = ({
         <div>
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="amount_paid"
-          >
-            Amount paid
-          </label>
-          <input
-            id="amount_paid"
-            name="amount_paid"
-            type="text"
-            value={formState.amount_paid}
-            onChange={handleInputChange}
-            placeholder="e.g. 125000"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
-          />
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Track how much has been paid against the contract value.
-          </p>
-        </div>
-        <div>
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="status"
           >
             Status
@@ -475,25 +432,25 @@ const ContractForm = ({
           >
             Technical departments involved
           </label>
-          <select
-            id="technical_department_ids"
-            name="technical_department_ids"
-            value={formState.technical_department_ids}
-            onChange={handleInputChange}
-            multiple
-            disabled={departmentsLoading}
-            className="h-32 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-900 dark:disabled:text-gray-500"
-          >
-            {departments.map((department) => (
-              <option key={department.id} value={String(department.id)}>
-                {department.name}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            Hold Ctrl/⌘ to select multiple departments. Leave empty if no
-            technical departments are required.
-          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {departments.map((department) => {
+              const checked = (formState.technical_department_ids || []).includes(String(department.id));
+              return (
+                <label key={department.id} className="flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      const current = Array.isArray(formState.technical_department_ids) ? formState.technical_department_ids : [];
+                      const next = checked ? current.filter((id) => id !== String(department.id)) : [...current, String(department.id)];
+                      handleInputChange({ target: { name: 'technical_department_ids', value: next } });
+                    }}
+                  />
+                  {department.name}
+                </label>
+              );
+            })}
+          </div>
         </div>
         <div className="sm:col-span-2">
           <label
@@ -528,20 +485,6 @@ const ContractForm = ({
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             placeholder="Define KPIs, performance metrics, and review processes."
           />
-        </div>
-        <div className="sm:col-span-2">
-          <h4 className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-100">Commercial Terms</h4>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <input name="commercial_contract_value" value={formState.commercial_contract_value} onChange={handleInputChange} placeholder="Contract Value" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_unit_pricing" value={formState.commercial_unit_pricing} onChange={handleInputChange} placeholder="Unit Pricing" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_price_validity" value={formState.commercial_price_validity} onChange={handleInputChange} placeholder="Price Validity" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_discount_structure" value={formState.commercial_discount_structure} onChange={handleInputChange} placeholder="Discount Structure" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_vat_tax" value={formState.commercial_vat_tax} onChange={handleInputChange} placeholder="VAT / Tax" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_currency_exchange_clause" value={formState.commercial_currency_exchange_clause} onChange={handleInputChange} placeholder="Currency Exchange Clause" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_escalation_clause" value={formState.commercial_escalation_clause} onChange={handleInputChange} placeholder="Escalation Clause" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_minimum_order_quantity" value={formState.commercial_minimum_order_quantity} onChange={handleInputChange} placeholder="Minimum Order Quantity" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <input name="commercial_delivery_charges" value={formState.commercial_delivery_charges} onChange={handleInputChange} placeholder="Delivery Charges" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 sm:col-span-2" />
-          </div>
         </div>
         <div className="sm:col-span-2">
           <label

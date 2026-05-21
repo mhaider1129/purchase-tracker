@@ -774,7 +774,7 @@ const ContractsPage = () => {
     const { name, value, selectedOptions } = event.target;
 
     if (name === 'technical_department_ids' || name === 'delivery_packaging_requirements' || name === 'delivery_transportation_requirements' || name === 'payment_methods') {
-      const selected = Array.from(selectedOptions || [], (option) => option.value);
+      const selected = Array.isArray(value) ? value : Array.from(selectedOptions || [], (option) => option.value);
       setFormState((prev) => ({ ...prev, [name]: selected }));
       return;
     }
@@ -821,7 +821,6 @@ const ContractsPage = () => {
       delivery_terms: formState.delivery_terms.trim() || null,
       warranty_terms: formState.warranty_terms.trim() || null,
       performance_management: formState.performance_management.trim() || null,
-      commercial_terms: formState.commercial_terms.trim() || null,
       compliance_legal_terms: formState.compliance_legal_terms.trim() || null,
       financial_payment_control: formState.financial_payment_control.trim() || null,
       risk_dispute_management: formState.risk_dispute_management.trim() || null,
@@ -829,7 +828,6 @@ const ContractsPage = () => {
       institute: formState.institute.trim() || null,
       contract_category: formState.contract_category.trim() || null,
       renewal_type: formState.renewal_type.trim() || null,
-      contract_owner: formState.contract_owner.trim() || null,
       currency: formState.currency.trim() || null,
       first_party: formState.first_party.trim() || null,
       second_party: formState.second_party.trim() || null,
@@ -891,11 +889,6 @@ const ContractsPage = () => {
 
     payload.renewal_notice_days =
       formState.renewal_notice_days === '' ? null : Number(formState.renewal_notice_days);
-    payload.estimated_contract_value =
-      formState.estimated_contract_value === '' ? null : Number(formState.estimated_contract_value);
-    payload.actual_consumed_value =
-      formState.actual_consumed_value === '' ? null : Number(formState.actual_consumed_value);
-
     if (!payload.title) {
       setFormError('A contract title is required.');
       return;

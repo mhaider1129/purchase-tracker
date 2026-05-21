@@ -55,6 +55,8 @@ import LifecycleAnalytics from "./pages/LifecycleAnalytics";
 import WorkloadAnalysis from "./pages/WorkloadAnalysis";
 import MonthlyDispensing from "./pages/MonthlyDispensing";
 import ContractsPage from "./pages/ContractsPage";
+import ContractTemplatesPage from "./pages/ContractTemplatesPage";
+import ContractClausesPage from "./pages/ContractClausesPage";
 import SupplierEvaluationsPage from "./pages/SupplierEvaluationsPage";
 import MyEvaluationsPage from "./pages/MyEvaluationsPage";
 import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
@@ -661,6 +663,14 @@ const AppRoutes = () => (
           resourceKey="feature.contracts"
         />
       }
+    />
+    <Route
+      path="/contract-templates"
+      element={<ProtectedRoute element={<ContractTemplatesPage />} resourceKey="feature.contracts" />}
+    />
+    <Route
+      path="/contract-clauses"
+      element={<ProtectedRoute element={<ContractClausesPage />} resourceKey="feature.contracts" />}
     />
     <Route
       path="/suppliers"
