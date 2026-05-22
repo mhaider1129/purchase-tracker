@@ -821,6 +821,18 @@ const ContractsPage = () => {
     event.preventDefault();
     setFormError('');
 
+    const parseOptionalNumericField = (value) => {
+      if (value === null || value === undefined) {
+        return null;
+      }
+      const normalized = String(value).trim();
+      if (!normalized) {
+        return null;
+      }
+      const parsed = Number(normalized);
+      return Number.isFinite(parsed) ? parsed : Number.NaN;
+    };
+
     const payload = {
       title: formState.title.trim(),
       vendor: formState.vendor.trim(),
@@ -902,6 +914,8 @@ const ContractsPage = () => {
 
     payload.renewal_notice_days =
       formState.renewal_notice_days === '' ? null : Number(formState.renewal_notice_days);
+    payload.estimated_contract_value = parseOptionalNumericField(formState.estimated_contract_value);
+    payload.actual_consumed_value = parseOptionalNumericField(formState.actual_consumed_value);
     if (!payload.title) {
       setFormError('A contract title is required.');
       return;
@@ -920,8 +934,12 @@ const ContractsPage = () => {
 
     if (formState.contract_value !== '') {
       const numericValue = Number(formState.contract_value);
-      if (Number.isNaN(numericValue)) {
+      if (!Number.isFinite(numericValue)) {
         setFormError('Contract value must be a valid number.');
+        return;
+      }
+      if (Math.abs(numericValue) >= 1000000000000) {
+        setFormError('Contract value is too large.');
         return;
       }
       payload.contract_value = numericValue;
@@ -931,8 +949,12 @@ const ContractsPage = () => {
 
     if (formState.amount_paid !== '') {
       const numericPaid = Number(formState.amount_paid);
-      if (Number.isNaN(numericPaid)) {
+      if (!Number.isFinite(numericPaid)) {
         setFormError('Amount paid must be a valid number.');
+        return;
+      }
+      if (Math.abs(numericPaid) >= 1000000000000) {
+        setFormError('Amount paid is too large.');
         return;
       }
       if (numericPaid < 0) {
@@ -964,6 +986,22 @@ const ContractsPage = () => {
       !Number.isFinite(payload.actual_consumed_value)
     ) {
       setFormError('Actual consumed value must be a valid number.');
+      return;
+    }
+
+    const exceedsNumericColumnLimit = (value) => Math.abs(value) >= 1000000000000;
+    if (
+      payload.estimated_contract_value !== null &&
+      exceedsNumericColumnLimit(payload.estimated_contract_value)
+    ) {
+      setFormError('Estimated contract value is too large.');
+      return;
+    }
+    if (
+      payload.actual_consumed_value !== null &&
+      exceedsNumericColumnLimit(payload.actual_consumed_value)
+    ) {
+      setFormError('Actual consumed value is too large.');
       return;
     }
 
