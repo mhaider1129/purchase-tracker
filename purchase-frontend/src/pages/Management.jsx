@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useAccessControl } from '../hooks/useAccessControl';
 import { hasPermission, hasAnyPermission } from '../utils/permissions';
 import useWarehouses from '../hooks/useWarehouses';
+import { defaultContractApprovalRules } from '../config/contractApprovalRules';
 
 const initialUserEditState = {
   role: '',
@@ -110,6 +111,7 @@ const Management = () => {
       canManageProjects: hasPermission(currentUser, 'projects.manage'),
       canManageRoles: hasAnyPermission(currentUser, ['roles.manage', 'permissions.manage']),
       canManagePermissions: hasPermission(currentUser, 'permissions.manage'),
+      canManageContractApprovalRules: hasAnyPermission(currentUser, ['contracts.manage', 'permissions.manage']),
     };
   }, [user]);
 
@@ -122,6 +124,7 @@ const Management = () => {
     canManageProjects,
     canManageRoles,
     canManagePermissions,
+    canManageContractApprovalRules,
   } = permissionFlags;
 
   const availableTabs = useMemo(() => {
@@ -139,6 +142,7 @@ const Management = () => {
       tabs.push('permissions');
       tabs.push('interfaceAccess');
     }
+    if (canManageContractApprovalRules) tabs.push('contractApprovalRules');
     return tabs;
   }, [
     canViewUsers,
@@ -148,6 +152,7 @@ const Management = () => {
     canManageProjects,
     canManageRoles,
     canManagePermissions,
+    canManageContractApprovalRules,
   ]);
 
   const [availablePermissions, setAvailablePermissions] = useState([]);
@@ -164,6 +169,11 @@ const Management = () => {
   const [accessConfigError, setAccessConfigError] = useState('');
   const [accessConfigSuccess, setAccessConfigSuccess] = useState('');
   const [savingAccessConfig, setSavingAccessConfig] = useState(false);
+  const [contractRulesDraft, setContractRulesDraft] = useState(() =>
+    JSON.stringify(defaultContractApprovalRules, null, 2),
+  );
+  const [contractRulesError, setContractRulesError] = useState('');
+  const [contractRulesSuccess, setContractRulesSuccess] = useState('');
 
   const warehouseRoles = useMemo(
     () => new Set(['warehousemanager', 'warehouse_manager', 'warehousekeeper', 'warehouse_keeper']),
@@ -2517,6 +2527,70 @@ const Management = () => {
     );
   };
 
+  const renderContractApprovalRules = () => (
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold text-slate-900">Contract Approval Rules</h3>
+      <p className="text-sm text-slate-600">
+        Configure contract approval stages and roles in frontend JSON.
+      </p>
+      <textarea
+        value={contractRulesDraft}
+        onChange={(e) => setContractRulesDraft(e.target.value)}
+        rows={16}
+        className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs"
+      />
+      {contractRulesError && <p className="text-sm text-rose-600">{contractRulesError}</p>}
+      {contractRulesSuccess && <p className="text-sm text-emerald-700">{contractRulesSuccess}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const parsed = JSON.parse(contractRulesDraft);
+              if (!Array.isArray(parsed?.stages) || parsed.stages.length === 0) {
+                setContractRulesError('Rules must include at least one stage.');
+                setContractRulesSuccess('');
+                return;
+              }
+              if (!Array.isArray(parsed?.editGateRoles) || parsed.editGateRoles.length === 0) {
+                setContractRulesError('Rules must include at least one edit gate role.');
+                setContractRulesSuccess('');
+                return;
+              }
+              localStorage.setItem('contract-approval-rules', JSON.stringify(parsed));
+              setContractRulesError('');
+              setContractRulesSuccess('Contract approval rules saved.');
+            } catch {
+              setContractRulesError('Invalid JSON. Please fix and try again.');
+              setContractRulesSuccess('');
+            }
+          }}
+          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+        >
+          Save rules
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const saved = localStorage.getItem('contract-approval-rules');
+              const parsed = saved ? JSON.parse(saved) : defaultContractApprovalRules;
+              setContractRulesDraft(JSON.stringify(parsed, null, 2));
+              setContractRulesError('');
+              setContractRulesSuccess('Loaded current rules.');
+            } catch {
+              setContractRulesError('Failed to load current rules.');
+              setContractRulesSuccess('');
+            }
+          }}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+        >
+          Load current rules
+        </button>
+      </div>
+    </div>
+  );
+
 
   return (
     <>
@@ -2704,6 +2778,18 @@ const Management = () => {
                     </button>
                   </>
                 )}
+                {canManageContractApprovalRules && (
+                  <button
+                    onClick={() => setTab('contractApprovalRules')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'contractApprovalRules'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Contract Approval Rules
+                  </button>
+                )}
               </div>
             </div>
 
@@ -2717,6 +2803,7 @@ const Management = () => {
               {tab === 'roles' && renderRoles()}
               {tab === 'permissions' && renderPermissions()}
               {tab === 'interfaceAccess' && renderInterfaceAccess()}
+              {tab === 'contractApprovalRules' && renderContractApprovalRules()}
             </div>
           </div>
         </div>
