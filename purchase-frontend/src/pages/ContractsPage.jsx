@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ContractForm from '../components/ContractForm';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
+import { listContractDocuments, createContractDocument, addContractDocumentVersion, archiveContractDocument } from '../api/contracts';
 import { useAuth } from '../hooks/useAuth';
 
 const parseJson = (value) => {
@@ -92,9 +93,10 @@ const statusOptions = [
   { value: 'legal_review', label: 'Legal Review' },
   { value: 'finance_review', label: 'Finance Review' },
   { value: 'technical_review', label: 'Technical Review' },
-  { value: 'pending_signature', label: 'Pending Signature' },
+  { value: 'executive_approval', label: 'Executive Approval' },
+  { value: 'sent_for_signature', label: 'Sent for Signature' },
   { value: 'active', label: 'Active' },
-  { value: 'expiring', label: 'Expiring' },
+  { value: 'expiring_soon', label: 'Expiring Soon' },
   { value: 'renewed', label: 'Renewed' },
   { value: 'expired', label: 'Expired' },
   { value: 'terminated', label: 'Terminated' },
@@ -167,8 +169,9 @@ const statusStyles = {
   legal_review: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
   technical_review: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
   finance_review: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
-  pending_signature: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
-  expiring: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  executive_approval: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
+  sent_for_signature: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
+  expiring_soon: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   renewed: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-300',
   expired: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
   terminated: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
@@ -296,8 +299,21 @@ const ContractsPage = () => {
   const [contractItems, setContractItems] = useState([]);
   const [approvals, setApprovals] = useState([]);
   const [checklist, setChecklist] = useState([]);
+  const [contractDocuments, setContractDocuments] = useState([]);
+  const [docForm, setDocForm] = useState({ document_type: 'draft', title: '', description: '', file_name: '', file_url: '', notes: '' });
+  const [versionForm, setVersionForm] = useState({ file_name: '', file_url: '', storage_path: '', mime_type: '', file_size: '', checksum: '', notes: '', is_current: true });
   const [consumption, setConsumption] = useState(null);
   const [risk, setRisk] = useState(null);
+  const [riskHistory, setRiskHistory] = useState([]);
+  const [riskDashboard, setRiskDashboard] = useState(null);
+  const [aiExtractions, setAiExtractions] = useState([]);
+  const [aiMessage, setAiMessage] = useState('');
+  const [obligations, setObligations] = useState([]);
+  const [renewalEvents, setRenewalEvents] = useState([]);
+  const [financialSummary, setFinancialSummary] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [consumptionEntries, setConsumptionEntries] = useState([]);
   const [contractPayments, setContractPayments] = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState('');
@@ -484,6 +500,17 @@ const ContractsPage = () => {
     api.get(`/contracts/${contractId}/items`).then(r => setContractItems(r.data || [])).catch(() => setContractItems([]));
     api.get(`/contracts/${contractId}/approvals`).then(r => setApprovals(r.data || [])).catch(() => setApprovals([]));
     api.get(`/contracts/${contractId}/document-checklist`).then(r => setChecklist(r.data || [])).catch(() => setChecklist([]));
+    api.get(`/contracts/${contractId}/obligations`).then(r=>setObligations(r.data||[])).catch(()=>setObligations([]));
+    api.get(`/contracts/${contractId}/renewal-events`).then(r=>setRenewalEvents(r.data||[])).catch(()=>setRenewalEvents([]));
+    api.get(`/contracts/${contractId}/financial-summary`).then(r=>setFinancialSummary(r.data||null)).catch(()=>setFinancialSummary(null));
+    api.get(`/contracts/${contractId}/invoices`).then(r=>setInvoices(r.data||[])).catch(()=>setInvoices([]));
+    api.get(`/contracts/${contractId}/payments`).then(r=>setPayments(r.data||[])).catch(()=>setPayments([]));
+    api.get(`/contracts/${contractId}/consumption-entries`).then(r=>setConsumptionEntries(r.data||[])).catch(()=>setConsumptionEntries([]));
+    api.get(`/contracts/${contractId}/risk`).then(r=>setRisk(r.data||null)).catch(()=>setRisk(null));
+    api.get(`/contracts/${contractId}/risk/history`).then(r=>setRiskHistory(r.data||[])).catch(()=>setRiskHistory([]));
+    api.get('/contracts/dashboard/risk').then(r=>setRiskDashboard(r.data||null)).catch(()=>setRiskDashboard(null));
+    api.get(`/contracts/${contractId}/ai-extractions`).then(r=>setAiExtractions(r.data||[])).catch(()=>setAiExtractions([]));
+    listContractDocuments(contractId).then(setContractDocuments).catch(() => setContractDocuments([]));
     api.get(`/contracts/${contractId}/consumption`).then(r => setConsumption(r.data || null)).catch(() => setConsumption(null));
     api.get(`/contracts/${contractId}/risk`).then(r => setRisk(r.data || null)).catch(() => setRisk(null));
   }, [editingId, viewingContract]);
@@ -2342,9 +2369,9 @@ const ContractsPage = () => {
             {(editingId || viewingContract) && (
               <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {['documents', 'items', 'approvals', 'consumption', 'risk'].map((tab) => (
+                  {['documents', 'obligations', 'renewals', 'financials', 'items', 'approvals', 'consumption', 'risk', 'ai_summary'].map((tab) => (
                     <button key={tab} type="button" onClick={() => setDetailTab(tab)} className={`rounded px-3 py-1 text-sm ${detailTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                      {tab === 'documents' ? 'Documents' : tab === 'items' ? 'Items / Price Catalog' : tab === 'approvals' ? 'Approvals' : tab === 'consumption' ? 'Consumption' : 'Risk & Compliance'}
+                      {tab === 'documents' ? 'Documents' : tab === 'obligations' ? 'Obligations' : tab === 'renewals' ? 'Renewals' : tab === 'financials' ? 'Financials' : tab === 'items' ? 'Items / Price Catalog' : tab === 'approvals' ? 'Approvals' : tab === 'consumption' ? 'Consumption' : tab === 'ai_summary' ? 'AI Summary' : 'Risk & Compliance'}
                     </button>
                   ))}
                 </div>
@@ -2371,10 +2398,16 @@ const ContractsPage = () => {
                   </ul>
                 </div>
                 </>}
+
+                {detailTab === 'obligations' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/obligations`,{title:'New obligation',obligation_type:'general',priority:'medium',status:'open'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Add Obligation</button>{obligations.map((o)=><div key={o.id} className="rounded border p-2 text-sm"><div className="font-medium">{o.title}</div><div>{o.obligation_type} · due {o.due_date || '—'} · {o.recurrence} · {o.priority} · {o.computed_status || o.status}</div><div className="mt-1 flex gap-2"><button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/complete`,{completion_notes:'Completed from UI'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Complete</button><button className="rounded bg-amber-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/waive`,{notes:'Waived'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Waive</button><button className="rounded bg-rose-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/cancel`,{notes:'Cancelled'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Cancel</button></div></div>)}</div>}
+                {detailTab === 'renewals' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/renewal-events`,{renewal_type:'manual',renewal_date:new Date().toISOString().slice(0,10),notice_days:90}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Add Renewal Event</button>{renewalEvents.map((r)=><div key={r.id} className="rounded border p-2 text-sm">{r.renewal_date || '—'} · alert {r.alert_date || '—'} · {r.notice_days} days · {r.status} · {r.decision || '—'} <button className="ml-2 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/renewal-events/${r.id}/decision`,{decision:'renew',decision_notes:'Approved'}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Decide Renew</button></div>)}</div>}
+
+                {detailTab === 'financials' && <div className="space-y-2 text-sm"><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">Remaining: {financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
                 {detailTab === 'items' && <div className="space-y-2">{contractItems.map((it) => <div key={it.id} className="rounded border p-2 text-sm">{it.item_name} - {it.contracted_price || '—'} {it.currency || ''}</div>)}</div>}
                 {detailTab === 'approvals' && <div className="space-y-2"><button type="button" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/submit-review`); const {data}=await api.get(`/contracts/${id}/approvals`); setApprovals(data||[]);}} className="rounded bg-blue-600 px-3 py-1 text-sm text-white">Submit for Review</button>{approvals.map((a)=><div key={a.id} className="rounded border p-2 text-sm">L{a.approval_level} {a.stage} - {a.status} {a.is_active ? '(Active)' : ''}</div>)}</div>}
                 {detailTab === 'consumption' && consumption && <div className="text-sm space-y-1"><p>Consumed: {consumption.actual_consumed_value}</p><p>Paid: {consumption.paid_amount}</p><p>Remaining: {consumption.remaining_balance}</p><p>Consumed %: {consumption.consumed_percentage}</p></div>}
-                {detailTab === 'risk' && risk && <div className="text-sm space-y-1"><p>Risk: {risk.risk_level} ({risk.risk_score})</p><ul className="list-disc pl-5">{(risk.risk_flags||[]).map((f,i)=><li key={i}>{f}</li>)}</ul></div>}
+                {detailTab === 'risk' && <div className="text-sm space-y-2"><div className="rounded border p-2"><p>Risk: <span className="font-semibold">{risk?.risk_level || '—'}</span> ({risk?.risk_score ?? '—'})</p><button type="button" className="mt-1 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; const {data}=await api.post(`/contracts/${id}/risk/recalculate`,{}); setRisk(data||null); const h=await api.get(`/contracts/${id}/risk/history`); setRiskHistory(h.data||[]);}}>Recalculate risk</button></div><div className="rounded border p-2"><p className="font-medium">Factors</p><ul className="list-disc pl-5">{(risk?.risk_factors||[]).map((f,i)=><li key={i}><span className="font-medium">{f.label || f.code}</span> (+{f.points}) — {f.explanation}</li>)}</ul></div><div className="rounded border p-2"><p className="font-medium">History</p>{riskHistory.slice(0,5).map((h)=><div key={h.id} className="text-xs">{h.assessed_at}: {h.risk_level} ({h.risk_score})</div>)}</div><div className="rounded border p-2"><p className="font-medium">Dashboard snapshot</p><div className="grid grid-cols-2 gap-1 text-xs md:grid-cols-4"><div>Low: {riskDashboard?.low_count ?? 0}</div><div>Medium: {riskDashboard?.medium_count ?? 0}</div><div>High: {riskDashboard?.high_count ?? 0}</div><div>Critical: {riskDashboard?.critical_count ?? 0}</div><div>Avg: {riskDashboard?.average_risk_score ?? 0}</div></div></div></div>}
+                {detailTab === 'ai_summary' && <div className="space-y-2 text-sm"><button type="button" className="rounded bg-indigo-600 px-3 py-1 text-white text-xs" onClick={async()=>{try{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/ai-extract`,{}); setAiMessage('Extraction requested successfully.');}catch(err){if(err?.response?.status===501){setAiMessage('AI extraction is prepared but no provider is configured yet.');}else{setAiMessage('Extraction failed.');}} const id=editingId||viewingContract?.id; const {data}=await api.get(`/contracts/${id}/ai-extractions`); setAiExtractions(data||[]);}}>Run AI Extraction</button>{aiMessage && <p className="text-xs text-slate-600">{aiMessage}</p>}{aiExtractions[0] ? <div className="rounded border p-2"><p>Status: {aiExtractions[0].extraction_status}</p><p>Summary: {aiExtractions[0].summary || '—'}</p><p>Parties: {JSON.stringify(aiExtractions[0].extracted_parties || {})}</p><p>Dates: {JSON.stringify(aiExtractions[0].extracted_dates || {})}</p><p>Value: {JSON.stringify(aiExtractions[0].extracted_value || {})}</p><p>Payment Terms: {JSON.stringify(aiExtractions[0].extracted_payment_terms || {})}</p><p>Renewal: {JSON.stringify(aiExtractions[0].extracted_renewal_clause || {})}</p><p>Termination: {JSON.stringify(aiExtractions[0].extracted_termination_clause || {})}</p><p>Obligations: {JSON.stringify(aiExtractions[0].extracted_obligations || [])}</p><p>Risks: {JSON.stringify(aiExtractions[0].extracted_risks || [])}</p></div> : <p>No AI extraction yet.</p>}</div>}
               </div>
             )}
 
