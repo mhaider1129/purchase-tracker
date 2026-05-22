@@ -2527,69 +2527,120 @@ const Management = () => {
     );
   };
 
-  const renderContractApprovalRules = () => (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-slate-900">Contract Approval Rules</h3>
-      <p className="text-sm text-slate-600">
-        Configure contract approval stages and roles in frontend JSON.
-      </p>
-      <textarea
-        value={contractRulesDraft}
-        onChange={(e) => setContractRulesDraft(e.target.value)}
-        rows={16}
-        className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs"
-      />
-      {contractRulesError && <p className="text-sm text-rose-600">{contractRulesError}</p>}
-      {contractRulesSuccess && <p className="text-sm text-emerald-700">{contractRulesSuccess}</p>}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            try {
-              const parsed = JSON.parse(contractRulesDraft);
-              if (!Array.isArray(parsed?.stages) || parsed.stages.length === 0) {
-                setContractRulesError('Rules must include at least one stage.');
-                setContractRulesSuccess('');
-                return;
-              }
-              if (!Array.isArray(parsed?.editGateRoles) || parsed.editGateRoles.length === 0) {
-                setContractRulesError('Rules must include at least one edit gate role.');
-                setContractRulesSuccess('');
-                return;
-              }
-              localStorage.setItem('contract-approval-rules', JSON.stringify(parsed));
-              setContractRulesError('');
-              setContractRulesSuccess('Contract approval rules saved.');
-            } catch {
-              setContractRulesError('Invalid JSON. Please fix and try again.');
-              setContractRulesSuccess('');
-            }
-          }}
-          className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-        >
-          Save rules
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            try {
-              const saved = localStorage.getItem('contract-approval-rules');
-              const parsed = saved ? JSON.parse(saved) : defaultContractApprovalRules;
-              setContractRulesDraft(JSON.stringify(parsed, null, 2));
-              setContractRulesError('');
-              setContractRulesSuccess('Loaded current rules.');
-            } catch {
-              setContractRulesError('Failed to load current rules.');
-              setContractRulesSuccess('');
-            }
-          }}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-        >
-          Load current rules
-        </button>
+  const renderContractApprovalRules = () => {
+    let parsedRules = null;
+    let parsedRulesError = '';
+
+    try {
+      parsedRules = JSON.parse(contractRulesDraft);
+    } catch {
+      parsedRulesError = 'Preview unavailable due to invalid JSON.';
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="overflow-x-auto">
+          <h3 className="mb-2 text-lg font-semibold text-slate-900">Contract Approval Rules</h3>
+          <p className="mb-3 text-sm text-slate-600">Configure contract approvals in the same table-style flow used for request approval rules.</p>
+
+          {parsedRulesError ? (
+            <p className="mb-3 text-sm text-rose-600">{parsedRulesError}</p>
+          ) : (
+            <>
+              <table className="mb-3 min-w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-200 text-left">
+                    <th className="p-2">Level</th>
+                    <th className="p-2">Stage Key</th>
+                    <th className="p-2">Stage Label</th>
+                    <th className="p-2">Role</th>
+                    <th className="p-2">Suggest Edits</th>
+                    <th className="p-2">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(parsedRules?.stages || []).map((stage, idx) => (
+                    <tr key={stage.key || idx} className="border-b">
+                      <td className="p-2">{idx + 1}</td>
+                      <td className="p-2">{stage.key || '—'}</td>
+                      <td className="p-2">{stage.label || '—'}</td>
+                      <td className="p-2">{stage.roleType || '—'}</td>
+                      <td className="p-2">{stage.canSuggestEdits ? 'Yes' : 'No'}</td>
+                      <td className="p-2">{stage.description || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="mb-3 rounded border border-gray-200 bg-gray-50 p-3 text-sm">
+                <p className="font-medium text-slate-900">Edit gate roles</p>
+                <p className="mt-1 text-slate-700">{Array.isArray(parsedRules?.editGateRoles) && parsedRules.editGateRoles.length > 0 ? parsedRules.editGateRoles.join(', ') : '—'}</p>
+                <p className="mt-2 text-slate-600">Max draft edit rounds: {parsedRules?.maxDraftEditRounds ?? '—'}</p>
+              </div>
+            </>
+          )}
+
+          <textarea
+            value={contractRulesDraft}
+            onChange={(e) => setContractRulesDraft(e.target.value)}
+            rows={16}
+            className="mb-3 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs"
+          />
+
+          {contractRulesError && <p className="mb-2 text-sm text-rose-600">{contractRulesError}</p>}
+          {contractRulesSuccess && <p className="mb-2 text-sm text-emerald-700">{contractRulesSuccess}</p>}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const parsed = JSON.parse(contractRulesDraft);
+                  if (!Array.isArray(parsed?.stages) || parsed.stages.length === 0) {
+                    setContractRulesError('Rules must include at least one stage.');
+                    setContractRulesSuccess('');
+                    return;
+                  }
+                  if (!Array.isArray(parsed?.editGateRoles) || parsed.editGateRoles.length === 0) {
+                    setContractRulesError('Rules must include at least one edit gate role.');
+                    setContractRulesSuccess('');
+                    return;
+                  }
+                  localStorage.setItem('contract-approval-rules', JSON.stringify(parsed));
+                  setContractRulesError('');
+                  setContractRulesSuccess('Contract approval rules saved.');
+                } catch {
+                  setContractRulesError('Invalid JSON. Please fix and try again.');
+                  setContractRulesSuccess('');
+                }
+              }}
+              className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+            >
+              Save rules
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  const saved = localStorage.getItem('contract-approval-rules');
+                  const parsed = saved ? JSON.parse(saved) : defaultContractApprovalRules;
+                  setContractRulesDraft(JSON.stringify(parsed, null, 2));
+                  setContractRulesError('');
+                  setContractRulesSuccess('Loaded current rules.');
+                } catch {
+                  setContractRulesError('Failed to load current rules.');
+                  setContractRulesSuccess('');
+                }
+              }}
+              className="rounded border border-slate-300 px-3 py-1 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              Load current rules
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
 
   return (
