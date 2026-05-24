@@ -721,26 +721,45 @@ const useApprovalsData = (user) => {
     const storedPath = attachment?.file_path || '';
     const filename = storedPath.split(/[\\/]/).pop();
     const idBasedEndpoint = attachment?.id ? `/attachments/${attachment.id}/download` : null;
-    const isLegacyFilenameEndpoint =
-      typeof attachment?.download_url === 'string' &&
-      /\/attachments\/download\//.test(attachment.download_url);
-    const downloadEndpoint = normalizeDownloadEndpoint(
-      (isLegacyFilenameEndpoint ? idBasedEndpoint : null) ||
-        attachment?.download_url ||
-        idBasedEndpoint ||
-        (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null),
+    const filenameBasedEndpoint = filename
+      ? `/attachments/download/${encodeURIComponent(filename)}`
+      : null;
+    const normalizedAttachmentEndpoint = normalizeDownloadEndpoint(attachment?.download_url);
+    const downloadCandidates = Array.from(
+      new Set(
+        [idBasedEndpoint, normalizedAttachmentEndpoint, filenameBasedEndpoint]
+          .map(normalizeDownloadEndpoint)
+          .filter(Boolean),
+      ),
     );
 
-    if (!downloadEndpoint) {
+    if (downloadCandidates.length === 0) {
       alert('Attachment file is missing.');
       return;
     }
 
     setDownloadingAttachmentId(attachment.id);
     try {
-      const response = await axios.get(downloadEndpoint, {
-        responseType: 'blob',
-      });
+      let response = null;
+      let lastError = null;
+
+      for (const endpoint of downloadCandidates) {
+        try {
+          response = await axios.get(endpoint, {
+            responseType: 'blob',
+          });
+          break;
+        } catch (error) {
+          lastError = error;
+          if (error?.response?.status !== 404) {
+            throw error;
+          }
+        }
+      }
+
+      if (!response) {
+        throw lastError || new Error('Attachment download failed');
+      }
 
       const blob = new Blob([response.data], {
         type: response.headers['content-type'] || 'application/octet-stream',
