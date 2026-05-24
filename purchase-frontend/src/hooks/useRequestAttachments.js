@@ -19,8 +19,7 @@ const normalizeDownloadEndpoint = (endpoint = "") => {
   if (!endpoint || typeof endpoint !== "string") return null;
   if (/^https?:\/\//i.test(endpoint)) return endpoint;
 
-  const prefixedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  return prefixedEndpoint.replace(/^\/api\//, "/");
+  return endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
 };
 
 const useRequestAttachments = () => {
