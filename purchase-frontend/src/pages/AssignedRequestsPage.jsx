@@ -531,9 +531,14 @@ const AssignedRequestsPage = () => {
   const handleDownloadAttachment = async (attachment) => {
     const storedPath = attachment.file_path || '';
     const filename = storedPath.split(/[\\/]/).pop();
+    const idBasedEndpoint = attachment?.id ? `/attachments/${attachment.id}/download` : null;
+    const isLegacyFilenameEndpoint =
+      typeof attachment?.download_url === 'string' &&
+      /\/attachments\/download\//.test(attachment.download_url);
     const downloadEndpoint = normalizeDownloadEndpoint(
-      attachment.download_url ||
-        (attachment.id ? `/attachments/${attachment.id}/download` : null) ||
+      (isLegacyFilenameEndpoint ? idBasedEndpoint : null) ||
+        attachment?.download_url ||
+        idBasedEndpoint ||
         (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null),
     );
 
