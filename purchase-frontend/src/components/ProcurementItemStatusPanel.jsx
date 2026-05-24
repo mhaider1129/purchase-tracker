@@ -181,9 +181,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     const filename = storedPath.split(/[\\/]/).pop();
     const downloadEndpoint = normalizeDownloadEndpoint(
       attachment?.download_url ||
-        (filename
-          ? `/attachments/download/${encodeURIComponent(filename)}`
-          : null),
+        (attachment?.id ? `/attachments/${attachment.id}/download` : null) ||
+        (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null),
     );
 
     if (!downloadEndpoint) {

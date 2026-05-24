@@ -39,7 +39,9 @@ const WarehouseSupplyRequestForm = () => {
         const res = await api.get('/warehouse-supply-templates');
         setTemplates(res.data || []);
       } catch (err) {
-        console.error('Failed to load templates:', err);
+        if (err?.response?.status !== 403) {
+          console.error('Failed to load templates:', err);
+        }
       }
     };
     fetchTemplates();

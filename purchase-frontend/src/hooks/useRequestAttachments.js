@@ -86,9 +86,8 @@ const useRequestAttachments = () => {
       : attachment.file_name || filename;
     const downloadEndpoint = normalizeDownloadEndpoint(
       attachment.download_url ||
-        (fallbackName
-          ? `/attachments/download/${encodeURIComponent(fallbackName)}`
-          : null),
+        (attachment.id ? `/attachments/${attachment.id}/download` : null) ||
+        (fallbackName ? `/attachments/download/${encodeURIComponent(fallbackName)}` : null),
     );
 
     if (!downloadEndpoint) {

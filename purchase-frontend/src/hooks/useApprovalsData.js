@@ -722,6 +722,7 @@ const useApprovalsData = (user) => {
     const filename = storedPath.split(/[\\/]/).pop();
     const downloadEndpoint = normalizeDownloadEndpoint(
       attachment?.download_url ||
+        (attachment?.id ? `/attachments/${attachment.id}/download` : null) ||
         (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null),
     );
 

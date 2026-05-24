@@ -522,7 +522,9 @@ const AssignedRequestsPage = () => {
     const storedPath = attachment.file_path || '';
     const filename = storedPath.split(/[\\/]/).pop();
     const downloadEndpoint = normalizeDownloadEndpoint(
-      attachment.download_url || (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null),
+      attachment.download_url ||
+        (attachment.id ? `/attachments/${attachment.id}/download` : null) ||
+        (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null),
     );
 
     if (!downloadEndpoint) {
