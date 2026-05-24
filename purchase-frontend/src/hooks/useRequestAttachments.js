@@ -30,10 +30,28 @@ const normalizeDownloadEndpoint = (endpoint = "") => {
     : `/${trimmedEndpoint}`;
 };
 
-const buildDownloadCandidates = (candidates = []) => {
-  const normalized = candidates.map(normalizeDownloadEndpoint).filter(Boolean);
 
-  const withApiPrefixVariants = normalized.flatMap((endpoint) => {
+const stripDuplicateApiPrefix = (endpoint = "") => {
+  if (typeof endpoint !== "string" || !endpoint.startsWith("/")) {
+    return endpoint;
+  }
+
+  const baseUrl = axios?.defaults?.baseURL || "";
+  const baseHasApiSuffix = /\/api\/?$/i.test(baseUrl);
+
+  if (baseHasApiSuffix && endpoint.startsWith("/api/")) {
+    return endpoint.replace(/^\/api/, "") || "/";
+  }
+
+  return endpoint;
+};
+
+const buildDownloadCandidates = (candidates = []) => {
+  const normalized = candidates
+    .map(normalizeDownloadEndpoint)
+    .map(stripDuplicateApiPrefix)
+    .filter(Boolean);
+
     if (/^https?:\/\//i.test(endpoint)) {
       return [endpoint];
     }
