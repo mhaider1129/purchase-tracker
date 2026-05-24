@@ -93,7 +93,7 @@ const useRequestAttachments = () => {
     );
     const downloadCandidates = Array.from(
       new Set(
-        [idBasedEndpoint, normalizedAttachmentEndpoint, filenameBasedEndpoint]
+        [normalizedAttachmentEndpoint, filenameBasedEndpoint, idBasedEndpoint]
           .map(normalizeDownloadEndpoint)
           .filter(Boolean),
       ),
