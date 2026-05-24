@@ -170,6 +170,7 @@ const AllRequestsPage = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRequests, setTotalRequests] = useState(0);
+  const [summaryCounts, setSummaryCounts] = useState({ urgent: 0, approved: 0, pending: 0, completed: 0 });
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -218,24 +219,14 @@ const AllRequestsPage = () => {
   } = useDirectPurchaseCommunications(user?.role);
 
   const requestSummary = useMemo(() => {
-    const summary = requests.reduce(
-      (acc, req) => {
-        const normalizedStatus = (req?.status || '').toLowerCase();
-        if (req?.is_urgent) acc.urgent += 1;
-        if (normalizedStatus === 'approved') acc.approved += 1;
-        if (normalizedStatus === 'pending') acc.pending += 1;
-        return acc;
-      },
-      { urgent: 0, approved: 0, pending: 0 },
-    );
-
     return [
       { label: 'Total requests', value: totalRequests },
-      { label: 'Urgent requests', value: summary.urgent },
-      { label: 'Approved', value: summary.approved },
-      { label: 'Pending', value: summary.pending },
+      { label: 'Urgent requests', value: summaryCounts.urgent },
+      { label: 'Approved', value: summaryCounts.approved },
+      { label: 'Pending', value: summaryCounts.pending },
+      { label: 'Completed', value: summaryCounts.completed },
     ];
-  }, [requests, totalRequests]);
+  }, [summaryCounts, totalRequests]);
   const canHardDeleteRequests = hasPermission(user || {}, 'requests.manage');
 
   useEffect(() => {
@@ -292,6 +283,37 @@ const AllRequestsPage = () => {
       const total = Number(res?.data?.total) || 0;
       setTotalRequests(total);
       setTotalPages(Math.ceil(total / limit));
+
+      const summaryRes = await axios.get('/requests', {
+        params: {
+          filter,
+          sort,
+          request_type: requestType,
+          search,
+          request_id: requestId.trim() || undefined,
+          from_date: fromDate,
+          to_date: toDate,
+          status,
+          department_id: department,
+          page: 1,
+          limit: Math.max(total, limit),
+        },
+      });
+
+      const summaryRequests = Array.isArray(summaryRes?.data?.data) ? summaryRes.data.data : [];
+      const finalizedStatuses = ['approved', 'rejected', 'completed', 'received', 'cancelled'];
+      const nextSummary = summaryRequests.reduce(
+        (acc, req) => {
+          const normalizedStatus = (req?.status || '').toLowerCase();
+          if (req?.is_urgent) acc.urgent += 1;
+          if (normalizedStatus === 'approved') acc.approved += 1;
+          if (normalizedStatus === 'completed') acc.completed += 1;
+          if (!finalizedStatuses.includes(normalizedStatus)) acc.pending += 1;
+          return acc;
+        },
+        { urgent: 0, approved: 0, pending: 0, completed: 0 },
+      );
+      setSummaryCounts(nextSummary);
     } catch (err) {
       console.error(err);
       alert('❌ Failed to fetch requests.');
