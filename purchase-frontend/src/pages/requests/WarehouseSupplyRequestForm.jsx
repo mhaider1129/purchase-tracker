@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import api from '../../api/axios';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,9 @@ const WarehouseSupplyRequestForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [supplyWarehouseId, setSupplyWarehouseId] = useState('');
+  const [category, setCategory] = useState('');
+  const [subCategory, setSubCategory] = useState('');
+  const [itemSearchTerms, setItemSearchTerms] = useState(['']);
 
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
@@ -83,16 +86,23 @@ const WarehouseSupplyRequestForm = () => {
   };
 
   const addItem = () =>
-    setItems([...items, { stock_item_id: '', item_name: '', quantity: 1 }]);
+    {
+      setItems([...items, { stock_item_id: '', item_name: '', quantity: 1 }]);
+      setItemSearchTerms((prev) => [...prev, '']);
+    };
   const removeItem = (idx) => {
     if (!window.confirm('Remove this item?')) return;
     setItems(items.filter((_, i) => i !== idx));
+    setItemSearchTerms((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleWarehouseChange = (value) => {
     setSupplyWarehouseId(value);
     setSelectedTemplateId('');
     setItems([{ stock_item_id: '', item_name: '', quantity: 1 }]);
+    setItemSearchTerms(['']);
+    setCategory('');
+    setSubCategory('');
   };
 
   const formatExpiry = (value) => {
@@ -114,6 +124,27 @@ const WarehouseSupplyRequestForm = () => {
     };
     setItems(updated);
   };
+
+  const categories = useMemo(
+    () => Array.from(new Set(warehouseItems.map((item) => item.category).filter(Boolean))).sort(),
+    [warehouseItems],
+  );
+
+  const subCategories = useMemo(() => {
+    const scoped = category
+      ? warehouseItems.filter((item) => item.category === category)
+      : warehouseItems;
+    return Array.from(new Set(scoped.map((item) => item.sub_category).filter(Boolean))).sort();
+  }, [warehouseItems, category]);
+
+  const filteredCatalog = useMemo(
+    () => warehouseItems.filter((item) => {
+      if (category && item.category !== category) return false;
+      if (subCategory && item.sub_category !== subCategory) return false;
+      return true;
+    }),
+    [warehouseItems, category, subCategory],
+  );
 
   const handleQuantityChange = (index, value) => {
     const updated = [...items];
@@ -251,6 +282,39 @@ const WarehouseSupplyRequestForm = () => {
 
           <div>
             <label className="block font-semibold mb-2">Items</label>
+            <div className="grid gap-4 md:grid-cols-2 mb-4">
+              <div>
+                <label className="block font-semibold mb-1">Category</label>
+                <select
+                  value={category}
+                  onChange={(e) => {
+                    setCategory(e.target.value);
+                    setSubCategory('');
+                  }}
+                  className="w-full p-2 border rounded"
+                  disabled={submitting || warehouseItemsLoading}
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Sub Category</label>
+                <select
+                  value={subCategory}
+                  onChange={(e) => setSubCategory(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  disabled={submitting || warehouseItemsLoading}
+                >
+                  <option value="">All Sub Categories</option>
+                  {subCategories.map((sub) => (
+                    <option key={sub} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             {supplyWarehouseId === '' && (
               <p className="text-sm text-gray-600 mb-2">
                 Select a warehouse to choose from its available items.
@@ -269,6 +333,20 @@ const WarehouseSupplyRequestForm = () => {
             )}
             {items.map((it, idx) => (
               <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
+                <input
+                  type="search"
+                  value={itemSearchTerms[idx] || ''}
+                  onChange={(e) =>
+                    setItemSearchTerms((prev) => {
+                      const next = [...prev];
+                      next[idx] = e.target.value;
+                      return next;
+                    })
+                  }
+                  placeholder="Type to filter items"
+                  className="flex-1 p-2 border rounded min-w-[200px]"
+                  disabled={submitting || warehouseItemsLoading}
+                />
                 <select
                   value={it.stock_item_id}
                   onChange={(e) => handleItemSelection(idx, e.target.value)}
@@ -282,7 +360,16 @@ const WarehouseSupplyRequestForm = () => {
                   }
                 >
                   <option value="">Select item</option>
-                  {warehouseItems.map((item) => (
+                  {filteredCatalog
+                    .filter((item) => {
+                      const q = (itemSearchTerms[idx] || '').trim().toLowerCase();
+                      if (!q) return true;
+                      return (
+                        String(item.stock_item_id || '').toLowerCase().includes(q) ||
+                        String(item.item_name || '').toLowerCase().includes(q)
+                      );
+                    })
+                    .map((item) => (
                     <option key={item.stock_item_id} value={item.stock_item_id}>
                       {item.item_name} (Exp: {formatExpiry(item.expiry_date)})
                     </option>

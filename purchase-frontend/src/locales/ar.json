@@ -13,7 +13,8 @@
     "supplierPortalTitle": "بوابة المورّدين",
     "supplierPortalDescription": "اطلع على طلبات عروض الأسعار وقدّم عروضك مباشرة من بوابة المورّدين دون تسجيل الدخول.",
     "supplierPortalCta": "فتح بوابة المورّدين",
-    "copyright": "© {{year}} مؤسسة وارث الدولية لعلاج الأورام"
+    "copyright": "© {{year}} مؤسسة وارث الدولية لعلاج الأورام",
+    "loginIdentifier": "البريد الإلكتروني أو الرقم الوظيفي أو رقم الهاتف"
   },
   "register": {
     "title": "تسجيل مستخدم جديد",
@@ -23,7 +24,8 @@
       "employeeId": "رقم الموظف",
       "password": "كلمة المرور",
       "selectDepartment": "-- اختر القسم --",
-      "selectSectionOptional": "-- اختر القسم الفرعي (اختياري) --"
+      "selectSectionOptional": "-- اختر القسم الفرعي (اختياري) --",
+      "phoneNumber": "رقم الهاتف"
     },
     "actions": {
       "showPassword": "إظهار كلمة المرور",

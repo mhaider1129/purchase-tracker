@@ -43,6 +43,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const itemId = item?.id;
   const tr = usePageTranslation("assignedRequests");
 
+  const normalizeDownloadEndpoint = (endpoint = "") => {
+    if (!endpoint || typeof endpoint !== "string") return null;
+    if (/^https?:\/\//i.test(endpoint)) return endpoint;
+
+    const prefixedEndpoint = endpoint.startsWith("/")
+      ? endpoint
+      : `/${endpoint}`;
+    return prefixedEndpoint.replace(/^\/api\//, "/");
+  };
+
   const updatedAt = item.procurement_updated_at
     ? new Date(item.procurement_updated_at).toLocaleString()
     : null;
@@ -169,11 +179,12 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const handleDownloadAttachment = async (attachment) => {
     const storedPath = attachment?.file_path || "";
     const filename = storedPath.split(/[\\/]/).pop();
-    const downloadEndpoint =
+    const downloadEndpoint = normalizeDownloadEndpoint(
       attachment?.download_url ||
-      (filename
-        ? `/attachments/download/${encodeURIComponent(filename)}`
-        : null);
+        (filename
+          ? `/attachments/download/${encodeURIComponent(filename)}`
+          : null),
+    );
 
     if (!downloadEndpoint) {
       alert(tr("itemPanel.attachments.missing", "Attachment file is missing."));

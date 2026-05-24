@@ -28,11 +28,14 @@ const WarehouseSupplyRequestsPage = () => {
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({
     search: '',
+    category: 'all',
+    subCategory: 'all',
     department: 'all',
     section: 'all',
     status: 'all',
     fromDate: '',
     toDate: '',
+    itemSearch: '',
   });
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [itemsCache, setItemsCache] = useState({});
@@ -153,17 +156,25 @@ const WarehouseSupplyRequestsPage = () => {
 
   const handleFilterChange = (key) => (event) => {
     const value = event.target.value;
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((prev) => {
+      if (key === 'category') {
+        return { ...prev, category: value, subCategory: 'all' };
+      }
+      return { ...prev, [key]: value };
+    });
   };
 
   const clearFilters = () => {
     setFilters({
       search: '',
+      category: 'all',
+      subCategory: 'all',
       department: 'all',
       section: 'all',
       status: 'all',
       fromDate: '',
       toDate: '',
+      itemSearch: '',
     });
   };
 
@@ -184,6 +195,23 @@ const WarehouseSupplyRequestsPage = () => {
         key: 'department',
         label: tr('activeFilters.department', 'Department: {{value}}', {
           value: filters.department,
+        }),
+      });
+    }
+    if (filters.category !== 'all') {
+      chips.push({
+        key: 'category',
+        label: tr('activeFilters.category', 'Category: {{value}}', {
+          value: filters.category,
+        }),
+      });
+    }
+
+    if (filters.subCategory !== 'all') {
+      chips.push({
+        key: 'subCategory',
+        label: tr('activeFilters.subCategory', 'Sub Category: {{value}}', {
+          value: filters.subCategory,
         }),
       });
     }
@@ -224,6 +252,15 @@ const WarehouseSupplyRequestsPage = () => {
       });
     }
 
+    if (filters.itemSearch.trim()) {
+      chips.push({
+        key: 'itemSearch',
+        label: tr('activeFilters.itemSearch', 'Item search: "{{value}}"', {
+          value: filters.itemSearch.trim(),
+        }),
+      });
+    }
+
     return chips;
   }, [filters, tr]);
 
@@ -242,8 +279,36 @@ const WarehouseSupplyRequestsPage = () => {
     [requests],
   );
 
+  const categories = useMemo(() => {
+    const set = new Set();
+    requests.forEach((req) => {
+      const requestItems = itemsCache[req.id] || normalizeItems(req.items || []);
+      requestItems.forEach((item) => {
+        const category = item.category || item.item_category;
+        if (category) set.add(String(category).trim());
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [requests, itemsCache]);
+
+  const subCategories = useMemo(() => {
+    const set = new Set();
+    requests.forEach((req) => {
+      const requestItems = itemsCache[req.id] || normalizeItems(req.items || []);
+      requestItems.forEach((item) => {
+        const category = String(item.category || item.item_category || '').trim();
+        const sub = String(item.sub_category || item.subcategory || '').trim();
+        if (!sub) return;
+        if (filters.category !== 'all' && category !== filters.category) return;
+        set.add(sub);
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [requests, itemsCache, filters.category]);
+
   const filteredRequests = useMemo(() => {
     const normalizedSearch = filters.search.trim().toLowerCase();
+    const normalizedItemSearch = filters.itemSearch.trim().toLowerCase();
     const from = filters.fromDate ? new Date(filters.fromDate) : null;
     const to = filters.toDate ? new Date(filters.toDate) : null;
 
@@ -278,6 +343,38 @@ const WarehouseSupplyRequestsPage = () => {
         return false;
       }
 
+      const requestItems = itemsCache[req.id] || normalizeItems(req.items || []);
+
+      if (filters.category !== 'all') {
+        const hasCategory = requestItems.some(
+          (item) => String(item.category || item.item_category || '').trim() === filters.category,
+        );
+        if (!hasCategory) return false;
+      }
+
+      if (filters.subCategory !== 'all') {
+        const hasSubCategory = requestItems.some((item) => {
+          const category = String(item.category || item.item_category || '').trim();
+          const sub = String(item.sub_category || item.subcategory || '').trim();
+          if (!sub) return false;
+          if (filters.category !== 'all' && category !== filters.category) return false;
+          return sub === filters.subCategory;
+        });
+        if (!hasSubCategory) return false;
+      }
+
+      if (normalizedItemSearch) {
+        const itemHaystack = requestItems
+          .flatMap((item) => [item.item_id, item.item_name])
+          .filter(Boolean)
+          .map((value) => String(value).toLowerCase())
+          .join(' ');
+
+        if (!itemHaystack.includes(normalizedItemSearch)) {
+          return false;
+        }
+      }
+
       if (normalizedSearch) {
         const haystack = [
           req.id,
@@ -296,7 +393,7 @@ const WarehouseSupplyRequestsPage = () => {
 
       return true;
     });
-  }, [filters, requests]);
+  }, [filters, requests, itemsCache]);
 
   const sortRequests = (list) => {
     const sorted = [...list];
@@ -586,6 +683,55 @@ const WarehouseSupplyRequestsPage = () => {
                 )}
                 value={filters.search}
                 onChange={handleFilterChange('search')}
+                className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700" htmlFor="category">
+                {tr('filters.category', 'Category')}
+              </label>
+              <select
+                id="category"
+                value={filters.category}
+                onChange={handleFilterChange('category')}
+                className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="all">{tr('filters.allCategories', 'All Categories')}</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700" htmlFor="subCategory">
+                {tr('filters.subCategory', 'Sub Category')}
+              </label>
+              <select
+                id="subCategory"
+                value={filters.subCategory}
+                onChange={handleFilterChange('subCategory')}
+                className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="all">{tr('filters.allSubCategories', 'All Sub Categories')}</option>
+                {subCategories.map((subCategory) => (
+                  <option key={subCategory} value={subCategory}>
+                    {subCategory}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium text-gray-700" htmlFor="itemSearch">
+                {tr('filters.itemSearch', 'Item search')}
+              </label>
+              <input
+                id="itemSearch"
+                type="search"
+                placeholder={tr('filters.itemSearchPlaceholder', 'Type to filter items')}
+                value={filters.itemSearch}
+                onChange={handleFilterChange('itemSearch')}
                 className="w-full rounded border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
               />
             </div>

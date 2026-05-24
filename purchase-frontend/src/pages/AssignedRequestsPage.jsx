@@ -521,8 +521,9 @@ const AssignedRequestsPage = () => {
   const handleDownloadAttachment = async (attachment) => {
     const storedPath = attachment.file_path || '';
     const filename = storedPath.split(/[\\/]/).pop();
-    const downloadEndpoint =
-      attachment.download_url || (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null);
+    const downloadEndpoint = normalizeDownloadEndpoint(
+      attachment.download_url || (filename ? `/attachments/download/${encodeURIComponent(filename)}` : null),
+    );
 
     if (!downloadEndpoint) {
       alert(tr('alerts.attachmentMissing', 'Attachment file is missing.'));
@@ -1004,3 +1005,10 @@ const AssignedRequestsPage = () => {
 };
 
 export default AssignedRequestsPage;
+const normalizeDownloadEndpoint = (endpoint = '') => {
+  if (!endpoint || typeof endpoint !== 'string') return null;
+  if (/^https?:\/\//i.test(endpoint)) return endpoint;
+
+  const prefixedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return prefixedEndpoint.replace(/^\/api\//, '/');
+};

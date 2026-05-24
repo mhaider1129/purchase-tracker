@@ -13,7 +13,8 @@
     "supplierPortalTitle": "Supplier portal",
     "supplierPortalDescription": "Access RFQs and submit bids directly from the supplier portal without signing in.",
     "supplierPortalCta": "Open supplier portal",
-    "copyright": "© {{year}} Warith International Cancer Institute"
+    "copyright": "© {{year}} Warith International Cancer Institute",
+    "loginIdentifier": "Email, employee ID, or phone number"
   },
   "register": {
     "title": "Register New User",
@@ -23,7 +24,8 @@
       "employeeId": "Employee ID",
       "password": "Password",
       "selectDepartment": "-- Select Department --",
-      "selectSectionOptional": "-- Select Section (optional) --"
+      "selectSectionOptional": "-- Select Section (optional) --",
+      "phoneNumber": "Phone number"
     },
     "actions": {
       "showPassword": "Show Password",

@@ -19,6 +19,7 @@ import usePageTranslation from '../utils/usePageTranslation';
 import Card from '../components/Card';
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
+const DASHBOARD_REFRESH_EVENT = 'dashboard:refresh';
 
 const Dashboard = () => {
   const translate = usePageTranslation('dashboard');
@@ -32,33 +33,47 @@ const Dashboard = () => {
       maximumFractionDigits: 0,
     });
 
+  const fetchSummary = async () => {
+    try {
+      const res = await axios.get('/dashboard/summary');
+      setSummary(res.data);
+      setError('');
+    } catch (err) {
+      console.error('❌ Failed to fetch dashboard data:', err);
+      setError(
+        translate('failedToLoad', { defaultValue: 'Failed to load dashboard' })
+      );
+    }
+  };
+
+  const fetchSpending = async (selectedYear = year) => {
+    try {
+      const res = await axios.get('/dashboard/department-spending', {
+        params: { year: selectedYear },
+      });
+      setDepartmentSpending(res.data);
+    } catch (err) {
+      console.error('❌ Failed to fetch department spending:', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const res = await axios.get('/dashboard/summary');
-        setSummary(res.data);
-      } catch (err) {
-        console.error('❌ Failed to fetch dashboard data:', err);
-        setError(
-          translate('failedToLoad', { defaultValue: 'Failed to load dashboard' })
-        );
-      }
-    };
     fetchSummary();
   }, []);
 
   useEffect(() => {
-    const fetchSpending = async () => {
-      try {
-        const res = await axios.get('/dashboard/department-spending', {
-          params: { year },
-        });
-        setDepartmentSpending(res.data);
-      } catch (err) {
-        console.error('❌ Failed to fetch department spending:', err);
-      }
+    fetchSpending(year);
+  }, [year]);
+
+  useEffect(() => {
+    const handleDashboardRefresh = () => {
+      fetchSummary();
+      fetchSpending(year);
     };
-    fetchSpending();
+
+    window.addEventListener(DASHBOARD_REFRESH_EVENT, handleDashboardRefresh);
+    return () =>
+      window.removeEventListener(DASHBOARD_REFRESH_EVENT, handleDashboardRefresh);
   }, [year]);
 
   const { deptChartData, deptNames } = useMemo(() => {

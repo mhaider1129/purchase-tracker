@@ -4,6 +4,7 @@ import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useWarehouses from '../hooks/useWarehouses';
 import useWarehouseStockItems from '../hooks/useWarehouseStockItems';
+import { hasPermission } from '../utils/permissions';
 
 const numberFormatter = new Intl.NumberFormat();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -96,6 +97,7 @@ const WarehouseInventoryPage = () => {
     [departments, issueForm.department_id],
   );
   const availableSections = useMemo(() => selectedIssueDepartment?.sections || [], [selectedIssueDepartment]);
+  const canViewWarehouseReports = useMemo(() => hasPermission(user, 'warehouse.view-supply'), [user]);
 
   useEffect(() => {
     if (
@@ -170,9 +172,11 @@ const WarehouseInventoryPage = () => {
       loadStockItems();
       loadUnassignedStockItems();
       loadDepartments();
-      loadReport();
+      if (canViewWarehouseReports) {
+        loadReport();
+      }
     }
-  }, [user, userLoading]);
+  }, [canViewWarehouseReports, user, userLoading]);
 
   useEffect(() => {
     if (warehouses.length > 0) {

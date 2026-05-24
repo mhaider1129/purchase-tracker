@@ -15,6 +15,14 @@ const getFilenameFromAttachment = (attachment = {}) => {
   return "attachment";
 };
 
+const normalizeDownloadEndpoint = (endpoint = "") => {
+  if (!endpoint || typeof endpoint !== "string") return null;
+  if (/^https?:\/\//i.test(endpoint)) return endpoint;
+
+  const prefixedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return prefixedEndpoint.replace(/^\/api\//, "/");
+};
+
 const useRequestAttachments = () => {
   const [attachmentsMap, setAttachmentsMap] = useState({});
   const [attachmentLoadingMap, setAttachmentLoadingMap] = useState({});
@@ -76,11 +84,12 @@ const useRequestAttachments = () => {
     const fallbackName = storedPath
       ? storedPath.split(/[\\/]/).pop()
       : attachment.file_name || filename;
-    const downloadEndpoint =
+    const downloadEndpoint = normalizeDownloadEndpoint(
       attachment.download_url ||
-      (fallbackName
-        ? `/attachments/download/${encodeURIComponent(fallbackName)}`
-        : null);
+        (fallbackName
+          ? `/attachments/download/${encodeURIComponent(fallbackName)}`
+          : null),
+    );
 
     if (!downloadEndpoint) {
       alert("Attachment file is missing.");

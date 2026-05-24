@@ -10,7 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 
 const Login = () => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -27,9 +27,9 @@ const Login = () => {
     setLoading(true);
     setErrorMsg('');
 
-    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedLoginIdentifier = loginIdentifier.trim();
 
-    if (!trimmedEmail || !password) {
+    if (!trimmedLoginIdentifier || !password) {
       setErrorMsg(t('login.emailPasswordRequired'));
       setLoading(false);
       return;
@@ -37,7 +37,7 @@ const Login = () => {
 
     try {
       const res = await api.post('/auth/login', {
-        email: trimmedEmail,
+        login: trimmedLoginIdentifier,
         password,
       });
 
@@ -93,15 +93,15 @@ const Login = () => {
             htmlFor="login-email"
             className="block mb-1 text-gray-700 dark:text-gray-300"
           >
-            {t('login.email')}
+            {t('login.loginIdentifier')}
           </label>
           <input
             id="login-email"
             ref={emailInputRef}
-            type="email"
+            type="text"
             className="w-full p-2 border border-gray-300 rounded"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={loginIdentifier}
+            onChange={(e) => setLoginIdentifier(e.target.value)}
             required
           />
         </div>

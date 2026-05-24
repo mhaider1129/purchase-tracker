@@ -610,6 +610,24 @@ const Navbar = () => {
             "text-emerald-600",
           ),
           createItem(
+            canManageContracts,
+            "Contract Templates",
+            "/contract-templates",
+            "text-emerald-600",
+          ),
+          createItem(
+            canManageContracts,
+            "Contract Clauses",
+            "/contract-clauses",
+            "text-emerald-600",
+          ),
+          createItem(
+            canManageContracts,
+            "Contract Approvals",
+            "/contracts/approvals",
+            "text-emerald-600",
+          ),
+          createItem(
             normalizedRole === "ceo",
             t("navbar.registerUser"),
             "/register",

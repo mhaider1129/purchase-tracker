@@ -90,6 +90,7 @@ const PRINT_TRANSLATIONS = {
     printConfirm: 'طباعة هذا الطلب ستزيد عداد الطباعة. هل تريد المتابعة؟',
   },
 };
+const DASHBOARD_REFRESH_EVENT = 'dashboard:refresh';
 
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
@@ -845,6 +846,7 @@ const AllRequestsPage = () => {
       if (expandedDirectCommId === requestId) setExpandedDirectCommId(null);
       alert('✅ Request deleted permanently.');
       fetchRequests();
+      window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
     } catch (err) {
       console.error(`❌ Failed to delete request ${requestId}:`, err);
       alert(err?.response?.data?.message || 'Failed to delete request.');

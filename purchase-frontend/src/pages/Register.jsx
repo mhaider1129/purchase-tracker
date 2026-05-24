@@ -15,7 +15,9 @@ const Register = () => {
     department_id: '',
     section_id: '', // 🆕 Added section_id
     employee_id: '',
+    phone_number: '',
   });
+
 
   const [departments, setDepartments] = useState([]);
   const [message, setMessage] = useState('');
@@ -77,6 +79,7 @@ const Register = () => {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         employee_id: formData.employee_id.trim(),
+        phone_number: formData.phone_number.trim(),
       };
 
       if (!payload.employee_id) {
@@ -129,6 +132,17 @@ const Register = () => {
             name="email"
             placeholder={t('register.fields.email')}
             value={formData.email}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+            required
+          />
+
+
+          <input
+            type="text"
+            name="phone_number"
+            placeholder={t('register.fields.phoneNumber')}
+            value={formData.phone_number}
             onChange={handleChange}
             className="w-full p-2 border rounded"
             required
