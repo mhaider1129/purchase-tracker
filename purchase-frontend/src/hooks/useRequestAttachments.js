@@ -17,9 +17,35 @@ const getFilenameFromAttachment = (attachment = {}) => {
 
 const normalizeDownloadEndpoint = (endpoint = "") => {
   if (!endpoint || typeof endpoint !== "string") return null;
-  if (/^https?:\/\//i.test(endpoint)) return endpoint;
 
-  return endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const trimmedEndpoint = endpoint.trim();
+  if (!trimmedEndpoint) return null;
+
+  if (/^https?:\/\//i.test(trimmedEndpoint)) {
+    return trimmedEndpoint;
+  }
+
+  return trimmedEndpoint.startsWith("/")
+    ? trimmedEndpoint
+    : `/${trimmedEndpoint}`;
+};
+
+const buildDownloadCandidates = (candidates = []) => {
+  const normalized = candidates.map(normalizeDownloadEndpoint).filter(Boolean);
+
+  const withApiPrefixVariants = normalized.flatMap((endpoint) => {
+    if (/^https?:\/\//i.test(endpoint)) {
+      return [endpoint];
+    }
+
+    if (!endpoint.startsWith("/api/")) {
+      return [endpoint];
+    }
+
+    return [endpoint, endpoint.replace(/^\/api/, "") || "/"];
+  });
+
+  return Array.from(new Set(withApiPrefixVariants));
 };
 
 const useRequestAttachments = () => {
@@ -90,13 +116,11 @@ const useRequestAttachments = () => {
     const normalizedAttachmentEndpoint = normalizeDownloadEndpoint(
       attachment?.download_url,
     );
-    const downloadCandidates = Array.from(
-      new Set(
-        [normalizedAttachmentEndpoint, filenameBasedEndpoint, idBasedEndpoint]
-          .map(normalizeDownloadEndpoint)
-          .filter(Boolean),
-      ),
-    );
+    const downloadCandidates = buildDownloadCandidates([
+      normalizedAttachmentEndpoint,
+      filenameBasedEndpoint,
+      idBasedEndpoint,
+    ]);
 
     if (downloadCandidates.length === 0) {
       alert("Attachment file is missing.");
