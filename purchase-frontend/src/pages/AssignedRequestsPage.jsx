@@ -514,7 +514,17 @@ const AssignedRequestsPage = () => {
       window.URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error(`❌ Error generating ${type.toUpperCase()} document for request ${requestId}:`, err);
-      alert(tr('alerts.generateDocumentFailed', 'Failed to generate document.'));
+      const serverMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        err?.message;
+
+      alert(
+        serverMessage
+          ? tr('alerts.generateDocumentFailedWithReason', `Failed to generate document: ${serverMessage}`)
+          : tr('alerts.generateDocumentFailed', 'Failed to generate document.'),
+      );
     }
   };
 

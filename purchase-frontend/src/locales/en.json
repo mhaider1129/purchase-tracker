@@ -125,6 +125,7 @@
     "department": "Department",
     "section": "Section",
     "employeeId": "Employee ID",
+    "phoneNumber": "Phone Number",
     "selectInstitute": "Select an institute",
     "selectInstituteFirst": "Select an institute first",
     "selectDepartment": "Select a department",

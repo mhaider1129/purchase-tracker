@@ -120,10 +120,7 @@ const OpenRequestsPage = () => {
       try {
         resetAttachments();
         const response = await api.get('/requests/my');
-        const open = response.data.filter(
-          (r) => !['completed', 'received', 'rejected'].includes((r.status || '').toLowerCase())
-        );
-        setRequests(open || []);
+        setRequests(Array.isArray(response.data) ? response.data : []);
         resetApprovals();
       } catch (err) {
         console.error('Failed to fetch open requests:', err);
@@ -156,25 +153,11 @@ const OpenRequestsPage = () => {
   }, [requests]);
 
   const statusCards = useMemo(() => {
-    const entries = Object.entries(statusCounts).map(([status, count]) => ({
-      key: status,
-      label: translate(`openRequests.statuses.${status}`, {
-        defaultValue: status ? status.charAt(0).toUpperCase() + status.slice(1) : status,
-      }),
-      count,
-    }));
-
-    if (!entries.some(({ key }) => key === 'received')) {
-      entries.push({
-        key: 'received',
-        label: translate('openRequests.statuses.received', {
-          defaultValue: 'Received',
-        }),
-        count: statusCounts.received || 0,
-      });
-    }
-
-    entries.sort((a, b) => b.count - a.count);
+    const finalizedStatuses = ['approved', 'rejected', 'completed', 'received', 'cancelled'];
+    const pendingCount = requests.reduce((count, req) => {
+      const status = (req?.status || '').toLowerCase();
+      return finalizedStatuses.includes(status) ? count : count + 1;
+    }, 0);
 
     return [
       {
@@ -183,9 +166,23 @@ const OpenRequestsPage = () => {
         count: requests.length,
         isTotal: true,
       },
-      ...entries,
+      {
+        key: 'pending',
+        label: translate('openRequests.statuses.pending', { defaultValue: 'Pending' }),
+        count: pendingCount,
+      },
+      {
+        key: 'approved',
+        label: translate('openRequests.statuses.approved', { defaultValue: 'Approved' }),
+        count: statusCounts.approved || 0,
+      },
+      {
+        key: 'completed',
+        label: translate('openRequests.statuses.completed', { defaultValue: 'Completed' }),
+        count: statusCounts.completed || 0,
+      },
     ];
-  }, [statusCounts, requests.length, tr, translate]);
+  }, [requests, statusCounts, tr, translate]);
 
   const uniqueTypes = useMemo(() => {
     return Array.from(

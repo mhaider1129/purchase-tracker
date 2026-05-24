@@ -124,9 +124,16 @@ api.interceptors.response.use(
 
     // General logging
     if (error.response) {
-      console.error(
-        `❌ ${error.response.status}: ${error.response.data.message}`,
-      );
+      const responseData = error.response.data;
+      const serverMessage =
+        (typeof responseData === "string" && responseData.trim()) ||
+        responseData?.message ||
+        responseData?.error ||
+        responseData?.detail ||
+        error.message ||
+        "Request failed";
+
+      console.error(`❌ ${error.response.status}: ${serverMessage}`);
     } else {
       console.error("❌ Network or Server error:", error.message);
     }

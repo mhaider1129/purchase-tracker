@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useDarkMode from "../hooks/useDarkMode";
-import { Menu, X, Sun, Moon, Contrast, ChevronDown, Search, XCircle } from "lucide-react";
+import { Menu, X, Sun, Moon, Contrast, ChevronDown, Search, XCircle, House } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./ui/NotificationBell";
 import { useAuth } from "../hooks/useAuth";
@@ -814,6 +814,15 @@ const Navbar = () => {
     >
       <div className="flex w-full items-center justify-between px-4 py-3 md:py-4">
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white/80 p-2 text-blue-700 transition hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800/80 dark:text-blue-300 dark:hover:bg-gray-700"
+            aria-label={t("navbar.home", { defaultValue: "Home" })}
+            title={t("navbar.home", { defaultValue: "Home" })}
+          >
+            <House size={18} aria-hidden="true" />
+          </button>
           <h1
             className="cursor-pointer text-xl font-semibold tracking-tight text-blue-700 dark:text-blue-300 md:text-2xl"
             onClick={() => navigate("/")}

@@ -271,18 +271,23 @@ const AllRequestsPage = () => {
       });
 
       const fetchedRequests = Array.isArray(res?.data?.data) ? [...res.data.data] : [];
-      const urgentRequests = [];
-      const nonUrgentRequests = [];
+      const isCompletedOrRejected = (req) => {
+        const normalizedStatus = String(req?.status || '').trim().toLowerCase();
+        return normalizedStatus === 'completed' || normalizedStatus === 'rejected';
+      };
+
+      const urgentPinnedRequests = [];
+      const regularRequests = [];
 
       fetchedRequests.forEach((req) => {
-        if (req?.is_urgent) {
-          urgentRequests.push(req);
+        if (req?.is_urgent && !isCompletedOrRejected(req)) {
+          urgentPinnedRequests.push(req);
         } else {
-          nonUrgentRequests.push(req);
+          regularRequests.push(req);
         }
       });
 
-      setRequests([...urgentRequests, ...nonUrgentRequests]);
+      setRequests([...urgentPinnedRequests, ...regularRequests]);
       resetApprovals();
       const total = Number(res?.data?.total) || 0;
       setTotalRequests(total);

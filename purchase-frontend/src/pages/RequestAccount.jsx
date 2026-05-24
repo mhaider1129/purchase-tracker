@@ -12,6 +12,7 @@ const defaultForm = {
   department_id: '',
   section_id: '',
   employee_id: '',
+  phone_number: '',
 };
 
 const RequestAccount = () => {
@@ -145,6 +146,7 @@ const RequestAccount = () => {
         department_id: departmentId,
         section_id: sectionId,
         employee_id: form.employee_id.trim(),
+        phone_number: form.phone_number.trim(),
       });
 
       setMessage({ type: 'success', text: t('requestAccount.successMessage') });
@@ -230,6 +232,19 @@ const RequestAccount = () => {
             onChange={handleChange}
             className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 dark:bg-gray-900"
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+            {t('requestAccount.phoneNumber')}
+          </label>
+          <input
+            type="tel"
+            name="phone_number"
+            value={form.phone_number}
+            onChange={handleChange}
+            className="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200 dark:bg-gray-900"
           />
         </div>
 

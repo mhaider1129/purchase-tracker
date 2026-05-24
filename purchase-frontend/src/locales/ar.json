@@ -122,6 +122,7 @@
     "department": "القسم",
     "section": "الشعبة",
     "employeeId": "رقم الموظف",
+    "phoneNumber": "رقم الهاتف",
     "selectInstitute": "اختر المؤسسة",
     "selectInstituteFirst": "اختر المؤسسة أولاً",
     "selectDepartment": "اختر القسم",
