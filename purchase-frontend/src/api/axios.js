@@ -6,7 +6,7 @@ const ENV_API_BASE =
   process.env.REACT_APP_API_URL ||
   "/api";
 
-const FALLBACK_API_BASES = ["/api", "", "/backend/api"];
+const FALLBACK_API_BASES = ["/api", "/api/api", "", "/backend/api"];
 
 const trimTrailingSlashes = (value = "") => value.replace(/\/+$/, "");
 
@@ -56,6 +56,7 @@ const resolveApiFallbackBases = (base) => {
 
   if (normalizedBase.endsWith("/api")) {
     candidates.add(normalizedBase.slice(0, -4));
+    candidates.add(`${normalizedBase}/api`);
   }
 
   if (normalizedBase.endsWith("/backend/api")) {
@@ -96,7 +97,7 @@ api.interceptors.response.use(
     const config = error.config || {};
     const status = error.response?.status;
 
-    if ((status === 404 || status === 405) && typeof config.url === "string") {
+    if (status === 404 && typeof config.url === "string") {
       const attemptedBases = config.__attemptedApiBases || [];
       const currentBase = trimTrailingSlashes(config.baseURL || API_BASE);
       const fallbackBases = resolveApiFallbackBases(currentBase);
