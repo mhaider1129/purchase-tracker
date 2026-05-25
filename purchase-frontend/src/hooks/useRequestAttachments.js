@@ -158,7 +158,7 @@ const useRequestAttachments = () => {
       for (const endpoint of downloadCandidates) {
         const candidateResponse = await axios.get(endpoint, {
           responseType: "blob",
-          validateStatus: (status) => status >= 200 && status < 500,
+          validateStatus: () => true,
         });
 
         if (candidateResponse.status === 404) {
@@ -167,9 +167,10 @@ const useRequestAttachments = () => {
         }
 
         if (candidateResponse.status < 200 || candidateResponse.status >= 300) {
-          throw new Error(
-            `Attachment download failed with status ${candidateResponse.status}`,
+          lastError = new Error(
+            `Attachment download failed with status ${candidateResponse.status} at ${endpoint}`,
           );
+          continue;
         }
 
         response = candidateResponse;
