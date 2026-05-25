@@ -41,7 +41,7 @@ api.interceptors.response.use(
 
     const method = (config.method || "get").toLowerCase();
 
-    if (status === 404 && method === "get" && typeof config.url === "string") {
+    if (status === 404 && typeof config.url === "string") {
       const attemptedBases = config.__attemptedApiBases || [];
       const currentBase = config.baseURL || API_BASE;
 
