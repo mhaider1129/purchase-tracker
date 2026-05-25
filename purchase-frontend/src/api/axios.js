@@ -1,7 +1,12 @@
 import axios from "axios";
 
 const API_BASE =
-  process.env.REACT_APP_API_BASE || "/api";
+  process.env.REACT_APP_API_BASE_URL ||
+  process.env.REACT_APP_API_BASE ||
+  process.env.REACT_APP_API_URL ||
+  "/api";
+
+const FALLBACK_API_BASES = ["/backend/api", "/api"];
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -34,13 +39,19 @@ api.interceptors.response.use(
     const config = error.config || {};
     const status = error.response?.status;
 
-    if (status === 404 && !config.__didRetryWithApiPrefix && typeof config.url === "string") {
-      config.__didRetryWithApiPrefix = true;
-
+    if (status === 404 && typeof config.url === "string") {
       const normalizedUrl = config.url.startsWith("/") ? config.url : `/${config.url}`;
-      config.url = `/api${normalizedUrl}`;
+      const attemptedBases = config.__attemptedApiBases || [];
 
-      return api.request(config);
+      const nextBase = FALLBACK_API_BASES.find(
+        (base) => !attemptedBases.includes(base) && !normalizedUrl.startsWith(`${base}/`)
+      );
+
+      if (nextBase) {
+        config.__attemptedApiBases = [...attemptedBases, nextBase];
+        config.url = `${nextBase}${normalizedUrl}`;
+        return api.request(config);
+      }
     }
 
     if (status === 401) {
