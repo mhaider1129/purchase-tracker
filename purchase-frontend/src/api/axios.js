@@ -6,7 +6,7 @@ const API_BASE =
   process.env.REACT_APP_API_URL ||
   "/api";
 
-const FALLBACK_API_BASES = ["/api", "/backend/api", "/backend", ""];
+const FALLBACK_API_BASES = ["/api", "/backend/api"];
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -39,7 +39,9 @@ api.interceptors.response.use(
     const config = error.config || {};
     const status = error.response?.status;
 
-    if ((status === 404 || status === 405) && typeof config.url === "string") {
+    const method = (config.method || "get").toLowerCase();
+
+    if (status === 404 && method === "get" && typeof config.url === "string") {
       const attemptedBases = config.__attemptedApiBases || [];
       const currentBase = config.baseURL || API_BASE;
 
