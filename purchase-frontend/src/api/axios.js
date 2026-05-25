@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const API_BASE =
-  process.env.REACT_APP_API_BASE || process.env.REACT_APP_API_URL || "/api";
+  process.env.REACT_APP_API_BASE_URL ||
+  process.env.REACT_APP_API_BASE ||
+  process.env.REACT_APP_API_URL ||
+  "/api";
 
 const FALLBACK_API_BASES = ["/backend/api", "/api"];
 
@@ -40,9 +43,13 @@ api.interceptors.response.use(
       const normalizedUrl = config.url.startsWith("/") ? config.url : `/${config.url}`;
       const attemptedBases = config.__attemptedApiBases || [];
 
-      const nextBase = FALLBACK_API_BASES.find(
-        (base) => !attemptedBases.includes(base) && !normalizedUrl.startsWith(`${base}/`)
+      const alreadyPrefixedWithKnownBase = FALLBACK_API_BASES.some(
+        (base) => normalizedUrl === base || normalizedUrl.startsWith(`${base}/`)
       );
+
+      const nextBase = alreadyPrefixedWithKnownBase
+        ? null
+        : FALLBACK_API_BASES.find((base) => !attemptedBases.includes(base));
 
       if (nextBase) {
         config.__attemptedApiBases = [...attemptedBases, nextBase];
