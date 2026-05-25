@@ -156,17 +156,24 @@ const useRequestAttachments = () => {
       let lastError = null;
 
       for (const endpoint of downloadCandidates) {
-        try {
-          response = await axios.get(endpoint, {
-            responseType: "blob",
-          });
-          break;
-        } catch (error) {
-          lastError = error;
-          if (error?.response?.status !== 404) {
-            throw error;
-          }
+        const candidateResponse = await axios.get(endpoint, {
+          responseType: "blob",
+          validateStatus: (status) => status >= 200 && status < 500,
+        });
+
+        if (candidateResponse.status === 404) {
+          lastError = new Error(`Attachment not found at ${endpoint}`);
+          continue;
         }
+
+        if (candidateResponse.status < 200 || candidateResponse.status >= 300) {
+          throw new Error(
+            `Attachment download failed with status ${candidateResponse.status}`,
+          );
+        }
+
+        response = candidateResponse;
+        break;
       }
 
       if (!response) {
