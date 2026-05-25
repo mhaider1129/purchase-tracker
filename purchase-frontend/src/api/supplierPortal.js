@@ -1,7 +1,7 @@
 import api from "./axios";
 
 export const loginSupplierPortal = async (payload, options = {}) => {
-  const response = await api.post("/supplier-portal/auth/login", payload, options);
+  const response = await api.post("/supplier-portal/auth/login/", payload, options);
   return response.data;
 };
 

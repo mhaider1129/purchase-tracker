@@ -36,7 +36,7 @@ const Login = () => {
     }
 
     try {
-      const res = await api.post('/auth/login', {
+      const res = await api.post('/auth/login/', {
         login: trimmedLoginIdentifier,
         password,
       });
