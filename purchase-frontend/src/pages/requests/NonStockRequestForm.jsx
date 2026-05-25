@@ -7,6 +7,7 @@ import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
+import RequestScheduleField from '../../components/requests/RequestScheduleField';
 
 const NonStockRequestForm = () => {
   const { t } = useTranslation();
@@ -18,6 +19,7 @@ const NonStockRequestForm = () => {
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scheduledFor, setScheduledFor] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [projectId, setProjectId] = useState('');
   const [itemErrors, setItemErrors] = useState([{}]);
@@ -447,6 +449,7 @@ ${templateText}`
     formData.append('target_section_id', targetSectionId || '');
     const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
     formData.append('items', JSON.stringify(itemsPayload));
+    if (scheduledFor) formData.append('scheduled_for', new Date(scheduledFor).toISOString());
     attachments.forEach((file) => formData.append('attachments', file));
     items.forEach((item, idx) => {
       (item.attachments || []).forEach((file) => {
@@ -825,6 +828,8 @@ ${templateText}`
               </div>
             )}
           </div>
+
+          <RequestScheduleField value={scheduledFor} onChange={setScheduledFor} disabled={isSubmitting} />
 
           <div className="flex justify-end">
             <button
