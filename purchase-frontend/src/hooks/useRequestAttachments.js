@@ -30,41 +30,12 @@ const normalizeDownloadEndpoint = (endpoint = "") => {
     : `/${trimmedEndpoint}`;
 };
 
-
-const stripDuplicateApiPrefix = (endpoint = "") => {
-  if (typeof endpoint !== "string" || !endpoint.startsWith("/")) {
-    return endpoint;
-  }
-
-  const baseUrl = axios?.defaults?.baseURL || "";
-  const baseHasApiSuffix = /\/api\/?$/i.test(baseUrl);
-
-  if (baseHasApiSuffix && endpoint.startsWith("/api/")) {
-    return endpoint.replace(/^\/api/, "") || "/";
-  }
-
-  return endpoint;
-};
-
 const buildDownloadCandidates = (candidates = []) => {
   const normalized = candidates
     .map(normalizeDownloadEndpoint)
-    .map(stripDuplicateApiPrefix)
     .filter(Boolean);
 
-  const withApiPrefixVariants = normalized.flatMap((endpoint) => {
-    if (/^https?:\/\//i.test(endpoint)) {
-      return [endpoint];
-    }
-
-    if (!endpoint.startsWith("/api/")) {
-      return [endpoint];
-    }
-
-    return [endpoint, endpoint.replace(/^\/api/, "") || "/"];
-  });
-
-  return Array.from(new Set(withApiPrefixVariants));
+  return Array.from(new Set(normalized));
 };
 
 const useRequestAttachments = () => {

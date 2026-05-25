@@ -420,7 +420,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
     setItemFeedbackMap((prev) => ({ ...prev, [requestId]: null }));
 
     try {
-      const res = await axios.patch(`/api/approvals/${approvalId}/items`, { items: payloadItems });
+      const res = await axios.patch(`/approvals/${approvalId}/items`, { items: payloadItems });
       const currentItems = Array.isArray(request.items) ? request.items : [];
       let mergedItems = currentItems;
 
@@ -586,7 +586,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
           payload.estimated_cost = normalizedCost;
         }
 
-        await axios.patch(`/api/approvals/${request.approval_id}/decision`, payload);
+        await axios.patch(`/approvals/${request.approval_id}/decision`, payload);
         setFeedback({
           type: 'success',
           message:
@@ -651,7 +651,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
       setAttachmentErrorMap((prev) => ({ ...prev, [requestId]: null }));
 
       try {
-        const res = await axios.get(`/api/attachments/${requestId}`);
+        const res = await axios.get(`/attachments/${requestId}`);
         const attachments = Array.isArray(res.data) ? res.data : [];
         setAttachmentsMap((prev) => ({ ...prev, [requestId]: attachments }));
       } catch (err) {

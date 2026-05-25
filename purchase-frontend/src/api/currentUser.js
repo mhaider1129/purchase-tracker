@@ -1,57 +1,6 @@
 import api from "./axios";
 
-const normalizeBasePath = () => {
-  const baseURL = api?.defaults?.baseURL || "";
+const CURRENT_USER_ENDPOINT = "/users/me";
 
-  if (!baseURL) {
-    return "";
-  }
-
-  try {
-    const pathname = /^https?:\/\//i.test(baseURL)
-      ? new URL(baseURL).pathname
-      : baseURL;
-    return pathname.replace(/\/+$/, "");
-  } catch {
-    return "";
-  }
-};
-
-const buildCandidateEndpoints = () => {
-  const basePath = normalizeBasePath();
-
-  if (/(^|\/)api(\/|$)/i.test(basePath)) {
-    return ["/users/me", "/auth/me", "/api/users/me", "/api/auth/me"];
-  }
-
-  return ["/api/users/me", "/users/me", "/api/auth/me", "/auth/me"];
-};
-
-const CURRENT_USER_ENDPOINTS = buildCandidateEndpoints();
-let resolvedCurrentUserEndpoint = null;
-
-const isNotFoundError = (error) => error?.response?.status === 404;
-
-export const fetchCurrentUser = async (config = {}) => {
-  if (resolvedCurrentUserEndpoint) {
-    return api.get(resolvedCurrentUserEndpoint, config);
-  }
-
-  let lastError;
-
-  for (const endpoint of CURRENT_USER_ENDPOINTS) {
-    try {
-      const response = await api.get(endpoint, { ...config, suppressNotFoundLog: true });
-      resolvedCurrentUserEndpoint = endpoint;
-      return response;
-    } catch (error) {
-      if (!isNotFoundError(error)) {
-        throw error;
-      }
-
-      lastError = error;
-    }
-  }
-
-  throw lastError;
-};
+export const fetchCurrentUser = async (config = {}) =>
+  api.get(CURRENT_USER_ENDPOINT, config);

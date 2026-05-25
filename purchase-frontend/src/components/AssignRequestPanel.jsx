@@ -12,7 +12,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
   useEffect(() => {
     const fetchProcurementUsers = async () => {
       try {
-        const res = await axios.get("/api/requests/procurement-users");
+        const res = await axios.get("/requests/procurement-users");
         setUsers(res.data);
       } catch (err) {
         console.error("❌ Failed to fetch procurement users:", err);
