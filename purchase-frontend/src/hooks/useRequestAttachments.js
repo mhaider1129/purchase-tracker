@@ -128,6 +128,9 @@ const useRequestAttachments = () => {
     const fallbackName = storedPath
       ? storedPath.split(/[\\/]/).pop()
       : attachment.file_name || filename;
+    const storedPathBasedEndpoint = storedPath
+      ? `/attachments/download?path=${encodeURIComponent(storedPath)}`
+      : null;
     const idBasedEndpoint = attachment?.id ? `/attachments/${attachment.id}/download` : null;
     const filenameBasedEndpoint = fallbackName
       ? `/attachments/download/${encodeURIComponent(fallbackName)}`
@@ -137,8 +140,9 @@ const useRequestAttachments = () => {
     );
     const downloadCandidates = buildDownloadCandidates([
       normalizedAttachmentEndpoint,
-      filenameBasedEndpoint,
       idBasedEndpoint,
+      storedPathBasedEndpoint,
+      filenameBasedEndpoint,
     ]);
 
     if (downloadCandidates.length === 0) {
