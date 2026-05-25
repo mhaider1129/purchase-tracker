@@ -30,8 +30,20 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
+  async (error) => {
+    const config = error.config || {};
+    const status = error.response?.status;
+
+    if (status === 404 && !config.__didRetryWithApiPrefix && typeof config.url === "string") {
+      config.__didRetryWithApiPrefix = true;
+
+      const normalizedUrl = config.url.startsWith("/") ? config.url : `/${config.url}`;
+      config.url = `/api${normalizedUrl}`;
+
+      return api.request(config);
+    }
+
+    if (status === 401) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
