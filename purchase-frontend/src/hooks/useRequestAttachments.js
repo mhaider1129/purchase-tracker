@@ -52,6 +52,7 @@ const buildDownloadCandidates = (candidates = []) => {
     .map(stripDuplicateApiPrefix)
     .filter(Boolean);
 
+  const withApiPrefixVariants = normalized.flatMap((endpoint) => {
     if (/^https?:\/\//i.test(endpoint)) {
       return [endpoint];
     }
