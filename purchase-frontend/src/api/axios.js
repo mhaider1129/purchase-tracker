@@ -40,20 +40,16 @@ api.interceptors.response.use(
     const status = error.response?.status;
 
     if (status === 404 && typeof config.url === "string") {
-      const normalizedUrl = config.url.startsWith("/") ? config.url : `/${config.url}`;
       const attemptedBases = config.__attemptedApiBases || [];
+      const currentBase = config.baseURL || API_BASE;
 
-      const alreadyPrefixedWithKnownBase = FALLBACK_API_BASES.some(
-        (base) => normalizedUrl === base || normalizedUrl.startsWith(`${base}/`)
+      const nextBase = FALLBACK_API_BASES.find(
+        (base) => base !== currentBase && !attemptedBases.includes(base)
       );
-
-      const nextBase = alreadyPrefixedWithKnownBase
-        ? null
-        : FALLBACK_API_BASES.find((base) => !attemptedBases.includes(base));
 
       if (nextBase) {
         config.__attemptedApiBases = [...attemptedBases, nextBase];
-        config.url = `${nextBase}${normalizedUrl}`;
+        config.baseURL = nextBase;
         return api.request(config);
       }
     }
