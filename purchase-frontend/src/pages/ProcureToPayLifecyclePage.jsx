@@ -17,6 +17,46 @@ import { hasAnyPermission } from '../utils/permissions';
 import { useSuppliers } from '../hooks/useSuppliers';
 import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
 
+
+const formatTimelineDate = (value) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleString('en-GB');
+};
+
+const buildTransactionTimeline = (payload = {}) => {
+  const lifecycle = payload?.lifecycle || {};
+  const approvals = payload?.approvals || [];
+  const receipts = payload?.receipts || [];
+  const invoices = payload?.invoices || [];
+  const matches = payload?.match_results || [];
+  const vouchers = payload?.vouchers || [];
+  const payments = payload?.payments || [];
+
+  const approvedApprovals = approvals.filter((entry) => String(entry.status || '').toLowerCase() === 'approved');
+  const hodApproval = approvedApprovals.find((entry) => String(entry.role || '').toLowerCase().includes('hod'));
+  const cmoApproval = approvedApprovals.find((entry) => String(entry.role || '').toLowerCase().includes('cmo'));
+
+  const quotationCount = Number(payload?.request?.quotation_count || 0);
+  const supplierSelected = payload?.request?.selected_supplier || invoices[0]?.supplier || payload?.request?.supplier_name;
+  const partialReceipt = receipts.find((entry) => Number(entry.short_quantity || 0) > 0 || Number(entry.damaged_quantity || 0) > 0);
+  const approvedPayments = payments.filter((entry) => ['approved', 'paid'].includes(String(entry.payment_status || '').toLowerCase()));
+
+  return [
+    { title: 'PR Created', at: lifecycle.created_at || payload?.request?.created_at, done: true },
+    { title: 'Approved by HOD', at: hodApproval?.approved_at || hodApproval?.created_at, done: Boolean(hodApproval) },
+    { title: 'Approved by CMO', at: cmoApproval?.approved_at || cmoApproval?.created_at, done: Boolean(cmoApproval) },
+    { title: 'RFQ Issued', at: payload?.request?.rfq_issued_at || lifecycle.rfq_issued_at, done: Boolean(payload?.request?.rfq_issued_at || lifecycle.rfq_issued_at) },
+    { title: `Quotations Received (${quotationCount || 0})`, at: payload?.request?.quotation_received_at || lifecycle.quotation_received_at, done: quotationCount > 0 },
+    { title: 'Supplier Selected', detail: supplierSelected || null, at: payload?.request?.supplier_selected_at || lifecycle.supplier_selected_at, done: Boolean(supplierSelected) },
+    { title: 'PO Issued', at: lifecycle.po_issued_at || payload?.request?.po_issued_at, done: Boolean(lifecycle.po_issued_at || payload?.request?.po_issued_at) },
+    { title: 'Partial Delivery Received', at: partialReceipt?.received_at, done: Boolean(partialReceipt) },
+    { title: 'Invoice Matched', at: matches[0]?.matched_at || matches[0]?.created_at, done: matches.some((entry) => String(entry.match_status || '').toLowerCase().includes('match')) },
+    { title: 'Payment Approved', at: approvedPayments[0]?.approved_at || approvedPayments[0]?.paid_at || approvedPayments[0]?.created_at, done: approvedPayments.length > 0 || vouchers.length > 0 },
+  ];
+};
+
 const ProcureToPayLifecyclePage = () => {
   const { requestId } = useParams();
   const hasRequestContext = Number.isInteger(Number(requestId)) && Number(requestId) > 0;
@@ -147,6 +187,8 @@ const ProcureToPayLifecyclePage = () => {
   };
 
   const availableReceipts = data?.receipts || [];
+  const transactionTimeline = useMemo(() => buildTransactionTimeline(data), [data]);
+
   const autoCompletedOnboardingSteps = useMemo(() => {
     const invoices = data?.invoices || [];
     const payments = data?.payments || [];
@@ -288,12 +330,35 @@ const ProcureToPayLifecyclePage = () => {
       {error && <div className="rounded bg-red-50 px-3 py-2 text-red-700">{error}</div>}
       {success && <div className="rounded bg-emerald-50 px-3 py-2 text-emerald-700">{success}</div>}
 
-      <div className="bg-white shadow rounded p-4">
-        <h2 className="font-semibold">Lifecycle Detail View</h2>
-        <p>Procurement State: <strong>{data?.lifecycle?.procurement_state || 'N/A'}</strong></p>
-        <p>Finance State: <strong>{data?.lifecycle?.finance_state || 'N/A'}</strong></p>
-        <p>Assigned Warehouse: <strong>{data?.request?.supply_warehouse_name || 'Not assigned'}</strong></p>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="bg-white shadow rounded p-4">
+          <h2 className="font-semibold">Lifecycle Detail View</h2>
+          <p>Procurement State: <strong>{data?.lifecycle?.procurement_state || 'N/A'}</strong></p>
+          <p>Finance State: <strong>{data?.lifecycle?.finance_state || 'N/A'}</strong></p>
+          <p>Assigned Warehouse: <strong>{data?.request?.supply_warehouse_name || 'Not assigned'}</strong></p>
+        </div>
+
+        <div className="bg-white shadow rounded p-4">
+          <h2 className="font-semibold">Transaction Timeline</h2>
+          <p className="text-sm text-gray-600 mb-3">End-to-end workflow visibility for operations, audit, and executive reporting.</p>
+          <ol className="space-y-3">
+            {transactionTimeline.map((step, index) => (
+              <li key={step.title} className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <span className={`mt-1 h-3 w-3 rounded-full ${step.done ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                  {index !== transactionTimeline.length - 1 && <span className="h-full w-px bg-gray-200" />}
+                </div>
+                <div className="pb-1">
+                  <p className="text-sm font-medium">{step.title}</p>
+                  {step.detail && <p className="text-xs text-gray-600">{step.detail}</p>}
+                  <p className="text-xs text-gray-500">{formatTimelineDate(step.at) || (step.done ? 'Completed (timestamp unavailable)' : 'Pending')}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
+
 
       <div className="grid xl:grid-cols-2 gap-4">
         <form className="bg-white shadow rounded p-4 space-y-3" onSubmit={handleSubmitReceipt}>

@@ -97,7 +97,7 @@ api.interceptors.response.use(
     const config = error.config || {};
     const status = error.response?.status;
 
-    if (status === 404 && typeof config.url === "string") {
+    if ([404, 502, 503, 504].includes(status) && typeof config.url === "string") {
       const attemptedBases = config.__attemptedApiBases || [];
       const currentBase = trimTrailingSlashes(config.baseURL || API_BASE);
       const fallbackBases = resolveApiFallbackBases(currentBase);

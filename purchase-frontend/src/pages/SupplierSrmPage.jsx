@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ClipboardList, Plus, Shield, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardList, FileText, Gavel, PackageCheck, Plus, Receipt, Shield, X } from "lucide-react";
 import { listSuppliers } from "../api/suppliers";
 import {
   createComplianceArtifact,
@@ -210,6 +210,60 @@ const SupplierSrmPage = () => {
   const complianceExpiry = overview?.compliance?.next_expiry;
   const openIssues = overview?.open_issues ?? 0;
   const latestScorecard = overview?.latest_scorecard;
+  const capaRequiredCount = issues.filter((item) => item.capa_required).length;
+
+  const workspaceTiles = [
+    {
+      title: "Active contracts",
+      value: "Connect",
+      description: "Attach contract governance records for this supplier.",
+      icon: FileText,
+    },
+    {
+      title: "POs",
+      value: "Connect",
+      description: "Link open and recently closed purchase orders.",
+      icon: PackageCheck,
+    },
+    {
+      title: "Delivery KPIs",
+      value: latestScorecard?.otif_score ? `${latestScorecard.otif_score}% OTIF` : "No KPI yet",
+      description: latestScorecard
+        ? `Lead variance ${latestScorecard.lead_time_variance ?? "-"} days`
+        : "Capture scorecards to unlock trend cards.",
+      icon: ClipboardList,
+    },
+    {
+      title: "Compliance docs",
+      value: `${compliance.length}`,
+      description: complianceBlocked ? "At least one artifact is blocked/expired." : "Compliance documents look healthy.",
+      icon: Shield,
+    },
+    {
+      title: "Invoices",
+      value: "Connect",
+      description: "Surface invoice status and aging for this supplier.",
+      icon: Receipt,
+    },
+    {
+      title: "Disputes",
+      value: `${openIssues}`,
+      description: openIssues > 0 ? "Open disputes require action." : "No open disputes.",
+      icon: Gavel,
+    },
+    {
+      title: "CAPA history",
+      value: `${capaRequiredCount}`,
+      description: capaRequiredCount > 0 ? "CAPA-linked issues tracked in SRM." : "No CAPA-linked issues yet.",
+      icon: AlertTriangle,
+    },
+    {
+      title: "Risk score",
+      value: complianceBlocked || openIssues > 0 ? "Elevated" : "Low",
+      description: "Calculated from compliance blocks and active supplier issues.",
+      icon: CheckCircle2,
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 transition-colors dark:bg-gray-950 dark:text-gray-100">
@@ -264,6 +318,32 @@ const SupplierSrmPage = () => {
           <div className="mt-6 rounded-md border border-gray-200 bg-white px-4 py-6 text-center text-gray-700 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
             {t("suppliersPage.empty")}
           </div>
+        )}
+
+        {selectedSupplier && (
+          <Panel title={`Open Supplier Workspace • ${selectedSupplier?.name || "Supplier"}`} icon={ClipboardList}>
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
+              Contextual workspace view for supplier operations: contracts, POs, delivery KPIs, compliance, invoices, disputes, CAPA history, and risk.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {workspaceTiles.map((tile) => {
+                const Icon = tile.icon;
+                return (
+                  <article
+                    key={tile.title}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-sm dark:border-gray-800 dark:bg-gray-950"
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{tile.title}</h3>
+                      <Icon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                    </div>
+                    <p className="text-base font-bold text-gray-900 dark:text-gray-100">{tile.value}</p>
+                    <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">{tile.description}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </Panel>
         )}
 
         {selectedSupplier && (

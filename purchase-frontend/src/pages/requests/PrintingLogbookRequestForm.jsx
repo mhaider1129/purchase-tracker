@@ -46,6 +46,8 @@ const PrintingLogbookRequestForm = () => {
     const payload = new FormData();
     payload.append('request_type', 'Non-Stock');
     payload.append('justification', 'Request to print logbook from approved source document.');
+    payload.append('budget_impact_month', '');
+    payload.append('project_id', '');
     payload.append('target_department_id', user.department_id);
     payload.append('target_section_id', user.section_id || '');
     payload.append('items', JSON.stringify([{ item_name: 'Logbook Printing', quantity: 1, specs }]));

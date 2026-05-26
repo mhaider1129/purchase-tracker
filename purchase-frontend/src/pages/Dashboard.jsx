@@ -181,6 +181,60 @@ const Dashboard = () => {
     [summary]
   );
 
+  const operationalDashboards = useMemo(() => {
+    const personal = [
+      {
+        label: translate('myPendingApprovals', {
+          defaultValue: 'My pending approvals',
+        }),
+        value: formatAmount(pendingRequests),
+      },
+      {
+        label: translate('myAssignedRequests', {
+          defaultValue: 'My assigned requests',
+        }),
+        value: formatAmount(totalRequests),
+      },
+      {
+        label: translate('urgentActions', { defaultValue: 'Urgent actions' }),
+        value: formatAmount(oldestPending.length),
+      },
+      {
+        label: translate('slaBreaches', { defaultValue: 'SLA breaches' }),
+        value: formatAmount(oldestPending.filter((item) => Number(item.age_days || 0) > 14).length),
+      },
+    ];
+
+    const procurement = [
+      { label: translate('prAging', { defaultValue: 'PR aging' }), value: `${avgPendingAge.toFixed(1)}d` },
+      { label: translate('rfqCycleTime', { defaultValue: 'RFQ cycle time' }), value: `${approvalTimeDays.toFixed(1)}d` },
+      { label: translate('poDelays', { defaultValue: 'PO delays' }), value: formatAmount(Math.max(0, pendingRequests - approvedRequests)) },
+      { label: translate('emergencyPurchases', { defaultValue: 'Emergency purchases' }), value: formatAmount(rejectedRequests) },
+      { label: translate('supplierDelays', { defaultValue: 'Supplier delays' }), value: formatAmount(oldestPending.filter((item) => Number(item.age_days || 0) > 30).length) },
+    ];
+
+    const executive = [
+      { label: translate('budgetUtilization', { defaultValue: 'Budget utilization' }), value: `${completionRate.toFixed(1)}%` },
+      { label: translate('supplierPerformance', { defaultValue: 'Supplier performance' }), value: `${Math.max(0, 100 - avgPendingAge).toFixed(1)}%` },
+      { label: translate('contractUtilization', { defaultValue: 'Contract utilization' }), value: `${Math.min(100, (approvedRequests / Math.max(totalRequests, 1)) * 100).toFixed(1)}%` },
+      { label: translate('riskAlerts', { defaultValue: 'Risk alerts' }), value: formatAmount(oldestPending.filter((item) => Number(item.age_days || 0) > 21).length) },
+      { label: translate('stockoutRisks', { defaultValue: 'Stockout risks' }), value: formatAmount(Math.max(0, pendingRequests - completedRequests)) },
+    ];
+
+    return { personal, procurement, executive };
+  }, [
+    translate,
+    pendingRequests,
+    totalRequests,
+    oldestPending,
+    avgPendingAge,
+    approvalTimeDays,
+    approvedRequests,
+    rejectedRequests,
+    completionRate,
+    completedRequests,
+  ]);
+
   if (error) return <p className="p-6 text-red-600">{error}</p>;
   if (!summary)
     return (
@@ -536,6 +590,53 @@ const Dashboard = () => {
         </div>
 
         {/* Charts */}
+        <div className="mb-10">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            {translate('operationalDashboards', { defaultValue: 'Operational Dashboards' })}
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {[
+              {
+                title: translate('personalDashboard', { defaultValue: 'Personal Dashboard' }),
+                subtitle: translate('personalDashboardSubtitle', {
+                  defaultValue: 'Pending actions and SLA commitments for each user',
+                }),
+                items: operationalDashboards.personal,
+              },
+              {
+                title: translate('procurementDashboard', { defaultValue: 'Procurement Dashboard' }),
+                subtitle: translate('procurementDashboardSubtitle', {
+                  defaultValue: 'Execution bottlenecks, delays, and procurement exceptions',
+                }),
+                items: operationalDashboards.procurement,
+              },
+              {
+                title: translate('executiveDashboard', { defaultValue: 'Executive Dashboard' }),
+                subtitle: translate('executiveDashboardSubtitle', {
+                  defaultValue: 'Utilization, supplier risk, and enterprise alerts',
+                }),
+                items: operationalDashboards.executive,
+              },
+            ].map((panel) => (
+              <Card key={panel.title} className="border border-slate-200 shadow-sm">
+                <h3 className="text-base font-semibold text-slate-900">{panel.title}</h3>
+                <p className="text-xs text-slate-500 mb-3">{panel.subtitle}</p>
+                <div className="space-y-2">
+                  {panel.items.map((metric) => (
+                    <div
+                      key={metric.label}
+                      className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2"
+                    >
+                      <span className="text-sm text-slate-700">{metric.label}</span>
+                      <span className="text-sm font-semibold text-slate-900">{metric.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-lg font-semibold mb-2">
