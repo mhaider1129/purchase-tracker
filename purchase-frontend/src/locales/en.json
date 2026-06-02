@@ -359,7 +359,9 @@
     "flags": {
       "urgentLabel": "Mark this request as urgent",
       "urgentHelper": "Urgent requests are highlighted for downstream teams.",
-      "urgentBadge": "Urgent"
+      "urgentBadge": "Urgent",
+      "budgetExceededBadge": "Over budget",
+      "budgetExceededDetails": "Red flag: this request exceeds the allocated budget. Available: {{available}} {{currency}}; estimated: {{estimated}} {{currency}}. Approval can still continue."
     },
     "attachments": {
       "title": "Request attachments",
@@ -1923,6 +1925,7 @@
     "levelLabel": "Level {{level}}",
     "statusMessageLabel": "Status Message",
     "duplicateWarning": "⚠️ This request may duplicate an earlier submission this month. Procurement has been notified.",
+    "budgetWarning": "⚠️ This request exceeds the currently allocated budget. It was submitted successfully and approvers will see the budget flag.",
     "missingSummary": "We couldn't load the submission summary. Please check your open requests for details.",
     "notAvailable": "Not available",
     "noPendingApprover": "No further approvals are required at this time.",

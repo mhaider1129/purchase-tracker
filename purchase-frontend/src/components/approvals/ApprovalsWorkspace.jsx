@@ -1061,6 +1061,11 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                               {t('maintenanceHODApprovals.flags.urgentBadge')}
                             </span>
                           )}
+                          {request.budget_exceeded && (
+                            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                              {t('maintenanceHODApprovals.flags.budgetExceededBadge', 'Over budget')}
+                            </span>
+                          )}
                         </div>
                         <p className="text-base font-semibold text-slate-900">
                           {request.justification || t('maintenanceHODApprovals.labels.noJustification')}
@@ -1088,6 +1093,16 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                             })}
                           </span>
                         </div>
+                        {request.budget_exceeded && (
+                          <div className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                            {t('maintenanceHODApprovals.flags.budgetExceededDetails', {
+                              defaultValue: 'Red flag: this request exceeds the allocated budget. Available: {{available}} {{currency}}; estimated: {{estimated}} {{currency}}. Approval can still continue.',
+                              available: Number(request.budget_available_amount || 0).toLocaleString(),
+                              estimated: Number(request.estimated_cost || 0).toLocaleString(),
+                              currency: request.budget_currency || 'USD',
+                            })}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center text-slate-500">
                         {isExpanded ? (

@@ -324,6 +324,22 @@ export const buildRequestSubmissionState = (
           "duplicate",
         ]),
       ),
+      budgetExceeded: normalizeBoolean(
+        pickValue([
+          "budget_exceeded",
+          "budgetExceeded",
+          ["budget", "exceeded"],
+        ]),
+      ),
+      budgetWarning:
+        pickValue(
+          [
+            "budget_warning",
+            "budgetWarning",
+            ["budget", "warning"],
+          ],
+          { preserveEmptyString: true },
+        ) ?? null,
       message:
         pickValue(
           [

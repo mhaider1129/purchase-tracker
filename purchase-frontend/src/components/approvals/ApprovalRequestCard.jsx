@@ -65,6 +65,11 @@ const ApprovalRequestCard = ({
                 {urgentLabel}
               </span>
             )}
+            {request?.budget_exceeded && (
+              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                Over budget
+              </span>
+            )}
             {getApprovalStatusChip()}
           </div>
           <p className="text-base font-semibold text-slate-900">
@@ -91,6 +96,13 @@ const ApprovalRequestCard = ({
               </span>
             ) : null}
           </div>
+          {request?.budget_exceeded && (
+            <div className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+              Red flag: this request exceeds the allocated budget. Available:{' '}
+              {Number(request.budget_available_amount || 0).toLocaleString()} {request.budget_currency || 'USD'};
+              estimated: {estimatedCostValue.toLocaleString()} {request.budget_currency || 'USD'}. Approval can still continue.
+            </div>
+          )}
           {request.updated_by && (
             <p className="text-xs text-slate-500">
               Last updated by <span className="font-medium text-slate-700">{request.updated_by}</span> on {formatDateTime(request.updated_at)}
