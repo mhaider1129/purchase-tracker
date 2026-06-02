@@ -8,4 +8,6 @@ export const printWarehouseSupplyRequest = async (id) => {
   return res.data;
 };
 
-export default { printWarehouseSupplyRequest };
+const warehouseSupplyApi = { printWarehouseSupplyRequest };
+
+export default warehouseSupplyApi;

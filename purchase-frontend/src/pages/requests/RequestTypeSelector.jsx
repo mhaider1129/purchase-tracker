@@ -22,7 +22,6 @@ import {
   Users,
   Wrench,
 } from 'lucide-react';
-import axios from '../../api/axios';
 import { fetchCurrentUser } from '../../api/currentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 

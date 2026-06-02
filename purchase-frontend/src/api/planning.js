@@ -18,7 +18,7 @@ export const saveReplenishmentPolicy = (payload) =>
 export const runReplenishmentPlanner = (payload) =>
   api.post("/planning/replenishment/run", payload);
 
-export default {
+const planningApi = {
   fetchDemandForecast,
   calculateSafetyStock,
   runMrp,
@@ -27,3 +27,5 @@ export default {
   saveReplenishmentPolicy,
   runReplenishmentPlanner,
 };
+
+export default planningApi;

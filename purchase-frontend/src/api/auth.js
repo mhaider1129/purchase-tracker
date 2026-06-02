@@ -9,6 +9,8 @@ export const changePassword = async ({ currentPassword, newPassword }) => {
   return response.data;
 };
 
-export default {
+const authApi = {
   changePassword,
 };
+
+export default authApi;

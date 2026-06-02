@@ -1207,15 +1207,10 @@ const Management = () => {
     () => users.filter((user) => user.is_active).length,
     [users]
   );
-  const pendingRequestsCount = useMemo(
-    () => accountRequests.filter((req) => req.status === 'pending').length,
-    [accountRequests]
-  );
   const activeProjectCount = useMemo(
     () => projects.filter((project) => project.is_active !== false).length,
     [projects]
   );
-
   const renderUsers = () => {
     if (!canViewUsers) {
       return (

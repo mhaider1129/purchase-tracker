@@ -40,17 +40,6 @@ const ContractForm = ({
     { key: "change_management_terms", label: "Change Control", placeholder: "Define amendment and change-control governance." },
   ];
 
-  const formatCurrencyPreview = (value) => {
-    if (value === "" || value === null || value === undefined) return "—";
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) return "—";
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: formState.currency || "USD",
-      maximumFractionDigits: 2,
-    }).format(numericValue);
-  };
-
   return (
     <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
       <div className="grid gap-4 sm:grid-cols-2">

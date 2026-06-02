@@ -13,7 +13,9 @@ export const updateStockItemRequestStatus = async (id, status) => {
   return res.data;
 };
 
-export default {
+const stockItemRequestsApi = {
   fetchStockItemRequests,
   updateStockItemRequestStatus,
 };
+
+export default stockItemRequestsApi;

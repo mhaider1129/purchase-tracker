@@ -15,8 +15,10 @@ export const submitSupplierDocument = async (payload, options = {}) => {
   return response.data;
 };
 
-export default {
+const supplierPortalApi = {
   loginSupplierPortal,
   acknowledgePurchaseOrder,
   submitSupplierDocument,
 };
+
+export default supplierPortalApi;

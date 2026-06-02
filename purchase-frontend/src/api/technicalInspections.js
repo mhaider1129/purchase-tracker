@@ -27,10 +27,12 @@ export const deleteTechnicalInspection = async (id, options = {}) => {
   await api.delete(`${RESOURCE}/${id}`, options);
 };
 
-export default {
+const technicalInspectionsApi = {
   listTechnicalInspections,
   getTechnicalInspection,
   createTechnicalInspection,
   updateTechnicalInspection,
   deleteTechnicalInspection,
 };
+
+export default technicalInspectionsApi;

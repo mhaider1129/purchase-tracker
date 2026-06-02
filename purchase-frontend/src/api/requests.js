@@ -30,9 +30,11 @@ export const createHistoricalRequest = async (payload, options = {}) => {
   return res.data;
 };
 
-export default {
+const requestsApi = {
   printRequest,
   getRequestDetails,
   updateRequest,
   createHistoricalRequest,
 };
+
+export default requestsApi;

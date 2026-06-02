@@ -15,8 +15,10 @@ export const updateRisk = async (riskId, payload, options = {}) => {
   return response.data?.risk;
 };
 
-export default {
+const riskManagementApi = {
   listRisks,
   createRisk,
   updateRisk,
 };
+
+export default riskManagementApi;

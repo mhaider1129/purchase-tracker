@@ -273,7 +273,7 @@ const CompletedAssignedRequestsPage = () => {
 
     try {
       const data = await printRequest(requestId);
-      const { request, items, assigned_user, message, print_count } = data;
+      const { request, items, message, print_count } = data;
 
       const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
       const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';

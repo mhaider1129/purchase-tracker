@@ -24,10 +24,12 @@ export const getSuppliersDashboard = async (options = {}) => {
   return response.data || {};
 };
 
-export default {
+const suppliersApi = {
   listSuppliers,
   createSupplier,
   updateSupplier,
   deleteSupplier,
   getSuppliersDashboard,
 };
+
+export default suppliersApi;

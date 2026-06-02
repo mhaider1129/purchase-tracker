@@ -46,7 +46,7 @@ export const getSupplierEvaluationDashboard = async (params = {}, options = {}) 
   return data || {};
 };
 
-export default {
+const supplierEvaluationsApi = {
   listSupplierEvaluations,
   listSupplierEvaluationBenchmarks,
   getSupplierEvaluation,
@@ -55,3 +55,5 @@ export default {
   deleteSupplierEvaluation,
   getSupplierEvaluationDashboard,
 };
+
+export default supplierEvaluationsApi;

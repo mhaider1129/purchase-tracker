@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import ContractForm from '../components/ContractForm';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
-import { listContractDocuments, createContractDocument, addContractDocumentVersion, archiveContractDocument } from '../api/contracts';
+import { listContractDocuments } from '../api/contracts';
 import { useAuth } from '../hooks/useAuth';
 
 const parseJson = (value) => {
@@ -299,9 +299,7 @@ const ContractsPage = () => {
   const [contractItems, setContractItems] = useState([]);
   const [approvals, setApprovals] = useState([]);
   const [checklist, setChecklist] = useState([]);
-  const [contractDocuments, setContractDocuments] = useState([]);
-  const [docForm, setDocForm] = useState({ document_type: 'draft', title: '', description: '', file_name: '', file_url: '', notes: '' });
-  const [versionForm, setVersionForm] = useState({ file_name: '', file_url: '', storage_path: '', mime_type: '', file_size: '', checksum: '', notes: '', is_current: true });
+  const [, setContractDocuments] = useState([]);
   const [consumption, setConsumption] = useState(null);
   const [risk, setRisk] = useState(null);
   const [riskHistory, setRiskHistory] = useState([]);
@@ -1794,7 +1792,6 @@ const ContractsPage = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={fetchContracts}
                     onClick={fetchContracts}
                     className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >

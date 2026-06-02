@@ -35,7 +35,7 @@ export const awardRfxResponse = async (id, payload, options = {}) => {
   return response.data;
 };
 
-export default {
+const rfxPortalApi = {
   listRfxEvents,
   createRfxEvent,
   updateRfxStatus,
@@ -44,3 +44,5 @@ export default {
   analyzeRfxQuotations,
   awardRfxResponse,
 };
+
+export default rfxPortalApi;

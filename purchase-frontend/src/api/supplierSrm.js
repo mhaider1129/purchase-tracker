@@ -52,7 +52,7 @@ export const createComplianceArtifact = async (supplierId, payload, options = {}
   return response.data;
 };
 
-export default {
+const supplierSrmApi = {
   getSupplierSrmStatus,
   listSupplierScorecards,
   createSupplierScorecard,
@@ -62,3 +62,5 @@ export default {
   listComplianceArtifacts,
   createComplianceArtifact,
 };
+
+export default supplierSrmApi;
