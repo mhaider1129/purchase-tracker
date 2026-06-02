@@ -43,6 +43,81 @@ const initialAutoAssignmentRule = {
   is_active: true,
 };
 
+const DepartmentVisibilityChecklist = ({
+  departments,
+  selectedDepartmentIds,
+  onChange,
+  disabled = false,
+  ariaLabel,
+  className = '',
+}) => {
+  const selectedIds = Array.isArray(selectedDepartmentIds) ? selectedDepartmentIds : [];
+  const selectedSet = new Set(selectedIds.map((id) => Number(id)));
+  const departmentIds = departments.map((department) => Number(department.id)).filter(Boolean);
+
+  const toggleDepartment = (departmentId) => {
+    const normalizedId = Number(departmentId);
+    const nextIds = selectedSet.has(normalizedId)
+      ? selectedIds.filter((id) => Number(id) !== normalizedId)
+      : [...selectedIds, normalizedId];
+
+    onChange(nextIds);
+  };
+
+  return (
+    <div
+      className={`mt-1 rounded border border-gray-200 bg-white ${className}`.trim()}
+      role="group"
+      aria-label={ariaLabel}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-3 py-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            checked={selectedIds.length === 0}
+            onChange={() => onChange([])}
+            disabled={disabled}
+          />
+          All departments
+        </label>
+        <button
+          type="button"
+          className="text-xs font-semibold text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
+          onClick={() => onChange(departmentIds)}
+          disabled={disabled || departmentIds.length === 0}
+        >
+          Check all listed
+        </button>
+      </div>
+      <div className="max-h-44 space-y-2 overflow-y-auto px-3 py-2">
+        {departments.length === 0 ? (
+          <p className="text-xs text-gray-500">No departments available.</p>
+        ) : (
+          departments.map((department) => {
+            const departmentId = Number(department.id);
+            return (
+              <label
+                key={department.id}
+                className="flex items-center gap-2 rounded px-1 py-1 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  checked={selectedSet.has(departmentId)}
+                  onChange={() => toggleDepartment(departmentId)}
+                  disabled={disabled}
+                />
+                <span>{department.name}</span>
+              </label>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Management = () => {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -526,10 +601,6 @@ const Management = () => {
       setLoadingProjects(false);
     }
   };
-
-
-  const getSelectedDepartmentIds = (event) =>
-    Array.from(event.target.selectedOptions).map((option) => Number(option.value));
 
   const getProjectDepartmentIds = (project) =>
     Array.isArray(project?.visible_departments)
@@ -2484,21 +2555,15 @@ const Management = () => {
             <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
               Visible departments
             </span>
-            <select
-              multiple
-              className="mt-1 h-28 w-full rounded border px-3 py-2"
-              value={newProjectDepartmentIds.map(String)}
-              onChange={(event) => setNewProjectDepartmentIds(getSelectedDepartmentIds(event))}
+            <DepartmentVisibilityChecklist
+              departments={departments}
+              selectedDepartmentIds={newProjectDepartmentIds}
+              onChange={setNewProjectDepartmentIds}
               disabled={loadingDepartments}
-            >
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+              ariaLabel="Departments that can see the new project"
+            />
             <span className="mt-1 block text-xs text-gray-500">
-              Leave empty to make the project visible to all departments.
+              Keep All departments checked to make the project visible to everyone, or check specific departments.
             </span>
           </label>
           <button
@@ -2537,23 +2602,14 @@ const Management = () => {
                   <tr key={project.id} className="border-b">
                     <td className="p-2 font-medium text-gray-900">{project.name}</td>
                     <td className="p-2">{project.is_active !== false ? 'Yes' : 'No'}</td>
-                    <td className="p-2 min-w-[16rem]">
-                      <select
-                        multiple
-                        className="h-24 w-full rounded border px-2 py-1"
-                        value={getProjectDepartmentIds(project).map(String)}
-                        onChange={(event) =>
-                          updateProjectVisibility(project, getSelectedDepartmentIds(event))
-                        }
+                    <td className="p-2 min-w-[18rem]">
+                      <DepartmentVisibilityChecklist
+                        departments={departments}
+                        selectedDepartmentIds={getProjectDepartmentIds(project)}
+                        onChange={(departmentIds) => updateProjectVisibility(project, departmentIds)}
                         disabled={loadingDepartments || savingProjectVisibilityId === project.id}
-                        aria-label={`Departments that can see ${project.name}`}
-                      >
-                        {departments.map((department) => (
-                          <option key={department.id} value={department.id}>
-                            {department.name}
-                          </option>
-                        ))}
-                      </select>
+                        ariaLabel={`Departments that can see ${project.name}`}
+                      />
                       <p className="mt-1 text-xs text-gray-500">
                         {savingProjectVisibilityId === project.id
                           ? 'Saving visibility...'

@@ -1,40 +1,6 @@
 import React from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
-const getPreviousApprovers = (request) => {
-  const value = request?.previous_approvers;
-
-  if (Array.isArray(value)) {
-    return value.filter(Boolean);
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  return [];
-};
-
-const formatPreviousApprover = (approver, formatDateTime) => {
-  const name = approver?.approver_name || approver?.name || 'Unknown approver';
-  const role = approver?.approver_role || approver?.role;
-  const level = approver?.approval_level;
-  const approvedAt = approver?.approved_at;
-
-  const details = [
-    role,
-    level ? `Level ${level}` : null,
-    approvedAt ? formatDateTime(approvedAt) : null,
-  ].filter(Boolean);
-
-  return details.length ? `${name} (${details.join(' • ')})` : name;
-};
-
 const ApprovalRequestCard = ({
   request,
   requesterDisplay,
@@ -55,13 +21,9 @@ const ApprovalRequestCard = ({
     estimatedCostLabel = 'Estimated Cost',
     urgentLabel = 'Urgent',
     approvalStatusLabel = 'Approval Status',
-    previousApproversLabel = 'Previously approved by',
-    noPreviousApproversLabel = 'No previous approvers yet',
   } = labels;
 
   const isUrgentRequest = Boolean(request?.is_urgent);
-  const previousApprovers = getPreviousApprovers(request);
-
   const getApprovalStatusChip = () => {
     if (!approvalStatus) return null;
 
@@ -128,14 +90,6 @@ const ApprovalRequestCard = ({
                 </span>
               </span>
             ) : null}
-          </div>
-          <div className="mt-2 rounded-md border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            <span className="font-semibold text-slate-700">{previousApproversLabel}:</span>{' '}
-            {previousApprovers.length > 0 ? (
-              <span>{previousApprovers.map((approver) => formatPreviousApprover(approver, formatDateTime)).join(', ')}</span>
-            ) : (
-              <span>{noPreviousApproversLabel}</span>
-            )}
           </div>
           {request.updated_by && (
             <p className="text-xs text-slate-500">

@@ -18,6 +18,8 @@ import ItemDecisionTable from '../components/approvals/ItemDecisionTable';
 import { getRequesterDisplay } from '../utils/requester';
 import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
 import AmountInput from '../components/ui/AmountInput';
+import ApprovalTimeline from '../components/ApprovalTimeline';
+import useApprovalTimeline from '../hooks/useApprovalTimeline';
 
 const ApprovalsPanel = () => {
   const [onboardingVersion, setOnboardingVersion] = useState(0);
@@ -91,6 +93,13 @@ const ApprovalsPanel = () => {
     typeFilter,
     urgencyFilter,
   } = useApprovalsData(user);
+
+  const {
+    approvalsMap,
+    expandedApprovalsId,
+    loadingApprovalsId,
+    toggleApprovals,
+  } = useApprovalTimeline();
 
   const filterLabels = {
     searchPlaceholder: 'Search by ID, justification, department or section',
@@ -343,6 +352,27 @@ const ApprovalsPanel = () => {
                             Requires immediate attention
                           </div>
                         )}
+
+                        <div>
+                          <Button
+                            variant="secondary"
+                            className="flex items-center gap-2"
+                            onClick={() => toggleApprovals(req.request_id)}
+                            isLoading={loadingApprovalsId === req.request_id}
+                          >
+                            <FileText className="h-4 w-4" aria-hidden />
+                            {expandedApprovalsId === req.request_id ? 'Hide Approvals' : 'View Approvals'}
+                          </Button>
+                          {expandedApprovalsId === req.request_id && (
+                            <div className="mt-3 rounded-md border border-slate-200 bg-white p-3">
+                              <ApprovalTimeline
+                                approvals={approvalsMap[req.request_id]}
+                                isLoading={loadingApprovalsId === req.request_id}
+                                isUrgent={Boolean(req?.is_urgent)}
+                              />
+                            </div>
+                          )}
+                        </div>
       <div className="space-y-3">
         <Button
           variant="outline"
