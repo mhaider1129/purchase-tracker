@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
 import PageShell from '../components/layout/PageShell';
+import AmountInput from '../components/ui/AmountInput';
 
 const ProcurementPlansPage = () => {
   const { user } = useCurrentUser();
@@ -541,9 +542,8 @@ const ProcurementPlansPage = () => {
                 <label className="block text-sm font-medium text-gray-700" htmlFor="planned-unit-cost">
                   Planned unit cost
                 </label>
-                <input
+                <AmountInput
                   id="planned-unit-cost"
-                  type="number"
                   min="0"
                   step="0.01"
                   value={itemForm.planned_unit_cost}

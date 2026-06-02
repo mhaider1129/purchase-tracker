@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
+import AmountInput from '../components/ui/AmountInput';
 
 const statusColors = {
   COO_REVIEW_PENDING: 'bg-yellow-100 text-yellow-800',
@@ -186,7 +187,7 @@ export default function AuditRegistryPage() {
           </label>
           <label className="text-sm">
             <span className="block text-gray-700 mb-1">Requested Payment Amount *</span>
-            <input type="number" min="0.01" step="0.01" value={form.finance_issued_amount} onChange={(e) => onFormChange('finance_issued_amount', e.target.value)} className="w-full border rounded px-3 py-2" required />
+            <AmountInput min="0.01" step="0.01" value={form.finance_issued_amount} onChange={(e) => onFormChange('finance_issued_amount', e.target.value)} className="w-full border rounded px-3 py-2" required />
           </label>
         </div>
 

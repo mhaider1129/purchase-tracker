@@ -25,6 +25,7 @@ const Dashboard = () => {
   const translate = usePageTranslation('dashboard');
   const [summary, setSummary] = useState(null);
   const [departmentSpending, setDepartmentSpending] = useState([]);
+  const [departmentRequestCosts, setDepartmentRequestCosts] = useState([]);
   const [year, setYear] = useState(new Date().getFullYear());
   const [error, setError] = useState('');
 
@@ -57,18 +58,31 @@ const Dashboard = () => {
     }
   };
 
+  const fetchDepartmentRequestCosts = async (selectedYear = year) => {
+    try {
+      const res = await axios.get('/dashboard/department-request-costs', {
+        params: { year: selectedYear },
+      });
+      setDepartmentRequestCosts(res.data);
+    } catch (err) {
+      console.error('❌ Failed to fetch department request costs:', err);
+    }
+  };
+
   useEffect(() => {
     fetchSummary();
   }, []);
 
   useEffect(() => {
     fetchSpending(year);
+    fetchDepartmentRequestCosts(year);
   }, [year]);
 
   useEffect(() => {
     const handleDashboardRefresh = () => {
       fetchSummary();
       fetchSpending(year);
+      fetchDepartmentRequestCosts(year);
     };
 
     window.addEventListener(DASHBOARD_REFRESH_EVENT, handleDashboardRefresh);
@@ -95,6 +109,32 @@ const Dashboard = () => {
     });
     return { deptChartData: data, deptNames: departments };
   }, [departmentSpending]);
+
+
+  const requestCostChartData = useMemo(
+    () =>
+      departmentRequestCosts.map((entry) => ({
+        ...entry,
+        label: `${entry.month} • ${entry.department}`,
+        approved_cost: Number(entry.approved_cost || 0),
+        rejected_cost: Number(entry.rejected_cost || 0),
+        total_cost: Number(entry.total_cost || 0),
+      })),
+    [departmentRequestCosts]
+  );
+
+  const requestCostTotals = useMemo(
+    () =>
+      departmentRequestCosts.reduce(
+        (acc, entry) => ({
+          approved: acc.approved + Number(entry.approved_cost || 0),
+          rejected: acc.rejected + Number(entry.rejected_cost || 0),
+          total: acc.total + Number(entry.total_cost || 0),
+        }),
+        { approved: 0, rejected: 0, total: 0 }
+      ),
+    [departmentRequestCosts]
+  );
 
   const pendingTrend = summary?.pending_vs_completed_trend || [];
   const oldestPending = summary?.oldest_pending_requests || [];
@@ -179,6 +219,46 @@ const Dashboard = () => {
   const spendingSpark = useMemo(
     () => (summary?.spending_by_month || []).slice(-6),
     [summary]
+  );
+
+
+  const procurementBacklogStages = useMemo(
+    () =>
+      (summary?.procurement_backlog_by_stage || []).map((entry) => ({
+        ...entry,
+        request_count: Number(entry.request_count || 0),
+        procured_cost: Number(entry.procured_cost || 0),
+      })),
+    [summary]
+  );
+
+  const pendingAgingBuckets = useMemo(
+    () =>
+      (summary?.pending_aging_buckets || []).map((entry) => ({
+        ...entry,
+        request_count: Number(entry.request_count || 0),
+        procured_cost: Number(entry.procured_cost || 0),
+      })),
+    [summary]
+  );
+
+  const demandVsProcuredChartData = useMemo(
+    () =>
+      (summary?.department_demand_vs_procured || [])
+        .slice(-12)
+        .map((entry) => ({
+          ...entry,
+          label: `${entry.month} • ${entry.department}`,
+          submitted_cost: Number(entry.submitted_cost || 0),
+          approved_cost: Number(entry.approved_cost || 0),
+          actual_procured_cost: Number(entry.actual_procured_cost || 0),
+        })),
+    [summary]
+  );
+
+  const dataQualityAlerts = summary?.data_quality_alerts || [];
+  const procurementValueCompletionRate = Number(
+    summary?.procurement_value_completion_rate || 0
   );
 
   const operationalDashboards = useMemo(() => {
@@ -637,10 +717,174 @@ const Dashboard = () => {
           </div>
         </div>
 
+
+        <div className="mb-10">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">
+                {translate('procurementControlTower', {
+                  defaultValue: 'Procurement Control Tower',
+                })}
+              </h2>
+              <p className="text-sm text-gray-500">
+                {translate('procurementControlTowerSubtitle', {
+                  defaultValue:
+                    'Actionable backlog, aging, demand-to-procurement, and data quality analytics.',
+                })}
+              </p>
+            </div>
+            <span className="inline-flex w-fit rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+              {translate('valueCompletionRate', {
+                defaultValue: 'Value completion: {{rate}}%',
+                rate: procurementValueCompletionRate.toFixed(1),
+              })}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <Card className="border border-amber-100 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900 mb-1">
+                {translate('backlogByStage', { defaultValue: 'Procurement Backlog by Stage' })}
+              </h3>
+              <p className="text-xs text-slate-500 mb-3">
+                {translate('backlogByStageSubtitle', {
+                  defaultValue: 'Approved requests stay pending until every requested item is procured.',
+                })}
+              </p>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={procurementBacklogStages} margin={{ top: 8, right: 16, bottom: 50, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="stage" angle={-25} textAnchor="end" interval={0} height={70} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar
+                    dataKey="request_count"
+                    fill="#f59e0b"
+                    name={translate('requests', { defaultValue: 'Requests' })}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="border border-rose-100 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900 mb-1">
+                {translate('pendingAgingBuckets', { defaultValue: 'Pending Aging Buckets' })}
+              </h3>
+              <p className="text-xs text-slate-500 mb-3">
+                {translate('pendingAgingBucketsSubtitle', {
+                  defaultValue: 'Shows how much of the procurement queue is moving into riskier age bands.',
+                })}
+              </p>
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={pendingAgingBuckets} margin={{ top: 8, right: 16, bottom: 20, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="bucket" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar
+                    dataKey="request_count"
+                    fill="#f43f5e"
+                    name={translate('requests', { defaultValue: 'Requests' })}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="xl:col-span-2 border border-blue-100 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900 mb-1">
+                {translate('demandVsProcured', { defaultValue: 'Department Demand vs Actual Procurement' })}
+              </h3>
+              <p className="text-xs text-slate-500 mb-3">
+                {translate('demandVsProcuredSubtitle', {
+                  defaultValue:
+                    'Compares submitted demand, approved value, and what was actually procured for the latest months.',
+                })}
+              </p>
+              <ResponsiveContainer width="100%" height={360}>
+                <BarChart data={demandVsProcuredChartData} margin={{ top: 8, right: 16, bottom: 85, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" angle={-35} textAnchor="end" interval={0} height={95} />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    dataKey="submitted_cost"
+                    fill="#94a3b8"
+                    name={translate('submittedDemand', { defaultValue: 'Submitted demand' })}
+                  />
+                  <Bar
+                    dataKey="approved_cost"
+                    fill="#60a5fa"
+                    name={translate('approvedValue', { defaultValue: 'Approved value' })}
+                  />
+                  <Bar
+                    dataKey="actual_procured_cost"
+                    fill="#10b981"
+                    name={translate('actualProcured', { defaultValue: 'Actual procured' })}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="xl:col-span-2 border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    {translate('dataQualityAlerts', { defaultValue: 'Data Quality Alerts' })}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    {translate('dataQualityAlertsSubtitle', {
+                      defaultValue: 'Records that can distort procurement KPIs or require cleanup.',
+                    })}
+                  </p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                  {translate('alertCount', {
+                    defaultValue: '{{count}} issue types',
+                    count: dataQualityAlerts.length,
+                  })}
+                </span>
+              </div>
+              {dataQualityAlerts.length ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-slate-600">
+                          {translate('issue', { defaultValue: 'Issue' })}
+                        </th>
+                        <th className="px-3 py-2 text-right font-semibold text-slate-600">
+                          {translate('count', { defaultValue: 'Count' })}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {dataQualityAlerts.map((alert) => (
+                        <tr key={alert.issue_key}>
+                          <td className="px-3 py-2 text-slate-700">{alert.issue_label}</td>
+                          <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                            {formatAmount(alert.issue_count)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {translate('noDataQualityAlerts', {
+                    defaultValue: 'No data quality issues found for the current dashboard scope.',
+                  })}
+                </p>
+              )}
+            </Card>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-lg font-semibold mb-2">
-              {translate('monthlySpending', { defaultValue: 'Monthly Spending' })}
+              {translate('monthlySpending', { defaultValue: 'Actual Procured Spending' })}
             </h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={summary?.spending_by_month || []}>
@@ -655,7 +899,7 @@ const Dashboard = () => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-semibold">
-                {translate('departmentSpending', { defaultValue: 'Department Spending' })}
+                {translate('departmentSpending', { defaultValue: 'Actual Procured Department Spending' })}
               </h2>
               <select
                 value={year}
@@ -682,6 +926,66 @@ const Dashboard = () => {
                   <Line key={d} type="monotone" dataKey={d} stroke={COLORS[idx % COLORS.length]} />
                 ))}
               </LineChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="md:col-span-2">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-2 gap-2">
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {translate('departmentRequestCosts', {
+                    defaultValue: 'Department Request Cost by Decision',
+                  })}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {translate('departmentRequestCostsSubtitle', {
+                    defaultValue:
+                      'Monthly submitted request value split by approved and rejected requests.',
+                  })}
+                </p>
+              </div>
+              <div className="flex gap-2 text-xs text-slate-600">
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+                  {translate('approvedCostTotal', {
+                    defaultValue: 'Approved: {{amount}}',
+                    amount: formatAmount(requestCostTotals.approved),
+                  })}
+                </span>
+                <span className="rounded-full bg-rose-50 px-3 py-1 text-rose-700">
+                  {translate('rejectedCostTotal', {
+                    defaultValue: 'Rejected: {{amount}}',
+                    amount: formatAmount(requestCostTotals.rejected),
+                  })}
+                </span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={340}>
+              <BarChart
+                data={requestCostChartData}
+                margin={{ top: 8, right: 16, bottom: 80, left: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="label" angle={-35} textAnchor="end" interval={0} height={90} />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar
+                  dataKey="approved_cost"
+                  stackId="requestCost"
+                  fill="#10b981"
+                  name={translate('approvedRequestCost', {
+                    defaultValue: 'Approved request cost',
+                  })}
+                />
+                <Bar
+                  dataKey="rejected_cost"
+                  stackId="requestCost"
+                  fill="#f43f5e"
+                  name={translate('rejectedRequestCost', {
+                    defaultValue: 'Rejected request cost',
+                  })}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
 

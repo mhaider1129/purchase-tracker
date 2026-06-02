@@ -202,6 +202,65 @@ const ProcureToPayLifecyclePage = () => {
   }, [availableReceipts.length, data?.invoices, data?.lifecycle?.finance_state, data?.payments]);
 
 
+
+  const unifiedChain = useMemo(() => {
+    const links = data?.document_flow_links || [];
+    const toType = (value) => String(value || '').toUpperCase();
+    const uniqueById = (arr = []) => {
+      const seen = new Set();
+      return arr.filter((entry) => {
+        const id = String(entry?.id || entry?.target_document_id || entry?.source_document_id || Math.random());
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+    };
+
+    const flowTargets = (types) => uniqueById(
+      links.filter((link) => types.includes(toType(link.target_document_type)) || types.includes(toType(link.source_document_type)))
+    );
+
+    return {
+      rfqs: flowTargets(['RFQ']),
+      quotations: flowTargets(['QUOTATION', 'SUPPLIER_QUOTATION']),
+      evaluations: flowTargets(['EVALUATION', 'SUPPLIER_EVALUATION']),
+      purchaseOrders: uniqueById(data?.purchase_orders || []),
+      grns: uniqueById(data?.receipts || []),
+      invoices: uniqueById(data?.invoices || []),
+      payments: uniqueById(data?.payments || []),
+      supplierScore: flowTargets(['SUPPLIER_SCORE', 'SUPPLIER_EVALUATION']),
+      contracts: flowTargets(['CONTRACT']),
+      auditTimeline: [
+        ...(data?.state_history || []).map((entry) => ({
+          id: `state-${entry.id}`,
+          at: entry.changed_at,
+          label: `${entry.from_state || 'N/A'} → ${entry.to_state || 'N/A'}`,
+          kind: 'Lifecycle',
+        })),
+        ...(data?.finance_actions || []).map((entry) => ({
+          id: `finance-${entry.id}`,
+          at: entry.created_at,
+          label: entry.action_type,
+          kind: 'Finance',
+        })),
+      ]
+        .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+        .slice(0, 12),
+    };
+  }, [data]);
+
+  const chainCards = [
+    ['Linked RFQs', unifiedChain.rfqs],
+    ['Linked Quotations', unifiedChain.quotations],
+    ['Linked Evaluation', unifiedChain.evaluations],
+    ['Linked PO', unifiedChain.purchaseOrders],
+    ['Linked GRNs', unifiedChain.grns],
+    ['Linked Invoices', unifiedChain.invoices],
+    ['Linked Payments', unifiedChain.payments],
+    ['Linked Supplier Score', unifiedChain.supplierScore],
+    ['Linked Contract', unifiedChain.contracts],
+  ];
+
   const computedInvoiceTotal = useMemo(() => {
     return (invoiceForm.items || []).reduce((sum, item) => {
       return sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0);
@@ -336,6 +395,30 @@ const ProcureToPayLifecyclePage = () => {
           <p>Procurement State: <strong>{data?.lifecycle?.procurement_state || 'N/A'}</strong></p>
           <p>Finance State: <strong>{data?.lifecycle?.finance_state || 'N/A'}</strong></p>
           <p>Assigned Warehouse: <strong>{data?.request?.supply_warehouse_name || 'Not assigned'}</strong></p>
+        </div>
+
+        <div className="bg-white shadow rounded p-4 space-y-3">
+          <h2 className="font-semibold">Unified Procurement Transaction Chain</h2>
+          <p className="text-sm text-gray-600">This request now behaves as one chain across Request → RFQ → Quotation → Evaluation → PO → GRN → Invoice → Payment → Supplier Score → Contract.</p>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {chainCards.map(([label, records]) => (
+              <div key={label} className="rounded border p-3">
+                <p className="text-sm text-gray-500">{label}</p>
+                <p className="text-lg font-semibold">{records.length}</p>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h3 className="font-medium">Audit Timeline</h3>
+            <ul className="mt-2 space-y-1 text-sm">
+              {unifiedChain.auditTimeline.map((entry) => (
+                <li key={entry.id} className="rounded border px-2 py-1">
+                  <span className="font-medium">[{entry.kind}]</span> {entry.label} · {new Date(entry.at).toLocaleString()}
+                </li>
+              ))}
+            </ul>
+            {unifiedChain.auditTimeline.length === 0 && <p className="text-sm text-gray-500">No audit timeline events linked yet.</p>}
+          </div>
         </div>
 
         <div className="bg-white shadow rounded p-4">

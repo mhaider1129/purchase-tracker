@@ -12,6 +12,7 @@ import { useAuth } from "../hooks/useAuth";
 import { hasPermission } from "../utils/permissions";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import AmountInput from "../components/ui/AmountInput";
 
 const defaultEventForm = {
   title: "",
@@ -884,9 +885,8 @@ const RfxPortalPage = () => {
                             <label className="block text-xs font-medium text-gray-700" htmlFor={`quote-bid-${index}`}>
                               {t("rfxPortal.fields.bidAmount")}
                             </label>
-                            <input
+                            <AmountInput
                               id={`quote-bid-${index}`}
-                              type="number"
                               step="0.01"
                               value={quote.bid_amount}
                               onChange={(e) => handleQuotationChange(index, "bid_amount", e.target.value)}
@@ -1082,9 +1082,8 @@ const RfxPortalPage = () => {
                                   <label className="block text-xs font-medium text-gray-700" htmlFor={`response-unit-${index}`}>
                                     {t("rfxPortal.fields.unitCost")}
                                   </label>
-                                  <input
+                                  <AmountInput
                                     id={`response-unit-${index}`}
-                                    type="number"
                                     step="0.01"
                                     value={item.unit_cost}
                                     onChange={(e) => handleResponseItemChange(index, "unit_cost", e.target.value)}
@@ -1181,10 +1180,9 @@ const RfxPortalPage = () => {
                     <label className="block text-sm font-medium text-gray-700" htmlFor="bid_amount">
                       {t("rfxPortal.fields.bidAmount")}
                     </label>
-                    <input
+                    <AmountInput
                       id="bid_amount"
                       name="bid_amount"
-                      type="number"
                       step="0.01"
                       value={responseForm.bid_amount}
                       onChange={handleResponseFormChange}

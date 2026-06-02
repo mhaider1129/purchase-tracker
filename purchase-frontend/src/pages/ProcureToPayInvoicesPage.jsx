@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import AmountInput from '../components/ui/AmountInput';
 import { listApInvoices, submitInvoice } from '../api/procureToPay';
 import { createSupplier } from '../api/suppliers';
 import { useSuppliers } from '../hooks/useSuppliers';
@@ -95,7 +96,7 @@ const ProcureToPayInvoicesPage = () => {
           </select>
           <input className="border rounded px-2 py-1" placeholder="Invoice Number" value={form.invoice_number} onChange={(e) => setForm((p) => ({ ...p, invoice_number: e.target.value }))} />
           <input className="border rounded px-2 py-1" type="date" value={form.invoice_date} onChange={(e) => setForm((p) => ({ ...p, invoice_date: e.target.value }))} />
-          <input className="border rounded px-2 py-1" placeholder="Amount" value={form.subtotal_amount} onChange={(e) => setForm((p) => ({ ...p, subtotal_amount: e.target.value }))} />
+          <AmountInput className="border rounded px-2 py-1" placeholder="Amount" value={form.subtotal_amount} onChange={(e) => setForm((p) => ({ ...p, subtotal_amount: e.target.value }))} />
         </div>
         <div className="flex items-center gap-2">
           <button className="bg-blue-600 text-white rounded px-3 py-1" onClick={onCreateInvoice}>Create</button>

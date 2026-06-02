@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import AmountInput from '../../components/ui/AmountInput';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
@@ -443,8 +444,7 @@ const ITRequestForm = () => {
                       <label className="block text-sm font-semibold text-gray-700">
                         {tr('items.fields.unitCost')}
                       </label>
-                      <input
-                        type="number"
+                      <AmountInput
                         min={0}
                         step="0.01"
                         placeholder={tr('items.fields.unitCostPlaceholder')}

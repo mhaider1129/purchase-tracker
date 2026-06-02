@@ -281,9 +281,13 @@ const StockRequestForm = () => {
     const formData = new FormData();
     formData.append('request_type', 'Stock');
     formData.append('justification', justification);
-    formData.append('target_section_id', sectionId);
+    if (sectionId !== null && sectionId !== undefined && sectionId !== '') {
+      formData.append('target_section_id', sectionId);
+    }
     formData.append('budget_impact_month', '');
-    formData.append('project_id', projectId);
+    if (projectId) {
+      formData.append('project_id', projectId);
+    }
     const itemsPayload = selectedItems.map(
       ({ attachments, category, sub_category, ...rest }) => rest
     );

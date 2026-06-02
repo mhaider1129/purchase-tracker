@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiRequests from "../api/requests";
 import Card from "../components/Card";
+import AmountInput from "../components/ui/AmountInput";
 
 const defaultItem = {
   item_name: "",
@@ -476,8 +477,7 @@ const HistoricalRequestsImportPage = () => {
                           <label className="text-sm font-semibold text-gray-700">
                             {t("historicalRequests.items.fields.unitCost", "Unit cost (optional)")}
                           </label>
-                          <input
-                            type="number"
+                          <AmountInput
                             min="0"
                             step="1"
                             className="mt-1 rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"

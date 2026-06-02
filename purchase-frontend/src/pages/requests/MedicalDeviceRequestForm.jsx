@@ -6,6 +6,7 @@ import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
+import AmountInput from '../../components/ui/AmountInput';
 
 const MedicalDeviceRequestForm = () => {
   const { user, loading } = useCurrentUser();
@@ -470,8 +471,7 @@ const MedicalDeviceRequestForm = () => {
                     <label className="block text-sm font-medium text-gray-700">
                       Unit cost<span className="text-red-600">*</span>
                     </label>
-                    <input
-                      type="number"
+                    <AmountInput
                       min={0}
                       step="0.01"
                       value={item.unit_cost}

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchDepartmentBudgets, saveDepartmentBudget } from "../api/budgetControl";
 import api from "../api/axios";
+import AmountInput from "../components/ui/AmountInput";
 
 const BudgetControlPage = () => {
   const [fiscalYear, setFiscalYear] = useState(new Date().getUTCFullYear());
@@ -72,7 +73,7 @@ const BudgetControlPage = () => {
           {departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
         <input className="border rounded px-2 py-1" type="number" value={form.fiscal_year} onChange={(e) => setForm((p) => ({ ...p, fiscal_year: e.target.value }))} required />
-        <input className="border rounded px-2 py-1" type="number" min="0" placeholder="Allocated amount" value={form.allocated_amount} onChange={(e) => setForm((p) => ({ ...p, allocated_amount: e.target.value }))} required />
+        <AmountInput className="border rounded px-2 py-1" min="0" placeholder="Allocated amount" value={form.allocated_amount} onChange={(e) => setForm((p) => ({ ...p, allocated_amount: e.target.value }))} required />
         <button className="bg-blue-600 text-white rounded px-3 py-1" type="submit">Save Budget</button>
       </form>
       {status && <div className="text-sm text-gray-700">{status}</div>}

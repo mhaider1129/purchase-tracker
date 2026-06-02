@@ -1,4 +1,5 @@
 import React from "react";
+import AmountInput from "./ui/AmountInput";
 
 const ContractForm = ({
   formState,
@@ -309,13 +310,12 @@ const ContractForm = ({
           >
             Contract value
           </label>
-          <input
+          <AmountInput
             id="contract_value"
             name="contract_value"
-            type="text"
             value={formState.contract_value}
             onChange={handleInputChange}
-            placeholder="e.g. 250000"
+            placeholder="e.g. 250,000"
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>

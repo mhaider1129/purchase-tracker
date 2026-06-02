@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "../api/axios";
 import usePageTranslation from "../utils/usePageTranslation";
+import AmountInput from "./ui/AmountInput";
 
 const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [status, setStatus] = useState(item.procurement_status || "");
@@ -649,8 +650,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             <label className="block text-sm font-medium text-slate-700">
               {tr("itemPanel.inputs.unitCost", "Unit Cost")}
             </label>
-            <input
-              type="number"
+            <AmountInput
               min={0}
               step="0.01"
               value={unitCost}
@@ -807,8 +807,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               <label className="block text-sm font-medium text-slate-700">
                 {tr("itemPanel.inputs.committedCost", "Committed Cost")}
               </label>
-              <input
-                type="number"
+              <AmountInput
                 min={0}
                 step="0.01"
                 value={committedCost}
@@ -820,8 +819,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               <label className="block text-sm font-medium text-slate-700">
                 {tr("itemPanel.inputs.paidCost", "Paid Cost")}
               </label>
-              <input
-                type="number"
+              <AmountInput
                 min={0}
                 step="0.01"
                 value={paidCost}
@@ -850,8 +848,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
                     "Contract Value Snapshot",
                   )}
                 </label>
-                <input
-                  type="number"
+                <AmountInput
                   min={0}
                   step="0.01"
                   value={contractValueSnapshot}

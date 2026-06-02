@@ -18,6 +18,7 @@ import {
 import axios from '../../api/axios';
 import ApprovalTimeline from '../ApprovalTimeline';
 import { Button } from '../ui/Button';
+import AmountInput from '../ui/AmountInput';
 import useApprovalTimeline from '../../hooks/useApprovalTimeline';
 import useCurrentUser from '../../hooks/useCurrentUser';
 
@@ -1362,10 +1363,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                   >
                                     {t('maintenanceHODApprovals.cost.label')}
                                   </label>
-                                  <input
+                                  <AmountInput
                                     id={`estimated-cost-${request.request_id}`}
-                                    type="text"
-                                    inputMode="decimal"
                                     className={`w-full rounded-md border px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                       estimatedCostErrors[request.request_id]
                                         ? 'border-rose-400'

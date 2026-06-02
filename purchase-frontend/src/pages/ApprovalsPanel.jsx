@@ -17,6 +17,7 @@ import AttachmentsPanel from '../components/approvals/AttachmentsPanel';
 import ItemDecisionTable from '../components/approvals/ItemDecisionTable';
 import { getRequesterDisplay } from '../utils/requester';
 import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
+import AmountInput from '../components/ui/AmountInput';
 
 const ApprovalsPanel = () => {
   const [onboardingVersion, setOnboardingVersion] = useState(0);
@@ -291,10 +292,8 @@ const ApprovalsPanel = () => {
                             >
                               Update Estimated Cost (IQD)
                             </label>
-                            <input
+                            <AmountInput
                               id={`scm-estimated-cost-${req.request_id}`}
-                              type="text"
-                              inputMode="decimal"
                               className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                               placeholder="Add an estimated total before approving"
                               value={estimatedCostDrafts[req.request_id] ?? ''}
@@ -476,10 +475,8 @@ const ApprovalsPanel = () => {
                 <label htmlFor="estimated-cost" className="block text-sm font-medium text-slate-700">
                   Estimated Cost (IQD)
                 </label>
-                <input
+                <AmountInput
                   id="estimated-cost"
-                  type="text"
-                  inputMode="decimal"
                   className={`mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     estimatedCostError ? 'border-red-500' : 'border-slate-300'
                   }`}

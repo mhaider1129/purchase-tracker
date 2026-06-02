@@ -8,6 +8,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import RequestScheduleField from '../../components/requests/RequestScheduleField';
+import AmountInput from '../../components/ui/AmountInput';
 
 const NonStockRequestForm = () => {
   const { t } = useTranslation();
@@ -40,6 +41,10 @@ const NonStockRequestForm = () => {
   const MAX_ITEMS_PER_REQUEST = 50;
   const DRAFT_STORAGE_KEY = 'non_stock_request_draft_v1';
   const fieldRefs = useRef({});
+  const submitInFlightRef = useRef(false);
+  const submissionKeyRef = useRef(
+    window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
 
   const focusFirstError = useCallback((errorsByItem, hasJustificationError = false) => {
     if (hasJustificationError) {
@@ -418,6 +423,10 @@ ${templateText}`
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (submitInFlightRef.current || isSubmitting) {
+      return;
+    }
+
     if (!justification.trim()) {
       alert(tr('alerts.justificationRequired'));
       focusFirstError([], true);
@@ -447,6 +456,7 @@ ${templateText}`
     formData.append('project_id', projectId || '');
     formData.append('target_department_id', targetDeptId);
     formData.append('target_section_id', targetSectionId || '');
+    formData.append('client_submission_key', submissionKeyRef.current);
     const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
     formData.append('items', JSON.stringify(itemsPayload));
     if (scheduledFor) formData.append('scheduled_for', new Date(scheduledFor).toISOString());
@@ -460,6 +470,7 @@ ${templateText}`
     if (!window.confirm(tr('confirmSubmit'))) return;
 
     try {
+      submitInFlightRef.current = true;
       setIsSubmitting(true);
       const res = await api.post('/requests', formData);
       const state = buildRequestSubmissionState('Non-Stock', res.data);
@@ -469,10 +480,13 @@ ${templateText}`
       window.localStorage.setItem('non_stock_recent_item_defaults', JSON.stringify({ brand: recentItem.brand || '', intended_use: recentItem.intended_use || '' }));
       setRequestAttachmentsError('');
       setItemErrors([{}]);
+      submissionKeyRef.current =
+        window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     } catch (err) {
       console.error('❌ Submission error:', err);
       alert(err.response?.data?.message || tr('alerts.submitFailed'));
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -581,8 +595,7 @@ ${templateText}`
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.expectedCostLabel')}</label>
-                    <input
-                      type="number"
+                    <AmountInput
                       min={0}
                       step="0.01"
                       placeholder={tr('fields.unitCostPlaceholder')}

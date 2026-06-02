@@ -91,6 +91,15 @@ const PRINT_TRANSLATIONS = {
   },
 };
 const DASHBOARD_REFRESH_EVENT = 'dashboard:refresh';
+const REQUEST_TYPE_FILTER_OPTIONS = [
+  { value: 'Stock', label: 'Stock' },
+  { value: 'Non-Stock', label: 'Non-Stock' },
+  { value: 'Medical Device', label: 'Medical Device' },
+  { value: 'Medication', label: 'Medication' },
+  { value: 'IT Item', label: 'IT Item' },
+  { value: 'Maintenance', label: 'Maintenance' },
+  { value: 'Printing Logbook', label: 'Logbooks' },
+];
 
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
@@ -166,6 +175,7 @@ const AllRequestsPage = () => {
   const [toDate, setToDate] = useState('');
   const [status, setStatus] = useState('');
   const [department, setDepartment] = useState('');
+  const [section, setSection] = useState('');
   const [departments, setDepartments] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -218,6 +228,16 @@ const AllRequestsPage = () => {
     handleSendDirectCommunication,
   } = useDirectPurchaseCommunications(user?.role);
 
+  const sectionOptions = useMemo(() => {
+    return departments.flatMap((dep) => {
+      if (department && String(dep.id) !== String(department)) return [];
+      return (dep.sections || []).map((sec) => ({
+        ...sec,
+        departmentName: dep.name,
+      }));
+    });
+  }, [department, departments]);
+
   const requestSummary = useMemo(() => {
     return [
       { label: 'Total requests', value: totalRequests },
@@ -256,6 +276,7 @@ const AllRequestsPage = () => {
           to_date: toDate,
           status,
           department_id: department,
+          section_id: section,
           page,
           limit,
         },
@@ -295,6 +316,7 @@ const AllRequestsPage = () => {
           to_date: toDate,
           status,
           department_id: department,
+          section_id: section,
           page: 1,
           limit: Math.max(total, limit),
         },
@@ -330,6 +352,7 @@ const AllRequestsPage = () => {
     resetApprovals,
     resetAttachments,
     search,
+    section,
     sort,
     status,
     toDate,
@@ -361,6 +384,7 @@ const AllRequestsPage = () => {
     setToDate('');
     setStatus('');
     setDepartment('');
+    setSection('');
     setPage(1);
     setFiltersChanged(true);
   };
@@ -409,6 +433,7 @@ const AllRequestsPage = () => {
           to_date: toDate,
           status,
           department_id: department,
+          section_id: section,
         },
         responseType: 'blob',
       });
@@ -930,12 +955,11 @@ const AllRequestsPage = () => {
 
         <select className="border p-2 rounded" value={requestType} onChange={(e) => setRequestType(e.target.value)}>
           <option value="">All Types</option>
-          <option value="Stock">Stock</option>
-          <option value="Non-Stock">Non-Stock</option>
-          <option value="Medical Device">Medical Device</option>
-          <option value="Medication">Medication</option>
-          <option value="IT Item">IT Item</option>
-          <option value="Maintenance">Maintenance</option>
+          {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
 
         <input
@@ -977,11 +1001,27 @@ const AllRequestsPage = () => {
           <option value="Completed">Completed</option>
         </select>
 
-        <select className="border p-2 rounded" value={department} onChange={(e) => setDepartment(e.target.value)}>
+        <select
+          className="border p-2 rounded"
+          value={department}
+          onChange={(e) => {
+            setDepartment(e.target.value);
+            setSection('');
+          }}
+        >
           <option value="">All Departments</option>
           {departments.map((dep) => (
             <option key={dep.id} value={dep.id}>
               {dep.name}
+            </option>
+          ))}
+        </select>
+
+        <select className="border p-2 rounded" value={section} onChange={(e) => setSection(e.target.value)}>
+          <option value="">All Sections</option>
+          {sectionOptions.map((sec) => (
+            <option key={sec.id} value={sec.id}>
+              {department ? sec.name : `${sec.departmentName} — ${sec.name}`}
             </option>
           ))}
         </select>

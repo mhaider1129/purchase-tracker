@@ -26,6 +26,23 @@ const initialNewRoute = {
   warehouse_id: '',
 };
 
+const defaultAutoAssignmentTypes = [
+  'Maintenance',
+  'Non-stock',
+  'Stock',
+  'IT',
+  'Logbook',
+  'Medical Device',
+  'Medication',
+];
+
+const initialAutoAssignmentRule = {
+  request_type: 'Maintenance',
+  warehouse_id: '',
+  assignee_user_id: '',
+  is_active: true,
+};
+
 const Management = () => {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -39,6 +56,12 @@ const Management = () => {
   const [deletingRoleId, setDeletingRoleId] = useState(null);
   const [routes, setRoutes] = useState([]);
   const [routesVersionLabel, setRoutesVersionLabel] = useState('');
+  const [autoAssignmentRules, setAutoAssignmentRules] = useState([]);
+  const [autoAssignmentTypes, setAutoAssignmentTypes] = useState(defaultAutoAssignmentTypes);
+  const [autoAssignmentForm, setAutoAssignmentForm] = useState(initialAutoAssignmentRule);
+  const [editingAutoAssignmentId, setEditingAutoAssignmentId] = useState(null);
+  const [editingAutoAssignment, setEditingAutoAssignment] = useState(initialAutoAssignmentRule);
+  const [autoAssignmentMessage, setAutoAssignmentMessage] = useState('');
   const [accountRequests, setAccountRequests] = useState([]);
   const [projects, setProjects] = useState([]);
   const [warehouseForm, setWarehouseForm] = useState({ name: '' });
@@ -60,6 +83,8 @@ const Management = () => {
   const [usersError, setUsersError] = useState('');
   const [departmentsError, setDepartmentsError] = useState('');
   const [routesError, setRoutesError] = useState('');
+  const [autoAssignmentError, setAutoAssignmentError] = useState('');
+  const [loadingAutoAssignments, setLoadingAutoAssignments] = useState(false);
   const [simulationInput, setSimulationInput] = useState('{\n  "changes": [],\n  "scenarios": []\n}');
   const [simulationResult, setSimulationResult] = useState(null);
   const [requestsError, setRequestsError] = useState('');
@@ -84,6 +109,8 @@ const Management = () => {
   const [editRoutes, setEditRoutes] = useState({});
   const [newRoute, setNewRoute] = useState(initialNewRoute);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDepartmentIds, setNewProjectDepartmentIds] = useState([]);
+  const [savingProjectVisibilityId, setSavingProjectVisibilityId] = useState(null);
 
   const { user } = useAuth();
   const {
@@ -112,11 +139,12 @@ const Management = () => {
       canManageRoles: hasAnyPermission(currentUser, ['roles.manage', 'permissions.manage']),
       canManagePermissions: hasPermission(currentUser, 'permissions.manage'),
       canManageContractApprovalRules: hasAnyPermission(currentUser, ['contracts.manage', 'permissions.manage']),
+      canManageAutoAssignments: hasAnyPermission(currentUser, ['requests.manage', 'permissions.manage', 'users.manage']) ||
+        ['Admin', 'SCM'].includes(currentUser.role),
     };
   }, [user]);
 
   const {
-    canManageUsers,
     canViewUsers,
     canManageAccountRequests,
     canManageDepartments,
@@ -125,6 +153,7 @@ const Management = () => {
     canManageRoles,
     canManagePermissions,
     canManageContractApprovalRules,
+    canManageAutoAssignments,
   } = permissionFlags;
 
   const availableTabs = useMemo(() => {
@@ -134,6 +163,7 @@ const Management = () => {
     if (canManageDepartments) tabs.push('departments');
     if (canManageDepartments) tabs.push('warehouses');
     if (canManageRoutes) tabs.push('routes');
+    if (canManageAutoAssignments) tabs.push('autoAssignments');
     if (canManageProjects) tabs.push('projects');
     if (canManageRoles) {
       tabs.push('roles');
@@ -151,6 +181,7 @@ const Management = () => {
     canManageRoutes,
     canManageProjects,
     canManageRoles,
+    canManageAutoAssignments,
     canManagePermissions,
     canManageContractApprovalRules,
   ]);
@@ -184,13 +215,13 @@ const Management = () => {
     warehouseRoles.has(String(roleName || '').toLowerCase());
 
   useEffect(() => {
-    if (canViewUsers || canManageRoutes || canManagePermissions || canManageRoles) {
+    if (canViewUsers || canManageRoutes || canManagePermissions || canManageRoles || canManageAutoAssignments) {
       fetchRoles();
     }
-    if (canViewUsers || canManagePermissions || canManageRoles) {
+    if (canViewUsers || canManagePermissions || canManageRoles || canManageAutoAssignments) {
       fetchUsers();
     }
-    if (canManageDepartments || canViewUsers || canManagePermissions || canManageRoles) {
+    if (canManageDepartments || canViewUsers || canManagePermissions || canManageRoles || canManageAutoAssignments || canManageProjects) {
       fetchDepartments();
     }
     if (canManageRoutes) {
@@ -210,6 +241,7 @@ const Management = () => {
     canManageDepartments,
     canManageAccountRequests,
     canManageProjects,
+    canManageAutoAssignments,
   ]);
 
   useEffect(() => {
@@ -247,6 +279,10 @@ const Management = () => {
     }
     if (tab === 'projects' && canManageProjects) {
       fetchProjects();
+      fetchDepartments();
+    }
+    if (tab === 'autoAssignments' && canManageAutoAssignments) {
+      fetchAutoAssignmentRules();
     }
   }, [
     tab,
@@ -257,6 +293,7 @@ const Management = () => {
     canManageAccountRequests,
     canManageProjects,
     canManageRoles,
+    canManageAutoAssignments,
     roles.length,
     availablePermissions.length,
   ]);
@@ -318,7 +355,7 @@ const Management = () => {
   };
 
   const fetchDepartments = async () => {
-    if (!(canManageDepartments || canViewUsers || canManagePermissions)) return;
+    if (!(canManageDepartments || canViewUsers || canManagePermissions || canManageProjects)) return;
     setLoadingDepartments(true);
     setDepartmentsError('');
     try {
@@ -370,6 +407,75 @@ const Management = () => {
   };
 
 
+  const fetchAutoAssignmentRules = async () => {
+    if (!canManageAutoAssignments) return;
+    setLoadingAutoAssignments(true);
+    setAutoAssignmentError('');
+    try {
+      const res = await api.get('/request-auto-assignment-rules');
+      setAutoAssignmentRules(res.data?.rules || []);
+      setAutoAssignmentTypes(res.data?.request_types || defaultAutoAssignmentTypes);
+    } catch (err) {
+      console.error('Failed to load auto-assignment rules', err);
+      setAutoAssignmentError(err?.response?.data?.message || 'Failed to load auto-assignment rules.');
+    } finally {
+      setLoadingAutoAssignments(false);
+    }
+  };
+
+  const normalizeAutoAssignmentPayload = (rule) => ({
+    request_type: rule.request_type,
+    warehouse_id: rule.request_type === 'Stock' && rule.warehouse_id ? Number(rule.warehouse_id) : null,
+    assignee_user_id: Number(rule.assignee_user_id),
+    is_active: rule.is_active !== false,
+  });
+
+  const saveAutoAssignmentRule = async (rule, id = null) => {
+    if (!canManageAutoAssignments) return;
+    setAutoAssignmentError('');
+    setAutoAssignmentMessage('');
+
+    if (!rule.request_type || !rule.assignee_user_id) {
+      setAutoAssignmentError('Choose a request type and assignee.');
+      return;
+    }
+
+    if (rule.request_type === 'Stock' && !rule.warehouse_id) {
+      setAutoAssignmentError('Stock rules must select the submitted warehouse.');
+      return;
+    }
+
+    try {
+      const payload = normalizeAutoAssignmentPayload(rule);
+      if (id) {
+        await api.put(`/request-auto-assignment-rules/${id}`, payload);
+        setEditingAutoAssignmentId(null);
+      } else {
+        await api.post('/request-auto-assignment-rules', payload);
+        setAutoAssignmentForm(initialAutoAssignmentRule);
+      }
+      setAutoAssignmentMessage('Auto-assignment rule saved.');
+      fetchAutoAssignmentRules();
+    } catch (err) {
+      console.error('Failed to save auto-assignment rule', err);
+      setAutoAssignmentError(err?.response?.data?.message || 'Unable to save auto-assignment rule.');
+    }
+  };
+
+  const deleteAutoAssignmentRule = async (id) => {
+    if (!canManageAutoAssignments || !window.confirm('Delete this auto-assignment rule?')) return;
+    setAutoAssignmentError('');
+    setAutoAssignmentMessage('');
+    try {
+      await api.delete(`/request-auto-assignment-rules/${id}`);
+      setAutoAssignmentMessage('Auto-assignment rule deleted.');
+      fetchAutoAssignmentRules();
+    } catch (err) {
+      console.error('Failed to delete auto-assignment rule', err);
+      setAutoAssignmentError(err?.response?.data?.message || 'Unable to delete auto-assignment rule.');
+    }
+  };
+
   const runRouteSimulation = async () => {
     if (!canManageRoutes) return;
 
@@ -418,6 +524,49 @@ const Management = () => {
       setProjectError(err?.response?.data?.message || 'Failed to load projects');
     } finally {
       setLoadingProjects(false);
+    }
+  };
+
+
+  const getSelectedDepartmentIds = (event) =>
+    Array.from(event.target.selectedOptions).map((option) => Number(option.value));
+
+  const getProjectDepartmentIds = (project) =>
+    Array.isArray(project?.visible_departments)
+      ? project.visible_departments.map((department) => Number(department.id)).filter(Boolean)
+      : [];
+
+  const formatProjectVisibility = (project) => {
+    const visibleDepartments = Array.isArray(project?.visible_departments)
+      ? project.visible_departments
+      : [];
+
+    if (visibleDepartments.length === 0) {
+      return 'All departments';
+    }
+
+    return visibleDepartments.map((department) => department.name).join(', ');
+  };
+
+  const updateProjectVisibility = async (project, departmentIds) => {
+    setProjectError('');
+    setProjectMessage('');
+    setSavingProjectVisibilityId(project.id);
+
+    try {
+      const res = await api.patch(`/projects/${project.id}/departments`, {
+        department_ids: departmentIds,
+      });
+      const updatedProject = res.data?.project || project;
+      setProjects((prev) =>
+        prev.map((item) => (item.id === project.id ? updatedProject : item))
+      );
+      setProjectMessage(res.data?.message || `Project visibility updated`);
+    } catch (err) {
+      console.error('Failed to update project visibility', err);
+      setProjectError(err?.response?.data?.message || 'Failed to update project visibility');
+    } finally {
+      setSavingProjectVisibilityId(null);
     }
   };
 
@@ -736,8 +885,12 @@ const Management = () => {
     setProjectMessage('');
 
     try {
-      await api.post('/projects', { name: trimmed });
+      await api.post('/projects', {
+        name: trimmed,
+        department_ids: newProjectDepartmentIds,
+      });
       setNewProjectName('');
+      setNewProjectDepartmentIds([]);
       setProjectMessage(`Project "${trimmed}" added successfully`);
       fetchProjects();
     } catch (err) {
@@ -971,6 +1124,13 @@ const Management = () => {
         return bTime - aTime;
       });
   }, [accountRequests, requestFilters]);
+
+  const procurementAssigneeUsers = useMemo(
+    () => users.filter((entry) =>
+      entry.is_active && ['ProcurementSpecialist', 'SCM'].includes(entry.role),
+    ),
+    [users],
+  );
 
   const activeUserCount = useMemo(
     () => users.filter((user) => user.is_active).length,
@@ -1945,6 +2105,182 @@ const Management = () => {
     );
   };
 
+  const renderAutoAssignments = () => {
+    if (!canManageAutoAssignments) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage request auto-assignment rules.
+        </div>
+      );
+    }
+
+    const renderRuleInputs = (rule, setRule, saveLabel, onSave) => (
+      <div className="grid gap-3 rounded border bg-white p-4 md:grid-cols-5 md:items-end">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Request type</label>
+          <select
+            className="mt-1 w-full rounded border border-gray-300 p-2"
+            value={rule.request_type}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              setRule((prev) => ({
+                ...prev,
+                request_type: nextType,
+                warehouse_id: nextType === 'Stock' ? prev.warehouse_id : '',
+              }));
+            }}
+          >
+            {autoAssignmentTypes.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Submitted warehouse</label>
+          <select
+            className="mt-1 w-full rounded border border-gray-300 p-2 disabled:bg-gray-100"
+            value={rule.warehouse_id || ''}
+            disabled={rule.request_type !== 'Stock'}
+            onChange={(e) => setRule((prev) => ({ ...prev, warehouse_id: e.target.value }))}
+          >
+            <option value="">{rule.request_type === 'Stock' ? '--Select warehouse--' : 'Not applicable'}</option>
+            {warehouses.map((warehouse) => (
+              <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Assign to</label>
+          <select
+            className="mt-1 w-full rounded border border-gray-300 p-2"
+            value={rule.assignee_user_id || ''}
+            onChange={(e) => setRule((prev) => ({ ...prev, assignee_user_id: e.target.value }))}
+          >
+            <option value="">--Select user--</option>
+            {procurementAssigneeUsers.map((assignee) => (
+              <option key={assignee.id} value={assignee.id}>
+                {assignee.name} ({assignee.role})
+              </option>
+            ))}
+          </select>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={rule.is_active !== false}
+            onChange={(e) => setRule((prev) => ({ ...prev, is_active: e.target.checked }))}
+          />
+          Active
+        </label>
+        <button
+          type="button"
+          onClick={onSave}
+          className="rounded bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
+        >
+          {saveLabel}
+        </button>
+      </div>
+    );
+
+    return (
+      <div className="space-y-4">
+        <div className="rounded border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+          <h3 className="text-base font-semibold">Automatic assignment after final approval</h3>
+          <p>
+            Admins and SCM can route approved Maintenance, Non-stock, Stock, IT, Logbook,
+            Medical Device, and Medication requests directly to a selected procurement user.
+            Stock rules require the warehouse submitted with the stock request.
+          </p>
+        </div>
+
+        {autoAssignmentError && <p className="text-sm text-red-600">{autoAssignmentError}</p>}
+        {autoAssignmentMessage && <p className="text-sm text-green-700">{autoAssignmentMessage}</p>}
+
+        {renderRuleInputs(
+          autoAssignmentForm,
+          setAutoAssignmentForm,
+          'Save rule',
+          () => saveAutoAssignmentRule(autoAssignmentForm),
+        )}
+
+        {loadingAutoAssignments ? (
+          <p>Loading auto-assignment rules...</p>
+        ) : autoAssignmentRules.length === 0 ? (
+          <p className="text-sm text-gray-500">No auto-assignment rules configured yet.</p>
+        ) : (
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="bg-gray-200 text-left">
+                <th className="p-2">Request type</th>
+                <th className="p-2">Submitted warehouse</th>
+                <th className="p-2">Assigned user</th>
+                <th className="p-2">Status</th>
+                <th className="p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {autoAssignmentRules.map((rule) => {
+                const isEditing = editingAutoAssignmentId === rule.id;
+                return (
+                  <tr key={rule.id} className="border-b align-top">
+                    {isEditing ? (
+                      <td colSpan="5" className="p-2">
+                        {renderRuleInputs(
+                          editingAutoAssignment,
+                          setEditingAutoAssignment,
+                          'Update rule',
+                          () => saveAutoAssignmentRule(editingAutoAssignment, rule.id),
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setEditingAutoAssignmentId(null)}
+                          className="mt-2 text-sm text-gray-600 hover:underline"
+                        >
+                          Cancel editing
+                        </button>
+                      </td>
+                    ) : (
+                      <>
+                        <td className="p-2">{rule.request_type}</td>
+                        <td className="p-2">{rule.warehouse_name || 'Not applicable'}</td>
+                        <td className="p-2">{rule.assignee_name || rule.assignee_user_id}</td>
+                        <td className="p-2">{rule.is_active ? 'Active' : 'Inactive'}</td>
+                        <td className="p-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingAutoAssignmentId(rule.id);
+                              setEditingAutoAssignment({
+                                request_type: rule.request_type,
+                                warehouse_id: rule.warehouse_id ? String(rule.warehouse_id) : '',
+                                assignee_user_id: rule.assignee_user_id ? String(rule.assignee_user_id) : '',
+                                is_active: rule.is_active !== false,
+                              });
+                            }}
+                            className="mr-2 text-blue-600 hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteAutoAssignmentRule(rule.id)}
+                            className="text-red-600 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    );
+  };
+
   const renderRoles = () => {
     if (!canManageRoles) {
       return (
@@ -2144,6 +2480,27 @@ const Management = () => {
               onChange={(e) => setNewProjectName(e.target.value)}
             />
           </label>
+          <label className="flex-1">
+            <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Visible departments
+            </span>
+            <select
+              multiple
+              className="mt-1 h-28 w-full rounded border px-3 py-2"
+              value={newProjectDepartmentIds.map(String)}
+              onChange={(event) => setNewProjectDepartmentIds(getSelectedDepartmentIds(event))}
+              disabled={loadingDepartments}
+            >
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
+            <span className="mt-1 block text-xs text-gray-500">
+              Leave empty to make the project visible to all departments.
+            </span>
+          </label>
           <button
             type="submit"
             className="rounded bg-blue-600 px-4 py-2 text-white"
@@ -2168,6 +2525,7 @@ const Management = () => {
               <tr className="bg-gray-200 text-left">
                 <th className="p-2">Name</th>
                 <th className="p-2">Active</th>
+                <th className="p-2">Visible to</th>
                 <th className="p-2">Created</th>
                 <th className="p-2">Actions</th>
               </tr>
@@ -2179,6 +2537,29 @@ const Management = () => {
                   <tr key={project.id} className="border-b">
                     <td className="p-2 font-medium text-gray-900">{project.name}</td>
                     <td className="p-2">{project.is_active !== false ? 'Yes' : 'No'}</td>
+                    <td className="p-2 min-w-[16rem]">
+                      <select
+                        multiple
+                        className="h-24 w-full rounded border px-2 py-1"
+                        value={getProjectDepartmentIds(project).map(String)}
+                        onChange={(event) =>
+                          updateProjectVisibility(project, getSelectedDepartmentIds(event))
+                        }
+                        disabled={loadingDepartments || savingProjectVisibilityId === project.id}
+                        aria-label={`Departments that can see ${project.name}`}
+                      >
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.id}>
+                            {department.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {savingProjectVisibilityId === project.id
+                          ? 'Saving visibility...'
+                          : formatProjectVisibility(project)}
+                      </p>
+                    </td>
                     <td className="p-2">
                       {createdAt ? createdAt.toLocaleDateString() : '—'}
                     </td>
@@ -2781,6 +3162,18 @@ const Management = () => {
                     Approval Routes
                   </button>
                 )}
+                {canManageAutoAssignments && (
+                  <button
+                    onClick={() => setTab('autoAssignments')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'autoAssignments'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Auto Assignments
+                  </button>
+                )}
                 {canManageProjects && (
                   <button
                     onClick={() => setTab('projects')}
@@ -2850,6 +3243,7 @@ const Management = () => {
               {tab === 'departments' && renderDepartments()}
               {tab === 'warehouses' && renderWarehouses()}
               {tab === 'routes' && renderRoutes()}
+              {tab === 'autoAssignments' && renderAutoAssignments()}
               {tab === 'projects' && renderProjects()}
               {tab === 'roles' && renderRoles()}
               {tab === 'permissions' && renderPermissions()}

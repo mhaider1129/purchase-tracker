@@ -6,6 +6,7 @@ import axios from '../api/axios';
 import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel';
 import PageShell from '../components/layout/PageShell';
 import ApprovalTimeline from '../components/ApprovalTimeline';
+import AmountInput from '../components/ui/AmountInput';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import { getRequesterDisplay } from '../utils/requester';
 import usePageTranslation from '../utils/usePageTranslation';
@@ -861,8 +862,7 @@ const AssignedRequestsPage = () => {
                           <label className="block text-sm font-medium mb-1 text-slate-700">
                             {tr('cost.recordedLabel', 'Total Cost Recorded')}
                           </label>
-                          <input
-                            type="number"
+                          <AmountInput
                             min={0}
                             step="0.01"
                             value={requestCosts[request.id] ?? ''}

@@ -16,6 +16,7 @@ import {
 } from "../api/suppliers";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import AmountInput from "../components/ui/AmountInput";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -666,7 +667,7 @@ const SuppliersPage = () => {
                   <InputField t={t} id="supplier-currency" name="currency" value={formValues.currency} onChange={handleFormChange} labelKey="suppliersPage.form.currency" />
                   <InputField t={t} id="supplier-payment-terms" name="payment_terms" value={formValues.payment_terms} onChange={handleFormChange} labelKey="suppliersPage.form.paymentTerms" />
                   <InputField t={t} id="supplier-lead-time-days" name="lead_time_days" value={formValues.lead_time_days} onChange={handleFormChange} labelKey="suppliersPage.form.leadTimeDays" type="number" min="0" />
-                  <InputField t={t} id="supplier-credit-limit" name="credit_limit" value={formValues.credit_limit} onChange={handleFormChange} labelKey="suppliersPage.form.creditLimit" type="number" min="0" step="0.01" />
+                  <InputField t={t} id="supplier-credit-limit" name="credit_limit" value={formValues.credit_limit} onChange={handleFormChange} labelKey="suppliersPage.form.creditLimit" amount min="0" step="0.01" />
                   <InputField t={t} id="supplier-status" name="status" value={formValues.status} onChange={handleFormChange} labelKey="suppliersPage.form.status" />
                   <InputField t={t} id="supplier-country" name="country" value={formValues.country} onChange={handleFormChange} labelKey="suppliersPage.form.country" />
                 </div>
@@ -743,21 +744,25 @@ const StatCard = ({ label, value }) => (
   </div>
 );
 
-const InputField = ({ t, id, name, value, onChange, labelKey, type = "text", ...props }) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor={id}>
-      {t(labelKey)}
-    </label>
-    <input
-      id={id}
-      name={name}
-      type={type}
-      value={value}
-      onChange={onChange}
-      className="mt-1 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
-      {...props}
-    />
-  </div>
-);
+const InputField = ({ t, id, name, value, onChange, labelKey, type = "text", amount = false, ...props }) => {
+  const Field = amount ? AmountInput : "input";
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor={id}>
+        {t(labelKey)}
+      </label>
+      <Field
+        id={id}
+        name={name}
+        type={amount ? undefined : type}
+        value={value}
+        onChange={onChange}
+        className="mt-1 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
+        {...props}
+      />
+    </div>
+  );
+};
 
 export default SuppliersPage;
