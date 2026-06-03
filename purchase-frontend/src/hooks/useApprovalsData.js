@@ -655,6 +655,7 @@ const useApprovalsData = (user) => {
       });
 
       closeHodModal();
+      await fetchApprovals();
       alert('Request forwarded to the selected HOD for approval.');
     } catch (err) {
       console.error('❌ Failed to forward request to HOD:', err);
