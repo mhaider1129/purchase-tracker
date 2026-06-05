@@ -1133,6 +1133,8 @@ const AllRequestsPage = () => {
                       <strong>Assigned To:</strong>{' '}
                       {request.assigned_user_name
                         ? `${request.assigned_user_name} (${request.assigned_user_role})`
+                        : request.split_assignees?.length > 0
+                        ? `Split among ${request.split_assignees.map((user) => user.name).join(', ')}`
                         : 'Not Assigned'}
                     </p>
                     <p>
@@ -1260,6 +1262,7 @@ const AllRequestsPage = () => {
                             <th className="border p-1">Qty</th>
                             <th className="border p-1">Unit Cost</th>
                             <th className="border p-1">Total</th>
+                            <th className="border p-1">Assigned To</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1270,6 +1273,7 @@ const AllRequestsPage = () => {
                             <td className="border p-1">{item.quantity}</td>
                             <td className="border p-1">{item.unit_cost}</td>
                             <td className="border p-1">{item.total_cost}</td>
+                            <td className="border p-1">{item.assigned_user_name || '—'}</td>
                           </tr>
                         ))}
                       </tbody>
