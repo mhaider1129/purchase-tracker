@@ -38,6 +38,7 @@ export const useDataQuery = ({
 }) => {
   const serializedKey = useMemo(() => serializeKey(queryKey), [queryKey]);
   const mountedRef = useRef(true);
+  const activeKeyRef = useRef(serializedKey);
 
   const [state, setState] = useState(() => {
     const cached = queryCache.get(serializedKey);
@@ -65,33 +66,56 @@ export const useDataQuery = ({
     };
   }, []);
 
+  useEffect(() => {
+    activeKeyRef.current = serializedKey;
+    const cached = queryCache.get(serializedKey);
+
+    if (enabled && cached && !isStale(cached, staleTime)) {
+      setState({
+        data: cached.data,
+        error: null,
+        isLoading: false,
+        isFetching: false,
+      });
+      return;
+    }
+
+    setState({
+      data: undefined,
+      error: null,
+      isLoading: enabled,
+      isFetching: false,
+    });
+  }, [enabled, serializedKey, staleTime]);
+
   const execute = useCallback(
     async ({ force = false } = {}) => {
       if (!enabled) {
         return state.data;
       }
 
-      const cached = queryCache.get(serializedKey);
+      const requestKey = serializedKey;
+      const cached = queryCache.get(requestKey);
       if (!force && cached && !isStale(cached, staleTime)) {
-        if (mountedRef.current) {
+        if (mountedRef.current && activeKeyRef.current === requestKey) {
           setState((prev) => ({ ...prev, data: cached.data, isLoading: false }));
         }
         return cached.data;
       }
 
-      const existingRequest = inflightRequests.get(serializedKey);
+      const existingRequest = inflightRequests.get(requestKey);
       if (existingRequest) {
-        if (mountedRef.current) {
+        if (mountedRef.current && activeKeyRef.current === requestKey) {
           setState((prev) => ({ ...prev, isFetching: true }));
         }
         const sharedData = await existingRequest;
-        if (mountedRef.current) {
+        if (mountedRef.current && activeKeyRef.current === requestKey) {
           setState({ data: sharedData, error: null, isLoading: false, isFetching: false });
         }
         return sharedData;
       }
 
-      if (mountedRef.current) {
+      if (mountedRef.current && activeKeyRef.current === requestKey) {
         setState((prev) => ({ ...prev, isLoading: prev.data === undefined, isFetching: true, error: null }));
       }
 
@@ -100,7 +124,7 @@ export const useDataQuery = ({
         for (let attempt = 0; attempt <= retry; attempt += 1) {
           try {
             const data = await queryFn();
-            queryCache.set(serializedKey, { data, updatedAt: Date.now() });
+            queryCache.set(requestKey, { data, updatedAt: Date.now() });
             return data;
           } catch (error) {
             lastError = error;
@@ -112,21 +136,21 @@ export const useDataQuery = ({
         throw lastError;
       })();
 
-      inflightRequests.set(serializedKey, request);
+      inflightRequests.set(requestKey, request);
 
       try {
         const data = await request;
-        if (mountedRef.current) {
+        if (mountedRef.current && activeKeyRef.current === requestKey) {
           setState({ data, error: null, isLoading: false, isFetching: false });
         }
         return data;
       } catch (error) {
-        if (mountedRef.current) {
+        if (mountedRef.current && activeKeyRef.current === requestKey) {
           setState((prev) => ({ ...prev, error, isLoading: false, isFetching: false }));
         }
         throw error;
       } finally {
-        inflightRequests.delete(serializedKey);
+        inflightRequests.delete(requestKey);
       }
     },
     [enabled, queryFn, retry, retryDelay, serializedKey, staleTime, state.data],

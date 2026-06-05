@@ -5,11 +5,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { fetchCurrentUser } from "../api/currentUser";
+import { invalidateQueries } from "./useDataQuery";
 
 const AuthContext = createContext(null);
 
@@ -35,6 +37,7 @@ const useProvideAuth = () => {
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const activeProfileRequestRef = useRef(0);
   const navigate = useNavigate();
 
   const isTokenExpired = useCallback((candidate) => {
@@ -50,7 +53,9 @@ const useProvideAuth = () => {
   }, []);
 
   const logout = useCallback(() => {
+    activeProfileRequestRef.current += 1;
     localStorage.removeItem("token");
+    invalidateQueries((key) => key.includes("current-user"));
     setToken(null);
     setUser(null);
     setIsLoading(false);
@@ -65,6 +70,9 @@ const useProvideAuth = () => {
         return;
       }
 
+      const requestId = activeProfileRequestRef.current + 1;
+      activeProfileRequestRef.current = requestId;
+      setUser(null);
       setIsLoading(true);
       try {
         const res = await fetchCurrentUser({
@@ -75,19 +83,29 @@ const useProvideAuth = () => {
           ? profile.permissions
           : [];
         profile.data_scopes = normalizeDataScopes(profile.data_scopes);
-        setUser(profile);
+        if (activeProfileRequestRef.current === requestId && localStorage.getItem("token") === activeToken) {
+          setUser(profile);
+        }
       } catch (err) {
-        console.error("❌ Failed to fetch user profile:", err);
-        logout();
+        if (activeProfileRequestRef.current === requestId && localStorage.getItem("token") === activeToken) {
+          console.error("❌ Failed to fetch user profile:", err);
+          logout();
+        }
       } finally {
-        setIsLoading(false);
+        if (activeProfileRequestRef.current === requestId) {
+          setIsLoading(false);
+        }
       }
     },
     [logout],
   );
 
   const login = useCallback((newToken) => {
+    activeProfileRequestRef.current += 1;
+    invalidateQueries((key) => key.includes("current-user"));
     localStorage.setItem("token", newToken);
+    setUser(null);
+    setIsLoading(true);
     setToken(newToken);
   }, []);
 
@@ -110,6 +128,9 @@ const useProvideAuth = () => {
       if (!newToken || isTokenExpired(newToken)) {
         logout();
       } else {
+        invalidateQueries((key) => key.includes("current-user"));
+        setUser(null);
+        setIsLoading(true);
         setToken(newToken);
       }
     };
