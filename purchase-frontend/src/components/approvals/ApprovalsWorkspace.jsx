@@ -18,6 +18,7 @@ import {
 import axios from '../../api/axios';
 import ApprovalTimeline from '../ApprovalTimeline';
 import { Button } from '../ui/Button';
+import PaginationControls from '../ui/PaginationControls';
 import AmountInput from '../ui/AmountInput';
 import useApprovalTimeline from '../../hooks/useApprovalTimeline';
 import useCurrentUser from '../../hooks/useCurrentUser';
@@ -1460,27 +1461,15 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                 </div>
               ))}
 
-              {filteredRequests.length > ITEMS_PER_PAGE && (
-                <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-                  <div>{t('common.pageOf', { current: currentPage, total: totalPages })}</div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                    >
-                      {t('common.prev')}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                    >
-                      {t('common.next')}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                className="rounded-md border border-slate-200 bg-white px-4 py-3 text-slate-600 md:justify-between"
+                summary={t('common.pageOf', { current: currentPage, total: totalPages })}
+                previousLabel={t('common.prev')}
+                nextLabel={t('common.next')}
+              />
             </div>
           )}
         </div>

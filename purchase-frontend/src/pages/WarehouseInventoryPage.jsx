@@ -5,6 +5,8 @@ import useCurrentUser from '../hooks/useCurrentUser';
 import useWarehouses from '../hooks/useWarehouses';
 import useWarehouseStockItems from '../hooks/useWarehouseStockItems';
 import { hasPermission } from '../utils/permissions';
+import PaginationControls from '../components/ui/PaginationControls';
+import { matchesSearchTokens } from '../utils/search';
 
 const numberFormatter = new Intl.NumberFormat();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -270,38 +272,29 @@ const WarehouseInventoryPage = () => {
   }, [itemSearch, stockItems]);
 
   const filteredIssueItems = useMemo(() => {
-    const term = issueItemSearch.trim().toLowerCase();
-    if (!term) return stockItems;
+    if (!issueItemSearch.trim()) return stockItems;
     return stockItems.filter((item) =>
-      [item.name, item.brand, item.category]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term))
+      matchesSearchTokens(issueItemSearch, [item.name, item.brand, item.category])
     );
   }, [issueItemSearch, stockItems]);
 
   const selectedItem = stockItems.find((item) => String(item.id) === String(form.stock_item_id));
   const filteredDiscardItems = useMemo(() => {
-    const term = discardItemSearch.trim().toLowerCase();
-    if (!term) return stockItems;
+    if (!discardItemSearch.trim()) return stockItems;
 
     return stockItems.filter((item) =>
-      [item.name, item.brand, item.category]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term))
+      matchesSearchTokens(discardItemSearch, [item.name, item.brand, item.category])
     );
   }, [discardItemSearch, stockItems]);
   const selectedDiscardItem = stockItems.find(
     (item) => String(item.id) === String(discardForm.stock_item_id),
   );
   const visibleInventoryItems = useMemo(() => {
-    const term = inventorySearch.trim().toLowerCase();
     let items = inventoryItems;
 
-    if (term) {
+    if (inventorySearch.trim()) {
       items = items.filter((item) =>
-        [item.item_name]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(term))
+        matchesSearchTokens(inventorySearch, [item.item_name])
       );
     }
 
@@ -1586,32 +1579,15 @@ const WarehouseInventoryPage = () => {
                   </div>
                 )}
 
-                {totalInventoryPages > 1 && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-700 dark:text-gray-200">
-                    <div className="text-gray-600 dark:text-gray-300">
-                      {tr('inventory.labels.pageSummary', { page: inventoryPage, pages: totalInventoryPages })}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setInventoryPage((prev) => Math.max(1, prev - 1))}
-                        disabled={inventoryPage === 1}
-                        className="rounded-md border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-                      >
-                        {tr('inventory.labels.previousPage')}
-                      </button>
-                      <span className="text-gray-600 dark:text-gray-300">{inventoryPage}</span>
-                      <button
-                        type="button"
-                        onClick={() => setInventoryPage((prev) => Math.min(totalInventoryPages, prev + 1))}
-                        disabled={inventoryPage >= totalInventoryPages}
-                        className="rounded-md border border-gray-300 bg-white px-3 py-1 font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:bg-gray-800"
-                      >
-                        {tr('inventory.labels.nextPage')}
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <PaginationControls
+                  currentPage={inventoryPage}
+                  totalPages={totalInventoryPages}
+                  onPageChange={setInventoryPage}
+                  className="justify-between text-xs"
+                  summary={tr('inventory.labels.pageSummary', { page: inventoryPage, pages: totalInventoryPages })}
+                  previousLabel={tr('inventory.labels.previousPage')}
+                  nextLabel={tr('inventory.labels.nextPage')}
+                />
               </>
             )}
           </div>

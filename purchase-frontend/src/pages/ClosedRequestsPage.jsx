@@ -9,6 +9,9 @@ import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import useCurrentUser from '../hooks/useCurrentUser';
 import { useNavigate } from 'react-router-dom';
+import PaginationControls from '../components/ui/PaginationControls';
+import { getDisplayItems } from '../utils/itemUtils';
+
 const ITEMS_PER_PAGE = 20;
 
 const formatDate = (value, locale) => {
@@ -70,6 +73,7 @@ const ClosedRequestsPage = () => {
   const [markingItemReceived, setMarkingItemReceived] = useState(null);
   const [receiptQuantityByItem, setReceiptQuantityByItem] = useState({});
   const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const {
     attachmentsMap,
     attachmentLoadingMap,
@@ -163,7 +167,10 @@ const ClosedRequestsPage = () => {
   };
 
   const toggleItems = (requestId) => {
-    setExpandedItemsId((prev) => (prev === requestId ? null : requestId));
+    setExpandedItemsId((prev) => {
+      setAlphabetizedItemsId(null);
+      return prev === requestId ? null : requestId;
+    });
   };
 
   const toggleAttachments = async (requestId) => {
@@ -662,9 +669,22 @@ const ClosedRequestsPage = () => {
                           <tr>
                             <td colSpan={11} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
                               <div className="space-y-3">
-                                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                                  {tr('itemsTitle', { defaultValue: 'Requested Items' })}
-                                </h3>
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                    {tr('itemsTitle', { defaultValue: 'Requested Items' })}
+                                  </h3>
+                                  {items.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setAlphabetizedItemsId((prev) => (prev === req.id ? null : req.id))
+                                      }
+                                      className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                    >
+                                      {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                                    </button>
+                                  )}
+                                </div>
                                 {items.length === 0 ? (
                                   <p className="text-sm text-gray-600 dark:text-gray-300">
                                     {tr('itemsEmpty', { defaultValue: 'No items were added to this request.' })}
@@ -692,7 +712,7 @@ const ClosedRequestsPage = () => {
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                        {items.map((item) => {
+                                        {getDisplayItems(items, alphabetizedItemsId === req.id).map((item) => {
                                           const isReceived = Boolean(item.is_received);
                                           const trackingKey = `${req.id}-${item.id}`;
                                           const canMarkItem =
@@ -935,16 +955,29 @@ const ClosedRequestsPage = () => {
 
                     {expandedItemsId === req.id && (
                       <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
-                          {tr('itemsTitle', { defaultValue: 'Requested Items' })}
-                        </h3>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                            {tr('itemsTitle', { defaultValue: 'Requested Items' })}
+                          </h3>
+                          {items.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAlphabetizedItemsId((prev) => (prev === req.id ? null : req.id))
+                              }
+                              className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                            >
+                              {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                            </button>
+                          )}
+                        </div>
                         {items.length === 0 ? (
                           <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                             {tr('itemsEmpty', { defaultValue: 'No items were added to this request.' })}
                           </p>
                         ) : (
                           <div className="mt-3 space-y-2">
-                            {items.map((item) => {
+                            {getDisplayItems(items, alphabetizedItemsId === req.id).map((item) => {
                               const isReceived = Boolean(item.is_received);
                               const trackingKey = `${req.id}-${item.id}`;
                               const canMarkItem =
@@ -1074,27 +1107,15 @@ const ClosedRequestsPage = () => {
               })}
             </div>
 
-            <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-200 pt-4 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 md:flex-row">
-              <span>{translate('common.pageOf', { current: currentPage, total: totalPages })}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  {translate('common.prev')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  {translate('common.next')}
-                </button>
-              </div>
-            </div>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              className="border-t border-gray-200 pt-4 dark:border-gray-700 md:justify-between"
+              summary={translate('common.pageOf', { current: currentPage, total: totalPages })}
+              previousLabel={translate('common.prev')}
+              nextLabel={translate('common.next')}
+            />
           </div>
         )}
       </div>

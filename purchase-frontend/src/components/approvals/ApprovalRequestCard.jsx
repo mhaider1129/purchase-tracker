@@ -12,6 +12,8 @@ const ApprovalRequestCard = ({
   approvalStatus,
   children,
   labels = {},
+  compactView = false,
+  summaryStats = {},
 }) => {
   const {
     requestIdLabel = 'Request #',
@@ -21,9 +23,21 @@ const ApprovalRequestCard = ({
     estimatedCostLabel = 'Estimated Cost',
     urgentLabel = 'Urgent',
     approvalStatusLabel = 'Approval Status',
+    compactSummaryLabel = 'Request summary',
+    itemsLabel = 'Items',
+    attachmentsLabel = 'Attachments',
+    viewDetailsLabel = 'View details',
+    hideDetailsLabel = 'Hide details',
   } = labels;
 
   const isUrgentRequest = Boolean(request?.is_urgent);
+  const itemsCount = Number(summaryStats.itemsCount ?? request?.items?.length ?? 0);
+  const attachmentsCount = Number(summaryStats.attachmentsCount ?? 0);
+  const headerPaddingClass = compactView ? 'px-4 py-3' : 'px-5 py-4';
+  const detailsPaddingClass = compactView ? 'px-4 py-3' : 'px-5 py-4';
+  const titleClass = compactView
+    ? 'line-clamp-2 text-sm font-semibold text-slate-900'
+    : 'text-base font-semibold text-slate-900';
   const getApprovalStatusChip = () => {
     if (!approvalStatus) return null;
 
@@ -49,7 +63,7 @@ const ApprovalRequestCard = ({
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-start justify-between gap-4 px-5 py-4 text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className={`flex w-full items-start justify-between gap-4 ${headerPaddingClass} text-left hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500`}
       >
         <div className="flex flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
@@ -72,10 +86,26 @@ const ApprovalRequestCard = ({
             )}
             {getApprovalStatusChip()}
           </div>
-          <p className="text-base font-semibold text-slate-900">
+          <p className={titleClass}>
             {request.justification || 'No justification provided.'}
           </p>
-          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+          {compactView && (
+            <div
+              className="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-600"
+              aria-label={compactSummaryLabel}
+            >
+              <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                {itemsLabel}: {Number.isFinite(itemsCount) ? itemsCount : 0}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                {attachmentsLabel}: {Number.isFinite(attachmentsCount) ? attachmentsCount : 0}
+              </span>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                {estimatedCostLabel}: {estimatedCostValue.toLocaleString()} IQD
+              </span>
+            </div>
+          )}
+          <div className={`${compactView ? 'sr-only' : 'mt-1 flex'} flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600`}>
             <p>
               <strong>{departmentLabel}:</strong> {request.department_name || '—'}
             </p>
@@ -109,12 +139,17 @@ const ApprovalRequestCard = ({
             </p>
           )}
         </div>
-        <div className="flex items-center text-slate-500">
+        <div className="flex shrink-0 items-center gap-2 text-slate-500">
+          {compactView && (
+            <span className="hidden rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 sm:inline-flex">
+              {isExpanded ? hideDetailsLabel : viewDetailsLabel}
+            </span>
+          )}
           {isExpanded ? <ChevronUp className="h-5 w-5" aria-hidden /> : <ChevronDown className="h-5 w-5" aria-hidden />}
         </div>
       </button>
 
-      {isExpanded && <div className="border-t border-slate-100 px-5 py-4">{children}</div>}
+      {isExpanded && <div className={`border-t border-slate-100 ${detailsPaddingClass}`}>{children}</div>}
     </div>
   );
 };

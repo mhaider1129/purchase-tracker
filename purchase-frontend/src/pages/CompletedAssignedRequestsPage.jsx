@@ -933,6 +933,11 @@ const CompletedAssignedRequestsPage = () => {
                                   {item.item_name}
                                   {item.brand && <span className="text-gray-500"> ({item.brand})</span>}
                                 </p>
+                                {item.specs && (
+                                  <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">
+                                    <span className="font-medium text-gray-700">Specs:</span> {item.specs}
+                                  </p>
+                                )}
                                 <p className="text-sm text-gray-600 mt-1">
                                   <span className="font-medium text-gray-700">Requested:</span> {item.quantity}
                                   <span className="mx-2 text-gray-400">•</span>

@@ -4,11 +4,15 @@ import api from '../../api/axios';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
+const MAX_ATTACHMENT_SIZE_MB = 50;
+const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
+
 const PrintingLogbookRequestForm = () => {
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formFile, setFormFile] = useState(null);
+  const [fileError, setFileError] = useState('');
   const [form, setForm] = useState({
     orientation: 'portrait',
     numberOfPages: 1,
@@ -24,10 +28,24 @@ const PrintingLogbookRequestForm = () => {
 
   const onChange = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  const handleFileChange = (e) => {
+    const nextFile = e.target.files?.[0] || null;
+
+    if (nextFile && nextFile.size > MAX_ATTACHMENT_SIZE_BYTES) {
+      setFormFile(null);
+      setFileError(`The approved form must be ${MAX_ATTACHMENT_SIZE_MB}MB or smaller.`);
+      e.target.value = '';
+      return;
+    }
+
+    setFileError('');
+    setFormFile(nextFile);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user?.department_id) return alert('Department is required for submitting requests.');
-    if (!formFile) return alert('Please upload the approved form (PDF or Word).');
+    if (!formFile) return alert(fileError || 'Please upload the approved form (PDF or Word).');
     if (!form.logbookName.trim()) return alert('Please enter the logbook name.');
 
     const specs = [
@@ -60,7 +78,13 @@ const PrintingLogbookRequestForm = () => {
       navigate('/request-submitted', { state });
     } catch (submitError) {
       console.error(submitError);
-      alert(submitError?.response?.data?.message || 'Failed to submit printing logbook request.');
+      const status = submitError?.response?.status;
+      const serverMessage = submitError?.response?.data?.message;
+      if (status === 413) {
+        alert(serverMessage || `The approved form is too large. Please upload a file up to ${MAX_ATTACHMENT_SIZE_MB}MB.`);
+      } else {
+        alert(serverMessage || 'Failed to submit printing logbook request.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -78,10 +102,12 @@ const PrintingLogbookRequestForm = () => {
           <input
             type="file"
             accept=".pdf,.doc,.docx,image/*,.heic,.heif"
-            onChange={(e) => setFormFile(e.target.files?.[0] || null)}
+            onChange={handleFileChange}
             className="w-full border rounded p-2"
             required
           />
+          <p className="mt-1 text-sm text-gray-500">Maximum file size: {MAX_ATTACHMENT_SIZE_MB}MB.</p>
+          {fileError && <p className="mt-1 text-sm text-red-600">{fileError}</p>}
         </div>
 
         <div>

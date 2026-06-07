@@ -9,8 +9,9 @@ import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
-import { extractItems } from '../utils/itemUtils';
+import { extractItems, getDisplayItems } from '../utils/itemUtils';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import PaginationControls from '../components/ui/PaginationControls';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -64,6 +65,7 @@ const OpenRequestsPage = () => {
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedId, setExpandedId] = useState(null);
+  const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingId, setLoadingId] = useState(null);
@@ -277,6 +279,8 @@ const OpenRequestsPage = () => {
         return;
       }
 
+      setAlphabetizedItemsId(null);
+
       if (!itemsMap[requestId]) {
         try {
           setLoadingId(requestId);
@@ -297,6 +301,7 @@ const OpenRequestsPage = () => {
   const toggleExpand = async (requestId) => {
     if (expandedId === requestId) {
       setExpandedId(null);
+      setAlphabetizedItemsId(null);
       setFocusedRequestId(null);
       if (expandedAttachmentsId === requestId) {
         setExpandedAttachmentsId(null);
@@ -304,6 +309,7 @@ const OpenRequestsPage = () => {
       return;
     }
 
+    setAlphabetizedItemsId(null);
     await openRequestDetails(requestId);
     setFocusedRequestId(requestId);
   };
@@ -888,7 +894,20 @@ const OpenRequestsPage = () => {
                         {expandedId === req.id && (
                           <tr>
                             <td colSpan={12} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
-                              <h3 className="font-semibold mb-2">{tr('requestedItems')}</h3>
+                              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                <h3 className="font-semibold">{tr('requestedItems')}</h3>
+                                {itemsMap[req.id]?.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setAlphabetizedItemsId((prev) => (prev === req.id ? null : req.id))
+                                    }
+                                    className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                                  >
+                                    {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                                  </button>
+                                )}
+                              </div>
                               {itemsMap[req.id]?.length > 0 ? (
                                 <table className="w-full text-sm border">
                                   <thead>
@@ -903,7 +922,7 @@ const OpenRequestsPage = () => {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {itemsMap[req.id].map((item, idx) => {
+                                    {getDisplayItems(itemsMap[req.id], alphabetizedItemsId === req.id).map((item, idx) => {
                                       const {
                                         statusKey,
                                         quantity: normalizedQuantity,
@@ -913,7 +932,7 @@ const OpenRequestsPage = () => {
                                         tr(`itemStatusLabels.${statusKey}`) ?? tr('itemStatusLabels.notPurchased');
 
                                       return (
-                                        <tr key={idx}>
+                                        <tr key={item.id ?? idx}>
                                           <td className="border p-1">{item.item_name}</td>
                                           <td className="border p-1">{item.brand || '—'}</td>
                                           <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0}</td>
@@ -1086,7 +1105,20 @@ const OpenRequestsPage = () => {
 
                     {expandedId === req.id && (
                       <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
-                        <h3 className="font-semibold mb-2">{tr('requestedItems')}</h3>
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                          <h3 className="font-semibold">{tr('requestedItems')}</h3>
+                          {itemsMap[req.id]?.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setAlphabetizedItemsId((prev) => (prev === req.id ? null : req.id))
+                              }
+                              className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                            >
+                              {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                            </button>
+                          )}
+                        </div>
                         {itemsMap[req.id]?.length > 0 ? (
                           <table className="w-full text-sm border">
                             <thead>
@@ -1101,7 +1133,7 @@ const OpenRequestsPage = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {itemsMap[req.id].map((item, idx) => {
+                              {getDisplayItems(itemsMap[req.id], alphabetizedItemsId === req.id).map((item, idx) => {
                                 const {
                                   statusKey,
                                   quantity: normalizedQuantity,
@@ -1111,7 +1143,7 @@ const OpenRequestsPage = () => {
                                   tr(`itemStatusLabels.${statusKey}`) ?? tr('itemStatusLabels.notPurchased');
 
                                 return (
-                                  <tr key={idx}>
+                                  <tr key={item.id ?? idx}>
                                     <td className="border p-1">{item.item_name}</td>
                                     <td className="border p-1">{item.brand || '—'}</td>
                                     <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0}</td>
@@ -1145,27 +1177,15 @@ const OpenRequestsPage = () => {
               })}
             </div>
 
-            <div className="flex flex-col items-center justify-between gap-3 border-t border-gray-200 pt-4 text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300 md:flex-row">
-              <span>{translate('common.pageOf', { current: currentPage, total: totalPages })}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  {translate('common.prev')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="rounded-md border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-                >
-                  {translate('common.next')}
-                </button>
-              </div>
-            </div>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              className="border-t border-gray-200 pt-4 dark:border-gray-700 md:justify-between"
+              summary={translate('common.pageOf', { current: currentPage, total: totalPages })}
+              previousLabel={translate('common.prev')}
+              nextLabel={translate('common.next')}
+            />
           </div>
         )}
       </div>

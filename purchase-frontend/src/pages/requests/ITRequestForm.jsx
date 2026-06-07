@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import useCurrentUser from '../../hooks/useCurrentUser';
+import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
@@ -45,6 +46,53 @@ const ITRequestForm = () => {
   const [attachmentError, setAttachmentError] = useState('');
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+
+  const draftData = useMemo(
+    () => ({
+      additionalNotes,
+      deploymentLocation,
+      items: items.map(({ id: _id, ...item }) => item),
+      justification,
+      preferredDeliveryDate,
+      priority,
+      projectId,
+    }),
+    [
+      additionalNotes,
+      deploymentLocation,
+      items,
+      justification,
+      preferredDeliveryDate,
+      priority,
+      projectId,
+    ]
+  );
+
+  const restoreDraft = useCallback((draft) => {
+    if (typeof draft?.justification === 'string') setJustification(draft.justification);
+    if (typeof draft?.projectId === 'string') setProjectId(draft.projectId);
+    if (typeof draft?.preferredDeliveryDate === 'string') {
+      setPreferredDeliveryDate(draft.preferredDeliveryDate);
+    }
+    if (typeof draft?.priority === 'string') setPriority(draft.priority);
+    if (typeof draft?.deploymentLocation === 'string') {
+      setDeploymentLocation(draft.deploymentLocation);
+    }
+    if (typeof draft?.additionalNotes === 'string') setAdditionalNotes(draft.additionalNotes);
+    if (Array.isArray(draft?.items) && draft.items.length > 0) {
+      setItems(draft.items.map((item) => ({ ...getEmptyItem(), ...item })));
+    }
+  }, []);
+
+  const {
+    clearDraft,
+    isSaving: isDraftSaving,
+    lastSavedLabel,
+  } = useRequestDraftAutosave({
+    storageKey: 'it_item_request_draft_v1',
+    data: draftData,
+    restoreDraft,
+  });
 
   const handleItemChange = (index, field, value) => {
     const updated = [...items];
@@ -202,6 +250,7 @@ const ITRequestForm = () => {
     try {
       setIsSubmitting(true);
       const res = await api.post('/requests', formData);
+      clearDraft();
       const state = buildRequestSubmissionState('IT Item', res.data);
       navigate('/request-submitted', { state });
     } catch (err) {
@@ -238,6 +287,13 @@ const ITRequestForm = () => {
 
         <section className="bg-blue-50 border border-blue-100 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2 text-blue-800">{tr('overview.heading')}</h2>
+          <p className="mb-3 text-sm text-blue-800" role="status">
+            {isDraftSaving
+              ? 'Saving draft...'
+              : lastSavedLabel
+                ? `Draft autosaved at ${lastSavedLabel}. You can resume if interrupted before submitting.`
+                : 'Draft autosave is active as IT items are filled in.'}
+          </p>
           <dl className="grid grid-cols-1 gap-y-2 sm:grid-cols-2 sm:gap-4 text-sm">
             <div className="flex items-center justify-between gap-3">
               <dt className="text-blue-900">{tr('overview.itemsPrepared')}</dt>

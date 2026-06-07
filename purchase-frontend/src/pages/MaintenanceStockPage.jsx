@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
+import { matchesSearchTokens } from '../utils/search';
 
 const MaintenanceStockPage = () => {
   const { t } = useTranslation();
@@ -91,11 +92,8 @@ const MaintenanceStockPage = () => {
   }, [items, sortConfig]);
 
   const visibleItems = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return sortedItems;
-    return sortedItems.filter((item) =>
-      item.item_name?.toLowerCase?.().includes(term)
-    );
+    if (!searchTerm.trim()) return sortedItems;
+    return sortedItems.filter((item) => matchesSearchTokens(searchTerm, [item.item_name]));
   }, [sortedItems, searchTerm]);
 
   const totals = useMemo(() => {

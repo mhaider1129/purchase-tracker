@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
+import { getDisplayItems } from '../utils/itemUtils';
 import { saveAs } from 'file-saver';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -18,6 +19,7 @@ const AuditRequestsPage = () => {
   const [toDate, setToDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingItemsId, setLoadingItemsId] = useState(null);
   const {
@@ -136,8 +138,10 @@ const AuditRequestsPage = () => {
   const toggleItems = async (requestId) => {
     if (expandedItemsId === requestId) {
       setExpandedItemsId(null);
+      setAlphabetizedItemsId(null);
       return;
     }
+    setAlphabetizedItemsId(null);
 
     if (!itemsMap[requestId]) {
       try {
@@ -356,7 +360,20 @@ const AuditRequestsPage = () => {
                     {expandedItemsId === req.id && (
                       <tr>
                         <td colSpan={7} className="p-4 bg-gray-50 border-t">
-                          <h3 className="font-semibold mb-2">{tr('items.title', 'Requested Items')}</h3>
+                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="font-semibold">{tr('items.title', 'Requested Items')}</h3>
+                            {itemsMap[req.id]?.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setAlphabetizedItemsId((prev) => (prev === req.id ? null : req.id))
+                                }
+                                className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
+                              >
+                                {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                              </button>
+                            )}
+                          </div>
                           {loadingItemsId === req.id ? (
                             <p className="text-gray-500">{tr('items.loading', 'Loading items...')}</p>
                           ) : itemsMap[req.id]?.length > 0 ? (
@@ -365,6 +382,7 @@ const AuditRequestsPage = () => {
                                 <thead>
                                   <tr className="bg-gray-100">
                                     <th className="border p-1">{tr('items.headers.item', 'Item')}</th>
+                                    <th className="border p-1">{tr('items.headers.specs', 'Specs')}</th>
                                     <th className="border p-1">{tr('items.headers.brand', 'Brand')}</th>
                                     <th className="border p-1">{tr('items.headers.quantity', 'Qty')}</th>
                                     <th className="border p-1">{tr('items.headers.unitCost', 'Unit Cost')}</th>
@@ -372,13 +390,16 @@ const AuditRequestsPage = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {itemsMap[req.id].map((item, idx) => (
-                                    <tr key={idx}>
-                                      <td className="border p-1">{item.item_name}</td>
-                                      <td className="border p-1">{item.brand || '—'}</td>
-                                      <td className="border p-1">{item.quantity}</td>
-                                      <td className="border p-1">{item.unit_cost}</td>
-                                      <td className="border p-1">{item.total_cost}</td>
+                                  {getDisplayItems(itemsMap[req.id], alphabetizedItemsId === req.id).map((item, idx) => (
+                                    <tr key={item.id ?? idx}>
+                                      <td className="border p-1 align-top">{item.item_name}</td>
+                                      <td className="border p-1 align-top whitespace-pre-wrap">
+                                        {item.specs || '—'}
+                                      </td>
+                                      <td className="border p-1 align-top">{item.brand || '—'}</td>
+                                      <td className="border p-1 align-top">{item.quantity}</td>
+                                      <td className="border p-1 align-top">{item.unit_cost}</td>
+                                      <td className="border p-1 align-top">{item.total_cost}</td>
                                     </tr>
                                   ))}
                                 </tbody>

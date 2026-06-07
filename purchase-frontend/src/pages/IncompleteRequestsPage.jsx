@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import { Link } from 'react-router-dom';
+import PaginationControls from '../components/ui/PaginationControls';
 
 const IncompleteRequestsPage = () => {
   const [requests, setRequests] = useState([]);
@@ -392,28 +393,13 @@ const IncompleteRequestsPage = () => {
               </table>
             </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="mt-4 flex justify-center items-center gap-4">
-                <button
-                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-                  disabled={page === 1}
-                  onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                >
-                  Prev
-                </button>
-                <span className="text-sm">
-                  Page {page} of {totalPages}
-                </span>
-                <button
-                  className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+            <PaginationControls
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              className="mt-4"
+              summary={`Page ${page} of ${totalPages}`}
+            />
           </>
         )}
       </div>

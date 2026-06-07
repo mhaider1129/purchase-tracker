@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useTranslation } from 'react-i18next';
 import usePageTranslation from '../utils/usePageTranslation';
+import PaginationControls from '../components/ui/PaginationControls';
 
 const AdminTools = () => {
   const [message, setMessage] = useState('');
@@ -398,26 +399,15 @@ const AdminTools = () => {
                 </ul>
               </div>
 
-              {/* Pagination Controls */}
-              <div className="mt-4 flex justify-between items-center">
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
-                >
-                  {t('common.prev')}
-                </button>
-                <span>
-                  {t('common.pageOf', { current: currentPage, total: totalPages })}
-                </span>
-                <button
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400"
-                >
-                  {t('common.next')}
-                </button>
-              </div>
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                className="mt-4 justify-between"
+                summary={t('common.pageOf', { current: currentPage, total: totalPages })}
+                previousLabel={t('common.prev')}
+                nextLabel={t('common.next')}
+              />
             </>
           )}
 

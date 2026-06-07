@@ -8,6 +8,8 @@ import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import useRequestAttachments from '../hooks/useRequestAttachments';
 import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
+import PaginationControls from '../components/ui/PaginationControls';
+import { getDisplayItems } from '../utils/itemUtils';
 
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
@@ -28,6 +30,7 @@ const MyMaintenanceRequests = () => {
   const [endDate, setEndDate] = useState('');
   const [sortDirection, setSortDirection] = useState('desc');
   const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const {
     expandedApprovalsId,
@@ -221,7 +224,10 @@ const MyMaintenanceRequests = () => {
   );
 
   const toggleItems = useCallback((requestId) => {
-    setExpandedItemsId((prev) => (prev === requestId ? null : requestId));
+    setExpandedItemsId((prev) => {
+      setAlphabetizedItemsId(null);
+      return prev === requestId ? null : requestId;
+    });
   }, []);
 
   const toggleAttachments = useCallback(
@@ -830,7 +836,20 @@ const MyMaintenanceRequests = () => {
                         <tr>
                           <td colSpan={9} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <div className="space-y-3">
-                              <h3 className="font-semibold text-gray-700">{itemCopy.heading}</h3>
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <h3 className="font-semibold text-gray-700">{itemCopy.heading}</h3>
+                                {Array.isArray(r.items) && r.items.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setAlphabetizedItemsId((prev) => (prev === r.id ? null : r.id))
+                                    }
+                                    className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
+                                  >
+                                    {alphabetizedItemsId === r.id ? 'Original order' : 'Sort A-Z'}
+                                  </button>
+                                )}
+                              </div>
                               {Array.isArray(r.items) && r.items.length > 0 ? (
                                 <div className="overflow-x-auto">
                                   <table className="min-w-full border text-sm">
@@ -844,7 +863,7 @@ const MyMaintenanceRequests = () => {
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {r.items.map((item, idx) => {
+                                      {getDisplayItems(r.items, alphabetizedItemsId === r.id).map((item, idx) => {
                                         const {
                                           statusKey,
                                           quantity: normalizedQuantity,
@@ -911,25 +930,14 @@ const MyMaintenanceRequests = () => {
                 </select>
               </div>
 
-              <div className="flex items-center gap-4 text-sm">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-                >
-                  {tr('pagination.prev')}
-                </button>
-                <span>
-                  {tr('pagination.pageOf', { current: currentPage, total: totalPages })}
-                </span>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-                >
-                  {tr('pagination.next')}
-                </button>
-              </div>
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                summary={tr('pagination.pageOf', { current: currentPage, total: totalPages })}
+                previousLabel={tr('pagination.prev')}
+                nextLabel={tr('pagination.next')}
+              />
             </div>
 
             <p className="mt-3 text-xs text-gray-500">

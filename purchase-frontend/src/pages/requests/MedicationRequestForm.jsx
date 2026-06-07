@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
+import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
 
 const MedicationRequestForm = () => {
   const [justification, setJustification] = useState('');
@@ -27,6 +28,35 @@ const MedicationRequestForm = () => {
     () => ['.pdf', '.jpg', '.jpeg', '.png', '.docx', '.xlsx'],
     []
   );
+
+  const draftData = useMemo(
+    () => ({
+      items,
+      justification,
+      projectId,
+    }),
+    [items, justification, projectId]
+  );
+
+  const restoreDraft = useCallback((draft) => {
+    if (typeof draft?.justification === 'string') setJustification(draft.justification);
+    if (typeof draft?.projectId === 'string') setProjectId(draft.projectId);
+    if (Array.isArray(draft?.items) && draft.items.length > 0) {
+      setItems(
+        draft.items.map((item) => ({ item_name: '', dosage: '', quantity: 1, ...item }))
+      );
+    }
+  }, []);
+
+  const {
+    clearDraft,
+    isSaving: isDraftSaving,
+    lastSavedLabel,
+  } = useRequestDraftAutosave({
+    storageKey: 'medication_request_draft_v1',
+    data: draftData,
+    restoreDraft,
+  });
 
   useEffect(() => {
     setItemErrors((prev) => {
@@ -204,6 +234,7 @@ const MedicationRequestForm = () => {
     try {
       setIsSubmitting(true);
       const res = await api.post('/requests', formData);
+      clearDraft();
       const state = buildRequestSubmissionState('Medication', res.data);
       navigate('/request-submitted', { state });
     } catch (err) {
@@ -249,6 +280,14 @@ const MedicationRequestForm = () => {
           Medication Request Form
           <HelpTooltip text="Provide medication details for your request." />
         </h1>
+
+        <p className="mb-4 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800" role="status">
+          {isDraftSaving
+            ? 'Saving draft...'
+            : lastSavedLabel
+              ? `Draft autosaved at ${lastSavedLabel}. You can resume if interrupted before submitting.`
+              : 'Draft autosave is active as you fill in each medication item.'}
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

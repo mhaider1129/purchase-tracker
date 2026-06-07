@@ -13,6 +13,10 @@ import useCurrentUser from '../hooks/useCurrentUser';
 import useStatusCommunications from '../hooks/useStatusCommunications';
 import useDirectPurchaseCommunications from '../hooks/useDirectPurchaseCommunications';
 import { hasPermission } from '../utils/permissions';
+import RequestViewModeToggle from '../components/requests/RequestViewModeToggle';
+import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
+import PaginationControls from '../components/ui/PaginationControls';
+import { getDisplayItems } from '../utils/itemUtils';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -50,7 +54,7 @@ const PRINT_TRANSLATIONS = {
     arabic: 'Arabic',
     yes: 'Yes',
     no: 'No',
-    printConfirm: 'Printing this request will increase its print count. Do you want to continue?',
+    printConfirm: 'Print this request? This will not increase its print count.',
   },
   ar: {
     purchaseSummary: 'ملخص طلب الشراء',
@@ -87,7 +91,7 @@ const PRINT_TRANSLATIONS = {
     arabic: 'العربية',
     yes: 'نعم',
     no: 'لا',
-    printConfirm: 'طباعة هذا الطلب ستزيد عداد الطباعة. هل تريد المتابعة؟',
+    printConfirm: 'هل تريد طباعة هذا الطلب؟ لن يزيد هذا عدد الطباعة.',
   },
 };
 const DASHBOARD_REFRESH_EVENT = 'dashboard:refresh';
@@ -158,9 +162,13 @@ const isPostApprovalStatus = (status) => {
 
 const AllRequestsPage = () => {
   const { user } = useCurrentUser();
+  const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
+    'all-requests-request-view-mode',
+  );
   const [requests, setRequests] = useState([]);
   const [expandedAssignId, setExpandedAssignId] = useState(null);
   const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [expandedCommunicationId, setExpandedCommunicationId] = useState(null);
   const [expandedDirectCommId, setExpandedDirectCommId] = useState(null);
@@ -248,6 +256,7 @@ const AllRequestsPage = () => {
     ];
   }, [summaryCounts, totalRequests]);
   const canHardDeleteRequests = hasPermission(user || {}, 'requests.manage');
+  const isSummaryRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
 
   useEffect(() => {
     const fetchDeps = async () => {
@@ -392,8 +401,10 @@ const AllRequestsPage = () => {
   const toggleItems = async (requestId) => {
     if (expandedItemsId === requestId) {
       setExpandedItemsId(null);
+      setAlphabetizedItemsId(null);
       return;
     }
+    setAlphabetizedItemsId(null);
     if (!itemsMap[requestId]) {
       try {
         setLoadingItemsId(requestId);
@@ -467,7 +478,7 @@ const AllRequestsPage = () => {
     if (!shouldPrint) return;
 
     try {
-      const data = await printRequest(requestId);
+      const data = await printRequest(requestId, { incrementPrintCount: false });
       const { request, items, message = 'Request ready for printing.', print_count } = data;
 
       const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
@@ -1073,6 +1084,13 @@ const AllRequestsPage = () => {
         </div>
       </Card>
 
+      <RequestViewModeToggle
+        className="mb-4"
+        value={requestViewMode}
+        onChange={setRequestViewMode}
+        description="Use summary view to scan IT, stock, non-stock, maintenance, and other request types without opening every detailed card."
+      />
+
       {loading ? (
         <p className="text-gray-600">Loading requests...</p>
       ) : requests.length === 0 ? (
@@ -1092,6 +1110,19 @@ const AllRequestsPage = () => {
             const showDirectPurchaseSection = canDocumentDirectPurchase && isUrgent;
             const isDirectPurchaseExpanded = expandedDirectCommId === request.id;
             const statusLabel = request.status || step;
+            const loadedItems = itemsMap[request.id] || [];
+            const itemCount = Number(
+              request.item_count ?? request.items_count ?? loadedItems.length ?? 0,
+            );
+            const attachmentCount = Number(
+              request.attachment_count ?? request.attachments_count ?? (attachmentsMap[request.id] || []).length,
+            );
+            const estimatedCostValue = Number(request.estimated_cost || 0);
+            const assignedDisplay = request.assigned_user_name
+              ? `${request.assigned_user_name} (${request.assigned_user_role})`
+              : request.split_assignees?.length > 0
+              ? `Split among ${request.split_assignees.map((user) => user.name).join(', ')}`
+              : 'Not Assigned';
 
             const toggleCommunication = (requestId) => {
               const nextId = expandedCommunicationId === requestId ? null : requestId;
@@ -1105,7 +1136,7 @@ const AllRequestsPage = () => {
             return (
               <Card key={request.id} className={`transition ${cardClasses}`}>
                 <div className="flex justify-between items-start gap-4 flex-wrap">
-                  <div className="space-y-1">
+                  <div className={isSummaryRequestView ? 'min-w-0 flex-1 space-y-2' : 'space-y-1'}>
                     <div className="flex items-center gap-3 flex-wrap">
                       <p className="font-semibold text-gray-800">ID: {request.id}</p>
                       {isUrgent && (
@@ -1114,38 +1145,63 @@ const AllRequestsPage = () => {
                           Urgent
                         </span>
                       )}
-                    </div>
-                    <p><strong>Type:</strong> {request.request_type}</p>
-                    <p>
-                      <strong>Project:</strong> {request.project_name || '—'}
-                    </p>
-                    <p>
-                      <strong>Department:</strong> {request.department_name || '—'}
-                    </p>
-                    <p>
-                      <strong>Section:</strong> {request.section_name || '—'}
-                    </p>
-                  <p>
-                    <strong>Requester:</strong> {requesterDisplay}
-                  </p>
-                    <p><strong>Justification:</strong> {request.justification}</p>
-                    <p>
-                      <strong>Assigned To:</strong>{' '}
-                      {request.assigned_user_name
-                        ? `${request.assigned_user_name} (${request.assigned_user_role})`
-                        : request.split_assignees?.length > 0
-                        ? `Split among ${request.split_assignees.map((user) => user.name).join(', ')}`
-                        : 'Not Assigned'}
-                    </p>
-                    <p>
-                      <strong>Current Step:</strong>{' '}
-                      <span className={`px-2 py-1 rounded ${getStepColor(step)}`}>
-                        {step}
-                      </span>
-                      {request.current_approver_role && request.current_approval_level && (
-                        <> (Level {request.current_approval_level})</>
+                      {isSummaryRequestView && (
+                        <>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${getStepColor(step)}`}>
+                            {step}
+                          </span>
+                          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                            {request.request_type || 'Request'}
+                          </span>
+                        </>
                       )}
-                    </p>
+                    </div>
+
+                    {isSummaryRequestView ? (
+                      <>
+                        <p className="line-clamp-2 text-sm font-medium text-gray-800">
+                          {request.justification || 'No justification provided.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-600" aria-label={`Summary for request ${request.id}`}>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Project: {request.project_name || '—'}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Department: {request.department_name || '—'}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Requester: {requesterDisplay}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Assigned: {assignedDisplay}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Items: {Number.isFinite(itemCount) ? itemCount : 0}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Attachments: {attachmentCount}</span>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Estimated: {estimatedCostValue.toLocaleString()} IQD</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p><strong>Type:</strong> {request.request_type}</p>
+                        <p>
+                          <strong>Project:</strong> {request.project_name || '—'}
+                        </p>
+                        <p>
+                          <strong>Department:</strong> {request.department_name || '—'}
+                        </p>
+                        <p>
+                          <strong>Section:</strong> {request.section_name || '—'}
+                        </p>
+                        <p>
+                          <strong>Requester:</strong> {requesterDisplay}
+                        </p>
+                        <p><strong>Justification:</strong> {request.justification}</p>
+                        <p>
+                          <strong>Assigned To:</strong> {assignedDisplay}
+                        </p>
+                        <p>
+                          <strong>Current Step:</strong>{' '}
+                          <span className={`px-2 py-1 rounded ${getStepColor(step)}`}>
+                            {step}
+                          </span>
+                          {request.current_approver_role && request.current_approval_level && (
+                            <> (Level {request.current_approval_level})</>
+                          )}
+                        </p>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
@@ -1250,7 +1306,20 @@ const AllRequestsPage = () => {
 
                 {expandedItemsId === request.id && (
                   <div className="mt-4 border-t pt-2">
-                    <h3 className="font-semibold mb-2">Requested Items</h3>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-semibold">Requested Items</h3>
+                      {itemsMap[request.id]?.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAlphabetizedItemsId((prev) => (prev === request.id ? null : request.id))
+                          }
+                          className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
+                        >
+                          {alphabetizedItemsId === request.id ? 'Original order' : 'Sort A-Z'}
+                        </button>
+                      )}
+                    </div>
                     {loadingItemsId === request.id ? (
                       <p className="text-gray-500">Loading items...</p>
                     ) : itemsMap[request.id]?.length > 0 ? (
@@ -1258,6 +1327,7 @@ const AllRequestsPage = () => {
                         <thead>
                           <tr className="bg-gray-100">
                             <th className="border p-1">Item</th>
+                            <th className="border p-1">Specs</th>
                             <th className="border p-1">Brand</th>
                             <th className="border p-1">Qty</th>
                             <th className="border p-1">Unit Cost</th>
@@ -1266,18 +1336,23 @@ const AllRequestsPage = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {itemsMap[request.id].map((item, idx) => (
-                            <tr key={idx}>
-                              <td className="border p-1">{item.item_name}</td>
-                            <td className="border p-1">{item.brand || '—'}</td>
-                            <td className="border p-1">{item.quantity}</td>
-                            <td className="border p-1">{item.unit_cost}</td>
-                            <td className="border p-1">{item.total_cost}</td>
-                            <td className="border p-1">{item.assigned_user_name || '—'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                          {getDisplayItems(itemsMap[request.id], alphabetizedItemsId === request.id).map((item, idx) => (
+                            <tr key={item.id ?? idx}>
+                              <td className="border p-1 align-top font-medium text-gray-900">
+                                {item.item_name}
+                              </td>
+                              <td className="border p-1 align-top whitespace-pre-wrap text-gray-700">
+                                {item.specs || '—'}
+                              </td>
+                              <td className="border p-1 align-top">{item.brand || '—'}</td>
+                              <td className="border p-1 align-top">{item.quantity}</td>
+                              <td className="border p-1 align-top">{item.unit_cost}</td>
+                              <td className="border p-1 align-top">{item.total_cost}</td>
+                              <td className="border p-1 align-top">{item.assigned_user_name || '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                   ) : (
                     <p className="text-sm text-gray-500">No items found.</p>
                   )}
@@ -1464,26 +1539,13 @@ const AllRequestsPage = () => {
         </div>
       )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <button
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-            disabled={page === 1}
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          >
-            Prev
-          </button>
-          <span>Page {page} of {totalPages}</span>
-          <button
-            className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300"
-            disabled={page === totalPages}
-            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <PaginationControls
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        className="mt-6"
+        summary={`Page ${page} of ${totalPages}`}
+      />
      </div>
     </>
   );

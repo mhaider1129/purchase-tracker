@@ -1,7 +1,13 @@
 import api from "./axios";
 
-export const printRequest = async (id) => {
-  const res = await api.get(`/requests/${id}/print`);
+export const printRequest = async (id, options = {}) => {
+  const trimmedId = String(id || "").trim();
+  if (!trimmedId) throw new Error("A request id is required");
+
+  const { incrementPrintCount = true } = options;
+  const res = await api.get(`/requests/${trimmedId}/print`, {
+    params: { incrementPrintCount },
+  });
   return res.data;
 };
 

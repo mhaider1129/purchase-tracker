@@ -1,12 +1,14 @@
 // src/pages/requests/StockRequestForm.js
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import { matchesSearchTokens } from '../../utils/search';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import useCurrentUser from '../../hooks/useCurrentUser';
+import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
 
 const createEmptyItem = (overrides = {}) => ({
   item_name: '',
@@ -50,6 +52,44 @@ const StockRequestForm = () => {
       : itemsList;
     return Array.from(new Set(scopedItems.map((it) => it.sub_category))).filter(Boolean);
   }, [category, itemsList]);
+
+  const draftData = useMemo(
+    () => ({
+      category,
+      itemSearchTerms,
+      justification,
+      projectId,
+      selectedItems: selectedItems.map(({ attachments: _attachments, ...item }) => item),
+      subCategory,
+    }),
+    [category, itemSearchTerms, justification, projectId, selectedItems, subCategory]
+  );
+
+  const restoreDraft = useCallback((draft) => {
+    if (typeof draft?.justification === 'string') setJustification(draft.justification);
+    if (typeof draft?.projectId === 'string') setProjectId(draft.projectId);
+    if (typeof draft?.category === 'string') setCategory(draft.category);
+    if (typeof draft?.subCategory === 'string') setSubCategory(draft.subCategory);
+    if (Array.isArray(draft?.selectedItems) && draft.selectedItems.length > 0) {
+      setSelectedItems(
+        draft.selectedItems.map((item) => ({ ...createEmptyItem(), ...item, attachments: [] }))
+      );
+    }
+    if (Array.isArray(draft?.itemSearchTerms)) {
+      setItemSearchTerms(draft.itemSearchTerms);
+    }
+  }, []);
+
+  const {
+    clearDraft,
+    isSaving: isDraftSaving,
+    lastSavedLabel,
+    status: draftStatus,
+  } = useRequestDraftAutosave({
+    storageKey: 'stock_request_draft_v1',
+    data: draftData,
+    restoreDraft,
+  });
 
   const hasSelectedData = useMemo(
     () =>
@@ -302,6 +342,7 @@ const StockRequestForm = () => {
     try {
       setIsSubmitting(true);
       const res = await api.post('/requests', formData);
+      clearDraft();
       const state = buildRequestSubmissionState('Stock', res.data);
       navigate('/request-submitted', { state });
     } catch (err) {
@@ -343,6 +384,15 @@ const StockRequestForm = () => {
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 mb-6">
           <p className="font-semibold mb-1">Need help preparing a stock request?</p>
+          <p className="text-xs text-blue-700 mb-2" role="status">
+            {isDraftSaving
+              ? 'Saving draft...'
+              : lastSavedLabel
+                ? `Draft autosaved at ${lastSavedLabel}. It will be restored if you leave before submitting.`
+                : draftStatus === 'restored'
+                  ? 'Draft restored. Continue editing and submit when ready.'
+                  : 'Draft autosave is active and will protect your progress as you fill in items.'}
+          </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>Filter items by category to quickly narrow down catalog entries.</li>
             <li>
@@ -465,16 +515,9 @@ const StockRequestForm = () => {
             <label className="block font-semibold mb-2">Select Items</label>
             {selectedItems.map((item, index) => {
               const searchTerm = itemSearchTerms[index] || '';
-              const normalizedTerm = searchTerm.toLowerCase();
-              let filteredOptions = scopedCatalog.filter((stock) => {
-                const nameMatch = stock.name
-                  .toLowerCase()
-                  .includes(normalizedTerm);
-                const brandMatch = (stock.brand || '')
-                  .toLowerCase()
-                  .includes(normalizedTerm);
-                return nameMatch || brandMatch;
-              });
+              let filteredOptions = scopedCatalog.filter((stock) =>
+                matchesSearchTokens(searchTerm, [stock.name, stock.brand])
+              );
               const hasSelectedOption = filteredOptions.some(
                 (stock) => String(stock.id) === String(item.stock_item_id)
               );

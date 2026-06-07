@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { printWarehouseSupplyRequest } from '../api/warehouseSupply';
 import usePageTranslation from '../utils/usePageTranslation';
 import { extractItems } from '../utils/itemUtils';
+import { matchesSearchTokens } from '../utils/search';
 
 const statusClasses = {
   approved: 'bg-green-100 text-green-700',
@@ -308,7 +309,7 @@ const WarehouseSupplyRequestsPage = () => {
 
   const filteredRequests = useMemo(() => {
     const normalizedSearch = filters.search.trim().toLowerCase();
-    const normalizedItemSearch = filters.itemSearch.trim().toLowerCase();
+    const hasItemSearch = Boolean(filters.itemSearch.trim());
     const from = filters.fromDate ? new Date(filters.fromDate) : null;
     const to = filters.toDate ? new Date(filters.toDate) : null;
 
@@ -363,14 +364,10 @@ const WarehouseSupplyRequestsPage = () => {
         if (!hasSubCategory) return false;
       }
 
-      if (normalizedItemSearch) {
-        const itemHaystack = requestItems
-          .flatMap((item) => [item.item_id, item.item_name])
-          .filter(Boolean)
-          .map((value) => String(value).toLowerCase())
-          .join(' ');
+      if (hasItemSearch) {
+        const itemHaystack = requestItems.flatMap((item) => [item.item_id, item.item_name]);
 
-        if (!itemHaystack.includes(normalizedItemSearch)) {
+        if (!matchesSearchTokens(filters.itemSearch, itemHaystack)) {
           return false;
         }
       }

@@ -10,6 +10,7 @@ import {
   listPoSourceRequests,
   submitPurchaseOrderForApproval,
 } from '../api/procureToPay';
+import PaginationControls from '../components/ui/PaginationControls';
 
 const STATUSES = ['ALL', 'PO_DRAFT', 'PO_PENDING_APPROVAL', 'PO_APPROVED', 'PO_ISSUED', 'PO_PARTIAL', 'PO_DELIVERED', 'PO_CLOSED', 'PO_CANCELLED'];
 
@@ -319,12 +320,14 @@ const ProcureToPayPurchaseOrdersPage = () => {
         </table>
       </div>
 
-      <div className="flex justify-between text-sm">
+      <div className="flex flex-col items-center justify-between gap-3 text-sm md:flex-row">
         <span>Total: {pagination.total}</span>
-        <div className="space-x-2">
-          <button className="px-2 py-1 border rounded" disabled={pagination.page <= 1} onClick={() => load(pagination.page - 1)}>Prev</button>
-          <button className="px-2 py-1 border rounded" disabled={(pagination.page * pagination.page_size) >= pagination.total} onClick={() => load(pagination.page + 1)}>Next</button>
-        </div>
+        <PaginationControls
+          currentPage={pagination.page}
+          totalPages={Math.ceil(pagination.total / pagination.page_size)}
+          onPageChange={load}
+          summary={`Page ${pagination.page} of ${Math.ceil(pagination.total / pagination.page_size)}`}
+        />
       </div>
     </div>
   );

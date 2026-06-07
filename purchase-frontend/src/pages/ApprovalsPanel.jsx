@@ -20,9 +20,14 @@ import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
 import AmountInput from '../components/ui/AmountInput';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import RequestViewModeToggle from '../components/requests/RequestViewModeToggle';
+import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
 
 const ApprovalsPanel = () => {
   const [onboardingVersion, setOnboardingVersion] = useState(0);
+  const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
+    'approvals-request-view-mode',
+  );
   const { user } = useCurrentUser();
   const {
     availableRequestTypes,
@@ -135,6 +140,7 @@ const ApprovalsPanel = () => {
     expandedId ? 'review_items' : null,
     selectedDecision ? 'submit_decision' : null,
   ].filter(Boolean);
+  const isCompactRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
 
 
   return (
@@ -239,6 +245,12 @@ const ApprovalsPanel = () => {
           labels={filterLabels}
         />
 
+        <RequestViewModeToggle
+          className="mt-4"
+          value={requestViewMode}
+          onChange={setRequestViewMode}
+        />
+
         <div className="mt-6">
           {loading ? (
             <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white py-16">
@@ -290,6 +302,11 @@ const ApprovalsPanel = () => {
                     estimatedCostValue={estimatedCostValue}
                     costTag={costTag}
                     approvalStatus={approvalStatus}
+                    compactView={isCompactRequestView}
+                    summaryStats={{
+                      itemsCount: (itemsMap[req.request_id] || []).length,
+                      attachmentsCount: attachments.length,
+                    }}
                   >
                     <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
                       <div className="order-2 space-y-4 lg:order-1">
