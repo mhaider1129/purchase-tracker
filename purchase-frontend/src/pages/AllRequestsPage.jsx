@@ -184,7 +184,9 @@ const AllRequestsPage = () => {
   const [status, setStatus] = useState('');
   const [department, setDepartment] = useState('');
   const [section, setSection] = useState('');
+  const [assignedUser, setAssignedUser] = useState('');
   const [departments, setDepartments] = useState([]);
+  const [procurementUsers, setProcurementUsers] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRequests, setTotalRequests] = useState(0);
@@ -270,6 +272,18 @@ const AllRequestsPage = () => {
     fetchDeps();
   }, []);
 
+  useEffect(() => {
+    const fetchProcurementUsers = async () => {
+      try {
+        const res = await axios.get('/requests/procurement-users');
+        setProcurementUsers(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error('❌ Failed to load assigned-user filter options:', err);
+      }
+    };
+    fetchProcurementUsers();
+  }, []);
+
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     resetAttachments();
@@ -286,6 +300,7 @@ const AllRequestsPage = () => {
           status,
           department_id: department,
           section_id: section,
+          assigned_to: assignedUser,
           page,
           limit,
         },
@@ -326,6 +341,7 @@ const AllRequestsPage = () => {
           status,
           department_id: department,
           section_id: section,
+          assigned_to: assignedUser,
           page: 1,
           limit: Math.max(total, limit),
         },
@@ -352,6 +368,7 @@ const AllRequestsPage = () => {
       setLoading(false);
     }
     }, [
+    assignedUser,
     department,
     filter,
     fromDate,
@@ -394,6 +411,7 @@ const AllRequestsPage = () => {
     setStatus('');
     setDepartment('');
     setSection('');
+    setAssignedUser('');
     setPage(1);
     setFiltersChanged(true);
   };
@@ -445,6 +463,7 @@ const AllRequestsPage = () => {
           status,
           department_id: department,
           section_id: section,
+          assigned_to: assignedUser,
         },
         responseType: 'blob',
       });
@@ -1033,6 +1052,16 @@ const AllRequestsPage = () => {
           {sectionOptions.map((sec) => (
             <option key={sec.id} value={sec.id}>
               {department ? sec.name : `${sec.departmentName} — ${sec.name}`}
+            </option>
+          ))}
+        </select>
+
+        <select className="border p-2 rounded" value={assignedUser} onChange={(e) => setAssignedUser(e.target.value)}>
+          <option value="">All Assigned Users</option>
+          <option value="unassigned">Unassigned</option>
+          {procurementUsers.map((procurementUser) => (
+            <option key={procurementUser.id} value={procurementUser.id}>
+              {procurementUser.name}
             </option>
           ))}
         </select>

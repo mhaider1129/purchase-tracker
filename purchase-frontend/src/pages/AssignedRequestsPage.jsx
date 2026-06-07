@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
+import { printRequest } from '../api/requests';
 import ProcurementItemStatusPanel from '../components/ProcurementItemStatusPanel';
 import PageShell from '../components/layout/PageShell';
 import ApprovalTimeline from '../components/ApprovalTimeline';
@@ -252,6 +253,7 @@ const AssignedRequestsPage = () => {
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
   const [bulkUpdatingRequestId, setBulkUpdatingRequestId] = useState(null);
+  const [printingRequestId, setPrintingRequestId] = useState(null);
   const [completionStates, setCompletionStates] = useState({});
   const [, setCompletionFeedback] = useState('');
   const {
@@ -462,6 +464,217 @@ const AssignedRequestsPage = () => {
     } catch (err) {
       console.error('❌ Error updating cost:', err);
       alert(tr('alerts.costUpdateFailed', 'Failed to update total cost.'));
+    }
+  };
+
+  const handlePrintRequest = async (requestId) => {
+    const shouldPrint = window.confirm(
+      tr(
+        'confirm.printRequest',
+        'Print this assigned request? This will increase the print count.',
+      ),
+    );
+
+    if (!shouldPrint) {
+      return;
+    }
+
+    setPrintingRequestId(requestId);
+
+    try {
+      const data = await printRequest(requestId, { incrementPrintCount: true });
+      const {
+        request,
+        items: printableItems = [],
+        message = tr('alerts.printReady', 'Request ready for printing.'),
+        print_count: printCount,
+      } = data;
+
+      setRequests((prev) =>
+        prev.map((req) =>
+          req.id === requestId
+            ? { ...req, print_count: printCount ?? request?.print_count ?? req.print_count }
+            : req,
+        ),
+      );
+
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        alert(tr('alerts.popupBlocked', 'Please enable popups to print the request.'));
+        return;
+      }
+
+      const escapeHtml = (value) => {
+        if (value === null || value === undefined) return '';
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      };
+
+      const formatPrintableValue = (value) => {
+        if (value === null || value === undefined || value === '') return '—';
+        return escapeHtml(value);
+      };
+
+      const formatPrintableDate = (value) => {
+        if (!value) return '—';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString());
+      };
+
+      const formatPrintableAmount = (value) => {
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric)) return formatPrintableValue(value);
+        return escapeHtml(
+          numeric.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }),
+        );
+      };
+
+      const detailFields = [
+        { label: tr('print.requestId', 'Request ID'), value: request?.id || requestId },
+        { label: tr('print.status', 'Status'), value: request?.status },
+        { label: tr('print.type', 'Type'), value: request?.request_type },
+        { label: tr('print.project', 'Project'), value: request?.project_name },
+        { label: tr('print.department', 'Department'), value: request?.department_name },
+        { label: tr('print.requester', 'Requester'), value: getRequesterDisplay(request || {}) },
+        { label: tr('print.createdOn', 'Created On'), value: formatPrintableDate(request?.created_at) },
+        { label: tr('print.neededBy', 'Needed By'), value: formatPrintableDate(request?.needed_by) },
+        { label: tr('print.printCount', 'Print Count'), value: printCount ?? request?.print_count },
+      ]
+        .map(({ label, value }) => ({ label, value: formatPrintableValue(value) }))
+        .filter(({ value }) => value && value !== '—');
+
+      const detailGrid = detailFields
+        .map(
+          ({ label, value }) => `
+            <div class="detail-item">
+              <span class="detail-label">${escapeHtml(label)}</span>
+              <span class="detail-value">${value}</span>
+            </div>`,
+        )
+        .join('');
+
+      const itemRows = printableItems
+        .map(
+          (item, index) => `
+            <tr>
+              <td>${index + 1}</td>
+              <td>
+                <strong>${formatPrintableValue(item.item_name)}</strong>
+                ${item.specs ? `<div class="item-note">${formatPrintableValue(item.specs)}</div>` : ''}
+              </td>
+              <td>${formatPrintableValue(item.brand)}</td>
+              <td class="numeric">${formatPrintableValue(item.quantity)}</td>
+              <td class="numeric">${formatPrintableValue(item.purchased_quantity)}</td>
+              <td class="numeric">${formatPrintableAmount(item.unit_cost)}</td>
+              <td class="numeric">${formatPrintableAmount(item.total_cost)}</td>
+            </tr>`,
+        )
+        .join('');
+
+      const totalCost = printableItems.reduce((sum, item) => {
+        const value = Number(item.total_cost);
+        return Number.isFinite(value) ? sum + value : sum;
+      }, 0);
+
+      const justification = request?.justification
+        ? `<section class="section">
+            <h2>${escapeHtml(tr('print.justification', 'Justification'))}</h2>
+            <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
+          </section>`
+        : '';
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>${escapeHtml(tr('print.title', 'Purchase Request'))} ${escapeHtml(request?.id || requestId)}</title>
+            <style>
+              @page { size: A4; margin: 18mm; }
+              body { margin: 0; padding: 28px; color: #1f2937; font-family: Arial, sans-serif; background: #f8fafc; }
+              .page { background: white; border-radius: 12px; padding: 30px; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08); }
+              header { display: flex; justify-content: space-between; gap: 16px; border-bottom: 3px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
+              h1 { margin: 0; font-size: 26px; color: #111827; }
+              h2 { color: #1d4ed8; border-bottom: 1px solid #bfdbfe; padding-bottom: 6px; font-size: 18px; }
+              .print-badge { align-self: center; border-radius: 999px; background: #2563eb; color: white; font-weight: 700; padding: 8px 16px; }
+              .details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 24px; }
+              .detail-item { background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+              .detail-label { display: block; color: #6b7280; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 4px; text-transform: uppercase; }
+              .detail-value { color: #111827; font-weight: 700; word-break: break-word; }
+              .section { margin-bottom: 24px; }
+              table { border-collapse: collapse; width: 100%; border: 1px solid #e5e7eb; font-size: 13px; }
+              th { background: #2563eb; color: white; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+              th, td { border-bottom: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; }
+              tbody tr:nth-child(even) { background: #f9fafb; }
+              .numeric { text-align: right; white-space: nowrap; }
+              .item-note { color: #4b5563; font-size: 12px; margin-top: 4px; }
+              .totals-row td { background: #eef2ff; font-weight: 700; }
+              footer { color: #6b7280; font-size: 12px; margin-top: 28px; text-align: right; }
+              @media print { body { background: white; padding: 0; } .page { box-shadow: none; border-radius: 0; padding: 0; } }
+            </style>
+          </head>
+          <body>
+            <div class="page">
+              <header>
+                <div>
+                  <h1>${escapeHtml(tr('print.heading', 'Purchase Request Summary'))}</h1>
+                  <p>${escapeHtml(tr('print.generatedOn', 'Generated on'))} ${escapeHtml(new Date().toLocaleString())}</p>
+                </div>
+                <span class="print-badge">${escapeHtml(tr('print.printCount', 'Print Count'))}: ${formatPrintableValue(printCount ?? request?.print_count)}</span>
+              </header>
+              <section class="section">
+                <h2>${escapeHtml(tr('print.details', 'Request Details'))}</h2>
+                <div class="details-grid">${detailGrid}</div>
+              </section>
+              ${justification}
+              <section class="section">
+                <h2>${escapeHtml(tr('print.items', 'Requested Items'))}</h2>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>${escapeHtml(tr('print.item', 'Item'))}</th>
+                      <th>${escapeHtml(tr('print.brand', 'Brand'))}</th>
+                      <th>${escapeHtml(tr('print.quantity', 'Qty'))}</th>
+                      <th>${escapeHtml(tr('print.purchasedQuantity', 'Purchased Qty'))}</th>
+                      <th>${escapeHtml(tr('print.unitCost', 'Unit Cost'))}</th>
+                      <th>${escapeHtml(tr('print.totalCost', 'Total Cost'))}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${itemRows || `<tr><td colspan="7" style="text-align:center; padding: 24px;">${escapeHtml(tr('print.noItems', 'No line items recorded.'))}</td></tr>`}
+                    <tr class="totals-row">
+                      <td colspan="6">${escapeHtml(tr('print.grandTotal', 'Grand Total'))}</td>
+                      <td class="numeric">${formatPrintableAmount(totalCost)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+              <footer>${escapeHtml(tr('print.requestId', 'Request ID'))} ${escapeHtml(request?.id || requestId)}</footer>
+            </div>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+
+      alert(message);
+    } catch (err) {
+      console.error('❌ Failed to print assigned request:', err);
+      alert(tr('alerts.printFailed', '❌ Failed to print request.'));
+    } finally {
+      setPrintingRequestId(null);
     }
   };
 
@@ -741,6 +954,20 @@ const AssignedRequestsPage = () => {
                       disabled={!completionState.canComplete}
                     >
                       {tr('completion.markComplete', 'Mark Request as Completed')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handlePrintRequest(request.id)}
+                      disabled={printingRequestId === request.id}
+                      className={`px-4 py-2 rounded text-white transition ${
+                        printingRequestId === request.id
+                          ? 'bg-slate-400 cursor-wait'
+                          : 'bg-slate-700 hover:bg-slate-800'
+                      }`}
+                    >
+                      {printingRequestId === request.id
+                        ? tr('actions.printing', 'Printing…')
+                        : tr('actions.print', 'Print')}
                     </button>
                     <button
                       onClick={() => toggleExpand(request.id)}

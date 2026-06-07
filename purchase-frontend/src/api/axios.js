@@ -118,6 +118,13 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
 
+    if (status === 413 && error.response && typeof error.response.data !== "object") {
+      error.response.data = {
+        message:
+          "Request is too large. Please reduce attachment sizes or ask an administrator to increase the upload limit.",
+      };
+    }
+
     return Promise.reject(error);
   }
 );
