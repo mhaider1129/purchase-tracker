@@ -1,6 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, ClipboardList, FileText, Gavel, PackageCheck, Plus, Receipt, Shield, X } from "lucide-react";
-import { listSuppliers } from "../api/suppliers";
+import { AlertTriangle, CheckCircle2, ClipboardList, FileText, Gavel, PackageCheck, Plus, Receipt, Shield, UsersRound, X } from "lucide-react";
+import {
+  createSupplierPrincipal,
+  deactivateSupplierPrincipal,
+  getSuppliersDashboard,
+  listSupplierPrincipals,
+  listSuppliers,
+  suspendSupplierPrincipal,
+  updateSupplierClassification,
+  updateSupplierPrincipal,
+  verifySupplierPrincipal,
+} from "../api/suppliers";
+import { listItemMaster } from "../api/itemMaster";
 import {
   createComplianceArtifact,
   createSupplierIssue,
@@ -13,6 +24,59 @@ import {
 } from "../api/supplierSrm";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+
+const SUPPLIER_CATEGORY_OPTIONS = [
+  "Medical Equipment",
+  "Medical Consumables",
+  "Pharmaceuticals",
+  "Laboratory Supplies",
+  "Maintenance & Spare Parts",
+  "IT & Software",
+  "Facilities & Construction",
+  "Professional Services",
+  "Logistics & Transport",
+  "Office & General Supplies",
+];
+
+const PRINCIPAL_COUNTRY_OPTIONS = [
+  "Iraq",
+  "United Arab Emirates",
+  "Saudi Arabia",
+  "Jordan",
+  "Turkey",
+  "Germany",
+  "United States",
+  "United Kingdom",
+  "China",
+  "India",
+  "Japan",
+  "South Korea",
+  "France",
+  "Italy",
+  "Netherlands",
+  "Switzerland",
+];
+
+const FALLBACK_AUTHORIZATION_CATEGORIES = [
+  "Medical Equipment",
+  "Medical Consumables",
+  "Pharmaceuticals",
+  "Laboratory Supplies",
+  "Maintenance Spare Parts",
+  "IT Equipment",
+  "Stationery",
+  "General Items",
+  "Services",
+];
+
+const FALLBACK_AUTHORIZATION_BRANDS = [
+  "Generic / No brand-specific authorization",
+  "Multi-brand authorization",
+  "Principal brand only",
+];
+
+const uniqueSorted = (values = []) => Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b));
+const csvToArray = (value) => (typeof value === "string" ? value.split(",").map((item) => item.trim()).filter(Boolean) : Array.isArray(value) ? value : []);
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -27,11 +91,39 @@ const SupplierSrmPage = () => {
 
   const [suppliers, setSuppliers] = useState([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [dashboardData, setDashboardData] = useState({});
 
   const [overview, setOverview] = useState(null);
   const [scorecards, setScorecards] = useState([]);
   const [issues, setIssues] = useState([]);
   const [compliance, setCompliance] = useState([]);
+  const [principals, setPrincipals] = useState([]);
+  const [itemReferenceOptions, setItemReferenceOptions] = useState({ categories: [], brands: [] });
+  const [classificationForm, setClassificationForm] = useState({
+    supplier_type: "Local Trader",
+    is_manufacturer: false,
+    is_authorized_agent: false,
+    is_authorized_distributor: false,
+    is_sub_distributor: false,
+    is_service_provider: false,
+    is_contractor: false,
+    regulatory_risk_level: "medium",
+    supplier_category: "",
+    notes: "",
+  });
+  const [principalForm, setPrincipalForm] = useState({
+    id: null,
+    principal_name: "",
+    principal_country: "",
+    relationship_type: "Authorized Distributor",
+    authorization_status: "Pending Verification",
+    authorization_start_date: "",
+    authorization_expiry_date: "",
+    authorized_categories: "",
+    authorized_brands: "",
+    authorization_document_url: "",
+    verification_notes: "",
+  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -65,8 +157,9 @@ const SupplierSrmPage = () => {
 
   const loadSuppliers = useCallback(async () => {
     try {
-      const data = await listSuppliers();
+      const [data, dashboard] = await Promise.all([listSuppliers(), getSuppliersDashboard()]);
       setSuppliers(Array.isArray(data) ? data : []);
+      setDashboardData(dashboard || {});
       if (!selectedSupplierId && Array.isArray(data) && data.length > 0) {
         setSelectedSupplierId(String(data[0].id));
       }
@@ -76,23 +169,39 @@ const SupplierSrmPage = () => {
     }
   }, [selectedSupplierId]);
 
+  const loadItemReferenceOptions = useCallback(async () => {
+    try {
+      const data = await listItemMaster({ status: "approved" });
+      const items = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : Array.isArray(data?.rows) ? data.rows : [];
+      setItemReferenceOptions({
+        categories: uniqueSorted(items.map((item) => item.category)),
+        brands: uniqueSorted(items.map((item) => item.brand_name || item.brand)),
+      });
+    } catch (err) {
+      console.warn("⚠️ Failed to load item master reference options for supplier principals", err);
+      setItemReferenceOptions({ categories: [], brands: [] });
+    }
+  }, []);
+
   const loadSrmData = useCallback(async () => {
     if (!selectedSupplierId) return;
     setLoading(true);
     setError("");
     try {
       const supplierId = Number(selectedSupplierId);
-      const [status, scorecardList, issueList, complianceList] = await Promise.all([
+      const [status, scorecardList, issueList, complianceList, principalList] = await Promise.all([
         getSupplierSrmStatus(supplierId),
         listSupplierScorecards(supplierId),
         listSupplierIssues(supplierId),
         listComplianceArtifacts(supplierId),
+        listSupplierPrincipals(supplierId),
       ]);
 
       setOverview(status);
       setScorecards(scorecardList);
       setIssues(issueList);
       setCompliance(complianceList);
+      setPrincipals(principalList);
     } catch (err) {
       console.error("❌ Failed to load SRM data", err);
       setError("Failed to load supplier SRM data");
@@ -100,6 +209,7 @@ const SupplierSrmPage = () => {
       setScorecards([]);
       setIssues([]);
       setCompliance([]);
+      setPrincipals([]);
     } finally {
       setLoading(false);
     }
@@ -107,7 +217,8 @@ const SupplierSrmPage = () => {
 
   useEffect(() => {
     loadSuppliers();
-  }, [loadSuppliers]);
+    loadItemReferenceOptions();
+  }, [loadItemReferenceOptions, loadSuppliers]);
 
   useEffect(() => {
     loadSrmData();
@@ -116,6 +227,41 @@ const SupplierSrmPage = () => {
   const selectedSupplier = useMemo(
     () => suppliers.find((supplier) => String(supplier.id) === String(selectedSupplierId)),
     [selectedSupplierId, suppliers],
+  );
+
+  useEffect(() => {
+    if (!selectedSupplier) return;
+    setClassificationForm({
+      supplier_type: selectedSupplier.supplier_type || "Local Trader",
+      is_manufacturer: Boolean(selectedSupplier.is_manufacturer),
+      is_authorized_agent: Boolean(selectedSupplier.is_authorized_agent),
+      is_authorized_distributor: Boolean(selectedSupplier.is_authorized_distributor),
+      is_sub_distributor: Boolean(selectedSupplier.is_sub_distributor),
+      is_service_provider: Boolean(selectedSupplier.is_service_provider),
+      is_contractor: Boolean(selectedSupplier.is_contractor),
+      regulatory_risk_level: selectedSupplier.regulatory_risk_level || "medium",
+      supplier_category: selectedSupplier.supplier_category || "",
+      notes: selectedSupplier.notes || "",
+    });
+  }, [selectedSupplier]);
+
+  const authorizationCategoryOptions = useMemo(
+    () => uniqueSorted([
+      ...FALLBACK_AUTHORIZATION_CATEGORIES,
+      ...SUPPLIER_CATEGORY_OPTIONS,
+      ...itemReferenceOptions.categories,
+      ...principals.flatMap((principal) => principal.authorized_categories || []),
+    ]),
+    [itemReferenceOptions.categories, principals],
+  );
+
+  const authorizationBrandOptions = useMemo(
+    () => uniqueSorted([
+      ...FALLBACK_AUTHORIZATION_BRANDS,
+      ...itemReferenceOptions.brands,
+      ...principals.flatMap((principal) => principal.authorized_brands || []),
+    ]),
+    [itemReferenceOptions.brands, principals],
   );
 
   const handleOpenEvaluations = () => {
@@ -176,6 +322,91 @@ const SupplierSrmPage = () => {
     }
   };
 
+  const handleClassificationSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedSupplierId) return;
+    try {
+      await updateSupplierClassification(Number(selectedSupplierId), classificationForm);
+      await loadSuppliers();
+      await loadSrmData();
+    } catch (err) {
+      console.error("❌ Failed to update supplier classification", err);
+      setError(err?.response?.data?.message || "Failed to update supplier classification");
+    }
+  };
+
+  const resetPrincipalForm = () => setPrincipalForm({
+    id: null,
+    principal_name: "",
+    principal_country: "",
+    relationship_type: "Authorized Distributor",
+    authorization_status: "Pending Verification",
+    authorization_start_date: "",
+    authorization_expiry_date: "",
+    authorized_categories: "",
+    authorized_brands: "",
+    authorization_document_url: "",
+    verification_notes: "",
+  });
+
+  const handlePrincipalSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedSupplierId) return;
+    const payload = {
+      ...principalForm,
+      authorized_categories: csvToArray(principalForm.authorized_categories),
+      authorized_brands: csvToArray(principalForm.authorized_brands),
+    };
+    try {
+      if (principalForm.id) {
+        await updateSupplierPrincipal(Number(selectedSupplierId), principalForm.id, payload);
+      } else {
+        await createSupplierPrincipal(Number(selectedSupplierId), payload);
+      }
+      resetPrincipalForm();
+      await loadSrmData();
+    } catch (err) {
+      console.error("❌ Failed to save supplier principal", err);
+      setError(err?.response?.data?.message || "Failed to save supplier principal");
+    }
+  };
+
+  const handleEditPrincipal = (principal) => {
+    setPrincipalForm({
+      id: principal.id,
+      principal_name: principal.principal_name || "",
+      principal_country: principal.principal_country || "",
+      relationship_type: principal.relationship_type || "Authorized Distributor",
+      authorization_status: principal.authorization_status || "Pending Verification",
+      authorization_start_date: principal.authorization_start_date?.slice?.(0, 10) || "",
+      authorization_expiry_date: principal.authorization_expiry_date?.slice?.(0, 10) || "",
+      authorized_categories: (principal.authorized_categories || []).join(", "),
+      authorized_brands: (principal.authorized_brands || []).join(", "),
+      authorization_document_url: principal.authorization_document_url || "",
+      verification_notes: principal.verification_notes || "",
+    });
+  };
+
+  const handleVerifyPrincipal = async (principalId) => {
+    if (!selectedSupplierId) return;
+    await verifySupplierPrincipal(Number(selectedSupplierId), principalId);
+    await loadSrmData();
+  };
+
+  const handleSuspendPrincipal = async (principalId) => {
+    if (!selectedSupplierId) return;
+    const reason = window.prompt("Reason for suspension?");
+    if (!reason) return;
+    await suspendSupplierPrincipal(Number(selectedSupplierId), principalId, { reason });
+    await loadSrmData();
+  };
+
+  const handleDeactivatePrincipal = async (principalId) => {
+    if (!selectedSupplierId) return;
+    await deactivateSupplierPrincipal(Number(selectedSupplierId), principalId);
+    await loadSrmData();
+  };
+
   const handleComplianceSubmit = async (event) => {
     event.preventDefault();
     if (!selectedSupplierId) return;
@@ -211,6 +442,39 @@ const SupplierSrmPage = () => {
   const openIssues = overview?.open_issues ?? 0;
   const latestScorecard = overview?.latest_scorecard;
   const capaRequiredCount = issues.filter((item) => item.capa_required).length;
+
+  const dashboardWidgets = [
+    {
+      title: "Suppliers by type",
+      value: dashboardData.widgets?.suppliers_by_type?.length || 0,
+      description: (dashboardData.widgets?.suppliers_by_type || []).map((item) => `${item.supplier_type}: ${item.supplier_count}`).join(" • ") || "No supplier types recorded",
+      icon: UsersRound,
+    },
+    {
+      title: "Expiring authorization letters",
+      value: dashboardData.widgets?.expiring_authorizations_30_days?.length || 0,
+      description: "Within 30 days",
+      icon: AlertTriangle,
+    },
+    {
+      title: "Unverified principals",
+      value: dashboardData.widgets?.unverified_supplier_principals || 0,
+      description: "Pending verification",
+      icon: Shield,
+    },
+    {
+      title: "High-risk suppliers",
+      value: dashboardData.widgets?.high_risk_suppliers?.length || 0,
+      description: "Risk level high or critical",
+      icon: Gavel,
+    },
+    {
+      title: "Expired authorizations",
+      value: dashboardData.widgets?.expired_authorizations?.length || 0,
+      description: "Represented companies requiring renewal",
+      icon: X,
+    },
+  ];
 
   const workspaceTiles = [
     {
@@ -314,6 +578,19 @@ const SupplierSrmPage = () => {
           </div>
         )}
 
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {dashboardWidgets.map((widget) => (
+            <OverviewCard
+              key={widget.title}
+              title={widget.title}
+              value={widget.value}
+              description={widget.description}
+              icon={widget.icon}
+              status={widget.value > 0 ? "warning" : "neutral"}
+            />
+          ))}
+        </div>
+
         {!selectedSupplier && !loading && (
           <div className="mt-6 rounded-md border border-gray-200 bg-white px-4 py-6 text-center text-gray-700 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
             {t("suppliersPage.empty")}
@@ -344,6 +621,99 @@ const SupplierSrmPage = () => {
               })}
             </div>
           </Panel>
+        )}
+
+        {selectedSupplier && (
+          <div className="mt-6 rounded-lg border border-blue-100 bg-white p-4 shadow-sm dark:border-blue-900/60 dark:bg-gray-900">
+            <div className="mb-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+              {["Overview", "Classification", "Principals / Represented Companies", "Compliance Documents", "Contracts", "Evaluations", "Risk & Scorecard", "Audit History"].map((tab) => (
+                <span key={tab} className="rounded-full bg-blue-50 px-3 py-1 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100">{tab}</span>
+              ))}
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <Panel title="Classification" icon={Shield}>
+                <form className="space-y-3" onSubmit={handleClassificationSubmit}>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <SelectField label="Supplier type" value={classificationForm.supplier_type} onChange={(event) => setClassificationForm((prev) => ({ ...prev, supplier_type: event.target.value }))} options={["Manufacturer", "Authorized Agent", "Authorized Distributor", "Sub-distributor", "Local Trader", "Service Provider", "Contractor"]} />
+                    <SelectField label="Regulatory risk" value={classificationForm.regulatory_risk_level} onChange={(event) => setClassificationForm((prev) => ({ ...prev, regulatory_risk_level: event.target.value }))} options={["low", "medium", "high", "critical"]} />
+                    <SelectField label="Supplier category" value={classificationForm.supplier_category} onChange={(event) => setClassificationForm((prev) => ({ ...prev, supplier_category: event.target.value }))} options={SUPPLIER_CATEGORY_OPTIONS} placeholder="Select category" />
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {[
+                      ["is_manufacturer", "Manufacturer"],
+                      ["is_authorized_agent", "Authorized Agent"],
+                      ["is_authorized_distributor", "Authorized Distributor"],
+                      ["is_sub_distributor", "Sub-distributor"],
+                      ["is_service_provider", "Service Provider"],
+                      ["is_contractor", "Contractor"],
+                    ].map(([field, label]) => (
+                      <label key={field} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                        <input type="checkbox" checked={classificationForm[field]} onChange={(event) => setClassificationForm((prev) => ({ ...prev, [field]: event.target.checked }))} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                        {label}
+                      </label>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Notes</label>
+                    <textarea className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" rows={3} value={classificationForm.notes} onChange={(event) => setClassificationForm((prev) => ({ ...prev, notes: event.target.value }))} />
+                  </div>
+                  <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Save classification</button>
+                </form>
+              </Panel>
+
+              <Panel title="Add / Edit Principal" icon={Plus}>
+                <form className="space-y-3" onSubmit={handlePrincipalSubmit}>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <InputField label="Principal / Company Name" value={principalForm.principal_name} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, principal_name: event.target.value }))} required />
+                    <SelectField label="Country" value={principalForm.principal_country} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, principal_country: event.target.value }))} options={PRINCIPAL_COUNTRY_OPTIONS} placeholder="Select country" />
+                    <SelectField label="Relationship type" value={principalForm.relationship_type} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, relationship_type: event.target.value }))} options={["Manufacturer", "Exclusive Agent", "Non-Exclusive Agent", "Authorized Distributor", "Sub-distributor", "Service Partner", "Maintenance Partner"]} />
+                    <SelectField label="Authorization status" value={principalForm.authorization_status} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, authorization_status: event.target.value }))} options={["Pending Verification", "Verified", "Expired", "Rejected", "Suspended"]} />
+                    <InputField label="Start date" type="date" value={principalForm.authorization_start_date} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, authorization_start_date: event.target.value }))} />
+                    <InputField label="Expiry date" type="date" value={principalForm.authorization_expiry_date} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, authorization_expiry_date: event.target.value }))} />
+                    <MultiSelectField label="Authorized categories" value={csvToArray(principalForm.authorized_categories)} options={authorizationCategoryOptions} onChange={(values) => setPrincipalForm((prev) => ({ ...prev, authorized_categories: values.join(", ") }))} />
+                    <MultiSelectField label="Authorized brands" value={csvToArray(principalForm.authorized_brands)} options={authorizationBrandOptions} onChange={(values) => setPrincipalForm((prev) => ({ ...prev, authorized_brands: values.join(", ") }))} />
+                    <InputField label="Authorization document URL" value={principalForm.authorization_document_url} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, authorization_document_url: event.target.value }))} />
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="submit" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">{principalForm.id ? "Update principal" : "Add principal"}</button>
+                    {principalForm.id && <button type="button" onClick={resetPrincipalForm} className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Cancel edit</button>}
+                  </div>
+                </form>
+              </Panel>
+            </div>
+
+            <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+              <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-800">
+                <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-600 dark:bg-gray-950 dark:text-gray-300">
+                  <tr>{["Principal / Company Name", "Country", "Relationship Type", "Authorized Categories", "Authorized Brands", "Authorization Status", "Start Date", "Expiry Date", "Expiry Status", "Verified By", "Verified At", "Actions"].map((head) => <th key={head} className="px-3 py-2">{head}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                  {principals.length === 0 && <tr><td className="px-3 py-4 text-gray-600 dark:text-gray-300" colSpan={12}>No represented principals recorded yet.</td></tr>}
+                  {principals.map((principal) => (
+                    <tr key={principal.id} className="align-top text-gray-800 dark:text-gray-200">
+                      <td className="px-3 py-2 font-medium">{principal.principal_name}</td>
+                      <td className="px-3 py-2">{principal.principal_country || "-"}</td>
+                      <td className="px-3 py-2">{principal.relationship_type}</td>
+                      <td className="px-3 py-2">{(principal.authorized_categories || []).join(", ") || "-"}</td>
+                      <td className="px-3 py-2">{(principal.authorized_brands || []).join(", ") || "-"}</td>
+                      <td className="px-3 py-2"><StatusBadge value={principal.authorization_status} /></td>
+                      <td className="px-3 py-2">{formatDate(principal.authorization_start_date)}</td>
+                      <td className="px-3 py-2">{formatDate(principal.authorization_expiry_date)}</td>
+                      <td className="px-3 py-2"><ExpiryBadge value={principal.expiry_status} /></td>
+                      <td className="px-3 py-2">{principal.verified_by_name || principal.verified_by || "-"}</td>
+                      <td className="px-3 py-2">{formatDate(principal.verified_at)}</td>
+                      <td className="space-x-2 px-3 py-2">
+                        <button type="button" onClick={() => handleEditPrincipal(principal)} className="text-blue-600 hover:underline">Edit</button>
+                        <button type="button" onClick={() => handleVerifyPrincipal(principal.id)} className="text-emerald-600 hover:underline">Verify</button>
+                        <button type="button" onClick={() => handleSuspendPrincipal(principal.id)} className="text-red-600 hover:underline">Suspend</button>
+                        <button type="button" onClick={() => handleDeactivatePrincipal(principal.id)} className="text-gray-600 hover:underline">Deactivate</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
 
         {selectedSupplier && (
@@ -781,5 +1151,70 @@ const InputField = ({ label, ...props }) => (
     />
   </div>
 );
+
+
+const SelectField = ({ label, options, placeholder = "Select", value = "", ...props }) => {
+  const normalizedOptions = uniqueSorted([...(value && !options.includes(value) ? [value] : []), ...options]);
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{label}</label>
+      <select
+        className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
+        value={value}
+        {...props}
+      >
+        <option value="">{placeholder}</option>
+        {normalizedOptions.map((option) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+const MultiSelectField = ({ label, options, value = [], onChange }) => {
+  const selected = Array.isArray(value) ? value : [];
+  const normalizedOptions = uniqueSorted([...selected, ...options]);
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{label}</label>
+      <select
+        multiple
+        className="mt-1 min-h-28 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
+        value={selected}
+        onChange={(event) => onChange(Array.from(event.target.selectedOptions).map((option) => option.value))}
+      >
+        {normalizedOptions.map((option) => (
+          <option key={option} value={option}>{option}</option>
+        ))}
+      </select>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Hold Ctrl/Cmd to select multiple values.</p>
+    </div>
+  );
+};
+
+const StatusBadge = ({ value }) => {
+  const classes = {
+    Verified: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-100",
+    "Pending Verification": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-100",
+    Expired: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-100",
+    Rejected: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-100",
+    Suspended: "bg-gray-200 text-gray-800 dark:bg-gray-800 dark:text-gray-100",
+  };
+
+  return <span className={`rounded-full px-2 py-1 text-xs font-semibold ${classes[value] || classes["Pending Verification"]}`}>{value || "Pending Verification"}</span>;
+};
+
+const ExpiryBadge = ({ value }) => {
+  const classes = {
+    Active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-100",
+    "Expiring Soon": "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-100",
+    Expired: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-100",
+  };
+
+  return <span className={`rounded-full px-2 py-1 text-xs font-semibold ${classes[value] || classes.Active}`}>{value || "Active"}</span>;
+};
 
 export default SupplierSrmPage;

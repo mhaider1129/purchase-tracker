@@ -40,6 +40,19 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [uploadError, setUploadError] = useState("");
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [showProcurementEntryModal, setShowProcurementEntryModal] = useState(false);
+  const [showProcurementHistoryModal, setShowProcurementHistoryModal] = useState(false);
+  const [entryForm, setEntryForm] = useState({
+    event_quantity: "",
+    unit_cost: item.unit_cost ?? "",
+    supplier_name: "",
+    procurement_date: new Date().toISOString().slice(0, 10),
+    procurement_note: "",
+  });
+  const [savingEntry, setSavingEntry] = useState(false);
+  const [historyEvents, setHistoryEvents] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const attachmentInputRef = useRef(null);
   const itemId = item?.id;
   const tr = usePageTranslation("assignedRequests");
@@ -81,8 +94,15 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   }, [item.unit_cost]);
 
   useEffect(() => {
-    setPurchasedQty(item.purchased_quantity ?? item.quantity ?? "");
-  }, [item.purchased_quantity, item.quantity]);
+    setPurchasedQty(item.purchased_quantity ?? 0);
+  }, [item.purchased_quantity]);
+
+  useEffect(() => {
+    setEntryForm((prev) => ({
+      ...prev,
+      unit_cost: item.unit_cost ?? prev.unit_cost ?? "",
+    }));
+  }, [item.unit_cost]);
 
   useEffect(() => {
     setStatus(item.procurement_status || "");
@@ -266,18 +286,18 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     return Math.max(Number((requestedQty - purchasedQtyNumber).toFixed(2)), 0);
   }, [purchasedQtyNumber, requestedQty]);
 
+  const remainingQty = item.remaining_quantity !== undefined && item.remaining_quantity !== null
+    ? Number(item.remaining_quantity)
+    : outstandingQty;
+  const latestProcurementDate = item.latest_procurement_date
+    ? new Date(item.latest_procurement_date).toLocaleDateString()
+    : "—";
+  const procurementEventsCount = Number(item.procurement_events_count || 0);
+
   const originalUnitCost = useMemo(
     () => parseNumber(item.unit_cost),
     [item.unit_cost, parseNumber],
   );
-  const requestedLineTotal = useMemo(() => {
-    if (requestedQty === null || originalUnitCost === null) {
-      return null;
-    }
-
-    return Number((requestedQty * originalUnitCost).toFixed(2));
-  }, [originalUnitCost, requestedQty]);
-
   const formatNumber = useCallback((value, options = {}) => {
     if (value === null || value === undefined) {
       return "—";
@@ -310,6 +330,10 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         label: tr("itemPanel.statusOptions.pending", "Pending Purchase"),
       },
       {
+        value: "partially_procured",
+        label: tr("itemPanel.statusOptions.partiallyProcured", "Partially Procured"),
+      },
+      {
         value: "purchased",
         label: tr("itemPanel.statusOptions.purchased", "Purchased"),
       },
@@ -332,6 +356,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const statusStyles = useMemo(
     () => ({
       pending: "border-amber-200 bg-amber-50 text-amber-700",
+      partially_procured: "border-amber-200 bg-amber-50 text-amber-700",
       purchased: "border-emerald-200 bg-emerald-50 text-emerald-700",
       not_procured: "border-rose-200 bg-rose-50 text-rose-700",
       completed: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -505,10 +530,6 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
         });
       }
 
-      await axios.put(`/requested-items/${item.id}/purchased-quantity`, {
-        purchased_quantity: numericQty,
-      });
-
       await axios.put(`/requested-items/${item.id}/procurement-status`, {
         procurement_status: status,
         procurement_comment: comment,
@@ -542,6 +563,87 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const fetchProcurementHistory = useCallback(async () => {
+    if (!item.request_id || !item.id) return;
+    setLoadingHistory(true);
+    try {
+      const res = await axios.get(
+        `/requests/${item.request_id}/items/${item.id}/procurement-events`,
+      );
+      setHistoryEvents(res.data.events || []);
+      setHistoryLoaded(true);
+    } catch (err) {
+      console.error("❌ Failed to fetch procurement history:", err);
+      setHistoryEvents([]);
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || tr("itemPanel.procurementHistory.loadFailed", "Failed to load procurement history."),
+      });
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [item.id, item.request_id, tr]);
+
+  const openProcurementHistory = async () => {
+    setShowProcurementHistoryModal(true);
+    await fetchProcurementHistory();
+  };
+
+  const handleAddProcurementEntry = async () => {
+    const quantityToAdd = Number(entryForm.event_quantity);
+    const numericRemaining = Number(remainingQty ?? 0);
+    const numericUnitCost = entryForm.unit_cost === "" || entryForm.unit_cost === null
+      ? null
+      : Number(entryForm.unit_cost);
+
+    if (!Number.isInteger(quantityToAdd) || quantityToAdd <= 0) {
+      setMessage({ type: "error", text: tr("itemPanel.procurementEntry.quantityPositive", "Quantity to add must be a positive whole number.") });
+      return;
+    }
+
+    if (quantityToAdd > numericRemaining) {
+      setMessage({ type: "error", text: tr("itemPanel.procurementEntry.quantityTooHigh", "Quantity to add cannot exceed the remaining quantity.") });
+      return;
+    }
+
+    if (numericUnitCost !== null && (Number.isNaN(numericUnitCost) || numericUnitCost < 0)) {
+      setMessage({ type: "error", text: tr("itemPanel.messages.unitCostInvalid", "Enter a valid unit cost (zero or above).") });
+      return;
+    }
+
+    setSavingEntry(true);
+    setMessage(null);
+    try {
+      await axios.post(`/requests/${item.request_id}/items/${item.id}/procurement-events`, {
+        event_quantity: quantityToAdd,
+        unit_cost: numericUnitCost,
+        supplier_name: entryForm.supplier_name || null,
+        procurement_date: entryForm.procurement_date || null,
+        procurement_note: entryForm.procurement_note || null,
+      });
+
+      setShowProcurementEntryModal(false);
+      setEntryForm({
+        event_quantity: "",
+        unit_cost: numericUnitCost ?? "",
+        supplier_name: "",
+        procurement_date: new Date().toISOString().slice(0, 10),
+        procurement_note: "",
+      });
+      setMessage({ type: "success", text: tr("itemPanel.procurementEntry.success", "✅ Procurement entry added successfully.") });
+      if (onUpdate) onUpdate();
+      if (historyLoaded) await fetchProcurementHistory();
+    } catch (err) {
+      console.error("❌ Failed to add procurement entry:", err);
+      setMessage({
+        type: "error",
+        text: err.response?.data?.message || tr("itemPanel.procurementEntry.failed", "Failed to add procurement entry."),
+      });
+    } finally {
+      setSavingEntry(false);
     }
   };
 
@@ -629,18 +731,15 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               {tr("itemPanel.cards.remainingQty", "Remaining Qty")}
             </p>
             <p className="mt-1 text-base font-semibold text-amber-700">
-              {formatNumber(outstandingQty)}
+              {formatNumber(remainingQty)}
             </p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
-              {tr("itemPanel.cards.requestedLineTotal", "Requested Line Total")}
+              {tr("itemPanel.cards.latestProcurementDate", "Latest Procurement Date")}
             </p>
             <p className="mt-1 text-base font-semibold text-slate-700">
-              {formatNumber(requestedLineTotal, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+              {latestProcurementDate}
             </p>
           </div>
         </div>
@@ -675,15 +774,35 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
           <div>
             <label className="block text-sm font-medium text-slate-700">
-              {tr("itemPanel.inputs.purchasedQuantity", "Purchased Quantity")}
+              {tr("itemPanel.inputs.purchasedQuantitySummary", "Purchased Quantity Summary")}
             </label>
             <input
               type="number"
               min={0}
               value={purchasedQty}
-              onChange={(e) => setPurchasedQty(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              readOnly
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700"
             />
+            <p className="mt-1 text-xs text-slate-500">
+              {tr("itemPanel.inputs.purchasedQuantityHelper", "This summary is updated by adding procurement entries, not by overwriting old quantities.")}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setShowProcurementEntryModal(true)}
+                disabled={Number(remainingQty || 0) <= 0}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {tr("itemPanel.procurementEntry.open", "Add Procurement Entry")}
+              </button>
+              <button
+                type="button"
+                onClick={openProcurementHistory}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                {tr("itemPanel.procurementHistory.open", "Procurement History")} ({procurementEventsCount})
+              </button>
+            </div>
           </div>
         </div>
 
@@ -925,6 +1044,107 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               : tr("itemPanel.buttons.save", "Save Updates")}
           </button>
         </div>
+
+
+
+        {showProcurementEntryModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800">{tr("itemPanel.procurementEntry.title", "Add Procurement Entry")}</h3>
+                  <p className="text-sm text-slate-500">{item.item_name}</p>
+                </div>
+                <button type="button" onClick={() => setShowProcurementEntryModal(false)} className="text-slate-500 hover:text-slate-700">×</button>
+              </div>
+
+              <div className="mt-4 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm sm:grid-cols-3">
+                <div><span className="block text-xs uppercase text-slate-400">Requested quantity</span><strong>{formatNumber(requestedQty)}</strong></div>
+                <div><span className="block text-xs uppercase text-slate-400">Already purchased</span><strong>{formatNumber(purchasedQtyNumber)}</strong></div>
+                <div><span className="block text-xs uppercase text-slate-400">Remaining quantity</span><strong>{formatNumber(remainingQty)}</strong></div>
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Quantity to add</label>
+                  <input type="number" min={1} step={1} max={remainingQty || undefined} value={entryForm.event_quantity} onChange={(e) => setEntryForm((prev) => ({ ...prev, event_quantity: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Unit cost</label>
+                  <AmountInput min={0} step="0.01" value={entryForm.unit_cost} onChange={(e) => setEntryForm((prev) => ({ ...prev, unit_cost: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Supplier name</label>
+                  <input type="text" value={entryForm.supplier_name} onChange={(e) => setEntryForm((prev) => ({ ...prev, supplier_name: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Procurement date</label>
+                  <input type="date" value={entryForm.procurement_date} onChange={(e) => setEntryForm((prev) => ({ ...prev, procurement_date: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                </div>
+              </div>
+
+              <label className="mt-3 block text-sm font-medium text-slate-700">Note</label>
+              <textarea value={entryForm.procurement_note} onChange={(e) => setEntryForm((prev) => ({ ...prev, procurement_note: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+
+              {Number(entryForm.event_quantity || 0) > 0 && Number(entryForm.event_quantity || 0) < Number(remainingQty || 0) && (
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  This will register a partial procurement entry. The remaining quantity will stay open.
+                </div>
+              )}
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button type="button" onClick={() => setShowProcurementEntryModal(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
+                <button type="button" onClick={handleAddProcurementEntry} disabled={savingEntry || Number(remainingQty || 0) <= 0} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">{savingEntry ? "Saving…" : "Add Entry"}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showProcurementHistoryModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div className="w-full max-w-5xl rounded-xl bg-white p-5 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-800">{tr("itemPanel.procurementHistory.title", "Procurement History")}</h3>
+                  <p className="text-sm text-slate-500">{item.item_name}</p>
+                </div>
+                <button type="button" onClick={() => setShowProcurementHistoryModal(false)} className="text-slate-500 hover:text-slate-700">×</button>
+              </div>
+
+              <div className="mt-4 max-h-[60vh] overflow-auto">
+                {loadingHistory ? (
+                  <p className="text-sm text-slate-500">Loading procurement history…</p>
+                ) : historyEvents.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">No detailed procurement events recorded.</p>
+                ) : (
+                  <table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Date</th><th className="px-3 py-2 text-left">Event Qty</th><th className="px-3 py-2 text-left">Previous</th><th className="px-3 py-2 text-left">New</th><th className="px-3 py-2 text-left">Remaining</th><th className="px-3 py-2 text-left">Unit Cost</th><th className="px-3 py-2 text-left">Total Cost</th><th className="px-3 py-2 text-left">Supplier</th><th className="px-3 py-2 text-left">User</th><th className="px-3 py-2 text-left">Note</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {historyEvents.map((event) => (
+                        <tr key={event.id}>
+                          <td className="px-3 py-2">{event.procurement_date ? new Date(event.procurement_date).toLocaleDateString() : "—"}</td>
+                          <td className="px-3 py-2">{formatNumber(event.event_quantity)}</td>
+                          <td className="px-3 py-2">{formatNumber(event.previous_purchased_quantity)}</td>
+                          <td className="px-3 py-2">{formatNumber(event.new_purchased_quantity)}</td>
+                          <td className="px-3 py-2">{formatNumber(event.remaining_quantity)}</td>
+                          <td className="px-3 py-2">{formatNumber(event.unit_cost, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2">{formatNumber(event.total_cost, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td className="px-3 py-2">{event.supplier_name || event.supplier_id || "—"}</td>
+                          <td className="px-3 py-2">{event.procurement_user_name || event.procurement_user_id || "—"}</td>
+                          <td className="px-3 py-2">{event.procurement_note || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {message && (
           <div

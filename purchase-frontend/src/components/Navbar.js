@@ -628,6 +628,12 @@ const Navbar = () => {
             "text-emerald-600",
           ),
           createItem(
+            normalizedRole === "scm",
+            "SCM Approval Stages",
+            "/contracts/approval-stage-monitor",
+            "text-indigo-700",
+          ),
+          createItem(
             normalizedRole === "ceo",
             t("navbar.registerUser"),
             "/register",

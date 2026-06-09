@@ -56,6 +56,7 @@ import WorkloadAnalysis from "./pages/WorkloadAnalysis";
 import MonthlyDispensing from "./pages/MonthlyDispensing";
 import ContractsPage from "./pages/ContractsPage";
 import ContractApprovalsPanel from "./pages/ContractApprovalsPanel";
+import ContractApprovalStageMonitor from "./pages/ContractApprovalStageMonitor";
 import ContractTemplatesPage from "./pages/ContractTemplatesPage";
 import ContractClausesPage from "./pages/ContractClausesPage";
 import SupplierEvaluationsPage from "./pages/SupplierEvaluationsPage";
@@ -671,6 +672,15 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<ContractApprovalsPanel />}
           resourceKey="feature.contracts"
+        />
+      }
+    />
+    <Route
+      path="/contracts/approval-stage-monitor"
+      element={
+        <ProtectedRoute
+          element={<ContractApprovalStageMonitor />}
+          allowedRoles={["scm"]}
         />
       }
     />

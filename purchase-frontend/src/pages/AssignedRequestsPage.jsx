@@ -29,7 +29,7 @@ const categorizeItems = (items = []) => {
       groups.purchased.push(item);
     } else if (status === 'not_procured' || status === 'canceled') {
       groups.notProcured.push(item);
-    } else if (status === 'pending' || !status) {
+    } else if (status === 'pending' || status === 'partially_procured' || !status) {
       groups.pending.push(item);
     } else {
       groups.other.push(item);
@@ -796,14 +796,20 @@ const AssignedRequestsPage = () => {
     try {
       for (const item of updatableItems) {
         const requestedQty = Number(item.quantity ?? 0);
+        const purchasedQty = Number(item.purchased_quantity ?? 0);
+        const remainingQty = Number(item.remaining_quantity ?? Math.max(requestedQty - purchasedQty, 0));
 
-        await axios.put(`/requested-items/${item.id}/purchased-quantity`, {
-          purchased_quantity: requestedQty,
-        });
+        if (remainingQty <= 0) {
+          continue;
+        }
 
-        await axios.put(`/requested-items/${item.id}/procurement-status`, {
-          procurement_status: 'purchased',
-          procurement_comment: item.procurement_comment || '',
+        await axios.post(`/requests/${requestId}/items/${item.id}/procurement-events`, {
+          event_quantity: remainingQty,
+          unit_cost: item.unit_cost ?? null,
+          procurement_note: tr(
+            'items.bulkFill.procurementEntryNote',
+            'Auto-filled remaining procurement quantity.',
+          ),
         });
       }
 
@@ -1106,7 +1112,7 @@ const AssignedRequestsPage = () => {
                               <p className="text-sm text-emerald-800">
                                 {tr(
                                   'items.bulkFill.description',
-                                  'Copies each requested quantity into the purchased quantity field and marks the item as purchased.',
+                                  'Adds a procurement entry for each remaining quantity and marks fully procured items as purchased.',
                                 )}
                               </p>
                             </div>
