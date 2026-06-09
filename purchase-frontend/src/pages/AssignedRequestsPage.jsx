@@ -768,7 +768,7 @@ const AssignedRequestsPage = () => {
 
     const updatableItems = items.filter((item) => {
       const requestedQty = Number(item.quantity ?? 0);
-      return item.id && !Number.isNaN(requestedQty) && requestedQty > 0;
+      return item.supports_procurement_events !== false && item.id && !Number.isNaN(requestedQty) && requestedQty > 0;
     });
 
     if (updatableItems.length === 0) {
@@ -1103,6 +1103,7 @@ const AssignedRequestsPage = () => {
                       <p className="text-gray-500">{tr('items.empty', 'No items found for this request.')}</p>
                     ) : (
                       <>
+                        {items.some((item) => item.supports_procurement_events !== false) && (
                         <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
                           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                             <div>
@@ -1132,6 +1133,7 @@ const AssignedRequestsPage = () => {
                             </button>
                           </div>
                         </div>
+                        )}
                         {itemSections.map(({ key, title, description, tone, empty }) => {
                           const sectionItems = groupedItems[key] || [];
                           if (key === 'other' && sectionItems.length === 0) {
@@ -1159,7 +1161,7 @@ const AssignedRequestsPage = () => {
                                 sectionItems.map((item, idx) => (
                                   <ProcurementItemStatusPanel
                                     key={item.id || idx}
-                                    item={item}
+                                    item={{ ...item, request_id: item.request_id || request.id }}
                                     onUpdate={() => fetchItems(request.id)}
                                   />
                                 ))

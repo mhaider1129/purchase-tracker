@@ -55,6 +55,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const attachmentInputRef = useRef(null);
   const itemId = item?.id;
+  const procurementEventsSupported = item?.supports_procurement_events !== false;
   const tr = usePageTranslation("assignedRequests");
 
   const normalizeDownloadEndpoint = (endpoint = "") => {
@@ -567,7 +568,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   };
 
   const fetchProcurementHistory = useCallback(async () => {
-    if (!item.request_id || !item.id) return;
+    if (!procurementEventsSupported || !item.request_id || !item.id) return;
     setLoadingHistory(true);
     try {
       const res = await axios.get(
@@ -585,14 +586,28 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     } finally {
       setLoadingHistory(false);
     }
-  }, [item.id, item.request_id, tr]);
+  }, [item.id, item.request_id, procurementEventsSupported, tr]);
 
   const openProcurementHistory = async () => {
+    if (!procurementEventsSupported) {
+      setMessage({
+        type: "error",
+        text: tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type."),
+      });
+      return;
+    }
     setShowProcurementHistoryModal(true);
     await fetchProcurementHistory();
   };
 
   const handleAddProcurementEntry = async () => {
+    if (!procurementEventsSupported) {
+      setMessage({
+        type: "error",
+        text: tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type."),
+      });
+      return;
+    }
     const quantityToAdd = Number(entryForm.event_quantity);
     const numericRemaining = Number(remainingQty ?? 0);
     const numericUnitCost = entryForm.unit_cost === "" || entryForm.unit_cost === null
@@ -784,13 +799,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700"
             />
             <p className="mt-1 text-xs text-slate-500">
-              {tr("itemPanel.inputs.purchasedQuantityHelper", "This summary is updated by adding procurement entries, not by overwriting old quantities.")}
+              {procurementEventsSupported
+                ? tr("itemPanel.inputs.purchasedQuantityHelper", "This summary is updated by adding procurement entries, not by overwriting old quantities.")
+                : tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.")}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setShowProcurementEntryModal(true)}
-                disabled={Number(remainingQty || 0) <= 0}
+                disabled={!procurementEventsSupported || Number(remainingQty || 0) <= 0}
+                title={!procurementEventsSupported ? tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.") : undefined}
                 className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {tr("itemPanel.procurementEntry.open", "Add Procurement Entry")}
@@ -798,7 +816,9 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               <button
                 type="button"
                 onClick={openProcurementHistory}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                disabled={!procurementEventsSupported}
+                title={!procurementEventsSupported ? tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.") : undefined}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               >
                 {tr("itemPanel.procurementHistory.open", "Procurement History")} ({procurementEventsCount})
               </button>
@@ -1094,7 +1114,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowProcurementEntryModal(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
-                <button type="button" onClick={handleAddProcurementEntry} disabled={savingEntry || Number(remainingQty || 0) <= 0} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">{savingEntry ? "Saving…" : "Add Entry"}</button>
+                <button type="button" onClick={handleAddProcurementEntry} disabled={savingEntry || !procurementEventsSupported || Number(remainingQty || 0) <= 0} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">{savingEntry ? "Saving…" : "Add Entry"}</button>
               </div>
             </div>
           </div>
