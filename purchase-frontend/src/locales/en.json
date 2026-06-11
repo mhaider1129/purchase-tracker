@@ -53,7 +53,8 @@
       "cpo": "CPO",
       "procurementSpecialist": "Procurement Specialist",
       "warehouseManager": "Warehouse Manager",
-      "warehouseKeeper": "Warehouse Keeper"
+      "warehouseKeeper": "Warehouse Keeper",
+      "scm": "SCM"
     }
   },
   "itemPanel": {
@@ -2158,7 +2159,11 @@
         "missing": "Attachment file is missing.",
         "downloadFailed": "Failed to download attachment. Please try again.",
         "downloading": "Downloading…",
-        "fallback": "Attachment"
+        "fallback": "Attachment",
+        "uploadLabel": "Upload attachment",
+        "uploading": "Uploading…",
+        "uploadFailed": "Failed to upload attachment.",
+        "uploadSuccess": "Attachment uploaded successfully."
       }
     }
   },
@@ -2177,7 +2182,9 @@
       "status": {
         "all": "All Statuses",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "completed": "Completed",
+        "received": "Received"
       },
       "type": {
         "all": "All Request Types",

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getIssuedCustodies } from '../../api/custody';
 import { Button } from '../../components/ui/Button';
@@ -26,7 +26,7 @@ const normalizeStatusKey = (value) => String(value || '')
 
 const CustodyIssuedList = () => {
   const { t } = useTranslation();
-  const tr = (key, options) => t(`custodyIssuedPage.${key}`, options);
+  const tr = useCallback((key, options) => t(`custodyIssuedPage.${key}`, options), [t]);
 
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,7 +35,7 @@ const CustodyIssuedList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
     setIsLoading(true);
     setError('');
     try {
@@ -48,11 +48,11 @@ const CustodyIssuedList = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tr]);
 
   useEffect(() => {
     loadRecords();
-  }, []);
+  }, [loadRecords]);
 
   const handleStatusChange = (value) => setStatusFilter(value);
 

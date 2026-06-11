@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { listDocumentFlow } from '../api/procureToPay';
 
 export default function ProcureToPayDocumentFlowPage() {
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState('');
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const res = await listDocumentFlow({ search: search || undefined });
     setRows(res?.data || []);
-  };
+  }, [search]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="p-6 space-y-4">

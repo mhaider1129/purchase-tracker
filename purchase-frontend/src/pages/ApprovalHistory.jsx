@@ -166,7 +166,7 @@ const ApprovalHistory = () => {
     };
 
      fetchHistory();
-  }, [statusFilter, fromDate, toDate, department]);
+  }, [statusFilter, fromDate, toDate, department, searchTerm]);
 
   useEffect(() => {
     setFiltered(applySearch(history, searchTerm));

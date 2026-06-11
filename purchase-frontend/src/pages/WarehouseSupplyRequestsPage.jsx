@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { printWarehouseSupplyRequest } from '../api/warehouseSupply';
@@ -47,16 +47,16 @@ const WarehouseSupplyRequestsPage = () => {
   const [sortOption, setSortOption] = useState('newest');
   const [printingId, setPrintingId] = useState(null);
 
-  const normalizeItems = (items = []) =>
+  const normalizeItems = useCallback((items = []) =>
     items.map((item) => ({
       ...item,
       item_id: item.item_id || item.id,
       item_name: item.item_name || item.name,
       quantity: Number(item.quantity ?? item.requested_quantity ?? 0),
       supplied_quantity: Number(item.supplied_quantity ?? item.supplied ?? 0),
-    }));
+    })), []);
 
-  const getFulfillmentStats = (request) => {
+  const getFulfillmentStats = useCallback((request) => {
     const items = itemsCache[request.id] || normalizeItems(request.items || []);
     const requestedTotal = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     const suppliedTotal = items.reduce(
@@ -72,15 +72,15 @@ const WarehouseSupplyRequestsPage = () => {
       items.every((item) => Number(item.supplied_quantity || 0) >= Number(item.quantity || 0));
 
     return { requestedTotal, suppliedTotal, outstanding, progress, fullySupplied };
-  };
-  const getStatusLabel = (status) => {
+  }, [itemsCache, normalizeItems]);
+  const getStatusLabel = useCallback((status) => {
     if (!status) {
       return tr('statuses.unknown', 'Unknown');
     }
     return tr(`statuses.${status.toLowerCase()}`, status);
-  };
+  }, [tr]);
 
-  const fetchRequests = async () => {
+  const fetchRequests = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -104,11 +104,11 @@ const WarehouseSupplyRequestsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [normalizeItems, tr]);
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
 
   const closeRequest = async (requestId) => {
     const confirmMessage = tr(
@@ -263,7 +263,7 @@ const WarehouseSupplyRequestsPage = () => {
     }
 
     return chips;
-  }, [filters, tr]);
+  }, [filters, getStatusLabel, tr]);
 
   const departments = useMemo(
     () => Array.from(new Set(requests.map((req) => req.department_name).filter(Boolean))).sort(),
@@ -290,7 +290,7 @@ const WarehouseSupplyRequestsPage = () => {
       });
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [requests, itemsCache]);
+  }, [requests, itemsCache, normalizeItems]);
 
   const subCategories = useMemo(() => {
     const set = new Set();
@@ -305,7 +305,7 @@ const WarehouseSupplyRequestsPage = () => {
       });
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [requests, itemsCache, filters.category]);
+  }, [requests, itemsCache, filters.category, normalizeItems]);
 
   const filteredRequests = useMemo(() => {
     const normalizedSearch = filters.search.trim().toLowerCase();
@@ -390,9 +390,9 @@ const WarehouseSupplyRequestsPage = () => {
 
       return true;
     });
-  }, [filters, requests, itemsCache]);
+  }, [filters, requests, itemsCache, normalizeItems]);
 
-  const sortRequests = (list) => {
+  const sortRequests = useCallback((list) => {
     const sorted = [...list];
 
     return sorted.sort((a, b) => {
@@ -417,11 +417,11 @@ const WarehouseSupplyRequestsPage = () => {
 
       return 0;
     });
-  };
+  }, [getFulfillmentStats, sortOption]);
 
   const sortedRequests = useMemo(
     () => sortRequests(filteredRequests),
-    [filteredRequests, sortOption, itemsCache],
+    [filteredRequests, sortRequests],
   );
 
   const summary = useMemo(() => {

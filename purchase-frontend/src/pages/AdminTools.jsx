@@ -139,7 +139,7 @@ const AdminTools = () => {
       console.error('❌ Token decode failed:', error);
       navigate('/login');
     }
-  }, [navigate, t]);
+  }, [navigate, tr]);
 
   // 🔁 Reassign Approvals
   const triggerReassignment = async () => {

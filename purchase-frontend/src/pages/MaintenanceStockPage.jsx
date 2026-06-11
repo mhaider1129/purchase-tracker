@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
@@ -6,7 +6,7 @@ import { matchesSearchTokens } from '../utils/search';
 
 const MaintenanceStockPage = () => {
   const { t } = useTranslation();
-  const tr = (key, options) => t(`maintenanceStockPage.${key}`, options);
+  const tr = useCallback((key, options) => t(`maintenanceStockPage.${key}`, options), [t]);
   const { user, loading } = useCurrentUser();
   const [items, setItems] = useState([]);
   const [newItem, setNewItem] = useState({ item_name: '', quantity: 0 });
@@ -14,7 +14,7 @@ const MaintenanceStockPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'item_name', direction: 'asc' });
 
-  const fetchStock = async () => {
+  const fetchStock = useCallback(async () => {
     try {
       const res = await api.get('/maintenance-stock');
       setItems(res.data || []);
@@ -23,11 +23,11 @@ const MaintenanceStockPage = () => {
       console.error('Failed to load maintenance stock:', err);
       setStatus({ type: 'error', message: tr('errors.loadFailed') });
     }
-  };
+  }, [tr]);
 
   useEffect(() => {
     if (user) fetchStock();
-  }, [user]);
+  }, [fetchStock, user]);
 
   useEffect(() => {
     if (status.type === 'success') {

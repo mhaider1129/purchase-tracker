@@ -133,7 +133,7 @@ const AuditRequestsPage = () => {
       }
     };
     fetchRequests();
-  }, [resetApprovals]);
+  }, [resetApprovals, tr]);
 
   const toggleItems = async (requestId) => {
     if (expandedItemsId === requestId) {

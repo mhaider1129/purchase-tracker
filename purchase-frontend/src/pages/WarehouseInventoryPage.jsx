@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
@@ -19,7 +19,7 @@ const formatExpiryDate = (value) => {
 
 const WarehouseInventoryPage = () => {
   const { t } = useTranslation();
-  const tr = (key, fallback) => t(`warehouseInventory.${key}`, fallback);
+  const tr = useCallback((key, fallback) => t(`warehouseInventory.${key}`, fallback), [t]);
   const { user, loading: userLoading } = useCurrentUser();
   const { warehouses, loading: warehousesLoading, error: warehousesError } = useWarehouses();
 
@@ -117,7 +117,7 @@ const WarehouseInventoryPage = () => {
     refresh: refreshInventory,
   } = useWarehouseStockItems(inventoryWarehouseId);
 
-  const loadStockItems = async () => {
+  const loadStockItems = useCallback(async () => {
     try {
       const res = await api.get('/stock-items');
       setStockItems(res.data || []);
@@ -125,9 +125,9 @@ const WarehouseInventoryPage = () => {
       console.error('Failed to load stock items:', err);
       setFormStatus({ state: 'error', message: tr('alerts.loadItemsFailed') });
     }
-  };
+  }, [tr]);
 
-  const loadUnassignedStockItems = async () => {
+  const loadUnassignedStockItems = useCallback(async () => {
     setUnassignedStatus({ state: 'loading', message: '' });
     try {
       const res = await api.get('/stock-items/unassigned');
@@ -138,9 +138,9 @@ const WarehouseInventoryPage = () => {
       const message = err?.response?.data?.message || tr('unassigned.alerts.loadFailed');
       setUnassignedStatus({ state: 'error', message });
     }
-  };
+  }, [tr]);
 
-  const loadDepartments = async () => {
+  const loadDepartments = useCallback(async () => {
     setDepartmentsStatus({ state: 'loading', message: '' });
     try {
       const res = await api.get('/departments');
@@ -150,9 +150,9 @@ const WarehouseInventoryPage = () => {
       console.error('Failed to load departments:', err);
       setDepartmentsStatus({ state: 'error', message: tr('alerts.loadDepartmentsFailed') });
     }
-  };
+  }, [tr]);
 
-  const loadReport = async () => {
+  const loadReport = useCallback(async () => {
     setReportStatus({ state: 'loading', message: '' });
     try {
       const res = await api.get('/warehouse-inventory/reports/weekly');
@@ -167,7 +167,7 @@ const WarehouseInventoryPage = () => {
       console.error('Failed to load weekly stocking report:', err);
       setReportStatus({ state: 'error', message: tr('alerts.reportFailed') });
     }
-  };
+  }, [tr]);
 
   useEffect(() => {
     if (!userLoading && user) {
@@ -178,7 +178,7 @@ const WarehouseInventoryPage = () => {
         loadReport();
       }
     }
-  }, [canViewWarehouseReports, user, userLoading]);
+  }, [canViewWarehouseReports, loadDepartments, loadReport, loadStockItems, loadUnassignedStockItems, user, userLoading]);
 
   useEffect(() => {
     if (warehouses.length > 0) {

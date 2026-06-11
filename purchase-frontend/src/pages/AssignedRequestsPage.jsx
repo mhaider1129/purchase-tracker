@@ -1,5 +1,5 @@
 // src/pages/AssignedRequestsPage.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
@@ -264,16 +264,7 @@ const AssignedRequestsPage = () => {
     resetApprovals,
   } = useApprovalTimeline();
 
-  const handleRefresh = () => {
-    setCompletionFeedback('');
-    setExpandedRequestId(null);
-    setItems([]);
-    setGroupedItems(createEmptyGroups());
-    setAttachments([]);
-    fetchAssignedRequests();
-  };
-  
-  const fetchAssignedRequests = async () => {
+  const fetchAssignedRequests = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get('/requests/assigned');
@@ -308,6 +299,15 @@ const AssignedRequestsPage = () => {
     } finally {
       setLoading(false);
     }
+  }, [resetApprovals]);
+
+  const handleRefresh = () => {
+    setCompletionFeedback('');
+    setExpandedRequestId(null);
+    setItems([]);
+    setGroupedItems(createEmptyGroups());
+    setAttachments([]);
+    fetchAssignedRequests();
   };
 
   const fetchItems = async (requestId) => {
@@ -851,7 +851,7 @@ const AssignedRequestsPage = () => {
 
   useEffect(() => {
     fetchAssignedRequests();
-  }, [resetApprovals]);
+  }, [fetchAssignedRequests]);
 
   const toggleExpand = (requestId) => {
     const isExpanded = expandedRequestId === requestId;

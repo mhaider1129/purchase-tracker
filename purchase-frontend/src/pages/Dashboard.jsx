@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import {
   BarChart,
@@ -34,7 +34,7 @@ const Dashboard = () => {
       maximumFractionDigits: 0,
     });
 
-  const fetchSummary = async () => {
+  const fetchSummary = useCallback(async () => {
     try {
       const res = await axios.get('/dashboard/summary');
       setSummary(res.data);
@@ -45,9 +45,9 @@ const Dashboard = () => {
         translate('failedToLoad', { defaultValue: 'Failed to load dashboard' })
       );
     }
-  };
+  }, [translate]);
 
-  const fetchSpending = async (selectedYear = year) => {
+  const fetchSpending = useCallback(async (selectedYear) => {
     try {
       const res = await axios.get('/dashboard/department-spending', {
         params: { year: selectedYear },
@@ -56,9 +56,9 @@ const Dashboard = () => {
     } catch (err) {
       console.error('❌ Failed to fetch department spending:', err);
     }
-  };
+  }, []);
 
-  const fetchDepartmentRequestCosts = async (selectedYear = year) => {
+  const fetchDepartmentRequestCosts = useCallback(async (selectedYear) => {
     try {
       const res = await axios.get('/dashboard/department-request-costs', {
         params: { year: selectedYear },
@@ -67,16 +67,16 @@ const Dashboard = () => {
     } catch (err) {
       console.error('❌ Failed to fetch department request costs:', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSummary();
-  }, []);
+  }, [fetchSummary]);
 
   useEffect(() => {
     fetchSpending(year);
     fetchDepartmentRequestCosts(year);
-  }, [year]);
+  }, [fetchSpending, fetchDepartmentRequestCosts, year]);
 
   useEffect(() => {
     const handleDashboardRefresh = () => {
@@ -88,7 +88,7 @@ const Dashboard = () => {
     window.addEventListener(DASHBOARD_REFRESH_EVENT, handleDashboardRefresh);
     return () =>
       window.removeEventListener(DASHBOARD_REFRESH_EVENT, handleDashboardRefresh);
-  }, [year]);
+  }, [fetchSummary, fetchSpending, fetchDepartmentRequestCosts, year]);
 
   const { deptChartData, deptNames } = useMemo(() => {
     if (!departmentSpending.length) return { deptChartData: [], deptNames: [] };
@@ -136,8 +136,8 @@ const Dashboard = () => {
     [departmentRequestCosts]
   );
 
-  const pendingTrend = summary?.pending_vs_completed_trend || [];
-  const oldestPending = summary?.oldest_pending_requests || [];
+  const pendingTrend = useMemo(() => summary?.pending_vs_completed_trend || [], [summary]);
+  const oldestPending = useMemo(() => summary?.oldest_pending_requests || [], [summary]);
   const completionRate = Number(summary?.completion_rate || 0);
   const avgPendingAge = Number(summary?.avg_pending_age_days || 0);
   const approvalTimeDays = Number(summary?.avg_approval_time_days || 0);

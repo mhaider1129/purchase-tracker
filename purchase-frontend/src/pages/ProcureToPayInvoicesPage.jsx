@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import AmountInput from '../components/ui/AmountInput';
 import { listApInvoices, submitInvoice } from '../api/procureToPay';
 import { createSupplier } from '../api/suppliers';
@@ -21,20 +21,20 @@ const ProcureToPayInvoicesPage = () => {
   const [showSupplierForm, setShowSupplierForm] = useState(false);
   const [error, setError] = useState('');
 
-  const loadInvoices = async () => {
+  const loadInvoices = useCallback(async () => {
     const res = await listApInvoices({
       search: filters.search || undefined,
       supplier: filters.supplier || undefined,
       status: filters.status === 'ALL' ? undefined : filters.status,
     });
     setRows(res?.data || []);
-  };
+  }, [filters]);
 
   const { suppliers, reloadSuppliers, suppliersError } = useSuppliers();
 
   useEffect(() => {
     loadInvoices();
-  }, []);
+  }, [loadInvoices]);
 
   const selectedSupplier = suppliers.find((entry) => Number(entry.id) === Number(form.supplier_id));
 

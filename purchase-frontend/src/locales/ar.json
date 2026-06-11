@@ -108,7 +108,11 @@
       "missing": "ملف المرفق مفقود.",
       "downloadFailed": "فشل تنزيل المرفق. يرجى المحاولة مرة أخرى.",
       "downloading": "جارٍ التنزيل…",
-      "fallback": "مرفق"
+      "fallback": "مرفق",
+      "uploadLabel": "رفع مرفق",
+      "uploading": "جارٍ الرفع…",
+      "uploadFailed": "فشل رفع المرفق.",
+      "uploadSuccess": "تم رفع المرفق بنجاح."
     }
   },
   "requestAccount": {
@@ -209,7 +213,9 @@
     "dismissNotification": "إغلاق الإشعار",
     "loadingNotifications": "جاري تحميل الإشعارات...",
     "viewDetails": "عرض التفاصيل",
-    "unreadCount": "{{count}} غير مقروء"
+    "unreadCount": "{{count}} غير مقروء",
+    "monthlyDispensing": "الصرف الشهري",
+    "stockItemApprovals": "اعتمادات أصناف المخزون"
   },
   "pageTitles": {
     "nonStockRequestForm": "نموذج طلب مواد غير مخزنية",
@@ -568,6 +574,32 @@
         "الامتثال القانوني",
         "التدقيق"
       ]
+    },
+    "modules": {
+      "title": "مساحة عمل المورّدين",
+      "subtitle": "انتقل إلى إدارة علاقات المورّدين أو التقييمات أو اللوحات أو التأهيل المسبق من مركز رئيسي واحد.",
+      "view": "فتح الوحدة",
+      "current": "العرض الحالي",
+      "master": {
+        "title": "السجلات الرئيسية",
+        "description": "إدارة ملفات المورّدين وبيانات التواصل وملاحظات الانضمام."
+      },
+      "srm": {
+        "title": "إدارة علاقات المورّدين",
+        "description": "متابعة صحة العلاقة وملاحظات المخاطر وإجراءات التواصل."
+      },
+      "evaluations": {
+        "title": "تقييمات المورّدين",
+        "description": "تسجيل مراجعات الأداء وبطاقات التقييم والإجراءات التصحيحية."
+      },
+      "dashboard": {
+        "title": "لوحة المورّدين",
+        "description": "مراقبة التغطية وتقدم التقييم ومؤشرات المشاركة."
+      },
+      "prequalification": {
+        "title": "التأهيل المسبق",
+        "description": "تسجيل جاهزية المورّد وحالة المستندات وجداول الاعتماد."
+      }
     }
   },
   "language": {
@@ -588,7 +620,8 @@
       "required": "جميع حقول كلمة المرور مطلوبة.",
       "length": "يجب أن تتكون كلمة المرور الجديدة من 8 أحرف على الأقل.",
       "match": "يجب أن تتطابق كلمة المرور الجديدة مع التأكيد."
-    }
+    },
+    "backToHome": "العودة إلى الصفحة الرئيسية"
   },
   "common": {
     "language": "اللغة",
@@ -1136,7 +1169,9 @@
       "status": {
         "all": "جميع الحالات",
         "approved": "موافق عليه",
-        "rejected": "مرفوض"
+        "rejected": "مرفوض",
+        "completed": "مكتمل",
+        "received": "تم الاستلام"
       },
       "type": {
         "all": "جميع أنواع الطلبات"
@@ -1485,7 +1520,10 @@
           "fifo": "الأقدم دخولاً أولاً (FIFO)"
         },
         "notes": "ملاحظات (اختياري)",
-        "notesPlaceholder": "مرجع أو طلب أو تفاصيل المستفيد"
+        "notesPlaceholder": "مرجع أو طلب أو تفاصيل المستفيد",
+        "section": "القسم الفرعي",
+        "sectionPlaceholder": "اختر قسماً فرعياً",
+        "optional": "اختياري"
       }
     },
     "discardForm": {
@@ -1560,7 +1598,8 @@
     "confirmDecision": "هل أنت متأكد أنك تريد {{decision}} سجل العهدة رقم {{id}}؟",
     "roles": {
       "hod": "رئيس القسم",
-      "custodian": "أمين العهدة"
+      "custodian": "أمين العهدة",
+      "scm": "سلسلة الإمداد"
     },
     "fields": {
       "custodyType": "نوع العهدة: {{type}}",
@@ -1832,7 +1871,19 @@
     "notAvailable": "غير متوفر",
     "noPendingApprover": "لا توجد موافقات إضافية مطلوبة حالياً.",
     "pendingAssignment": "في انتظار التعيين",
-    "attachmentsCount": "تم رفع {{count}} ملف/ملفات"
+    "attachmentsCount": "تم رفع {{count}} ملف/ملفات",
+    "itemsHeading": "نظرة عامة على حالة الأصناف",
+    "itemNameHeader": "الصنف",
+    "itemQuantityHeader": "المطلوب",
+    "itemPurchasedHeader": "المشترى",
+    "itemStatusHeader": "الحالة",
+    "noItems": "لم يتم تضمين أي أصناف في هذا الطلب.",
+    "unnamedItem": "صنف بلا اسم",
+    "itemStatus": {
+      "purchased": "تم الشراء",
+      "partiallyPurchased": "تم الشراء جزئياً",
+      "notPurchased": "لم يتم الشراء"
+    }
   },
   "closedRequests": {
     "title": "طلباتي المغلقة",
@@ -2133,7 +2184,9 @@
     "subtitle": "راجع الطلبات المعتمدة وسجل العناصر التي تم تزويدها.",
     "actions": {
       "refresh": "تحديث",
-      "clearFilters": "مسح المرشحات"
+      "clearFilters": "مسح المرشحات",
+      "print": "طباعة",
+      "printing": "جارٍ الطباعة…"
     },
     "summary": {
       "total": "إجمالي الطلبات"
@@ -2164,22 +2217,76 @@
       "noJustification": "لا يوجد تبرير.",
       "recordSupplied": "تسجيل العناصر المزوّدة",
       "viewItems": "عرض العناصر المطلوبة",
-      "hideItems": "إخفاء العناصر المطلوبة"
+      "hideItems": "إخفاء العناصر المطلوبة",
+      "closeRequest": "إغلاق الطلب",
+      "closeRequestConfirm": "هل تريد إغلاق طلب تزويد المخزن حتى لو لم يتم توريده بالكامل؟",
+      "closing": "جارٍ الإغلاق…",
+      "itemsCount": "الأصناف في الطلب",
+      "supplied": "المورّد حتى الآن",
+      "outstanding": "المتبقي",
+      "outstandingDetail": "ما زال {{count}} صنفاً بحاجة إلى التوريد.",
+      "noOutstanding": "تم توريد كل ما طُلب.",
+      "progressLabel": "تم تنفيذ {{progress}}٪",
+      "suppliedSummary": "تم توريد {{supplied}} من {{requested}}",
+      "fullySupplied": "تم توريد جميع الكميات المطلوبة.",
+      "fulfillmentHint": "سجّل الكميات المورّدة أو أغلق الطلب عند الانتهاء.",
+      "badges": {
+        "closed": "مغلق",
+        "needsAttention": "يحتاج إلى متابعة التوريد",
+        "inProgress": "قيد التنفيذ"
+      }
     },
     "items": {
       "loading": "جاري تحميل العناصر المطلوبة...",
       "requestedQuantity": "الكمية المطلوبة: {{quantity}}",
-      "empty": "لا توجد عناصر مطلوبة."
+      "empty": "لا توجد عناصر مطلوبة.",
+      "suppliedQuantity": "المورّد: {{quantity}}"
     },
     "alerts": {
       "loadFailed": "تعذر تحميل طلبات التجهيز المخزنية. حاول مرة أخرى.",
-      "itemsLoadFailed": "تعذر تحميل العناصر المطلوبة. حاول مرة أخرى لاحقاً."
+      "itemsLoadFailed": "تعذر تحميل العناصر المطلوبة. حاول مرة أخرى لاحقاً.",
+      "printFailed": "فشلت طباعة طلب تزويد المخزن.",
+      "enablePopups": "يرجى تفعيل النوافذ المنبثقة لطباعة هذا الطلب."
     },
     "statuses": {
       "approved": "موافق",
       "pending": "قيد الانتظار",
       "rejected": "مرفوض",
-      "unknown": "غير معروف"
+      "unknown": "غير معروف",
+      "completed": "مكتمل"
+    },
+    "sort": {
+      "label": "ترتيب حسب",
+      "options": {
+        "newest": "الأحدث أولاً",
+        "oldest": "الأقدم أولاً",
+        "outstanding": "الأكثر احتياجاً للتوريد",
+        "progress": "أعلى نسبة إنجاز"
+      }
+    },
+    "activeFilters": {
+      "title": "الفلاتر النشطة",
+      "none": "لا توجد فلاتر نشطة",
+      "clear": "مسح الفلاتر",
+      "search": "بحث: {{value}}",
+      "department": "القسم: {{value}}",
+      "section": "القسم الفرعي: {{value}}",
+      "status": "الحالة: {{value}}",
+      "from": "من: {{value}}",
+      "to": "إلى: {{value}}"
+    },
+    "print": {
+      "title": "طلب تزويد مخزن",
+      "heading": "طلب تزويد مخزن",
+      "printCount": "عدد مرات الطباعة",
+      "requester": "مقدّم الطلب",
+      "role": "الدور",
+      "items": "الأصناف المطلوبة",
+      "itemName": "الصنف",
+      "outstanding": "المتبقي",
+      "totals": "الإجماليات",
+      "footer": "تم إنشاؤه لمتابعة تنفيذ تزويد المخزن.",
+      "closeFailed": "فشل إغلاق الطلب. يرجى المحاولة مرة أخرى."
     }
   },
   "rfxPortal": {
@@ -2332,5 +2439,65 @@
     "recentWindow": "آخر 30 يومًا",
     "approvalsCompleted": "الموافقات المنجزة",
     "error": "تعذر تحميل تحليل عبء العمل"
+  },
+  "suppliersPrequalification": {
+    "title": "التأهيل المسبق للمورّدين",
+    "subtitle": "متابعة فحوص الجاهزية ومستويات المخاطر وجداول الاعتماد قبل الانضمام.",
+    "refresh": "تحديث",
+    "loading": "جارٍ تحميل المورّدين…",
+    "error": "فشل تحميل المورّدين. يرجى المحاولة مرة أخرى.",
+    "retry": "إعادة المحاولة",
+    "empty": "لا يوجد مورّدون.",
+    "note": "يتم حفظ قيود التأهيل المسبق محلياً في هذه الجلسة. اربط الخدمة بالخادم لحفظ هذه التحديثات بشكل دائم.",
+    "stats": {
+      "total": "إجمالي المورّدين",
+      "prequalified": "مؤهل مسبقاً",
+      "inReview": "قيد المراجعة",
+      "onHold": "معلّق",
+      "rejected": "مرفوض"
+    },
+    "search": {
+      "label": "بحث في المورّدين",
+      "placeholder": "ابحث باسم المورّد"
+    },
+    "form": {
+      "title": "إدخال التأهيل المسبق",
+      "subtitle": "سجّل حالة المستندات ومستوى المخاطر وتواريخ الاعتماد.",
+      "supplier": "المورّد",
+      "selectSupplier": "اختر مورّداً",
+      "status": "الحالة",
+      "risk": "مستوى المخاطر",
+      "prequalifiedOn": "تاريخ التأهيل المسبق",
+      "expiresOn": "صالح حتى",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "وثّق نواقص المستندات أو الاعتمادات أو متطلبات المتابعة.",
+      "save": "حفظ التأهيل المسبق",
+      "success": "تم تحديث التأهيل المسبق لـ {{name}}.",
+      "validation": {
+        "supplier": "يرجى اختيار مورّد قبل الحفظ."
+      }
+    },
+    "table": {
+      "supplier": "المورّد",
+      "status": "الحالة",
+      "risk": "مستوى المخاطر",
+      "prequalifiedOn": "مؤهل مسبقاً",
+      "expiresOn": "ينتهي في",
+      "actions": "الإجراءات",
+      "manage": "إدارة",
+      "clear": "مسح"
+    },
+    "status": {
+      "notStarted": "لم يبدأ",
+      "inReview": "قيد المراجعة",
+      "prequalified": "مؤهل مسبقاً",
+      "onHold": "معلّق",
+      "rejected": "مرفوض"
+    },
+    "risk": {
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "مرتفع"
+    }
   }
 }

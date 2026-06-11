@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { listAccountsPayable } from '../api/procureToPay';
 
 export default function ProcureToPayAccountsPayablePage() {
   const [rows, setRows] = useState([]);
   const [filters, setFilters] = useState({ supplier: '', status: 'ALL', overdue: false });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const res = await listAccountsPayable({
       supplier: filters.supplier || undefined,
       status: filters.status === 'ALL' ? undefined : filters.status,
       overdue: filters.overdue ? 'true' : undefined,
     });
     setRows(res?.data || []);
-  };
+  }, [filters]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="p-6 space-y-4">

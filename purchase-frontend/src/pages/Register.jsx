@@ -45,7 +45,7 @@ const Register = () => {
       localStorage.removeItem('token');
       return navigate('/login');
     }
-  }, [navigate]);
+  }, [navigate, t]);
 
   // 📥 Load Departments with Sections
   useEffect(() => {

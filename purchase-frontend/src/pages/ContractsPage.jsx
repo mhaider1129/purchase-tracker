@@ -1189,14 +1189,14 @@ const ContractsPage = () => {
     }
   };
 
-  const isExpiringSoon = (contract) => {
+  const isExpiringSoon = useCallback((contract) => {
     if (!contract || contract.is_expired) {
       return false;
     }
 
     const daysUntilExpiry = contract.days_until_expiry;
     return typeof daysUntilExpiry === 'number' && daysUntilExpiry >= 0 && daysUntilExpiry <= EXPIRING_SOON_THRESHOLD_DAYS;
-  };
+  }, []);
 
   const contractStats = useMemo(() => {
     const stats = {
@@ -1250,7 +1250,7 @@ const ContractsPage = () => {
         : null;
 
     return { ...stats, paidCoverage };
-  }, [contracts]);
+  }, [contracts, isExpiringSoon]);
 
   const {
     active: activeCount,
@@ -1274,7 +1274,7 @@ const ContractsPage = () => {
 
       return true;
     });
-  }, [contracts, renewalFilter]);
+  }, [contracts, isExpiringSoon, renewalFilter]);
 
   const sortedContracts = useMemo(() => {
     return [...filteredContracts].sort((a, b) => {
@@ -1334,6 +1334,17 @@ const ContractsPage = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, 'contracts-export.csv');
   }, [sortedContracts]);
+
+  const formatCurrency = useCallback((value) => {
+    if (value === null || value === undefined) return null;
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return null;
+
+    return new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(numeric);
+  }, []);
 
   const handlePrintContracts = useCallback(() => {
     const printWindow = window.open('', '', 'width=1100,height=800');
@@ -1396,7 +1407,7 @@ const ContractsPage = () => {
     printWindow.document.close();
     printWindow.focus();
     printWindow.print();
-  }, [sortedContracts]);
+  }, [formatCurrency, sortedContracts]);
 
   const renderStatusBadge = (status) => {
     const normalized = (status || '').toLowerCase();
@@ -1439,18 +1450,7 @@ const ContractsPage = () => {
     return parsed.toLocaleDateString();
   };
 
-  const formatCurrency = (value) => {
-    if (value === null || value === undefined) return null;
-    const numeric = Number(value);
-    if (!Number.isFinite(numeric)) return null;
-
-    return new Intl.NumberFormat(undefined, {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    }).format(numeric);
-  };
-
-  const getPaidSummary = (contract) => {
+  const getPaidSummary = useCallback((contract) => {
     const paidValue = Number(contract?.amount_paid);
     const totalValue = Number(contract?.contract_value);
     const hasPaid = Number.isFinite(paidValue);
@@ -1463,7 +1463,7 @@ const ContractsPage = () => {
       formattedTotal: hasTotal ? formatCurrency(totalValue) : null,
       percent: percent !== null ? Number(percent.toFixed(1)) : null,
     };
-  };
+  }, [formatCurrency]);
 
   const selectedContractInsights = useMemo(() => {
     if (!viewingContract) {

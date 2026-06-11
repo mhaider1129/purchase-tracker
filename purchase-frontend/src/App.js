@@ -87,6 +87,7 @@ import ProcureToPayDocumentFlowPage from "./pages/ProcureToPayDocumentFlowPage";
 import ProcureToPayDashboardPage from "./pages/ProcureToPayDashboardPage";
 import TaskManagementPage from "./pages/TaskManagementPage";
 import BudgetControlPage from "./pages/BudgetControlPage";
+import DepartmentRequestedItemsBoard from "./pages/DepartmentRequestedItemsBoard";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -636,6 +637,15 @@ const AppRoutes = () => (
         <ProtectedRoute
           element={<ProcurementPlansPage />}
           resourceKey="feature.procurementPlans"
+        />
+      }
+    />
+    <Route
+      path="/department-requested-items"
+      element={
+        <ProtectedRoute
+          element={<DepartmentRequestedItemsBoard />}
+          allowedRoles={["scm", "admin", "procurementsupervisor"]}
         />
       }
     />

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchDepartmentBudgets, saveDepartmentBudget } from "../api/budgetControl";
 import api from "../api/axios";
 import AmountInput from "../components/ui/AmountInput";
@@ -11,7 +11,7 @@ const BudgetControlPage = () => {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setError("");
     try {
       const [budgetRows, departmentRows] = await Promise.all([
@@ -24,11 +24,11 @@ const BudgetControlPage = () => {
       setError(err?.response?.data?.message || "Failed to load budget control data.");
       setRows([]);
     }
-  };
+  }, [fiscalYear]);
 
   useEffect(() => {
     load();
-  }, [fiscalYear]);
+  }, [load]);
 
   const totals = useMemo(() => rows.reduce((acc, r) => {
     acc.allocated += Number(r.allocated_amount) || 0;

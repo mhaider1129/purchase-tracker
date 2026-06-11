@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createRfxEvent,
   listRfxEvents,
@@ -184,7 +184,7 @@ const RfxPortalPage = () => {
     [isAuthenticated, user],
   );
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -197,9 +197,9 @@ const RfxPortalPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  const loadResponses = async (eventId) => {
+  const loadResponses = useCallback(async (eventId) => {
     if (!eventId || !canManage) {
       setResponses([]);
       return;
@@ -211,17 +211,17 @@ const RfxPortalPage = () => {
     } catch (err) {
       console.error("❌ Failed to load responses", err);
     }
-  };
+  }, [canManage]);
 
   useEffect(() => {
     loadEvents();
-  }, []);
+  }, [loadEvents]);
 
   useEffect(() => {
     loadResponses(selectedEventId);
     setAnalysisResult(null);
     setAnalysisQuotations([createEmptyQuotation()]);
-  }, [selectedEventId]);
+  }, [loadResponses, selectedEventId]);
 
   useEffect(() => {
     if (!selectedEvent) {

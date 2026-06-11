@@ -176,6 +176,7 @@ const Navbar = () => {
       "feature.procurementQueues",
       ["procurement.update-status"],
     );
+    const canViewDepartmentRequestedItems = ["admin", "scm", "procurementsupervisor"].includes(normalizedRole);
     const canAccessProcureToPayReceipts = hasAccess(
       currentUser,
       "feature.procureToPayReceipts",
@@ -355,6 +356,12 @@ const Navbar = () => {
           resolveFeatureNavItem("allRequests", canViewAllRequests),
           resolveFeatureNavItem("historicalRequests", canImportHistorical),
           resolveFeatureNavItem("procurementPlans", canManageProcurement),
+          createItem(
+            canViewDepartmentRequestedItems,
+            "Department Requested Items",
+            "/department-requested-items",
+            "text-indigo-700",
+          ),
           resolveFeatureNavItem("assignedRequests", canHandleProcurementQueues),
           resolveFeatureNavItem("completedAssigned", canHandleProcurementQueues),
         ].filter(Boolean),

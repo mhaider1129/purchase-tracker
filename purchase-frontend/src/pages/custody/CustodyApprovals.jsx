@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -9,7 +9,7 @@ import { Button } from '../../components/ui/Button';
 
 const CustodyApprovals = () => {
   const { t } = useTranslation();
-  const tr = (key, options) => t(`custodyApprovalsPage.${key}`, options);
+  const tr = useCallback((key, options) => t(`custodyApprovalsPage.${key}`, options), [t]);
   const navigate = useNavigate();
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +17,7 @@ const CustodyApprovals = () => {
   const [banner, setBanner] = useState({ type: 'idle', message: '' });
   const [actionState, setActionState] = useState({ id: null, decision: null });
 
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
     try {
       setIsLoading(true);
       setError('');
@@ -29,11 +29,11 @@ const CustodyApprovals = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [tr]);
 
   useEffect(() => {
     loadRecords();
-  }, []);
+  }, [loadRecords]);
 
   const handleDecision = async (recordId, decision) => {
     const confirmation = window.confirm(

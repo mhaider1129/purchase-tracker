@@ -289,6 +289,7 @@ const Management = () => {
   const requiresWarehouseAssignment = (roleName) =>
     warehouseRoles.has(String(roleName || '').toLowerCase());
 
+  /* eslint-disable react-hooks/exhaustive-deps -- Data loaders are declared below these effects and are gated by permission/tab state. */
   useEffect(() => {
     if (canViewUsers || canManageRoutes || canManagePermissions || canManageRoles || canManageAutoAssignments) {
       fetchRoles();
@@ -409,6 +410,7 @@ const Management = () => {
     }
     fetchUserPermissions(selectedPermissionUserId);
   }, [canManagePermissions, selectedPermissionUserId]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const fetchUsers = async () => {
     if (!(canViewUsers || canManagePermissions)) return;

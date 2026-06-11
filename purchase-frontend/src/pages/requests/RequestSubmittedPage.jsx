@@ -1,6 +1,5 @@
 // src/pages/RequestSubmittedPage.jsx
-import React from 'react';
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useTranslation } from 'react-i18next';
@@ -17,19 +16,22 @@ const RequestSubmittedPage = () => {
     [location.state, requestType],
   );
 
-  const summary =
-    location.state?.summary ||
-    normalizedSubmission.summary ||
-    (location.state?.requestId || location.state?.statusMessage
-      ? {
-          requestId: location.state?.requestId ?? null,
-          estimatedCost: null,
-          attachmentsUploaded: 0,
-          nextApproval: null,
-          duplicateDetected: false,
-          message: location.state?.statusMessage || location.state?.message || '',
-        }
-      : null);
+  const summary = useMemo(
+    () =>
+      location.state?.summary ||
+      normalizedSubmission.summary ||
+      (location.state?.requestId || location.state?.statusMessage
+        ? {
+            requestId: location.state?.requestId ?? null,
+            estimatedCost: null,
+            attachmentsUploaded: 0,
+            nextApproval: null,
+            duplicateDetected: false,
+            message: location.state?.statusMessage || location.state?.message || '',
+          }
+        : null),
+    [location.state, normalizedSubmission.summary],
+  );
 
   const items = Array.isArray(location.state?.items)
     ? location.state.items
