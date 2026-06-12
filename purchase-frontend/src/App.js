@@ -88,6 +88,9 @@ import ProcureToPayDashboardPage from "./pages/ProcureToPayDashboardPage";
 import TaskManagementPage from "./pages/TaskManagementPage";
 import BudgetControlPage from "./pages/BudgetControlPage";
 import DepartmentRequestedItemsBoard from "./pages/DepartmentRequestedItemsBoard";
+import RequestDetailWorkspace from "./pages/RequestDetailWorkspace";
+import ProcurementEvaluationsPage from "./pages/ProcurementEvaluationsPage";
+import ProcurementEvaluationDetail from "./pages/ProcurementEvaluationDetail";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -286,6 +289,11 @@ const AppRoutes = () => (
           allowedRoles={["scm", "admin", "finance", "financeapprover", "cfo"]}
         />
       }
+    />
+
+    <Route
+      path="/requests/:requestId"
+      element={<ProtectedRoute element={<RequestDetailWorkspace />} />}
     />
     <Route
       path="/requests/:requestId/procure-to-pay"
@@ -649,6 +657,27 @@ const AppRoutes = () => (
         />
       }
     />
+    <Route
+      path="/procurement-evaluations"
+      element={
+        <ProtectedRoute
+          element={<ProcurementEvaluationsPage />}
+          allowedRoles={["admin", "SCM", "ProcurementSupervisor", "ProcurementSpecialist"]}
+          requiredPermissions={["evaluations.manage", "procurement.update-status"]}
+        />
+      }
+    />
+    <Route
+      path="/procurement-evaluations/:id"
+      element={
+        <ProtectedRoute
+          element={<ProcurementEvaluationDetail />}
+          allowedRoles={["admin", "SCM", "ProcurementSupervisor", "ProcurementSpecialist", "CMO", "CFO", "COO", "CEO"]}
+          requiredPermissions={["evaluations.manage", "procurement.update-status", "requests.view-all"]}
+        />
+      }
+    />
+
     <Route
       path="/stock-item-approvals"
       element={

@@ -1,5 +1,6 @@
 // src/pages/AllRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
 import { printRequest } from '../api/requests';
@@ -1234,6 +1235,12 @@ const AllRequestsPage = () => {
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
+                    <Link
+                      to={`/requests/${request.id}`}
+                      className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    >
+                      Open Workspace
+                    </Link>
                     <button
                       className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
                       onClick={() => handlePrint(request.id)}

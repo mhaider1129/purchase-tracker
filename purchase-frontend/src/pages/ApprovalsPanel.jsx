@@ -1,5 +1,6 @@
 //src/pages/ApprovalsPanel.js
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   AlertTriangle,
   Building2,
@@ -370,7 +371,13 @@ const ApprovalsPanel = () => {
                           </div>
                         )}
 
-                        <div>
+                        <div className="space-y-2">
+                          <Link
+                            to={`/requests/${req.request_id}`}
+                            className="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                          >
+                            Open Workspace
+                          </Link>
                           <Button
                             variant="secondary"
                             className="flex items-center gap-2"

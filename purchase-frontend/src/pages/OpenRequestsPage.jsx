@@ -1,5 +1,6 @@
 // src/pages/OpenRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { updateRequest } from '../api/requests';
 import { saveAs } from 'file-saver';
@@ -833,6 +834,13 @@ const OpenRequestsPage = () => {
                             {getCurrentStage(req)}
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
+                            <div className="flex flex-wrap gap-2">
+                              <Link
+                                to={`/requests/${req.id}`}
+                                className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-blue-700"
+                              >
+                                Workspace
+                              </Link>
                             <button
                               type="button"
                               onClick={() => openEditRequest(req)}
@@ -842,6 +850,7 @@ const OpenRequestsPage = () => {
                             >
                               {te('buttonLabel')}
                             </button>
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             <button
@@ -1004,6 +1013,7 @@ const OpenRequestsPage = () => {
                   >
                     <header className="flex items-start justify-between gap-3">
                       <div>
+                        <Link to={`/requests/${req.id}`} className="mb-2 inline-flex rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white">Open Workspace</Link>
                         <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                           {tr('table.id')} #{req.id}
                         </p>

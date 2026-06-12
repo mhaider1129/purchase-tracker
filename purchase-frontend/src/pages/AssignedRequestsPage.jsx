@@ -536,6 +536,22 @@ const AssignedRequestsPage = () => {
         );
       };
 
+      const formatFinalApprovalSummary = (name, dateValue) => {
+        const formattedDate = formatPrintableDate(dateValue);
+        if (formattedDate === '—') return formattedDate;
+        return `${name || tr('print.finalApprover', 'Final approver')} ${tr(
+          'print.approvalOn',
+          'on',
+        )} ${formattedDate}`;
+      };
+
+      const lastUpdated = request?.final_approval?.approved_at
+        ? formatFinalApprovalSummary(
+            request.final_approval.approver_name,
+            request.final_approval.approved_at,
+          )
+        : formatPrintableDate(request?.updated_at);
+
       const detailFields = [
         { label: tr('print.requestId', 'Request ID'), value: request?.id || requestId },
         { label: tr('print.status', 'Status'), value: request?.status },
@@ -546,6 +562,7 @@ const AssignedRequestsPage = () => {
         { label: tr('print.createdOn', 'Created On'), value: formatPrintableDate(request?.created_at) },
         { label: tr('print.neededBy', 'Needed By'), value: formatPrintableDate(request?.needed_by) },
         { label: tr('print.printCount', 'Print Count'), value: printCount ?? request?.print_count },
+        { label: tr('print.lastUpdated', 'Last Updated'), value: lastUpdated },
       ]
         .map(({ label, value }) => ({ label, value: formatPrintableValue(value) }))
         .filter(({ value }) => value && value !== '—');
@@ -617,6 +634,8 @@ const AssignedRequestsPage = () => {
               .numeric { text-align: right; white-space: nowrap; }
               .item-note { color: #4b5563; font-size: 12px; margin-top: 4px; }
               .totals-row td { background: #eef2ff; font-weight: 700; }
+              .signature-blocks { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-top: 32px; }
+              .signature { border-top: 1px solid #9ca3af; padding-top: 12px; text-align: center; font-size: 12px; color: #6b7280; }
               footer { color: #6b7280; font-size: 12px; margin-top: 28px; text-align: right; }
               @media print { body { background: white; padding: 0; } .page { box-shadow: none; border-radius: 0; padding: 0; } }
             </style>
@@ -657,6 +676,11 @@ const AssignedRequestsPage = () => {
                     </tr>
                   </tbody>
                 </table>
+              </section>
+              <section class="signature-blocks">
+                <div class="signature">${escapeHtml(tr('print.preparedBy', 'Prepared By'))}</div>
+                <div class="signature">${escapeHtml(tr('print.reviewedBy', 'Reviewed By'))}</div>
+                <div class="signature">${escapeHtml(tr('print.approvedBy', 'Approved By'))}</div>
               </section>
               <footer>${escapeHtml(tr('print.requestId', 'Request ID'))} ${escapeHtml(request?.id || requestId)}</footer>
             </div>
@@ -975,6 +999,12 @@ const AssignedRequestsPage = () => {
                         ? tr('actions.printing', 'Printing…')
                         : tr('actions.print', 'Print')}
                     </button>
+                    <Link
+                      to={`/requests/${request.id}`}
+                      className="bg-emerald-600 text-white px-4 py-2 rounded hover:bg-emerald-700 text-center"
+                    >
+                      Workspace
+                    </Link>
                     <button
                       onClick={() => toggleExpand(request.id)}
                       className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

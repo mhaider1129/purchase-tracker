@@ -357,6 +357,12 @@ const Navbar = () => {
           resolveFeatureNavItem("historicalRequests", canImportHistorical),
           resolveFeatureNavItem("procurementPlans", canManageProcurement),
           createItem(
+            ["admin", "scm", "procurementsupervisor", "procurementspecialist"].includes(normalizedRole),
+            "Procurement Evaluations",
+            "/procurement-evaluations",
+            "text-fuchsia-700",
+          ),
+          createItem(
             canViewDepartmentRequestedItems,
             "Department Requested Items",
             "/department-requested-items",
