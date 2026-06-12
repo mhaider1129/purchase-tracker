@@ -71,11 +71,15 @@ const ProcurementEvaluationDetail = () => {
 
   const createOffer = async (event) => {
     event.preventDefault();
-    await procurementEvaluationsApi.createOffer(id, offerForm);
-    setOfferForm({ supplier_name: "", offer_name: "", pricing_model: "KIT_OWNERSHIP", warranty_years: 0, delivery_time_days: "" });
-    await loadAll();
+    try {
+      await procurementEvaluationsApi.createOffer(id, offerForm);
+      setOfferForm({ supplier_name: "", offer_name: "", pricing_model: "KIT_OWNERSHIP", warranty_years: 0, delivery_time_days: "" });
+      setError("");
+      await loadAll();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create offer.");
+    }
   };
-
   const createTest = async (event) => {
     event.preventDefault();
     await procurementEvaluationsApi.createTest(id, testForm);
