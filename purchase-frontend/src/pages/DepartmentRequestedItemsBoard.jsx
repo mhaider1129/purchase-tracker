@@ -33,6 +33,47 @@ const Badge = ({ children, className = "" }) => (
 
 const toCsvValue = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
+const excelColumns = [
+  ["request_id", "Request ID"],
+  ["request_number", "Request Number"],
+  ["request_date", "Request Date"],
+  ["request_type", "Request Type"],
+  ["request_status", "Request Status"],
+  ["approval_status", "Approval Status"],
+  ["department_name", "Department"],
+  ["section_name", "Section"],
+  ["requester_name", "Requester"],
+  ["requester_phone", "Requester Phone"],
+  ["requester_email", "Requester Email"],
+  ["item_id", "Item ID"],
+  ["item_name", "Item"],
+  ["brand", "Brand"],
+  ["intended_use", "Intended Use"],
+  ["requested_quantity", "Requested Quantity"],
+  ["purchased_quantity", "Purchased Quantity"],
+  ["remaining_quantity", "Remaining Quantity"],
+  ["procurement_status", "Procurement Status"],
+  ["assigned_to_name", "Assigned To"],
+  ["required_delivery_date", "Required Delivery Date"],
+  ["priority", "Priority"],
+  ["emergency_flag", "Emergency"],
+  ["overdue_flag", "Overdue"],
+  ["partially_procured_flag", "Partially Procured"],
+  ["justification", "Justification"],
+  ["last_procurement_update", "Last Procurement Update"],
+  ["latest_procurement_event", "Latest Procurement Event"],
+  ["latest_follow_up_note", "Latest Follow-Up Note"],
+  ["latest_department_response", "Latest Department Response"],
+  ["days_since_request", "Days Since Request"],
+];
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
 const DepartmentRequestedItemsBoard = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState(emptyFilters);
@@ -41,7 +82,8 @@ const DepartmentRequestedItemsBoard = () => {
   const [rows, setRows] = useState([]);
   const [grouped, setGrouped] = useState([]);
   const [summary, setSummary] = useState({});
-  const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, total_pages: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 100, total: 0, total_pages: 0 });
+  const [exporting, setExporting] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [expanded, setExpanded] = useState({});
@@ -81,14 +123,14 @@ const DepartmentRequestedItemsBoard = () => {
     setFilters((current) => ({ ...current, [key]: value, ...(key === "department_id" ? { section_id: "", requester_id: "" } : {}), ...(key === "section_id" ? { requester_id: "" } : {}) }));
   };
 
-  const fetchRows = async (page = pagination.page) => {
+  const fetchRows = async (page = pagination.page, limit = pagination.limit) => {
     setLoading(true);
     setError("");
     try {
       const params = {
         ...filters,
         page,
-        limit: pagination.limit,
+        limit,
         emergency_only: filters.emergency_only || undefined,
         overdue_only: filters.overdue_only || undefined,
         include_completed: filters.include_completed || undefined,
@@ -125,13 +167,59 @@ const DepartmentRequestedItemsBoard = () => {
     if (navigator.clipboard && response.message) await navigator.clipboard.writeText(response.message);
   };
 
+  const fetchAllRowsForExport = async () => {
+    const pageSize = 250;
+    const firstParams = {
+      ...filters,
+      page: 1,
+      limit: pageSize,
+      group_by: "none",
+      emergency_only: filters.emergency_only || undefined,
+      overdue_only: filters.overdue_only || undefined,
+      include_completed: filters.include_completed || undefined,
+    };
+    Object.keys(firstParams).forEach((key) => (firstParams[key] === "" || firstParams[key] === false) && delete firstParams[key]);
+    const firstResponse = await getDepartmentRequestedItems(firstParams);
+    const allRows = [...(firstResponse.data || [])];
+    const totalPages = firstResponse.pagination?.total_pages || 1;
+
+    for (let page = 2; page <= totalPages; page += 1) {
+      const response = await getDepartmentRequestedItems({ ...firstParams, page });
+      allRows.push(...(response.data || []));
+    }
+
+    return allRows;
+  };
+
+  const exportExcel = async () => {
+    setExporting(true);
+    setError("");
+    try {
+      const exportRows = await fetchAllRowsForExport();
+      const headerHtml = excelColumns.map(([, label]) => `<th>${escapeHtml(label)}</th>`).join("");
+      const rowsHtml = exportRows
+        .map((row) => `<tr>${excelColumns.map(([key]) => `<td>${escapeHtml(row[key])}</td>`).join("")}</tr>`)
+        .join("");
+      const workbook = `<!doctype html><html><head><meta charset="utf-8" /></head><body><table><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table></body></html>`;
+      const blob = new Blob([workbook], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "department-requested-items.xls";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to export department requested items.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const exportCsv = () => {
-    const headers = ["Request ID", "Department", "Section", "Requester", "Item", "Requested", "Purchased", "Remaining", "Status", "Required Date", "Days Since Request"];
-    const body = rows.map((row) => [row.request_id, row.department_name, row.section_name, row.requester_name, row.item_name, row.requested_quantity, row.purchased_quantity, row.remaining_quantity, row.procurement_status, row.required_delivery_date, row.days_since_request].map(toCsvValue).join(","));
-    const blob = new Blob([[headers.map(toCsvValue).join(","), ...body].join("\n")], { type: "text/csv;charset=utf-8" });
+    const body = rows.map((row) => excelColumns.map(([key]) => toCsvValue(row[key])).join(","));
+    const blob = new Blob([[excelColumns.map(([, label]) => toCsvValue(label)).join(","), ...body].join("\n")], { type: "text/csv;charset=utf-8" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "department-requested-items.csv";
+    link.download = "department-requested-items-current-page.csv";
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -223,7 +311,8 @@ const DepartmentRequestedItemsBoard = () => {
           <button onClick={() => fetchRows(1)} className="rounded bg-blue-700 px-4 py-2 font-semibold text-white">Refresh</button>
           <button onClick={() => generateMessage()} className="rounded bg-purple-700 px-4 py-2 font-semibold text-white">Generate Follow-Up Message</button>
           <button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} className="rounded bg-emerald-700 px-4 py-2 font-semibold text-white" disabled={!selectedRows.length}>Add Follow-Up Note</button>
-          <button onClick={exportCsv} className="rounded border px-4 py-2 font-semibold text-gray-700">Export CSV</button>
+          <button onClick={exportExcel} className="rounded border px-4 py-2 font-semibold text-gray-700" disabled={exporting}>{exporting ? "Exporting..." : "Export Excel (all results)"}</button>
+          <button onClick={exportCsv} className="rounded border px-4 py-2 font-semibold text-gray-700">Export CSV (current page)</button>
         </div>
       </div>
 
@@ -241,6 +330,33 @@ const DepartmentRequestedItemsBoard = () => {
       ))}
 
       {!loading && filters.group_by === "none" && <div className="rounded-xl border bg-white shadow-sm">{renderTable(rows)}</div>}
+
+      {!loading && pagination.total > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-4 text-sm text-gray-700 shadow-sm">
+          <div>
+            Showing {(pagination.page - 1) * pagination.limit + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} items
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2">
+              Rows per page
+              <select
+                value={pagination.limit}
+                onChange={(e) => {
+                  const nextLimit = Number(e.target.value);
+                  setPagination((current) => ({ ...current, limit: nextLimit, page: 1 }));
+                  fetchRows(1, nextLimit);
+                }}
+                className="rounded border p-2"
+              >
+                {[50, 100, 250].map((value) => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </label>
+            <button onClick={() => fetchRows(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1} className="rounded border px-3 py-2 disabled:opacity-50">Previous</button>
+            <span>Page {pagination.page} of {pagination.total_pages || 1}</span>
+            <button onClick={() => fetchRows(Math.min(pagination.total_pages || 1, pagination.page + 1))} disabled={pagination.page >= (pagination.total_pages || 1)} className="rounded border px-3 py-2 disabled:opacity-50">Next</button>
+          </div>
+        </div>
+      )}
 
       {messagePreview && <div className="rounded-xl border bg-white p-4 shadow-sm"><div className="mb-2 font-semibold">Follow-Up Message Preview</div><textarea readOnly value={messagePreview} className="h-48 w-full rounded border p-3" /><button onClick={() => navigator.clipboard?.writeText(messagePreview)} className="mt-2 rounded bg-purple-700 px-4 py-2 font-semibold text-white">Copy Message</button></div>}
 

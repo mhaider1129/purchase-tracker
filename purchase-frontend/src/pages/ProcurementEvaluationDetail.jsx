@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import procurementEvaluationsApi from "../api/procurementEvaluations";
 
-const tabs = ["Overview", "Offers", "Test Cost Matrix", "Criteria & Weights", "Scores", "Results", "Sensitivity", "Documents", "Recommendation"];
+const tabs = ["Overview", "Scenarios", "Items and Services", "Coverage Analysis", "Commercial Models", "Utilization Analysis", "Break-even Analysis", "TCO Analysis", "Risk Analysis", "Scores", "Results", "Sensitivity Analysis", "Documents", "Recommendation"];
 const inputClass = "rounded-lg border border-slate-300 p-2 text-sm";
 
 const money = (value) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -19,6 +19,12 @@ const ProcurementEvaluationDetail = () => {
   const [results, setResults] = useState([]);
   const [sensitivity, setSensitivity] = useState([]);
   const [recommendation, setRecommendation] = useState(null);
+  const [coverage, setCoverage] = useState(null);
+  const [itemComparison, setItemComparison] = useState([]);
+  const [importText, setImportText] = useState("");
+  const [importOfferId, setImportOfferId] = useState("");
+  const [importOption, setImportOption] = useState("APPEND");
+  const [importPreview, setImportPreview] = useState(null);
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [offerForm, setOfferForm] = useState({ supplier_name: "", offer_name: "", pricing_model: "KIT_OWNERSHIP", warranty_years: 0, delivery_time_days: "" });
@@ -134,6 +140,11 @@ const ProcurementEvaluationDetail = () => {
     setSummaryDraft(response.data?.summary || "");
   }, [id]);
 
+  const loadCoverage = async () => { const response = await procurementEvaluationsApi.coverage(id); setCoverage(response.data); };
+  const loadItemComparison = async () => { const response = await procurementEvaluationsApi.itemComparison(id); setItemComparison(response.data || []); };
+  const previewImport = async () => { const response = await procurementEvaluationsApi.previewImport(id, { text: importText }); setImportPreview(response.data); };
+  const confirmImport = async () => { if (!importOfferId) return; await procurementEvaluationsApi.confirmImport(id, importOfferId, { text: importText, option: importOption, columnMap: importPreview?.columnMap }); setImportText(""); setImportPreview(null); await loadAll(); };
+
   const finalize = async () => {
     const selected = recommendation?.final_recommended_offer || results[0];
     if (!selected) return;
@@ -142,7 +153,7 @@ const ProcurementEvaluationDetail = () => {
   };
 
   useEffect(() => {
-    if (activeTab === "Sensitivity") loadSensitivity().catch((err) => setError(err.response?.data?.message || "Failed to load sensitivity."));
+    if (activeTab === "Sensitivity Analysis") loadSensitivity().catch((err) => setError(err.response?.data?.message || "Failed to load sensitivity."));
     if (activeTab === "Recommendation") loadRecommendation().catch((err) => setError(err.response?.data?.message || "Failed to load recommendation."));
   }, [activeTab, loadRecommendation, loadSensitivity]);
 
@@ -178,7 +189,7 @@ const ProcurementEvaluationDetail = () => {
           </section>
         )}
 
-        {activeTab === "Offers" && (
+        {activeTab === "Scenarios" && (
           <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             {!readOnly && <form onSubmit={createOffer} className="grid gap-3 md:grid-cols-6">
               <input className={inputClass} placeholder="Supplier name" value={offerForm.supplier_name} onChange={(e) => setOfferForm({ ...offerForm, supplier_name: e.target.value })} required />
@@ -194,14 +205,14 @@ const ProcurementEvaluationDetail = () => {
           </section>
         )}
 
-        {activeTab === "Test Cost Matrix" && (
+        {["Items and Services", "Commercial Models", "Utilization Analysis"].includes(activeTab) && (
           <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
             {!readOnly && <form onSubmit={createTest} className="flex flex-wrap gap-3"><input className={inputClass} placeholder="Test name" value={testForm.test_name} onChange={(e) => setTestForm({ ...testForm, test_name: e.target.value })} required /><input type="number" className={inputClass} placeholder="Monthly volume" value={testForm.expected_monthly_volume} onChange={(e) => setTestForm({ ...testForm, expected_monthly_volume: e.target.value })} /><button className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white">Add Test</button><button type="button" onClick={saveCostMatrix} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white">Bulk Save</button><button type="button" onClick={() => navigator.clipboard?.writeText(costs.map((c) => `${c.test_name},${c.offer_name},${c.annual_test_cost}`).join("\n"))} className="rounded-lg border px-4 py-2 font-semibold text-slate-700">Export CSV</button></form>}
             <div className="overflow-x-auto"><table className="min-w-full border-separate border-spacing-0 text-xs"><thead><tr><th className="sticky left-0 bg-slate-100 p-2 text-left">Test / Annual Volume</th>{offers.map((offer) => <th key={offer.id} className="min-w-[280px] bg-slate-100 p-2 text-left">{offer.offer_name}</th>)}</tr></thead><tbody>{tests.map((test) => <tr key={test.id}><td className="sticky left-0 border-t bg-white p-2 font-semibold">{test.test_name}<br /><span className="text-slate-500">{money(Number(test.expected_monthly_volume) * 12)} tests/year</span></td>{offers.map((offer) => { const key = `${offer.id}:${test.id}`; const current = { pricing_method: 'KIT_OWNERSHIP', ...(costByPair[key] || {}), ...(costDrafts[key] || {}) }; const cheapest = cheapestByTest[test.id] && Number(current.annual_test_cost || 0) === cheapestByTest[test.id]; return <td key={key} className={`border-t p-2 align-top ${cheapest ? 'bg-emerald-50' : ''}`}><select className={inputClass} value={current.pricing_method} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, pricing_method: e.target.value } })}><option>KIT_OWNERSHIP</option><option>PAY_PER_REPORTABLE</option></select>{current.pricing_method === 'PAY_PER_REPORTABLE' ? <div className="mt-2 grid grid-cols-2 gap-2"><input className={inputClass} placeholder="Price/report" value={current.price_per_reportable_test || ''} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, price_per_reportable_test: e.target.value } })} /><label><input type="checkbox" checked={Boolean(current.company_absorbs_waste)} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, company_absorbs_waste: e.target.checked } })} /> Waste</label><label><input type="checkbox" checked={Boolean(current.company_absorbs_qc)} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, company_absorbs_qc: e.target.checked } })} /> QC</label><label><input type="checkbox" checked={Boolean(current.company_absorbs_repeats)} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, company_absorbs_repeats: e.target.checked } })} /> Repeats</label></div> : <div className="mt-2 grid grid-cols-2 gap-2">{[['kit_price','Kit price'],['tests_per_kit','Tests/kit'],['usable_tests_per_kit','Usable tests'],['expected_waste_percentage','Waste %'],['repeat_rate_percentage','Repeat %'],['qc_cost_per_kit','QC/kit'],['calibrator_cost_per_kit','Calibrator'],['fixed_consumable_cost_per_kit','Fixed cons.'],['other_kit_related_cost','Other']].map(([field,label]) => <input key={field} className={inputClass} placeholder={label} value={current[field] || ''} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, [field]: e.target.value } })} />)}</div>}<p className="mt-2 font-semibold text-slate-700">Effective: {money(current.calculated_effective_cost_per_reported_test)} / Annual: {money(current.annual_test_cost)}</p></td>; })}</tr>)}</tbody></table></div>
           </section>
         )}
 
-        {activeTab === "Criteria & Weights" && (
+        {activeTab === "TCO Analysis" && (
           <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><p className={criteriaWeightTotal === 100 ? "text-emerald-700" : "text-amber-700"}>Total weight: {criteriaWeightTotal} (should total 100)</p>{!readOnly && <form onSubmit={createCriteria} className="flex flex-wrap gap-3"><input className={inputClass} placeholder="Criteria" value={criteriaForm.criteria_name} onChange={(e) => setCriteriaForm({ ...criteriaForm, criteria_name: e.target.value })} required /><input className={inputClass} placeholder="Group" value={criteriaForm.criteria_group} onChange={(e) => setCriteriaForm({ ...criteriaForm, criteria_group: e.target.value })} /><input type="number" className={inputClass} placeholder="Weight" value={criteriaForm.weight} onChange={(e) => setCriteriaForm({ ...criteriaForm, weight: e.target.value })} /><select className={inputClass} value={criteriaForm.scoring_type} onChange={(e) => setCriteriaForm({ ...criteriaForm, scoring_type: e.target.value })}><option>manual</option><option>automatic</option></select><button className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white">Add Criteria</button></form>}<table className="min-w-full text-sm"><tbody>{criteria.map((item) => <tr key={item.id} className="border-t"><td className="p-2 font-semibold">{item.criteria_name}</td><td>{item.criteria_group}</td><td>{item.weight}</td><td>{item.scoring_type}</td></tr>)}</tbody></table></section>
         )}
 
@@ -213,7 +224,19 @@ const ProcurementEvaluationDetail = () => {
           <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><div className="grid gap-4 md:grid-cols-3">{results.map((row) => <div key={row.offer_id} className="rounded-xl border p-4"><p className="text-sm font-semibold text-indigo-700">Rank #{row.rank}</p><h3 className="font-bold">{row.offer_name}</h3><p>TCO: {money(row.tco_period_cost)}</p><p>Annual running: {money(row.total_annual_cost)}</p><p>Avg/test: {money(row.average_cost_per_reported_test)}</p><p>Score: {Number(row.final_weighted_score || 0).toFixed(2)}</p>{row.commitment_warning && <p className="mt-2 rounded bg-amber-50 p-2 text-xs text-amber-800">{row.commitment_warning}</p>}</div>)}</div><div className="overflow-x-auto"><table className="min-w-full text-sm"><thead><tr className="bg-slate-100"><th>Rank</th><th>Offer</th><th>Pricing</th><th>Initial</th><th>Annual fixed</th><th>Annual variable</th><th>Commitment adj.</th><th>Total annual</th><th>TCO</th><th>Avg/test</th><th>Score</th><th>Warning</th></tr></thead><tbody>{results.map((row) => <tr key={row.offer_id} className="border-t"><td>{row.rank}</td><td>{row.offer_name}</td><td>{row.pricing_model}</td><td>{money(row.initial_cost)}</td><td>{money(row.annual_fixed_cost)}</td><td>{money(row.annual_variable_test_cost)}</td><td>{money(row.annual_commitment_adjustment)}</td><td>{money(row.total_annual_cost)}</td><td>{money(row.tco_period_cost)}</td><td>{money(row.average_cost_per_reported_test)}</td><td>{Number(row.final_weighted_score || 0).toFixed(2)}</td><td>{row.commitment_warning || '—'}</td></tr>)}</tbody></table></div></section>
         )}
 
-        {activeTab === "Sensitivity" && (
+        {activeTab === "Coverage Analysis" && (
+          <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><button onClick={loadCoverage} className="rounded-lg border px-4 py-2 font-semibold">Refresh Coverage</button><div className="grid gap-4 md:grid-cols-3">{coverage?.offers?.map((offer) => <div key={offer.offer_id} className="rounded-xl border p-4"><h3 className="font-bold">{offer.offer_name}</h3><p className="text-2xl font-bold text-indigo-700">{offer.coverage_percentage}%</p><p>{offer.covered_count}/{offer.required_count} required items</p><p className="text-sm text-red-700">Missing: {offer.missing_items?.join(', ') || 'None'}</p></div>)}</div>{coverage?.unavailable_items?.length ? <p className="rounded bg-red-50 p-3 text-red-700">Unavailable: {coverage.unavailable_items.join(', ')}</p> : null}</section>
+        )}
+
+        {activeTab === "Break-even Analysis" && (
+          <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><button onClick={loadItemComparison} className="rounded-lg border px-4 py-2 font-semibold">Refresh Comparison</button><table className="min-w-full text-sm"><tbody>{itemComparison.map((item) => <tr key={item.test_name} className="border-t"><td className="p-2 font-semibold">{item.test_name}</td><td>Cheapest: {item.cheapest_supplier?.offer_name || '—'}</td><td>{item.savings_opportunities?.map((saving) => `${saving.offer_name}: ${money(saving.potential_saving)}`).join('; ') || 'No savings gap'}</td></tr>)}</tbody></table></section>
+        )}
+
+        {activeTab === "Commercial Models" && !readOnly && (
+          <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><h2 className="text-xl font-bold">Bulk Excel / CSV Import and Commercial Model Mapping</h2><div className="flex flex-wrap gap-3"><select className={inputClass} value={importOfferId} onChange={(e) => setImportOfferId(e.target.value)}><option value="">Company offer</option>{offers.map((offer) => <option key={offer.id} value={offer.id}>{offer.offer_name}</option>)}</select><select className={inputClass} value={importOption} onChange={(e) => setImportOption(e.target.value)}><option>APPEND</option><option>REPLACE</option><option>UPDATE_MATCHING</option></select><button onClick={previewImport} className="rounded-lg border px-4 py-2 font-semibold">Preview</button><button onClick={confirmImport} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white">Confirm Import</button></div><textarea className="min-h-[150px] w-full rounded-lg border p-3" placeholder="Paste Excel/CSV rows with headers" value={importText} onChange={(e) => setImportText(e.target.value)} />{importPreview && <div className="rounded bg-slate-50 p-3 text-sm"><p>Valid: {importPreview.valid_count}; Errors: {importPreview.error_count}</p><p>Mapping: {Object.entries(importPreview.columnMap || {}).map(([key, value]) => `${key}=${value}`).join(', ')}</p></div>}</section>
+        )}
+
+        {activeTab === "Sensitivity Analysis" && (
           <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"><button onClick={loadSensitivity} className="mb-4 rounded-lg border px-4 py-2 font-semibold">Refresh Sensitivity</button><div className="grid gap-4 md:grid-cols-2">{sensitivity.map((scenario) => <div key={scenario.key} className="rounded-xl border p-4"><h3 className="font-bold">{scenario.label}</h3><p className={scenario.recommendation_changes ? 'text-amber-700' : 'text-emerald-700'}>Winner: {scenario.winner?.offer_name || '—'} {scenario.recommendation_changes ? '(recommendation changes)' : ''}</p>{scenario.offers?.map((offer) => <p key={offer.offer_id} className="text-sm text-slate-600">{offer.offer_name}: TCO {money(offer.tco_period_cost)}</p>)}</div>)}</div></section>
         )}
 
