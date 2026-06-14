@@ -1,6 +1,7 @@
 // src/pages/requests/StockRequestForm.js
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Papa from 'papaparse';
 import api from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
@@ -26,6 +27,31 @@ const hasWarehouseAssignment = (value) => {
   return Number.isInteger(parsed) && parsed > 0;
 };
 
+const normalizeUploadHeader = (header = '') =>
+  String(header)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+const pickUploadValue = (row, aliases) => {
+  for (const alias of aliases) {
+    if (
+      row[alias] !== undefined &&
+      row[alias] !== null &&
+      String(row[alias]).trim() !== ''
+    ) {
+      return String(row[alias]).trim();
+    }
+  }
+  return '';
+};
+
+const parsePositiveQuantity = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.ceil(parsed) : 0;
+};
+
 const StockRequestForm = () => {
   const [itemsList, setItemsList] = useState([]);
   const [selectedItems, setSelectedItems] = useState([createEmptyItem()]);
@@ -41,16 +67,20 @@ const StockRequestForm = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState('');
+  const [bulkUploadMessage, setBulkUploadMessage] = useState('');
   const navigate = useNavigate();
   const categories = useMemo(
-    () => Array.from(new Set(itemsList.map((it) => it.category))).filter(Boolean),
+    () =>
+      Array.from(new Set(itemsList.map((it) => it.category))).filter(Boolean),
     [itemsList]
   );
   const subCategories = useMemo(() => {
     const scopedItems = category
       ? itemsList.filter((it) => it.category === category)
       : itemsList;
-    return Array.from(new Set(scopedItems.map((it) => it.sub_category))).filter(Boolean);
+    return Array.from(new Set(scopedItems.map((it) => it.sub_category))).filter(
+      Boolean
+    );
   }, [category, itemsList]);
 
   const draftData = useMemo(
@@ -59,20 +89,35 @@ const StockRequestForm = () => {
       itemSearchTerms,
       justification,
       projectId,
-      selectedItems: selectedItems.map(({ attachments: _attachments, ...item }) => item),
+      selectedItems: selectedItems.map(
+        ({ attachments: _attachments, ...item }) => item
+      ),
       subCategory,
     }),
-    [category, itemSearchTerms, justification, projectId, selectedItems, subCategory]
+    [
+      category,
+      itemSearchTerms,
+      justification,
+      projectId,
+      selectedItems,
+      subCategory,
+    ]
   );
 
   const restoreDraft = useCallback((draft) => {
-    if (typeof draft?.justification === 'string') setJustification(draft.justification);
+    if (typeof draft?.justification === 'string')
+      setJustification(draft.justification);
     if (typeof draft?.projectId === 'string') setProjectId(draft.projectId);
     if (typeof draft?.category === 'string') setCategory(draft.category);
-    if (typeof draft?.subCategory === 'string') setSubCategory(draft.subCategory);
+    if (typeof draft?.subCategory === 'string')
+      setSubCategory(draft.subCategory);
     if (Array.isArray(draft?.selectedItems) && draft.selectedItems.length > 0) {
       setSelectedItems(
-        draft.selectedItems.map((item) => ({ ...createEmptyItem(), ...item, attachments: [] }))
+        draft.selectedItems.map((item) => ({
+          ...createEmptyItem(),
+          ...item,
+          attachments: [],
+        }))
       );
     }
     if (Array.isArray(draft?.itemSearchTerms)) {
@@ -125,7 +170,9 @@ const StockRequestForm = () => {
 
   const handleSubCategoryChange = (value) => {
     setSubCategory(value);
-    setSelectedItems((items) => items.map((it) => ({ ...it, sub_category: value })));
+    setSelectedItems((items) =>
+      items.map((it) => ({ ...it, sub_category: value }))
+    );
   };
 
   useEffect(() => {
@@ -142,7 +189,9 @@ const StockRequestForm = () => {
     }
 
     if (!hasWarehouseAssignment(user.warehouse_id)) {
-      alert('🚫 Access Denied: Only warehouse users can submit stock requests.');
+      alert(
+        '🚫 Access Denied: Only warehouse users can submit stock requests.'
+      );
       navigate('/');
     }
   }, [navigate, user, userLoading]);
@@ -163,7 +212,9 @@ const StockRequestForm = () => {
         setItemsList(res.data || []);
       } catch (err) {
         console.error('Failed to load stock items:', err);
-        setItemsError(err?.response?.data?.message || 'Unable to load stock catalog');
+        setItemsError(
+          err?.response?.data?.message || 'Unable to load stock catalog'
+        );
       } finally {
         setItemsLoading(false);
       }
@@ -202,7 +253,9 @@ const StockRequestForm = () => {
           available_quantity: '',
         };
       } else {
-        const matchedItem = itemsList.find((stock) => String(stock.id) === stockItemId);
+        const matchedItem = itemsList.find(
+          (stock) => String(stock.id) === stockItemId
+        );
         if (matchedItem) {
           updated[index] = {
             ...current,
@@ -235,6 +288,146 @@ const StockRequestForm = () => {
     const updated = [...selectedItems];
     updated[index].attachments = Array.from(files);
     setSelectedItems(updated);
+  };
+
+  const findCatalogMatch = useCallback(
+    ({ id, name, brand }) => {
+      const normalizedName = name.trim().toLowerCase();
+      const normalizedBrand = brand.trim().toLowerCase();
+      if (id) {
+        const byId = itemsList.find(
+          (stock) => String(stock.id).trim() === id.trim()
+        );
+        if (byId) return byId;
+      }
+      if (!normalizedName) return null;
+      return (
+        itemsList.find((stock) => {
+          const stockName = String(stock.name || '')
+            .trim()
+            .toLowerCase();
+          const stockBrand = String(stock.brand || '')
+            .trim()
+            .toLowerCase();
+          return (
+            stockName === normalizedName &&
+            (!normalizedBrand || stockBrand === normalizedBrand)
+          );
+        }) || null
+      );
+    },
+    [itemsList]
+  );
+
+  const applyUploadedRows = useCallback(
+    (rows) => {
+      const importedItems = [];
+      const skippedRows = [];
+      const unmatchedRows = [];
+
+      rows.forEach((rawRow, index) => {
+        const row = Object.entries(rawRow || {}).reduce((acc, [key, value]) => {
+          acc[normalizeUploadHeader(key)] = value;
+          return acc;
+        }, {});
+        const id = pickUploadValue(row, ['id', 'item_id', 'stock_item_id']);
+        const name = pickUploadValue(row, ['name', 'item_name', 'item']);
+        const brand = pickUploadValue(row, ['brand']);
+        const availableQuantity = pickUploadValue(row, [
+          'available_quantity',
+          'available_qty',
+          'available',
+          'stock_available',
+        ]);
+        const requestedQuantity = parsePositiveQuantity(
+          pickUploadValue(row, [
+            'requested_quantity',
+            'requested_qty',
+            'request_quantity',
+            'quantity',
+            'qty',
+          ])
+        );
+
+        if ((!id && !name) || !requestedQuantity) {
+          skippedRows.push(index + 2);
+          return;
+        }
+
+        const matchedItem = findCatalogMatch({ id, name, brand });
+        if (!matchedItem) {
+          unmatchedRows.push(index + 2);
+        }
+
+        importedItems.push({
+          ...createEmptyItem({
+            category: matchedItem?.category || category,
+            sub_category: matchedItem?.sub_category || subCategory,
+          }),
+          stock_item_id: matchedItem?.id || '',
+          item_name: matchedItem?.name || name,
+          brand: matchedItem?.brand || brand,
+          available_quantity:
+            matchedItem?.available_quantity ?? availableQuantity,
+          quantity: requestedQuantity,
+        });
+      });
+
+      if (!importedItems.length) {
+        setBulkUploadMessage(
+          'No valid rows were found. Include id or name and a requested quantity greater than 0.'
+        );
+        return;
+      }
+
+      setSelectedItems(importedItems);
+      setItemSearchTerms(
+        importedItems.map((item) => (item.stock_item_id ? '' : item.item_name))
+      );
+
+      const firstMatched = importedItems.find(
+        (item) => item.category || item.sub_category
+      );
+      if (firstMatched?.category) setCategory(firstMatched.category);
+      if (firstMatched?.sub_category) setSubCategory(firstMatched.sub_category);
+
+      const details = [`Imported ${importedItems.length} item(s).`];
+      if (skippedRows.length)
+        details.push(`Skipped row(s): ${skippedRows.join(', ')}.`);
+      if (unmatchedRows.length) {
+        details.push(
+          `Review row(s) ${unmatchedRows.join(', ')} because they did not match the stock catalog.`
+        );
+      }
+      setBulkUploadMessage(details.join(' '));
+    },
+    [category, findCatalogMatch, subCategory]
+  );
+
+  const handleBulkUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setBulkUploadMessage('Reading uploaded item file...');
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (result) => {
+        if (result.errors?.length) {
+          setBulkUploadMessage(
+            result.errors[0]?.message || 'Unable to parse the uploaded file.'
+          );
+          return;
+        }
+        applyUploadedRows(result.data || []);
+      },
+      error: (error) => {
+        setBulkUploadMessage(
+          error?.message || 'Unable to parse the uploaded file.'
+        );
+      },
+    });
+    event.target.value = '';
   };
 
   const addItem = () => {
@@ -271,11 +464,11 @@ const StockRequestForm = () => {
   const itemsStats = useMemo(() => {
     const totalQuantity = selectedItems.reduce(
       (sum, item) => sum + Number(item.quantity || 0),
-      0,
+      0
     );
     const attachmentCount = selectedItems.reduce(
       (sum, item) => sum + (item.attachments?.length || 0),
-      0,
+      0
     );
     return {
       totalQuantity,
@@ -294,7 +487,10 @@ const StockRequestForm = () => {
     [itemsList, category, subCategory]
   );
 
-  const catalogPreview = useMemo(() => scopedCatalog.slice(0, 5), [scopedCatalog]);
+  const catalogPreview = useMemo(
+    () => scopedCatalog.slice(0, 5),
+    [scopedCatalog]
+  );
 
   const validateForm = () => {
     if (!justification.trim()) {
@@ -349,7 +545,7 @@ const StockRequestForm = () => {
       console.error('❌ Submission error:', err);
       alert(
         err.response?.data?.message ||
-          '❌ Failed to submit request. Please try again.',
+          '❌ Failed to submit request. Please try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -359,7 +555,9 @@ const StockRequestForm = () => {
   if (userLoading) {
     return (
       <>
-          <div className="p-6 text-gray-600 text-center">Loading your profile...</div>
+        <div className="p-6 text-gray-600 text-center">
+          Loading your profile...
+        </div>
       </>
     );
   }
@@ -367,7 +565,7 @@ const StockRequestForm = () => {
   if (userError) {
     return (
       <>
-          <div className="p-6 text-red-600 text-center">
+        <div className="p-6 text-red-600 text-center">
           {userError || 'Unable to load your account'}
         </div>
       </>
@@ -383,7 +581,9 @@ const StockRequestForm = () => {
         </h1>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 mb-6">
-          <p className="font-semibold mb-1">Need help preparing a stock request?</p>
+          <p className="font-semibold mb-1">
+            Need help preparing a stock request?
+          </p>
           <p className="text-xs text-blue-700 mb-2" role="status">
             {isDraftSaving
               ? 'Saving draft...'
@@ -394,11 +594,17 @@ const StockRequestForm = () => {
                   : 'Draft autosave is active and will protect your progress as you fill in items.'}
           </p>
           <ul className="list-disc pl-5 space-y-1">
-            <li>Filter items by category to quickly narrow down catalog entries.</li>
             <li>
-              Selecting a known catalog item will pre-fill its brand and available quantity for you.
+              Filter items by category to quickly narrow down catalog entries.
             </li>
-            <li>Use the project link when the request is tied to a specific initiative.</li>
+            <li>
+              Selecting a known catalog item will pre-fill its brand and
+              available quantity for you.
+            </li>
+            <li>
+              Use the project link when the request is tied to a specific
+              initiative.
+            </li>
           </ul>
         </div>
 
@@ -406,21 +612,28 @@ const StockRequestForm = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="p-4 border rounded-lg bg-white shadow-sm">
               <p className="text-xs uppercase text-gray-500">Requester</p>
-              <p className="font-semibold text-gray-900">{currentUser.full_name}</p>
+              <p className="font-semibold text-gray-900">
+                {currentUser.full_name}
+              </p>
               <p className="text-sm text-gray-600">{currentUser.role_name}</p>
             </div>
             <div className="p-4 border rounded-lg bg-white shadow-sm">
               <p className="text-xs uppercase text-gray-500">Department</p>
-              <p className="font-semibold text-gray-900">{currentUser.department_name}</p>
+              <p className="font-semibold text-gray-900">
+                {currentUser.department_name}
+              </p>
               <p className="text-sm text-gray-600">
                 Section: {currentUser.section_name || 'Not assigned'}
               </p>
             </div>
             <div className="p-4 border rounded-lg bg-white shadow-sm">
               <p className="text-xs uppercase text-gray-500">Summary</p>
-              <p className="font-semibold text-gray-900">{itemsStats.count} items</p>
+              <p className="font-semibold text-gray-900">
+                {itemsStats.count} items
+              </p>
               <p className="text-sm text-gray-600">
-                {itemsStats.totalQuantity} total units • {itemsStats.attachmentCount} attachments
+                {itemsStats.totalQuantity} total units •{' '}
+                {itemsStats.attachmentCount} attachments
               </p>
             </div>
           </div>
@@ -505,11 +718,48 @@ const StockRequestForm = () => {
               </ul>
               {itemsList.length > catalogPreview.length && (
                 <p className="text-xs text-gray-500 mt-2">
-                  Showing {catalogPreview.length} of {itemsList.length} catalog entries.
+                  Showing {catalogPreview.length} of {itemsList.length} catalog
+                  entries.
                 </p>
               )}
             </div>
           )}
+
+          <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <label
+                  className="block font-semibold mb-1"
+                  htmlFor="stock-items-upload"
+                >
+                  Upload items from Excel
+                </label>
+                <p className="text-sm text-emerald-900">
+                  Upload a CSV file exported from Excel with columns: id, name,
+                  brand, available quantity, requested quantity. Matching by id
+                  is preferred; otherwise the form will match by item name and
+                  brand.
+                </p>
+                <p className="text-xs text-emerald-800 mt-1">
+                  Tip: in Excel, choose “Save As” and select CSV before
+                  uploading.
+                </p>
+              </div>
+              <input
+                id="stock-items-upload"
+                type="file"
+                accept=".csv,text/csv,application/vnd.ms-excel"
+                onChange={handleBulkUpload}
+                className="p-2 border rounded bg-white md:w-72"
+                disabled={isSubmitting || itemsLoading}
+              />
+            </div>
+            {bulkUploadMessage && (
+              <p className="text-sm text-emerald-900 mt-3" role="status">
+                {bulkUploadMessage}
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="block font-semibold mb-2">Select Items</label>
@@ -559,21 +809,29 @@ const StockRequestForm = () => {
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <div className="flex-1 min-w-[200px]">
-                      <label className="block text-sm text-gray-600 mb-1">Search catalog</label>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Search catalog
+                      </label>
                       <input
                         type="text"
                         value={searchTerm}
-                        onChange={(e) => handleSearchTermChange(index, e.target.value)}
+                        onChange={(e) =>
+                          handleSearchTermChange(index, e.target.value)
+                        }
                         className="w-full p-2 border rounded"
                         disabled={isSubmitting || itemsLoading}
                         placeholder="Type to filter items"
                       />
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                      <label className="block text-sm text-gray-600 mb-1">Item name</label>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Item name
+                      </label>
                       <select
                         value={item.stock_item_id}
-                        onChange={(e) => handleItemSelection(index, e.target.value)}
+                        onChange={(e) =>
+                          handleItemSelection(index, e.target.value)
+                        }
                         className="w-full p-2 border rounded"
                         required
                         disabled={isSubmitting || !scopedCatalog.length}
@@ -599,45 +857,61 @@ const StockRequestForm = () => {
                       )}
                     </div>
                     <div className="w-40">
-                      <label className="block text-sm text-gray-600 mb-1">Brand</label>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Brand
+                      </label>
                       <input
                         type="text"
                         placeholder="Optional"
                         value={item.brand}
-                        onChange={(e) => handleItemChange(index, 'brand', e.target.value)}
-                        className="w-full p-2 border rounded"
-                        disabled={isSubmitting}
-                      />
-                    </div>
-                    <div className="w-32">
-                      <label className="block text-sm text-gray-600 mb-1">Available</label>
-                      <input
-                        type="number"
-                        min={0}
-                        placeholder="0"
-                        value={item.available_quantity}
                         onChange={(e) =>
-                          handleItemChange(index, 'available_quantity', e.target.value)
+                          handleItemChange(index, 'brand', e.target.value)
                         }
                         className="w-full p-2 border rounded"
                         disabled={isSubmitting}
                       />
                     </div>
                     <div className="w-32">
-                      <label className="block text-sm text-gray-600 mb-1">Requested</label>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Available
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        value={item.available_quantity}
+                        onChange={(e) =>
+                          handleItemChange(
+                            index,
+                            'available_quantity',
+                            e.target.value
+                          )
+                        }
+                        className="w-full p-2 border rounded"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="w-32">
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Requested
+                      </label>
                       <input
                         type="number"
                         min={1}
                         placeholder="0"
                         value={item.quantity}
-                        onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
+                        onChange={(e) =>
+                          handleItemChange(index, 'quantity', e.target.value)
+                        }
                         className="w-full p-2 border rounded"
                         required
                         disabled={isSubmitting}
                       />
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                      <label className="block text-sm text-gray-600 mb-1">Item attachments</label>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Item attachments
+                      </label>
                       <input
                         type="file"
                         multiple

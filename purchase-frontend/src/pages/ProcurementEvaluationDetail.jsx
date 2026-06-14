@@ -7,6 +7,36 @@ const inputClass = "rounded-lg border border-slate-300 p-2 text-sm";
 
 const money = (value) => Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
+const parseNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatPercentInput = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  const numeric = parseNumber(value);
+  return numeric > 0 && numeric <= 1 ? String(Number((numeric * 100).toFixed(4))) : String(value);
+};
+
+const calculateWastePercentage = ({ tests_per_kit, usable_tests_per_kit, repeat_rate_percentage }) => {
+  const testsPerKit = parseNumber(tests_per_kit);
+  const usableTests = parseNumber(usable_tests_per_kit);
+  const repeatValue = parseNumber(repeat_rate_percentage);
+  const repeatRate = repeatValue > 1 ? repeatValue / 100 : repeatValue;
+  const denominator = testsPerKit * (1 - repeatRate);
+
+  if (testsPerKit <= 0 || usableTests <= 0 || denominator <= 0) return "";
+
+  const waste = Math.max(0, Math.min(100, (1 - usableTests / denominator) * 100));
+  return String(Number(waste.toFixed(4)));
+};
+
+const normalizeCostDraft = (draft) => ({
+  ...draft,
+  expected_waste_percentage: formatPercentInput(draft.expected_waste_percentage),
+  repeat_rate_percentage: formatPercentInput(draft.repeat_rate_percentage),
+});
+
 const ProcurementEvaluationDetail = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState(window.location.hash === "#recommendation" ? "Recommendation" : "Overview");
@@ -101,16 +131,32 @@ const ProcurementEvaluationDetail = () => {
     await loadAll();
   };
 
-  const saveCostMatrix = async () => {
-    const items = Object.entries(costDrafts).map(([key, value]) => {
+  const saveCostMatrix = async (keysToSave = null) => {
+    const draftEntries = Object.entries(costDrafts).filter(([key]) => !keysToSave || keysToSave.includes(key));
+    const items = draftEntries.map(([key, value]) => {
       const [offerId, testId] = key.split(":");
       const test = tests.find((item) => Number(item.id) === Number(testId));
       return { offer_id: Number(offerId), test_id: Number(testId), expected_monthly_volume: test?.expected_monthly_volume || 0, ...value };
     });
     if (items.length === 0) return;
     await procurementEvaluationsApi.bulkSaveCosts(id, items);
-    setCostDrafts({});
+    setCostDrafts((previous) => {
+      const next = { ...previous };
+      draftEntries.forEach(([key]) => { delete next[key]; });
+      return next;
+    });
     await loadAll();
+  };
+
+  const updateCostDraft = (key, current, field, value) => {
+    setCostDrafts((previous) => {
+      const nextDraft = normalizeCostDraft({ ...current, ...(previous[key] || {}), [field]: value });
+      if (["tests_per_kit", "usable_tests_per_kit", "repeat_rate_percentage"].includes(field)) {
+        const autoWaste = calculateWastePercentage(nextDraft);
+        if (autoWaste !== "") nextDraft.expected_waste_percentage = autoWaste;
+      }
+      return { ...previous, [key]: nextDraft };
+    });
   };
 
   const saveScores = async () => {
@@ -207,8 +253,8 @@ const ProcurementEvaluationDetail = () => {
 
         {["Items and Services", "Commercial Models", "Utilization Analysis"].includes(activeTab) && (
           <section className="space-y-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            {!readOnly && <form onSubmit={createTest} className="flex flex-wrap gap-3"><input className={inputClass} placeholder="Test name" value={testForm.test_name} onChange={(e) => setTestForm({ ...testForm, test_name: e.target.value })} required /><input type="number" className={inputClass} placeholder="Monthly volume" value={testForm.expected_monthly_volume} onChange={(e) => setTestForm({ ...testForm, expected_monthly_volume: e.target.value })} /><button className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white">Add Test</button><button type="button" onClick={saveCostMatrix} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white">Bulk Save</button><button type="button" onClick={() => navigator.clipboard?.writeText(costs.map((c) => `${c.test_name},${c.offer_name},${c.annual_test_cost}`).join("\n"))} className="rounded-lg border px-4 py-2 font-semibold text-slate-700">Export CSV</button></form>}
-            <div className="overflow-x-auto"><table className="min-w-full border-separate border-spacing-0 text-xs"><thead><tr><th className="sticky left-0 bg-slate-100 p-2 text-left">Test / Annual Volume</th>{offers.map((offer) => <th key={offer.id} className="min-w-[280px] bg-slate-100 p-2 text-left">{offer.offer_name}</th>)}</tr></thead><tbody>{tests.map((test) => <tr key={test.id}><td className="sticky left-0 border-t bg-white p-2 font-semibold">{test.test_name}<br /><span className="text-slate-500">{money(Number(test.expected_monthly_volume) * 12)} tests/year</span></td>{offers.map((offer) => { const key = `${offer.id}:${test.id}`; const current = { pricing_method: 'KIT_OWNERSHIP', ...(costByPair[key] || {}), ...(costDrafts[key] || {}) }; const cheapest = cheapestByTest[test.id] && Number(current.annual_test_cost || 0) === cheapestByTest[test.id]; return <td key={key} className={`border-t p-2 align-top ${cheapest ? 'bg-emerald-50' : ''}`}><select className={inputClass} value={current.pricing_method} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, pricing_method: e.target.value } })}><option>KIT_OWNERSHIP</option><option>PAY_PER_REPORTABLE</option></select>{current.pricing_method === 'PAY_PER_REPORTABLE' ? <div className="mt-2 grid grid-cols-2 gap-2"><input className={inputClass} placeholder="Price/report" value={current.price_per_reportable_test || ''} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, price_per_reportable_test: e.target.value } })} /><label><input type="checkbox" checked={Boolean(current.company_absorbs_waste)} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, company_absorbs_waste: e.target.checked } })} /> Waste</label><label><input type="checkbox" checked={Boolean(current.company_absorbs_qc)} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, company_absorbs_qc: e.target.checked } })} /> QC</label><label><input type="checkbox" checked={Boolean(current.company_absorbs_repeats)} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, company_absorbs_repeats: e.target.checked } })} /> Repeats</label></div> : <div className="mt-2 grid grid-cols-2 gap-2">{[['kit_price','Kit price'],['tests_per_kit','Tests/kit'],['usable_tests_per_kit','Usable tests'],['expected_waste_percentage','Waste %'],['repeat_rate_percentage','Repeat %'],['qc_cost_per_kit','QC/kit'],['calibrator_cost_per_kit','Calibrator'],['fixed_consumable_cost_per_kit','Fixed cons.'],['other_kit_related_cost','Other']].map(([field,label]) => <input key={field} className={inputClass} placeholder={label} value={current[field] || ''} onChange={(e) => setCostDrafts({ ...costDrafts, [key]: { ...current, [field]: e.target.value } })} />)}</div>}<p className="mt-2 font-semibold text-slate-700">Effective: {money(current.calculated_effective_cost_per_reported_test)} / Annual: {money(current.annual_test_cost)}</p></td>; })}</tr>)}</tbody></table></div>
+            {!readOnly && <form onSubmit={createTest} className="flex flex-wrap gap-3"><input className={inputClass} placeholder="Test name" value={testForm.test_name} onChange={(e) => setTestForm({ ...testForm, test_name: e.target.value })} required /><input type="number" className={inputClass} placeholder="Monthly volume" value={testForm.expected_monthly_volume} onChange={(e) => setTestForm({ ...testForm, expected_monthly_volume: e.target.value })} /><button className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white">Add Test</button><button type="button" onClick={() => saveCostMatrix()} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white">Bulk Save</button><button type="button" onClick={() => navigator.clipboard?.writeText(costs.map((c) => `${c.test_name},${c.offer_name},${c.annual_test_cost}`).join("\n"))} className="rounded-lg border px-4 py-2 font-semibold text-slate-700">Export CSV</button></form>}
+            <div className="overflow-x-auto"><table className="min-w-full border-separate border-spacing-0 text-xs"><thead><tr><th className="sticky left-0 bg-slate-100 p-2 text-left">Test / Annual Volume</th>{offers.map((offer) => <th key={offer.id} className="min-w-[280px] bg-slate-100 p-2 text-left">{offer.offer_name}</th>)}</tr></thead><tbody>{tests.map((test) => <tr key={test.id}><td className="sticky left-0 border-t bg-white p-2 font-semibold">{test.test_name}<br /><span className="text-slate-500">{money(Number(test.expected_monthly_volume) * 12)} tests/year</span></td>{offers.map((offer) => { const key = `${offer.id}:${test.id}`; const current = { pricing_method: 'KIT_OWNERSHIP', ...(costByPair[key] || {}), ...(costDrafts[key] || {}) }; const cheapest = cheapestByTest[test.id] && Number(current.annual_test_cost || 0) === cheapestByTest[test.id]; return <td key={key} className={`border-t p-2 align-top ${cheapest ? 'bg-emerald-50' : ''}`}><select className={inputClass} value={current.pricing_method} onChange={(e) => updateCostDraft(key, current, "pricing_method", e.target.value)}><option>KIT_OWNERSHIP</option><option>PAY_PER_REPORTABLE</option></select>{current.pricing_method === 'PAY_PER_REPORTABLE' ? <div className="mt-2 grid grid-cols-2 gap-2"><input className={inputClass} placeholder="Price/report" value={current.price_per_reportable_test || ''} onChange={(e) => updateCostDraft(key, current, "price_per_reportable_test", e.target.value)} /><label><input type="checkbox" checked={Boolean(current.company_absorbs_waste)} onChange={(e) => updateCostDraft(key, current, "company_absorbs_waste", e.target.checked)} /> Waste</label><label><input type="checkbox" checked={Boolean(current.company_absorbs_qc)} onChange={(e) => updateCostDraft(key, current, "company_absorbs_qc", e.target.checked)} /> QC</label><label><input type="checkbox" checked={Boolean(current.company_absorbs_repeats)} onChange={(e) => updateCostDraft(key, current, "company_absorbs_repeats", e.target.checked)} /> Repeats</label></div> : <div className="mt-2 grid grid-cols-2 gap-2">{[['kit_price','Kit price'],['tests_per_kit','Tests/kit'],['usable_tests_per_kit','Usable tests'],['expected_waste_percentage','Waste %'],['repeat_rate_percentage','Repeat %'],['qc_cost_per_kit','QC/kit'],['calibrator_cost_per_kit','Calibrator'],['fixed_consumable_cost_per_kit','Fixed cons.'],['other_kit_related_cost','Other']].map(([field,label]) => <input key={field} className={inputClass} placeholder={label} value={["expected_waste_percentage", "repeat_rate_percentage"].includes(field) ? formatPercentInput(current[field]) : (current[field] || '')} onChange={(e) => updateCostDraft(key, current, field, e.target.value)} />)}</div>}{!readOnly && <button type="button" disabled={!costDrafts[key]} onClick={() => saveCostMatrix([key])} className="mt-2 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300">Save values</button>}<p className="mt-2 font-semibold text-slate-700">Effective: {money(current.calculated_effective_cost_per_reported_test)} / Annual: {money(current.annual_test_cost)}</p></td>; })}</tr>)}</tbody></table></div>
           </section>
         )}
 
