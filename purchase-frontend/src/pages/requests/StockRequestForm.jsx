@@ -772,7 +772,7 @@ const StockRequestForm = () => {
                 (stock) => String(stock.id) === String(item.stock_item_id)
               );
               if (item.stock_item_id && !hasSelectedOption) {
-                const matched = scopedCatalog.find(
+                const matched = itemsList.find(
                   (stock) => String(stock.id) === String(item.stock_item_id)
                 );
                 if (matched) {
