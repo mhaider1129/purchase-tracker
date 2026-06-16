@@ -250,7 +250,7 @@ const HistoricalRequestsImportPage = () => {
                       {t("historicalRequests.placeholders.selectType", "Select type")}
                     </option>
                     <option value="Stock">Stock</option>
-                    <option value="Non Stock">Non Stock</option>
+                    <option value="Non-Stock">Non-Stock</option>
                     <option value="Maintenance">Maintenance</option>
                     <option value="Medical Device">Medical Device</option>
                     <option value="Medication">Medication</option>

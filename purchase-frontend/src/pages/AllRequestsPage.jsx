@@ -125,6 +125,7 @@ const getCurrentStep = (req) => {
   if (req.status?.toLowerCase() === 'technical_inspection_pending')
     return 'Technical Inspection Pending';
   if (req.status?.toLowerCase() === 'received') return 'Received';
+  if (req.status?.toLowerCase() === 'partially procured') return 'Partially Procured';
   if (req.status === 'Approved' && !req.current_approver_role) return 'Approved';
   if (req.current_approver_role) {
     return STEP_LABELS[req.current_approver_role] || `${req.current_approver_role} Approval`;
@@ -143,6 +144,8 @@ const getStepColor = (step) => {
     case 'Approved':
     case 'Received':
       return 'bg-green-100 text-green-800';
+    case 'Partially Procured':
+      return 'bg-amber-100 text-amber-800';
     case 'Submitted':
       return 'bg-gray-100 text-gray-800';
     default:
@@ -155,6 +158,7 @@ const isPostApprovalStatus = (status) => {
   return [
     'approved',
     'assigned',
+    'partially procured',
     'technical_inspection_pending',
     'completed',
     'received',
@@ -1027,6 +1031,7 @@ const AllRequestsPage = () => {
           <option value="">All Statuses</option>
           <option value="Pending">Pending</option>
           <option value="Approved">Approved</option>
+          <option value="Partially Procured">Partially Procured</option>
           <option value="Received">Received</option>
           <option value="Rejected">Rejected</option>
           <option value="Completed">Completed</option>
