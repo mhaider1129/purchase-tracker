@@ -8,6 +8,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import RequestScheduleField from '../../components/requests/RequestScheduleField';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 import AmountInput from '../../components/ui/AmountInput';
 
 const NonStockRequestForm = () => {
@@ -20,6 +21,7 @@ const NonStockRequestForm = () => {
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([getEmptyItem()]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [scheduledFor, setScheduledFor] = useState('');
   const [attachments, setAttachments] = useState([]);
   const [projectId, setProjectId] = useState('');
@@ -36,7 +38,7 @@ const NonStockRequestForm = () => {
     () => ['.pdf', '.jpg', '.jpeg', '.png', '.docx', '.xlsx'],
     []
   );
-  const MAX_ATTACHMENT_SIZE_MB = 20;
+  const MAX_ATTACHMENT_SIZE_MB = 500;
   const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
   const MAX_ITEMS_PER_REQUEST = 50;
   const DRAFT_STORAGE_KEY = 'non_stock_request_draft_v1';
@@ -459,6 +461,7 @@ ${templateText}`
     formData.append('client_submission_key', submissionKeyRef.current);
     const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
     formData.append('items', JSON.stringify(itemsPayload));
+    formData.append('is_urgent', isUrgent ? 'true' : 'false');
     if (scheduledFor) formData.append('scheduled_for', new Date(scheduledFor).toISOString());
     attachments.forEach((file) => formData.append('attachments', file));
     items.forEach((item, idx) => {
@@ -841,6 +844,13 @@ ${templateText}`
               </div>
             )}
           </div>
+
+          <UrgentRequestToggle
+            user={user}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={isSubmitting}
+          />
 
           <RequestScheduleField value={scheduledFor} onChange={setScheduledFor} disabled={isSubmitting} />
 

@@ -8,6 +8,7 @@ import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const createItemId = () =>
   typeof crypto !== 'undefined' && crypto.randomUUID
@@ -37,6 +38,7 @@ const ITRequestForm = () => {
   const [items, setItems] = useState([getEmptyItem()]);
   const [attachments, setAttachments] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [preferredDeliveryDate, setPreferredDeliveryDate] = useState('');
   const [priority, setPriority] = useState('Normal');
@@ -245,6 +247,7 @@ const ITRequestForm = () => {
     formData.append('priority', priority);
     formData.append('deployment_location', deploymentLocation);
     formData.append('additional_notes', additionalNotes);
+    formData.append('is_urgent', isUrgent ? 'true' : 'false');
     attachments.forEach((f) => formData.append('attachments', f));
 
     try {
@@ -584,6 +587,13 @@ const ITRequestForm = () => {
               </ul>
             )}
           </section>
+
+          <UrgentRequestToggle
+            user={user}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={isSubmitting}
+          />
 
           <div className="flex justify-end">
             <button

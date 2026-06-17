@@ -8,6 +8,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import useCurrentUser from '../../hooks/useCurrentUser';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const createEmptyItem = () => ({ item_name: '', quantity: 1, specs: '', attachments: [] });
 
@@ -28,6 +29,7 @@ const MaintenanceRequestForm = () => {
   const [requesters, setRequesters] = useState([]);
   const [targetRequesterId, setTargetRequesterId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [formError, setFormError] = useState('');
   const [projectId, setProjectId] = useState('');
@@ -188,6 +190,7 @@ const MaintenanceRequestForm = () => {
       formData.append('target_requester_id', targetRequesterId);
       const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
       formData.append('items', JSON.stringify(itemsPayload));
+    formData.append('is_urgent', isUrgent ? 'true' : 'false');
       attachments.forEach((file) => formData.append('attachments', file));
       if (projectId) {
         formData.append('project_id', projectId);
@@ -399,6 +402,13 @@ const MaintenanceRequestForm = () => {
               disabled={submitting || !isFormValid}
             />
           </div>
+
+          <UrgentRequestToggle
+            user={currentUser}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={submitting}
+          />
 
           <Button
             type="submit"

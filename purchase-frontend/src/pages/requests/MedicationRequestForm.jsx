@@ -6,6 +6,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const MedicationRequestForm = () => {
   const [justification, setJustification] = useState('');
@@ -14,6 +15,7 @@ const MedicationRequestForm = () => {
   const [attachments, setAttachments] = useState([]);
   const [attachmentsError, setAttachmentsError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [projectId, setProjectId] = useState('');
 
   const { user, loading, error } = useCurrentUser();
@@ -228,6 +230,7 @@ const MedicationRequestForm = () => {
     formData.append('target_department_id', targetDeptId);
     formData.append('target_section_id', targetSectionId || '');
     formData.append('items', JSON.stringify(items));
+    formData.append('is_urgent', isUrgent ? 'true' : 'false');
     formData.append('project_id', projectId);
     attachments.forEach((file) => formData.append('attachments', file));
 
@@ -488,6 +491,13 @@ const MedicationRequestForm = () => {
               </ul>
             )}
           </div>
+          <UrgentRequestToggle
+            user={user}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={isSubmitting}
+          />
+
           <div>
             <button
               type="submit"

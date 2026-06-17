@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
-const MAX_ATTACHMENT_SIZE_MB = 50;
+const MAX_ATTACHMENT_SIZE_MB = 500;
 const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
 
 const PrintingLogbookRequestForm = () => {
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [formFile, setFormFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [form, setForm] = useState({
@@ -69,6 +71,7 @@ const PrintingLogbookRequestForm = () => {
     payload.append('target_department_id', user.department_id);
     payload.append('target_section_id', user.section_id || '');
     payload.append('items', JSON.stringify([{ item_name: 'Logbook Printing', quantity: 1, specs }]));
+    payload.append('is_urgent', isUrgent ? 'true' : 'false');
     payload.append('attachments', formFile);
 
     try {
@@ -175,6 +178,13 @@ const PrintingLogbookRequestForm = () => {
           <label className="block font-semibold mb-1">Other details/specifications</label>
           <textarea className="w-full border rounded p-2" rows={4} value={form.otherDetails} onChange={(e) => onChange('otherDetails', e.target.value)} placeholder="Any extra instructions: paper quality, binding, perforation, cover color, etc." />
         </div>
+
+          <UrgentRequestToggle
+            user={user}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={isSubmitting}
+          />
 
         <button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50">
           {isSubmitting ? 'Submitting...' : 'Submit Printing Request'}

@@ -7,6 +7,7 @@ import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import useWarehouses from '../../hooks/useWarehouses';
 import useWarehouseStockItems from '../../hooks/useWarehouseStockItems';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const WarehouseSupplyRequestForm = () => {
   const [items, setItems] = useState([{ stock_item_id: '', item_name: '', quantity: 1 }]);
@@ -14,6 +15,7 @@ const WarehouseSupplyRequestForm = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [justification, setJustification] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [projectId, setProjectId] = useState('');
   const [supplyWarehouseId, setSupplyWarehouseId] = useState('');
   const [category, setCategory] = useState('');
@@ -186,6 +188,7 @@ const WarehouseSupplyRequestForm = () => {
     payload.append('project_id', projectId || '');
     const mapped = items.map(it => ({ item_name: it.item_name, quantity: it.quantity }));
     payload.append('items', JSON.stringify(mapped));
+    payload.append('is_urgent', isUrgent ? 'true' : 'false');
 
     try {
       setSubmitting(true);
@@ -393,6 +396,13 @@ const WarehouseSupplyRequestForm = () => {
             ))}
             <button type="button" onClick={addItem} className="text-blue-600 mt-2" disabled={submitting}>+ Add Item</button>
           </div>
+
+          <UrgentRequestToggle
+            user={user}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={submitting}
+          />
 
           <button
             type="submit"

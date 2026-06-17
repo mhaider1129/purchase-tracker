@@ -266,6 +266,7 @@ const Management = () => {
   const [permissionsError, setPermissionsError] = useState('');
   const [permissionsSuccess, setPermissionsSuccess] = useState('');
   const [selectedPermissionUserId, setSelectedPermissionUserId] = useState('');
+  const [inlinePermissionsEditorOpen, setInlinePermissionsEditorOpen] = useState(false);
   const [selectedUserPermissions, setSelectedUserPermissions] = useState([]);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [editingAccessKey, setEditingAccessKey] = useState('');
@@ -326,6 +327,9 @@ const Management = () => {
       fetchDepartments();
       if (!roles.length) {
         fetchRoles();
+      }
+      if (canManagePermissions && !availablePermissions.length) {
+        fetchPermissionsCatalog();
       }
     }
     if (tab === 'departments' && canManageDepartments) {
@@ -781,6 +785,124 @@ const Management = () => {
     } finally {
       setSavingPermissions(false);
     }
+  };
+
+  const openUserPermissionsEditor = (targetUser) => {
+    if (!canManagePermissions || !targetUser?.id) return;
+    setInlinePermissionsEditorOpen(true);
+    setSelectedPermissionUserId(String(targetUser.id));
+    fetchUserPermissions(targetUser.id);
+  };
+
+  const selectedPermissionUser = useMemo(
+    () => users.find((entry) => String(entry.id) === String(selectedPermissionUserId)) || null,
+    [selectedPermissionUserId, users],
+  );
+
+  const renderInlineUserPermissionsEditor = () => {
+    if (!canManagePermissions || !inlinePermissionsEditorOpen || !selectedPermissionUserId) return null;
+
+    const urgentPermission = availablePermissions.find(
+      (permission) => permission.code === 'requests.mark-urgent-on-submit',
+    );
+    const remainingPermissions = availablePermissions.filter(
+      (permission) => permission.code !== 'requests.mark-urgent-on-submit',
+    );
+
+    const renderPermissionCheckbox = (permission, extraClassName = '') => {
+      const checked = selectedUserPermissions.includes(permission.code);
+      return (
+        <label
+          key={permission.code}
+          className={`flex cursor-pointer items-start gap-3 rounded border border-gray-200 bg-gray-50 p-3 hover:border-blue-300 ${extraClassName}`}
+        >
+          <input
+            type="checkbox"
+            className="mt-1 h-4 w-4"
+            checked={checked}
+            onChange={() => togglePermissionForUser(permission.code)}
+            disabled={permissionsLoading || savingPermissions}
+          />
+          <div>
+            <div className="text-sm font-semibold text-gray-800">{permission.name}</div>
+            <p className="text-xs text-gray-600">{permission.description}</p>
+            <p className="text-xs text-gray-400">Code: {permission.code}</p>
+          </div>
+        </label>
+      );
+    };
+
+    return (
+      <div className="mb-4 rounded border border-blue-200 bg-blue-50 p-4 shadow-sm">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-900">
+              User permissions
+            </h3>
+            <p className="text-sm text-blue-800">
+              Editing permissions for {selectedPermissionUser?.name || 'selected user'}.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="text-sm font-semibold text-blue-700 hover:underline"
+            onClick={() => setInlinePermissionsEditorOpen(false)}
+          >
+            Close
+          </button>
+        </div>
+
+        {permissionsSuccess && (
+          <div className="mt-3 rounded border border-emerald-200 bg-emerald-50 p-2 text-sm text-emerald-700">
+            {permissionsSuccess}
+          </div>
+        )}
+        {permissionsError && (
+          <div className="mt-3 rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
+            {permissionsError}
+          </div>
+        )}
+
+        {permissionsLoading ? (
+          <p className="mt-3 text-sm text-gray-600">Loading permissions...</p>
+        ) : availablePermissions.length === 0 ? (
+          <p className="mt-3 text-sm text-gray-600">No permissions available.</p>
+        ) : (
+          <>
+            {urgentPermission && (
+              <div className="mt-3">
+                {renderPermissionCheckbox(
+                  urgentPermission,
+                  'border-amber-300 bg-amber-50 hover:border-amber-400',
+                )}
+              </div>
+            )}
+            <details className="mt-3">
+              <summary className="cursor-pointer text-sm font-semibold text-blue-800">
+                Show all permissions
+              </summary>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {remainingPermissions.map((permission) => renderPermissionCheckbox(permission))}
+              </div>
+            </details>
+          </>
+        )}
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={saveUserPermissions}
+            disabled={savingPermissions || permissionsLoading || !selectedPermissionUserId}
+            className={`rounded px-4 py-2 text-white ${
+              savingPermissions || permissionsLoading || !selectedPermissionUserId
+                ? 'bg-gray-400'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {savingPermissions ? 'Saving...' : 'Save permissions'}
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const startEditingAccessResource = (resource) => {
@@ -1276,6 +1398,7 @@ const Management = () => {
         </div>
         {usersError && <p className="text-sm text-red-600">{usersError}</p>}
       </div>
+      {renderInlineUserPermissionsEditor()}
       {loadingUsers ? (
         <p>Loading users...</p>
       ) : filteredUsers.length === 0 ? (
@@ -1452,10 +1575,19 @@ const Management = () => {
                         )}
                         <button
                           onClick={() => startEdit(user)}
-                          className="text-blue-600 hover:underline"
+                          className="text-blue-600 hover:underline mr-2"
                         >
                           Assign
                         </button>
+                        {canManagePermissions && (
+                          <button
+                            type="button"
+                            onClick={() => openUserPermissionsEditor(user)}
+                            className="text-indigo-600 hover:underline"
+                          >
+                            Permissions
+                          </button>
+                        )}
                       </>
                     )}
                   </td>

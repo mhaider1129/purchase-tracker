@@ -7,6 +7,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import AmountInput from '../../components/ui/AmountInput';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const MedicalDeviceRequestForm = () => {
   const { user, loading } = useCurrentUser();
@@ -16,6 +17,7 @@ const MedicalDeviceRequestForm = () => {
   const [items, setItems] = useState([getEmptyItem()]);
   const [itemErrors, setItemErrors] = useState([{}]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [requestAttachmentsError, setRequestAttachmentsError] = useState('');
   const [projectId, setProjectId] = useState('');
@@ -302,6 +304,7 @@ const MedicalDeviceRequestForm = () => {
       unit_cost: Number(rest.unit_cost) || 0,
     }));
     formData.append('items', JSON.stringify(itemsPayload));
+    formData.append('is_urgent', isUrgent ? 'true' : 'false');
     attachments.forEach((file) => formData.append('attachments', file));
     items.forEach((item, idx) => {
       (item.attachments || []).forEach((file) => {
@@ -659,6 +662,13 @@ const MedicalDeviceRequestForm = () => {
               </ul>
             )}
           </div>
+
+          <UrgentRequestToggle
+            user={user}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={isSubmitting}
+          />
 
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
             <button

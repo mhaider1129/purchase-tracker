@@ -10,6 +10,7 @@ import { matchesSearchTokens } from '../../utils/search';
 import ProjectSelector from '../../components/projects/ProjectSelector';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
+import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const createEmptyItem = (overrides = {}) => ({
   item_name: '',
@@ -60,6 +61,7 @@ const StockRequestForm = () => {
   const [subCategory, setSubCategory] = useState('');
   const [justification, setJustification] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUrgent, setIsUrgent] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [sectionId, setSectionId] = useState(null);
   const [projectId, setProjectId] = useState('');
@@ -528,6 +530,7 @@ const StockRequestForm = () => {
       ({ attachments, category, sub_category, ...rest }) => rest
     );
     formData.append('items', JSON.stringify(itemsPayload));
+    formData.append('is_urgent', isUrgent ? 'true' : 'false');
     attachments.forEach((file) => formData.append('attachments', file));
     selectedItems.forEach((item, idx) => {
       (item.attachments || []).forEach((file) => {
@@ -950,6 +953,13 @@ const StockRequestForm = () => {
               disabled={isSubmitting}
             />
           </div>
+
+          <UrgentRequestToggle
+            user={user}
+            checked={isUrgent}
+            onChange={setIsUrgent}
+            disabled={isSubmitting}
+          />
 
           <button
             type="submit"
