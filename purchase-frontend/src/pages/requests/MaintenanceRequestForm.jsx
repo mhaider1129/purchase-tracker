@@ -195,7 +195,9 @@ const MaintenanceRequestForm = () => {
       formData.append('maintenance_ref_number', refNumber);
       formData.append('justification', justification);
       formData.append('target_department_id', targetDeptId);
-      formData.append('target_section_id', targetSectionId);
+      if (targetSectionId) {
+        formData.append('target_section_id', targetSectionId);
+      }
       if (requiresTemporaryRequesterName) {
         formData.append('temporary_requester_name', temporaryRequesterName.trim());
       }

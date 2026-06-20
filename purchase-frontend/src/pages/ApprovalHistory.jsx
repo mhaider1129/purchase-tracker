@@ -159,14 +159,16 @@ const ApprovalHistory = () => {
     const fetchHistory = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/requests/approval-history', {
-          params: {
+        const params = Object.fromEntries(
+          Object.entries({
             status: statusFilter,
             from_date: fromDate,
             to_date: toDate,
             department_id: department,
-          },
-        });
+          }).filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+        );
+
+        const res = await axios.get('/requests/approval-history', { params });
         setHistory(res.data);
         setFiltered(applySearch(res.data, searchTerm));
         setCurrentPage(1);
