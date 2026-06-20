@@ -27,6 +27,16 @@ export const updateRequest = async (id, payload, options = {}) => {
   return res.data;
 };
 
+export const getHodApprovers = async (options = {}) => {
+  const res = await api.get("/requests/hod-approvers", options);
+  return res.data;
+};
+
+export const getProcurementUsers = async (options = {}) => {
+  const res = await api.get("/requests/procurement-users", options);
+  return res.data;
+};
+
 export const createHistoricalRequest = async (payload, options = {}) => {
   if (!payload || typeof payload !== "object") {
     throw new Error("Payload is required");
@@ -40,6 +50,8 @@ const requestsApi = {
   printRequest,
   getRequestDetails,
   updateRequest,
+  getHodApprovers,
+  getProcurementUsers,
   createHistoricalRequest,
 };
 

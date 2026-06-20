@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiRequests from "../api/requests";
 import Card from "../components/Card";
 import AmountInput from "../components/ui/AmountInput";
+
+const REQUEST_STATUS_OPTIONS = ["Approved", "Received", "Completed"];
 
 const defaultItem = {
   item_name: "",
@@ -33,12 +35,52 @@ const HistoricalRequestsImportPage = () => {
     justification: "",
     approved_at: "",
     completed_at: "",
-    mark_completed: false,
+    status: "Approved",
+    final_approver_id: "",
+    procurement_user_id: "",
   });
   const [items, setItems] = useState([{ ...defaultItem }]);
+  const [approvers, setApprovers] = useState([]);
+  const [procurementUsers, setProcurementUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSelectableUsers = async () => {
+      setLoadingUsers(true);
+      try {
+        const [approverRows, procurementRows] = await Promise.all([
+          apiRequests.getHodApprovers(),
+          apiRequests.getProcurementUsers(),
+        ]);
+        if (!isMounted) return;
+        setApprovers(Array.isArray(approverRows) ? approverRows : []);
+        setProcurementUsers(Array.isArray(procurementRows) ? procurementRows : []);
+      } catch (err) {
+        if (isMounted) {
+          setErrorMessage(
+            err?.response?.data?.message ||
+              t(
+                "historicalRequests.errorUsers",
+                "Unable to load approvers or procurement users. You can still type IDs manually.",
+              ),
+          );
+        }
+      } finally {
+        if (isMounted) setLoadingUsers(false);
+      }
+    };
+
+    loadSelectableUsers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [t]);
 
   const totalCost = useMemo(() => {
     return items.reduce((sum, item) => {
@@ -107,6 +149,14 @@ const HistoricalRequestsImportPage = () => {
       }
     }
 
+    if (!REQUEST_STATUS_OPTIONS.includes(form.status)) {
+      return t("historicalRequests.validation.status", "Select the request status");
+    }
+
+    if (!String(form.final_approver_id || "").trim()) {
+      return t("historicalRequests.validation.finalApprover", "Select the final approver");
+    }
+
     if (
       form.request_type === "Warehouse Supply" &&
       !String(form.supply_warehouse_id || "").trim()
@@ -133,8 +183,14 @@ const HistoricalRequestsImportPage = () => {
           : undefined,
       justification: form.justification.trim() || undefined,
       approved_at: form.approved_at || undefined,
-      completed_at: form.mark_completed ? form.completed_at || undefined : undefined,
-      mark_completed: form.mark_completed,
+      completed_at: form.status === "Completed" ? form.completed_at || undefined : undefined,
+      status: form.status,
+      mark_completed: form.status === "Completed",
+      final_approver_id: Number(form.final_approver_id),
+      procurement_user_id:
+        form.status === "Approved" && form.procurement_user_id
+          ? Number(form.procurement_user_id)
+          : undefined,
       items: items.map((item) => ({
         ...item,
         item_name: item.item_name.trim(),
@@ -158,6 +214,7 @@ const HistoricalRequestsImportPage = () => {
     if (!payload.supply_warehouse_id) delete payload.supply_warehouse_id;
     if (!payload.approved_at) delete payload.approved_at;
     if (!payload.completed_at) delete payload.completed_at;
+    if (!payload.procurement_user_id) delete payload.procurement_user_id;
 
     return payload;
   };
@@ -191,7 +248,9 @@ const HistoricalRequestsImportPage = () => {
         justification: "",
         approved_at: "",
         completed_at: "",
-        mark_completed: false,
+        status: "Approved",
+        final_approver_id: "",
+        procurement_user_id: "",
       });
       setItems([{ ...defaultItem }]);
     } catch (err) {
@@ -368,30 +427,101 @@ const HistoricalRequestsImportPage = () => {
                   />
                 </div>
 
-                <div className="flex flex-col rounded border border-gray-200 bg-gray-50 p-3">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <input
-                      type="checkbox"
-                      checked={form.mark_completed}
-                      onChange={(e) => handleFieldChange("mark_completed", e.target.checked)}
-                    />
-                    {t("historicalRequests.fields.markCompleted", "Mark as completed")}
+                <div className="flex flex-col">
+                  <label className="text-sm font-semibold text-gray-700">
+                    {t("historicalRequests.fields.status", "Imported request status")}
                   </label>
+                  <select
+                    className="mt-1 rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"
+                    value={form.status}
+                    onChange={(e) => {
+                      const nextStatus = e.target.value;
+                      setForm((prev) => ({
+                        ...prev,
+                        status: nextStatus,
+                        completed_at: nextStatus === "Completed" ? prev.completed_at : "",
+                        procurement_user_id:
+                          nextStatus === "Approved" ? prev.procurement_user_id : "",
+                      }));
+                    }}
+                  >
+                    {REQUEST_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
                   <p className="mt-1 text-xs text-gray-500">
                     {t(
-                      "historicalRequests.help.completion",
-                      "If checked, the request will be stored as Completed and ready for KPI tracking.",
+                      "historicalRequests.help.status",
+                      "Approved requests remain open for procurement; Received and Completed requests are kept as closed historical records.",
                     )}
                   </p>
-                  {form.mark_completed && (
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm font-semibold text-gray-700">
+                    {t("historicalRequests.fields.finalApprover", "Final approver")}
+                  </label>
+                  <select
+                    className="mt-1 rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"
+                    value={form.final_approver_id}
+                    onChange={(e) => handleFieldChange("final_approver_id", e.target.value)}
+                  >
+                    <option value="">
+                      {loadingUsers
+                        ? t("historicalRequests.placeholders.loadingUsers", "Loading users…")
+                        : t("historicalRequests.placeholders.finalApprover", "Select final approver")}
+                    </option>
+                    {approvers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} {user.department_name ? `— ${user.department_name}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {form.status === "Approved" && (
+                  <div className="flex flex-col">
+                    <label className="text-sm font-semibold text-gray-700">
+                      {t("historicalRequests.fields.procurementUser", "Assign to procurement user (optional)")}
+                    </label>
+                    <select
+                      className="mt-1 rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"
+                      value={form.procurement_user_id}
+                      onChange={(e) => handleFieldChange("procurement_user_id", e.target.value)}
+                    >
+                      <option value="">
+                        {t("historicalRequests.placeholders.procurementUser", "Leave unassigned")}
+                      </option>
+                      {procurementUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {t(
+                        "historicalRequests.help.procurementUser",
+                        "Assign approved historical requests that still need procurement action.",
+                      )}
+                    </p>
+                  </div>
+                )}
+
+                {form.status === "Completed" && (
+                  <div className="flex flex-col">
+                    <label className="text-sm font-semibold text-gray-700">
+                      {t("historicalRequests.fields.completedAt", "Completed on")}
+                    </label>
                     <input
                       type="date"
-                      className="mt-3 rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"
+                      className="mt-1 rounded border border-gray-300 p-2 focus:border-blue-500 focus:outline-none"
                       value={form.completed_at}
                       onChange={(e) => handleFieldChange("completed_at", e.target.value)}
                     />
-                  )}
-                </div>
+                  </div>
+                )}
               </section>
 
               <section className="space-y-4">
