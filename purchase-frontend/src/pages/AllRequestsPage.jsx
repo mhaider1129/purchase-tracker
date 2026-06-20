@@ -571,7 +571,7 @@ const AllRequestsPage = () => {
       const requesterRole = maintenanceAssignedToRequester
         ? request.requester_role
         : isMaintenanceRequest && request.temporary_requester_name
-          ? 'Temporary Requester'
+          ? null
           : request.requester_role;
 
       const requesterDisplay = requesterName
