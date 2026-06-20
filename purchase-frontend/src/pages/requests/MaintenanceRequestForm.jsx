@@ -27,7 +27,8 @@ const MaintenanceRequestForm = () => {
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
   const [requesters, setRequesters] = useState([]);
-  const [targetRequesterId, setTargetRequesterId] = useState('');
+  const [requestersLoaded, setRequestersLoaded] = useState(false);
+  const [temporaryRequesterName, setTemporaryRequesterName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isUrgent, setIsUrgent] = useState(false);
   const [attachments, setAttachments] = useState([]);
@@ -78,6 +79,30 @@ const MaintenanceRequestForm = () => {
     };
     fetchSections();
   }, [targetDeptId, tr]);
+
+  useEffect(() => {
+    const fetchRequesters = async () => {
+      setRequestersLoaded(false);
+      setRequesters([]);
+
+      if (!targetDeptId || (sections.length > 0 && !targetSectionId)) {
+        return;
+      }
+
+      try {
+        const sectionQuery = targetSectionId ? `?section_id=${targetSectionId}` : '';
+        const res = await axios.get(`/departments/${targetDeptId}/requesters${sectionQuery}`);
+        setRequesters(res.data || []);
+      } catch (err) {
+        console.error('❌ Failed to fetch requesters:', err);
+        setRequesters([]);
+      } finally {
+        setRequestersLoaded(true);
+      }
+    };
+
+    fetchRequesters();
+  }, [sections.length, targetDeptId, targetSectionId]);
 
   const handleItemChange = useCallback((index, field, value) => {
     setItems((prev) => {
@@ -130,44 +155,28 @@ const MaintenanceRequestForm = () => {
     return '';
   }, [items, tr]);
 
+  const requesterLookupReady = Boolean(targetDeptId) && !(sections.length > 0 && !targetSectionId) && requestersLoaded;
+  const requiresTemporaryRequesterName = requesterLookupReady && requesters.length === 0;
+
   const isFormValid = useMemo(() => {
     if (
       !refNumber.trim() ||
       !targetDeptId ||
-      !justification.trim() ||
-      !targetRequesterId
+      !justification.trim()
     ) {
       return false;
     }
     if (sections.length > 0 && !targetSectionId) {
       return false;
     }
+    if (!requesterLookupReady) {
+      return false;
+    }
+    if (requiresTemporaryRequesterName && !temporaryRequesterName.trim()) {
+      return false;
+    }
     return validateItems() === '';
-  }, [justification, refNumber, sections.length, targetDeptId, targetSectionId, targetRequesterId, validateItems]);
-
-  useEffect(() => {
-    const fetchRequesters = async () => {
-      if (!targetDeptId) {
-        setRequesters([]);
-        setTargetRequesterId('');
-        return;
-      }
-      if (sections.length > 0 && !targetSectionId) {
-        setRequesters([]);
-        setTargetRequesterId('');
-        return;
-      }
-      try {
-        const sectionQuery = targetSectionId ? `?section_id=${targetSectionId}` : '';
-        const res = await axios.get(`/departments/${targetDeptId}/requesters${sectionQuery}`);
-        setRequesters(res.data || []);
-      } catch (err) {
-        console.error('❌ Failed to fetch requesters:', err);
-        setRequesters([]);
-      }
-    };
-    fetchRequesters();
-  }, [sections.length, targetDeptId, targetSectionId]);
+  }, [justification, refNumber, requesterLookupReady, requiresTemporaryRequesterName, sections.length, targetDeptId, targetSectionId, temporaryRequesterName, validateItems]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -187,10 +196,12 @@ const MaintenanceRequestForm = () => {
       formData.append('justification', justification);
       formData.append('target_department_id', targetDeptId);
       formData.append('target_section_id', targetSectionId);
-      formData.append('target_requester_id', targetRequesterId);
+      if (requiresTemporaryRequesterName) {
+        formData.append('temporary_requester_name', temporaryRequesterName.trim());
+      }
       const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
       formData.append('items', JSON.stringify(itemsPayload));
-    formData.append('is_urgent', isUrgent ? 'true' : 'false');
+      formData.append('is_urgent', isUrgent ? 'true' : 'false');
       attachments.forEach((file) => formData.append('attachments', file));
       if (projectId) {
         formData.append('project_id', projectId);
@@ -286,20 +297,29 @@ const MaintenanceRequestForm = () => {
             required
           />
 
-          <select
-            aria-label={tr('fields.requesterNameAria')}
-            value={targetRequesterId}
-            onChange={(e) => setTargetRequesterId(e.target.value)}
-            className="w-full border p-2 rounded"
-            required
-          >
-            <option value="">{tr('fields.requesterNamePlaceholder')}</option>
-            {requesters.map((requester) => (
-              <option key={requester.id} value={requester.id}>
-                {requester.name}
-              </option>
-            ))}
-          </select>
+          <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+            {requiresTemporaryRequesterName
+              ? tr(
+                  'fields.manualRequesterNotice',
+                  'No active requester was found for the selected department/section. Enter the requester name below; requester approval will still be recorded automatically before the request goes to the HOD.'
+                )
+              : tr(
+                  'fields.autoRequesterNotice',
+                  'The system will assign this request to the active requester for the selected department/section and automatically record requester approval before sending it to the HOD.'
+                )}
+          </div>
+
+          {requiresTemporaryRequesterName && (
+            <input
+              type="text"
+              aria-label={tr('fields.temporaryRequesterNameAria', 'Requester name')}
+              placeholder={tr('fields.temporaryRequesterNamePlaceholder', 'Requester name')}
+              value={temporaryRequesterName}
+              onChange={(e) => setTemporaryRequesterName(e.target.value)}
+              className="w-full border p-2 rounded"
+              required
+            />
+          )}
 
           <ProjectSelector
             value={projectId}
