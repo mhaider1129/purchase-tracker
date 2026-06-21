@@ -14,6 +14,16 @@ import { getDisplayItems } from '../utils/itemUtils';
 
 const ITEMS_PER_PAGE = 20;
 
+const toCsvValue = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+const formatItemSpecsForExport = (items = [], notAvailable = '—') => {
+  const specs = items
+    .map((item) => [item.item_name, item.specs].filter(Boolean).join(': '))
+    .filter(Boolean);
+
+  return specs.length ? specs.join(' | ') : notAvailable;
+};
+
 const formatDate = (value, locale) => {
   if (!value) {
     return '—';
@@ -337,6 +347,7 @@ const ClosedRequestsPage = () => {
         tr('table.status'),
         tr('table.assigned'),
         tr('table.updated'),
+        tr('specs', { defaultValue: 'Specs' }),
       ],
       ...sorted.map((req) => [
         req.id,
@@ -345,10 +356,11 @@ const ClosedRequestsPage = () => {
         req.status,
         req.assigned_user_name || tr('notAvailable'),
         formatDate(req.updated_at || req.created_at, normalizedLocale),
+        formatItemSpecsForExport(req.items || [], tr('notAvailable')),
       ]),
     ];
 
-    const csv = rows.map((row) => row.join(',')).join('\n');
+    const csv = rows.map((row) => row.map(toCsvValue).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, `${tr('csvFileName')}.csv`);
   };
@@ -698,6 +710,9 @@ const ClosedRequestsPage = () => {
                                             {tr('itemName', { defaultValue: 'Item' })}
                                           </th>
                                           <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
+                                            {tr('specs', { defaultValue: 'Specs' })}
+                                          </th>
+                                          <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
                                             {tr('quantity', { defaultValue: 'Quantity' })}
                                           </th>
                                           <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-200">
@@ -727,6 +742,9 @@ const ClosedRequestsPage = () => {
                                             <tr key={item.id} className="bg-white dark:bg-gray-900">
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
                                                 {item.item_name || tr('notAvailable')}
+                                              </td>
+                                              <td className="px-4 py-2 whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+                                                {item.specs || '—'}
                                               </td>
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
                                                 {item.quantity ?? '—'}
@@ -998,6 +1016,11 @@ const ClosedRequestsPage = () => {
                                       <p className="font-semibold text-gray-900 dark:text-gray-100">
                                         {item.item_name || tr('notAvailable')}
                                       </p>
+                                      {item.specs && (
+                                        <p className="text-xs text-gray-500 dark:text-gray-300">
+                                          {tr('specs', { defaultValue: 'Specs' })}: {item.specs}
+                                        </p>
+                                      )}
                                       <p className="text-xs text-gray-500 dark:text-gray-300">
                                         {tr('quantity', { defaultValue: 'Quantity' })}: {item.quantity ?? '—'}
                                       </p>

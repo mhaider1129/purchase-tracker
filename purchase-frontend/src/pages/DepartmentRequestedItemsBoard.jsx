@@ -48,6 +48,7 @@ const excelColumns = [
   ["item_id", "Item ID"],
   ["item_name", "Item"],
   ["brand", "Brand"],
+  ["specs", "Specs"],
   ["intended_use", "Intended Use"],
   ["requested_quantity", "Requested Quantity"],
   ["purchased_quantity", "Purchased Quantity"],
@@ -253,7 +254,7 @@ const DepartmentRequestedItemsBoard = () => {
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
           <tr>
-            <th className="px-3 py-2">Select</th><th className="px-3 py-2">Request ID</th><th className="px-3 py-2">Section</th><th className="px-3 py-2">Requester</th><th className="px-3 py-2">Item</th><th className="px-3 py-2">Requested</th><th className="px-3 py-2">Purchased</th><th className="px-3 py-2">Remaining</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Required Date</th><th className="px-3 py-2">Days</th><th className="px-3 py-2">Actions</th>
+            <th className="px-3 py-2">Select</th><th className="px-3 py-2">Request ID</th><th className="px-3 py-2">Section</th><th className="px-3 py-2">Requester</th><th className="px-3 py-2">Item</th><th className="px-3 py-2">Specs</th><th className="px-3 py-2">Requested</th><th className="px-3 py-2">Purchased</th><th className="px-3 py-2">Remaining</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Required Date</th><th className="px-3 py-2">Days</th><th className="px-3 py-2">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">
@@ -264,6 +265,7 @@ const DepartmentRequestedItemsBoard = () => {
               <td className="px-3 py-2">{row.section_name || "—"}</td>
               <td className="px-3 py-2"><div>{row.requester_name || "—"}</div><div className="text-xs text-gray-500">{row.requester_phone || row.requester_email}</div></td>
               <td className="px-3 py-2"><div className="font-medium">{row.item_name}</div><div className="text-xs text-gray-500">{row.brand || row.intended_use || ""}</div></td>
+              <td className="px-3 py-2 max-w-xs whitespace-pre-wrap text-gray-700">{row.specs || "—"}</td>
               <td className="px-3 py-2">{row.requested_quantity}</td>
               <td className="px-3 py-2">{row.purchased_quantity}</td>
               <td className="px-3 py-2 font-bold text-red-700">{row.remaining_quantity}</td>

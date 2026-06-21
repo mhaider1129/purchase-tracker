@@ -16,6 +16,16 @@ import PaginationControls from '../components/ui/PaginationControls';
 
 const ITEMS_PER_PAGE = 10;
 
+const toCsvValue = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+const formatItemSpecsForExport = (items = [], notAvailable = '—') => {
+  const specs = items
+    .map((item) => [item.item_name, item.specs].filter(Boolean).join(': '))
+    .filter(Boolean);
+
+  return specs.length ? specs.join(' | ') : notAvailable;
+};
+
 const formatDate = (value, locale) => {
   if (!value) {
     return '—';
@@ -488,6 +498,7 @@ const OpenRequestsPage = () => {
         tr('table.status'),
         tr('table.assigned'),
         tr('table.updated'),
+        tr('specs', { defaultValue: 'Specs' }),
       ],
       ...sorted.map((req) => [
         req.id,
@@ -496,10 +507,11 @@ const OpenRequestsPage = () => {
         req.status,
         req.assigned_user_name || tr('notAvailable'),
         formatDate(req.updated_at || req.created_at, normalizedLocale),
+        formatItemSpecsForExport(req.items || itemsMap[req.id] || [], tr('notAvailable')),
       ]),
     ];
 
-    const csv = rows.map((row) => row.join(',')).join('\n');
+    const csv = rows.map((row) => row.map(toCsvValue).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     saveAs(blob, `${tr('csvFileName')}.csv`);
   };
@@ -923,6 +935,7 @@ const OpenRequestsPage = () => {
                                     <tr className="bg-gray-100">
                                       <th className="border p-1">{tr('item')}</th>
                                       <th className="border p-1">{tr('brand')}</th>
+                                      <th className="border p-1">{tr('specs', { defaultValue: 'Specs' })}</th>
                                       <th className="border p-1">{tr('qty')}</th>
                                       <th className="border p-1">{tr('purchasedQty')}</th>
                                       <th className="border p-1">{tr('itemStatus')}</th>
@@ -944,6 +957,7 @@ const OpenRequestsPage = () => {
                                         <tr key={item.id ?? idx}>
                                           <td className="border p-1">{item.item_name}</td>
                                           <td className="border p-1">{item.brand || '—'}</td>
+                                          <td className="border p-1 whitespace-pre-wrap">{item.specs || '—'}</td>
                                           <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0}</td>
                                           <td className="border p-1">{purchasedQuantity ?? 0}</td>
                                           <td className="border p-1">{statusLabel}</td>
@@ -1135,6 +1149,7 @@ const OpenRequestsPage = () => {
                               <tr className="bg-gray-100">
                                 <th className="border p-1">{tr('item')}</th>
                                 <th className="border p-1">{tr('brand')}</th>
+                                <th className="border p-1">{tr('specs', { defaultValue: 'Specs' })}</th>
                                 <th className="border p-1">{tr('qty')}</th>
                                 <th className="border p-1">{tr('purchasedQty')}</th>
                                 <th className="border p-1">{tr('itemStatus')}</th>
@@ -1156,6 +1171,7 @@ const OpenRequestsPage = () => {
                                   <tr key={item.id ?? idx}>
                                     <td className="border p-1">{item.item_name}</td>
                                     <td className="border p-1">{item.brand || '—'}</td>
+                                    <td className="border p-1 whitespace-pre-wrap">{item.specs || '—'}</td>
                                     <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0}</td>
                                     <td className="border p-1">{purchasedQuantity ?? 0}</td>
                                     <td className="border p-1">{statusLabel}</td>

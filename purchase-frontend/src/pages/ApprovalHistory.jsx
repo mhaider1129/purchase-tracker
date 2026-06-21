@@ -1,5 +1,5 @@
 //src/pages/ApprovalHistory.js
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import Papa from 'papaparse';
 import jsPDF from 'jspdf';
@@ -22,6 +22,8 @@ const ApprovalHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCommunicationId, setExpandedCommunicationId] = useState(null);
   const [expandedItemsId, setExpandedItemsId] = useState(null);
+  const [itemsMap, setItemsMap] = useState({});
+  const [loadingItemsId, setLoadingItemsId] = useState(null);
   const { user } = useCurrentUser();
   const {
     canSendCommunication,
@@ -64,7 +66,7 @@ const ApprovalHistory = () => {
     fetchDeps();
   }, []);
 
-  const applySearch = (items, term) => {
+  const applySearch = useCallback((items, term) => {
     if (!term.trim()) return items;
 
     const lowered = term.toLowerCase();
@@ -78,16 +80,11 @@ const ApprovalHistory = () => {
         item.status,
         item.decision,
         item.comments,
-        ...(item.approved_items || []).flatMap((approvedItem) => [
-          approvedItem.item_name,
-          approvedItem.approval_status,
-          approvedItem.approval_comments,
-        ]),
       ]
         .filter(Boolean)
         .some((value) => value.toString().toLowerCase().includes(lowered))
     );
-  };
+  }, []);
 
   const formatCurrency = (value) => {
     if (value === null || value === undefined || value === '') return '—';
@@ -101,11 +98,33 @@ const ApprovalHistory = () => {
     }).format(numberValue);
   };
 
-  const getApprovedItems = (item) => (Array.isArray(item?.approved_items) ? item.approved_items : []);
+  const getRequestItems = (requestId) => (Array.isArray(itemsMap[requestId]) ? itemsMap[requestId] : []);
 
-  const summarizeApprovedItems = (items) => {
-    if (!items.length) return 'No item-level approvals recorded';
-    return items.map((approvedItem) => `${approvedItem.item_name || 'Unnamed item'} (${approvedItem.approval_status || '—'})`).join('; ');
+  const summarizeRequestItems = (items) => {
+    if (!items.length) return 'Open the request items view to load item details';
+    return items.map((requestItem) => `${requestItem.item_name || 'Unnamed item'} (${requestItem.quantity ?? '—'})`).join('; ');
+  };
+
+  const toggleItems = async (requestId) => {
+    if (expandedItemsId === requestId) {
+      setExpandedItemsId(null);
+      return;
+    }
+
+    if (!itemsMap[requestId]) {
+      try {
+        setLoadingItemsId(requestId);
+        const res = await axios.get(`/requests/${requestId}/items`);
+        setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
+      } catch (err) {
+        console.error(`❌ Failed to load items for request ${requestId}:`, err);
+        setError('Failed to load request items');
+      } finally {
+        setLoadingItemsId(null);
+      }
+    }
+
+    setExpandedItemsId(requestId);
   };
 
   const statusVariant = {
@@ -181,12 +200,12 @@ const ApprovalHistory = () => {
     };
 
      fetchHistory();
-  }, [statusFilter, fromDate, toDate, department, searchTerm]);
+  }, [statusFilter, fromDate, toDate, department, searchTerm, applySearch]);
 
   useEffect(() => {
     setFiltered(applySearch(history, searchTerm));
     setCurrentPage(1);
-  }, [history, searchTerm]);
+  }, [history, searchTerm, applySearch]);
 
   const downloadCSV = () => {
     const sorted = [...filtered].sort((a, b) => new Date(b.approved_at) - new Date(a.approved_at));
@@ -201,7 +220,7 @@ const ApprovalHistory = () => {
         'Final Status': item.status,
         'Your Decision': item.decision,
         'Your Comment': item.comments || '—',
-        Items: summarizeApprovedItems(getApprovedItems(item)),
+        Items: summarizeRequestItems(getRequestItems(item.request_id)),
         Level: item.approval_level || '—',
         Date: item.approved_at ? new Date(item.approved_at).toLocaleString('en-GB') : '—'
       }))
@@ -233,7 +252,7 @@ const ApprovalHistory = () => {
       item.status,
       item.decision,
       item.comments || '—',
-      summarizeApprovedItems(getApprovedItems(item)),
+      summarizeRequestItems(getRequestItems(item.request_id)),
       item.approval_level || '—',
       item.approved_at ? new Date(item.approved_at).toLocaleString('en-GB') : '—'
     ]);
@@ -396,7 +415,7 @@ const ApprovalHistory = () => {
                     <th className="border-b border-gray-200 p-3 font-semibold">Final Status</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Your Decision</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Your Comment</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Items Approved</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">Items</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Level</th>
                     <th className="border-b border-gray-200 p-3 font-semibold">Date</th>
                     {canViewCommunication && (
@@ -448,17 +467,18 @@ const ApprovalHistory = () => {
                           )}
                         </td>
                         <td className="border-r p-2 align-top text-gray-600">
-                          {getApprovedItems(item).length > 0 ? (
-                            <button
-                              type="button"
-                              className="text-blue-700 underline"
-                              onClick={() => setExpandedItemsId(expandedItemsId === item.request_id ? null : item.request_id)}
-                            >
-                              {expandedItemsId === item.request_id ? 'Hide' : 'View'} {getApprovedItems(item).length} item{getApprovedItems(item).length === 1 ? '' : 's'}
-                            </button>
-                          ) : (
-                            <span className="text-xs text-gray-400">No item records</span>
-                          )}
+                          <button
+                            type="button"
+                            className="text-blue-700 underline disabled:text-gray-400 disabled:no-underline"
+                            onClick={() => toggleItems(item.request_id)}
+                            disabled={loadingItemsId === item.request_id}
+                          >
+                            {loadingItemsId === item.request_id
+                              ? 'Loading items...'
+                              : expandedItemsId === item.request_id
+                                ? 'Hide Items'
+                                : 'View Items'}
+                          </button>
                         </td>
                         <td className="border-r p-2 align-top text-gray-600">{item.approval_level || '—'}</td>
                         <td className="p-2 align-top text-gray-600">
@@ -507,32 +527,38 @@ const ApprovalHistory = () => {
                       {expandedItemsId === item.request_id && (
                         <tr className="bg-blue-50/40">
                           <td colSpan={canViewCommunication ? 14 : 13} className="p-3 align-top">
-                            <p className="text-sm font-semibold text-blue-900">Items you approved for request {item.request_id}</p>
+                            <p className="text-sm font-semibold text-blue-900">Requested items for request {item.request_id}</p>
                             <div className="mt-3 overflow-x-auto rounded border border-blue-100 bg-white">
                               <table className="min-w-full text-xs">
                                 <thead className="bg-blue-50 text-left uppercase tracking-wide text-blue-700">
                                   <tr>
                                     <th className="p-2 font-semibold">Item</th>
+                                    <th className="p-2 font-semibold">Specs</th>
+                                    <th className="p-2 font-semibold">Brand</th>
                                     <th className="p-2 font-semibold">Quantity</th>
                                     <th className="p-2 font-semibold">Unit Cost</th>
                                     <th className="p-2 font-semibold">Total Cost</th>
                                     <th className="p-2 font-semibold">Decision</th>
-                                    <th className="p-2 font-semibold">Item Comment</th>
-                                    <th className="p-2 font-semibold">Approved At</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {getApprovedItems(item).map((approvedItem) => (
-                                    <tr key={`${approvedItem.source || 'item'}-${approvedItem.id}`} className="border-t border-blue-100">
-                                      <td className="p-2 font-medium text-gray-900">{approvedItem.item_name || '—'}</td>
-                                      <td className="p-2 text-gray-700">{approvedItem.quantity ?? '—'}</td>
-                                      <td className="p-2 text-gray-700">{formatCurrency(approvedItem.unit_cost)}</td>
-                                      <td className="p-2 text-gray-700">{formatCurrency(approvedItem.total_cost)}</td>
-                                      <td className="p-2 text-gray-700">{approvedItem.approval_status || '—'}</td>
-                                      <td className="p-2 text-gray-700">{approvedItem.approval_comments || '—'}</td>
-                                      <td className="p-2 text-gray-700">{approvedItem.approved_at ? new Date(approvedItem.approved_at).toLocaleString('en-GB') : '—'}</td>
+                                  {getRequestItems(item.request_id).length > 0 ? (
+                                    getRequestItems(item.request_id).map((requestItem, itemIdx) => (
+                                      <tr key={requestItem.id ?? itemIdx} className="border-t border-blue-100">
+                                        <td className="p-2 font-medium text-gray-900">{requestItem.item_name || '—'}</td>
+                                        <td className="p-2 text-gray-700 whitespace-pre-wrap">{requestItem.specs || '—'}</td>
+                                        <td className="p-2 text-gray-700">{requestItem.brand || '—'}</td>
+                                        <td className="p-2 text-gray-700">{requestItem.quantity ?? '—'}</td>
+                                        <td className="p-2 text-gray-700">{formatCurrency(requestItem.unit_cost)}</td>
+                                        <td className="p-2 text-gray-700">{formatCurrency(requestItem.total_cost)}</td>
+                                        <td className="p-2 text-gray-700">{requestItem.approval_status || '—'}</td>
+                                      </tr>
+                                    ))
+                                  ) : (
+                                    <tr>
+                                      <td colSpan={7} className="border-t border-blue-100 p-3 text-center text-gray-500">No items found.</td>
                                     </tr>
-                                  ))}
+                                  )}
                                 </tbody>
                               </table>
                             </div>
