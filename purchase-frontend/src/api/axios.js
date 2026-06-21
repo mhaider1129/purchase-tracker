@@ -69,9 +69,6 @@ const resolveApiFallbackBases = (base) => {
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 15000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use(
@@ -83,7 +80,14 @@ api.interceptors.request.use(
     }
 
     if (config.data instanceof FormData) {
+      // Let the browser/axios generate the multipart boundary. Leaving a default
+      // JSON content type here can cause file submissions to be parsed as JSON
+      // and rejected by the API/proxy as an oversized request body.
       delete config.headers["Content-Type"];
+      delete config.headers["content-type"];
+      config.headers.set?.("Content-Type", undefined);
+    } else if (!config.headers["Content-Type"] && !config.headers["content-type"]) {
+      config.headers["Content-Type"] = "application/json";
     }
 
     return config;
@@ -97,7 +101,11 @@ api.interceptors.response.use(
     const config = error.config || {};
     const status = error.response?.status;
 
-    if ([404, 502, 503, 504].includes(status) && typeof config.url === "string") {
+    const shouldTryApiFallback =
+      [502, 503, 504].includes(status) ||
+      (status === 404 && !/^\/?attachments\//.test(config.url || ""));
+
+    if (shouldTryApiFallback && typeof config.url === "string") {
       const attemptedBases = config.__attemptedApiBases || [];
       const currentBase = trimTrailingSlashes(config.baseURL || API_BASE);
       const fallbackBases = resolveApiFallbackBases(currentBase);
