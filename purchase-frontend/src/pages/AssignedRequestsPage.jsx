@@ -217,7 +217,7 @@ const ITEM_SECTION_CONFIG = [
 ];
 
 const AssignedRequestsPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const tr = usePageTranslation('assignedRequests');
   const itemSections = useMemo(
@@ -482,7 +482,10 @@ const AssignedRequestsPage = () => {
     setPrintingRequestId(requestId);
 
     try {
-      const data = await printRequest(requestId, { incrementPrintCount: true });
+      const data = await printRequest(requestId, {
+        incrementPrintCount: true,
+        language: i18n.language === 'en' ? 'en' : 'ar',
+      });
       const {
         request,
         items: printableItems = [],

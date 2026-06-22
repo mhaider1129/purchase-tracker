@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
+import { printRequest } from '../api/requests';
 import { getDisplayItems } from '../utils/itemUtils';
 import { saveAs } from 'file-saver';
 import ApprovalTimeline from '../components/ApprovalTimeline';
@@ -22,6 +23,7 @@ const AuditRequestsPage = () => {
   const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingItemsId, setLoadingItemsId] = useState(null);
+  const [printingId, setPrintingId] = useState(null);
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -52,6 +54,10 @@ const AuditRequestsPage = () => {
     () => [
       tr('table.headers.id', 'ID'),
       tr('table.headers.type', 'Type'),
+      tr('table.headers.requester', 'Requester'),
+      tr('table.headers.department', 'Department'),
+      tr('table.headers.section', 'Section'),
+      tr('table.headers.printCount', 'Print Count'),
       tr('table.headers.project', 'Project'),
       tr('table.headers.justification', 'Justification'),
       tr('table.headers.status', 'Status'),
@@ -62,7 +68,7 @@ const AuditRequestsPage = () => {
   );
   const csvHeaders = useMemo(
     () =>
-      tableHeaders.slice(0, 6),
+      tableHeaders.slice(0, 10),
     [tableHeaders],
   );
   const exportFileName = tr('export.fileName', 'Audit_Requests.csv');
@@ -103,6 +109,10 @@ const AuditRequestsPage = () => {
       ...data.map((r) => [
         r.id,
         r.request_type,
+        r.requester_name || '',
+        r.department_name || '',
+        r.section_name || '',
+        r.print_count ?? 0,
         r.project_name || '',
         r.justification || '',
         getStatusLabel(r.status),
@@ -167,6 +177,9 @@ const AuditRequestsPage = () => {
         r.request_type?.toLowerCase().includes(term) ||
         r.justification?.toLowerCase().includes(term) ||
         r.status?.toLowerCase().includes(term) ||
+        r.requester_name?.toLowerCase().includes(term) ||
+        r.department_name?.toLowerCase().includes(term) ||
+        r.section_name?.toLowerCase().includes(term) ||
         r.project_name?.toLowerCase().includes(term) ||
         String(r.id).includes(term);
 
@@ -197,6 +210,84 @@ const AuditRequestsPage = () => {
 
     setFiltered(filteredRequests);
   }, [fromDate, requests, search, statusFilter, toDate, typeFilter]);
+
+
+  const escapeHtml = (value) =>
+    String(value ?? '—')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const handlePrintRequest = async (requestId) => {
+    try {
+      setPrintingId(requestId);
+      const data = await printRequest(requestId, { incrementPrintCount: false });
+      const { request, items = [], print_count: printCount } = data;
+      const printWindow = window.open('', '_blank', 'width=1100,height=800');
+      if (!printWindow) {
+        alert(tr('alerts.popupBlocked', 'Please enable popups to print the request.'));
+        return;
+      }
+
+      const detailRows = [
+        [tr('print.requestId', 'Request ID'), request?.id || requestId],
+        [tr('print.type', 'Type'), request?.request_type],
+        [tr('print.status', 'Status'), request?.status],
+        [tr('print.requester', 'Requester'), request?.requester_name],
+        [tr('print.department', 'Department'), request?.department_name],
+        [tr('print.section', 'Section'), request?.section_name],
+        [tr('print.project', 'Project'), request?.project_name],
+        [tr('print.printCount', 'Print Count'), printCount ?? request?.print_count],
+      ];
+      const itemRows = items.map((item) => `
+        <tr>
+          <td>${escapeHtml(item.item_name)}</td>
+          <td>${escapeHtml(item.specs)}</td>
+          <td>${escapeHtml(item.brand)}</td>
+          <td>${escapeHtml(item.quantity)}</td>
+          <td>${escapeHtml(item.unit_cost)}</td>
+          <td>${escapeHtml(item.total_cost)}</td>
+        </tr>`).join('');
+
+      printWindow.document.write(`
+        <html><head><title>${escapeHtml(tr('print.title', 'Audit Request Details'))} #${escapeHtml(requestId)}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+          .header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 18px; }
+          .badge { background: #1d4ed8; color: white; border-radius: 999px; padding: 8px 14px; font-weight: 700; }
+          .details { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 16px 0; }
+          .detail { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; }
+          .label { display: block; color: #6b7280; font-size: 12px; text-transform: uppercase; margin-bottom: 4px; }
+          table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+          th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; vertical-align: top; }
+          th { background: #f3f4f6; }
+          .justification { white-space: pre-wrap; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+          @media print { .no-print { display: none; } body { padding: 0; } }
+        </style></head><body>
+          <div class="no-print" style="text-align:right;margin-bottom:12px;"><button onclick="window.print()">${escapeHtml(tr('actions.print', 'Print'))}</button></div>
+          <div class="header"><div><h1>${escapeHtml(tr('print.heading', 'Audit Request Details'))}</h1><p>${escapeHtml(new Date().toLocaleString())}</p></div><div class="badge">${escapeHtml(tr('print.printCount', 'Print Count'))}: ${escapeHtml(printCount ?? request?.print_count ?? 0)}</div></div>
+          <div class="details">${detailRows.map(([label, value]) => `<div class="detail"><span class="label">${escapeHtml(label)}</span>${escapeHtml(value)}</div>`).join('')}</div>
+          <h2>${escapeHtml(tr('print.justification', 'Justification'))}</h2><div class="justification">${escapeHtml(request?.justification)}</div>
+          <h2>${escapeHtml(tr('print.items', 'Requested Items'))}</h2>
+          <table><thead><tr><th>${escapeHtml(tr('items.headers.item', 'Item'))}</th><th>${escapeHtml(tr('items.headers.specs', 'Specs'))}</th><th>${escapeHtml(tr('items.headers.brand', 'Brand'))}</th><th>${escapeHtml(tr('items.headers.quantity', 'Qty'))}</th><th>${escapeHtml(tr('items.headers.unitCost', 'Unit Cost'))}</th><th>${escapeHtml(tr('items.headers.total', 'Total'))}</th></tr></thead><tbody>${itemRows || `<tr><td colspan="6">${escapeHtml(tr('items.empty', 'No items found.'))}</td></tr>`}</tbody></table>
+        </body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
+    } catch (err) {
+      console.error(`❌ Failed to print audit request ${requestId}:`, err);
+      alert(tr('alerts.printFailed', 'Failed to print request.'));
+    } finally {
+      setPrintingId(null);
+    }
+  };
+
+  const isAutoApprovedStep = (approval) => {
+    const status = String(approval?.status || '').toLowerCase();
+    const comments = String(approval?.comments || '').toLowerCase();
+    return status.includes('auto') || comments.includes('auto-approved') || comments.includes('auto approved');
+  };
 
   const renderStatusBadge = (status) => {
     const normalized = status?.toLowerCase();
@@ -318,6 +409,10 @@ const AuditRequestsPage = () => {
                     <tr>
                       <td className="p-2 border">{req.id}</td>
                       <td className="p-2 border">{req.request_type}</td>
+                      <td className="p-2 border">{req.requester_name || '—'}</td>
+                      <td className="p-2 border">{req.department_name || '—'}</td>
+                      <td className="p-2 border">{req.section_name || '—'}</td>
+                      <td className="p-2 border text-center">{req.print_count ?? 0}</td>
                       <td className="p-2 border">{req.project_name || '—'}</td>
                       <td className="p-2 border max-w-xs">
                         <span className="block truncate" title={req.justification}>
@@ -345,6 +440,13 @@ const AuditRequestsPage = () => {
                           </button>
                           <button
                             className="text-blue-600 underline"
+                            onClick={() => handlePrintRequest(req.id)}
+                            disabled={printingId === req.id}
+                          >
+                            {printingId === req.id ? tr('actions.printing', 'Printing…') : tr('actions.print', 'Print')}
+                          </button>
+                          <button
+                            className="text-blue-600 underline"
                             onClick={() => toggleApprovals(req.id)}
                             disabled={loadingApprovalsId === req.id}
                           >
@@ -359,7 +461,7 @@ const AuditRequestsPage = () => {
                     </tr>
                     {expandedItemsId === req.id && (
                       <tr>
-                        <td colSpan={7} className="p-4 bg-gray-50 border-t">
+                        <td colSpan={11} className="p-4 bg-gray-50 border-t">
                           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                             <h3 className="font-semibold">{tr('items.title', 'Requested Items')}</h3>
                             {itemsMap[req.id]?.length > 1 && (
@@ -413,10 +515,10 @@ const AuditRequestsPage = () => {
                     )}
                     {expandedApprovalsId === req.id && (
                       <tr>
-                        <td colSpan={7} className="p-4 bg-gray-50 border-t">
+                        <td colSpan={11} className="p-4 bg-gray-50 border-t">
                           <h3 className="font-semibold mb-2">{t('common.approvalTimeline')}</h3>
                           <ApprovalTimeline
-                            approvals={approvalsMap[req.id]}
+                            approvals={(approvalsMap[req.id] || []).filter((approval) => !isAutoApprovedStep(approval))}
                             isLoading={loadingApprovalsId === req.id}
                             isUrgent={Boolean(req?.is_urgent)}
                           />

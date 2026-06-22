@@ -81,6 +81,7 @@ const ClosedRequestsPage = () => {
   } = useApprovalTimeline();
   const { user: currentUser } = useCurrentUser();
   const [markingItemReceived, setMarkingItemReceived] = useState(null);
+  const [reportingReceiptIssue, setReportingReceiptIssue] = useState(null);
   const [receiptQuantityByItem, setReceiptQuantityByItem] = useState({});
   const [expandedItemsId, setExpandedItemsId] = useState(null);
   const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
@@ -164,7 +165,75 @@ const ClosedRequestsPage = () => {
     }
   };
 
+
+  const handleReportReceiptIssue = async (requestId, item, issueType) => {
+    const itemId = item?.id;
+    const trackingKey = `${requestId}-${itemId}`;
+    const actualQuantityRaw = receiptQuantityByItem[trackingKey];
+    const actualQuantity =
+      actualQuantityRaw === undefined || actualQuantityRaw === ''
+        ? 0
+        : Number(actualQuantityRaw);
+
+    if (!Number.isFinite(actualQuantity) || actualQuantity < 0) {
+      alert(tr('invalidActualQty', { defaultValue: 'Enter a valid received quantity, or leave it blank for zero.' }));
+      return;
+    }
+
+    if (issueType === 'quantity_mismatch') {
+      const expectedQty = Number(item?.purchased_quantity ?? item?.quantity ?? 0);
+      if (actualQuantity >= expectedQty) {
+        alert(tr('mismatchQtyRequired', { defaultValue: 'Enter the lower quantity actually received before reporting a mismatch.' }));
+        return;
+      }
+    }
+
+    const defaultNote = issueType === 'not_received'
+      ? tr('notReceivedDefaultNote', { defaultValue: 'Requester marked the procured item as not received yet.' })
+      : tr('quantityMismatchDefaultNote', { defaultValue: 'Requester received a different quantity than procurement marked as procured.' });
+
+    setReportingReceiptIssue(`${trackingKey}-${issueType}`);
+    try {
+      const response = await api.patch(`/requests/${requestId}/report-receipt-issue`, {
+        item_id: itemId,
+        issue_type: issueType,
+        actual_quantity: issueType === 'not_received' ? 0 : actualQuantity,
+        notes: defaultNote,
+      });
+
+      setRequests((prevRequests) =>
+        prevRequests.map((req) => {
+          if (req.id !== requestId) return req;
+          return {
+            ...req,
+            status: response?.data?.request_status || req.status,
+            items: (req.items || []).map((currentItem) =>
+              currentItem.id === itemId
+                ? {
+                    ...currentItem,
+                    is_received: false,
+                    received_quantity: issueType === 'not_received' ? 0 : actualQuantity,
+                    receipt_issue_status: issueType,
+                    receipt_issue_quantity: issueType === 'not_received' ? 0 : actualQuantity,
+                    receipt_issue_notes: defaultNote,
+                    receipt_issue_reported_at: new Date().toISOString(),
+                  }
+                : currentItem,
+            ),
+          };
+        }),
+      );
+    } catch (err) {
+      console.error('Failed to report receipt issue:', err);
+      const serverMessage = err?.response?.data?.message;
+      alert(serverMessage || 'Failed to report receipt issue.');
+    } finally {
+      setReportingReceiptIssue(null);
+    }
+  };
+
   const handleStartTechnicalInspection = (requestId, item) => {
+
     navigate('/technical-inspections', {
       state: {
         prefillInspection: {
@@ -754,6 +823,11 @@ const ClosedRequestsPage = () => {
                                               </td>
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
                                                 {item.procurement_status || tr('notAvailable')}
+                                                {item.receipt_issue_status && (
+                                                  <div className="mt-1 text-xs text-rose-600 dark:text-rose-300">
+                                                    {tr('receiptIssue', { defaultValue: 'Issue' })}: {item.receipt_issue_status.replace('_', ' ')}
+                                                  </div>
+                                                )}
                                               </td>
                                               <td className="px-4 py-2">
                                                 <span
@@ -765,7 +839,9 @@ const ClosedRequestsPage = () => {
                                                 >
                                                   {isReceived
                                                     ? tr('receivedLabel', { defaultValue: 'Received' })
-                                                    : tr('pendingReceiptLabel', { defaultValue: 'Pending Receipt' })}
+                                                    : item.receipt_issue_status
+                                                      ? tr('receiptIssueLabel', { defaultValue: 'Receipt Issue Reported' })
+                                                      : tr('pendingReceiptLabel', { defaultValue: 'Pending Receipt' })}
                                                 </span>
                                               </td>
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
@@ -795,6 +871,22 @@ const ClosedRequestsPage = () => {
                                                       {markingItemReceived === trackingKey
                                                         ? tr('markingItem', { defaultValue: 'Marking…' })
                                                         : tr('markItemReceived', { defaultValue: 'Receive Batch' })}
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleReportReceiptIssue(req.id, item, 'quantity_mismatch')}
+                                                      disabled={reportingReceiptIssue === `${trackingKey}-quantity_mismatch`}
+                                                      className="inline-flex items-center gap-2 rounded-md border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-800"
+                                                    >
+                                                      {tr('reportMismatch', { defaultValue: 'Report Difference' })}
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleReportReceiptIssue(req.id, item, 'not_received')}
+                                                      disabled={reportingReceiptIssue === `${trackingKey}-not_received`}
+                                                      className="inline-flex items-center gap-2 rounded-md border border-rose-300 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-600 dark:text-rose-200 dark:hover:bg-rose-800"
+                                                    >
+                                                      {tr('reportNotReceived', { defaultValue: 'Not Received Yet' })}
                                                     </button>
                                                   </div>
                                                 ) : isTechnicalInspectionPending ? (
@@ -1032,6 +1124,11 @@ const ClosedRequestsPage = () => {
                                           {tr('procurementStatus', { defaultValue: 'Procurement Status' })}: {item.procurement_status}
                                         </p>
                                       )}
+                                      {item.receipt_issue_status && (
+                                        <p className="text-xs font-medium text-rose-600 dark:text-rose-300">
+                                          {tr('receiptIssue', { defaultValue: 'Issue' })}: {item.receipt_issue_status.replace('_', ' ')}
+                                        </p>
+                                      )}
                                     </div>
                                     <div className="text-right">
                                       <span
@@ -1043,7 +1140,9 @@ const ClosedRequestsPage = () => {
                                       >
                                         {isReceived
                                           ? tr('receivedLabel', { defaultValue: 'Received' })
-                                          : tr('pendingReceiptLabel', { defaultValue: 'Pending Receipt' })}
+                                          : item.receipt_issue_status
+                                            ? tr('receiptIssueLabel', { defaultValue: 'Receipt Issue Reported' })
+                                            : tr('pendingReceiptLabel', { defaultValue: 'Pending Receipt' })}
                                       </span>
                                     </div>
                                   </div>
@@ -1073,6 +1172,22 @@ const ClosedRequestsPage = () => {
                                         {markingItemReceived === trackingKey
                                           ? tr('markingItem', { defaultValue: 'Marking…' })
                                           : tr('markItemReceived', { defaultValue: 'Receive Batch' })}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleReportReceiptIssue(req.id, item, 'quantity_mismatch')}
+                                        disabled={reportingReceiptIssue === `${trackingKey}-quantity_mismatch`}
+                                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-amber-600 dark:text-amber-200 dark:hover:bg-amber-800"
+                                      >
+                                        {tr('reportMismatch', { defaultValue: 'Report Difference' })}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleReportReceiptIssue(req.id, item, 'not_received')}
+                                        disabled={reportingReceiptIssue === `${trackingKey}-not_received`}
+                                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-rose-300 px-3 py-1 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-600 dark:text-rose-200 dark:hover:bg-rose-800"
+                                      >
+                                        {tr('reportNotReceived', { defaultValue: 'Not Received Yet' })}
                                       </button>
                                     </div>
                                   )}

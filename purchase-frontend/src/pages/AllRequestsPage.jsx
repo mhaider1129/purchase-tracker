@@ -199,7 +199,7 @@ const AllRequestsPage = () => {
   const [loadingExport, setLoadingExport] = useState(false);
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [printLanguage, setPrintLanguage] = useState('en');
+  const [printLanguage, setPrintLanguage] = useState('ar');
   const limit = 10;
   const {
     expandedApprovalsId,
@@ -502,7 +502,10 @@ const AllRequestsPage = () => {
     if (!shouldPrint) return;
 
     try {
-      const data = await printRequest(requestId, { incrementPrintCount: false });
+      const data = await printRequest(requestId, {
+        incrementPrintCount: false,
+        language: printLanguage,
+      });
       const { request, items, message = 'Request ready for printing.', print_count } = data;
 
       const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';

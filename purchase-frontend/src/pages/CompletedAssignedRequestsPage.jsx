@@ -100,7 +100,7 @@ const CompletedAssignedRequestsPage = () => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
-  const [printLanguage, setPrintLanguage] = useState('en');
+  const [printLanguage, setPrintLanguage] = useState('ar');
   const [printTemplateUrl, setPrintTemplateUrl] = useState(() => localStorage.getItem(PRINT_TEMPLATE_URL_STORAGE_KEY) || '');
   const [printTemplateFileData, setPrintTemplateFileData] = useState(
     () => localStorage.getItem(PRINT_TEMPLATE_FILE_STORAGE_KEY) || '',
@@ -272,7 +272,7 @@ const CompletedAssignedRequestsPage = () => {
     if (!shouldPrint) return;
 
     try {
-      const data = await printRequest(requestId);
+      const data = await printRequest(requestId, { language: printLanguage });
       const { request, items, message, print_count } = data;
 
       const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';

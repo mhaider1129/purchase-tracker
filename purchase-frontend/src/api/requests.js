@@ -4,9 +4,10 @@ export const printRequest = async (id, options = {}) => {
   const trimmedId = String(id || "").trim();
   if (!trimmedId) throw new Error("A request id is required");
 
-  const { incrementPrintCount = true } = options;
+  const { incrementPrintCount = true, language = "ar" } = options;
+  const normalizedLanguage = language === "en" ? "en" : "ar";
   const res = await api.get(`/requests/${trimmedId}/print`, {
-    params: { incrementPrintCount },
+    params: { incrementPrintCount, language: normalizedLanguage },
   });
   return res.data;
 };

@@ -1,5 +1,5 @@
 // src/pages/requests/MaintenanceRequestForm.jsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../../api/axios';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,9 @@ const MaintenanceRequestForm = () => {
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetSectionId, setTargetSectionId] = useState('');
   const [requesters, setRequesters] = useState([]);
+  const [hodRequesters, setHodRequesters] = useState([]);
+  const [requesterMode, setRequesterMode] = useState('manual');
+  const [selectedHodRequesterId, setSelectedHodRequesterId] = useState('');
   const [requestersLoaded, setRequestersLoaded] = useState(false);
   const [temporaryRequesterName, setTemporaryRequesterName] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -84,6 +87,10 @@ const MaintenanceRequestForm = () => {
     const fetchRequesters = async () => {
       setRequestersLoaded(false);
       setRequesters([]);
+      setHodRequesters([]);
+      setRequesterMode('manual');
+      setSelectedHodRequesterId('');
+      setTemporaryRequesterName('');
 
       if (!targetDeptId || (sections.length > 0 && !targetSectionId)) {
         return;
@@ -91,11 +98,16 @@ const MaintenanceRequestForm = () => {
 
       try {
         const sectionQuery = targetSectionId ? `?section_id=${targetSectionId}` : '';
-        const res = await axios.get(`/departments/${targetDeptId}/requesters${sectionQuery}`);
-        setRequesters(res.data || []);
+        const [requestersRes, hodsRes] = await Promise.all([
+          axios.get(`/departments/${targetDeptId}/requesters${sectionQuery}`),
+          axios.get(`/departments/${targetDeptId}/hods`),
+        ]);
+        setRequesters(requestersRes.data || []);
+        setHodRequesters(hodsRes.data || []);
       } catch (err) {
         console.error('❌ Failed to fetch requesters:', err);
         setRequesters([]);
+        setHodRequesters([]);
       } finally {
         setRequestersLoaded(true);
       }
@@ -156,27 +168,10 @@ const MaintenanceRequestForm = () => {
   }, [items, tr]);
 
   const requesterLookupReady = Boolean(targetDeptId) && !(sections.length > 0 && !targetSectionId) && requestersLoaded;
-  const requiresTemporaryRequesterName = requesterLookupReady && requesters.length === 0;
-
-  const isFormValid = useMemo(() => {
-    if (
-      !refNumber.trim() ||
-      !targetDeptId ||
-      !justification.trim()
-    ) {
-      return false;
-    }
-    if (sections.length > 0 && !targetSectionId) {
-      return false;
-    }
-    if (!requesterLookupReady) {
-      return false;
-    }
-    if (requiresTemporaryRequesterName && !temporaryRequesterName.trim()) {
-      return false;
-    }
-    return validateItems() === '';
-  }, [justification, refNumber, requesterLookupReady, requiresTemporaryRequesterName, sections.length, targetDeptId, targetSectionId, temporaryRequesterName, validateItems]);
+  const hasNoActiveRequester = requesterLookupReady && requesters.length === 0;
+  const canUseHodRequester = hasNoActiveRequester && hodRequesters.length > 0;
+  const requiresTemporaryRequesterName = hasNoActiveRequester && (!canUseHodRequester || requesterMode === 'manual');
+  const requiresHodRequester = canUseHodRequester && requesterMode === 'hod';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -197,6 +192,12 @@ const MaintenanceRequestForm = () => {
       formData.append('target_department_id', targetDeptId);
       if (targetSectionId) {
         formData.append('target_section_id', targetSectionId);
+      }
+      if (hasNoActiveRequester) {
+        formData.append('maintenance_requester_mode', requesterMode);
+      }
+      if (requiresHodRequester) {
+        formData.append('hod_requester_id', selectedHodRequesterId);
       }
       if (requiresTemporaryRequesterName) {
         formData.append('temporary_requester_name', temporaryRequesterName.trim());
@@ -300,16 +301,59 @@ const MaintenanceRequestForm = () => {
           />
 
           <div className="rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-            {requiresTemporaryRequesterName
-              ? tr(
-                  'fields.manualRequesterNotice',
-                  'No active requester was found for the selected department/section. Enter the requester name below; requester approval will still be recorded automatically before the request goes to the HOD.'
-                )
+            {hasNoActiveRequester
+              ? canUseHodRequester
+                ? tr('fields.hodRequesterChoiceNotice')
+                : tr('fields.manualRequesterNotice')
               : tr(
                   'fields.autoRequesterNotice',
                   'The system will assign this request to the active requester for the selected department/section and automatically record requester approval before sending it to the HOD.'
                 )}
           </div>
+
+
+          {canUseHodRequester && (
+            <div className="rounded border border-gray-200 bg-white p-3 text-sm">
+              <p className="mb-2 font-semibold text-gray-700">{tr('fields.requesterModeLabel')}</p>
+              <label className="mb-2 flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="requesterMode"
+                  value="hod"
+                  checked={requesterMode === 'hod'}
+                  onChange={() => setRequesterMode('hod')}
+                />
+                <span>{tr('fields.useHodRequester')}</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="requesterMode"
+                  value="manual"
+                  checked={requesterMode === 'manual'}
+                  onChange={() => setRequesterMode('manual')}
+                />
+                <span>{tr('fields.useManualRequester')}</span>
+              </label>
+            </div>
+          )}
+
+          {requiresHodRequester && (
+            <select
+              aria-label={tr('fields.hodRequesterAria')}
+              value={selectedHodRequesterId}
+              onChange={(e) => setSelectedHodRequesterId(e.target.value)}
+              className="w-full border p-2 rounded"
+              required
+            >
+              <option value="">{tr('fields.selectHodRequester')}</option>
+              {hodRequesters.map((hod) => (
+                <option key={hod.id} value={hod.id}>
+                  {hod.name}
+                </option>
+              ))}
+            </select>
+          )}
 
           {requiresTemporaryRequesterName && (
             <input
@@ -421,7 +465,7 @@ const MaintenanceRequestForm = () => {
               multiple
               onChange={(e) => setAttachments(Array.from(e.target.files))}
               className="p-2 border rounded w-full"
-              disabled={submitting || !isFormValid}
+              disabled={submitting}
             />
           </div>
 

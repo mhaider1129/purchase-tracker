@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import { saveAs } from 'file-saver';
+import { buildExcelCsvBlob } from '../utils/csvExport';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -368,21 +369,7 @@ const MyMaintenanceRequests = () => {
       }),
     ];
 
-    const csvContent = csvRows.map((row) => row.map((value) => {
-      if (value === null || value === undefined) {
-        return '';
-      }
-
-      const stringValue = String(value);
-
-      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-
-      return stringValue;
-    }).join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = buildExcelCsvBlob(csvRows);
     saveAs(blob, `${tr('export.filePrefix')}_${new Date().toISOString().split('T')[0]}.csv`);
   };
 
@@ -846,7 +833,9 @@ const MyMaintenanceRequests = () => {
                                     }
                                     className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
                                   >
-                                    {alphabetizedItemsId === r.id ? 'Original order' : 'Sort A-Z'}
+                                    {alphabetizedItemsId === r.id
+                                      ? tr('items.actions.sortOriginal')
+                                      : tr('items.actions.sortAlphabetical')}
                                   </button>
                                 )}
                               </div>

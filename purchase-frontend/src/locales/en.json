@@ -804,7 +804,17 @@
       "justificationAria": "Justification",
       "justificationPlaceholder": "Justification",
       "requesterNameAria": "Department Requester Name",
-      "requesterNamePlaceholder": "Department Requester Name"
+      "requesterNamePlaceholder": "Department Requester Name",
+      "manualRequesterNotice": "No active requester was found for the selected department/section. Enter the requester name below; requester approval will still be recorded automatically before the request goes to the HOD.",
+      "autoRequesterNotice": "The system will assign this request to the active requester for the selected department/section and automatically record requester approval before sending it to the HOD.",
+      "hodRequesterChoiceNotice": "No active requester was found for the selected department/section, but an HOD is available. Choose whether to submit in the HOD name or type the requester name manually.",
+      "requesterModeLabel": "Requester fallback",
+      "useHodRequester": "Submit in the HOD name",
+      "useManualRequester": "Type requester name manually",
+      "hodRequesterAria": "HOD requester",
+      "selectHodRequester": "Select HOD requester",
+      "temporaryRequesterNameAria": "Requester name",
+      "temporaryRequesterNamePlaceholder": "Requester name"
     },
     "stock": {
       "heading": "Available Maintenance Stock",
@@ -1043,6 +1053,16 @@
         "label": "Printing Logbook Request",
         "aria": "Open printing logbook request form",
         "description": "Submit approved forms for printing as serial logbooks."
+      },
+      "procurementLogbook": {
+        "label": "Bulk Logbook Procurement Request",
+        "aria": "Submit a procurement request for bulk logbook printing",
+        "description": "Use the purchase workflow for approved source documents and bulk logbook production."
+      },
+      "itPrintService": {
+        "label": "IT Print Service Request",
+        "aria": "Submit a print service request to IT",
+        "description": "Ask IT to print a specific log or form by name and quantity without purchase approvals."
       }
     },
     "emptyState": "No available actions were found for your role. Please contact an administrator if you believe this is an error.",
@@ -1288,7 +1308,9 @@
       "empty": "No items recorded for this request.",
       "actions": {
         "show": "View items",
-        "hide": "Hide items"
+        "hide": "Hide items",
+        "sortOriginal": "Original order",
+        "sortAlphabetical": "Sort A-Z"
       },
       "columns": {
         "item": "Item",
