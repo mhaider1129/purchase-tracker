@@ -11,25 +11,38 @@ const STATUS_LABELS = {
 };
 
 const normalize = (value) => String(value || '').trim().toLowerCase();
-const isItUser = (user) => normalize(user?.role).includes('it') || normalize(user?.department_name).includes('it');
+const isLinkedItDepartmentUser = (user, settings) => {
+  const linkedDepartmentId = Number(settings?.department_id);
+  if (Number.isInteger(linkedDepartmentId) && linkedDepartmentId > 0) {
+    return Number(user?.department_id) === linkedDepartmentId;
+  }
+
+  return normalize(user?.department_name).includes('it');
+};
 
 const PrintServiceRequestsPage = () => {
   const { user } = useCurrentUser();
   const [myRequests, setMyRequests] = useState([]);
   const [queueRequests, setQueueRequests] = useState([]);
+  const [queueSettings, setQueueSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [form, setForm] = useState({ form_name: '', quantity: 1, notes: '' });
 
-  const canManageQueue = useMemo(() => isItUser(user), [user]);
+  const canManageQueue = useMemo(() => isLinkedItDepartmentUser(user, queueSettings), [queueSettings, user]);
 
   const loadRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const myResponse = await api.get('/print-service-requests/my');
+      const [myResponse, settingsResponse] = await Promise.all([
+        api.get('/print-service-requests/my'),
+        api.get('/print-service-requests/settings'),
+      ]);
       setMyRequests(myResponse.data?.requests || []);
+      const settings = settingsResponse.data?.settings || null;
+      setQueueSettings(settings);
 
-      if (canManageQueue) {
+      if (isLinkedItDepartmentUser(user, settings)) {
         const queueResponse = await api.get('/print-service-requests/queue');
         setQueueRequests(queueResponse.data?.requests || []);
       } else {
@@ -40,7 +53,7 @@ const PrintServiceRequestsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [canManageQueue]);
+  }, [user]);
 
   useEffect(() => {
     loadRequests();
@@ -138,7 +151,7 @@ const PrintServiceRequestsPage = () => {
         <button type="submit" className="mt-4 rounded bg-cyan-600 px-4 py-2 font-semibold text-white hover:bg-cyan-700">Submit to IT</button>
       </form>
 
-      {canManageQueue && <section className="space-y-3"><h2 className="text-xl font-semibold">IT Department Queue</h2>{loading ? <p>Loading...</p> : renderRequestTable(queueRequests, 'queue')}</section>}
+      {canManageQueue && <section className="space-y-3"><h2 className="text-xl font-semibold">IT Department Queue</h2><p className="text-sm text-gray-600">Accessible to users assigned to {queueSettings?.department_name || 'the linked IT department'}.</p>{loading ? <p>Loading...</p> : renderRequestTable(queueRequests, 'queue')}</section>}
       <section className="space-y-3"><h2 className="text-xl font-semibold">My Print Requests</h2>{loading ? <p>Loading...</p> : renderRequestTable(myRequests, 'my')}</section>
     </div>
   );

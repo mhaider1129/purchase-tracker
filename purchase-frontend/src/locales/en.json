@@ -215,7 +215,11 @@
     "dismissNotification": "Dismiss notification",
     "loadingNotifications": "Loading notifications…",
     "viewDetails": "View details",
-    "unreadCount": "{{count}} unread"
+    "unreadCount": "{{count}} unread",
+    "highContrastMode": "High contrast mode",
+    "home": "Home",
+    "notificationsLoadFailed": "Failed to load notifications.",
+    "retry": "Retry"
   },
   "pageTitles": {
     "nonStockRequestForm": "Non-Stock Request Form",
@@ -243,7 +247,9 @@
       "itemName": "Each item needs a name",
       "quantity": "Quantities must be whole numbers",
       "unitCost": "Unit cost must be a whole number or left blank",
-      "supplyWarehouse": "Select the fulfilling warehouse"
+      "supplyWarehouse": "Select the fulfilling warehouse",
+      "finalApprover": "Final approver is required.",
+      "status": "Status is required."
     },
     "fields": {
       "requestType": "Request type",
@@ -254,12 +260,19 @@
       "supplyWarehouse": "Supply warehouse ID",
       "justification": "Justification (optional)",
       "approvedAt": "Approved on",
-      "markCompleted": "Mark as completed"
+      "markCompleted": "Mark as completed",
+      "completedAt": "Completed at",
+      "finalApprover": "Final approver",
+      "procurementUser": "Procurement user",
+      "status": "Status"
     },
     "placeholders": {
       "selectType": "Select type",
       "requesterId": "Employee ID for the requester",
-      "temporaryRequester": "Name on the paper request"
+      "temporaryRequester": "Name on the paper request",
+      "finalApprover": "Select final approver",
+      "loadingUsers": "Loading users...",
+      "procurementUser": "Select procurement user"
     },
     "help": {
       "requester": "Required unless you provide a temporary requester name.",
@@ -267,7 +280,9 @@
       "items": "Use one line per requested item. Quantities and costs must be whole numbers.",
       "dates": "Set the approved date to match the original paper approval. Completion date is optional.",
       "access": "Only authorized users can import requests for KPI alignment.",
-      "title": "Import guidance"
+      "title": "Import guidance",
+      "procurementUser": "Select the procurement owner responsible for the request.",
+      "status": "Choose the final lifecycle status for this historical request."
     },
     "items": {
       "title": "Requested items",
@@ -293,7 +308,8 @@
     "actions": {
       "saving": "Saving…",
       "save": "Import historical request"
-    }
+    },
+    "errorUsers": "Failed to load users."
   },
   "maintenanceHODApprovals": {
     "title": "Maintenance Approval Center",
@@ -1791,7 +1807,53 @@
     "oldestPending": "Oldest Pending Requests",
     "requestWithDepartment": "Request #{{id}} • {{department}}",
     "waitingDays": "Waiting {{days}} days",
-    "noPendingBacklog": "No pending backlog 🎉"
+    "noPendingBacklog": "No pending backlog 🎉",
+    "actualProcured": "Actual Procured",
+    "alertCount": "Alert Count",
+    "approvedCostTotal": "Approved Cost Total",
+    "approvedRequestCost": "Approved Request Cost",
+    "approvedValue": "Approved Value",
+    "backlogByStage": "Backlog By Stage",
+    "backlogByStageSubtitle": "Backlog By Stage Subtitle",
+    "budgetUtilization": "Budget Utilization",
+    "contractUtilization": "Contract Utilization",
+    "count": "Count",
+    "dataQualityAlerts": "Data Quality Alerts",
+    "dataQualityAlertsSubtitle": "Data Quality Alerts Subtitle",
+    "demandVsProcured": "Demand Vs Procured",
+    "demandVsProcuredSubtitle": "Demand Vs Procured Subtitle",
+    "departmentRequestCosts": "Department Request Costs",
+    "departmentRequestCostsSubtitle": "Department Request Costs Subtitle",
+    "emergencyPurchases": "Emergency Purchases",
+    "executiveDashboard": "Executive Dashboard",
+    "executiveDashboardSubtitle": "Executive Dashboard Subtitle",
+    "issue": "Issue",
+    "myAssignedRequests": "My Assigned Requests",
+    "myPendingApprovals": "My Pending Approvals",
+    "noDataQualityAlerts": "No Data Quality Alerts",
+    "operationalDashboards": "Operational Dashboards",
+    "pendingAgingBuckets": "Pending Aging Buckets",
+    "pendingAgingBucketsSubtitle": "Pending Aging Buckets Subtitle",
+    "personalDashboard": "Personal Dashboard",
+    "personalDashboardSubtitle": "Personal Dashboard Subtitle",
+    "poDelays": "PO Delays",
+    "prAging": "PR Aging",
+    "procurementControlTower": "Procurement Control Tower",
+    "procurementControlTowerSubtitle": "Procurement Control Tower Subtitle",
+    "procurementDashboard": "Procurement Dashboard",
+    "procurementDashboardSubtitle": "Procurement Dashboard Subtitle",
+    "rejectedCostTotal": "Rejected Cost Total",
+    "rejectedRequestCost": "Rejected Request Cost",
+    "requests": "Requests",
+    "rfqCycleTime": "RFQ Cycle Time",
+    "riskAlerts": "Risk Alerts",
+    "slaBreaches": "SLA Breaches",
+    "stockoutRisks": "Stockout Risks",
+    "submittedDemand": "Submitted Demand",
+    "supplierDelays": "Supplier Delays",
+    "supplierPerformance": "Supplier Performance",
+    "urgentActions": "Urgent Actions",
+    "valueCompletionRate": "Value Completion Rate"
   },
   "openRequests": {
     "title": "My Open Requests",
@@ -2022,11 +2084,14 @@
     "empty": "No requests assigned to you.",
     "actions": {
       "refresh": "Refresh",
-      "refreshing": "Refreshing..."
+      "refreshing": "Refreshing...",
+      "print": "Print",
+      "printing": "Printing…"
     },
     "confirm": {
       "markComplete": "Are you sure you want to mark this request as completed?",
-      "bulkPurchase": "This will copy the requested quantity into the purchased quantity and mark every item as purchased. Continue?"
+      "bulkPurchase": "This will copy the requested quantity into the purchased quantity and mark every item as purchased. Continue?",
+      "printRequest": "Print Request"
     },
     "alerts": {
       "loadFailed": "Failed to load assigned requests.",
@@ -2042,7 +2107,11 @@
       "noItemsForBulkUpdate": "No items available to update for this request.",
       "invalidBulkItems": "Items must have a requested quantity greater than zero to be auto-filled.",
       "bulkPurchaseSuccess": "All items were marked as purchased using their requested quantities.",
-      "bulkPurchaseFailed": "Failed to update all items. Some items may not have been updated."
+      "bulkPurchaseFailed": "Failed to update all items. Some items may not have been updated.",
+      "generateDocumentFailedWithReason": "Generate Document Failed With Reason",
+      "popupBlocked": "Please enable popups to print the request.",
+      "printFailed": "❌ Failed to print request.",
+      "printReady": "Request ready for printing."
     },
     "summary": {
       "totalItems": "Total Items",
@@ -2060,7 +2129,8 @@
       "department": "Department",
       "requester": "Requester",
       "viewItems": "View Items",
-      "hideItems": "Hide Items"
+      "hideItems": "Hide Items",
+      "viewPo": "View PO"
     },
     "items": {
       "loading": "Loading items...",
@@ -2069,7 +2139,8 @@
         "title": "Auto-fill purchased quantities",
         "description": "Copies each requested quantity into the purchased quantity field and marks the item as purchased.",
         "updating": "Updating items…",
-        "cta": "Mark all as purchased"
+        "cta": "Mark all as purchased",
+        "procurementEntryNote": "Procurement Entry Note"
       }
     },
     "sections": {
@@ -2124,7 +2195,8 @@
     "completion": {
       "markComplete": "Mark Request as Completed",
       "missingCost": "Record and save the total cost of this request before completing it.",
-      "incompleteItems": "All items must be marked as purchased or unable to procure with recorded quantities before completing the request."
+      "incompleteItems": "All items must be marked as purchased or unable to procure with recorded quantities before completing the request.",
+      "postActionNotice": "Post Action Notice"
     },
     "itemPanel": {
       "requestedQuantityPrefix": "Requested quantity:",
@@ -2139,7 +2211,8 @@
         "purchased": "Purchased",
         "notProcured": "Not Procured",
         "completed": "Completed",
-        "canceled": "Canceled"
+        "canceled": "Canceled",
+        "partiallyProcured": "Partially Procured"
       },
       "lastUpdated": "Last updated by {{name}} at {{time}}",
       "lastUpdatedUnknown": "Unknown",
@@ -2148,7 +2221,8 @@
         "requestedQty": "Requested Qty",
         "purchasedQty": "Purchased Qty",
         "remainingQty": "Remaining Qty",
-        "requestedLineTotal": "Requested Line Total"
+        "requestedLineTotal": "Requested Line Total",
+        "latestProcurementDate": "Latest Procurement Date"
       },
       "inputs": {
         "unitCost": "Unit Cost",
@@ -2158,7 +2232,20 @@
         "selectStatus": "-- Select Status --",
         "comment": "Comment",
         "poIssuanceMethod": "PO Issuance Method",
-        "poIssuancePlaceholder": "e.g., email, supplier portal, courier"
+        "poIssuancePlaceholder": "e.g., email, supplier portal, courier",
+        "committedCost": "Committed Cost",
+        "contractId": "Contract ID",
+        "contractSnapshot": "Contract Snapshot",
+        "currency": "Currency",
+        "currencyPlaceholder": "e.g., USD",
+        "invoiceNumber": "Invoice Number",
+        "paidCost": "Paid Cost",
+        "poNumber": "PO Number",
+        "purchasedQuantityHelper": "This summary is updated by adding procurement entries, not by overwriting old quantities.",
+        "purchasedQuantitySummary": "Purchased Quantity Summary",
+        "savingsDriver": "Savings Driver",
+        "savingsHelper": "Savings Helper",
+        "savingsNotes": "Savings Notes"
       },
       "recordedLineTotal": "Recorded Line Total:",
       "buttons": {
@@ -2171,7 +2258,11 @@
         "purchasedQtyInvalid": "Enter a valid purchased quantity (zero or above).",
         "purchasedQtyRequired": "Purchased items require a purchased quantity greater than zero.",
         "updateSuccess": "✅ Updated successfully.",
-        "updateFailed": "❌ Failed to update."
+        "updateFailed": "❌ Failed to update.",
+        "committedCostInvalid": "Committed Cost Invalid",
+        "contractIdInvalid": "Contract ID Invalid",
+        "contractSnapshotInvalid": "Contract Snapshot Invalid",
+        "paidCostInvalid": "Paid Cost Invalid"
       },
       "attachments": {
         "title": "Item Attachments",
@@ -2186,14 +2277,87 @@
         "uploading": "Uploading…",
         "uploadFailed": "Failed to upload attachment.",
         "uploadSuccess": "Attachment uploaded successfully."
+      },
+      "moreDetails": {
+        "helper": "Helper",
+        "hide": "Hide",
+        "show": "Show",
+        "title": "Additional procurement details"
+      },
+      "procurementEntry": {
+        "failed": "Failed to add procurement entry.",
+        "open": "Add Procurement Entry",
+        "quantityPositive": "Quantity to add must be a positive whole number.",
+        "quantityTooHigh": "Quantity to add cannot exceed the remaining quantity.",
+        "success": "✅ Procurement entry added successfully.",
+        "title": "Add Procurement Entry",
+        "unsupported": "Procurement entries are not available for this item type."
+      },
+      "procurementHistory": {
+        "loadFailed": "Failed to load procurement history.",
+        "open": "Procurement History",
+        "title": "Procurement History"
+      },
+      "savingsDrivers": {
+        "altSupplier": "Alt Supplier",
+        "contract": "Contract",
+        "negotiated": "Negotiated",
+        "none": "-- Select Driver --",
+        "specChange": "Specification change",
+        "volume": "Volume/scale discount"
       }
+    },
+    "completionScreen": {
+      "none": "N/A",
+      "requestType": "Request",
+      "title": "Request Action Completed Successfully!"
+    },
+    "description": "Track procurement progress, update item statuses, and complete requests once all items are finalized.",
+    "kpis": {
+      "pendingCompletion": "Needs Attention",
+      "readyToComplete": "Ready to Complete",
+      "totalRequests": "Total Assigned Requests",
+      "urgentRequests": "Urgent Requests"
+    },
+    "print": {
+      "approvalOn": "Approval On",
+      "approvedBy": "Approved By",
+      "brand": "Brand",
+      "createdOn": "Created On",
+      "department": "Department",
+      "details": "Request Details",
+      "finalApprover": "Final approver",
+      "generatedOn": "Generated on",
+      "grandTotal": "Grand Total",
+      "heading": "Purchase Request Summary",
+      "item": "Item",
+      "items": "Requested Items",
+      "justification": "Justification",
+      "lastUpdated": "Last Updated",
+      "neededBy": "Needed By",
+      "noItems": "No line items recorded.",
+      "preparedBy": "Prepared By",
+      "printCount": "Print Count",
+      "project": "Project",
+      "purchasedQuantity": "Purchased Qty",
+      "quantity": "Qty",
+      "requestId": "Request ID",
+      "requester": "Requester",
+      "reviewedBy": "Reviewed By",
+      "status": "Status",
+      "title": "Purchase Request",
+      "totalCost": "Total Cost",
+      "type": "Type",
+      "unitCost": "Unit Cost"
     }
   },
   "auditRequests": {
     "title": "Audit Requests",
     "actions": {
       "reset": "Reset Filters",
-      "exportCsv": "Export CSV"
+      "exportCsv": "Export CSV",
+      "print": "Print",
+      "printing": "Printing…"
     },
     "stats": {
       "total": "Total Requests",
@@ -2226,7 +2390,11 @@
         "justification": "Justification",
         "status": "Status",
         "approvalTimestamp": "Approval Timestamp",
-        "actions": "Actions"
+        "actions": "Actions",
+        "department": "Department",
+        "printCount": "Print Count",
+        "requester": "Requester",
+        "section": "Section"
       },
       "actions": {
         "viewItems": "View Items",
@@ -2242,13 +2410,16 @@
         "brand": "Brand",
         "quantity": "Qty",
         "unitCost": "Unit Cost",
-        "total": "Total"
+        "total": "Total",
+        "specs": "Specs"
       },
       "empty": "No items found."
     },
     "alerts": {
       "loadFailed": "Failed to load audit requests.",
-      "itemsLoadFailed": "Failed to load items."
+      "itemsLoadFailed": "Failed to load items.",
+      "popupBlocked": "Please enable popups to print the request.",
+      "printFailed": "Failed to print request."
     },
     "export": {
       "fileName": "Audit_Requests.csv"
@@ -2259,6 +2430,20 @@
       "received": "Received",
       "rejected": "Rejected",
       "unknown": "Unknown"
+    },
+    "print": {
+      "department": "Department",
+      "heading": "Audit Request Details",
+      "items": "Requested Items",
+      "justification": "Justification",
+      "printCount": "Print Count",
+      "project": "Project",
+      "requestId": "Request ID",
+      "requester": "Requester",
+      "section": "Section",
+      "status": "Status",
+      "title": "Audit Request Details",
+      "type": "Type"
     }
   },
   "warehouseSupplyRequests": {
@@ -2282,7 +2467,13 @@
       "status": "Status",
       "from": "From",
       "to": "To",
-      "allOption": "All"
+      "allOption": "All",
+      "allCategories": "All Categories",
+      "allSubCategories": "All Sub Categories",
+      "category": "Category",
+      "itemSearch": "Item search",
+      "itemSearchPlaceholder": "Type to filter items",
+      "subCategory": "Sub Category"
     },
     "sort": {
       "label": "Sort by",
@@ -2302,7 +2493,10 @@
       "section": "Section: {{value}}",
       "status": "Status: {{value}}",
       "from": "From: {{value}}",
-      "to": "To: {{value}}"
+      "to": "To: {{value}}",
+      "category": "Category: {{value}}",
+      "itemSearch": "Item search: ",
+      "subCategory": "Sub Category: {{value}}"
     },
     "list": {
       "loading": "Loading requests…",
@@ -2348,7 +2542,8 @@
       "loadFailed": "Failed to load warehouse supply requests. Please try again.",
       "itemsLoadFailed": "Failed to load requested items. Please try again later.",
       "printFailed": "Failed to print warehouse supply request.",
-      "enablePopups": "Please enable popups to print this request."
+      "enablePopups": "Please enable popups to print this request.",
+      "closeFailed": "Failed to close the request. Please try again."
     },
     "print": {
       "title": "Warehouse Supply Request",
@@ -2369,6 +2564,12 @@
       "rejected": "Rejected",
       "completed": "Completed",
       "unknown": "Unknown"
+    },
+    "completionScreen": {
+      "message": "Warehouse supply request closed successfully.",
+      "none": "N/A",
+      "requestType": "Warehouse Supply",
+      "title": "Request Action Completed Successfully!"
     }
   },
   "rfxPortal": {
@@ -2521,5 +2722,149 @@
     "recentWindow": "Past 30 days",
     "approvalsCompleted": "Approvals completed",
     "error": "Failed to load workload analysis"
-  }
+  },
+  "active": "Active",
+  "actualProcured": "Actual Procured",
+  "ageShort": "Age Short",
+  "agingIndicator": "Aging Indicator",
+  "alertCount": "Alert Count",
+  "approval": "Approval",
+  "approvalOn": "Approval On",
+  "approvalSeparator": "Approval Separator",
+  "approvalSpeed": "Approval Speed",
+  "approvalsCompleted": "Approvals Completed",
+  "approved": "Approved",
+  "approvedBy": "Approved By",
+  "approvedCostTotal": "Approved Cost Total",
+  "approvedRequestCost": "Approved Request Cost",
+  "approvedValue": "Approved Value",
+  "approver": "Approver",
+  "averageAgeLabel": "Average Age Label",
+  "avgAge": "Avg Age",
+  "avgApprovalTime": "Avg Approval Time",
+  "avgPendingAge": "Avg Pending Age",
+  "backlogByStage": "Backlog By Stage",
+  "backlogByStageSubtitle": "Backlog By Stage Subtitle",
+  "backlogGrowing": "Backlog Growing",
+  "backlogImproving": "Backlog Improving",
+  "backlogNoChange": "Backlog No Change",
+  "backlogPulse": "Backlog Pulse",
+  "backlogStable": "Backlog Stable",
+  "budgetUtilization": "Budget Utilization",
+  "byDepartment": "By Department",
+  "byLevel": "By Level",
+  "changeSinceLastMonth": "Change Since Last Month",
+  "completed": "Completed",
+  "completionHelper": "Completion Helper",
+  "completionPerformance": "Completion Performance",
+  "completionRate": "Completion Rate",
+  "completionSparkLabel": "Completion Spark Label",
+  "completionTrend": "Completion Trend",
+  "contractUtilization": "Contract Utilization",
+  "count": "Count",
+  "createdOn": "Created On",
+  "dataQualityAlerts": "Data Quality Alerts",
+  "dataQualityAlertsSubtitle": "Data Quality Alerts Subtitle",
+  "daysValue": "Days Value",
+  "demandVsProcured": "Demand Vs Procured",
+  "demandVsProcuredSubtitle": "Demand Vs Procured Subtitle",
+  "department": "Department",
+  "departmentLabel": "Department Label",
+  "departmentRequestCosts": "Department Request Costs",
+  "departmentRequestCostsSubtitle": "Department Request Costs Subtitle",
+  "departmentSpend": "Department Spend",
+  "departmentSpending": "Department Spending",
+  "emergencyPurchases": "Emergency Purchases",
+  "error": "Error",
+  "executiveDashboard": "Executive Dashboard",
+  "executiveDashboardSubtitle": "Executive Dashboard Subtitle",
+  "failedToLoad": "Failed To Load",
+  "finalApprover": "Final Approver",
+  "generatedOn": "Generated On",
+  "grandTotal": "Grand Total",
+  "issue": "Issue",
+  "justification": "Justification",
+  "lastUpdated": "Last Updated",
+  "leadingDepartment": "Leading Department",
+  "level": "Level",
+  "loadingDashboard": "Loading Dashboard",
+  "maintenanceRef": "Maintenance Ref",
+  "monthlySpending": "Monthly Spending",
+  "myAssignedRequests": "My Assigned Requests",
+  "myPendingApprovals": "My Pending Approvals",
+  "neededBy": "Needed By",
+  "no": "No",
+  "noDataQualityAlerts": "No Data Quality Alerts",
+  "noItems": "No Items",
+  "noPendingBacklog": "No Pending Backlog",
+  "oldestPending": "Oldest Pending",
+  "onHold": "On Hold",
+  "operationalDashboards": "Operational Dashboards",
+  "overviewTitle": "Overview Title",
+  "pending": "Pending",
+  "pendingAgingBuckets": "Pending Aging Buckets",
+  "pendingAgingBucketsSubtitle": "Pending Aging Buckets Subtitle",
+  "pendingChange": "Pending Change",
+  "pendingNow": "Pending Now",
+  "pendingShort": "Pending Short",
+  "pendingVsCompleted": "Pending Vs Completed",
+  "permissionTag": "Permission Tag",
+  "personalDashboard": "Personal Dashboard",
+  "personalDashboardSubtitle": "Personal Dashboard Subtitle",
+  "poDelays": "PO Delays",
+  "prAging": "PR Aging",
+  "preparedBy": "Prepared By",
+  "printConfirm": "Print Confirm",
+  "printCount": "Print Count",
+  "procurementControlTower": "Procurement Control Tower",
+  "procurementControlTowerSubtitle": "Procurement Control Tower Subtitle",
+  "procurementDashboard": "Procurement Dashboard",
+  "procurementDashboardSubtitle": "Procurement Dashboard Subtitle",
+  "project": "Project",
+  "purchaseSummary": "Purchase Summary",
+  "recentWindow": "Recent Window",
+  "rejected": "Rejected",
+  "rejectedCostTotal": "Rejected Cost Total",
+  "rejectedRequestCost": "Rejected Request Cost",
+  "rejectedRequests": "Rejected Requests",
+  "requestDetails": "Request Details",
+  "requestId": "Request ID",
+  "requestWithDepartment": "Request With Department",
+  "requestedItems": "Requested Items",
+  "requester": "Requester",
+  "requests": "Requests",
+  "requestsLabel": "Requests Label",
+  "reviewedBy": "Reviewed By",
+  "rfqCycleTime": "RFQ Cycle Time",
+  "riskAlerts": "Risk Alerts",
+  "role": "Role",
+  "section": "Section",
+  "slaBreaches": "SLA Breaches",
+  "sortedByCount": "Sorted By Count",
+  "specs": "Specs",
+  "spendHighlights": "Spend Highlights",
+  "status": "Status",
+  "statusActionNeeded": "Status Action Needed",
+  "statusOnTrack": "Status On Track",
+  "statusWatchlist": "Status Watchlist",
+  "stockoutRisks": "Stockout Risks",
+  "submittedDemand": "Submitted Demand",
+  "subtitle": "Subtitle",
+  "supplierDelays": "Supplier Delays",
+  "supplierPerformance": "Supplier Performance",
+  "title": "Title",
+  "topApprovers": "Top Approvers",
+  "topDepartments": "Top Departments",
+  "topSpendingMonth": "Top Spending Month",
+  "topSpendingMonthFallback": "Top Spending Month Fallback",
+  "totalRequests": "Total Requests",
+  "trendLabel": "Trend Label",
+  "urgent": "Urgent",
+  "urgentActions": "Urgent Actions",
+  "urgentShort": "Urgent Short",
+  "valueCompletionRate": "Value Completion Rate",
+  "viewingYear": "Viewing Year",
+  "waitingDays": "Waiting Days",
+  "yearToDateSpend": "Year To Date Spend",
+  "yes": "Yes"
 }

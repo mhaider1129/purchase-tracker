@@ -153,8 +153,12 @@ const getStepColor = (step) => {
   }
 };
 
+const normalizeStatus = (status) => String(status || '').trim().toLowerCase();
+
+const isCompletedStatus = (status) => ['completed', 'received'].includes(normalizeStatus(status));
+
 const isPostApprovalStatus = (status) => {
-  const normalized = (status || '').toLowerCase();
+  const normalized = normalizeStatus(status);
   return [
     'approved',
     'assigned',
@@ -313,8 +317,8 @@ const AllRequestsPage = () => {
 
       const fetchedRequests = Array.isArray(res?.data?.data) ? [...res.data.data] : [];
       const isCompletedOrRejected = (req) => {
-        const normalizedStatus = String(req?.status || '').trim().toLowerCase();
-        return normalizedStatus === 'completed' || normalizedStatus === 'rejected';
+        const normalizedStatus = normalizeStatus(req?.status);
+        return isCompletedStatus(normalizedStatus) || normalizedStatus === 'rejected';
       };
 
       const urgentPinnedRequests = [];
@@ -356,10 +360,10 @@ const AllRequestsPage = () => {
       const finalizedStatuses = ['approved', 'rejected', 'completed', 'received', 'cancelled'];
       const nextSummary = summaryRequests.reduce(
         (acc, req) => {
-          const normalizedStatus = (req?.status || '').toLowerCase();
+          const normalizedStatus = normalizeStatus(req?.status);
           if (req?.is_urgent) acc.urgent += 1;
           if (normalizedStatus === 'approved') acc.approved += 1;
-          if (normalizedStatus === 'completed') acc.completed += 1;
+          if (isCompletedStatus(normalizedStatus)) acc.completed += 1;
           if (!finalizedStatuses.includes(normalizedStatus)) acc.pending += 1;
           return acc;
         },

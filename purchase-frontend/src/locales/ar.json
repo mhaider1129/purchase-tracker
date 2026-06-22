@@ -215,7 +215,11 @@
     "viewDetails": "عرض التفاصيل",
     "unreadCount": "{{count}} غير مقروء",
     "monthlyDispensing": "الصرف الشهري",
-    "stockItemApprovals": "اعتمادات أصناف المخزون"
+    "stockItemApprovals": "اعتمادات أصناف المخزون",
+    "highContrastMode": "وضع التباين العالي",
+    "home": "الرئيسية",
+    "notificationsLoadFailed": "تعذر تحميل الإشعارات.",
+    "retry": "إعادة المحاولة"
   },
   "pageTitles": {
     "nonStockRequestForm": "نموذج طلب مواد غير مخزنية",
@@ -243,7 +247,9 @@
       "itemName": "كل بند يحتاج اسماً",
       "quantity": "يجب أن تكون الكميات أرقاماً صحيحة",
       "unitCost": "يجب أن يكون سعر الوحدة رقماً صحيحاً أو يُترك فارغاً",
-      "supplyWarehouse": "اختر المخزن المنفذ"
+      "supplyWarehouse": "اختر المخزن المنفذ",
+      "finalApprover": "المعتمد النهائي مطلوب.",
+      "status": "الحالة مطلوبة."
     },
     "fields": {
       "requestType": "نوع الطلب",
@@ -254,12 +260,19 @@
       "supplyWarehouse": "معرّف المخزن",
       "justification": "التبرير (اختياري)",
       "approvedAt": "تاريخ الموافقة",
-      "markCompleted": "تحديد كمنجز"
+      "markCompleted": "تحديد كمنجز",
+      "completedAt": "تاريخ الإكمال",
+      "finalApprover": "المعتمد النهائي",
+      "procurementUser": "مستخدم المشتريات",
+      "status": "الحالة"
     },
     "placeholders": {
       "selectType": "اختر النوع",
       "requesterId": "رقم الموظف لمقدم الطلب",
-      "temporaryRequester": "الاسم في الطلب الورقي"
+      "temporaryRequester": "الاسم في الطلب الورقي",
+      "finalApprover": "اختر المعتمد النهائي",
+      "loadingUsers": "جارٍ تحميل المستخدمين...",
+      "procurementUser": "اختر مستخدم المشتريات"
     },
     "help": {
       "requester": "مطلوب ما لم يتم إدخال اسم مقدم طلب مؤقت.",
@@ -267,7 +280,9 @@
       "items": "استخدم سطراً لكل بند. يجب أن تكون الكميات والأسعار أرقاماً صحيحة.",
       "dates": "اضبط تاريخ الموافقة ليطابق الطلب الورقي. تاريخ الإتمام اختياري.",
       "access": "فقط المستخدمون المصرح لهم يمكنهم الاستيراد لضبط المؤشرات.",
-      "title": "إرشادات الاستيراد"
+      "title": "إرشادات الاستيراد",
+      "procurementUser": "اختر مسؤول المشتريات المعني بالطلب.",
+      "status": "اختر حالة دورة الحياة النهائية لهذا الطلب التاريخي."
     },
     "items": {
       "title": "البنود المطلوبة",
@@ -293,7 +308,8 @@
     "actions": {
       "saving": "جاري الحفظ…",
       "save": "استيراد طلب تاريخي"
-    }
+    },
+    "errorUsers": "تعذر تحميل المستخدمين."
   },
   "maintenanceHODApprovals": {
     "title": "مركز موافقات الصيانة",
@@ -1731,7 +1747,53 @@
     "oldestPending": "أقدم الطلبات المعلقة",
     "requestWithDepartment": "طلب رقم {{id}} • {{department}}",
     "waitingDays": "بانتظار {{days}} يوم",
-    "noPendingBacklog": "لا يوجد تراكم للطلبات 🎉"
+    "noPendingBacklog": "لا يوجد تراكم للطلبات 🎉",
+    "actualProcured": "المنفذ فعلياً",
+    "alertCount": "عدد التنبيهات",
+    "approvedCostTotal": "إجمالي التكلفة المعتمدة",
+    "approvedRequestCost": "تكلفة الطلب المعتمدة",
+    "approvedValue": "القيمة المعتمدة",
+    "backlogByStage": "الأعمال المتراكمة حسب المرحلة",
+    "backlogByStageSubtitle": "توزيع الطلبات المعلقة حسب مرحلة سير العمل",
+    "budgetUtilization": "استخدام الميزانية",
+    "contractUtilization": "استخدام العقود",
+    "count": "العدد",
+    "dataQualityAlerts": "تنبيهات جودة البيانات",
+    "dataQualityAlertsSubtitle": "مشكلات البيانات التي تحتاج إلى مراجعة",
+    "demandVsProcured": "الطلب مقابل المنفذ شرائياً",
+    "demandVsProcuredSubtitle": "مقارنة الكميات المطلوبة بالكميات التي تم شراؤها",
+    "departmentRequestCosts": "تكاليف طلبات الأقسام",
+    "departmentRequestCostsSubtitle": "إجمالي التكاليف المسجلة حسب القسم",
+    "emergencyPurchases": "المشتريات الطارئة",
+    "executiveDashboard": "لوحة الإدارة التنفيذية",
+    "executiveDashboardSubtitle": "ملخص مؤشرات الشراء الاستراتيجية",
+    "issue": "مشكلة",
+    "myAssignedRequests": "طلباتي المسندة",
+    "myPendingApprovals": "موافقاتي المعلقة",
+    "noDataQualityAlerts": "لا توجد تنبيهات لجودة البيانات",
+    "operationalDashboards": "لوحات العمليات",
+    "pendingAgingBuckets": "فئات أعمار الطلبات المعلقة",
+    "pendingAgingBucketsSubtitle": "مدة انتظار الطلبات المعلقة",
+    "personalDashboard": "لوحتي الشخصية",
+    "personalDashboardSubtitle": "ملخص مهامي وموافقاتي",
+    "poDelays": "تأخيرات أوامر الشراء",
+    "prAging": "أعمار طلبات الشراء",
+    "procurementControlTower": "برج مراقبة المشتريات",
+    "procurementControlTowerSubtitle": "رؤية موحدة لمخاطر وأداء المشتريات",
+    "procurementDashboard": "لوحة المشتريات",
+    "procurementDashboardSubtitle": "مؤشرات أداء طلبات الشراء والتنفيذ",
+    "rejectedCostTotal": "إجمالي التكلفة المرفوضة",
+    "rejectedRequestCost": "تكلفة الطلب المرفوضة",
+    "requests": "الطلبات",
+    "rfqCycleTime": "زمن دورة طلبات عروض الأسعار",
+    "riskAlerts": "تنبيهات المخاطر",
+    "slaBreaches": "تجاوزات اتفاقية مستوى الخدمة",
+    "stockoutRisks": "مخاطر نفاد المخزون",
+    "submittedDemand": "الطلب المقدم",
+    "supplierDelays": "تأخيرات الموردين",
+    "supplierPerformance": "أداء الموردين",
+    "urgentActions": "إجراءات عاجلة",
+    "valueCompletionRate": "نسبة إكمال القيمة"
   },
   "openRequests": {
     "title": "طلباتي المفتوحة",
@@ -1962,11 +2024,14 @@
     "empty": "لا توجد طلبات مسندة إليك.",
     "actions": {
       "refresh": "تحديث",
-      "refreshing": "جاري التحديث..."
+      "refreshing": "جاري التحديث...",
+      "print": "طباعة",
+      "printing": "جارٍ الطباعة…"
     },
     "confirm": {
       "markComplete": "هل أنت متأكد أنك تريد وسم هذا الطلب كمكتمل؟",
-      "bulkPurchase": "سيتم نسخ الكمية المطلوبة إلى كمية الشراء ووضع علامة مشتَرَى على كل عنصر. هل ترغب بالمتابعة؟"
+      "bulkPurchase": "سيتم نسخ الكمية المطلوبة إلى كمية الشراء ووضع علامة مشتَرَى على كل عنصر. هل ترغب بالمتابعة؟",
+      "printRequest": "طباعة الطلب"
     },
     "alerts": {
       "loadFailed": "تعذر تحميل الطلبات المسندة.",
@@ -1982,7 +2047,11 @@
       "noItemsForBulkUpdate": "لا توجد عناصر متاحة لتحديثها في هذا الطلب.",
       "invalidBulkItems": "يجب أن تحتوي العناصر على كمية مطلوبة أكبر من الصفر لاستخدام التعبئة التلقائية.",
       "bulkPurchaseSuccess": "تم وضع علامة مشتَرَى على جميع العناصر باستخدام الكميات المطلوبة.",
-      "bulkPurchaseFailed": "تعذر تحديث جميع العناصر. قد لا تكون بعض العناصر قد تم تحديثها."
+      "bulkPurchaseFailed": "تعذر تحديث جميع العناصر. قد لا تكون بعض العناصر قد تم تحديثها.",
+      "generateDocumentFailedWithReason": "فشل إنشاء المستند: {{reason}}",
+      "popupBlocked": "يرجى تفعيل النوافذ المنبثقة لطباعة الطلب.",
+      "printFailed": "❌ فشلت طباعة الطلب.",
+      "printReady": "الطلب جاهز للطباعة."
     },
     "summary": {
       "totalItems": "إجمالي العناصر",
@@ -2000,7 +2069,8 @@
       "department": "الإدارة",
       "requester": "مقدّم الطلب",
       "viewItems": "عرض العناصر",
-      "hideItems": "إخفاء العناصر"
+      "hideItems": "إخفاء العناصر",
+      "viewPo": "عرض أمر الشراء"
     },
     "items": {
       "loading": "جاري تحميل العناصر...",
@@ -2009,7 +2079,8 @@
         "title": "تعبئة الكميات المشتراة تلقائياً",
         "description": "ينسخ كل كمية مطلوبة إلى حقل الكمية المشتراة ويضع علامة مشتراة على العنصر.",
         "updating": "جاري تحديث العناصر...",
-        "cta": "وضع علامة مشتراة للجميع"
+        "cta": "وضع علامة مشتراة للجميع",
+        "procurementEntryNote": "ملاحظة إدخال الشراء"
       }
     },
     "sections": {
@@ -2064,7 +2135,8 @@
     "completion": {
       "markComplete": "وضع علامة مكتمل على الطلب",
       "missingCost": "سجّل واحفظ إجمالي تكلفة هذا الطلب قبل إكماله.",
-      "incompleteItems": "يجب وضع علامة مشتراة أو تعذر الشراء لجميع العناصر مع تسجيل الكميات قبل إكمال الطلب."
+      "incompleteItems": "يجب وضع علامة مشتراة أو تعذر الشراء لجميع العناصر مع تسجيل الكميات قبل إكمال الطلب.",
+      "postActionNotice": "تنبيه بعد الإجراء"
     },
     "itemPanel": {
       "requestedQuantityPrefix": "الكمية المطلوبة:",
@@ -2079,7 +2151,8 @@
         "purchased": "تم الشراء",
         "notProcured": "لم يتم التوريد",
         "completed": "مكتمل",
-        "canceled": "أُلغي"
+        "canceled": "أُلغي",
+        "partiallyProcured": "تم التوريد جزئياً"
       },
       "lastUpdated": "آخر تحديث بواسطة {{name}} في {{time}}",
       "lastUpdatedUnknown": "غير معروف",
@@ -2088,7 +2161,8 @@
         "requestedQty": "الكمية المطلوبة",
         "purchasedQty": "الكمية المشتراة",
         "remainingQty": "الكمية المتبقية",
-        "requestedLineTotal": "إجمالي السطر المطلوب"
+        "requestedLineTotal": "إجمالي السطر المطلوب",
+        "latestProcurementDate": "آخر تاريخ شراء"
       },
       "inputs": {
         "unitCost": "تكلفة الوحدة",
@@ -2098,7 +2172,20 @@
         "selectStatus": "-- اختر الحالة --",
         "comment": "تعليق",
         "poIssuanceMethod": "طريقة إصدار أمر الشراء",
-        "poIssuancePlaceholder": "مثال: بريد إلكتروني، بوابة المورد، مندوب"
+        "poIssuancePlaceholder": "مثال: بريد إلكتروني، بوابة المورد، مندوب",
+        "committedCost": "التكلفة الملتزم بها",
+        "contractId": "رقم العقد",
+        "contractSnapshot": "لقطة العقد",
+        "currency": "العملة",
+        "currencyPlaceholder": "مثال: USD",
+        "invoiceNumber": "رقم الفاتورة",
+        "paidCost": "التكلفة المدفوعة",
+        "poNumber": "رقم أمر الشراء",
+        "purchasedQuantityHelper": "يتم تحديث هذا الملخص بإضافة إدخالات شراء، وليس باستبدال الكميات السابقة.",
+        "purchasedQuantitySummary": "ملخص الكمية المشتراة",
+        "savingsDriver": "سبب التوفير",
+        "savingsHelper": "مساعدة التوفير",
+        "savingsNotes": "ملاحظات التوفير"
       },
       "recordedLineTotal": "إجمالي السطر المسجل:",
       "buttons": {
@@ -2111,7 +2198,11 @@
         "purchasedQtyInvalid": "أدخل كمية مشتراة صالحة (صفر أو أكثر).",
         "purchasedQtyRequired": "تحتاج العناصر المشتراة إلى كمية مشتراة أكبر من الصفر.",
         "updateSuccess": "✅ تم التحديث بنجاح.",
-        "updateFailed": "❌ فشل التحديث."
+        "updateFailed": "❌ فشل التحديث.",
+        "committedCostInvalid": "التكلفة الملتزم بها غير صالحة",
+        "contractIdInvalid": "رقم العقد غير صالح",
+        "contractSnapshotInvalid": "لقطة العقد غير صالحة",
+        "paidCostInvalid": "التكلفة المدفوعة غير صالحة"
       },
       "attachments": {
         "title": "مرفقات العنصر",
@@ -2126,14 +2217,87 @@
         "downloadFailed": "فشل تنزيل المرفق. يرجى المحاولة مرة أخرى.",
         "downloading": "جارٍ التنزيل…",
         "fallback": "مرفق"
+      },
+      "moreDetails": {
+        "helper": "مساعدة",
+        "hide": "إخفاء",
+        "show": "عرض",
+        "title": "تفاصيل شراء إضافية"
+      },
+      "procurementEntry": {
+        "failed": "فشلت إضافة إدخال الشراء.",
+        "open": "إضافة إدخال شراء",
+        "quantityPositive": "يجب أن تكون الكمية المضافة عدداً صحيحاً موجباً.",
+        "quantityTooHigh": "لا يمكن أن تتجاوز الكمية المضافة الكمية المتبقية.",
+        "success": "✅ تمت إضافة إدخال الشراء بنجاح.",
+        "title": "إضافة إدخال شراء",
+        "unsupported": "إدخالات الشراء غير متاحة لهذا النوع من العناصر."
+      },
+      "procurementHistory": {
+        "loadFailed": "فشل تحميل سجل الشراء.",
+        "open": "سجل الشراء",
+        "title": "سجل الشراء"
+      },
+      "savingsDrivers": {
+        "altSupplier": "مورد بديل",
+        "contract": "عقد",
+        "negotiated": "تم التفاوض",
+        "none": "-- اختر سبب التوفير --",
+        "specChange": "تغيير المواصفات",
+        "volume": "خصم الكمية/الحجم"
       }
+    },
+    "completionScreen": {
+      "none": "N/A",
+      "requestType": "Request",
+      "title": "Request Action Completed Successfully!"
+    },
+    "description": "تابع تقدم الشراء، وحدّث حالات العناصر، وأكمل الطلبات بعد إنهاء جميع العناصر.",
+    "kpis": {
+      "pendingCompletion": "Needs Attention",
+      "readyToComplete": "Ready to Complete",
+      "totalRequests": "Total Assigned Requests",
+      "urgentRequests": "Urgent Requests"
+    },
+    "print": {
+      "approvalOn": "Approval On",
+      "approvedBy": "Approved By",
+      "brand": "Brand",
+      "createdOn": "Created On",
+      "department": "القسم",
+      "details": "تفاصيل الطلب",
+      "finalApprover": "المعتمد النهائي",
+      "generatedOn": "Generated on",
+      "grandTotal": "الإجمالي الكلي",
+      "heading": "Purchase Request Summary",
+      "item": "Item",
+      "items": "Requested Items",
+      "justification": "المبرر",
+      "lastUpdated": "آخر تحديث",
+      "neededBy": "مطلوب قبل",
+      "noItems": "No line items recorded.",
+      "preparedBy": "أعده",
+      "printCount": "عدد مرات الطباعة",
+      "project": "المشروع",
+      "purchasedQuantity": "Purchased Qty",
+      "quantity": "Qty",
+      "requestId": "Request ID",
+      "requester": "مقدم الطلب",
+      "reviewedBy": "راجعه",
+      "status": "الحالة",
+      "title": "Purchase Request",
+      "totalCost": "Total Cost",
+      "type": "Type",
+      "unitCost": "Unit Cost"
     }
   },
   "auditRequests": {
     "title": "طلبات التدقيق",
     "actions": {
       "reset": "إعادة تعيين المرشحات",
-      "exportCsv": "تصدير CSV"
+      "exportCsv": "تصدير CSV",
+      "print": "Print",
+      "printing": "Printing…"
     },
     "stats": {
       "total": "إجمالي الطلبات",
@@ -2166,7 +2330,11 @@
         "justification": "التبرير",
         "status": "الحالة",
         "approvalTimestamp": "وقت الاعتماد",
-        "actions": "إجراءات"
+        "actions": "إجراءات",
+        "department": "القسم",
+        "printCount": "عدد مرات الطباعة",
+        "requester": "مقدم الطلب",
+        "section": "الشعبة"
       },
       "actions": {
         "viewItems": "عرض العناصر",
@@ -2182,13 +2350,16 @@
         "brand": "العلامة التجارية",
         "quantity": "الكمية",
         "unitCost": "تكلفة الوحدة",
-        "total": "الإجمالي"
+        "total": "الإجمالي",
+        "specs": "المواصفات"
       },
       "empty": "لا توجد عناصر."
     },
     "alerts": {
       "loadFailed": "تعذر تحميل طلبات التدقيق.",
-      "itemsLoadFailed": "تعذر تحميل العناصر."
+      "itemsLoadFailed": "تعذر تحميل العناصر.",
+      "popupBlocked": "Please enable popups to print the request.",
+      "printFailed": "Failed to print request."
     },
     "export": {
       "fileName": "Audit_Requests.csv"
@@ -2199,6 +2370,20 @@
       "received": "مستلم",
       "rejected": "مرفوض",
       "unknown": "غير معروف"
+    },
+    "print": {
+      "department": "القسم",
+      "heading": "Audit Request Details",
+      "items": "Requested Items",
+      "justification": "المبرر",
+      "printCount": "عدد مرات الطباعة",
+      "project": "المشروع",
+      "requestId": "Request ID",
+      "requester": "مقدم الطلب",
+      "section": "الشعبة",
+      "status": "الحالة",
+      "title": "Audit Request Details",
+      "type": "Type"
     }
   },
   "warehouseSupplyRequests": {
@@ -2222,7 +2407,13 @@
       "status": "الحالة",
       "from": "من",
       "to": "إلى",
-      "allOption": "الكل"
+      "allOption": "الكل",
+      "allCategories": "All Categories",
+      "allSubCategories": "All Sub Categories",
+      "category": "Category",
+      "itemSearch": "Item search",
+      "itemSearchPlaceholder": "Type to filter items",
+      "subCategory": "Sub Category"
     },
     "list": {
       "loading": "جاري تحميل الطلبات...",
@@ -2268,7 +2459,8 @@
       "loadFailed": "تعذر تحميل طلبات التجهيز المخزنية. حاول مرة أخرى.",
       "itemsLoadFailed": "تعذر تحميل العناصر المطلوبة. حاول مرة أخرى لاحقاً.",
       "printFailed": "فشلت طباعة طلب تزويد المخزن.",
-      "enablePopups": "يرجى تفعيل النوافذ المنبثقة لطباعة هذا الطلب."
+      "enablePopups": "يرجى تفعيل النوافذ المنبثقة لطباعة هذا الطلب.",
+      "closeFailed": "فشل إغلاق الطلب. يرجى المحاولة مرة أخرى."
     },
     "statuses": {
       "approved": "موافق",
@@ -2295,7 +2487,10 @@
       "section": "القسم الفرعي: {{value}}",
       "status": "الحالة: {{value}}",
       "from": "من: {{value}}",
-      "to": "إلى: {{value}}"
+      "to": "إلى: {{value}}",
+      "category": "الفئة: {{value}}",
+      "itemSearch": "بحث العنصر: ",
+      "subCategory": "الفئة الفرعية: {{value}}"
     },
     "print": {
       "title": "طلب تزويد مخزن",
@@ -2309,6 +2504,12 @@
       "totals": "الإجماليات",
       "footer": "تم إنشاؤه لمتابعة تنفيذ تزويد المخزن.",
       "closeFailed": "فشل إغلاق الطلب. يرجى المحاولة مرة أخرى."
+    },
+    "completionScreen": {
+      "message": "تم إغلاق طلب تزويد المخزن بنجاح.",
+      "none": "غير متوفر",
+      "requestType": "تزويد مخزن",
+      "title": "تم تنفيذ إجراء الطلب بنجاح!"
     }
   },
   "rfxPortal": {
@@ -2521,5 +2722,149 @@
       "medium": "متوسط",
       "high": "مرتفع"
     }
-  }
+  },
+  "active": "نشط",
+  "actualProcured": "Actual Procured",
+  "ageShort": "Age Short",
+  "agingIndicator": "Aging Indicator",
+  "alertCount": "Alert Count",
+  "approval": "الموافقة",
+  "approvalOn": "Approval On",
+  "approvalSeparator": "Approval Separator",
+  "approvalSpeed": "Approval Speed",
+  "approvalsCompleted": "Approvals Completed",
+  "approved": "معتمد",
+  "approvedBy": "Approved By",
+  "approvedCostTotal": "Approved Cost Total",
+  "approvedRequestCost": "Approved Request Cost",
+  "approvedValue": "Approved Value",
+  "approver": "المعتمد",
+  "averageAgeLabel": "Average Age Label",
+  "avgAge": "Avg Age",
+  "avgApprovalTime": "Avg Approval Time",
+  "avgPendingAge": "Avg Pending Age",
+  "backlogByStage": "Backlog By Stage",
+  "backlogByStageSubtitle": "Backlog By Stage Subtitle",
+  "backlogGrowing": "Backlog Growing",
+  "backlogImproving": "Backlog Improving",
+  "backlogNoChange": "Backlog No Change",
+  "backlogPulse": "Backlog Pulse",
+  "backlogStable": "Backlog Stable",
+  "budgetUtilization": "Budget Utilization",
+  "byDepartment": "By Department",
+  "byLevel": "By Level",
+  "changeSinceLastMonth": "Change Since Last Month",
+  "completed": "مكتمل",
+  "completionHelper": "Completion Helper",
+  "completionPerformance": "Completion Performance",
+  "completionRate": "Completion Rate",
+  "completionSparkLabel": "Completion Spark Label",
+  "completionTrend": "Completion Trend",
+  "contractUtilization": "Contract Utilization",
+  "count": "العدد",
+  "createdOn": "Created On",
+  "dataQualityAlerts": "Data Quality Alerts",
+  "dataQualityAlertsSubtitle": "Data Quality Alerts Subtitle",
+  "daysValue": "Days Value",
+  "demandVsProcured": "Demand Vs Procured",
+  "demandVsProcuredSubtitle": "Demand Vs Procured Subtitle",
+  "department": "القسم",
+  "departmentLabel": "Department Label",
+  "departmentRequestCosts": "Department Request Costs",
+  "departmentRequestCostsSubtitle": "Department Request Costs Subtitle",
+  "departmentSpend": "Department Spend",
+  "departmentSpending": "Department Spending",
+  "emergencyPurchases": "Emergency Purchases",
+  "error": "خطأ",
+  "executiveDashboard": "Executive Dashboard",
+  "executiveDashboardSubtitle": "Executive Dashboard Subtitle",
+  "failedToLoad": "تعذر التحميل",
+  "finalApprover": "Final Approver",
+  "generatedOn": "تاريخ الإنشاء",
+  "grandTotal": "الإجمالي الكلي",
+  "issue": "مشكلة",
+  "justification": "المبرر",
+  "lastUpdated": "آخر تحديث",
+  "leadingDepartment": "Leading Department",
+  "level": "المستوى",
+  "loadingDashboard": "Loading Dashboard",
+  "maintenanceRef": "Maintenance Ref",
+  "monthlySpending": "Monthly Spending",
+  "myAssignedRequests": "My Assigned Requests",
+  "myPendingApprovals": "My Pending Approvals",
+  "neededBy": "مطلوب قبل",
+  "no": "لا",
+  "noDataQualityAlerts": "No Data Quality Alerts",
+  "noItems": "لا توجد عناصر",
+  "noPendingBacklog": "No Pending Backlog",
+  "oldestPending": "Oldest Pending",
+  "onHold": "قيد الانتظار",
+  "operationalDashboards": "Operational Dashboards",
+  "overviewTitle": "Overview Title",
+  "pending": "معلق",
+  "pendingAgingBuckets": "Pending Aging Buckets",
+  "pendingAgingBucketsSubtitle": "Pending Aging Buckets Subtitle",
+  "pendingChange": "Pending Change",
+  "pendingNow": "Pending Now",
+  "pendingShort": "Pending Short",
+  "pendingVsCompleted": "Pending Vs Completed",
+  "permissionTag": "Permission Tag",
+  "personalDashboard": "Personal Dashboard",
+  "personalDashboardSubtitle": "Personal Dashboard Subtitle",
+  "poDelays": "PO Delays",
+  "prAging": "PR Aging",
+  "preparedBy": "أعده",
+  "printConfirm": "Print Confirm",
+  "printCount": "عدد مرات الطباعة",
+  "procurementControlTower": "Procurement Control Tower",
+  "procurementControlTowerSubtitle": "Procurement Control Tower Subtitle",
+  "procurementDashboard": "Procurement Dashboard",
+  "procurementDashboardSubtitle": "Procurement Dashboard Subtitle",
+  "project": "المشروع",
+  "purchaseSummary": "Purchase Summary",
+  "recentWindow": "Recent Window",
+  "rejected": "مرفوض",
+  "rejectedCostTotal": "Rejected Cost Total",
+  "rejectedRequestCost": "Rejected Request Cost",
+  "rejectedRequests": "Rejected Requests",
+  "requestDetails": "تفاصيل الطلب",
+  "requestId": "Request ID",
+  "requestWithDepartment": "Request With Department",
+  "requestedItems": "Requested Items",
+  "requester": "مقدم الطلب",
+  "requests": "الطلبات",
+  "requestsLabel": "Requests Label",
+  "reviewedBy": "راجعه",
+  "rfqCycleTime": "RFQ Cycle Time",
+  "riskAlerts": "Risk Alerts",
+  "role": "الدور",
+  "section": "الشعبة",
+  "slaBreaches": "SLA Breaches",
+  "sortedByCount": "Sorted By Count",
+  "specs": "المواصفات",
+  "spendHighlights": "Spend Highlights",
+  "status": "الحالة",
+  "statusActionNeeded": "Status Action Needed",
+  "statusOnTrack": "Status On Track",
+  "statusWatchlist": "Status Watchlist",
+  "stockoutRisks": "Stockout Risks",
+  "submittedDemand": "Submitted Demand",
+  "subtitle": "العنوان الفرعي",
+  "supplierDelays": "Supplier Delays",
+  "supplierPerformance": "Supplier Performance",
+  "title": "العنوان",
+  "topApprovers": "Top Approvers",
+  "topDepartments": "Top Departments",
+  "topSpendingMonth": "Top Spending Month",
+  "topSpendingMonthFallback": "Top Spending Month Fallback",
+  "totalRequests": "Total Requests",
+  "trendLabel": "Trend Label",
+  "urgent": "عاجل",
+  "urgentActions": "Urgent Actions",
+  "urgentShort": "Urgent Short",
+  "valueCompletionRate": "Value Completion Rate",
+  "viewingYear": "Viewing Year",
+  "waitingDays": "Waiting Days",
+  "yearToDateSpend": "Year To Date Spend",
+  "yes": "نعم"
 }

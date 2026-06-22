@@ -142,6 +142,12 @@ const Management = () => {
   const [warehouseForm, setWarehouseForm] = useState({ name: '' });
   const [warehouseMessage, setWarehouseMessage] = useState('');
   const [warehouseError, setWarehouseError] = useState('');
+  const [printSettings, setPrintSettings] = useState(null);
+  const [printSettingsDepartmentId, setPrintSettingsDepartmentId] = useState('');
+  const [printSettingsMessage, setPrintSettingsMessage] = useState('');
+  const [printSettingsError, setPrintSettingsError] = useState('');
+  const [loadingPrintSettings, setLoadingPrintSettings] = useState(false);
+  const [savingPrintSettings, setSavingPrintSettings] = useState(false);
   const [savingWarehouse, setSavingWarehouse] = useState(false);
   const [editingWarehouseId, setEditingWarehouseId] = useState(null);
   const [editingWarehouseName, setEditingWarehouseName] = useState('');
@@ -216,6 +222,8 @@ const Management = () => {
       canManageContractApprovalRules: hasAnyPermission(currentUser, ['contracts.manage', 'permissions.manage']),
       canManageAutoAssignments: hasAnyPermission(currentUser, ['requests.manage', 'permissions.manage', 'users.manage']) ||
         ['Admin', 'SCM'].includes(currentUser.role),
+      canManagePrintServiceSettings: hasPermission(currentUser, 'departments.manage') ||
+        ['Admin', 'SCM'].includes(currentUser.role),
     };
   }, [user]);
 
@@ -229,6 +237,7 @@ const Management = () => {
     canManagePermissions,
     canManageContractApprovalRules,
     canManageAutoAssignments,
+    canManagePrintServiceSettings,
   } = permissionFlags;
 
   const availableTabs = useMemo(() => {
@@ -239,6 +248,7 @@ const Management = () => {
     if (canManageDepartments) tabs.push('warehouses');
     if (canManageRoutes) tabs.push('routes');
     if (canManageAutoAssignments) tabs.push('autoAssignments');
+    if (canManagePrintServiceSettings) tabs.push('printServices');
     if (canManageProjects) tabs.push('projects');
     if (canManageRoles) {
       tabs.push('roles');
@@ -257,6 +267,7 @@ const Management = () => {
     canManageProjects,
     canManageRoles,
     canManageAutoAssignments,
+    canManagePrintServiceSettings,
     canManagePermissions,
     canManageContractApprovalRules,
   ]);
@@ -298,7 +309,7 @@ const Management = () => {
     if (canViewUsers || canManagePermissions || canManageRoles || canManageAutoAssignments) {
       fetchUsers();
     }
-    if (canManageDepartments || canViewUsers || canManagePermissions || canManageRoles || canManageAutoAssignments || canManageProjects) {
+    if (canManageDepartments || canViewUsers || canManagePermissions || canManageRoles || canManageAutoAssignments || canManageProjects || canManagePrintServiceSettings) {
       fetchDepartments();
     }
     if (canManageRoutes) {
@@ -319,6 +330,7 @@ const Management = () => {
     canManageAccountRequests,
     canManageProjects,
     canManageAutoAssignments,
+    canManagePrintServiceSettings,
   ]);
 
   useEffect(() => {
@@ -364,6 +376,10 @@ const Management = () => {
     if (tab === 'autoAssignments' && canManageAutoAssignments) {
       fetchAutoAssignmentRules();
     }
+    if (tab === 'printServices' && canManagePrintServiceSettings) {
+      fetchPrintServiceSettings();
+      fetchDepartments();
+    }
   }, [
     tab,
     canViewUsers,
@@ -374,6 +390,7 @@ const Management = () => {
     canManageProjects,
     canManageRoles,
     canManageAutoAssignments,
+    canManagePrintServiceSettings,
     roles.length,
     availablePermissions.length,
   ]);
@@ -436,7 +453,7 @@ const Management = () => {
   };
 
   const fetchDepartments = async () => {
-    if (!(canManageDepartments || canViewUsers || canManagePermissions || canManageProjects)) return;
+    if (!(canManageDepartments || canViewUsers || canManagePermissions || canManageProjects || canManagePrintServiceSettings)) return;
     setLoadingDepartments(true);
     setDepartmentsError('');
     try {
@@ -605,6 +622,45 @@ const Management = () => {
       setProjectError(err?.response?.data?.message || 'Failed to load projects');
     } finally {
       setLoadingProjects(false);
+    }
+  };
+
+
+  const fetchPrintServiceSettings = async () => {
+    if (!canManagePrintServiceSettings) return;
+    setLoadingPrintSettings(true);
+    setPrintSettingsError('');
+    try {
+      const res = await api.get('/print-service-requests/settings');
+      const settings = res.data?.settings || null;
+      setPrintSettings(settings);
+      setPrintSettingsDepartmentId(settings?.department_id ? String(settings.department_id) : '');
+    } catch (err) {
+      console.error('Failed to load print service settings', err);
+      setPrintSettingsError(err?.response?.data?.message || 'Failed to load print service settings.');
+    } finally {
+      setLoadingPrintSettings(false);
+    }
+  };
+
+  const savePrintServiceSettings = async () => {
+    if (!canManagePrintServiceSettings) return;
+    setSavingPrintSettings(true);
+    setPrintSettingsError('');
+    setPrintSettingsMessage('');
+    try {
+      const res = await api.put('/print-service-requests/settings', {
+        department_id: printSettingsDepartmentId ? Number(printSettingsDepartmentId) : null,
+      });
+      const settings = res.data?.settings || null;
+      setPrintSettings(settings);
+      setPrintSettingsDepartmentId(settings?.department_id ? String(settings.department_id) : '');
+      setPrintSettingsMessage(res.data?.message || 'IT Department Queue department link saved.');
+    } catch (err) {
+      console.error('Failed to save print service settings', err);
+      setPrintSettingsError(err?.response?.data?.message || 'Failed to save print service settings.');
+    } finally {
+      setSavingPrintSettings(false);
     }
   };
 
@@ -2481,6 +2537,74 @@ const Management = () => {
     );
   };
 
+
+  const renderPrintServices = () => {
+    if (!canManagePrintServiceSettings) {
+      return (
+        <div className="rounded border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+          You do not have permission to manage print service settings.
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="rounded border border-cyan-100 bg-cyan-50 p-4 text-sm text-cyan-900">
+          <h3 className="text-base font-semibold">IT Department Queue access</h3>
+          <p>
+            Link the IT Department Queue to the department whose users should view the queue and
+            accept, complete, or claim print service requests.
+          </p>
+        </div>
+        {printSettingsError && <p className="text-sm text-red-600">{printSettingsError}</p>}
+        {printSettingsMessage && <p className="text-sm text-green-700">{printSettingsMessage}</p>}
+        {loadingPrintSettings ? (
+          <p>Loading print service settings...</p>
+        ) : (
+          <div className="space-y-3 rounded border bg-white p-4 shadow-sm">
+            <label className="block">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Linked IT department
+              </span>
+              <select
+                className="mt-1 w-full rounded border border-gray-300 p-2"
+                value={printSettingsDepartmentId}
+                onChange={(e) => setPrintSettingsDepartmentId(e.target.value)}
+                disabled={savingPrintSettings}
+              >
+                <option value="">-- Select department --</option>
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>{department.name}</option>
+                ))}
+              </select>
+            </label>
+            <p className="text-xs text-gray-600">
+              Current link: {printSettings?.department_name || 'Not configured; legacy IT-name matching is used.'}
+            </p>
+            {printSettings?.updated_at && (
+              <p className="text-xs text-gray-500">
+                Last updated {new Date(printSettings.updated_at).toLocaleString()}
+                {printSettings.updated_by_name ? ` by ${printSettings.updated_by_name}` : ''}.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={savePrintServiceSettings}
+              disabled={savingPrintSettings || !printSettingsDepartmentId}
+              className={`rounded px-4 py-2 font-semibold text-white ${
+                savingPrintSettings || !printSettingsDepartmentId
+                  ? 'bg-gray-400'
+                  : 'bg-cyan-600 hover:bg-cyan-700'
+              }`}
+            >
+              {savingPrintSettings ? 'Saving…' : 'Save queue department'}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderRoles = () => {
     if (!canManageRoles) {
       return (
@@ -3359,6 +3483,18 @@ const Management = () => {
                     Auto Assignments
                   </button>
                 )}
+                {canManagePrintServiceSettings && (
+                  <button
+                    onClick={() => setTab('printServices')}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      tab === 'printServices'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
+                    }`}
+                  >
+                    Print Services
+                  </button>
+                )}
                 {canManageProjects && (
                   <button
                     onClick={() => setTab('projects')}
@@ -3429,6 +3565,7 @@ const Management = () => {
               {tab === 'warehouses' && renderWarehouses()}
               {tab === 'routes' && renderRoutes()}
               {tab === 'autoAssignments' && renderAutoAssignments()}
+              {tab === 'printServices' && renderPrintServices()}
               {tab === 'projects' && renderProjects()}
               {tab === 'roles' && renderRoles()}
               {tab === 'permissions' && renderPermissions()}
