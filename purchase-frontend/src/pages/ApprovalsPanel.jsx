@@ -1,4 +1,5 @@
 //src/pages/ApprovalsPanel.js
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -25,6 +26,7 @@ import RequestViewModeToggle from '../components/requests/RequestViewModeToggle'
 import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
 
 const ApprovalsPanel = () => {
+  const { t } = useTranslation();
   const [onboardingVersion, setOnboardingVersion] = useState(0);
   const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
     'approvals-request-view-mode',
@@ -149,7 +151,7 @@ const ApprovalsPanel = () => {
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900">Pending & On-Hold Approvals</h1>
+            <h1 className="text-3xl font-semibold text-slate-900">{t('approvalsPanel.title')}</h1>
             <p className="mt-1 max-w-2xl text-sm text-slate-600">
               Review, pause, or continue approval requests from your departments.
             </p>

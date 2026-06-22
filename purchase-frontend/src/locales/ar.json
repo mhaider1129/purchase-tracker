@@ -219,7 +219,8 @@
     "highContrastMode": "وضع التباين العالي",
     "home": "الرئيسية",
     "notificationsLoadFailed": "تعذر تحميل الإشعارات.",
-    "retry": "إعادة المحاولة"
+    "retry": "إعادة المحاولة",
+    "itPrintServiceRequests": "طلبات خدمة الطباعة لتقنية المعلومات"
   },
   "pageTitles": {
     "nonStockRequestForm": "نموذج طلب مواد غير مخزنية",
@@ -2866,5 +2867,35 @@
   "viewingYear": "Viewing Year",
   "waitingDays": "Waiting Days",
   "yearToDateSpend": "Year To Date Spend",
-  "yes": "نعم"
+  "yes": "نعم",
+  "warehouseSupplyRequestForm": {
+    "title": "طلب إمداد المستودع"
+  },
+  "maintenanceWarehouseSupplyRequestForm": {
+    "title": "طلب إمداد مستودع الصيانة"
+  },
+  "stockRequestForm": {
+    "title": "طلب شراء مخزون"
+  },
+  "medicalDeviceRequestForm": {
+    "title": "نموذج طلب جهاز طبي"
+  },
+  "medicationRequestForm": {
+    "title": "نموذج طلب دواء"
+  },
+  "procurementLogbookRequestForm": {
+    "title": "طلب شراء دفاتر سجل بالجملة"
+  },
+  "approvalHistory": {
+    "title": "سجل الموافقات"
+  },
+  "approvalsPanel": {
+    "title": "الموافقات المعلقة والموقوفة مؤقتاً"
+  },
+  "printServiceRequestsPage": {
+    "title": "طلبات خدمة الطباعة لتقنية المعلومات"
+  },
+  "custodyIssuePage": {
+    "title": "إصدار عهدة"
+  }
 }

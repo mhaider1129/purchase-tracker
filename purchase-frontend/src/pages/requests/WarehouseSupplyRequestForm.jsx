@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useMemo, useState, useEffect } from 'react';
 import api from '../../api/axios';
 import useCurrentUser from '../../hooks/useCurrentUser';
@@ -10,6 +11,7 @@ import useWarehouseStockItems from '../../hooks/useWarehouseStockItems';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const WarehouseSupplyRequestForm = () => {
+  const { t } = useTranslation();
   const [items, setItems] = useState([{ stock_item_id: '', item_name: '', quantity: 1 }]);
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
@@ -223,7 +225,7 @@ const WarehouseSupplyRequestForm = () => {
     <>
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
-          Warehouse Supply Request
+          {t('warehouseSupplyRequestForm.title')}
           <HelpTooltip text="Request items from warehouse stock" />
         </h1>
 

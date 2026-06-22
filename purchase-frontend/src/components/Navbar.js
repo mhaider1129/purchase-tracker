@@ -343,7 +343,7 @@ const Navbar = () => {
           ),
           createItem(
             true,
-            "IT Print Service Requests",
+            t("navbar.itPrintServiceRequests"),
             "/print-service-requests",
             "text-cyan-700",
           ),

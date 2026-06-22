@@ -1,4 +1,5 @@
 //src/pages/ApprovalHistory.js
+import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import Papa from 'papaparse';
@@ -8,6 +9,7 @@ import useCurrentUser from '../hooks/useCurrentUser';
 import useStatusCommunications from '../hooks/useStatusCommunications';
 
 const ApprovalHistory = () => {
+  const { t } = useTranslation();
   const [history, setHistory] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [error, setError] = useState(null);
@@ -240,7 +242,7 @@ const ApprovalHistory = () => {
   const downloadPDF = () => {
     const sorted = [...filtered].sort((a, b) => new Date(b.approved_at) - new Date(a.approved_at));
     const doc = new jsPDF();
-    doc.text('Approval History', 14, 15);
+    doc.text(t('approvalHistory.title'), 14, 15);
 
     const tableData = sorted.map(item => [
       item.request_id,
@@ -274,7 +276,7 @@ const ApprovalHistory = () => {
   return (
     <>
       <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">Approval History</h1>
+        <h1 className="text-2xl font-bold mb-4">{t('approvalHistory.title')}</h1>
 
         {/* 🔍 Filters */}
         <div className="flex flex-wrap gap-4 items-end mb-6">

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
@@ -21,6 +22,7 @@ const isLinkedItDepartmentUser = (user, settings) => {
 };
 
 const PrintServiceRequestsPage = () => {
+  const { t } = useTranslation();
   const { user } = useCurrentUser();
   const [myRequests, setMyRequests] = useState([]);
   const [queueRequests, setQueueRequests] = useState([]);
@@ -129,7 +131,7 @@ const PrintServiceRequestsPage = () => {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">IT Print Service Requests</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('printServiceRequestsPage.title')}</h1>
         <p className="mt-1 text-gray-600">Request printing for a specific log or form. This workflow is handled by IT and does not create purchase requests or approval steps.</p>
       </div>
 

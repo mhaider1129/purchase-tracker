@@ -219,7 +219,8 @@
     "highContrastMode": "High contrast mode",
     "home": "Home",
     "notificationsLoadFailed": "Failed to load notifications.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "itPrintServiceRequests": "IT Print Service Requests"
   },
   "pageTitles": {
     "nonStockRequestForm": "Non-Stock Request Form",
@@ -2866,5 +2867,35 @@
   "viewingYear": "Viewing Year",
   "waitingDays": "Waiting Days",
   "yearToDateSpend": "Year To Date Spend",
-  "yes": "Yes"
+  "yes": "Yes",
+  "warehouseSupplyRequestForm": {
+    "title": "Warehouse Supply Request"
+  },
+  "maintenanceWarehouseSupplyRequestForm": {
+    "title": "Maintenance Warehouse Supply Request"
+  },
+  "stockRequestForm": {
+    "title": "Stock Purchase Request"
+  },
+  "medicalDeviceRequestForm": {
+    "title": "Medical Device Request Form"
+  },
+  "medicationRequestForm": {
+    "title": "Medication Request Form"
+  },
+  "procurementLogbookRequestForm": {
+    "title": "Bulk Logbook Procurement Request"
+  },
+  "approvalHistory": {
+    "title": "Approval History"
+  },
+  "approvalsPanel": {
+    "title": "Pending & On-Hold Approvals"
+  },
+  "printServiceRequestsPage": {
+    "title": "IT Print Service Requests"
+  },
+  "custodyIssuePage": {
+    "title": "Issue Custody Record"
+  }
 }

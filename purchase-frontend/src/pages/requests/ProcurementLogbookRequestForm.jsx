@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
@@ -9,6 +10,7 @@ const MAX_ATTACHMENT_SIZE_MB = 500;
 const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
 
 const ProcurementLogbookRequestForm = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +100,7 @@ const ProcurementLogbookRequestForm = () => {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Bulk Logbook Procurement Request</h1>
+      <h1 className="text-2xl font-bold mb-4">{t('procurementLogbookRequestForm.title')}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block font-semibold mb-1">Approved Form (PDF/Word)</label>

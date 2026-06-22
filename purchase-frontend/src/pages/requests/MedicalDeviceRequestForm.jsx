@@ -1,4 +1,5 @@
 // src/pages/requests/MedicalDeviceRequestForm.jsx
+import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
@@ -10,6 +11,7 @@ import AmountInput from '../../components/ui/AmountInput';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const MedicalDeviceRequestForm = () => {
+  const { t } = useTranslation();
   const { user, loading } = useCurrentUser();
   const navigate = useNavigate();
 
@@ -337,7 +339,7 @@ const MedicalDeviceRequestForm = () => {
     <>
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
-          Medical Device Request Form
+          {t('medicalDeviceRequestForm.title')}
           <HelpTooltip text="Step 2: Provide details for your medical device request." />
         </h1>
 

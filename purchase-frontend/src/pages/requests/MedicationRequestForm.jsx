@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
@@ -9,6 +10,7 @@ import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const MedicationRequestForm = () => {
+  const { t } = useTranslation();
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([{ item_name: '', dosage: '', quantity: 1 }]);
   const [itemErrors, setItemErrors] = useState([{}]);
@@ -280,7 +282,7 @@ const MedicationRequestForm = () => {
     <>
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
-          Medication Request Form
+          {t('medicationRequestForm.title')}
           <HelpTooltip text="Provide medication details for your request." />
         </h1>
 

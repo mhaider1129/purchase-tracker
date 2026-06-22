@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../../api/axios';
 import {
@@ -7,6 +8,7 @@ import {
 import { Button } from '../../components/ui/Button';
 
 const CustodyIssueForm = () => {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     itemName: '',
     quantity: '',
@@ -178,7 +180,7 @@ const CustodyIssueForm = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-6">Issue Custody Record</h1>
+        <h1 className="text-2xl font-semibold mb-6">{t('custodyIssuePage.title')}</h1>
         <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
           <div>
             <label htmlFor="itemName" className="block text-sm font-medium text-gray-700">

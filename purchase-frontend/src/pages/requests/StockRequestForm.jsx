@@ -1,5 +1,6 @@
 // src/pages/requests/StockRequestForm.js
 
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Papa from 'papaparse';
 import api from '../../api/axios';
@@ -54,6 +55,7 @@ const parsePositiveQuantity = (value) => {
 };
 
 const StockRequestForm = () => {
+  const { t } = useTranslation();
   const [itemsList, setItemsList] = useState([]);
   const [selectedItems, setSelectedItems] = useState([createEmptyItem()]);
   const [itemSearchTerms, setItemSearchTerms] = useState(['']);
@@ -579,7 +581,7 @@ const StockRequestForm = () => {
     <>
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
-          Stock Request Form
+          {t('stockRequestForm.title')}
           <HelpTooltip text="Step 2: Provide details for your stock request." />
         </h1>
 
