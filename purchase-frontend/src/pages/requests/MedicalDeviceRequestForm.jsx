@@ -229,7 +229,7 @@ const MedicalDeviceRequestForm = () => {
 
   const addItem = () => {
     if (items.length >= MAX_ITEMS_PER_REQUEST) {
-      alert(`You can only request up to ${MAX_ITEMS_PER_REQUEST} devices per submission.`);
+      alert(t('medicalDeviceRequestForm.alerts.maxItems', { max: MAX_ITEMS_PER_REQUEST }));
       return;
     }
     setItems([...items, getEmptyItem()]);
@@ -237,7 +237,7 @@ const MedicalDeviceRequestForm = () => {
   };
   const removeItem = (index) => {
     if (items.length === 1) return;
-    if (!window.confirm('Remove this item?')) return;
+    if (!window.confirm(t('medicalDeviceRequestForm.alerts.removeItem'))) return;
     setItems(items.filter((_, i) => i !== index));
     setItemErrors((prev) => prev.filter((_, i) => i !== index));
   };
@@ -279,17 +279,17 @@ const MedicalDeviceRequestForm = () => {
     setRequestAttachmentsError(attachmentsError);
 
     if (!justification.trim()) {
-      alert('❌ Justification is required.');
+      alert(t('medicalDeviceRequestForm.alerts.justificationRequired'));
       return;
     }
 
     if (!user?.department_id) {
-      alert('❌ Your department info is missing.');
+      alert(t('medicalDeviceRequestForm.alerts.missingDepartment'));
       return;
     }
 
     if (hasItemErrors || attachmentsError) {
-      alert('❌ Please resolve the highlighted errors before submitting.');
+      alert(t('medicalDeviceRequestForm.alerts.resolveErrors'));
       return;
     }
 
@@ -321,7 +321,7 @@ const MedicalDeviceRequestForm = () => {
       navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Submission error:', err);
-      alert(err.response?.data?.message || '❌ Failed to submit request.');
+      alert(err.response?.data?.message || t('medicalDeviceRequestForm.alerts.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -330,7 +330,7 @@ const MedicalDeviceRequestForm = () => {
   if (loading) {
     return (
       <>
-          <div className="p-6">Loading form...</div>
+          <div className="p-6">{t('medicalDeviceRequestForm.loading')}</div>
       </>
     );
   }
@@ -340,28 +340,28 @@ const MedicalDeviceRequestForm = () => {
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           {t('medicalDeviceRequestForm.title')}
-          <HelpTooltip text="Step 2: Provide details for your medical device request." />
+          <HelpTooltip text={t('medicalDeviceRequestForm.help')} />
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-blue-900">Request overview</h2>
+              <h2 className="text-lg font-semibold text-blue-900">{t('medicalDeviceRequestForm.overview')}</h2>
               <p className="text-sm text-blue-800">
-                Track totals as you add devices and supporting information.
+                {t('medicalDeviceRequestForm.overviewHelp')}
               </p>
             </div>
             <dl className="flex flex-wrap gap-6 text-blue-900">
               <div>
-                <dt className="text-xs uppercase tracking-wide text-blue-700">Line items</dt>
+                <dt className="text-xs uppercase tracking-wide text-blue-700">{t('medicalDeviceRequestForm.lineItems')}</dt>
                 <dd className="text-xl font-bold">{items.length}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-blue-700">Total devices</dt>
+                <dt className="text-xs uppercase tracking-wide text-blue-700">{t('medicalDeviceRequestForm.totalDevices')}</dt>
                 <dd className="text-xl font-bold">{totalDeviceCount}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-blue-700">Estimated total</dt>
+                <dt className="text-xs uppercase tracking-wide text-blue-700">{t('medicalDeviceRequestForm.estimatedTotal')}</dt>
                 <dd className="text-xl font-bold">≈ {formattedTotalCost}</dd>
               </div>
             </dl>
@@ -369,7 +369,7 @@ const MedicalDeviceRequestForm = () => {
 
           {/* Auto-Filled Department */}
           <div>
-            <label className="block font-semibold mb-1">Your Department</label>
+            <label className="block font-semibold mb-1">{t('medicalDeviceRequestForm.fields.department')}</label>
             <input
               type="text"
               value={user?.department_name || ''}
@@ -380,7 +380,7 @@ const MedicalDeviceRequestForm = () => {
 
           {/* Auto-Filled Section */}
           <div>
-            <label className="block font-semibold mb-1">Your Section</label>
+            <label className="block font-semibold mb-1">{t('medicalDeviceRequestForm.fields.section')}</label>
             <input
               type="text"
               value={user?.section_name || ''}
@@ -391,13 +391,13 @@ const MedicalDeviceRequestForm = () => {
 
           {/* Justification */}
           <div>
-            <label className="block font-semibold mb-1">Justification</label>
+            <label className="block font-semibold mb-1">{t('medicalDeviceRequestForm.fields.justification')}</label>
             <textarea
               className="w-full p-2 border rounded"
               rows={4}
               value={justification}
               onChange={(e) => setJustification(e.target.value)}
-              placeholder="Explain why the medical device is needed, referencing patient or service impact..."
+              placeholder={t('medicalDeviceRequestForm.fields.justificationPlaceholder')}
               required
               disabled={isSubmitting}
             />
@@ -426,7 +426,7 @@ const MedicalDeviceRequestForm = () => {
                       className="self-start text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
                       disabled={isSubmitting}
                     >
-                      ✕ Remove Device
+                      {t('medicalDeviceRequestForm.removeDevice')}
                     </button>
                   )}
                 </div>
@@ -438,7 +438,7 @@ const MedicalDeviceRequestForm = () => {
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Portable ultrasound machine"
+                      placeholder={t('medicalDeviceRequestForm.fields.itemPlaceholder')}
                       value={item.item_name}
                       onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
                       className={`mt-1 w-full rounded border p-2 ${
@@ -500,7 +500,7 @@ const MedicalDeviceRequestForm = () => {
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="Describe the clinical or operational use for this device"
+                      placeholder={t('medicalDeviceRequestForm.fields.intendedUsePlaceholder')}
                       value={item.intended_use}
                       onChange={(e) => handleItemChange(index, 'intended_use', e.target.value)}
                       className="mt-1 w-full rounded border border-gray-300 p-2"
@@ -511,11 +511,11 @@ const MedicalDeviceRequestForm = () => {
                   <div>
                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                       Technical specifications
-                      <HelpTooltip text="Include the critical specs procurement should verify (e.g. modalities, power, accessories)." />
+                      <HelpTooltip text={t('medicalDeviceRequestForm.specHelp')} />
                     </label>
                     <textarea
                       rows={3}
-                      placeholder="List key specifications and configuration requirements"
+                      placeholder={t('medicalDeviceRequestForm.fields.specsPlaceholder')}
                       value={item.specs}
                       onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
                       className="mt-1 w-full rounded border border-gray-300 p-2"
@@ -523,7 +523,7 @@ const MedicalDeviceRequestForm = () => {
                     />
                     {index === 0 && specGuidance.length > 0 && (
                       <div className="mt-2 rounded border border-blue-100 bg-blue-50 p-2 text-xs text-blue-900">
-                        <p className="font-semibold">Specification tips</p>
+                        <p className="font-semibold">{t('medicalDeviceRequestForm.fields.specTips')}</p>
                         <ul className="list-disc pl-4 space-y-1">
                           {specGuidance.map((tip) => (
                             <li key={tip}>{tip}</li>
@@ -541,7 +541,7 @@ const MedicalDeviceRequestForm = () => {
                     </label>
                     <input
                       type="text"
-                      placeholder="Optional brand, model, or vendor preference"
+                      placeholder={t('medicalDeviceRequestForm.fields.deviceInfoPlaceholder')}
                       value={item.device_info}
                       onChange={(e) => handleItemChange(index, 'device_info', e.target.value)}
                       className="mt-1 w-full rounded border border-gray-300 p-2"
@@ -589,7 +589,7 @@ const MedicalDeviceRequestForm = () => {
                     disabled={isSubmitting}
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Allowed: {allowedExtensionsDisplay}. Max size {MAX_ATTACHMENT_SIZE_MB} MB per file.
+                    {t('medicalDeviceRequestForm.allowed', { types: allowedExtensionsDisplay, size: MAX_ATTACHMENT_SIZE_MB })}
                   </p>
                   {errors.attachments && (
                     <p className="mt-1 text-sm text-red-600">{errors.attachments}</p>
@@ -623,7 +623,7 @@ const MedicalDeviceRequestForm = () => {
           })}
 
           <div>
-            <label className="block font-semibold mb-1">Request attachments</label>
+            <label className="block font-semibold mb-1">{t('medicalDeviceRequestForm.fields.attachments')}</label>
             <input
               type="file"
               multiple
@@ -635,7 +635,7 @@ const MedicalDeviceRequestForm = () => {
               disabled={isSubmitting}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Attach quotes or approvals covering the entire request. Allowed: {allowedExtensionsDisplay}. Max {MAX_ATTACHMENT_SIZE_MB} MB per file.
+              {t('medicalDeviceRequestForm.attachmentsHelp', { types: allowedExtensionsDisplay, size: MAX_ATTACHMENT_SIZE_MB })}
             </p>
             {requestAttachmentsError && (
               <p className="mt-1 text-sm text-red-600">{requestAttachmentsError}</p>
@@ -679,7 +679,7 @@ const MedicalDeviceRequestForm = () => {
               className="text-blue-600 font-semibold disabled:opacity-50"
               disabled={isSubmitting}
             >
-              + Add another device
+              {t('medicalDeviceRequestForm.addDevice')}
             </button>
 
             <button
@@ -689,8 +689,8 @@ const MedicalDeviceRequestForm = () => {
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
-              <HelpTooltip text="Step 3: Submit the request for approval." />
+              {isSubmitting ? t('medicalDeviceRequestForm.fields.submitting') : t('medicalDeviceRequestForm.fields.submit')}
+              <HelpTooltip text={t('medicalDeviceRequestForm.submitHelp')} />
             </button>
           </div>
         </form>

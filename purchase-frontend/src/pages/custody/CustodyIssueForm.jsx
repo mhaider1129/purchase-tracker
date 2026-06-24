@@ -40,7 +40,7 @@ const CustodyIssueForm = () => {
       } catch (err) {
         console.error('❌ Failed to load departments:', err);
         if (!isMounted) return;
-        setDepartmentsError('Unable to load departments. Please try again.');
+        setDepartmentsError(t('custodyIssuePage.errors.departments'));
       }
     };
 
@@ -48,7 +48,7 @@ const CustodyIssueForm = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (form.custodyType !== 'personal') {
@@ -79,7 +79,7 @@ const CustodyIssueForm = () => {
         .catch((err) => {
           console.error('❌ Failed to search recipients:', err);
           if (!isActive) return;
-          setSearchError('Unable to search recipients.');
+          setSearchError(t('custodyIssuePage.errors.search'));
         })
         .finally(() => {
           if (isActive) {
@@ -92,7 +92,7 @@ const CustodyIssueForm = () => {
       isActive = false;
       clearTimeout(timer);
     };
-  }, [recipientQuery, form.custodyType]);
+  }, [recipientQuery, form.custodyType, t]);
 
   useEffect(() => {
     if (form.custodyType === 'departmental') {
@@ -184,14 +184,14 @@ const CustodyIssueForm = () => {
         <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
           <div>
             <label htmlFor="itemName" className="block text-sm font-medium text-gray-700">
-              Item Name
+              {t('custodyIssuePage.fields.itemName')}
             </label>
             <input
               id="itemName"
               name="itemName"
               type="text"
               className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-              placeholder="Enter item name"
+              placeholder={t('custodyIssuePage.fields.itemNamePlaceholder')}
               value={form.itemName}
               onChange={handleInputChange}
               required
@@ -200,7 +200,7 @@ const CustodyIssueForm = () => {
 
           <div>
             <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
-              Quantity
+              {t('custodyIssuePage.fields.quantity')}
             </label>
             <input
               id="quantity"
@@ -208,7 +208,7 @@ const CustodyIssueForm = () => {
               type="number"
               min="1"
               className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-              placeholder="Enter quantity"
+              placeholder={t('custodyIssuePage.fields.quantityPlaceholder')}
               value={form.quantity}
               onChange={handleInputChange}
               required
@@ -217,21 +217,21 @@ const CustodyIssueForm = () => {
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-              Description
+              {t('custodyIssuePage.fields.description')}
             </label>
             <textarea
               id="description"
               name="description"
               rows="3"
               className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-              placeholder="Provide additional details"
+              placeholder={t('custodyIssuePage.fields.detailsPlaceholder')}
               value={form.description}
               onChange={handleInputChange}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Custody Type</label>
+            <label className="block text-sm font-medium text-gray-700">{t('custodyIssuePage.fields.custodyType')}</label>
             <div className="mt-2 flex gap-4">
               <label className="inline-flex items-center gap-2">
                 <input
@@ -241,7 +241,7 @@ const CustodyIssueForm = () => {
                   checked={form.custodyType === 'personal'}
                   onChange={handleInputChange}
                 />
-                <span>Personal custody</span>
+                <span>{t('custodyIssuePage.fields.personal')}</span>
               </label>
               <label className="inline-flex items-center gap-2">
                 <input
@@ -251,7 +251,7 @@ const CustodyIssueForm = () => {
                   checked={form.custodyType === 'departmental'}
                   onChange={handleInputChange}
                 />
-                <span>Departmental custody</span>
+                <span>{t('custodyIssuePage.fields.departmental')}</span>
               </label>
             </div>
           </div>
@@ -259,13 +259,13 @@ const CustodyIssueForm = () => {
           {form.custodyType === 'personal' && (
             <div>
               <label htmlFor="recipient" className="block text-sm font-medium text-gray-700">
-                Custodian
+                {t('custodyIssuePage.fields.custodian')}
               </label>
               <input
                 id="recipient"
                 type="text"
                 className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-                placeholder="Search by name, email, or employee ID"
+                placeholder={t('custodyIssuePage.fields.recipientSearch')}
                 value={recipientQuery}
                 onChange={(event) => {
                   setRecipientQuery(event.target.value);
@@ -274,7 +274,7 @@ const CustodyIssueForm = () => {
                 autoComplete="off"
               />
               {isSearchingRecipients && (
-                <p className="text-sm text-gray-500 mt-1">Searching recipients...</p>
+                <p className="text-sm text-gray-500 mt-1">{t('custodyIssuePage.states.searching')}</p>
               )}
               {searchError && (
                 <p className="text-sm text-red-500 mt-1">{searchError}</p>
@@ -292,7 +292,7 @@ const CustodyIssueForm = () => {
                         <div className="text-xs text-gray-500">{recipient.email}</div>
                         {recipient.employee_id && (
                           <div className="text-xs text-gray-500">
-                            Employee ID: {recipient.employee_id}
+                            {t('custodyIssuePage.fields.employeeId', { id: recipient.employee_id })}
                           </div>
                         )}
                         {recipient.department_name && (
@@ -307,8 +307,7 @@ const CustodyIssueForm = () => {
               )}
               {selectedRecipient && (
                 <p className="mt-2 text-sm text-green-600">
-                  Selected custodian: {selectedRecipient.name} ({selectedRecipient.email}
-                  {selectedRecipient.employee_id ? ` • ${selectedRecipient.employee_id}` : ''})
+                  {t('custodyIssuePage.fields.selectedCustodian', { name: selectedRecipient.name, email: selectedRecipient.email, employeeId: selectedRecipient.employee_id ? ` • ${selectedRecipient.employee_id}` : '' })}
                 </p>
               )}
             </div>
@@ -317,7 +316,7 @@ const CustodyIssueForm = () => {
           {form.custodyType === 'departmental' && (
             <div>
               <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700">
-                Department
+                {t('custodyIssuePage.fields.department')}
               </label>
               <select
                 id="departmentId"
@@ -327,7 +326,7 @@ const CustodyIssueForm = () => {
                 onChange={handleInputChange}
                 required
               >
-                <option value="">Select department</option>
+                <option value="">{t('custodyIssuePage.fields.selectDepartment')}</option>
                 {departments.map((dept) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}
@@ -349,7 +348,7 @@ const CustodyIssueForm = () => {
               name="custodyCode"
               type="text"
               className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"
-              placeholder="Enter custody code if available"
+              placeholder={t('custodyIssuePage.fields.custodyCodePlaceholder')}
               value={form.custodyCode}
               onChange={handleInputChange}
             />
@@ -369,7 +368,7 @@ const CustodyIssueForm = () => {
 
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={isSubmitting || !formIsValid}>
-              {isSubmitting ? 'Submitting...' : 'Submit custody record'}
+              {isSubmitting ? t('custodyIssuePage.actions.submitting') : t('custodyIssuePage.actions.submit')}
             </Button>
             <Button
               type="button"

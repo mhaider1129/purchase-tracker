@@ -2869,7 +2869,41 @@
   "yearToDateSpend": "Year To Date Spend",
   "yes": "نعم",
   "warehouseSupplyRequestForm": {
-    "title": "طلب إمداد المستودع"
+    "title": "طلب إمداد المستودع",
+    "loading": "جارٍ التحميل...",
+    "loadUserFailed": "تعذر تحميل معلومات المستخدم.",
+    "fields": {
+      "justification": "التبرير",
+      "fulfillmentWarehouse": "مستودع التجهيز",
+      "selectWarehouse": "اختر المستودع",
+      "template": "القالب",
+      "selectTemplate": "-- اختر قالباً --",
+      "items": "العناصر",
+      "category": "الفئة",
+      "allCategories": "كل الفئات",
+      "subCategory": "الفئة الفرعية",
+      "allSubCategories": "كل الفئات الفرعية",
+      "selectWarehouseHelp": "اختر مستودعاً لعرض العناصر المتاحة فيه.",
+      "loadingItems": "جارٍ تحميل عناصر المستودع...",
+      "emptyWarehouse": "لا توجد عناصر مهيأة لهذا المستودع.",
+      "itemSearchPlaceholder": "اكتب لتصفية العناصر",
+      "selectItem": "اختر عنصراً",
+      "expiry": "الانتهاء",
+      "addItem": "+ إضافة عنصر",
+      "submitting": "جارٍ الإرسال...",
+      "submit": "إرسال الطلب"
+    },
+    "alerts": {
+      "selectWarehouseFirst": "يرجى اختيار مستودع التجهيز أولاً",
+      "noTemplateItems": "لا توجد عناصر القالب في المستودع المحدد",
+      "removeItem": "إزالة هذا العنصر؟",
+      "justificationRequired": "التبرير مطلوب",
+      "missingDepartment": "معلومات القسم غير موجودة في حسابك",
+      "selectFulfillmentWarehouse": "يرجى اختيار المستودع الذي سيجهز هذا الطلب",
+      "invalidItems": "يجب اختيار عنصر مستودع وكمية لكل بند",
+      "submitFailed": "فشل إرسال الطلب",
+      "noExpiry": "بدون انتهاء"
+    }
   },
   "maintenanceWarehouseSupplyRequestForm": {
     "title": "طلب إمداد مستودع الصيانة"
@@ -2878,24 +2912,414 @@
     "title": "طلب شراء مخزون"
   },
   "medicalDeviceRequestForm": {
-    "title": "نموذج طلب جهاز طبي"
+    "title": "نموذج طلب جهاز طبي",
+    "loading": "جارٍ تحميل النموذج...",
+    "overview": "نظرة عامة على الطلب",
+    "lineItems": "بنود الطلب",
+    "totalDevices": "إجمالي الأجهزة",
+    "estimatedTotal": "الإجمالي التقديري",
+    "fields": {
+      "department": "قسمك",
+      "section": "شعبتك",
+      "justification": "التبرير",
+      "justificationPlaceholder": "اشرح سبب الحاجة إلى الجهاز الطبي مع الإشارة إلى أثره على المريض أو الخدمة...",
+      "itemPlaceholder": "مثال: جهاز ألتراساوند محمول",
+      "intendedUsePlaceholder": "صف الاستخدام السريري أو التشغيلي لهذا الجهاز",
+      "specsPlaceholder": "اذكر المواصفات الرئيسية ومتطلبات التهيئة",
+      "specTips": "نصائح المواصفات",
+      "deviceInfoPlaceholder": "علامة تجارية أو موديل أو مورد مفضل اختياري",
+      "attachments": "مرفقات الطلب",
+      "submitting": "جارٍ الإرسال...",
+      "submit": "إرسال الطلب"
+    },
+    "alerts": {
+      "maxItems": "يمكنك طلب ما يصل إلى {{max}} أجهزة فقط في كل إرسال.",
+      "removeItem": "إزالة هذا العنصر؟",
+      "justificationRequired": "❌ التبرير مطلوب.",
+      "missingDepartment": "❌ معلومات قسمك غير موجودة.",
+      "resolveErrors": "❌ يرجى حل الأخطاء المحددة قبل الإرسال.",
+      "submitFailed": "❌ فشل إرسال الطلب."
+    },
+    "help": "الخطوة 2: أدخل تفاصيل طلب الجهاز الطبي.",
+    "overviewHelp": "تابع الإجماليات أثناء إضافة الأجهزة والمعلومات الداعمة.",
+    "removeDevice": "✕ إزالة الجهاز",
+    "specHelp": "أدرج المواصفات الحرجة التي يجب على المشتريات التحقق منها (مثل الأنماط، الطاقة، الملحقات).",
+    "allowed": "المسموح: {{types}}. الحد الأقصى {{size}} م.ب لكل ملف.",
+    "attachmentsHelp": "أرفق عروض الأسعار أو الموافقات الخاصة بالطلب بالكامل. المسموح: {{types}}. الحد الأقصى {{size}} م.ب لكل ملف.",
+    "remove": "إزالة",
+    "addDevice": "+ إضافة جهاز آخر",
+    "submitHelp": "الخطوة 3: إرسال الطلب للموافقة."
   },
   "medicationRequestForm": {
-    "title": "نموذج طلب دواء"
+    "title": "نموذج طلب دواء",
+    "loading": "جارٍ تحميل معلومات المستخدم...",
+    "loadUserFailed": "❌ تعذر تحميل معلومات المستخدم. يرجى تسجيل الدخول مرة أخرى أو التواصل مع المسؤول.",
+    "fields": {
+      "department": "قسمك",
+      "section": "شعبتك",
+      "justification": "التبرير",
+      "justificationPlaceholder": "اشرح الحاجة إلى هذه الأدوية...",
+      "medications": "الأدوية",
+      "summary": "{{count}} مدرج · إجمالي الكمية {{quantity}}",
+      "quickSummary": "ملخص سريع",
+      "namePlaceholder": "اسم الدواء",
+      "dosagePlaceholder": "الجرعة",
+      "submitting": "جارٍ الإرسال...",
+      "submit": "إرسال الطلب"
+    },
+    "alerts": {
+      "removeItem": "إزالة هذا العنصر؟",
+      "justificationRequired": "❌ التبرير مطلوب.",
+      "missingDepartment": "❌ القسم غير موجود في حسابك.",
+      "invalidItems": "❌ يجب أن يتضمن كل عنصر اسم الدواء والجرعة وكمية صحيحة.",
+      "attachments": "❌ يرجى حل مشكلات المرفقات قبل الإرسال.",
+      "submitFailed": "❌ فشل إرسال الطلب."
+    },
+    "help": "أدخل تفاصيل الأدوية المطلوبة.",
+    "savingDraft": "جارٍ حفظ المسودة...",
+    "draftSaved": "تم حفظ المسودة تلقائياً في {{time}}. يمكنك المتابعة إذا انقطعت قبل الإرسال.",
+    "draftActive": "الحفظ التلقائي للمسودة نشط أثناء تعبئة كل دواء.",
+    "remove": "إزالة",
+    "uploadHelp": "ارفع المستندات الداعمة (حد أقصى 10 م.ب لكل ملف).",
+    "accepted": "الصيغ المقبولة: {{types}}",
+    "submitHelp": "إرسال الطلب للموافقة."
   },
   "procurementLogbookRequestForm": {
-    "title": "طلب شراء دفاتر سجل بالجملة"
+    "title": "طلب شراء دفاتر سجل بالجملة",
+    "loading": "جارٍ تحميل معلومات المستخدم...",
+    "loadUserFailed": "تعذر تحميل تفاصيل المستخدم.",
+    "fields": {
+      "approvedForm": "النموذج المعتمد (PDF/Word)",
+      "maxFileSize": "الحد الأقصى لحجم الملف: {{size}}MB.",
+      "logbookName": "اسم دفتر السجل",
+      "logbookPlaceholder": "أدخل اسم دفتر السجل",
+      "orientation": "اتجاه دفتر السجل",
+      "portrait": "عمودي",
+      "landscape": "أفقي",
+      "pages": "عدد الصفحات",
+      "direction": "اتجاه البدء",
+      "ltr": "من اليسار إلى اليمين",
+      "rtl": "من اليمين إلى اليسار",
+      "serial": "الترقيم التسلسلي",
+      "auto": "ترقيم تلقائي",
+      "none": "بدون ترقيم",
+      "startFrom": "يبدأ الترقيم من",
+      "printingType": "نوع الطباعة",
+      "single": "وجه واحد",
+      "double": "وجهين",
+      "ncr": "مطلوب NCR",
+      "tearOff": "صفحات قابلة للفصل",
+      "details": "تفاصيل/مواصفات أخرى",
+      "detailsPlaceholder": "أي تعليمات إضافية: جودة الورق، التجليد، التخريم، لون الغلاف، إلخ.",
+      "submitting": "جارٍ الإرسال...",
+      "submit": "إرسال طلب شراء دفاتر السجل بالجملة"
+    },
+    "alerts": {
+      "fileTooLarge": "يجب أن يكون النموذج المعتمد بحجم {{size}}MB أو أقل.",
+      "departmentRequired": "القسم مطلوب لإرسال الطلبات.",
+      "uploadRequired": "يرجى رفع النموذج المعتمد (PDF أو Word).",
+      "nameRequired": "يرجى إدخال اسم دفتر السجل.",
+      "uploadTooLarge": "النموذج المعتمد كبير جداً. يرجى رفع ملف لا يتجاوز {{size}}MB.",
+      "submitFailed": "فشل إرسال طلب شراء دفاتر السجل بالجملة."
+    }
   },
   "approvalHistory": {
-    "title": "سجل الموافقات"
+    "title": "سجل الموافقات",
+    "filters": {
+      "search": "بحث",
+      "searchPlaceholder": "ابحث برقم الطلب أو القسم أو التبرير...",
+      "status": "تصفية حسب الحالة:",
+      "all": "الكل",
+      "approved": "موافق عليه",
+      "rejected": "مرفوض",
+      "department": "القسم:",
+      "from": "من تاريخ:",
+      "to": "إلى تاريخ:",
+      "reset": "إعادة تعيين"
+    },
+    "actions": {
+      "csv": "تنزيل CSV",
+      "pdf": "تنزيل PDF"
+    },
+    "summary": {
+      "showing": "عرض {{filtered}} من {{total}} موافقة",
+      "total": "إجمالي القرارات",
+      "approved": "موافق عليه",
+      "rejected": "مرفوض",
+      "pending": "معلق",
+      "spend": "الإنفاق التقديري"
+    },
+    "states": {
+      "loading": "جارٍ التحميل...",
+      "empty": "لا توجد موافقات."
+    },
+    "table": {
+      "requestId": "رقم الطلب",
+      "type": "النوع",
+      "department": "القسم",
+      "requester": "مقدم الطلب",
+      "project": "المشروع",
+      "justification": "التبرير",
+      "cost": "التكلفة",
+      "finalStatus": "الحالة النهائية",
+      "decision": "قرارك",
+      "comment": "تعليقك",
+      "items": "العناصر",
+      "level": "المستوى",
+      "date": "التاريخ",
+      "scm": "اتصالات المشتريات",
+      "notAvailable": "غير متاح",
+      "loadingItems": "جارٍ تحميل العناصر...",
+      "hideItems": "إخفاء العناصر",
+      "viewItems": "عرض العناصر",
+      "requestedItems": "العناصر المطلوبة للطلب {{id}}",
+      "item": "العنصر",
+      "specs": "المواصفات",
+      "brand": "العلامة التجارية",
+      "quantity": "الكمية",
+      "unitCost": "تكلفة الوحدة",
+      "totalCost": "إجمالي التكلفة",
+      "noItems": "لا توجد عناصر.",
+      "updates": "التحديثات",
+      "hide": "إخفاء",
+      "view": "عرض",
+      "communication": "تواصل حالة المشتريات",
+      "communicationHelp": "ناقش حالة هذا الطلب المعتمد (الحالة الحالية: {{status}}).",
+      "refresh": "تحديث",
+      "loadingComms": "جارٍ تحميل المحادثات...",
+      "commentsPlaceholder": "شارك تحديثاً مع فريق المشتريات...",
+      "unknown": "غير معروف"
+    }
   },
   "approvalsPanel": {
-    "title": "الموافقات المعلقة والموقوفة مؤقتاً"
+    "title": "الموافقات المعلقة والموقوفة مؤقتاً",
+    "subtitle": "راجع طلبات الموافقة من إداراتك أو أوقفها مؤقتاً أو تابعها.",
+    "actions": {
+      "refresh": "تحديث",
+      "refreshAria": "تحديث قائمة الموافقات",
+      "openWorkspace": "فتح مساحة العمل",
+      "hideApprovals": "إخفاء الموافقات",
+      "viewApprovals": "عرض الموافقات",
+      "resumeApproval": "استئناف الموافقة",
+      "putOnHold": "إيقاف مؤقت",
+      "sendToHod": "إرسال إلى رئيس القسم",
+      "assignRequester": "إسناد إلى مقدم طلب القسم",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "submit": "إرسال",
+      "send": "إرسال",
+      "clear": "مسح",
+      "cancel": "إلغاء"
+    },
+    "onboarding": {
+      "title": "جولة أولى: الموافقات",
+      "subtitle": "استخدم هذا الدليل لمعالجة الموافقات بسرعة وبشكل موحّد.",
+      "filterTitle": "تصفية قائمة الطلبات المعلقة",
+      "filterTip": "ابدأ بالطلبات العاجلة والأحدث أولاً.",
+      "reviewTitle": "مراجعة تفاصيل العناصر",
+      "reviewTip": "تحقق من الكمية والملاحظات والمرفقات قبل اتخاذ القرار.",
+      "decisionTitle": "إرسال قرار الموافقة",
+      "decisionTip": "اترك تعليقات مختصرة وواضحة لأغراض التدقيق."
+    },
+    "stats": {
+      "totalPending": "إجمالي المعلق",
+      "urgent": "عاجل",
+      "estimatedTotal": "الإجمالي التقديري (د.ع)",
+      "requestsByType": "الطلبات حسب النوع",
+      "noTypeData": "لا توجد بيانات للنوع"
+    },
+    "filters": {
+      "searchPlaceholder": "ابحث بالرقم أو التبرير أو الإدارة أو الشعبة",
+      "requestType": "نوع الطلب",
+      "allTypes": "كل الأنواع",
+      "urgency": "الأولوية",
+      "sortBy": "ترتيب حسب",
+      "reset": "إعادة تعيين المرشحات",
+      "urgencyAll": "الكل",
+      "urgentOnly": "العاجلة فقط",
+      "nonUrgent": "غير عاجلة",
+      "newest": "الأحدث أولاً",
+      "oldest": "الأقدم أولاً",
+      "costHigh": "التكلفة: من الأعلى للأدنى",
+      "costLow": "التكلفة: من الأدنى للأعلى"
+    },
+    "requestView": {
+      "title": "طريقة عرض الطلب",
+      "description": "استخدم العرض المختصر لفحص بطاقات الطلبات بسرعة، أو العرض التفصيلي لإظهار بيانات الطلب مباشرة.",
+      "detailed": "تفصيلي",
+      "summary": "ملخص",
+      "aria": "نمط عرض الطلب"
+    },
+    "items": {
+      "heading": "العناصر المطلوبة",
+      "save": "حفظ قرارات العناصر",
+      "qty": "الكمية",
+      "availableQty": "الكمية المتاحة",
+      "unitCost": "تكلفة الوحدة",
+      "total": "الإجمالي",
+      "decision": "القرار",
+      "comments": "التعليقات",
+      "approved": "موافق عليه",
+      "rejected": "مرفوض",
+      "pending": "معلق",
+      "empty": "لا توجد عناصر لهذا الطلب."
+    },
+    "hodModal": {
+      "title": "إرسال إلى رئيس القسم",
+      "description": "أضف خطوة موافقة رئيس القسم قبل متابعة سير العمل.",
+      "select": "اختر رئيس القسم",
+      "loading": "جارٍ تحميل رؤساء الأقسام المعتمدين...",
+      "choose": "اختر رئيس قسم",
+      "fallback": "رئيس قسم",
+      "empty": "لا يوجد رؤساء أقسام نشطون متاحون.",
+      "helper": "سيتلقى رئيس القسم المحدد موافقة معلقة قبل انتقال الطلب إلى المستوى التالي."
+    },
+    "states": {
+      "loading": "جارٍ تحميل الموافقات...",
+      "empty": "لا توجد موافقات معلقة.",
+      "emptyFiltered": "لا توجد موافقات معلقة تطابق المرشحات المحددة.",
+      "clearFilters": "مسح المرشحات"
+    },
+    "cost": {
+      "updateEstimated": "تحديث التكلفة التقديرية (د.ع)",
+      "placeholder": "أضف الإجمالي التقديري قبل الموافقة",
+      "helper": "سيتم تأكيد هذا المبلغ عند الموافقة على الطلب أو رفضه. اتركه فارغاً للاحتفاظ بالقيمة الحالية.",
+      "modalLabel": "التكلفة التقديرية (د.ع)",
+      "modalPlaceholder": "أدخل رقماً أو اتركه فارغاً",
+      "modalHelper": "أدخل تقديراً محدثاً ليتمكن المعتمدون اللاحقون من رؤية التكلفة المتوقعة. اتركه فارغاً للاحتفاظ بالقيمة الحالية."
+    },
+    "status": {
+      "requiresAttention": "يتطلب اهتماماً فورياً",
+      "onHoldHelp": "هذه الموافقة موقوفة مؤقتاً حالياً. استأنفها للموافقة على الطلب أو رفضه."
+    },
+    "decisionModal": {
+      "title": "{{decision}} الطلب رقم {{id}}",
+      "commentsPlaceholder": "أدخل تعليقات اختيارية...",
+      "markUrgent": "وضع علامة على هذا الطلب كـ"
+    }
   },
   "printServiceRequestsPage": {
-    "title": "طلبات خدمة الطباعة لتقنية المعلومات"
+    "title": "طلبات خدمة الطباعة لتقنية المعلومات",
+    "subtitle": "اطلب طباعة سجل أو نموذج محدد. يتولى قسم تقنية المعلومات هذا المسار ولا ينشئ طلبات شراء أو خطوات موافقة.",
+    "formTitle": "إرسال طلب طباعة",
+    "fields": {
+      "logForm": "اسم السجل/النموذج",
+      "quantity": "الكمية",
+      "notes": "ملاحظات / مواصفات",
+      "formPlaceholder": "مثال: سجل درجة الحرارة اليومي",
+      "notesPlaceholder": "تعليمات طباعة اختيارية"
+    },
+    "actions": {
+      "submit": "إرسال إلى تقنية المعلومات",
+      "accept": "قبول",
+      "complete": "إكمال",
+      "claimed": "وضع علامة تم الاستلام"
+    },
+    "sections": {
+      "queue": "قائمة قسم تقنية المعلومات",
+      "my": "طلبات الطباعة الخاصة بي",
+      "queueHelp": "متاح للمستخدمين المعينين إلى {{department}}.",
+      "linkedDepartment": "قسم تقنية المعلومات المرتبط"
+    },
+    "table": {
+      "id": "المعرف",
+      "logForm": "السجل/النموذج",
+      "qty": "الكمية",
+      "requester": "مقدم الطلب",
+      "status": "الحالة",
+      "updated": "آخر تحديث",
+      "actions": "الإجراءات",
+      "empty": "لا توجد طلبات خدمة طباعة."
+    },
+    "status": {
+      "submitted": "مرسل",
+      "accepted": "مقبول من تقنية المعلومات",
+      "completed": "جاهز للاستلام",
+      "claimed": "تم الاستلام",
+      "cancelled": "ملغي"
+    },
+    "messages": {
+      "loadFailed": "فشل تحميل طلبات خدمة الطباعة.",
+      "submitSuccess": "تم إرسال طلب خدمة الطباعة إلى قسم تقنية المعلومات.",
+      "submitFailed": "فشل إرسال طلب خدمة الطباعة.",
+      "updateFailed": "فشل تحديث طلب خدمة الطباعة.",
+      "loading": "جارٍ التحميل..."
+    }
   },
   "custodyIssuePage": {
-    "title": "إصدار عهدة"
+    "title": "إصدار عهدة",
+    "fields": {
+      "itemName": "اسم العنصر",
+      "itemNamePlaceholder": "أدخل اسم العنصر",
+      "quantity": "الكمية",
+      "quantityPlaceholder": "أدخل الكمية",
+      "details": "التفاصيل",
+      "detailsPlaceholder": "قدم تفاصيل إضافية",
+      "custodyType": "نوع العهدة",
+      "personal": "عهدة شخصية",
+      "departmental": "عهدة قسم",
+      "recipientSearch": "ابحث بالاسم أو البريد أو رقم الموظف",
+      "department": "القسم",
+      "selectDepartment": "اختر القسم",
+      "custodyCode": "رمز العهدة",
+      "custodyCodePlaceholder": "أدخل رمز العهدة إن وجد",
+      "description": "الوصف",
+      "custodian": "المستلم",
+      "employeeId": "رقم الموظف: {{id}}",
+      "selectedCustodian": "المستلم المحدد: {{name}} ({{email}}{{employeeId}})"
+    },
+    "states": {
+      "searching": "جارٍ البحث عن المستلمين..."
+    },
+    "actions": {
+      "submitting": "جارٍ الإرسال...",
+      "submit": "إرسال سجل العهدة",
+      "cancel": "إلغاء"
+    },
+    "errors": {
+      "departments": "تعذر تحميل الأقسام. يرجى المحاولة مرة أخرى.",
+      "search": "تعذر البحث عن المستلمين."
+    }
+  },
+  "stockPurchaseRequestForm": {
+    "title": "طلب شراء مخزون",
+    "fields": {
+      "requester": "مقدم الطلب",
+      "department": "القسم",
+      "summary": "الملخص",
+      "justification": "التبرير",
+      "justificationPlaceholder": "اشرح سبب الحاجة إلى طلب المخزون هذا...",
+      "category": "الفئة",
+      "allCategories": "كل الفئات",
+      "subCategory": "الفئة الفرعية",
+      "allSubCategories": "كل الفئات الفرعية",
+      "loadingCatalog": "جارٍ تحميل كتالوج المخزون...",
+      "catalogPreview": "معاينة الكتالوج",
+      "selectItems": "اختر العناصر",
+      "itemSearchPlaceholder": "اكتب لتصفية العناصر",
+      "chooseItem": "اختر عنصراً",
+      "optional": "اختياري",
+      "attachments": "المرفقات"
+    },
+    "alerts": {
+      "changeCategory": "سيؤدي تغيير الفئة إلى إزالة كل العناصر المحددة. هل تريد المتابعة؟",
+      "login": "🔒 يرجى تسجيل الدخول أولاً.",
+      "accessDenied": "🚫 رفض الوصول: يمكن لمستخدمي المستودع فقط إرسال طلبات المخزون.",
+      "removeItem": "إزالة هذا العنصر؟",
+      "justificationRequired": "⚠️ التبرير مطلوب.",
+      "invalidItems": "⚠️ يجب أن يحتوي كل عنصر على اسم وكمية صحيحة.",
+      "catalogFailed": "تعذر تحميل كتالوج المخزون"
+    },
+    "help": "الخطوة 2: أدخل تفاصيل طلب المخزون.",
+    "savingDraft": "جارٍ حفظ المسودة...",
+    "draftSaved": "تم حفظ المسودة تلقائياً في {{time}}. ستتم استعادتها إذا غادرت قبل الإرسال.",
+    "draftSaving": "جارٍ حفظ المسودة...",
+    "draftActive": "الحفظ التلقائي نشط وسيحمي تقدمك أثناء تعبئة العناصر.",
+    "section": "الشعبة: {{section}}",
+    "notAssigned": "غير معيّن",
+    "itemsSummary": "{{count}} عنصر",
+    "unitsSummary": "{{quantity}} وحدة إجمالاً • {{attachments}} مرفق",
+    "remove": "إزالة",
+    "submitHelp": "الخطوة 3: إرسال الطلب للموافقة."
   }
 }

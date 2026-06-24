@@ -2869,7 +2869,41 @@
   "yearToDateSpend": "Year To Date Spend",
   "yes": "Yes",
   "warehouseSupplyRequestForm": {
-    "title": "Warehouse Supply Request"
+    "title": "Warehouse Supply Request",
+    "loading": "Loading...",
+    "loadUserFailed": "Unable to load user info.",
+    "fields": {
+      "justification": "Justification",
+      "fulfillmentWarehouse": "Fulfillment Warehouse",
+      "selectWarehouse": "Select Warehouse",
+      "template": "Template",
+      "selectTemplate": "-- Select Template --",
+      "items": "Items",
+      "category": "Category",
+      "allCategories": "All Categories",
+      "subCategory": "Sub Category",
+      "allSubCategories": "All Sub Categories",
+      "selectWarehouseHelp": "Select a warehouse to choose from its available items.",
+      "loadingItems": "Loading warehouse items...",
+      "emptyWarehouse": "No items are configured for this warehouse.",
+      "itemSearchPlaceholder": "Type to filter items",
+      "selectItem": "Select item",
+      "expiry": "Exp",
+      "addItem": "+ Add Item",
+      "submitting": "Submitting...",
+      "submit": "Submit Request"
+    },
+    "alerts": {
+      "selectWarehouseFirst": "Please select a fulfillment warehouse first",
+      "noTemplateItems": "None of the template items are available in the selected warehouse",
+      "removeItem": "Remove this item?",
+      "justificationRequired": "Justification is required",
+      "missingDepartment": "Your account is missing department information",
+      "selectFulfillmentWarehouse": "Please select the warehouse fulfilling this request",
+      "invalidItems": "Each item must have a warehouse item selected and a quantity",
+      "submitFailed": "Failed to submit request",
+      "noExpiry": "No expiry"
+    }
   },
   "maintenanceWarehouseSupplyRequestForm": {
     "title": "Maintenance Warehouse Supply Request"
@@ -2878,24 +2912,414 @@
     "title": "Stock Purchase Request"
   },
   "medicalDeviceRequestForm": {
-    "title": "Medical Device Request Form"
+    "title": "Medical Device Request Form",
+    "loading": "Loading form...",
+    "overview": "Request overview",
+    "lineItems": "Line items",
+    "totalDevices": "Total devices",
+    "estimatedTotal": "Estimated total",
+    "fields": {
+      "department": "Your Department",
+      "section": "Your Section",
+      "justification": "Justification",
+      "justificationPlaceholder": "Explain why the medical device is needed, referencing patient or service impact...",
+      "itemPlaceholder": "e.g. Portable ultrasound machine",
+      "intendedUsePlaceholder": "Describe the clinical or operational use for this device",
+      "specsPlaceholder": "List key specifications and configuration requirements",
+      "specTips": "Specification tips",
+      "deviceInfoPlaceholder": "Optional brand, model, or vendor preference",
+      "attachments": "Request attachments",
+      "submitting": "Submitting...",
+      "submit": "Submit Request"
+    },
+    "alerts": {
+      "maxItems": "You can only request up to {{max}} devices per submission.",
+      "removeItem": "Remove this item?",
+      "justificationRequired": "❌ Justification is required.",
+      "missingDepartment": "❌ Your department info is missing.",
+      "resolveErrors": "❌ Please resolve the highlighted errors before submitting.",
+      "submitFailed": "❌ Failed to submit request."
+    },
+    "help": "Step 2: Provide details for your medical device request.",
+    "overviewHelp": "Track totals as you add devices and supporting information.",
+    "removeDevice": "✕ Remove Device",
+    "specHelp": "Include the critical specs procurement should verify (e.g. modalities, power, accessories).",
+    "allowed": "Allowed: {{types}}. Max size {{size}} MB per file.",
+    "attachmentsHelp": "Attach quotes or approvals covering the entire request. Allowed: {{types}}. Max {{size}} MB per file.",
+    "remove": "Remove",
+    "addDevice": "+ Add another device",
+    "submitHelp": "Step 3: Submit the request for approval."
   },
   "medicationRequestForm": {
-    "title": "Medication Request Form"
+    "title": "Medication Request Form",
+    "loading": "Loading user information...",
+    "loadUserFailed": "❌ Unable to load user info. Please log in again or contact admin.",
+    "fields": {
+      "department": "Your Department",
+      "section": "Your Section",
+      "justification": "Justification",
+      "justificationPlaceholder": "Explain the need for these medications...",
+      "medications": "Medications",
+      "summary": "{{count}} listed · Total quantity {{quantity}}",
+      "quickSummary": "Quick summary",
+      "namePlaceholder": "Medication Name",
+      "dosagePlaceholder": "Dosage",
+      "submitting": "Submitting...",
+      "submit": "Submit Request"
+    },
+    "alerts": {
+      "removeItem": "Remove this item?",
+      "justificationRequired": "❌ Justification is required.",
+      "missingDepartment": "❌ Your account is missing department.",
+      "invalidItems": "❌ Each item must include a medication name, dosage, and valid quantity.",
+      "attachments": "❌ Please resolve attachment issues before submitting.",
+      "submitFailed": "❌ Failed to submit request."
+    },
+    "help": "Provide medication details for your request.",
+    "savingDraft": "Saving draft...",
+    "draftSaved": "Draft autosaved at {{time}}. You can resume if interrupted before submitting.",
+    "draftActive": "Draft autosave is active as you fill in each medication item.",
+    "remove": "Remove",
+    "uploadHelp": "Upload supporting documents (max 10MB each).",
+    "accepted": "Accepted formats: {{types}}",
+    "submitHelp": "Submit the request for approval."
   },
   "procurementLogbookRequestForm": {
-    "title": "Bulk Logbook Procurement Request"
+    "title": "Bulk Logbook Procurement Request",
+    "loading": "Loading user information...",
+    "loadUserFailed": "Unable to load user details.",
+    "fields": {
+      "approvedForm": "Approved Form (PDF/Word)",
+      "maxFileSize": "Maximum file size: {{size}}MB.",
+      "logbookName": "Logbook Name",
+      "logbookPlaceholder": "Enter the name of the logbook",
+      "orientation": "Logbook Orientation",
+      "portrait": "Portrait",
+      "landscape": "Landscape",
+      "pages": "Number of Pages",
+      "direction": "Starting Direction",
+      "ltr": "Left to Right",
+      "rtl": "Right to Left",
+      "serial": "Serial Numbering",
+      "auto": "Auto Numbered",
+      "none": "No Numbering",
+      "startFrom": "Numbering Starts From",
+      "printingType": "Printing Type",
+      "single": "Single-sided",
+      "double": "Double-sided",
+      "ncr": "NCR required",
+      "tearOff": "Tear-off pages",
+      "details": "Other details/specifications",
+      "detailsPlaceholder": "Any extra instructions: paper quality, binding, perforation, cover color, etc.",
+      "submitting": "Submitting...",
+      "submit": "Submit Bulk Logbook Purchase Request"
+    },
+    "alerts": {
+      "fileTooLarge": "The approved form must be {{size}}MB or smaller.",
+      "departmentRequired": "Department is required for submitting requests.",
+      "uploadRequired": "Please upload the approved form (PDF or Word).",
+      "nameRequired": "Please enter the logbook name.",
+      "uploadTooLarge": "The approved form is too large. Please upload a file up to {{size}}MB.",
+      "submitFailed": "Failed to submit bulk logbook procurement request."
+    }
   },
   "approvalHistory": {
-    "title": "Approval History"
+    "title": "Approval History",
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Search by request ID, department, justification...",
+      "status": "Filter by Status:",
+      "all": "All",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "department": "Department:",
+      "from": "From Date:",
+      "to": "To Date:",
+      "reset": "Reset"
+    },
+    "actions": {
+      "csv": "Download CSV",
+      "pdf": "Download PDF"
+    },
+    "summary": {
+      "showing": "Showing {{filtered}} of {{total}} approvals",
+      "total": "Total Decisions",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending",
+      "spend": "Estimated Spend"
+    },
+    "states": {
+      "loading": "Loading...",
+      "empty": "No approvals found."
+    },
+    "table": {
+      "requestId": "Request ID",
+      "type": "Type",
+      "department": "Department",
+      "requester": "Requester",
+      "project": "Project",
+      "justification": "Justification",
+      "cost": "Cost",
+      "finalStatus": "Final Status",
+      "decision": "Your Decision",
+      "comment": "Your Comment",
+      "items": "Items",
+      "level": "Level",
+      "date": "Date",
+      "scm": "SCM Comms",
+      "notAvailable": "Not available",
+      "loadingItems": "Loading items...",
+      "hideItems": "Hide Items",
+      "viewItems": "View Items",
+      "requestedItems": "Requested items for request {{id}}",
+      "item": "Item",
+      "specs": "Specs",
+      "brand": "Brand",
+      "quantity": "Quantity",
+      "unitCost": "Unit Cost",
+      "totalCost": "Total Cost",
+      "noItems": "No items found.",
+      "updates": "updates",
+      "hide": "Hide",
+      "view": "View",
+      "communication": "SCM Status Communication",
+      "communicationHelp": "Discuss the status of this approved request (current status: {{status}}).",
+      "refresh": "Refresh",
+      "loadingComms": "Loading communications...",
+      "commentsPlaceholder": "Share an update with the SCM team...",
+      "unknown": "Unknown"
+    }
   },
   "approvalsPanel": {
-    "title": "Pending & On-Hold Approvals"
+    "title": "Pending & On-Hold Approvals",
+    "subtitle": "Review, pause, or continue approval requests from your departments.",
+    "actions": {
+      "refresh": "Refresh",
+      "refreshAria": "Refresh approvals list",
+      "openWorkspace": "Open Workspace",
+      "hideApprovals": "Hide Approvals",
+      "viewApprovals": "View Approvals",
+      "resumeApproval": "Resume Approval",
+      "putOnHold": "Put On Hold",
+      "sendToHod": "Send to Department HOD",
+      "assignRequester": "Assign to Department Requester",
+      "approve": "Approve",
+      "reject": "Reject",
+      "submit": "Submit",
+      "send": "Send",
+      "clear": "Clear",
+      "cancel": "Cancel"
+    },
+    "onboarding": {
+      "title": "First-run walkthrough: Approvals",
+      "subtitle": "Use this guide to process approvals consistently and quickly.",
+      "filterTitle": "Filter your pending queue",
+      "filterTip": "Start with urgent and newest requests first.",
+      "reviewTitle": "Review item-level details",
+      "reviewTip": "Check quantity, notes, and attachments before deciding.",
+      "decisionTitle": "Submit approval decision",
+      "decisionTip": "Leave concise comments for audit clarity."
+    },
+    "stats": {
+      "totalPending": "Total Pending",
+      "urgent": "Urgent",
+      "estimatedTotal": "Estimated Total (IQD)",
+      "requestsByType": "Requests by Type",
+      "noTypeData": "No type data"
+    },
+    "filters": {
+      "searchPlaceholder": "Search by ID, justification, department or section",
+      "requestType": "Request Type",
+      "allTypes": "All types",
+      "urgency": "Urgency",
+      "sortBy": "Sort by",
+      "reset": "Reset filters",
+      "urgencyAll": "All",
+      "urgentOnly": "Urgent only",
+      "nonUrgent": "Non-urgent",
+      "newest": "Newest first",
+      "oldest": "Oldest first",
+      "costHigh": "Cost: high to low",
+      "costLow": "Cost: low to high"
+    },
+    "requestView": {
+      "title": "Request view",
+      "description": "Use summary view to scan compact request cards, or detailed view to show request metadata up front.",
+      "detailed": "Detailed",
+      "summary": "Summary",
+      "aria": "Request view mode"
+    },
+    "items": {
+      "heading": "Requested Items",
+      "save": "Save Item Decisions",
+      "qty": "Qty",
+      "availableQty": "Available Qty",
+      "unitCost": "Unit Cost",
+      "total": "Total",
+      "decision": "Decision",
+      "comments": "Comments",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending",
+      "empty": "No items found for this request."
+    },
+    "hodModal": {
+      "title": "Send to Department HOD",
+      "description": "Add a department HOD approval step before continuing the workflow.",
+      "select": "Select department HOD",
+      "loading": "Loading HOD approvers...",
+      "choose": "Choose a HOD",
+      "fallback": "HOD",
+      "empty": "No active HOD approvers are available.",
+      "helper": "The selected HOD will receive a pending approval before the request continues to the next level."
+    },
+    "states": {
+      "loading": "Loading approvals...",
+      "empty": "No pending approvals.",
+      "emptyFiltered": "No pending approvals match the selected filters.",
+      "clearFilters": "Clear filters"
+    },
+    "cost": {
+      "updateEstimated": "Update Estimated Cost (IQD)",
+      "placeholder": "Add an estimated total before approving",
+      "helper": "This amount will be confirmed when you approve or reject the request. Leave blank to keep the existing value.",
+      "modalLabel": "Estimated Cost (IQD)",
+      "modalPlaceholder": "Enter a number or leave blank",
+      "modalHelper": "Provide an updated estimate so downstream approvers can see the projected cost. Leave blank to keep the current value."
+    },
+    "status": {
+      "requiresAttention": "Requires immediate attention",
+      "onHoldHelp": "This approval is currently on hold. Resume it to approve or reject the request."
+    },
+    "decisionModal": {
+      "title": "{{decision}} Request #{{id}}",
+      "commentsPlaceholder": "Enter optional comments...",
+      "markUrgent": "Mark this request as"
+    }
   },
   "printServiceRequestsPage": {
-    "title": "IT Print Service Requests"
+    "title": "IT Print Service Requests",
+    "subtitle": "Request printing for a specific log or form. This workflow is handled by IT and does not create purchase requests or approval steps.",
+    "formTitle": "Submit a print request",
+    "fields": {
+      "logForm": "Log/Form name",
+      "quantity": "Quantity",
+      "notes": "Notes / specifications",
+      "formPlaceholder": "e.g. Daily temperature log",
+      "notesPlaceholder": "Optional printing instructions"
+    },
+    "actions": {
+      "submit": "Submit to IT",
+      "accept": "Accept",
+      "complete": "Complete",
+      "claimed": "Mark claimed"
+    },
+    "sections": {
+      "queue": "IT Department Queue",
+      "my": "My Print Requests",
+      "queueHelp": "Accessible to users assigned to {{department}}.",
+      "linkedDepartment": "the linked IT department"
+    },
+    "table": {
+      "id": "ID",
+      "logForm": "Log/Form",
+      "qty": "Qty",
+      "requester": "Requester",
+      "status": "Status",
+      "updated": "Updated",
+      "actions": "Actions",
+      "empty": "No print service requests found."
+    },
+    "status": {
+      "submitted": "Submitted",
+      "accepted": "Accepted by IT",
+      "completed": "Ready to claim",
+      "claimed": "Claimed",
+      "cancelled": "Cancelled"
+    },
+    "messages": {
+      "loadFailed": "Failed to load print service requests.",
+      "submitSuccess": "Print service request submitted to the IT Department.",
+      "submitFailed": "Failed to submit print service request.",
+      "updateFailed": "Failed to update print service request.",
+      "loading": "Loading..."
+    }
   },
   "custodyIssuePage": {
-    "title": "Issue Custody Record"
+    "title": "Issue Custody Record",
+    "fields": {
+      "itemName": "Item Name",
+      "itemNamePlaceholder": "Enter item name",
+      "quantity": "Quantity",
+      "quantityPlaceholder": "Enter quantity",
+      "details": "Details",
+      "detailsPlaceholder": "Provide additional details",
+      "custodyType": "Custody Type",
+      "personal": "Personal custody",
+      "departmental": "Departmental custody",
+      "recipientSearch": "Search by name, email, or employee ID",
+      "department": "Department",
+      "selectDepartment": "Select department",
+      "custodyCode": "Custody Code",
+      "custodyCodePlaceholder": "Enter custody code if available",
+      "description": "Description",
+      "custodian": "Custodian",
+      "employeeId": "Employee ID: {{id}}",
+      "selectedCustodian": "Selected custodian: {{name}} ({{email}}{{employeeId}})"
+    },
+    "states": {
+      "searching": "Searching recipients..."
+    },
+    "actions": {
+      "submitting": "Submitting...",
+      "submit": "Submit custody record",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "departments": "Unable to load departments. Please try again.",
+      "search": "Unable to search recipients."
+    }
+  },
+  "stockPurchaseRequestForm": {
+    "title": "Stock Purchase Request",
+    "fields": {
+      "requester": "Requester",
+      "department": "Department",
+      "summary": "Summary",
+      "justification": "Justification",
+      "justificationPlaceholder": "Explain why this stock request is needed...",
+      "category": "Category",
+      "allCategories": "All Categories",
+      "subCategory": "Sub Category",
+      "allSubCategories": "All Sub Categories",
+      "loadingCatalog": "Loading stock catalog...",
+      "catalogPreview": "Catalog preview",
+      "selectItems": "Select Items",
+      "itemSearchPlaceholder": "Type to filter items",
+      "chooseItem": "Choose an item",
+      "optional": "Optional",
+      "attachments": "Attachments"
+    },
+    "alerts": {
+      "changeCategory": "Changing the category will remove all selected items. Continue?",
+      "login": "🔒 Please log in first.",
+      "accessDenied": "🚫 Access Denied: Only warehouse users can submit stock requests.",
+      "removeItem": "Remove this item?",
+      "justificationRequired": "⚠️ Justification is required.",
+      "invalidItems": "⚠️ Each item must have a name and valid quantity.",
+      "catalogFailed": "Unable to load stock catalog"
+    },
+    "help": "Step 2: Provide details for your stock request.",
+    "savingDraft": "Saving draft...",
+    "draftSaved": "Draft autosaved at {{time}}. It will be restored if you leave before submitting.",
+    "draftSaving": "Saving draft...",
+    "draftActive": "Draft autosave is active and will protect your progress as you fill in items.",
+    "section": "Section: {{section}}",
+    "notAssigned": "Not assigned",
+    "itemsSummary": "{{count}} items",
+    "unitsSummary": "{{quantity}} total units • {{attachments}} attachments",
+    "remove": "Remove",
+    "submitHelp": "Step 3: Submit the request for approval."
   }
 }

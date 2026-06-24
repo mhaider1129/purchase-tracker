@@ -72,6 +72,7 @@ const StockRequestForm = () => {
   const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState('');
   const [bulkUploadMessage, setBulkUploadMessage] = useState('');
+  const [pastedItemsText, setPastedItemsText] = useState('');
   const navigate = useNavigate();
   const categories = useMemo(
     () =>
@@ -156,7 +157,7 @@ const StockRequestForm = () => {
   const handleCategoryChange = (value) => {
     if (hasSelectedData) {
       const confirmChange = window.confirm(
-        'Changing the category will remove all selected items. Continue?'
+        t('stockPurchaseRequestForm.alerts.changeCategory')
       );
       if (!confirmChange) {
         return;
@@ -182,10 +183,10 @@ const StockRequestForm = () => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      alert('🔒 Please log in first.');
+      alert(t('stockPurchaseRequestForm.alerts.login'));
       navigate('/login');
     }
-  }, [navigate]);
+  }, [navigate, t]);
 
   useEffect(() => {
     if (userLoading || !user) {
@@ -194,11 +195,11 @@ const StockRequestForm = () => {
 
     if (!hasWarehouseAssignment(user.warehouse_id)) {
       alert(
-        '🚫 Access Denied: Only warehouse users can submit stock requests.'
+        t('stockPurchaseRequestForm.alerts.accessDenied')
       );
       navigate('/');
     }
-  }, [navigate, user, userLoading]);
+  }, [navigate, t, user, userLoading]);
 
   useEffect(() => {
     if (user) {
@@ -217,7 +218,7 @@ const StockRequestForm = () => {
       } catch (err) {
         console.error('Failed to load stock items:', err);
         setItemsError(
-          err?.response?.data?.message || 'Unable to load stock catalog'
+          err?.response?.data?.message || t('stockPurchaseRequestForm.alerts.catalogFailed')
         );
       } finally {
         setItemsLoading(false);
@@ -225,7 +226,7 @@ const StockRequestForm = () => {
     };
 
     fetchItems();
-  }, []);
+  }, [t]);
 
   const handleItemChange = (index, field, value) => {
     setSelectedItems((prev) => {
@@ -408,6 +409,35 @@ const StockRequestForm = () => {
     [category, findCatalogMatch, subCategory]
   );
 
+  const handlePastedItemsImport = () => {
+    if (!pastedItemsText.trim()) {
+      setBulkUploadMessage(
+        'Paste rows copied from Excel before importing. Include a header row with id or name and requested quantity.'
+      );
+      return;
+    }
+
+    setBulkUploadMessage('Reading pasted item rows...');
+    Papa.parse(pastedItemsText.trim(), {
+      header: true,
+      skipEmptyLines: true,
+      complete: (result) => {
+        if (result.errors?.length) {
+          setBulkUploadMessage(
+            result.errors[0]?.message || 'Unable to parse the pasted rows.'
+          );
+          return;
+        }
+        applyUploadedRows(result.data || []);
+      },
+      error: (error) => {
+        setBulkUploadMessage(
+          error?.message || 'Unable to parse the pasted rows.'
+        );
+      },
+    });
+  };
+
   const handleBulkUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -443,7 +473,7 @@ const StockRequestForm = () => {
   };
 
   const removeItem = (index) => {
-    if (!window.confirm('Remove this item?')) return;
+    if (!window.confirm(t('stockPurchaseRequestForm.alerts.removeItem'))) return;
     setSelectedItems((items) => items.filter((_, i) => i !== index));
     setItemSearchTerms((terms) => terms.filter((_, i) => i !== index));
   };
@@ -498,7 +528,7 @@ const StockRequestForm = () => {
 
   const validateForm = () => {
     if (!justification.trim()) {
-      alert('⚠️ Justification is required.');
+      alert(t('stockPurchaseRequestForm.alerts.justificationRequired'));
       return false;
     }
 
@@ -507,7 +537,7 @@ const StockRequestForm = () => {
     );
 
     if (hasInvalidItem) {
-      alert('⚠️ Each item must have a name and valid quantity.');
+      alert(t('stockPurchaseRequestForm.alerts.invalidItems'));
       return false;
     }
 
@@ -582,7 +612,7 @@ const StockRequestForm = () => {
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           {t('stockRequestForm.title')}
-          <HelpTooltip text="Step 2: Provide details for your stock request." />
+          <HelpTooltip text={t('stockPurchaseRequestForm.help')} />
         </h1>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 mb-6">
@@ -591,12 +621,12 @@ const StockRequestForm = () => {
           </p>
           <p className="text-xs text-blue-700 mb-2" role="status">
             {isDraftSaving
-              ? 'Saving draft...'
+              ? t('stockPurchaseRequestForm.savingDraft')
               : lastSavedLabel
-                ? `Draft autosaved at ${lastSavedLabel}. It will be restored if you leave before submitting.`
+                ? t('stockPurchaseRequestForm.draftSaved', { time: lastSavedLabel })
                 : draftStatus === 'restored'
                   ? 'Draft restored. Continue editing and submit when ready.'
-                  : 'Draft autosave is active and will protect your progress as you fill in items.'}
+                  : t('stockPurchaseRequestForm.draftActive')}
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>
@@ -616,29 +646,28 @@ const StockRequestForm = () => {
         {currentUser && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="p-4 border rounded-lg bg-white shadow-sm">
-              <p className="text-xs uppercase text-gray-500">Requester</p>
+              <p className="text-xs uppercase text-gray-500">{t('stockPurchaseRequestForm.fields.requester')}</p>
               <p className="font-semibold text-gray-900">
                 {currentUser.full_name}
               </p>
               <p className="text-sm text-gray-600">{currentUser.role_name}</p>
             </div>
             <div className="p-4 border rounded-lg bg-white shadow-sm">
-              <p className="text-xs uppercase text-gray-500">Department</p>
+              <p className="text-xs uppercase text-gray-500">{t('stockPurchaseRequestForm.fields.department')}</p>
               <p className="font-semibold text-gray-900">
                 {currentUser.department_name}
               </p>
               <p className="text-sm text-gray-600">
-                Section: {currentUser.section_name || 'Not assigned'}
+                {t('stockPurchaseRequestForm.section', { section: currentUser.section_name || t('stockPurchaseRequestForm.notAssigned') })}
               </p>
             </div>
             <div className="p-4 border rounded-lg bg-white shadow-sm">
-              <p className="text-xs uppercase text-gray-500">Summary</p>
+              <p className="text-xs uppercase text-gray-500">{t('stockPurchaseRequestForm.fields.summary')}</p>
               <p className="font-semibold text-gray-900">
-                {itemsStats.count} items
+                {t('stockPurchaseRequestForm.itemsSummary', { count: itemsStats.count })}
               </p>
               <p className="text-sm text-gray-600">
-                {itemsStats.totalQuantity} total units •{' '}
-                {itemsStats.attachmentCount} attachments
+                {t('stockPurchaseRequestForm.unitsSummary', { quantity: itemsStats.totalQuantity, attachments: itemsStats.attachmentCount })}
               </p>
             </div>
           </div>
@@ -646,13 +675,13 @@ const StockRequestForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block font-semibold mb-1">Justification</label>
+            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.justification')}</label>
             <textarea
               className="w-full p-2 border rounded"
               rows={3}
               value={justification}
               onChange={(e) => setJustification(e.target.value)}
-              placeholder="Explain why this stock request is needed..."
+              placeholder={t('stockPurchaseRequestForm.fields.justificationPlaceholder')}
               required
               disabled={isSubmitting}
             />
@@ -666,14 +695,14 @@ const StockRequestForm = () => {
           />
 
           <div>
-            <label className="block font-semibold mb-1">Category</label>
+            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.category')}</label>
             <select
               value={category}
               onChange={(e) => handleCategoryChange(e.target.value)}
               className="p-2 border rounded"
               disabled={isSubmitting}
             >
-              <option value="">All Categories</option>
+              <option value="">{t('stockPurchaseRequestForm.fields.allCategories')}</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -683,14 +712,14 @@ const StockRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Sub Category</label>
+            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.subCategory')}</label>
             <select
               value={subCategory}
               onChange={(e) => handleSubCategoryChange(e.target.value)}
               className="p-2 border rounded"
               disabled={isSubmitting || subCategories.length === 0}
             >
-              <option value="">All Sub Categories</option>
+              <option value="">{t('stockPurchaseRequestForm.fields.allSubCategories')}</option>
               {subCategories.map((subCat) => (
                 <option key={subCat} value={subCat}>
                   {subCat}
@@ -705,12 +734,12 @@ const StockRequestForm = () => {
             </p>
           )}
           {itemsLoading && (
-            <p className="text-sm text-gray-500">Loading stock catalog...</p>
+            <p className="text-sm text-gray-500">{t('stockPurchaseRequestForm.fields.loadingCatalog')}</p>
           )}
 
           {!itemsLoading && catalogPreview.length > 0 && (
             <div className="border border-dashed border-gray-300 rounded-lg p-4 text-sm text-gray-700 bg-gray-50">
-              <p className="font-semibold mb-2">Catalog preview</p>
+              <p className="font-semibold mb-2">{t('stockPurchaseRequestForm.fields.catalogPreview')}</p>
               <ul className="space-y-1">
                 {catalogPreview.map((stock) => (
                   <li key={stock.id} className="flex justify-between">
@@ -730,7 +759,7 @@ const StockRequestForm = () => {
             </div>
           )}
 
-          <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
+          <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-4 space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
                 <label
@@ -759,6 +788,48 @@ const StockRequestForm = () => {
                 disabled={isSubmitting || itemsLoading}
               />
             </div>
+
+            <div className="border-t border-emerald-200 pt-4">
+              <label
+                className="block font-semibold mb-1"
+                htmlFor="stock-items-paste"
+              >
+                Or copy and paste from Excel
+              </label>
+              <p className="text-sm text-emerald-900 mb-2">
+                Copy rows from Excel and paste them here with the same headers:
+                id, name, brand, available quantity, requested quantity.
+              </p>
+              <textarea
+                id="stock-items-paste"
+                value={pastedItemsText}
+                onChange={(e) => setPastedItemsText(e.target.value)}
+                className="w-full min-h-32 p-2 border rounded bg-white font-mono text-sm"
+                placeholder={
+                  'id\tname\tbrand\tavailable quantity\trequested quantity\n123\tGloves\tAcme\t25\t10'
+                }
+                disabled={isSubmitting || itemsLoading}
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handlePastedItemsImport}
+                  className="px-3 py-2 bg-emerald-700 text-white text-sm font-semibold rounded hover:bg-emerald-800 disabled:opacity-50"
+                  disabled={isSubmitting || itemsLoading}
+                >
+                  Import pasted rows
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPastedItemsText('')}
+                  className="px-3 py-2 border border-emerald-300 text-emerald-900 text-sm font-semibold rounded hover:bg-emerald-100 disabled:opacity-50"
+                  disabled={isSubmitting || itemsLoading || !pastedItemsText}
+                >
+                  Clear pasted rows
+                </button>
+              </div>
+            </div>
+
             {bulkUploadMessage && (
               <p className="text-sm text-emerald-900 mt-3" role="status">
                 {bulkUploadMessage}
@@ -767,7 +838,7 @@ const StockRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-2">Select Items</label>
+            <label className="block font-semibold mb-2">{t('stockPurchaseRequestForm.fields.selectItems')}</label>
             {selectedItems.map((item, index) => {
               const searchTerm = itemSearchTerms[index] || '';
               let filteredOptions = scopedCatalog.filter((stock) =>
@@ -825,7 +896,7 @@ const StockRequestForm = () => {
                         }
                         className="w-full p-2 border rounded"
                         disabled={isSubmitting || itemsLoading}
-                        placeholder="Type to filter items"
+                        placeholder={t('stockPurchaseRequestForm.fields.itemSearchPlaceholder')}
                       />
                     </div>
                     <div className="flex-1 min-w-[200px]">
@@ -841,7 +912,7 @@ const StockRequestForm = () => {
                         required
                         disabled={isSubmitting || !scopedCatalog.length}
                       >
-                        <option value="">Choose an item</option>
+                        <option value="">{t('stockPurchaseRequestForm.fields.chooseItem')}</option>
                         {filteredOptions.map((stock) => (
                           <option key={stock.id} value={stock.id}>
                             {stock.name}
@@ -867,7 +938,7 @@ const StockRequestForm = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="Optional"
+                        placeholder={t('stockPurchaseRequestForm.fields.optional')}
                         value={item.brand}
                         onChange={(e) =>
                           handleItemChange(index, 'brand', e.target.value)
@@ -946,7 +1017,7 @@ const StockRequestForm = () => {
 
           {/* Attachments */}
           <div>
-            <label className="block font-semibold mb-1">Attachments</label>
+            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.attachments')}</label>
             <input
               type="file"
               multiple
@@ -971,7 +1042,7 @@ const StockRequestForm = () => {
             }`}
           >
             {isSubmitting ? 'Submitting...' : 'Submit Request'}
-            <HelpTooltip text="Step 3: Submit the request for approval." />
+            <HelpTooltip text={t('stockPurchaseRequestForm.submitHelp')} />
           </button>
         </form>
       </div>

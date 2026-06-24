@@ -12,6 +12,18 @@ import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import { getRequesterDisplay } from '../utils/requester';
 import usePageTranslation from '../utils/usePageTranslation';
 
+const SEARCHABLE_REQUEST_FIELDS = [
+  'id',
+  'request_type',
+  'project_name',
+  'department_name',
+  'requester_name',
+  'requested_by_name',
+  'requester_email',
+  'justification',
+  'status',
+];
+
 const createEmptyGroups = () => ({
   purchased: [],
   pending: [],
@@ -242,6 +254,11 @@ const AssignedRequestsPage = () => {
   );
 
   const [requests, setRequests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [completionFilter, setCompletionFilter] = useState('all');
+  const [urgencyFilter, setUrgencyFilter] = useState('all');
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [items, setItems] = useState([]);
   const [groupedItems, setGroupedItems] = useState(() => createEmptyGroups());
@@ -862,10 +879,79 @@ const AssignedRequestsPage = () => {
   };
 
 
+  const filterOptions = useMemo(() => {
+    const buildOptions = (key) =>
+      Array.from(
+        new Set(
+          requests
+            .map((request) => request?.[key])
+            .filter((value) => value !== null && value !== undefined && String(value).trim() !== '')
+            .map((value) => String(value)),
+        ),
+      ).sort((a, b) => a.localeCompare(b));
+
+    return {
+      types: buildOptions('request_type'),
+      departments: buildOptions('department_name'),
+    };
+  }, [requests]);
+
+  const filteredRequests = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return requests.filter((request) => {
+      if (typeFilter !== 'all' && String(request?.request_type || '') !== typeFilter) {
+        return false;
+      }
+
+      if (departmentFilter !== 'all' && String(request?.department_name || '') !== departmentFilter) {
+        return false;
+      }
+
+      if (urgencyFilter === 'urgent' && !request?.is_urgent) {
+        return false;
+      }
+
+      if (urgencyFilter === 'standard' && request?.is_urgent) {
+        return false;
+      }
+
+      const completionState = completionStates[request.id] || evaluateCompletionState(request);
+      if (completionFilter === 'ready' && !completionState.canComplete) {
+        return false;
+      }
+
+      if (completionFilter === 'needs_attention' && completionState.canComplete) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      const searchableValues = [
+        ...SEARCHABLE_REQUEST_FIELDS.map((field) => request?.[field]),
+        getRequesterDisplay(request),
+      ];
+
+      return searchableValues.some((value) =>
+        String(value ?? '').toLowerCase().includes(normalizedSearch),
+      );
+    });
+  }, [completionFilter, completionStates, departmentFilter, requests, searchTerm, typeFilter, urgencyFilter]);
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setTypeFilter('all');
+    setDepartmentFilter('all');
+    setCompletionFilter('all');
+    setUrgencyFilter('all');
+  };
+
   const pageKpis = useMemo(() => {
-    const totalRequests = requests.length;
-    const urgentRequests = requests.filter((req) => Boolean(req?.is_urgent)).length;
-    const readyToComplete = requests.filter((req) => completionStates[req.id]?.canComplete).length;
+    const totalRequests = filteredRequests.length;
+    const urgentRequests = filteredRequests.filter((req) => Boolean(req?.is_urgent)).length;
+    const readyToComplete = filteredRequests.filter((req) => completionStates[req.id]?.canComplete).length;
     const pendingCompletion = Math.max(totalRequests - readyToComplete, 0);
 
     return [
@@ -874,7 +960,7 @@ const AssignedRequestsPage = () => {
       { label: tr('kpis.readyToComplete', 'Ready to Complete'), value: readyToComplete },
       { label: tr('kpis.pendingCompletion', 'Needs Attention'), value: pendingCompletion },
     ];
-  }, [completionStates, requests, tr]);
+  }, [completionStates, filteredRequests, tr]);
 
   useEffect(() => {
     fetchAssignedRequests();
@@ -920,7 +1006,107 @@ const AssignedRequestsPage = () => {
           <p className="text-sm text-slate-600">{tr('empty', 'No requests assigned to you.')}</p>
         </div>
       ) : (
-          requests.map((request) => {
+        <>
+          <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+              <div className="lg:col-span-2">
+                <label htmlFor="assigned-request-search" className="mb-1 block text-sm font-medium text-slate-700">
+                  {tr('filters.searchLabel', 'Search assigned requests')}
+                </label>
+                <input
+                  id="assigned-request-search"
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder={tr('filters.searchPlaceholder', 'Search by ID, requester, project, department, type, or justification')}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+              <div>
+                <label htmlFor="assigned-request-type-filter" className="mb-1 block text-sm font-medium text-slate-700">
+                  {tr('filters.typeLabel', 'Type')}
+                </label>
+                <select
+                  id="assigned-request-type-filter"
+                  value={typeFilter}
+                  onChange={(event) => setTypeFilter(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="all">{tr('filters.allTypes', 'All types')}</option>
+                  {filterOptions.types.map((type) => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="assigned-request-department-filter" className="mb-1 block text-sm font-medium text-slate-700">
+                  {tr('filters.departmentLabel', 'Department')}
+                </label>
+                <select
+                  id="assigned-request-department-filter"
+                  value={departmentFilter}
+                  onChange={(event) => setDepartmentFilter(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="all">{tr('filters.allDepartments', 'All departments')}</option>
+                  {filterOptions.departments.map((department) => (
+                    <option key={department} value={department}>{department}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="assigned-request-completion-filter" className="mb-1 block text-sm font-medium text-slate-700">
+                  {tr('filters.completionLabel', 'Completion')}
+                </label>
+                <select
+                  id="assigned-request-completion-filter"
+                  value={completionFilter}
+                  onChange={(event) => setCompletionFilter(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="all">{tr('filters.allCompletion', 'All completion states')}</option>
+                  <option value="ready">{tr('filters.readyToComplete', 'Ready to complete')}</option>
+                  <option value="needs_attention">{tr('filters.needsAttention', 'Needs attention')}</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="assigned-request-urgency-filter" className="mb-1 block text-sm font-medium text-slate-700">
+                  {tr('filters.urgencyLabel', 'Urgency')}
+                </label>
+                <select
+                  id="assigned-request-urgency-filter"
+                  value={urgencyFilter}
+                  onChange={(event) => setUrgencyFilter(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="all">{tr('filters.allUrgency', 'All urgency levels')}</option>
+                  <option value="urgent">{tr('filters.urgentOnly', 'Urgent only')}</option>
+                  <option value="standard">{tr('filters.standardOnly', 'Standard only')}</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                {tr('filters.resultCount', 'Showing {{shown}} of {{total}} assigned requests', {
+                  shown: filteredRequests.length,
+                  total: requests.length,
+                })}
+              </span>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="self-start rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:self-auto"
+              >
+                {tr('filters.reset', 'Reset filters')}
+              </button>
+            </div>
+          </div>
+
+          {filteredRequests.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
+              <p className="text-sm text-slate-600">{tr('filters.noResults', 'No assigned requests match your search or filters.')}</p>
+            </div>
+          ) : filteredRequests.map((request) => {
             const summary = request.status_summary || {};
             const autoTotal =
               autoTotals[request.id] ?? summary.items_total_cost ?? null;
@@ -1254,7 +1440,9 @@ const AssignedRequestsPage = () => {
               </div>
             );
           })
-        )}
+          }
+        </>
+      )}
     </PageShell>
   );
 };

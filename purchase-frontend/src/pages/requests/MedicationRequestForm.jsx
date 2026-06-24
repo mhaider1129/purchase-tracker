@@ -180,7 +180,7 @@ const MedicationRequestForm = () => {
 
   const removeItem = (index) => {
     if (items.length === 1) return;
-    if (!window.confirm('Remove this item?')) return;
+    if (!window.confirm(t('medicationRequestForm.alerts.removeItem'))) return;
     setItems(items.filter((_, i) => i !== index));
     setItemErrors((prev) => prev.filter((_, i) => i !== index));
   };
@@ -201,12 +201,12 @@ const MedicationRequestForm = () => {
     e.preventDefault();
 
     if (!justification.trim()) {
-      alert('❌ Justification is required.');
+      alert(t('medicationRequestForm.alerts.justificationRequired'));
       return;
     }
 
     if (!targetDeptId) {
-      alert('❌ Your account is missing department.');
+      alert(t('medicationRequestForm.alerts.missingDepartment'));
       return;
     }
 
@@ -216,12 +216,12 @@ const MedicationRequestForm = () => {
     );
     if (hasInvalidItem) {
       setItemErrors(itemValidationResults);
-      alert('❌ Each item must include a medication name, dosage, and valid quantity.');
+      alert(t('medicationRequestForm.alerts.invalidItems'));
       return;
     }
 
     if (attachmentsError) {
-      alert('❌ Please resolve attachment issues before submitting.');
+      alert(t('medicationRequestForm.alerts.attachments'));
       return;
     }
 
@@ -244,7 +244,7 @@ const MedicationRequestForm = () => {
       navigate('/request-submitted', { state });
     } catch (err) {
       console.error('❌ Submission error:', err);
-      alert(err.response?.data?.message || '❌ Failed to submit request.');
+      alert(err.response?.data?.message || t('medicationRequestForm.alerts.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -253,7 +253,7 @@ const MedicationRequestForm = () => {
   if (loading) {
     return (
       <>
-          <div className="p-6 text-gray-600 text-center">Loading user information...</div>
+          <div className="p-6 text-gray-600 text-center">{t('medicationRequestForm.loading')}</div>
       </>
     );
   }
@@ -262,7 +262,7 @@ const MedicationRequestForm = () => {
     return (
       <>
           <div className="p-6 text-red-600 text-center">
-          ❌ Unable to load user info. Please log in again or contact admin.
+          {t('medicationRequestForm.loadUserFailed')}
         </div>
       </>
     );
@@ -283,34 +283,34 @@ const MedicationRequestForm = () => {
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           {t('medicationRequestForm.title')}
-          <HelpTooltip text="Provide medication details for your request." />
+          <HelpTooltip text={t('medicationRequestForm.help')} />
         </h1>
 
         <p className="mb-4 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800" role="status">
           {isDraftSaving
-            ? 'Saving draft...'
+            ? t('medicationRequestForm.savingDraft')
             : lastSavedLabel
-              ? `Draft autosaved at ${lastSavedLabel}. You can resume if interrupted before submitting.`
-              : 'Draft autosave is active as you fill in each medication item.'}
+              ? t('medicationRequestForm.draftSaved', { time: lastSavedLabel })
+              : t('medicationRequestForm.draftActive')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block font-semibold mb-1">Your Department</label>
+            <label className="block font-semibold mb-1">{t('medicationRequestForm.fields.department')}</label>
             <p className="p-2 border rounded bg-gray-100">{user.department_name}</p>
           </div>
           <div>
-            <label className="block font-semibold mb-1">Your Section</label>
+            <label className="block font-semibold mb-1">{t('medicationRequestForm.fields.section')}</label>
             <p className="p-2 border rounded bg-gray-100">{user.section_name || 'N/A'}</p>
           </div>
           <div>
-            <label className="block font-semibold mb-1">Justification</label>
+            <label className="block font-semibold mb-1">{t('medicationRequestForm.fields.justification')}</label>
             <textarea
               className="w-full p-2 border rounded"
               rows={3}
               value={justification}
               onChange={(e) => setJustification(e.target.value)}
-              placeholder="Explain the need for these medications..."
+              placeholder={t('medicationRequestForm.fields.justificationPlaceholder')}
               required
               disabled={isSubmitting}
             />
@@ -324,13 +324,13 @@ const MedicationRequestForm = () => {
           />
           <div>
             <div className="flex items-center justify-between gap-2 mb-2">
-              <label className="block font-semibold">Medications</label>
+              <label className="block font-semibold">{t('medicationRequestForm.fields.medications')}</label>
               <span className="text-sm text-gray-500">
-                {medicationSummary.itemCount} listed · Total quantity {medicationSummary.totalQuantity}
+                {t('medicationRequestForm.fields.summary', { count: medicationSummary.itemCount, quantity: medicationSummary.totalQuantity })}
               </span>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm text-blue-900 mb-4">
-              <p className="font-semibold">Quick summary</p>
+              <p className="font-semibold">{t('medicationRequestForm.fields.quickSummary')}</p>
               <p>
                 {medicationSummary.uniqueCount} unique medication
                 {medicationSummary.uniqueCount === 1 ? '' : 's'} requested.
@@ -382,7 +382,7 @@ const MedicationRequestForm = () => {
                     <div className="flex-1 min-w-[200px]">
                       <input
                         type="text"
-                        placeholder="Medication Name"
+                        placeholder={t('medicationRequestForm.fields.namePlaceholder')}
                         aria-label={`Item ${index + 1} Name`}
                         value={item.item_name}
                         onChange={(e) =>
@@ -403,7 +403,7 @@ const MedicationRequestForm = () => {
                     <div className="flex-1 min-w-[180px]">
                       <input
                         type="text"
-                        placeholder="Dosage"
+                        placeholder={t('medicationRequestForm.fields.dosagePlaceholder')}
                         aria-label={`Item ${index + 1} Dosage`}
                         value={item.dosage}
                         onChange={(e) =>
@@ -457,7 +457,7 @@ const MedicationRequestForm = () => {
           <div>
             <label className="block font-semibold mb-1">
               Attachments
-              <HelpTooltip text="Upload supporting documents (max 10MB each)." />
+              <HelpTooltip text={t('medicationRequestForm.uploadHelp')} />
             </label>
             <input
               type="file"
@@ -467,7 +467,7 @@ const MedicationRequestForm = () => {
               disabled={isSubmitting}
             />
             <p className="mt-1 text-sm text-gray-500">
-              Accepted formats: {allowedExtensions.join(', ')}
+              {t('medicationRequestForm.accepted', { types: allowedExtensions.join(', ') })}
             </p>
             {attachmentsError && (
               <p className="mt-1 text-sm text-red-600">{attachmentsError}</p>
@@ -508,8 +508,8 @@ const MedicationRequestForm = () => {
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
-              <HelpTooltip text="Submit the request for approval." />
+              {isSubmitting ? t('medicationRequestForm.fields.submitting') : t('medicationRequestForm.fields.submit')}
+              <HelpTooltip text={t('medicationRequestForm.submitHelp')} />
             </button>
           </div>
         </form>

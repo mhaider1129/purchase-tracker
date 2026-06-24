@@ -65,7 +65,7 @@ const WarehouseSupplyRequestForm = () => {
     const template = templates.find((t) => t.id === parseInt(id, 10));
     if (template) {
       if (!supplyWarehouseId) {
-        alert('Please select a fulfillment warehouse first');
+        alert(t('warehouseSupplyRequestForm.alerts.selectWarehouseFirst'));
         return;
       }
 
@@ -84,7 +84,7 @@ const WarehouseSupplyRequestForm = () => {
         .filter(Boolean);
 
       if (mapped.length === 0) {
-        alert('None of the template items are available in the selected warehouse');
+        alert(t('warehouseSupplyRequestForm.alerts.noTemplateItems'));
       }
 
       setItems(mapped.length ? mapped : [{ stock_item_id: '', item_name: '', quantity: 1 }]);
@@ -97,7 +97,7 @@ const WarehouseSupplyRequestForm = () => {
       setItemSearchTerms((prev) => [...prev, '']);
     };
   const removeItem = (idx) => {
-    if (!window.confirm('Remove this item?')) return;
+    if (!window.confirm(t('warehouseSupplyRequestForm.alerts.removeItem'))) return;
     setItems(items.filter((_, i) => i !== idx));
     setItemSearchTerms((prev) => prev.filter((_, i) => i !== idx));
   };
@@ -112,7 +112,7 @@ const WarehouseSupplyRequestForm = () => {
   };
 
   const formatExpiry = (value) => {
-    if (!value) return 'No expiry';
+    if (!value) return t('warehouseSupplyRequestForm.alerts.noExpiry');
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleDateString();
@@ -161,22 +161,22 @@ const WarehouseSupplyRequestForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!justification.trim()) {
-      alert('Justification is required');
+      alert(t('warehouseSupplyRequestForm.alerts.justificationRequired'));
       return;
     }
     if (!targetDeptId) {
-      alert('Your account is missing department information');
+      alert(t('warehouseSupplyRequestForm.alerts.missingDepartment'));
       return;
     }
     if (!supplyWarehouseId) {
-      alert('Please select the warehouse fulfilling this request');
+      alert(t('warehouseSupplyRequestForm.alerts.selectFulfillmentWarehouse'));
       return;
     }
     const hasInvalid = items.some(
       (i) => !i.stock_item_id || !i.item_name.trim() || i.quantity < 1,
     );
     if (hasInvalid) {
-      alert('Each item must have a warehouse item selected and a quantity');
+      alert(t('warehouseSupplyRequestForm.alerts.invalidItems'));
       return;
     }
 
@@ -199,7 +199,7 @@ const WarehouseSupplyRequestForm = () => {
       navigate('/request-submitted', { state });
     } catch (err) {
       console.error('Submission failed:', err);
-      alert(err.response?.data?.message || 'Failed to submit request');
+      alert(err.response?.data?.message || t('warehouseSupplyRequestForm.alerts.submitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -208,7 +208,7 @@ const WarehouseSupplyRequestForm = () => {
   if (loading) {
     return (
       <>
-          <div className="p-6 text-center text-gray-600">Loading...</div>
+          <div className="p-6 text-center text-gray-600">{t('warehouseSupplyRequestForm.loading')}</div>
       </>
     );
   }
@@ -216,7 +216,7 @@ const WarehouseSupplyRequestForm = () => {
   if (error || !user) {
     return (
       <>
-          <div className="p-6 text-center text-red-600">Unable to load user info.</div>
+          <div className="p-6 text-center text-red-600">{t('warehouseSupplyRequestForm.loadUserFailed')}</div>
       </>
     );
   }
@@ -226,12 +226,12 @@ const WarehouseSupplyRequestForm = () => {
       <div className="max-w-3xl mx-auto p-6">
         <h1 className="text-2xl font-bold mb-4">
           {t('warehouseSupplyRequestForm.title')}
-          <HelpTooltip text="Request items from warehouse stock" />
+          <HelpTooltip text={t('warehouseSupplyRequestForm.title')} />
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block font-semibold mb-1">Justification</label>
+            <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.justification')}</label>
             <textarea
               className="w-full p-2 border rounded"
               rows={3}
@@ -243,7 +243,7 @@ const WarehouseSupplyRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Fulfillment Warehouse</label>
+            <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.fulfillmentWarehouse')}</label>
             <select
               value={supplyWarehouseId}
               onChange={(e) => handleWarehouseChange(e.target.value)}
@@ -251,7 +251,7 @@ const WarehouseSupplyRequestForm = () => {
               disabled={submitting || warehousesLoading || warehouses.length === 0}
               required
             >
-              <option value="">Select Warehouse</option>
+              <option value="">{t('warehouseSupplyRequestForm.fields.selectWarehouse')}</option>
               {warehouses.map((wh) => (
                 <option key={wh.id} value={wh.id}>
                   {wh.name}
@@ -264,14 +264,14 @@ const WarehouseSupplyRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Template</label>
+            <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.template')}</label>
             <select
               value={selectedTemplateId}
               onChange={(e) => applyTemplate(e.target.value)}
               className="p-2 border rounded"
               disabled={submitting}
             >
-              <option value="">-- Select Template --</option>
+              <option value="">{t('warehouseSupplyRequestForm.fields.selectTemplate')}</option>
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.template_name}
@@ -288,10 +288,10 @@ const WarehouseSupplyRequestForm = () => {
           />
 
           <div>
-            <label className="block font-semibold mb-2">Items</label>
+            <label className="block font-semibold mb-2">{t('warehouseSupplyRequestForm.fields.items')}</label>
             <div className="grid gap-4 md:grid-cols-2 mb-4">
               <div>
-                <label className="block font-semibold mb-1">Category</label>
+                <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.category')}</label>
                 <select
                   value={category}
                   onChange={(e) => {
@@ -301,21 +301,21 @@ const WarehouseSupplyRequestForm = () => {
                   className="w-full p-2 border rounded"
                   disabled={submitting || warehouseItemsLoading}
                 >
-                  <option value="">All Categories</option>
+                  <option value="">{t('warehouseSupplyRequestForm.fields.allCategories')}</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block font-semibold mb-1">Sub Category</label>
+                <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.subCategory')}</label>
                 <select
                   value={subCategory}
                   onChange={(e) => setSubCategory(e.target.value)}
                   className="w-full p-2 border rounded"
                   disabled={submitting || warehouseItemsLoading}
                 >
-                  <option value="">All Sub Categories</option>
+                  <option value="">{t('warehouseSupplyRequestForm.fields.allSubCategories')}</option>
                   {subCategories.map((sub) => (
                     <option key={sub} value={sub}>{sub}</option>
                   ))}
@@ -324,18 +324,18 @@ const WarehouseSupplyRequestForm = () => {
             </div>
             {supplyWarehouseId === '' && (
               <p className="text-sm text-gray-600 mb-2">
-                Select a warehouse to choose from its available items.
+                {t('warehouseSupplyRequestForm.fields.selectWarehouseHelp')}
               </p>
             )}
             {warehouseItemsError && (
               <p className="text-sm text-red-600 mb-2">{warehouseItemsError}</p>
             )}
             {warehouseItemsLoading && (
-              <p className="text-sm text-gray-600 mb-2">Loading warehouse items...</p>
+              <p className="text-sm text-gray-600 mb-2">{t('warehouseSupplyRequestForm.fields.loadingItems')}</p>
             )}
             {supplyWarehouseId && !warehouseItemsLoading && warehouseItems.length === 0 && (
               <p className="text-sm text-gray-600 mb-2">
-                No items are configured for this warehouse.
+                {t('warehouseSupplyRequestForm.fields.emptyWarehouse')}
               </p>
             )}
             {items.map((it, idx) => (
@@ -350,7 +350,7 @@ const WarehouseSupplyRequestForm = () => {
                       return next;
                     })
                   }
-                  placeholder="Type to filter items"
+                  placeholder={t('warehouseSupplyRequestForm.fields.itemSearchPlaceholder')}
                   className="flex-1 p-2 border rounded min-w-[200px]"
                   disabled={submitting || warehouseItemsLoading}
                 />
@@ -366,7 +366,7 @@ const WarehouseSupplyRequestForm = () => {
                     warehouseItems.length === 0
                   }
                 >
-                  <option value="">Select item</option>
+                  <option value="">{t('warehouseSupplyRequestForm.fields.selectItem')}</option>
                   {filteredCatalog
                     .filter((item) => {
                       const q = (itemSearchTerms[idx] || '').trim().toLowerCase();
@@ -378,7 +378,7 @@ const WarehouseSupplyRequestForm = () => {
                     })
                     .map((item) => (
                     <option key={item.stock_item_id} value={item.stock_item_id}>
-                      {item.item_name} (Exp: {formatExpiry(item.expiry_date)})
+                      {item.item_name} ({t('warehouseSupplyRequestForm.fields.expiry')}: {formatExpiry(item.expiry_date)})
                     </option>
                   ))}
                 </select>
@@ -396,7 +396,7 @@ const WarehouseSupplyRequestForm = () => {
                 )}
               </div>
             ))}
-            <button type="button" onClick={addItem} className="text-blue-600 mt-2" disabled={submitting}>+ Add Item</button>
+            <button type="button" onClick={addItem} className="text-blue-600 mt-2" disabled={submitting}>{t('warehouseSupplyRequestForm.fields.addItem')}</button>
           </div>
 
           <UrgentRequestToggle
@@ -411,7 +411,7 @@ const WarehouseSupplyRequestForm = () => {
             disabled={submitting}
             className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {submitting ? 'Submitting...' : 'Submit Request'}
+            {submitting ? t('warehouseSupplyRequestForm.fields.submitting') : t('warehouseSupplyRequestForm.fields.submit')}
           </button>
         </form>
       </div>

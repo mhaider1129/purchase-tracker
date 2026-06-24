@@ -4,11 +4,11 @@ import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
 
 const STATUS_LABELS = {
-  submitted: 'Submitted',
-  accepted: 'Accepted by IT',
-  completed: 'Ready to claim',
-  claimed: 'Claimed',
-  cancelled: 'Cancelled',
+  submitted: 'printServiceRequestsPage.status.submitted',
+  accepted: 'printServiceRequestsPage.status.accepted',
+  completed: 'printServiceRequestsPage.status.completed',
+  claimed: 'printServiceRequestsPage.status.claimed',
+  cancelled: 'printServiceRequestsPage.status.cancelled',
 };
 
 const normalize = (value) => String(value || '').trim().toLowerCase();
@@ -51,11 +51,11 @@ const PrintServiceRequestsPage = () => {
         setQueueRequests([]);
       }
     } catch (error) {
-      setMessage(error?.response?.data?.message || 'Failed to load print service requests.');
+      setMessage(error?.response?.data?.message || t('printServiceRequestsPage.messages.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [t, user]);
 
   useEffect(() => {
     loadRequests();
@@ -71,10 +71,10 @@ const PrintServiceRequestsPage = () => {
         notes: form.notes,
       });
       setForm({ form_name: '', quantity: 1, notes: '' });
-      setMessage('Print service request submitted to the IT Department.');
+      setMessage(t('printServiceRequestsPage.messages.submitSuccess'));
       await loadRequests();
     } catch (error) {
-      setMessage(error?.response?.data?.message || 'Failed to submit print service request.');
+      setMessage(error?.response?.data?.message || t('printServiceRequestsPage.messages.submitFailed'));
     }
   };
 
@@ -84,7 +84,7 @@ const PrintServiceRequestsPage = () => {
       await api.patch(`/print-service-requests/${requestId}/status`, { status });
       await loadRequests();
     } catch (error) {
-      setMessage(error?.response?.data?.message || 'Failed to update print service request.');
+      setMessage(error?.response?.data?.message || t('printServiceRequestsPage.messages.updateFailed'));
     }
   };
 
@@ -93,18 +93,18 @@ const PrintServiceRequestsPage = () => {
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
           <tr>
-            <th className="px-4 py-3">ID</th>
-            <th className="px-4 py-3">Log/Form</th>
-            <th className="px-4 py-3">Qty</th>
-            <th className="px-4 py-3">Requester</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3">Updated</th>
-            <th className="px-4 py-3">Actions</th>
+            <th className="px-4 py-3">{t('printServiceRequestsPage.table.id')}</th>
+            <th className="px-4 py-3">{t('printServiceRequestsPage.table.logForm')}</th>
+            <th className="px-4 py-3">{t('printServiceRequestsPage.table.qty')}</th>
+            <th className="px-4 py-3">{t('printServiceRequestsPage.table.requester')}</th>
+            <th className="px-4 py-3">{t('printServiceRequestsPage.table.status')}</th>
+            <th className="px-4 py-3">{t('printServiceRequestsPage.table.updated')}</th>
+            <th className="px-4 py-3">{t('printServiceRequestsPage.table.actions')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
           {requests.length === 0 ? (
-            <tr><td className="px-4 py-4 text-gray-500" colSpan="7">No print service requests found.</td></tr>
+            <tr><td className="px-4 py-4 text-gray-500" colSpan="7">{t('printServiceRequestsPage.table.empty')}</td></tr>
           ) : requests.map((request) => (
             <tr key={`${mode}-${request.id}`}>
               <td className="px-4 py-3 font-medium">#{request.id}</td>
@@ -114,12 +114,12 @@ const PrintServiceRequestsPage = () => {
               </td>
               <td className="px-4 py-3">{request.quantity}</td>
               <td className="px-4 py-3">{request.requester_name || '—'}<div className="text-xs text-gray-500">{request.requester_department || ''}</div></td>
-              <td className="px-4 py-3"><span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">{STATUS_LABELS[request.status] || request.status}</span></td>
+              <td className="px-4 py-3"><span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">{t(STATUS_LABELS[request.status] || request.status)}</span></td>
               <td className="px-4 py-3 text-gray-600">{request.updated_at ? new Date(request.updated_at).toLocaleString() : '—'}</td>
               <td className="space-x-2 px-4 py-3">
-                {mode === 'queue' && request.status === 'submitted' && <button onClick={() => updateStatus(request.id, 'accepted')} className="rounded bg-blue-600 px-3 py-1 text-white">Accept</button>}
-                {mode === 'queue' && request.status === 'accepted' && <button onClick={() => updateStatus(request.id, 'completed')} className="rounded bg-green-600 px-3 py-1 text-white">Complete</button>}
-                {request.status === 'completed' && <button onClick={() => updateStatus(request.id, 'claimed')} className="rounded bg-purple-600 px-3 py-1 text-white">Mark claimed</button>}
+                {mode === 'queue' && request.status === 'submitted' && <button onClick={() => updateStatus(request.id, 'accepted')} className="rounded bg-blue-600 px-3 py-1 text-white">{t('printServiceRequestsPage.actions.accept')}</button>}
+                {mode === 'queue' && request.status === 'accepted' && <button onClick={() => updateStatus(request.id, 'completed')} className="rounded bg-green-600 px-3 py-1 text-white">{t('printServiceRequestsPage.actions.complete')}</button>}
+                {request.status === 'completed' && <button onClick={() => updateStatus(request.id, 'claimed')} className="rounded bg-purple-600 px-3 py-1 text-white">{t('printServiceRequestsPage.actions.claimed')}</button>}
               </td>
             </tr>
           ))}
@@ -132,29 +132,29 @@ const PrintServiceRequestsPage = () => {
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">{t('printServiceRequestsPage.title')}</h1>
-        <p className="mt-1 text-gray-600">Request printing for a specific log or form. This workflow is handled by IT and does not create purchase requests or approval steps.</p>
+        <p className="mt-1 text-gray-600">{t('printServiceRequestsPage.subtitle')}</p>
       </div>
 
       {message && <div className="rounded border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800">{message}</div>}
 
       <form onSubmit={submitRequest} className="rounded-lg border bg-white p-4 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold">Submit a print request</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t('printServiceRequestsPage.formTitle')}</h2>
         <div className="grid gap-4 md:grid-cols-3">
-          <label className="md:col-span-2">Log/Form name
-            <input value={form.form_name} onChange={(event) => setForm((prev) => ({ ...prev, form_name: event.target.value }))} required className="mt-1 w-full rounded border p-2" placeholder="e.g. Daily temperature log" />
+          <label className="md:col-span-2">{t('printServiceRequestsPage.fields.logForm')}
+            <input value={form.form_name} onChange={(event) => setForm((prev) => ({ ...prev, form_name: event.target.value }))} required className="mt-1 w-full rounded border p-2" placeholder={t('printServiceRequestsPage.fields.formPlaceholder')} />
           </label>
-          <label>Quantity
+          <label>{t('printServiceRequestsPage.fields.quantity')}
             <input type="number" min="1" value={form.quantity} onChange={(event) => setForm((prev) => ({ ...prev, quantity: event.target.value }))} required className="mt-1 w-full rounded border p-2" />
           </label>
-          <label className="md:col-span-3">Notes / specifications
-            <textarea value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} rows="3" className="mt-1 w-full rounded border p-2" placeholder="Optional printing instructions" />
+          <label className="md:col-span-3">{t('printServiceRequestsPage.fields.notes')}
+            <textarea value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} rows="3" className="mt-1 w-full rounded border p-2" placeholder={t('printServiceRequestsPage.fields.notesPlaceholder')} />
           </label>
         </div>
-        <button type="submit" className="mt-4 rounded bg-cyan-600 px-4 py-2 font-semibold text-white hover:bg-cyan-700">Submit to IT</button>
+        <button type="submit" className="mt-4 rounded bg-cyan-600 px-4 py-2 font-semibold text-white hover:bg-cyan-700">{t('printServiceRequestsPage.actions.submit')}</button>
       </form>
 
-      {canManageQueue && <section className="space-y-3"><h2 className="text-xl font-semibold">IT Department Queue</h2><p className="text-sm text-gray-600">Accessible to users assigned to {queueSettings?.department_name || 'the linked IT department'}.</p>{loading ? <p>Loading...</p> : renderRequestTable(queueRequests, 'queue')}</section>}
-      <section className="space-y-3"><h2 className="text-xl font-semibold">My Print Requests</h2>{loading ? <p>Loading...</p> : renderRequestTable(myRequests, 'my')}</section>
+      {canManageQueue && <section className="space-y-3"><h2 className="text-xl font-semibold">{t('printServiceRequestsPage.sections.queue')}</h2><p className="text-sm text-gray-600">{t('printServiceRequestsPage.sections.queueHelp', { department: queueSettings?.department_name || t('printServiceRequestsPage.sections.linkedDepartment') })}</p>{loading ? <p>{t('printServiceRequestsPage.messages.loading')}</p> : renderRequestTable(queueRequests, 'queue')}</section>}
+      <section className="space-y-3"><h2 className="text-xl font-semibold">{t('printServiceRequestsPage.sections.my')}</h2>{loading ? <p>{t('printServiceRequestsPage.messages.loading')}</p> : renderRequestTable(myRequests, 'my')}</section>
     </div>
   );
 };

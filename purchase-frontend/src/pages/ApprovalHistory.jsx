@@ -281,36 +281,36 @@ const ApprovalHistory = () => {
         {/* 🔍 Filters */}
         <div className="flex flex-wrap gap-4 items-end mb-6">
           <div className="flex-1 min-w-[220px]">
-            <label className="block text-sm font-medium mb-1">Search</label>
+            <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.search')}</label>
             <input
               type="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by request ID, department, justification..."
+              placeholder={t('approvalHistory.filters.searchPlaceholder')}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Filter by Status:</label>
+            <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.status')}</label>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="p-2 border rounded"
             >
-              <option value="">All</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
+              <option value="">{t('approvalHistory.filters.all')}</option>
+              <option value="Approved">{t('approvalHistory.filters.approved')}</option>
+              <option value="Rejected">{t('approvalHistory.filters.rejected')}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Department:</label>
+            <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.department')}</label>
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
               className="p-2 border rounded"
             >
-              <option value="">All</option>
+              <option value="">{t('approvalHistory.filters.all')}</option>
               {departments.map((dep) => (
                 <option key={dep.id} value={dep.id}>
                   {dep.name}
@@ -320,7 +320,7 @@ const ApprovalHistory = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">From Date:</label>
+            <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.from')}</label>
             <input
               type="date"
               value={fromDate}
@@ -330,7 +330,7 @@ const ApprovalHistory = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">To Date:</label>
+            <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.to')}</label>
             <input
               type="date"
               value={toDate}
@@ -365,7 +365,7 @@ const ApprovalHistory = () => {
           </button>
           <div className="ml-auto flex items-center text-sm text-gray-500">
             <span>
-              Showing {filtered.length} of {history.length} approvals
+              {t('approvalHistory.summary.showing', { filtered: filtered.length, total: history.length })}
             </span>
           </div>
         </div>
@@ -373,55 +373,55 @@ const ApprovalHistory = () => {
         {/* 📊 Stats */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 mb-6">
           <div className="p-4 border rounded-lg bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Total Decisions</p>
+            <p className="text-sm text-gray-500">{t('approvalHistory.summary.total')}</p>
             <p className="text-2xl font-semibold text-gray-900">{summary.total}</p>
           </div>
           <div className="p-4 border rounded-lg bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Approved</p>
+            <p className="text-sm text-gray-500">{t('approvalHistory.filters.approved')}</p>
             <p className="text-2xl font-semibold text-green-600">{summary.approved}</p>
           </div>
           <div className="p-4 border rounded-lg bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Rejected</p>
+            <p className="text-sm text-gray-500">{t('approvalHistory.filters.rejected')}</p>
             <p className="text-2xl font-semibold text-red-600">{summary.rejected}</p>
           </div>
           <div className="p-4 border rounded-lg bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Pending</p>
+            <p className="text-sm text-gray-500">{t('approvalHistory.summary.pending')}</p>
             <p className="text-2xl font-semibold text-yellow-600">{summary.pending}</p>
           </div>
           <div className="p-4 border rounded-lg bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Estimated Spend</p>
+            <p className="text-sm text-gray-500">{t('approvalHistory.summary.spend')}</p>
             <p className="text-2xl font-semibold text-gray-900">{formatCurrency(summary.spend)}</p>
           </div>
         </div>
 
         {/* 📋 Table */}
         {loading ? (
-          <p>Loading...</p>
+          <p>{t('approvalHistory.states.loading')}</p>
         ) : error ? (
           <p className="text-red-500">{error}</p>
         ) : filtered.length === 0 ? (
-          <p>No approvals found.</p>
+          <p>{t('approvalHistory.states.empty')}</p>
         ) : (
           <>
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50 text-left uppercase tracking-wide text-xs text-gray-500">
                   <tr>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Request ID</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Type</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Department</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Requester</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Project</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Justification</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Cost</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Final Status</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Your Decision</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Your Comment</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Items</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Level</th>
-                    <th className="border-b border-gray-200 p-3 font-semibold">Date</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.requestId')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.type')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.department')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.requester')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.project')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.justification')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.cost')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.finalStatus')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.decision')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.comment')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.items')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.level')}</th>
+                    <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.date')}</th>
                     {canViewCommunication && (
-                      <th className="border-b border-gray-200 p-3 font-semibold">SCM Comms</th>
+                      <th className="border-b border-gray-200 p-3 font-semibold">{t('approvalHistory.table.scm')}</th>
                     )}
                   </tr>
                 </thead>
@@ -476,10 +476,10 @@ const ApprovalHistory = () => {
                             disabled={loadingItemsId === item.request_id}
                           >
                             {loadingItemsId === item.request_id
-                              ? 'Loading items...'
+                              ? t('approvalHistory.table.loadingItems')
                               : expandedItemsId === item.request_id
-                                ? 'Hide Items'
-                                : 'View Items'}
+                                ? t('approvalHistory.table.hideItems')
+                                : t('approvalHistory.table.viewItems')}
                           </button>
                         </td>
                         <td className="border-r p-2 align-top text-gray-600">{item.approval_level || '—'}</td>
@@ -520,7 +520,7 @@ const ApprovalHistory = () => {
                                 {expandedCommunicationId === item.request_id ? 'Hide' : 'View'} updates
                               </button>
                             ) : (
-                              <span className="text-xs text-gray-400">Not available</span>
+                              <span className="text-xs text-gray-400">{t('approvalHistory.table.notAvailable')}</span>
                             )}
                           </td>
                         )}
@@ -529,18 +529,18 @@ const ApprovalHistory = () => {
                       {expandedItemsId === item.request_id && (
                         <tr className="bg-blue-50/40">
                           <td colSpan={canViewCommunication ? 14 : 13} className="p-3 align-top">
-                            <p className="text-sm font-semibold text-blue-900">Requested items for request {item.request_id}</p>
+                            <p className="text-sm font-semibold text-blue-900">{t('approvalHistory.table.requestedItems', { id: item.request_id })}</p>
                             <div className="mt-3 overflow-x-auto rounded border border-blue-100 bg-white">
                               <table className="min-w-full text-xs">
                                 <thead className="bg-blue-50 text-left uppercase tracking-wide text-blue-700">
                                   <tr>
-                                    <th className="p-2 font-semibold">Item</th>
-                                    <th className="p-2 font-semibold">Specs</th>
-                                    <th className="p-2 font-semibold">Brand</th>
-                                    <th className="p-2 font-semibold">Quantity</th>
-                                    <th className="p-2 font-semibold">Unit Cost</th>
-                                    <th className="p-2 font-semibold">Total Cost</th>
-                                    <th className="p-2 font-semibold">Decision</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.item')}</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.specs')}</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.brand')}</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.quantity')}</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.unitCost')}</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.totalCost')}</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.decision')}</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -558,7 +558,7 @@ const ApprovalHistory = () => {
                                     ))
                                   ) : (
                                     <tr>
-                                      <td colSpan={7} className="border-t border-blue-100 p-3 text-center text-gray-500">No items found.</td>
+                                      <td colSpan={7} className="border-t border-blue-100 p-3 text-center text-gray-500">{t('approvalHistory.table.noItems')}</td>
                                     </tr>
                                   )}
                                 </tbody>
@@ -574,9 +574,9 @@ const ApprovalHistory = () => {
                             <td colSpan={14} className="p-3 align-top">
                               <div className="flex items-start justify-between gap-2">
                                 <div>
-                                  <p className="text-sm font-semibold text-indigo-900">SCM Status Communication</p>
+                                  <p className="text-sm font-semibold text-indigo-900">{t('approvalHistory.table.communication')}</p>
                                   <p className="text-xs text-indigo-700">
-                                    Discuss the status of this approved request (current status: {item.status || 'Unknown'}).
+                                    {t('approvalHistory.table.communicationHelp', { status: item.status || t('approvalHistory.table.unknown') })}
                                   </p>
                                 </div>
                                 <button
@@ -591,7 +591,7 @@ const ApprovalHistory = () => {
 
                               <div className="mt-3 space-y-2">
                                 {communicationLoading[item.request_id] && (
-                                  <p className="text-xs text-indigo-700">Loading communications...</p>
+                                  <p className="text-xs text-indigo-700">{t('approvalHistory.table.loadingComms')}</p>
                                 )}
                                 {communicationError[item.request_id] && (
                                   <p className="text-xs text-rose-600">{communicationError[item.request_id]}</p>
@@ -621,7 +621,7 @@ const ApprovalHistory = () => {
                                     <textarea
                                       className="w-full rounded border border-indigo-200 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                                       rows={3}
-                                      placeholder="Share an update with the SCM team..."
+                                      placeholder={t('approvalHistory.table.commentsPlaceholder')}
                                       value={communicationDrafts[item.request_id] || ''}
                                       onChange={(event) =>
                                         setCommunicationDrafts((prev) => ({
