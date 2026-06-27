@@ -1303,7 +1303,7 @@
     },
     "intro": "Track the status of your submitted maintenance requests and export them for reporting.",
     "actions": {
-      "exportCsv": "Export CSV"
+      "exportExcel": "Export Excel"
     },
     "loading": "Loading maintenance requests...",
     "empty": {
@@ -1378,7 +1378,8 @@
       "currentStepUnknown": "Approval status unavailable",
       "currentStepFinalized": "Final approval completed by {{approver}} on {{date}}",
       "finalApprovalPending": "Pending final approval",
-      "finalApprovalBy": "{{approver}} on {{date}}"
+      "finalApprovalBy": "{{approver}} on {{date}}",
+      "sheetName": "Maintenance Requests"
     },
     "filters": {
       "searchLabel": "Search",

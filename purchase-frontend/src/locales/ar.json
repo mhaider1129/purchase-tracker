@@ -1243,7 +1243,7 @@
     },
     "intro": "تابع حالة طلبات الصيانة المقدمة وقم بتصديرها لأغراض التقارير.",
     "actions": {
-      "exportCsv": "تصدير CSV"
+      "exportExcel": "تصدير Excel"
     },
     "loading": "جاري تحميل طلبات الصيانة...",
     "empty": {
@@ -1318,7 +1318,8 @@
       "currentStepUnknown": "حالة الموافقة غير متاحة",
       "currentStepFinalized": "أُنجزت الموافقة النهائية بواسطة {{approver}} بتاريخ {{date}}",
       "finalApprovalPending": "بلا موافقة نهائية بعد",
-      "finalApprovalBy": "{{approver}} بتاريخ {{date}}"
+      "finalApprovalBy": "{{approver}} بتاريخ {{date}}",
+      "sheetName": "طلبات الصيانة"
     },
     "filters": {
       "searchLabel": "بحث",

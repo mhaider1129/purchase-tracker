@@ -115,3 +115,20 @@
     @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
   }
 }
+@layer components {
+  .arabic-date-input {
+    direction: rtl;
+    text-align: right;
+    unicode-bidi: plaintext;
+  }
+
+  .arabic-date-input::-webkit-datetime-edit,
+  .arabic-date-input::-webkit-datetime-edit-fields-wrapper,
+  .arabic-date-input::-webkit-datetime-edit-year-field,
+  .arabic-date-input::-webkit-datetime-edit-month-field,
+  .arabic-date-input::-webkit-datetime-edit-day-field,
+  .arabic-date-input::-webkit-datetime-edit-text {
+    direction: rtl;
+    unicode-bidi: plaintext;
+  }
+}

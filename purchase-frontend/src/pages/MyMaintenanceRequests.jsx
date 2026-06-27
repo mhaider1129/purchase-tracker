@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import { saveAs } from 'file-saver';
-import { buildExcelCsvBlob } from '../utils/csvExport';
+import { buildExcelHtmlBlob } from '../utils/excelHtmlExport';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -346,7 +346,7 @@ const MyMaintenanceRequests = () => {
     return tr('export.finalApprovalPending');
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     const headers = tr('export.headers', { returnObjects: true });
     const csvRows = [
       headers,
@@ -369,8 +369,11 @@ const MyMaintenanceRequests = () => {
       }),
     ];
 
-    const blob = buildExcelCsvBlob(csvRows);
-    saveAs(blob, `${tr('export.filePrefix')}_${new Date().toISOString().split('T')[0]}.csv`);
+    const blob = buildExcelHtmlBlob(csvRows, {
+      sheetName: tr('export.sheetName'),
+      rtl: document?.documentElement?.dir === 'rtl',
+    });
+    saveAs(blob, `${tr('export.filePrefix')}_${new Date().toISOString().split('T')[0]}.xls`);
   };
 
   const filteredRequests = useMemo(() => {
@@ -535,10 +538,10 @@ const MyMaintenanceRequests = () => {
             <p className="text-sm text-gray-600">{tr('intro')}</p>
           </div>
           <button
-            onClick={exportToCSV}
+            onClick={exportToExcel}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
           >
-            {tr('actions.exportCsv')}
+            {tr('actions.exportExcel')}
           </button>
         </div>
 
@@ -673,7 +676,10 @@ const MyMaintenanceRequests = () => {
                   type="date"
                   value={startDate}
                   onChange={(event) => setStartDate(event.target.value)}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
+                  data-placeholder="سنة/شهر/يوم"
+                  lang="ar"
+                  dir="rtl"
+                  className="arabic-date-input w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
                 />
               </div>
               <div>
@@ -685,7 +691,10 @@ const MyMaintenanceRequests = () => {
                   type="date"
                   value={endDate}
                   onChange={(event) => setEndDate(event.target.value)}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
+                  data-placeholder="سنة/شهر/يوم"
+                  lang="ar"
+                  dir="rtl"
+                  className="arabic-date-input w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
                 />
               </div>
               <div>

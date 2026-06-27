@@ -55,7 +55,7 @@ const EMPTY_PO_FORM = {
   approval_route: '',
 };
 
-const EMPTY_MANUAL_ITEM = { item_name: '', quantity: '1', uom: '', unit_price: '0' };
+const EMPTY_MANUAL_ITEM = { requested_item_id: null, item_name: '', quantity: '1', uom: '', unit_price: '0' };
 
 const formatAmount = (value) => Number(value || 0).toFixed(2);
 
@@ -82,6 +82,28 @@ const ProcureToPayPurchaseOrdersPage = () => {
     return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
   }, [requestId]);
 
+  const buildItemsFromSourceRequest = useCallback((sourceRequest) => {
+    const remainingItems = Array.isArray(sourceRequest?.remaining_items) ? sourceRequest.remaining_items : [];
+    const items = remainingItems
+      .map((item) => ({
+        requested_item_id: item.requested_item_id || null,
+        item_name: item.item_name || '',
+        quantity: String(item.remaining_quantity ?? item.quantity ?? ''),
+        uom: item.uom || '',
+        unit_price: String(item.unit_price ?? 0),
+      }))
+      .filter((item) => item.item_name && Number(item.quantity) > 0);
+
+    return items.length > 0 ? items : [EMPTY_MANUAL_ITEM];
+  }, []);
+
+  const applySourceRequestToPoItems = useCallback((requestIdValue, requests = sourceRequests) => {
+    const sourceRequest = requests.find((request) => String(request.id) === String(requestIdValue));
+    if (sourceRequest) {
+      setManualItems(buildItemsFromSourceRequest(sourceRequest));
+    }
+  }, [buildItemsFromSourceRequest, sourceRequests]);
+
   const load = useCallback(async (page = pagination.page) => {
     const params = {
       page,
@@ -102,9 +124,10 @@ const ProcureToPayPurchaseOrdersPage = () => {
       listPoSourceRequests(requestsParams),
     ]);
 
+    const nextSourceRequests = requestRes?.data || [];
     setRows(poRes?.data || []);
     setPagination(poRes?.pagination || { page: 1, page_size: 20, total: 0 });
-    setSourceRequests(requestRes?.data || []);
+    setSourceRequests(nextSourceRequests);
   }, [filters.search, filters.status, filters.supplier, pagination.page, pagination.page_size, scopedRequestId]);
 
   useEffect(() => {
@@ -112,11 +135,18 @@ const ProcureToPayPurchaseOrdersPage = () => {
   }, [load]);
 
   useEffect(() => {
+    if (isCreating && manualForm.source_document_type === 'PURCHASE_REQUEST' && selectedRequestId) {
+      applySourceRequestToPoItems(selectedRequestId);
+    }
+  }, [applySourceRequestToPoItems, isCreating, manualForm.source_document_type, selectedRequestId, sourceRequests]);
+
+  useEffect(() => {
     if (scopedRequestId && isCreating) {
       setSelectedRequestId(String(scopedRequestId));
       setManualForm((prev) => ({ ...prev, source_document_type: 'PURCHASE_REQUEST', source_document_id: String(scopedRequestId) }));
+      applySourceRequestToPoItems(scopedRequestId);
     }
-  }, [isCreating, scopedRequestId]);
+  }, [applySourceRequestToPoItems, isCreating, scopedRequestId]);
 
   const validateForm = (form, options = {}) => {
     const missing = [];
@@ -134,6 +164,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
 
   const normalizedManualItems = manualItems
     .map((item) => ({
+      requested_item_id: item.requested_item_id || null,
       item_name: item.item_name.trim(),
       quantity: Number(item.quantity) || 0,
       uom: item.uom.trim(),
@@ -159,6 +190,9 @@ const ProcureToPayPurchaseOrdersPage = () => {
       source_document_type: scopedRequestId ? 'PURCHASE_REQUEST' : prev.source_document_type,
       source_document_id: scopedRequestId ? String(scopedRequestId) : prev.source_document_id,
     }));
+    if (scopedRequestId) {
+      applySourceRequestToPoItems(scopedRequestId);
+    }
     setIsCreating(true);
   };
 
@@ -314,7 +348,11 @@ const ProcureToPayPurchaseOrdersPage = () => {
             <select className="border rounded px-2 py-1" value={manualForm.source_document_type} onChange={(e) => {
               const sourceType = e.target.value;
               setManualForm((prev) => ({ ...prev, source_document_type: sourceType, source_document_id: sourceType === 'PURCHASE_REQUEST' ? selectedRequestId : prev.source_document_id }));
-              if (sourceType !== 'PURCHASE_REQUEST') setSelectedRequestId('');
+              if (sourceType === 'PURCHASE_REQUEST' && selectedRequestId) applySourceRequestToPoItems(selectedRequestId);
+              if (sourceType !== 'PURCHASE_REQUEST') {
+                setSelectedRequestId('');
+                setManualItems([EMPTY_MANUAL_ITEM]);
+              }
             }}>
               {SOURCE_TYPES.map((source) => <option key={source.value} value={source.value}>{source.label}</option>)}
             </select>
@@ -322,9 +360,10 @@ const ProcureToPayPurchaseOrdersPage = () => {
               <select className="border rounded px-2 py-1" value={selectedRequestId} onChange={(e) => {
                 setSelectedRequestId(e.target.value);
                 setManualForm((prev) => ({ ...prev, source_document_id: e.target.value }));
+                applySourceRequestToPoItems(e.target.value);
               }} disabled={Boolean(scopedRequestId)}>
                 <option value="">Select approved request</option>
-                {sourceRequests.map((r) => <option key={r.id} value={r.id}>Request #{r.id} · {r.request_type}</option>)}
+                {sourceRequests.map((r) => <option key={r.id} value={r.id}>Request #{r.id} · {r.request_type} · {(r.remaining_items || []).length} remaining lines</option>)}
               </select>
             ) : (
               <input className="border rounded px-2 py-1" placeholder="Source reference / contract no." value={manualForm.source_document_id} onChange={(e) => setManualForm((prev) => ({ ...prev, source_document_id: e.target.value }))} />
@@ -345,12 +384,14 @@ const ProcureToPayPurchaseOrdersPage = () => {
           </div>
           <div className="rounded border p-3 space-y-2">
             <div className="flex items-center justify-between"><h3 className="font-medium">PO items</h3><span className="text-xs text-gray-600">Total: {formatAmount(manualItemsTotal)}</span></div>
+            {manualForm.source_document_type === 'PURCHASE_REQUEST' && <p className="text-xs text-gray-500">Items are auto-filled from the selected purchase request with only quantities not already assigned to another non-cancelled PO. Delete lines that will be procured from a different supplier.</p>}
             {manualItems.map((item, index) => (
-              <div key={index} className="grid sm:grid-cols-5 gap-2">
+              <div key={index} className="grid sm:grid-cols-6 gap-2">
                 <input className="border rounded px-2 py-1 sm:col-span-2" placeholder="Item description" value={item.item_name} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, item_name: e.target.value } : row)))} />
                 <input className="border rounded px-2 py-1" placeholder="Qty" type="number" min="0" value={item.quantity} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, quantity: e.target.value } : row)))} />
                 <input className="border rounded px-2 py-1" placeholder="UOM" value={item.uom} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, uom: e.target.value } : row)))} />
                 <input className="border rounded px-2 py-1" placeholder="Unit price" type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, unit_price: e.target.value } : row)))} />
+                <button type="button" className="rounded border border-red-300 px-2 py-1 text-sm text-red-700" onClick={() => setManualItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : [EMPTY_MANUAL_ITEM]))}>Delete</button>
               </div>
             ))}
             <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setManualItems((prev) => [...prev, EMPTY_MANUAL_ITEM])}>Add item</button>
