@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import axios from "../../api/axios";
+import axios, { API_ACTION_NOTIFICATION_EVENT } from "../../api/axios";
 import { useAuth } from "../../hooks/useAuth";
 
 const NotificationContext = createContext(null);
@@ -22,6 +22,34 @@ const toastStyles = {
   warning:
     "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/40 dark:text-amber-100",
   info: "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-700/60 dark:bg-sky-900/40 dark:text-sky-100",
+};
+
+const playNotificationSound = (type = "info") => {
+  if (typeof window === "undefined") return;
+
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+
+  try {
+    const context = new AudioContext();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const frequency = type === "error" ? 220 : type === "success" ? 660 : 520;
+
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, context.currentTime);
+    gain.gain.setValueAtTime(0.001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.22);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.24);
+    oscillator.onended = () => context.close();
+  } catch (err) {
+    console.warn("⚠️ Notification sound could not be played:", err);
+  }
 };
 
 const ToastPortal = ({ toasts, onDismiss }) => {
@@ -94,6 +122,8 @@ export const NotificationProvider = ({
   const toastTimers = useRef(new Map());
   const pollingRef = useRef(null);
   const isFetchingRef = useRef(false);
+  const knownNotificationIdsRef = useRef(new Set());
+  const hasLoadedNotificationsRef = useRef(false);
 
   const dismissToast = useCallback((id) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -115,6 +145,7 @@ export const NotificationProvider = ({
       const timeoutDuration = duration ?? toastTimeout;
 
       setToasts((prev) => [...prev, { id, message, title, type }]);
+      playNotificationSound(type);
 
       if (
         timeoutDuration !== null &&
@@ -137,6 +168,8 @@ export const NotificationProvider = ({
     async ({ silent = false } = {}) => {
       if (!isAuthenticated) {
         setInbox([]);
+        knownNotificationIdsRef.current.clear();
+        hasLoadedNotificationsRef.current = false;
         setError(null);
         return;
       }
@@ -165,6 +198,29 @@ export const NotificationProvider = ({
           .map((item) => normalizeNotification(item))
           .filter(Boolean);
 
+        const knownIds = knownNotificationIdsRef.current;
+        const hasLoaded = hasLoadedNotificationsRef.current;
+        const newNotifications = normalized.filter(
+          (notification) => notification.id && !knownIds.has(notification.id),
+        );
+
+        normalized.forEach((notification) => {
+          if (notification.id) {
+            knownIds.add(notification.id);
+          }
+        });
+        hasLoadedNotificationsRef.current = true;
+
+        if (hasLoaded && newNotifications.length > 0) {
+          newNotifications.slice(0, 3).forEach((notification) => {
+            pushToast({
+              title: notification.title || "New notification",
+              message: notification.message,
+              type: notification.metadata?.level || notification.metadata?.variant || "info",
+            });
+          });
+        }
+
         setInbox(normalized);
         setError(null);
       } catch (err) {
@@ -177,7 +233,7 @@ export const NotificationProvider = ({
         }
       }
     },
-    [isAuthenticated],
+    [isAuthenticated, pushToast],
   );
 
   const markNotificationAsRead = useCallback(
@@ -225,6 +281,8 @@ export const NotificationProvider = ({
   useEffect(() => {
     if (!isAuthenticated) {
       setInbox([]);
+      knownNotificationIdsRef.current.clear();
+      hasLoadedNotificationsRef.current = false;
       clearPolling();
       return;
     }
@@ -255,6 +313,27 @@ export const NotificationProvider = ({
       clearPolling();
     };
   }, [isAuthenticated, pollInterval, fetchNotifications, clearPolling]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const handleApiAction = (event) => {
+      const detail = event.detail || {};
+      pushToast({
+        title: detail.title,
+        message: detail.message,
+        type: detail.type || "info",
+      });
+    };
+
+    window.addEventListener(API_ACTION_NOTIFICATION_EVENT, handleApiAction);
+
+    return () => {
+      window.removeEventListener(API_ACTION_NOTIFICATION_EVENT, handleApiAction);
+    };
+  }, [pushToast]);
 
   useEffect(
     () => () => {

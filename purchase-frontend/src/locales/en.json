@@ -1365,6 +1365,12 @@
         "Ref #",
         "Items",
         "Status",
+        "Submission Timeline",
+        "Approval Started At",
+        "First Approval At",
+        "Final Approval At",
+        "Approval Duration (Days)",
+        "Approval Timeline",
         "Current Step of Approval",
         "Date of Final Approval"
       ],

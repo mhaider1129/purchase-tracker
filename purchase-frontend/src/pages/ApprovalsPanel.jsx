@@ -435,27 +435,28 @@ const ApprovalsPanel = () => {
                               {t('approvalsPanel.actions.sendToHod')}
                             </Button>
                           )}
-                          {req.request_type === 'Maintenance' && req.approval_level === 1 ? (
-                            <Button onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}>
+                          {req.request_type === 'Maintenance' && req.approval_level === 1 && (
+                            <Button
+                              variant="secondary"
+                              onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}
+                              disabled={isOnHold}
+                            >
                               {t('approvalsPanel.actions.assignRequester')}
                             </Button>
-                          ) : (
-                            <>
-                              <Button
-                                onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
-                                disabled={isOnHold}
-                              >
-                                {t('approvalsPanel.actions.approve')}
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
-                                disabled={isOnHold}
-                              >
-                                {t('approvalsPanel.actions.reject')}
-                              </Button>
-                            </>
-          )}
+                          )}
+                          <Button
+                            onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
+                            disabled={isOnHold}
+                          >
+                            {t('approvalsPanel.actions.approve')}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
+                            disabled={isOnHold}
+                          >
+                            {t('approvalsPanel.actions.reject')}
+                          </Button>
 
         </div>
       </div>

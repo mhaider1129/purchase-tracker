@@ -71,6 +71,77 @@ const api = axios.create({
   timeout: 15000,
 });
 
+const notificationEventName = "purchase-tracker:api-action";
+const mutatingMethods = new Set(["post", "put", "patch", "delete"]);
+const notificationMutedPaths = [
+  /^\/?notifications(?:\/|$)/i,
+  /^\/?auth\/me$/i,
+];
+
+const getRequestMethod = (config = {}) =>
+  String(config.method || "get").toLowerCase();
+
+const getRequestPath = (config = {}) => String(config.url || "");
+
+const shouldAnnounceApiAction = (config = {}) => {
+  const method = getRequestMethod(config);
+  const path = getRequestPath(config);
+
+  return (
+    mutatingMethods.has(method) &&
+    !config.__skipActionNotification &&
+    !notificationMutedPaths.some((pattern) => pattern.test(path.replace(/^\/+api\//i, "")))
+  );
+};
+
+const getResponseMessage = (response) => {
+  const data = response?.data;
+
+  if (typeof data === "string" && data.trim()) {
+    return data.trim();
+  }
+
+  if (data && typeof data === "object") {
+    return (
+      data.message ||
+      data.error ||
+      data.data?.message ||
+      data.data?.status ||
+      null
+    );
+  }
+
+  return null;
+};
+
+const dispatchApiActionNotification = ({ config, response, error, type }) => {
+  if (typeof window === "undefined" || !shouldAnnounceApiAction(config)) {
+    return;
+  }
+
+  const method = getRequestMethod(config).toUpperCase();
+  const fallbackMessage =
+    type === "error"
+      ? `${method} action failed. Please try again.`
+      : `${method} action completed successfully.`;
+  const detailMessage =
+    type === "error"
+      ? error?.response?.data?.message || error?.response?.data?.error || error?.message
+      : getResponseMessage(response);
+
+  window.dispatchEvent(
+    new CustomEvent(notificationEventName, {
+      detail: {
+        type,
+        title: type === "error" ? "Action failed" : "Action completed",
+        message: detailMessage || fallbackMessage,
+      },
+    }),
+  );
+};
+
+export const API_ACTION_NOTIFICATION_EVENT = notificationEventName;
+
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -96,14 +167,23 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    dispatchApiActionNotification({
+      config: response.config,
+      response,
+      type: "success",
+    });
+    return response;
+  },
   async (error) => {
     const config = error.config || {};
     const status = error.response?.status;
 
+    const method = (config.method || "get").toLowerCase();
+    const isSafeRequest = ["get", "head", "options"].includes(method);
     const shouldTryApiFallback =
       [502, 503, 504].includes(status) ||
-      (status === 404 && !/^\/?attachments\//.test(config.url || ""));
+      (isSafeRequest && status === 404 && !/^\/?attachments\//.test(config.url || ""));
 
     if (shouldTryApiFallback && typeof config.url === "string") {
       const attemptedBases = config.__attemptedApiBases || [];
@@ -132,6 +212,12 @@ api.interceptors.response.use(
           "Request is too large. Please reduce attachment sizes or ask an administrator to increase the upload limit.",
       };
     }
+
+    dispatchApiActionNotification({
+      config,
+      error,
+      type: "error",
+    });
 
     return Promise.reject(error);
   }

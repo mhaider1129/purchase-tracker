@@ -332,6 +332,15 @@ const MyMaintenanceRequests = () => {
     return tr('export.currentStepUnknown');
   };
 
+  const formatExportDate = (value) => {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
+  };
+
   const getFinalApprovalDateLabel = (request) => {
     const normalizedStatus = request.status?.toLowerCase();
     const finalDetails = getFinalApprovalDetails(request);
@@ -363,6 +372,12 @@ const MyMaintenanceRequests = () => {
           r.maintenance_ref_number || '-',
           formatItemsForExport(r.items),
           statusLabel,
+          r.submission_timeline || '',
+          formatExportDate(r.approval_started_at),
+          formatExportDate(r.first_approval_at),
+          formatExportDate(r.final_approval_at),
+          r.approval_duration_days ?? '',
+          r.approval_timeline || '',
           getCurrentApprovalStepLabel(r),
           getFinalApprovalDateLabel(r),
         ];
