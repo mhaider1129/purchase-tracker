@@ -51,6 +51,13 @@ const useApprovalsData = (user) => {
   const [hodModalRequestId, setHodModalRequestId] = useState(null);
   const [hodSubmitLoading, setHodSubmitLoading] = useState(false);
   const [holdLoadingMap, setHoldLoadingMap] = useState({});
+  const [showApprovalSummary, setShowApprovalSummary] = useState(false);
+  const [summaryRequestIds, setSummaryRequestIds] = useState([]);
+  const [summaryDecisions, setSummaryDecisions] = useState({});
+  const [summaryComments, setSummaryComments] = useState({});
+  const [summarySubmitting, setSummarySubmitting] = useState(false);
+  const [summaryLoadingItems, setSummaryLoadingItems] = useState(false);
+  const [summaryFeedback, setSummaryFeedback] = useState(null);
 
   const canMarkUrgent = useMemo(
     () => ['HOD', 'CMO', 'COO', 'WarehouseManager'].includes(user?.role),
@@ -208,6 +215,40 @@ const useApprovalsData = (user) => {
     return summary;
   }, []);
 
+  const loadItemsForRequest = useCallback(async (requestId) => {
+    if (itemsMap[requestId]) {
+      return itemsMap[requestId];
+    }
+
+    const res = await axios.get(`/requests/${requestId}/items`);
+    const fetchedItems = extractItems(res.data);
+    setItemsMap((prev) => ({ ...prev, [requestId]: fetchedItems }));
+    setItemDecisions((prev) => ({
+      ...prev,
+      [requestId]: fetchedItems.reduce((acc, item) => {
+        if (!item?.id) return acc;
+        acc[item.id] = {
+          status: item.approval_status || 'Pending',
+          comments: item.approval_comments || '',
+        };
+        return acc;
+      }, {}),
+    }));
+    setItemQuantityDrafts((prev) => ({
+      ...prev,
+      [requestId]: fetchedItems.reduce((acc, item) => {
+        if (!item?.id) return acc;
+        acc[item.id] = item.quantity ?? '';
+        return acc;
+      }, {}),
+    }));
+    setItemSummaries((prev) => ({
+      ...prev,
+      [requestId]: getItemSummaryFromItems(fetchedItems),
+    }));
+    return fetchedItems;
+  }, [getItemSummaryFromItems, itemsMap]);
+
   const toggleExpand = async (requestId) => {
     const isSameRequest = expandedId === requestId;
     const nextExpandedId = isSameRequest ? null : requestId;
@@ -218,32 +259,7 @@ const useApprovalsData = (user) => {
     }
     if (!itemsMap[requestId]) {
       try {
-        const res = await axios.get(`/requests/${requestId}/items`);
-        const fetchedItems = extractItems(res.data);
-        setItemsMap((prev) => ({ ...prev, [requestId]: fetchedItems }));
-        setItemDecisions((prev) => ({
-          ...prev,
-          [requestId]: fetchedItems.reduce((acc, item) => {
-            if (!item?.id) return acc;
-            acc[item.id] = {
-              status: item.approval_status || 'Pending',
-              comments: item.approval_comments || '',
-            };
-            return acc;
-          }, {}),
-        }));
-        setItemQuantityDrafts((prev) => ({
-          ...prev,
-          [requestId]: fetchedItems.reduce((acc, item) => {
-            if (!item?.id) return acc;
-            acc[item.id] = item.quantity ?? '';
-            return acc;
-          }, {}),
-        }));
-        setItemSummaries((prev) => ({
-          ...prev,
-          [requestId]: getItemSummaryFromItems(fetchedItems),
-        }));
+        await loadItemsForRequest(requestId);
       } catch (err) {
         console.error('❌ Failed to load items:', err);
       }
@@ -335,7 +351,7 @@ const useApprovalsData = (user) => {
     }));
   };
 
-  const saveItemDecisions = async (requestId, approvalId) => {
+  const saveItemDecisions = async (requestId, approvalId, options = {}) => {
     const decisionsForRequest = itemDecisions[requestId] || {};
     const quantityDrafts = itemQuantityDrafts[requestId] || {};
     const itemsForRequest = itemsMap[requestId] || [];
@@ -359,24 +375,28 @@ const useApprovalsData = (user) => {
       if (hasQuantityDraft) {
         parsedQuantity = Number(rawQuantity);
         if (Number.isNaN(parsedQuantity) || parsedQuantity <= 0) {
+          const message = 'Enter a valid quantity greater than zero for changed items.';
           setItemFeedback((prev) => ({
             ...prev,
             [requestId]: {
               type: 'error',
-              message: 'Enter a valid quantity greater than zero for changed items.',
+              message,
             },
           }));
+          if (options.allowNoChanges) throw new Error(message);
           return;
         }
 
         if (!Number.isInteger(parsedQuantity)) {
+          const message = 'Quantity must be a whole number.';
           setItemFeedback((prev) => ({
             ...prev,
             [requestId]: {
               type: 'error',
-              message: 'Quantity must be a whole number.',
+              message,
             },
           }));
+          if (options.allowNoChanges) throw new Error(message);
           return;
         }
       }
@@ -393,6 +413,10 @@ const useApprovalsData = (user) => {
           ...(hasQuantityDraft ? { quantity: parsedQuantity } : {}),
         });
       }
+    }
+
+    if (payloadItems.length === 0 && options.allowNoChanges) {
+      return;
     }
 
     if (payloadItems.length === 0) {
@@ -514,6 +538,106 @@ const useApprovalsData = (user) => {
       }));
     } finally {
       setSavingItems((prev) => ({ ...prev, [requestId]: false }));
+    }
+  };
+
+
+  const canUseApprovalSummary = useMemo(
+    () => ['COO', 'CMO', 'SCM'].includes((user?.role || '').toUpperCase()),
+    [user?.role],
+  );
+
+  const openApprovalSummary = async (sourceRequests = filteredRequests) => {
+    const eligibleRequests = (Array.isArray(sourceRequests) ? sourceRequests : [])
+      .filter((req) => String(req?.approval_status || 'Pending').toLowerCase() !== 'on hold');
+
+    if (eligibleRequests.length === 0) {
+      setSummaryFeedback({ type: 'warning', message: 'No active pending requests are available for summary approval.' });
+      return;
+    }
+
+    setSummaryLoadingItems(true);
+    setSummaryFeedback(null);
+    try {
+      await Promise.all(eligibleRequests.map((req) => loadItemsForRequest(req.request_id)));
+      setSummaryRequestIds(eligibleRequests.map((req) => req.request_id));
+      setSummaryDecisions(
+        eligibleRequests.reduce((acc, req) => {
+          acc[req.request_id] = 'Approved';
+          return acc;
+        }, {}),
+      );
+      setSummaryComments({});
+      setShowApprovalSummary(true);
+    } catch (err) {
+      console.error('❌ Failed to prepare approval summary:', err);
+      setSummaryFeedback({ type: 'error', message: 'Failed to load request items for the approval summary.' });
+    } finally {
+      setSummaryLoadingItems(false);
+    }
+  };
+
+  const closeApprovalSummary = () => {
+    if (summarySubmitting) return;
+    setShowApprovalSummary(false);
+    setSummaryRequestIds([]);
+    setSummaryDecisions({});
+    setSummaryComments({});
+    setSummaryFeedback(null);
+  };
+
+  const removeFromApprovalSummary = (requestId) => {
+    setSummaryRequestIds((prev) => prev.filter((id) => id !== requestId));
+  };
+
+  const setSummaryDecision = (requestId, decision) => {
+    setSummaryDecisions((prev) => ({ ...prev, [requestId]: decision }));
+  };
+
+  const setSummaryComment = (requestId, comment) => {
+    setSummaryComments((prev) => ({ ...prev, [requestId]: comment }));
+  };
+
+  const submitApprovalSummary = async () => {
+    const selectedRequests = requests.filter((req) => summaryRequestIds.includes(req.request_id));
+    if (selectedRequests.length === 0) {
+      setSummaryFeedback({ type: 'warning', message: 'Keep at least one request in the summary before submitting.' });
+      return;
+    }
+
+    const confirmed = window.confirm(`Apply approval decisions to ${selectedRequests.length} request(s)?`);
+    if (!confirmed) return;
+
+    setSummarySubmitting(true);
+    setSummaryFeedback(null);
+    try {
+      for (const req of selectedRequests) {
+        await saveItemDecisions(req.request_id, req.approval_id, { allowNoChanges: true });
+        const payload = {
+          status: summaryDecisions[req.request_id] || 'Approved',
+          comments: summaryComments[req.request_id] || '',
+          is_urgent: canMarkUrgent ? Boolean(req.is_urgent) : false,
+        };
+        if ((user?.role || '').toUpperCase() === 'SCM') {
+          const rawCost = estimatedCostDrafts[req.request_id];
+          if (rawCost !== undefined && rawCost !== null && String(rawCost).trim() !== '') {
+            const normalized = Number(String(rawCost).replace(/,/g, ''));
+            if (Number.isNaN(normalized) || normalized <= 0) {
+              throw new Error(`Enter a positive estimated cost for Request #${req.request_id}.`);
+            }
+            payload.estimated_cost = normalized;
+          }
+        }
+        await axios.put(`/requests/approval/${req.approval_id}`, payload);
+      }
+
+      setRequests((prev) => prev.filter((req) => !summaryRequestIds.includes(req.request_id)));
+      closeApprovalSummary();
+    } catch (err) {
+      console.error('❌ Failed to submit approval summary:', err);
+      setSummaryFeedback({ type: 'error', message: err?.message || 'Failed to apply approval summary decisions.' });
+    } finally {
+      setSummarySubmitting(false);
     }
   };
 
@@ -913,6 +1037,22 @@ const useApprovalsData = (user) => {
 
   return {
     availableRequestTypes,
+    approvalSummary: {
+      canUse: canUseApprovalSummary,
+      close: closeApprovalSummary,
+      decisions: summaryDecisions,
+      feedback: summaryFeedback,
+      loadingItems: summaryLoadingItems,
+      open: openApprovalSummary,
+      remove: removeFromApprovalSummary,
+      requestIds: summaryRequestIds,
+      setComment: setSummaryComment,
+      setDecision: setSummaryDecision,
+      show: showApprovalSummary,
+      submit: submitApprovalSummary,
+      submitting: summarySubmitting,
+      comments: summaryComments,
+    },
     attachmentErrorMap,
     attachmentLoadingMap,
     attachmentsMap,

@@ -34,6 +34,7 @@ const ApprovalsPanel = () => {
   const { user } = useCurrentUser();
   const {
     availableRequestTypes,
+    approvalSummary,
     attachmentErrorMap,
     attachmentLoadingMap,
     attachmentsMap,
@@ -167,7 +168,16 @@ const ApprovalsPanel = () => {
               {t('approvalsPanel.subtitle')}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {approvalSummary.canUse && (
+              <Button
+                onClick={() => approvalSummary.open(filteredRequests)}
+                disabled={loading || filteredRequests.length === 0 || approvalSummary.loadingItems}
+                isLoading={approvalSummary.loadingItems}
+              >
+                {approvalSummary.loadingItems ? 'Preparing summary…' : 'Approval summary'}
+              </Button>
+            )}
             <Button onClick={fetchApprovals} variant="secondary" aria-label={t('approvalsPanel.actions.refreshAria')}>
               {loading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-600" aria-hidden />
@@ -468,6 +478,133 @@ const ApprovalsPanel = () => {
           )}
         </div>
       </div>
+
+
+      {approvalSummary.feedback && !approvalSummary.show && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-md rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-xl">
+          {approvalSummary.feedback.message}
+        </div>
+      )}
+
+      {approvalSummary.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-lg bg-white shadow-xl">
+            <div className="border-b border-slate-200 p-5">
+              <h2 className="text-xl font-semibold text-slate-900">Pending approvals summary</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Review all pending requests in one window. Every request starts toggled to approve; switch a request to reject or remove it to handle it later in the normal flow.
+              </p>
+            </div>
+            <div className="max-h-[65vh] space-y-4 overflow-y-auto p-5">
+              {approvalSummary.feedback && (
+                <div className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+                  {approvalSummary.feedback.message}
+                </div>
+              )}
+              {approvalSummary.requestIds.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
+                  No requests remain in this approval summary.
+                </div>
+              ) : (
+                approvalSummary.requestIds.map((requestId) => {
+                  const req = requests.find((candidate) => candidate.request_id === requestId);
+                  if (!req) return null;
+                  const items = itemsMap[requestId] || [];
+                  return (
+                    <section key={requestId} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold text-slate-900">Request #{requestId}</h3>
+                          <dl className="mt-2 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
+                            <div><dt className="font-medium text-slate-500">Department</dt><dd>{req.department_name || '—'}</dd></div>
+                            <div><dt className="font-medium text-slate-500">Section</dt><dd>{req.section_name || '—'}</dd></div>
+                            <div><dt className="font-medium text-slate-500">Related project</dt><dd>{req.project_name || 'Not applicable'}</dd></div>
+                            <div><dt className="font-medium text-slate-500">Requester</dt><dd>{getRequesterDisplay(req)}</dd></div>
+                          </dl>
+                          <div className="mt-3 text-sm text-slate-700">
+                            <span className="font-medium text-slate-500">Justification: </span>
+                            {req.justification || 'No justification provided.'}
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:min-w-56">
+                          <div className="inline-flex rounded-md border border-slate-300 bg-white p-1">
+                            {['Approved', 'Rejected'].map((decision) => (
+                              <button
+                                key={decision}
+                                type="button"
+                                className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${
+                                  approvalSummary.decisions[requestId] === decision
+                                    ? decision === 'Approved'
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'bg-rose-600 text-white'
+                                    : 'text-slate-600 hover:bg-slate-100'
+                                }`}
+                                onClick={() => approvalSummary.setDecision(requestId, decision)}
+                              >
+                                {decision === 'Approved' ? 'Approve' : 'Reject'}
+                              </button>
+                            ))}
+                          </div>
+                          <Button variant="secondary" onClick={() => approvalSummary.remove(requestId)}>
+                            Remove from summary
+                          </Button>
+                        </div>
+                      </div>
+                      <textarea
+                        className="mt-3 h-20 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Optional decision comments for this request"
+                        value={approvalSummary.comments[requestId] || ''}
+                        onChange={(event) => approvalSummary.setComment(requestId, event.target.value)}
+                      />
+                      {user?.role === 'SCM' && (
+                        <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+                          <label className="block text-sm font-medium text-blue-900" htmlFor={`summary-cost-${requestId}`}>Estimated cost</label>
+                          <AmountInput
+                            id={`summary-cost-${requestId}`}
+                            className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                            placeholder={t('approvalsPanel.cost.placeholder')}
+                            value={estimatedCostDrafts[requestId] ?? ''}
+                            onChange={(event) => handleEstimatedCostDraftChange(requestId, event.target.value)}
+                          />
+                        </div>
+                      )}
+                      <div className="mt-4 rounded-md bg-white p-3">
+                        <ItemDecisionTable
+                          items={items}
+                          decisions={itemDecisions[requestId] || {}}
+                          quantityDrafts={itemQuantityDrafts[requestId] || {}}
+                          canEdit
+                          isItemLockedForUser={isItemLockedForUser}
+                          onStatusChange={(itemId, status) => handleItemStatusChange(requestId, itemId, status)}
+                          onCommentChange={(itemId, value) => handleItemCommentChange(requestId, itemId, value)}
+                          onQuantityChange={(itemId, value) => handleItemQuantityChange(requestId, itemId, value)}
+                          onSave={() => saveItemDecisions(requestId, req.approval_id)}
+                          saving={!!savingItems[requestId]}
+                          summary={itemSummaries[requestId]}
+                          feedback={itemFeedback[requestId]}
+                          labels={itemLabels}
+                        />
+                      </div>
+                    </section>
+                  );
+                })
+              )}
+            </div>
+            <div className="flex justify-end gap-3 border-t border-slate-200 p-5">
+              <Button
+                onClick={approvalSummary.submit}
+                disabled={approvalSummary.requestIds.length === 0 || approvalSummary.submitting}
+                isLoading={approvalSummary.submitting}
+              >
+                Take approval decision
+              </Button>
+              <Button variant="ghost" onClick={approvalSummary.close} disabled={approvalSummary.submitting}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showHodModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

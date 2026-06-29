@@ -11,6 +11,7 @@ import useRequestAttachments from '../hooks/useRequestAttachments';
 import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
 import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
+import { updateRequest } from '../api/requests';
 
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
@@ -33,6 +34,10 @@ const MyMaintenanceRequests = () => {
   const [expandedItemsId, setExpandedItemsId] = useState(null);
   const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
+  const [editingRequest, setEditingRequest] = useState(null);
+  const [editForm, setEditForm] = useState({ justification: '', items: [] });
+  const [editError, setEditError] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -162,6 +167,109 @@ const MyMaintenanceRequests = () => {
     }),
     [tr],
   );
+
+
+  const canEditBeforeFinalApproval = useCallback((request) => {
+    const normalizedStatus = (request?.status || '').trim().toLowerCase();
+    return !['approved', 'completed', 'received', 'cancelled'].includes(normalizedStatus);
+  }, []);
+
+  const openEditRequest = useCallback((request) => {
+    setEditError('');
+    setEditingRequest(request);
+    setEditForm({
+      justification: request?.justification || '',
+      items: Array.isArray(request?.items) && request.items.length > 0
+        ? request.items.map((item) => ({
+            item_name: item?.item_name || '',
+            brand: item?.brand || '',
+            quantity: item?.quantity ?? '',
+            unit_cost: item?.unit_cost ?? '',
+            specs: item?.specs || '',
+          }))
+        : [{ item_name: '', brand: '', quantity: 1, unit_cost: '', specs: '' }],
+    });
+  }, []);
+
+  const closeEditRequest = useCallback(() => {
+    setEditingRequest(null);
+    setEditForm({ justification: '', items: [] });
+    setEditError('');
+    setEditSubmitting(false);
+  }, []);
+
+  const handleEditItemChange = (index, field, value) => {
+    setEditForm((prev) => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [field]: value };
+      return { ...prev, items };
+    });
+  };
+
+  const addEditItem = () => {
+    setEditForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { item_name: '', brand: '', quantity: 1, unit_cost: '', specs: '' }],
+    }));
+  };
+
+  const removeEditItem = (index) => {
+    setEditForm((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, idx) => idx !== index),
+    }));
+  };
+
+  const submitEditRequest = async (event) => {
+    event.preventDefault();
+    if (!editingRequest) return;
+
+    const sanitizedItems = editForm.items.map((item) => ({
+      item_name: item.item_name?.trim(),
+      brand: item.brand?.trim() || undefined,
+      quantity: Number(item.quantity),
+      unit_cost: item.unit_cost === '' || item.unit_cost === null || item.unit_cost === undefined
+        ? null
+        : Number(item.unit_cost),
+      specs: item.specs?.trim() || undefined,
+    }));
+
+    if (sanitizedItems.some((item) => !item.item_name || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
+      setEditError('Enter at least one valid item name and whole-number quantity.');
+      return;
+    }
+
+    setEditSubmitting(true);
+    setEditError('');
+
+    try {
+      await updateRequest(editingRequest.id, {
+        justification: editForm.justification,
+        items: sanitizedItems,
+      });
+
+      setRequests((prev) => prev.map((request) => (
+        request.id === editingRequest.id
+          ? {
+              ...request,
+              justification: editForm.justification,
+              status: 'Submitted',
+              items: sanitizedItems.map((item, idx) => ({
+                ...item,
+                id: editingRequest.items?.[idx]?.id || `${editingRequest.id}-${idx}`,
+                total_cost: item.unit_cost === null ? null : item.unit_cost * item.quantity,
+              })),
+            }
+          : request
+      )));
+      closeEditRequest();
+    } catch (err) {
+      console.error('❌ Failed to edit maintenance request:', err);
+      setEditError(err?.response?.data?.error || err?.response?.data?.message || 'Failed to update maintenance request.');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
 
   const getStatusBadge = (status = '') => {
     const base = 'px-2 py-1 text-xs font-semibold rounded';
@@ -748,6 +856,7 @@ const MyMaintenanceRequests = () => {
                   <th className="border px-3 py-2 text-left">{tr('table.attachments')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.items')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.approvals')}</th>
+                  <th className="border px-3 py-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -823,10 +932,23 @@ const MyMaintenanceRequests = () => {
                               : t('common.viewApprovals')}
                           </button>
                         </td>
+                        <td className="border px-3 py-2">
+                          {canEditBeforeFinalApproval(r) ? (
+                            <button
+                              type="button"
+                              onClick={() => openEditRequest(r)}
+                              className="rounded bg-amber-600 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-700"
+                            >
+                              Edit request
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
                       </tr>
                       {isAttachmentsExpanded && (
                         <tr>
-                          <td colSpan={9} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={10} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <RequestAttachmentsSection
                               attachments={attachments}
                               isLoading={attachmentsLoading}
@@ -845,7 +967,7 @@ const MyMaintenanceRequests = () => {
                       )}
                       {isItemsExpanded && (
                         <tr>
-                          <td colSpan={9} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={10} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <div className="space-y-3">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <h3 className="font-semibold text-gray-700">{itemCopy.heading}</h3>
@@ -911,7 +1033,7 @@ const MyMaintenanceRequests = () => {
                       )}
                       {isApprovalsExpanded && (
                         <tr>
-                          <td colSpan={9} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={10} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <ApprovalTimeline
                               approvals={approvalsMap[r.id]}
                               isLoading={loadingApprovalsId === r.id}
@@ -963,6 +1085,50 @@ const MyMaintenanceRequests = () => {
           </>
         )}
       </div>
+
+      {editingRequest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <form onSubmit={submitEditRequest} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold">Edit maintenance request #{editingRequest.id}</h2>
+                <p className="text-sm text-gray-600">After saving, only SCM approval will be requested again.</p>
+              </div>
+              <button type="button" onClick={closeEditRequest} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            {editError && <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
+            <label className="mb-3 block text-sm font-medium text-gray-700">
+              Justification
+              <textarea
+                value={editForm.justification}
+                onChange={(event) => setEditForm((prev) => ({ ...prev, justification: event.target.value }))}
+                className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                rows={3}
+              />
+            </label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Items</h3>
+                <button type="button" onClick={addEditItem} className="rounded border px-3 py-1 text-sm font-medium hover:bg-gray-50">Add item</button>
+              </div>
+              {editForm.items.map((item, index) => (
+                <div key={index} className="grid gap-2 rounded border border-gray-200 p-3 md:grid-cols-5">
+                  <input value={item.item_name} onChange={(event) => handleEditItemChange(index, 'item_name', event.target.value)} placeholder="Item name" className="rounded border px-2 py-1 md:col-span-2" />
+                  <input value={item.quantity} onChange={(event) => handleEditItemChange(index, 'quantity', event.target.value)} placeholder="Qty" type="number" min="1" className="rounded border px-2 py-1" />
+                  <input value={item.unit_cost} onChange={(event) => handleEditItemChange(index, 'unit_cost', event.target.value)} placeholder="Unit cost" type="number" min="0" className="rounded border px-2 py-1" />
+                  <button type="button" onClick={() => removeEditItem(index)} disabled={editForm.items.length === 1} className="rounded border px-2 py-1 text-sm text-red-600 disabled:opacity-50">Remove</button>
+                  <input value={item.brand} onChange={(event) => handleEditItemChange(index, 'brand', event.target.value)} placeholder="Brand" className="rounded border px-2 py-1" />
+                  <input value={item.specs} onChange={(event) => handleEditItemChange(index, 'specs', event.target.value)} placeholder="Specs" className="rounded border px-2 py-1 md:col-span-4" />
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={closeEditRequest} className="rounded border px-4 py-2">Cancel</button>
+              <button type="submit" disabled={editSubmitting} className="rounded bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-60">{editSubmitting ? 'Saving…' : 'Save and request SCM approval'}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </>
   );
 };

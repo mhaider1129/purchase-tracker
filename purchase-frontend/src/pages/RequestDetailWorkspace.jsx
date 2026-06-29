@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
+import { getDisplayItems } from '../utils/itemUtils';
 
 const tabs = ['Overview', 'Items', 'Approvals', 'Procurement', 'Timeline', 'Documents', 'Linked Records', 'Communication', 'Audit'];
 const noteTypes = ['internal_note', 'department_follow_up', 'supplier_follow_up', 'clarification', 'finance_note', 'warehouse_note'];
@@ -100,7 +101,9 @@ const RequestDetailWorkspace = () => {
   const [noteTarget, setNoteTarget] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [procurementForm, setProcurementForm] = useState({ item_id: '', event_quantity: '', unit_cost: '', supplier_id: '', procurement_date: new Date().toISOString().slice(0, 10), procurement_note: '' });
+  const [procurementItemSearch, setProcurementItemSearch] = useState('');
   const [noteForm, setNoteForm] = useState({ note_type: 'internal_note', note: '' });
+  const [sortItemsAlphabetically, setSortItemsAlphabetically] = useState(false);
 
   const fetchWorkspace = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -134,6 +137,10 @@ const RequestDetailWorkspace = () => {
   const auditLogs = workspace?.audit_logs || EMPTY_ARRAY;
   const timeline = workspace?.timeline || EMPTY_ARRAY;
   const actions = new Set(workspace?.available_actions || EMPTY_ARRAY);
+  const displayedItems = useMemo(
+    () => getDisplayItems(items, sortItemsAlphabetically),
+    [items, sortItemsAlphabetically],
+  );
 
   const summary = useMemo(() => {
     const totalItems = items.length;
@@ -159,11 +166,36 @@ const RequestDetailWorkspace = () => {
   }, {}), [attachments]);
 
   const openProcurementModal = (item) => {
+    setProcurementItemSearch('');
     setProcurementForm((prev) => ({ ...prev, item_id: item?.item_id || item?.id || '', event_quantity: '', unit_cost: item?.unit_cost || '', supplier_id: item?.supplier_id || '', procurement_note: '' }));
     setProcurementModalOpen(true);
   };
 
+  const filteredProcurementItems = useMemo(() => {
+    const query = procurementItemSearch.trim().toLowerCase();
+    if (!query) return items;
+
+    return items.filter((item) => [
+      item.item_name,
+      item.brand,
+      item.category,
+      item.specs,
+      item.intended_use,
+      item.supplier_name,
+    ].some((value) => String(value || '').toLowerCase().includes(query)));
+  }, [items, procurementItemSearch]);
+
   const selectedProcurementItem = items.find((item) => String(item.item_id || item.id) === String(procurementForm.item_id));
+
+  useEffect(() => {
+    if (!procurementModalOpen || filteredProcurementItems.length === 0) return;
+
+    const selectedItemStillVisible = filteredProcurementItems.some((item) => String(item.item_id || item.id) === String(procurementForm.item_id));
+    if (!selectedItemStillVisible) {
+      const firstItem = filteredProcurementItems[0];
+      setProcurementForm((prev) => ({ ...prev, item_id: firstItem.item_id || firstItem.id }));
+    }
+  }, [filteredProcurementItems, procurementForm.item_id, procurementModalOpen]);
 
   const submitProcurementEvent = async (event) => {
     event.preventDefault();
@@ -296,12 +328,27 @@ const RequestDetailWorkspace = () => {
 
         {activeTab === 'Items' && (
           <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 print:hidden">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Requested items</h2>
+                <p className="text-xs text-slate-500">Sorting only changes this view and does not update the saved request.</p>
+              </div>
+              {items.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setSortItemsAlphabetically((prev) => !prev)}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  {sortItemsAlphabetically ? 'Original order' : 'Sort A-Z'}
+                </button>
+              ) : null}
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Item</th><th className="px-4 py-3">Requested</th><th className="px-4 py-3">Purchased</th><th className="px-4 py-3">Remaining</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Supplier</th><th className="px-4 py-3">Latest unit cost</th><th className="px-4 py-3 print:hidden">Actions</th></tr></thead>
+                <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Item</th><th className="px-4 py-3">Specs</th><th className="px-4 py-3">Intended use</th><th className="px-4 py-3">Requested</th><th className="px-4 py-3">Purchased</th><th className="px-4 py-3">Remaining</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Supplier</th><th className="px-4 py-3">Latest unit cost</th><th className="px-4 py-3 print:hidden">Actions</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {items.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p></td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{item.procurement_status}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') ? <button className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700" disabled title="Use existing procurement status workflow if configured">Unable</button> : null}</div></td></tr>)}
-                  {items.length === 0 ? <tr><td colSpan="8" className="p-6"><EmptyState>No requested items found.</EmptyState></td></tr> : null}
+                  {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{item.procurement_status}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') ? <button className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700" disabled title="Use existing procurement status workflow if configured">Unable</button> : null}</div></td></tr>)}
+                  {items.length === 0 ? <tr><td colSpan="10" className="p-6"><EmptyState>No requested items found.</EmptyState></td></tr> : null}
                 </tbody>
               </table>
             </div>
@@ -363,8 +410,12 @@ const RequestDetailWorkspace = () => {
       {procurementModalOpen && (
         <ModalShell title="Register Procurement Entry" onClose={() => setProcurementModalOpen(false)}>
           <form onSubmit={submitProcurementEvent} className="space-y-4">
-            <label className="block text-sm font-semibold text-slate-700">Item<select value={procurementForm.item_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, item_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required>{items.map((item) => <option key={item.item_id || item.id} value={item.item_id || item.id}>{item.item_name}</option>)}</select></label>
-            {selectedProcurementItem ? <div className="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-3"><span>Requested: <b>{selectedProcurementItem.requested_quantity}</b></span><span>Purchased: <b>{selectedProcurementItem.purchased_quantity}</b></span><span>Remaining: <b>{selectedProcurementItem.remaining_quantity}</b></span></div> : null}
+            <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
+              <label className="block text-sm font-semibold text-slate-700">Search items<input type="search" value={procurementItemSearch} onChange={(event) => setProcurementItemSearch(event.target.value)} placeholder="Search by item, brand, specs, intended use, or supplier" className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label>
+              <label className="block text-sm font-semibold text-slate-700">Item<select value={procurementForm.item_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, item_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required>{filteredProcurementItems.map((item) => <option key={item.item_id || item.id} value={item.item_id || item.id}>{item.item_name}</option>)}</select></label>
+            </div>
+            {filteredProcurementItems.length === 0 ? <p className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">No items match that search.</p> : null}
+            {selectedProcurementItem ? <div className="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-3"><span>Requested: <b>{selectedProcurementItem.requested_quantity}</b></span><span>Purchased: <b>{selectedProcurementItem.purchased_quantity}</b></span><span>Remaining: <b>{selectedProcurementItem.remaining_quantity}</b></span><span className="sm:col-span-3">Specs: <b>{selectedProcurementItem.specs || '—'}</b></span><span className="sm:col-span-3">Intended use: <b>{selectedProcurementItem.intended_use || '—'}</b></span></div> : null}
             <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-semibold text-slate-700">Event quantity<input type="number" min="1" max={selectedProcurementItem?.remaining_quantity || undefined} value={procurementForm.event_quantity} onChange={(event) => setProcurementForm((prev) => ({ ...prev, event_quantity: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /></label><label className="block text-sm font-semibold text-slate-700">Unit cost<input type="number" min="0" step="0.01" value={procurementForm.unit_cost} onChange={(event) => setProcurementForm((prev) => ({ ...prev, unit_cost: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label><label className="block text-sm font-semibold text-slate-700">Supplier<select value={procurementForm.supplier_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, supplier_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2"><option value="">No supplier selected</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label><label className="block text-sm font-semibold text-slate-700">Procurement date<input type="date" value={procurementForm.procurement_date} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_date: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label></div>
             <label className="block text-sm font-semibold text-slate-700">Note<textarea value={procurementForm.procurement_note} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_note: event.target.value }))} className="mt-1 min-h-24 w-full rounded-lg border border-slate-300 p-2" /></label>
             <div className="flex justify-end gap-2"><button type="button" onClick={() => setProcurementModalOpen(false)} className="rounded-lg border px-4 py-2">Cancel</button><button disabled={submitting} className="rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Saving…' : 'Save entry'}</button></div>

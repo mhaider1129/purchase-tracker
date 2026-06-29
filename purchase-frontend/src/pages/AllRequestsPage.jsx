@@ -119,6 +119,24 @@ const STEP_LABELS = {
   ProcurementSpecialist: 'Procurement Specialist Action',
 };
 
+const getMaintenanceReference = (request) => {
+  if (request?.request_type !== 'Maintenance') return null;
+  const reference = request?.maintenance_ref_number;
+  return reference === null || reference === undefined || reference === '' ? '—' : reference;
+};
+
+
+const CURRENT_STEP_FILTER_OPTIONS = [
+  { value: 'Submitted', label: 'Submitted' },
+  { value: 'Rejected', label: 'Rejected' },
+  { value: 'Completed', label: 'Completed' },
+  { value: 'Technical Inspection Pending', label: 'Technical Inspection Pending' },
+  { value: 'Received', label: 'Received' },
+  { value: 'Partially Procured', label: 'Partially Procured' },
+  { value: 'Approved', label: 'Approved' },
+  ...Object.entries(STEP_LABELS).map(([value, label]) => ({ value, label })),
+];
+
 const getCurrentStep = (req) => {
   if (req.status === 'Rejected') return 'Rejected';
   if (req.status?.toLowerCase() === 'completed') return 'Completed';
@@ -188,6 +206,8 @@ const AllRequestsPage = () => {
   const [requestType, setRequestType] = useState('');
   const [search, setSearch] = useState('');
   const [requestId, setRequestId] = useState('');
+  const [maintenanceRefNumber, setMaintenanceRefNumber] = useState('');
+  const [currentStep, setCurrentStep] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [status, setStatus] = useState('');
@@ -201,6 +221,7 @@ const AllRequestsPage = () => {
   const [totalRequests, setTotalRequests] = useState(0);
   const [summaryCounts, setSummaryCounts] = useState({ urgent: 0, approved: 0, pending: 0, completed: 0 });
   const [loadingExport, setLoadingExport] = useState(false);
+  const [remindingApproverIds, setRemindingApproverIds] = useState(() => new Set());
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [printLanguage, setPrintLanguage] = useState('ar');
@@ -267,6 +288,7 @@ const AllRequestsPage = () => {
     ];
   }, [summaryCounts, totalRequests]);
   const canHardDeleteRequests = hasPermission(user || {}, 'requests.manage');
+  const canRemindCurrentApprover = String(user?.role || '').trim().toUpperCase() === 'SCM';
   const isSummaryRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
 
   useEffect(() => {
@@ -304,6 +326,8 @@ const AllRequestsPage = () => {
           request_type: requestType,
           search,
           request_id: requestId.trim() || undefined,
+          maintenance_ref_number: maintenanceRefNumber.trim() || undefined,
+          current_step: currentStep || undefined,
           from_date: fromDate,
           to_date: toDate,
           status,
@@ -345,6 +369,8 @@ const AllRequestsPage = () => {
           request_type: requestType,
           search,
           request_id: requestId.trim() || undefined,
+          maintenance_ref_number: maintenanceRefNumber.trim() || undefined,
+          current_step: currentStep || undefined,
           from_date: fromDate,
           to_date: toDate,
           status,
@@ -380,7 +406,9 @@ const AllRequestsPage = () => {
     assignedUser,
     department,
     filter,
+    currentStep,
     fromDate,
+    maintenanceRefNumber,
     page,
     requestId,
     requestType,
@@ -415,6 +443,8 @@ const AllRequestsPage = () => {
     setRequestType('');
     setSearch('');
     setRequestId('');
+    setMaintenanceRefNumber('');
+    setCurrentStep('');
     setFromDate('');
     setToDate('');
     setStatus('');
@@ -467,6 +497,8 @@ const AllRequestsPage = () => {
           request_type: requestType,
           search,
           request_id: requestId.trim() || undefined,
+          maintenance_ref_number: maintenanceRefNumber.trim() || undefined,
+          current_step: currentStep || undefined,
           from_date: fromDate,
           to_date: toDate,
           status,
@@ -917,6 +949,28 @@ const AllRequestsPage = () => {
     }
   };
 
+  const handleRemindCurrentApprover = async (requestId) => {
+    const confirmed = window.confirm(
+      `Send an email reminder to the current approver for request ${requestId}?`,
+    );
+    if (!confirmed) return;
+
+    setRemindingApproverIds((prev) => new Set(prev).add(requestId));
+    try {
+      const res = await axios.post(`/approvals/request/${requestId}/remind-current`);
+      alert(res?.data?.message || '✅ Approval reminder email sent.');
+    } catch (err) {
+      console.error(`❌ Failed to remind current approver for request ${requestId}:`, err);
+      alert(err?.response?.data?.message || '❌ Failed to send approval reminder.');
+    } finally {
+      setRemindingApproverIds((prev) => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
+    }
+  };
+
   const handleHardDelete = async (requestId) => {
     const confirmed = window.confirm(
       `Delete request ${requestId} permanently? This removes the request and all related records.`,
@@ -1019,6 +1073,23 @@ const AllRequestsPage = () => {
           value={requestId}
           onChange={(e) => setRequestId(e.target.value)}
         />
+
+        <input
+          type="text"
+          className="border p-2 rounded"
+          placeholder="Maintenance Reference Number"
+          value={maintenanceRefNumber}
+          onChange={(e) => setMaintenanceRefNumber(e.target.value)}
+        />
+
+        <select className="border p-2 rounded" value={currentStep} onChange={(e) => setCurrentStep(e.target.value)}>
+          <option value="">All Current Steps</option>
+          {CURRENT_STEP_FILTER_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
 
         <input
           type="date"
@@ -1205,6 +1276,9 @@ const AllRequestsPage = () => {
                           {request.justification || 'No justification provided.'}
                         </p>
                         <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-600" aria-label={`Summary for request ${request.id}`}>
+                          {getMaintenanceReference(request) && (
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">Maintenance Ref #: {getMaintenanceReference(request)}</span>
+                          )}
                           <span className="rounded-full bg-slate-100 px-2 py-0.5">Project: {request.project_name || '—'}</span>
                           <span className="rounded-full bg-slate-100 px-2 py-0.5">Department: {request.department_name || '—'}</span>
                           <span className="rounded-full bg-slate-100 px-2 py-0.5">Requester: {requesterDisplay}</span>
@@ -1217,6 +1291,11 @@ const AllRequestsPage = () => {
                     ) : (
                       <>
                         <p><strong>Type:</strong> {request.request_type}</p>
+                        {getMaintenanceReference(request) && (
+                          <p>
+                            <strong>Maintenance Ref #:</strong> {getMaintenanceReference(request)}
+                          </p>
+                        )}
                         <p>
                           <strong>Project:</strong> {request.project_name || '—'}
                         </p>
@@ -1259,6 +1338,17 @@ const AllRequestsPage = () => {
                     >
                       Print
                     </button>
+                    {canRemindCurrentApprover && (
+                      <button
+                        type="button"
+                        className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        onClick={() => handleRemindCurrentApprover(request.id)}
+                        disabled={remindingApproverIds.has(request.id) || !request.current_approver_role}
+                        title={request.current_approver_role ? 'Email a reminder to the current approver' : 'No current approver to remind'}
+                      >
+                        {remindingApproverIds.has(request.id) ? 'Sending reminder...' : 'Remind Approver'}
+                      </button>
+                    )}
                     {canHardDeleteRequests && (
                       <button
                         className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
@@ -1355,14 +1445,20 @@ const AllRequestsPage = () => {
                 {expandedItemsId === request.id && (
                   <div className="mt-4 border-t pt-2">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-semibold">Requested Items</h3>
+                      <div>
+                        <h3 className="font-semibold">Requested Items</h3>
+                        <p className="text-xs text-gray-500">
+                          Sort items in this request view only; the saved request order is unchanged.
+                        </p>
+                      </div>
                       {itemsMap[request.id]?.length > 1 && (
                         <button
                           type="button"
+                          aria-pressed={alphabetizedItemsId === request.id}
                           onClick={() =>
                             setAlphabetizedItemsId((prev) => (prev === request.id ? null : request.id))
                           }
-                          className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
+                          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100"
                         >
                           {alphabetizedItemsId === request.id ? 'Original order' : 'Sort A-Z'}
                         </button>
