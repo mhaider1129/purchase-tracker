@@ -1067,6 +1067,11 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                               {t('maintenanceHODApprovals.flags.budgetExceededBadge', 'Over budget')}
                             </span>
                           )}
+                          {request.is_edit_approval && (
+                            <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs font-semibold text-purple-700">
+                              Edit approval
+                            </span>
+                          )}
                         </div>
                         <p className="text-base font-semibold text-slate-900">
                           {request.justification || t('maintenanceHODApprovals.labels.noJustification')}
@@ -1391,6 +1396,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                     onChange={(event) =>
                                       handleEstimatedCostChange(request.request_id, event.target.value)
                                     }
+                                    disabled={Boolean(request.is_edit_approval)}
                                   />
                                   <p className="text-xs text-slate-500">
                                     {t('maintenanceHODApprovals.cost.helper')}
@@ -1438,6 +1444,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                 })}
                               >
                                 {isProcessing && processingDecision === 'Approved' ? 'Approving…' : t('maintenanceHODApprovals.actions.approve')}
+                                {request.is_edit_approval && !(isProcessing && processingDecision === 'Approved') ? ' Edit' : ''}
                               </Button>
                               <Button
                                 variant="destructive"

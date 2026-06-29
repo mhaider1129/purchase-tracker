@@ -21,6 +21,7 @@ const ApprovalRequestCard = ({
     requesterLabel = 'Requester',
     submittedLabel = 'Submitted',
     estimatedCostLabel = 'Estimated Cost',
+    maintenanceRefLabel = 'Maintenance Ref #',
     urgentLabel = 'Urgent',
     approvalStatusLabel = 'Approval Status',
     compactSummaryLabel = 'Request summary',
@@ -74,6 +75,11 @@ const ApprovalRequestCard = ({
                 {request.request_type}
               </span>
             )}
+            {request.maintenance_ref_number && (
+              <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+                {maintenanceRefLabel}: {request.maintenance_ref_number}
+              </span>
+            )}
             {isUrgentRequest && (
               <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
                 {urgentLabel}
@@ -103,6 +109,11 @@ const ApprovalRequestCard = ({
               <span className="rounded-full bg-slate-100 px-2 py-0.5">
                 {estimatedCostLabel}: {estimatedCostValue.toLocaleString()} IQD
               </span>
+              {request.maintenance_ref_number && (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                  {maintenanceRefLabel}: {request.maintenance_ref_number}
+                </span>
+              )}
             </div>
           )}
           <div className={`${compactView ? 'sr-only' : 'mt-1 flex'} flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600`}>
@@ -118,6 +129,11 @@ const ApprovalRequestCard = ({
             <span>
               {estimatedCostLabel}: {estimatedCostValue.toLocaleString()} IQD
             </span>
+            {request.maintenance_ref_number && (
+              <span>
+                <strong>{maintenanceRefLabel}:</strong> {request.maintenance_ref_number}
+              </span>
+            )}
             {costTag ? (
               <span className="inline-flex items-center gap-1">
                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold text-white ${costTag.color}`}>

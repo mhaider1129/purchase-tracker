@@ -740,7 +740,7 @@ const useApprovalsData = (user) => {
       fetchApprovals();
     } catch (err) {
       console.error('❌ Reassignment failed:', err);
-      alert('Failed to assign request to department requester.');
+      alert(err?.response?.data?.message || err?.response?.data?.error || 'Failed to assign request to department requester.');
     }
   };
 
