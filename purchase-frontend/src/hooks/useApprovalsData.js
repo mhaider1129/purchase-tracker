@@ -32,6 +32,7 @@ const useApprovalsData = (user) => {
   const [savingItems, setSavingItems] = useState({});
   const [itemSummaries, setItemSummaries] = useState({});
   const [itemFeedback, setItemFeedback] = useState({});
+  const [warehouseConversionItems, setWarehouseConversionItems] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
@@ -215,6 +216,13 @@ const useApprovalsData = (user) => {
     return summary;
   }, []);
 
+  const canConvertItemsToWarehouseSupply = useCallback(
+    (request) =>
+      (user?.role || '').toUpperCase() === 'WAREHOUSEMANAGER' &&
+      request?.request_type !== 'Warehouse Supply',
+    [user?.role],
+  );
+
   const loadItemsForRequest = useCallback(async (requestId) => {
     if (itemsMap[requestId]) {
       return itemsMap[requestId];
@@ -327,6 +335,45 @@ const useApprovalsData = (user) => {
     }));
   };
 
+  const handleWarehouseConversionToggle = (requestId, itemId, checked) => {
+    const currentItems = itemsMap[requestId] || [];
+    const targetItem = currentItems.find((it) => it.id === itemId);
+
+    if (targetItem && isItemLockedForUser(targetItem)) {
+      setItemFeedback((prev) => ({
+        ...prev,
+        [requestId]: {
+          type: 'warning',
+          message: 'Items rejected by a previous approver cannot be changed.',
+        },
+      }));
+      return;
+    }
+
+    setWarehouseConversionItems((prev) => ({
+      ...prev,
+      [requestId]: {
+        ...(prev[requestId] || {}),
+        [itemId]: Boolean(checked),
+      },
+    }));
+
+    if (checked) {
+      setItemDecisions((prev) => ({
+        ...prev,
+        [requestId]: {
+          ...(prev[requestId] || {}),
+          [itemId]: {
+            status: 'Rejected',
+            comments:
+              prev[requestId]?.[itemId]?.comments ||
+              'Converted to warehouse supply request because stock is available.',
+          },
+        },
+      }));
+    }
+  };
+
   const handleItemQuantityChange = (requestId, itemId, quantityValue) => {
     const currentItems = itemsMap[requestId] || [];
     const targetItem = currentItems.find((it) => it.id === itemId);
@@ -354,6 +401,7 @@ const useApprovalsData = (user) => {
   const saveItemDecisions = async (requestId, approvalId, options = {}) => {
     const decisionsForRequest = itemDecisions[requestId] || {};
     const quantityDrafts = itemQuantityDrafts[requestId] || {};
+    const conversionsForRequest = warehouseConversionItems[requestId] || {};
     const itemsForRequest = itemsMap[requestId] || [];
 
     const payloadItems = [];
@@ -366,8 +414,11 @@ const useApprovalsData = (user) => {
         comments: item?.approval_comments || '',
       };
 
-      const status = decision?.status || 'Pending';
-      const commentsValue = decision?.comments || '';
+      const convertToWarehouseSupply = Boolean(conversionsForRequest[item.id]);
+      const status = convertToWarehouseSupply ? 'Rejected' : decision?.status || 'Pending';
+      const commentsValue = convertToWarehouseSupply
+        ? decision?.comments || 'Converted to warehouse supply request because stock is available.'
+        : decision?.comments || '';
       const rawQuantity = quantityDrafts[item.id];
       const hasQuantityDraft = rawQuantity !== undefined && rawQuantity !== null && rawQuantity !== '';
 
@@ -405,11 +456,12 @@ const useApprovalsData = (user) => {
         status !== (item.approval_status || 'Pending') || commentsValue !== (item.approval_comments || '');
       const quantityChanged = hasQuantityDraft && parsedQuantity !== Number(item.quantity);
 
-      if (statusChanged || quantityChanged) {
+      if (statusChanged || quantityChanged || convertToWarehouseSupply) {
         payloadItems.push({
           item_id: Number(item.id),
           status,
           comments: commentsValue,
+          convert_to_warehouse_supply: convertToWarehouseSupply,
           ...(hasQuantityDraft ? { quantity: parsedQuantity } : {}),
         });
       }
@@ -474,6 +526,16 @@ const useApprovalsData = (user) => {
           return { ...prev, [requestId]: existing };
         });
 
+        setWarehouseConversionItems((prev) => {
+          const existing = { ...(prev[requestId] || {}) };
+          res.data.updatedItems.forEach((item) => {
+            if (item.converted_to_warehouse_supply) {
+              existing[item.id] = false;
+            }
+          });
+          return { ...prev, [requestId]: existing };
+        });
+
         setItemDecisions((prev) => {
           const existing = { ...(prev[requestId] || {}) };
           res.data.updatedItems.forEach((item) => {
@@ -508,6 +570,10 @@ const useApprovalsData = (user) => {
         }));
       }
 
+      const conversionMessage = res.data?.warehouseSupplyRequestId
+        ? ` Converted item(s) to Warehouse Supply Request #${res.data.warehouseSupplyRequestId}.`
+        : '';
+
       if (res.data?.lockedItems?.length) {
         const lockedMessage = `Items locked by previous approvers: ${res.data.lockedItems.join(', ')}.`;
         const baseSummaryMessage = ` Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.`;
@@ -515,7 +581,7 @@ const useApprovalsData = (user) => {
           ...prev,
           [requestId]: {
             type: 'warning',
-            message: `${lockedMessage}${baseSummaryMessage}`,
+            message: `${lockedMessage}${baseSummaryMessage}${conversionMessage}`,
           },
         }));
       } else {
@@ -523,7 +589,7 @@ const useApprovalsData = (user) => {
           ...prev,
           [requestId]: {
             type: 'success',
-            message: `Item decisions saved. Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.`,
+            message: `Item decisions saved. Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.${conversionMessage}`,
           },
         }));
       }
@@ -1074,6 +1140,7 @@ const useApprovalsData = (user) => {
     handleEstimatedCostDraftChange,
     handleItemCommentChange,
     handleItemQuantityChange,
+    handleWarehouseConversionToggle,
     handleItemStatusChange,
     handleModalEstimatedCostChange,
     hasActiveFilters,
@@ -1084,9 +1151,11 @@ const useApprovalsData = (user) => {
     hodSubmitLoading,
     holdLoadingMap,
     isItemLockedForUser,
+    canConvertItemsToWarehouseSupply,
     isUrgent,
     itemDecisions,
     itemFeedback,
+    warehouseConversionItems,
     itemsMap,
     itemQuantityDrafts,
     itemSummaries,

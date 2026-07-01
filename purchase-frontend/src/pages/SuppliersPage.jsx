@@ -10,9 +10,13 @@ import {
 } from "lucide-react";
 import {
   createSupplier,
+  createSupplierContact,
   deleteSupplier,
+  deleteSupplierContact,
+  listSupplierContacts,
   listSuppliers,
   updateSupplier,
+  updateSupplierContact,
 } from "../api/suppliers";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -49,6 +53,20 @@ const SuppliersPage = () => {
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
   const [saving, setSaving] = useState(false);
+  const [contacts, setContacts] = useState([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactError, setContactError] = useState("");
+  const [contactSuccess, setContactSuccess] = useState("");
+  const [selectedContactId, setSelectedContactId] = useState(null);
+  const [contactFormValues, setContactFormValues] = useState({
+    name: "",
+    phone_number: "",
+    email: "",
+    position: "",
+    responsibility: "",
+    notes: "",
+    is_primary: false,
+  });
 
   const supplierModules = useMemo(
     () => [
@@ -194,8 +212,125 @@ const SuppliersPage = () => {
     });
   }, [search, suppliers]);
 
+  const selectedSupplier = useMemo(
+    () => suppliers.find((supplier) => supplier.id === selectedSupplierId) || null,
+    [selectedSupplierId, suppliers],
+  );
+
+  const resetContactForm = () => {
+    setSelectedContactId(null);
+    setContactFormValues({
+      name: "",
+      phone_number: "",
+      email: "",
+      position: "",
+      responsibility: "",
+      notes: "",
+      is_primary: false,
+    });
+  };
+
+  const fetchSupplierContacts = useCallback(async (supplierId) => {
+    if (!supplierId) {
+      setContacts([]);
+      return;
+    }
+
+    setContactsLoading(true);
+    setContactError("");
+    try {
+      const data = await listSupplierContacts(supplierId);
+      setContacts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("❌ Failed to load supplier contacts:", err);
+      setContactError(t("suppliersPage.contacts.loadError"));
+      setContacts([]);
+    } finally {
+      setContactsLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    fetchSupplierContacts(selectedSupplierId);
+  }, [fetchSupplierContacts, selectedSupplierId]);
+
+  const handleContactFormChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setContactFormValues((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  };
+
+  const handleContactEditSelect = (contact) => {
+    setSelectedContactId(contact.id);
+    setContactFormValues({
+      name: contact.name || "",
+      phone_number: contact.phone_number || "",
+      email: contact.email || "",
+      position: contact.position || "",
+      responsibility: contact.responsibility || "",
+      notes: contact.notes || "",
+      is_primary: Boolean(contact.is_primary),
+    });
+    setContactError("");
+    setContactSuccess("");
+  };
+
+  const handleContactSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedSupplierId) return;
+    setContactError("");
+    setContactSuccess("");
+
+    if (!contactFormValues.name.trim()) {
+      setContactError(t("suppliersPage.contacts.validation.name"));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (selectedContactId) {
+        await updateSupplierContact(selectedSupplierId, selectedContactId, contactFormValues);
+        setContactSuccess(t("suppliersPage.contacts.updated"));
+      } else {
+        await createSupplierContact(selectedSupplierId, contactFormValues);
+        setContactSuccess(t("suppliersPage.contacts.created"));
+      }
+      await fetchSupplierContacts(selectedSupplierId);
+      resetContactForm();
+    } catch (err) {
+      console.error("❌ Failed to save supplier contact:", err);
+      setContactError(err?.response?.data?.message || t("suppliersPage.contacts.genericError"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleContactDelete = async (contact) => {
+    if (!selectedSupplierId) return;
+    const confirmation = window.confirm(t("suppliersPage.contacts.confirmDelete", { name: contact.name }));
+    if (!confirmation) return;
+
+    setSaving(true);
+    setContactError("");
+    setContactSuccess("");
+    try {
+      await deleteSupplierContact(selectedSupplierId, contact.id);
+      await fetchSupplierContacts(selectedSupplierId);
+      if (selectedContactId === contact.id) resetContactForm();
+      setContactSuccess(t("suppliersPage.contacts.deleted", { name: contact.name }));
+    } catch (err) {
+      console.error("❌ Failed to delete supplier contact:", err);
+      setContactError(err?.response?.data?.message || t("suppliersPage.contacts.deleteError"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const resetForm = () => {
     setSelectedSupplierId(null);
+    setContacts([]);
+    resetContactForm();
+    setContactError("");
+    setContactSuccess("");
     setFormValues({
       name: "",
       contact_email: "",
@@ -709,6 +844,74 @@ const SuppliersPage = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </section>
+
+          <section className="lg:col-span-3">
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+              <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{t("suppliersPage.contacts.title")}</h2>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                  {selectedSupplier ? t("suppliersPage.contacts.selected", { name: selectedSupplier.name }) : t("suppliersPage.contacts.selectSupplier")}
+                </p>
+              </div>
+              {selectedSupplier ? (
+                <div className="grid gap-6 p-4 lg:grid-cols-3">
+                  <form className="space-y-4" onSubmit={handleContactSubmit}>
+                    <InputField t={t} id="supplier-contact-name" name="name" value={contactFormValues.name} onChange={handleContactFormChange} labelKey="suppliersPage.contacts.name" />
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                      <InputField t={t} id="supplier-contact-phone" name="phone_number" value={contactFormValues.phone_number} onChange={handleContactFormChange} labelKey="suppliersPage.contacts.phone" type="tel" />
+                      <InputField t={t} id="supplier-contact-email" name="email" value={contactFormValues.email} onChange={handleContactFormChange} labelKey="suppliersPage.contacts.email" type="email" />
+                      <InputField t={t} id="supplier-contact-position" name="position" value={contactFormValues.position} onChange={handleContactFormChange} labelKey="suppliersPage.contacts.position" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="supplier-contact-responsibility">{t("suppliersPage.contacts.responsibility")}</label>
+                      <textarea id="supplier-contact-responsibility" name="responsibility" value={contactFormValues.responsibility} onChange={handleContactFormChange} rows={2} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="supplier-contact-notes">{t("suppliersPage.contacts.notes")}</label>
+                      <textarea id="supplier-contact-notes" name="notes" value={contactFormValues.notes} onChange={handleContactFormChange} rows={2} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950" />
+                    </div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
+                      <input type="checkbox" name="is_primary" checked={contactFormValues.is_primary} onChange={handleContactFormChange} className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                      {t("suppliersPage.contacts.primary")}
+                    </label>
+                    {contactError && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/40 dark:text-red-100">{contactError}</div>}
+                    {contactSuccess && <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-800 dark:bg-green-900/40 dark:text-green-100">{contactSuccess}</div>}
+                    <div className="flex flex-wrap gap-3">
+                      <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500">{selectedContactId ? t("suppliersPage.contacts.update") : t("suppliersPage.contacts.create")}</button>
+                      <button type="button" onClick={resetContactForm} disabled={saving} className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-800 transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800">{t("suppliersPage.contacts.reset")}</button>
+                    </div>
+                  </form>
+                  <div className="lg:col-span-2">
+                    {contactsLoading ? (
+                      <div className="p-6 text-center text-gray-600 dark:text-gray-300">{t("suppliersPage.contacts.loading")}</div>
+                    ) : contacts.length === 0 ? (
+                      <div className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:text-gray-300">{t("suppliersPage.contacts.empty")}</div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-gray-800">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                          <thead className="bg-gray-50 dark:bg-gray-800"><tr>{["name","phone","email","position","responsibility","actions"].map((key) => <th key={key} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-200">{t(`suppliersPage.contacts.table.${key}`)}</th>)}</tr></thead>
+                          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                            {contacts.map((contact) => (
+                              <tr key={contact.id} className={selectedContactId === contact.id ? "bg-blue-50/60 dark:bg-blue-900/40" : ""}>
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{contact.name}{contact.is_primary ? <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-200">{t("suppliersPage.contacts.primaryBadge")}</span> : null}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{contact.phone_number || "-"}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{contact.email || "-"}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{contact.position || "-"}</td>
+                                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{contact.responsibility || "-"}</td>
+                                <td className="px-4 py-3 text-sm"><div className="flex gap-2"><button type="button" onClick={() => handleContactEditSelect(contact)} className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-800 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-800">{t("suppliersPage.actions.manage")}</button><button type="button" onClick={() => handleContactDelete(contact)} disabled={saving} className="rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 dark:border-red-700/70 dark:text-red-200 dark:hover:bg-red-900/30">{t("suppliersPage.actions.delete")}</button></div></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 text-center text-sm text-gray-600 dark:text-gray-300">{t("suppliersPage.contacts.noSupplier")}</div>
+              )}
             </div>
           </section>
 

@@ -19,6 +19,25 @@ export const deleteSupplier = async (id, options = {}) => {
   await api.delete(`/suppliers/${id}`, options);
 };
 
+export const listSupplierContacts = async (id, options = {}) => {
+  const response = await api.get(`/suppliers/${id}/contacts`, options);
+  return Array.isArray(response.data) ? response.data : [];
+};
+
+export const createSupplierContact = async (id, payload, options = {}) => {
+  const response = await api.post(`/suppliers/${id}/contacts`, payload, options);
+  return response.data;
+};
+
+export const updateSupplierContact = async (id, contactId, payload, options = {}) => {
+  const response = await api.patch(`/suppliers/${id}/contacts/${contactId}`, payload, options);
+  return response.data;
+};
+
+export const deleteSupplierContact = async (id, contactId, options = {}) => {
+  await api.delete(`/suppliers/${id}/contacts/${contactId}`, options);
+};
+
 export const getSuppliersDashboard = async (options = {}) => {
   const response = await api.get('/suppliers/dashboard', options);
   return response.data || {};
@@ -69,6 +88,10 @@ const suppliersApi = {
   createSupplier,
   updateSupplier,
   deleteSupplier,
+  listSupplierContacts,
+  createSupplierContact,
+  updateSupplierContact,
+  deleteSupplierContact,
   getSuppliersDashboard,
   getSupplierProfile,
   updateSupplierClassification,

@@ -17,6 +17,9 @@ const ItemDecisionTable = ({
   onStatusChange,
   onCommentChange,
   onQuantityChange,
+  onWarehouseConversionToggle,
+  canConvertToWarehouseSupply = false,
+  warehouseConversionSelections = {},
   onSave,
   saving,
   summary,
@@ -39,6 +42,7 @@ const ItemDecisionTable = ({
     approvedLabel = 'Approved',
     rejectedLabel = 'Rejected',
     pendingLabel = 'Pending',
+    convertToWarehouseSupplyLabel = 'Convert to warehouse supply',
   } = labels;
 
   return (
@@ -71,6 +75,9 @@ const ItemDecisionTable = ({
                 <th className="px-3 py-2 text-left font-medium text-slate-600">{totalCostLabel}</th>
                 <th className="px-3 py-2 text-left font-medium text-slate-600">{decisionLabel}</th>
                 <th className="px-3 py-2 text-left font-medium text-slate-600">{commentsLabel}</th>
+                {canConvertToWarehouseSupply && (
+                  <th className="px-3 py-2 text-left font-medium text-slate-600">{convertToWarehouseSupplyLabel}</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -86,6 +93,7 @@ const ItemDecisionTable = ({
                 const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || '';
                 const decisionLocked = canEdit && isItemLockedForUser?.(item);
                 const quantityValue = quantityDrafts[item.id] ?? item.quantity ?? '';
+                const convertSelected = Boolean(warehouseConversionSelections[item.id]);
 
                 return (
                   <tr key={item.id || item.item_name} className={`${rowHighlight} transition-colors`}>
@@ -109,7 +117,7 @@ const ItemDecisionTable = ({
                           value={quantityValue}
                           onChange={(event) => onQuantityChange(item.id, event.target.value)}
                           className="w-24 rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={decisionLocked}
+                          disabled={decisionLocked || convertSelected}
                         />
                       ) : (
                         <span>{item.quantity ?? '—'}</span>
@@ -124,7 +132,7 @@ const ItemDecisionTable = ({
                           className="w-full rounded-md border border-slate-200 px-2 py-1 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           value={decision.status || 'Pending'}
                           onChange={(event) => onStatusChange(item.id, event.target.value)}
-                          disabled={decisionLocked}
+                          disabled={decisionLocked || convertSelected}
                         >
                           <option value="Pending">Pending</option>
                           <option value="Approved">Approved</option>
@@ -142,7 +150,7 @@ const ItemDecisionTable = ({
                           placeholder="Optional comments"
                           value={decision.comments || ''}
                           onChange={(event) => onCommentChange(item.id, event.target.value)}
-                          disabled={decisionLocked}
+                          disabled={decisionLocked || convertSelected}
                         />
                       ) : (
                         <span>{decision.comments || '—'}</span>
@@ -153,6 +161,20 @@ const ItemDecisionTable = ({
                         </p>
                       )}
                     </td>
+                    {canConvertToWarehouseSupply && (
+                      <td className="px-3 py-3 text-slate-600">
+                        <label className="inline-flex items-start gap-2 text-xs font-medium text-slate-700">
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            checked={convertSelected}
+                            onChange={(event) => onWarehouseConversionToggle?.(item.id, event.target.checked)}
+                            disabled={decisionLocked}
+                          />
+                          <span>Use stock and reject from purchase</span>
+                        </label>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

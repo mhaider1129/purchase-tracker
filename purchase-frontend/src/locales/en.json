@@ -617,6 +617,43 @@
         "Legal compliance",
         "Audit"
       ]
+    },
+    "contacts": {
+      "title": "Supplier contacts register",
+      "selected": "Managing contacts for {{name}}",
+      "selectSupplier": "Select a supplier from the register to add or maintain its contacts.",
+      "noSupplier": "Choose Manage on a supplier row to define contacts for that supplier.",
+      "loading": "Loading contacts...",
+      "loadError": "Unable to load supplier contacts.",
+      "empty": "No contacts have been registered for this supplier yet.",
+      "name": "Contact name",
+      "phone": "Phone number",
+      "email": "Email",
+      "position": "Position",
+      "responsibility": "Responsibility",
+      "notes": "Notes / other details",
+      "primary": "Primary contact",
+      "primaryBadge": "Primary",
+      "create": "Add contact",
+      "update": "Update contact",
+      "reset": "Reset contact form",
+      "created": "Contact was added successfully.",
+      "updated": "Contact was updated successfully.",
+      "deleted": "{{name}} was removed from the contacts register.",
+      "genericError": "Unable to save the contact right now. Please try again.",
+      "deleteError": "Unable to delete the contact right now.",
+      "confirmDelete": "Delete contact {{name}}?",
+      "validation": {
+        "name": "Contact name is required."
+      },
+      "table": {
+        "name": "Name",
+        "phone": "Phone",
+        "email": "Email",
+        "position": "Position",
+        "responsibility": "Responsibility",
+        "actions": "Actions"
+      }
     }
   },
   "suppliersPrequalification": {

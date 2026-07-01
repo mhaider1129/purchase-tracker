@@ -64,7 +64,10 @@ const ContractForm = ({
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="currency">Currency</label>
-          <input id="currency" name="currency" type="text" value={formState.currency} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <select id="currency" name="currency" value={formState.currency} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+            <option value="IQD">IQD</option>
+            <option value="USD">USD</option>
+          </select>
         </div>
         <div className="sm:col-span-2">
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Parties Information</h3>

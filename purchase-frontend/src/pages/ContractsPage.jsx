@@ -111,6 +111,20 @@ const renewalOptions = [
 
 const EXPIRING_SOON_THRESHOLD_DAYS = 30;
 
+const CURRENCY_OPTIONS = ['IQD', 'USD'];
+const USD_TO_IQD_RATE = Number(process.env.REACT_APP_USD_TO_IQD_RATE || 1600);
+
+const normalizeCurrency = (currency) => {
+  const normalized = String(currency || 'IQD').trim().toUpperCase();
+  return CURRENCY_OPTIONS.includes(normalized) ? normalized : 'IQD';
+};
+
+const toIqd = (amount, currency) => {
+  const numeric = Number(amount);
+  if (!Number.isFinite(numeric)) return null;
+  return normalizeCurrency(currency) === 'USD' ? numeric * USD_TO_IQD_RATE : numeric;
+};
+
 const statStyles = {
   active: {
     gradient: 'from-emerald-500/90 to-emerald-600',
@@ -851,7 +865,7 @@ const ContractsPage = () => {
       institute: formState.institute.trim() || null,
       contract_category: formState.contract_category.trim() || null,
       renewal_type: formState.renewal_type.trim() || null,
-      currency: formState.currency.trim() || null,
+      currency: normalizeCurrency(formState.currency),
       first_party: formState.first_party.trim() || null,
       second_party: formState.second_party.trim() || null,
       authorized_signatory: formState.authorized_signatory.trim() || null,
@@ -1214,13 +1228,13 @@ const ContractsPage = () => {
         stats.active += 1;
       }
 
-      const numericValue = Number(contract.contract_value);
-      const numericPaid = Number(contract.amount_paid);
-      if (Number.isFinite(numericValue)) {
-        stats.totalValue += numericValue;
+      const iqdValue = toIqd(contract.contract_value, contract.currency);
+      const iqdPaid = toIqd(contract.amount_paid, contract.currency);
+      if (Number.isFinite(iqdValue)) {
+        stats.totalValue += iqdValue;
       }
-      if (Number.isFinite(numericPaid)) {
-        stats.totalPaid += numericPaid;
+      if (Number.isFinite(iqdPaid)) {
+        stats.totalPaid += iqdPaid;
       }
 
       if (contract.is_expired) {
@@ -1233,6 +1247,9 @@ const ContractsPage = () => {
       }
 
       const daysUntilExpiry = contract.days_until_expiry;
+      if (['terminated', 'archived', 'expired'].includes(normalizedStatus)) {
+        return;
+      }
       if (typeof daysUntilExpiry === 'number' && daysUntilExpiry >= 0) {
         if (!stats.nextRenewal || daysUntilExpiry < stats.nextRenewal.daysUntil) {
           stats.nextRenewal = {
@@ -1335,7 +1352,7 @@ const ContractsPage = () => {
     saveAs(blob, 'contracts-export.csv');
   }, [sortedContracts]);
 
-  const formatCurrency = useCallback((value) => {
+  const formatCurrency = useCallback((value, currency = null) => {
     if (value === null || value === undefined) return null;
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return null;
@@ -1343,7 +1360,7 @@ const ContractsPage = () => {
     return new Intl.NumberFormat(undefined, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    }).format(numeric);
+    }).format(numeric) + (currency ? ` ${normalizeCurrency(currency)}` : '');
   }, []);
 
   const handlePrintContracts = useCallback(() => {
@@ -1363,8 +1380,8 @@ const ContractsPage = () => {
             <td>${contract.start_date || ''}</td>
             <td>${contract.end_date || ''}</td>
             <td>${(contract.status || '').toUpperCase()}</td>
-            <td>${formatCurrency(contract.contract_value) ?? ''}</td>
-            <td>${formatCurrency(contract.amount_paid) ?? ''}</td>
+            <td>${formatCurrency(contract.contract_value, contract.currency) ?? ''}</td>
+            <td>${formatCurrency(contract.amount_paid, contract.currency) ?? ''}</td>
           </tr>
         `
       )
@@ -1422,6 +1439,11 @@ const ContractsPage = () => {
   };
 
   const renderExpiry = (contract) => {
+    const normalizedStatus = (contract?.status || '').toLowerCase();
+    if (['terminated', 'archived'].includes(normalizedStatus)) {
+      return renewalPill('inactive', normalizedStatus === 'terminated' ? 'Terminated' : 'Archived');
+    }
+
     if (!contract.end_date) {
       return renewalPill('ok', 'No end date');
     }
@@ -1451,7 +1473,12 @@ const ContractsPage = () => {
   };
 
   const getPaidSummary = useCallback((contract) => {
-    const paidValue = Number(contract?.amount_paid);
+    const registeredPaymentTotal = viewingContract?.id === contract?.id
+      ? contractPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)
+      : null;
+    const paidValue = registeredPaymentTotal !== null && registeredPaymentTotal > 0
+      ? registeredPaymentTotal
+      : Number(contract?.amount_paid);
     const totalValue = Number(contract?.contract_value);
     const hasPaid = Number.isFinite(paidValue);
     const hasTotal = Number.isFinite(totalValue) && totalValue > 0;
@@ -1459,11 +1486,11 @@ const ContractsPage = () => {
     const percent = hasTotal && hasPaid ? Math.min((paidValue / totalValue) * 100, 9999) : null;
 
     return {
-      formattedPaid: hasPaid ? formatCurrency(paidValue) : null,
-      formattedTotal: hasTotal ? formatCurrency(totalValue) : null,
+      formattedPaid: hasPaid ? formatCurrency(paidValue, contract?.currency) : null,
+      formattedTotal: hasTotal ? formatCurrency(totalValue, contract?.currency) : null,
       percent: percent !== null ? Number(percent.toFixed(1)) : null,
     };
-  }, [formatCurrency]);
+  }, [contractPayments, formatCurrency, viewingContract?.id]);
 
   const selectedContractInsights = useMemo(() => {
     if (!viewingContract) {
@@ -1630,6 +1657,7 @@ const ContractsPage = () => {
   const renewalPill = (tone, label) => {
     const colorMap = {
       expired: 'bg-rose-50 text-rose-700 ring-rose-100 dark:bg-rose-900/30 dark:text-rose-200 dark:ring-rose-800/60',
+      inactive: 'bg-gray-100 text-gray-700 ring-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:ring-gray-700',
       expiring: 'bg-amber-50 text-amber-700 ring-amber-100 dark:bg-amber-900/30 dark:text-amber-200 dark:ring-amber-800/60',
       ok: 'bg-emerald-50 text-emerald-700 ring-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-200 dark:ring-emerald-800/60',
     };
@@ -1641,6 +1669,7 @@ const ContractsPage = () => {
         }`}
       >
         {tone === 'expired' && '⏳'}
+        {tone === 'inactive' && '⏸️'}
         {tone === 'expiring' && '⚠️'}
         {tone === 'ok' && '✅'}
         {label}
@@ -1705,10 +1734,10 @@ const ContractsPage = () => {
           <StatCard
             tone="paid"
             title="Paid to date"
-            value={formatCurrency(totalPaid) ?? '—'}
+            value={formatCurrency(totalPaid, 'IQD') ?? '—'}
             description={
               totalValue
-                ? `of ${formatCurrency(totalValue)}${paidCoverage !== null ? ` • ${paidCoverage}% paid` : ''}`
+                ? `of ${formatCurrency(totalValue, 'IQD')}${paidCoverage !== null ? ` • ${paidCoverage}% paid` : ''}`
                 : 'Add contract values to track spend'
             }
           />
@@ -1844,7 +1873,7 @@ const ContractsPage = () => {
                   sortedContracts.map((contract) => {
                     const isSelected = viewingContract?.id === contract.id;
                     const paidSummary = getPaidSummary(contract);
-                    const contractValue = formatCurrency(contract.contract_value);
+                    const contractValue = formatCurrency(contract.contract_value, contract.currency);
                     return (
                       <button
                         key={contract.id}
@@ -1935,8 +1964,8 @@ const ContractsPage = () => {
                     ) : (
                       sortedContracts.map((contract, index) => {
                         const isSelected = viewingContract?.id === contract.id;
-                        const contractValue = formatCurrency(contract.contract_value);
-                        const estimatedValue = formatCurrency(contract.estimated_contract_value);
+                        const contractValue = formatCurrency(contract.contract_value, contract.currency);
+                        const estimatedValue = formatCurrency(contract.estimated_contract_value, contract.currency);
                         const paidSummary = getPaidSummary(contract);
                         const paidBarTone =
                           paidSummary.percent === null
@@ -2204,6 +2233,22 @@ const ContractsPage = () => {
                       </p>
                     </div>
                     <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">First party</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.first_party || <span className="italic text-gray-500">Not specified</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Second party</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">
+                        {viewingContract.second_party || <span className="italic text-gray-500">Not specified</span>}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</h3>
+                      <p className="mt-1 text-gray-900 dark:text-gray-100">{normalizeCurrency(viewingContract.currency)}</p>
+                    </div>
+                    <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Supplier record</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
                         {viewingContract.supplier_id
@@ -2246,7 +2291,7 @@ const ContractsPage = () => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Contract value</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
-                        {formatCurrency(viewingContract.contract_value) ?? '—'}
+                        {formatCurrency(viewingContract.contract_value, viewingContract.currency) ?? '—'}
                       </p>
                     </div>
                     <div>

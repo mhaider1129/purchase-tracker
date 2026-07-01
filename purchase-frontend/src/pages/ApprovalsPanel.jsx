@@ -55,6 +55,7 @@ const ApprovalsPanel = () => {
     handleEstimatedCostDraftChange,
     handleItemCommentChange,
     handleItemQuantityChange,
+    handleWarehouseConversionToggle,
     handleItemStatusChange,
     handleModalEstimatedCostChange,
     hasActiveFilters,
@@ -65,8 +66,10 @@ const ApprovalsPanel = () => {
     holdLoadingMap,
     isUrgent,
     isItemLockedForUser,
+    canConvertItemsToWarehouseSupply,
     itemDecisions,
     itemFeedback,
+    warehouseConversionItems,
     itemsMap,
     itemQuantityDrafts,
     itemSummaries,
@@ -143,6 +146,7 @@ const ApprovalsPanel = () => {
     rejectedLabel: t('approvalsPanel.items.rejected'),
     pendingLabel: t('approvalsPanel.items.pending'),
     emptyLabel: t('approvalsPanel.items.empty'),
+    convertToWarehouseSupplyLabel: 'Warehouse stock',
   };
 
   const modalTitles = {
@@ -384,6 +388,11 @@ const ApprovalsPanel = () => {
                           onQuantityChange={(itemId, value) =>
                             handleItemQuantityChange(req.request_id, itemId, value)
                           }
+                          canConvertToWarehouseSupply={canConvertItemsToWarehouseSupply(req)}
+                          warehouseConversionSelections={warehouseConversionItems[req.request_id] || {}}
+                          onWarehouseConversionToggle={(itemId, checked) =>
+                            handleWarehouseConversionToggle(req.request_id, itemId, checked)
+                          }
                           onSave={() => saveItemDecisions(req.request_id, req.approval_id)}
                           saving={!!savingItems[req.request_id]}
                           summary={itemSummaries[req.request_id]}
@@ -578,6 +587,9 @@ const ApprovalsPanel = () => {
                           onStatusChange={(itemId, status) => handleItemStatusChange(requestId, itemId, status)}
                           onCommentChange={(itemId, value) => handleItemCommentChange(requestId, itemId, value)}
                           onQuantityChange={(itemId, value) => handleItemQuantityChange(requestId, itemId, value)}
+                          canConvertToWarehouseSupply={canConvertItemsToWarehouseSupply(req)}
+                          warehouseConversionSelections={warehouseConversionItems[requestId] || {}}
+                          onWarehouseConversionToggle={(itemId, checked) => handleWarehouseConversionToggle(requestId, itemId, checked)}
                           onSave={() => saveItemDecisions(requestId, req.approval_id)}
                           saving={!!savingItems[requestId]}
                           summary={itemSummaries[requestId]}
