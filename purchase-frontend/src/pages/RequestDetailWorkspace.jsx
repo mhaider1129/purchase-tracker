@@ -239,8 +239,8 @@ const RequestDetailWorkspace = () => {
     setSubmitting(true);
     try {
       await api.put(`/requested-items/${itemStatusTarget.item_id || itemStatusTarget.id}/procurement-status`, {
-        status: itemStatusForm.procurement_status,
-        comment: itemStatusForm.procurement_comment,
+        procurement_status: itemStatusForm.procurement_status,
+        procurement_comment: itemStatusForm.procurement_comment,
       });
       setItemStatusModalOpen(false);
       setItemStatusTarget(null);
