@@ -45,10 +45,11 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   const [entryForm, setEntryForm] = useState({
     event_quantity: "",
     unit_cost: item.unit_cost ?? "",
-    supplier_name: "",
+    supplier_id: item.supplier_id || "",
     procurement_date: new Date().toISOString().slice(0, 10),
     procurement_note: "",
   });
+  const [suppliers, setSuppliers] = useState([]);
   const [savingEntry, setSavingEntry] = useState(false);
   const [historyEvents, setHistoryEvents] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -159,6 +160,13 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   useEffect(() => {
     fetchItemAttachments();
   }, [fetchItemAttachments]);
+
+  useEffect(() => {
+    axios
+      .get("/suppliers")
+      .then((res) => setSuppliers(Array.isArray(res.data) ? res.data : res.data?.suppliers || []))
+      .catch(() => setSuppliers([]));
+  }, []);
 
   const handleUploadAttachment = async (event) => {
     const file = event.target.files?.[0];
@@ -600,6 +608,13 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
     await fetchProcurementHistory();
   };
 
+  // Retain legacy status-form helpers for backward compatibility while this page routes procurement updates through the shared register-procurement flow.
+  void saving;
+  void setShowMoreDetails;
+  void originalUnitCost;
+  void savingsDriverOptions;
+  void handleSave;
+
   const handleAddProcurementEntry = async () => {
     if (!procurementEventsSupported) {
       setMessage({
@@ -635,7 +650,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       await axios.post(`/requests/${item.request_id}/items/${item.id}/procurement-events`, {
         event_quantity: quantityToAdd,
         unit_cost: numericUnitCost,
-        supplier_name: entryForm.supplier_name || null,
+        supplier_id: entryForm.supplier_id || null,
         procurement_date: entryForm.procurement_date || null,
         procurement_note: entryForm.procurement_note || null,
       });
@@ -644,7 +659,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
       setEntryForm({
         event_quantity: "",
         unit_cost: numericUnitCost ?? "",
-        supplier_name: "",
+        supplier_id: "",
         procurement_date: new Date().toISOString().slice(0, 10),
         procurement_note: "",
       });
@@ -663,8 +678,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
   };
 
   return (
-    <div className="mb-4 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200">
-      <div className="p-4 sm:p-5">
+    <div className="mb-3 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:border-blue-200 hover:shadow-md">
+      <div className="p-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h4 className="text-lg font-semibold text-slate-800">
@@ -724,8 +739,8 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
               {tr("itemPanel.cards.requestedQty", "Requested Qty")}
             </p>
@@ -733,7 +748,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               {formatNumber(requestedQty)}
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
               {tr("itemPanel.cards.purchasedQty", "Purchased Qty")}
             </p>
@@ -741,7 +756,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               {formatNumber(purchasedQtyNumber)}
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
               {tr("itemPanel.cards.remainingQty", "Remaining Qty")}
             </p>
@@ -749,7 +764,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               {formatNumber(remainingQty)}
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[11px] uppercase tracking-wide text-slate-400">
               {tr("itemPanel.cards.latestProcurementDate", "Latest Procurement Date")}
             </p>
@@ -759,286 +774,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              {tr("itemPanel.inputs.unitCost", "Unit Cost")}
-            </label>
-            <AmountInput
-              min={0}
-              step="0.01"
-              value={unitCost}
-              onChange={(e) => setUnitCost(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-            {originalUnitCost !== null && (
-              <p className="mt-1 text-xs text-slate-500">
-                {tr(
-                  "itemPanel.inputs.originalUnitCost",
-                  "Originally requested at {{cost}}",
-                  {
-                    cost: formatNumber(originalUnitCost, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }),
-                  },
-                )}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              {tr("itemPanel.inputs.purchasedQuantitySummary", "Purchased Quantity Summary")}
-            </label>
-            <input
-              type="number"
-              min={0}
-              value={purchasedQty}
-              readOnly
-              className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-700"
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              {procurementEventsSupported
-                ? tr("itemPanel.inputs.purchasedQuantityHelper", "This summary is updated by adding procurement entries, not by overwriting old quantities.")
-                : tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.")}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setShowProcurementEntryModal(true)}
-                disabled={!procurementEventsSupported || Number(remainingQty || 0) <= 0}
-                title={!procurementEventsSupported ? tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.") : undefined}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-              >
-                {tr("itemPanel.procurementEntry.open", "Add Procurement Entry")}
-              </button>
-              <button
-                type="button"
-                onClick={openProcurementHistory}
-                disabled={!procurementEventsSupported}
-                title={!procurementEventsSupported ? tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.") : undefined}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-              >
-                {tr("itemPanel.procurementHistory.open", "Procurement History")} ({procurementEventsCount})
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              {tr("itemPanel.inputs.procurementStatus", "Procurement Status")}
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">
-                {tr("itemPanel.inputs.selectStatus", "-- Select Status --")}
-              </option>
-              {statusOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-
-            <label className="mt-3 block text-sm font-medium text-slate-700">
-              {tr(
-                "itemPanel.inputs.poIssuanceMethod",
-                "PO Issuance Method",
-              )}
-            </label>
-            <input
-              type="text"
-              value={poIssuanceMethod}
-              onChange={(e) => setPoIssuanceMethod(e.target.value)}
-              placeholder={tr(
-                "itemPanel.inputs.poIssuancePlaceholder",
-                "e.g., email, supplier portal, courier",
-              )}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              {tr("itemPanel.inputs.comment", "Comment")}
-            </label>
-            <textarea
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={2}
-              className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-          <button
-            type="button"
-            onClick={() => setShowMoreDetails((prev) => !prev)}
-            className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-700"
-            aria-expanded={showMoreDetails}
-          >
-            <span>
-              {tr("itemPanel.moreDetails.title", "Additional procurement details")}
-            </span>
-            <span className="text-xs text-slate-500">
-              {showMoreDetails
-                ? tr("itemPanel.moreDetails.hide", "Hide")
-                : tr("itemPanel.moreDetails.show", "Show")}
-            </span>
-          </button>
-          <p className="mt-1 text-xs text-slate-500">
-            {tr(
-              "itemPanel.moreDetails.helper",
-              "Includes PO, invoice, contract, savings, and attachment information.",
-            )}
-          </p>
-        </div>
-
-        {showMoreDetails && (
-          <>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                {tr("itemPanel.inputs.poNumber", "PO Number")}
-              </label>
-              <input
-                type="text"
-                value={poNumber}
-                onChange={(e) => setPoNumber(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                {tr("itemPanel.inputs.invoiceNumber", "Invoice Number")}
-              </label>
-              <input
-                type="text"
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                {tr("itemPanel.inputs.currency", "Currency")}
-              </label>
-              <input
-                type="text"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                placeholder={tr("itemPanel.inputs.currencyPlaceholder", "e.g., USD")}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                {tr("itemPanel.inputs.committedCost", "Committed Cost")}
-              </label>
-              <AmountInput
-                min={0}
-                step="0.01"
-                value={committedCost}
-                onChange={(e) => setCommittedCost(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">
-                {tr("itemPanel.inputs.paidCost", "Paid Cost")}
-              </label>
-              <AmountInput
-                min={0}
-                step="0.01"
-                value={paidCost}
-                onChange={(e) => setPaidCost(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">
-                  {tr("itemPanel.inputs.contractId", "Contract ID")}
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  step="1"
-                  value={contractId}
-                  onChange={(e) => setContractId(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">
-                  {tr(
-                    "itemPanel.inputs.contractSnapshot",
-                    "Contract Value Snapshot",
-                  )}
-                </label>
-                <AmountInput
-                  min={0}
-                  step="0.01"
-                  value={contractValueSnapshot}
-                  onChange={(e) => setContractValueSnapshot(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              {tr("itemPanel.inputs.savingsDriver", "Savings Driver")}
-            </label>
-            <select
-              value={savingsDriver}
-              onChange={(e) => setSavingsDriver(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              {savingsDriverOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-xs text-slate-500">
-              {tr(
-                "itemPanel.inputs.savingsHelper",
-                "Track whether savings came from negotiation, contract coverage, or other drivers.",
-              )}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700">
-              {tr("itemPanel.inputs.savingsNotes", "Savings Notes")}
-            </label>
-            <textarea
-              value={savingsNotes}
-              onChange={(e) => setSavingsNotes(e.target.value)}
-              rows={2}
-              className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-          </>
-        )}
-
-        <div className="mt-6 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-600">
             <span className="font-semibold text-slate-700">
               {tr("itemPanel.recordedLineTotal", "Recorded Line Total:")}
@@ -1049,22 +785,27 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             })}
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 ${
-              saving
-                ? "bg-green-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
-            type="button"
-          >
-            {saving
-              ? tr("itemPanel.buttons.saving", "Saving…")
-              : tr("itemPanel.buttons.save", "Save Updates")}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setShowProcurementEntryModal(true)}
+              disabled={!procurementEventsSupported || Number(remainingQty || 0) <= 0}
+              title={!procurementEventsSupported ? tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.") : undefined}
+              className="rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {tr("itemPanel.procurementEntry.register", "Register Procurement")}
+            </button>
+            <button
+              type="button"
+              onClick={openProcurementHistory}
+              disabled={!procurementEventsSupported}
+              title={!procurementEventsSupported ? tr("itemPanel.procurementEntry.unsupported", "Procurement entries are not available for this item type.") : undefined}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            >
+              {tr("itemPanel.procurementHistory.open", "Procurement History")} ({procurementEventsCount})
+            </button>
+          </div>
         </div>
-
 
 
         {showProcurementEntryModal && (
@@ -1072,7 +813,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-800">{tr("itemPanel.procurementEntry.title", "Add Procurement Entry")}</h3>
+                  <h3 className="text-lg font-semibold text-slate-800">{tr("itemPanel.procurementEntry.title", "Register Procurement Entry")}</h3>
                   <p className="text-sm text-slate-500">{item.item_name}</p>
                 </div>
                 <button type="button" onClick={() => setShowProcurementEntryModal(false)} className="text-slate-500 hover:text-slate-700">×</button>
@@ -1094,8 +835,13 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
                   <AmountInput min={0} step="0.01" value={entryForm.unit_cost} onChange={(e) => setEntryForm((prev) => ({ ...prev, unit_cost: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Supplier name</label>
-                  <input type="text" value={entryForm.supplier_name} onChange={(e) => setEntryForm((prev) => ({ ...prev, supplier_name: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <label className="block text-sm font-medium text-slate-700">Supplier</label>
+                  <select value={entryForm.supplier_id} onChange={(e) => setEntryForm((prev) => ({ ...prev, supplier_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                    <option value="">No supplier selected</option>
+                    {suppliers.map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Procurement date</label>
@@ -1114,7 +860,7 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowProcurementEntryModal(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
-                <button type="button" onClick={handleAddProcurementEntry} disabled={savingEntry || !procurementEventsSupported || Number(remainingQty || 0) <= 0} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">{savingEntry ? "Saving…" : "Add Entry"}</button>
+                <button type="button" onClick={handleAddProcurementEntry} disabled={savingEntry || !procurementEventsSupported || Number(remainingQty || 0) <= 0} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">{savingEntry ? "Saving…" : "Save entry"}</button>
               </div>
             </div>
           </div>

@@ -9,6 +9,7 @@ import PageShell from '../components/layout/PageShell';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import AmountInput from '../components/ui/AmountInput';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
+import { getDisplayItems } from '../utils/itemUtils';
 import { getRequesterDisplay } from '../utils/requester';
 import usePageTranslation from '../utils/usePageTranslation';
 
@@ -259,6 +260,7 @@ const AssignedRequestsPage = () => {
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [completionFilter, setCompletionFilter] = useState('all');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
+  const [sortItemsAlphabetically, setSortItemsAlphabetically] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [items, setItems] = useState([]);
   const [groupedItems, setGroupedItems] = useState(() => createEmptyGroups());
@@ -973,9 +975,11 @@ const AssignedRequestsPage = () => {
       setItems([]);
       setGroupedItems(createEmptyGroups());
       setAttachments([]);
+      setSortItemsAlphabetically(false);
     } else {
       fetchItems(requestId);
       fetchAttachments(requestId);
+      setSortItemsAlphabetically(false);
     }
   };
 
@@ -1353,8 +1357,28 @@ const AssignedRequestsPage = () => {
                           </div>
                         </div>
                         )}
+                        <div className="mb-4 flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <h3 className="text-sm font-semibold text-slate-800">
+                              {tr('items.sort.title', 'Item order')}
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                              {tr('items.sort.helper', 'Sorting only changes this view and does not update the saved request.')}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSortItemsAlphabetically((prev) => !prev)}
+                            disabled={items.length < 2}
+                            className="self-start rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+                          >
+                            {sortItemsAlphabetically
+                              ? tr('items.sort.original', 'Original order')
+                              : tr('items.sort.alphabetical', 'Sort A-Z')}
+                          </button>
+                        </div>
                         {itemSections.map(({ key, title, description, tone, empty }) => {
-                          const sectionItems = groupedItems[key] || [];
+                          const sectionItems = getDisplayItems(groupedItems[key] || [], sortItemsAlphabetically);
                           if (key === 'other' && sectionItems.length === 0) {
                             return null;
                           }

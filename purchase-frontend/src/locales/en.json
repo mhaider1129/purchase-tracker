@@ -3220,7 +3220,8 @@
       "submit": "Submit to IT",
       "accept": "Accept",
       "complete": "Complete",
-      "claimed": "Mark claimed"
+      "claimed": "Mark claimed",
+      "reject": "Reject"
     },
     "sections": {
       "queue": "IT Department Queue",
@@ -3243,7 +3244,8 @@
       "accepted": "Accepted by IT",
       "completed": "Ready to claim",
       "claimed": "Claimed",
-      "cancelled": "Cancelled"
+      "cancelled": "Cancelled",
+      "rejected": "Rejected by IT"
     },
     "messages": {
       "loadFailed": "Failed to load print service requests.",

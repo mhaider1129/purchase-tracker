@@ -103,6 +103,9 @@ const RequestDetailWorkspace = () => {
   const [procurementForm, setProcurementForm] = useState({ item_id: '', event_quantity: '', unit_cost: '', supplier_id: '', procurement_date: new Date().toISOString().slice(0, 10), procurement_note: '' });
   const [procurementItemSearch, setProcurementItemSearch] = useState('');
   const [noteForm, setNoteForm] = useState({ note_type: 'internal_note', note: '' });
+  const [itemStatusModalOpen, setItemStatusModalOpen] = useState(false);
+  const [itemStatusTarget, setItemStatusTarget] = useState(null);
+  const [itemStatusForm, setItemStatusForm] = useState({ procurement_status: 'not_procured', procurement_comment: '' });
   const [sortItemsAlphabetically, setSortItemsAlphabetically] = useState(false);
 
   const fetchWorkspace = useCallback(async (isRefresh = false) => {
@@ -187,6 +190,17 @@ const RequestDetailWorkspace = () => {
 
   const selectedProcurementItem = items.find((item) => String(item.item_id || item.id) === String(procurementForm.item_id));
 
+  const completionReadiness = useMemo(() => {
+    const finalizedStatuses = new Set(['purchased', 'completed', 'not_procured', 'canceled']);
+    const hasSavedCost = request.estimated_cost !== null && request.estimated_cost !== undefined && request.estimated_cost !== '' && Number(request.estimated_cost) >= 0;
+    const incompleteItems = items.filter((item) => !finalizedStatuses.has(String(item.procurement_status || '').trim().toLowerCase()));
+    return {
+      canComplete: hasSavedCost && items.length > 0 && incompleteItems.length === 0,
+      hasSavedCost,
+      incompleteItems,
+    };
+  }, [items, request.estimated_cost]);
+
   useEffect(() => {
     if (!procurementModalOpen || filteredProcurementItems.length === 0) return;
 
@@ -217,6 +231,56 @@ const RequestDetailWorkspace = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const submitItemStatus = async (event) => {
+    event.preventDefault();
+    if (!itemStatusTarget) return;
+    setSubmitting(true);
+    try {
+      await api.put(`/requested-items/${itemStatusTarget.item_id || itemStatusTarget.id}/procurement-status`, {
+        procurement_status: itemStatusForm.procurement_status,
+        procurement_comment: itemStatusForm.procurement_comment,
+      });
+      setItemStatusModalOpen(false);
+      setItemStatusTarget(null);
+      setItemStatusForm({ procurement_status: 'not_procured', procurement_comment: '' });
+      await fetchWorkspace(true);
+      setActiveTab('Items');
+    } catch (err) {
+      alert(err.response?.data?.error || err.response?.data?.message || 'Failed to update item status.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const markRequestCompleted = async () => {
+    if (!completionReadiness.canComplete) {
+      alert('Before completing, mark every item as purchased/completed or Not Procured/Canceled and make sure the request has a saved total cost.');
+      return;
+    }
+
+    if (!window.confirm('Mark this request as completed? Items marked Not Procured or Canceled will remain closed without purchase.')) return;
+
+    setSubmitting(true);
+    try {
+      await api.patch(`/requests/${requestId}/mark-completed`);
+      await fetchWorkspace(true);
+      setActiveTab('Overview');
+    } catch (err) {
+      alert(err.response?.data?.error || err.response?.data?.message || 'Failed to mark request as completed.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openItemStatusModal = (item, defaultStatus = 'not_procured') => {
+    setItemStatusTarget(item);
+    setItemStatusForm({
+      procurement_status: defaultStatus,
+      procurement_comment: item.latest_note || '',
+    });
+    setItemStatusModalOpen(true);
   };
 
   const submitNote = async (event) => {
@@ -283,6 +347,7 @@ const RequestDetailWorkspace = () => {
             <div className="flex flex-wrap gap-2 print:hidden">
               {actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(items[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">Register Procurement</button> : null}
               {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Add Note</button> : null}
+              {actions.has('mark_request_completed') ? <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} title={completionReadiness.canComplete ? 'Complete this request' : 'Finalize every item and save total cost before completing'} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>Mark Completed</button> : null}
               {actions.has('export_pdf') ? <button onClick={printWorkspace} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100">Print / PDF</button> : null}
               <button onClick={() => fetchWorkspace(true)} disabled={refreshing} className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">{refreshing ? 'Refreshing…' : 'Refresh'}</button>
             </div>
@@ -304,6 +369,19 @@ const RequestDetailWorkspace = () => {
               <Card title="Pending approvals" value={summary.pendingApprovals} />
               <Card title="Attachments" value={summary.attachmentsCount} />
             </div>
+            {actions.has('mark_request_completed') ? (
+              <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm print:hidden">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-lg font-bold text-emerald-950">Request completion</h2>
+                    <p className="text-sm text-emerald-800">Complete the request after purchased items are recorded. Any item that will not be bought must be marked Not Procured or Canceled first.</p>
+                    {!completionReadiness.hasSavedCost ? <p className="mt-2 text-xs font-semibold text-rose-700">A saved total cost is required before completion.</p> : null}
+                    {completionReadiness.incompleteItems.length > 0 ? <p className="mt-1 text-xs font-semibold text-rose-700">{completionReadiness.incompleteItems.length} item(s) still need a final purchased, completed, not procured, or canceled status.</p> : null}
+                  </div>
+                  <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>Mark Request as Completed</button>
+                </div>
+              </section>
+            ) : null}
             <div className="grid gap-6 lg:grid-cols-3">
               <section className="rounded-2xl bg-white p-6 shadow-sm lg:col-span-2">
                 <h2 className="text-lg font-bold text-slate-900">Request summary</h2>
@@ -347,7 +425,7 @@ const RequestDetailWorkspace = () => {
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Item</th><th className="px-4 py-3">Specs</th><th className="px-4 py-3">Intended use</th><th className="px-4 py-3">Requested</th><th className="px-4 py-3">Purchased</th><th className="px-4 py-3">Remaining</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Supplier</th><th className="px-4 py-3">Latest unit cost</th><th className="px-4 py-3 print:hidden">Actions</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{item.procurement_status}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') ? <button className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700" disabled title="Use existing procurement status workflow if configured">Unable</button> : null}</div></td></tr>)}
+                  {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{item.procurement_status}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') ? <><button onClick={() => openItemStatusModal(item, 'not_procured')} className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Not Procured</button><button onClick={() => openItemStatusModal(item, 'canceled')} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Cancel Item</button></> : null}</div></td></tr>)}
                   {items.length === 0 ? <tr><td colSpan="10" className="p-6"><EmptyState>No requested items found.</EmptyState></td></tr> : null}
                 </tbody>
               </table>
@@ -419,6 +497,17 @@ const RequestDetailWorkspace = () => {
             <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-semibold text-slate-700">Event quantity<input type="number" min="1" max={selectedProcurementItem?.remaining_quantity || undefined} value={procurementForm.event_quantity} onChange={(event) => setProcurementForm((prev) => ({ ...prev, event_quantity: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /></label><label className="block text-sm font-semibold text-slate-700">Unit cost<input type="number" min="0" step="0.01" value={procurementForm.unit_cost} onChange={(event) => setProcurementForm((prev) => ({ ...prev, unit_cost: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label><label className="block text-sm font-semibold text-slate-700">Supplier<select value={procurementForm.supplier_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, supplier_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2"><option value="">No supplier selected</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label><label className="block text-sm font-semibold text-slate-700">Procurement date<input type="date" value={procurementForm.procurement_date} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_date: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label></div>
             <label className="block text-sm font-semibold text-slate-700">Note<textarea value={procurementForm.procurement_note} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_note: event.target.value }))} className="mt-1 min-h-24 w-full rounded-lg border border-slate-300 p-2" /></label>
             <div className="flex justify-end gap-2"><button type="button" onClick={() => setProcurementModalOpen(false)} className="rounded-lg border px-4 py-2">Cancel</button><button disabled={submitting} className="rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Saving…' : 'Save entry'}</button></div>
+          </form>
+        </ModalShell>
+      )}
+
+      {itemStatusModalOpen && (
+        <ModalShell title={itemStatusTarget ? `Finalize ${itemStatusTarget.item_name}` : 'Finalize Item'} onClose={() => { setItemStatusModalOpen(false); setItemStatusTarget(null); }}>
+          <form onSubmit={submitItemStatus} className="space-y-4">
+            <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Use this when the item was not purchased and should not block completing the request.</p>
+            <label className="block text-sm font-semibold text-slate-700">Final item status<select value={itemStatusForm.procurement_status} onChange={(event) => setItemStatusForm((prev) => ({ ...prev, procurement_status: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2"><option value="not_procured">Not Procured / Will not be purchased</option><option value="canceled">Canceled</option></select></label>
+            <label className="block text-sm font-semibold text-slate-700">Reason / note<textarea value={itemStatusForm.procurement_comment} onChange={(event) => setItemStatusForm((prev) => ({ ...prev, procurement_comment: event.target.value }))} className="mt-1 min-h-28 w-full rounded-lg border border-slate-300 p-2" placeholder="Explain why this item will not be purchased." /></label>
+            <div className="flex justify-end gap-2"><button type="button" onClick={() => setItemStatusModalOpen(false)} className="rounded-lg border px-4 py-2">Cancel</button><button disabled={submitting} className="rounded-lg bg-rose-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Saving…' : 'Save status'}</button></div>
           </form>
         </ModalShell>
       )}

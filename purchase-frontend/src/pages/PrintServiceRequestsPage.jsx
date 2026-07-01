@@ -9,6 +9,7 @@ const STATUS_LABELS = {
   completed: 'printServiceRequestsPage.status.completed',
   claimed: 'printServiceRequestsPage.status.claimed',
   cancelled: 'printServiceRequestsPage.status.cancelled',
+  rejected: 'printServiceRequestsPage.status.rejected',
 };
 
 const normalize = (value) => String(value || '').trim().toLowerCase();
@@ -118,6 +119,7 @@ const PrintServiceRequestsPage = () => {
               <td className="px-4 py-3 text-gray-600">{request.updated_at ? new Date(request.updated_at).toLocaleString() : '—'}</td>
               <td className="space-x-2 px-4 py-3">
                 {mode === 'queue' && request.status === 'submitted' && <button onClick={() => updateStatus(request.id, 'accepted')} className="rounded bg-blue-600 px-3 py-1 text-white">{t('printServiceRequestsPage.actions.accept')}</button>}
+                {mode === 'queue' && ['submitted', 'accepted'].includes(request.status) && <button onClick={() => updateStatus(request.id, 'rejected')} className="rounded bg-red-600 px-3 py-1 text-white">{t('printServiceRequestsPage.actions.reject')}</button>}
                 {mode === 'queue' && request.status === 'accepted' && <button onClick={() => updateStatus(request.id, 'completed')} className="rounded bg-green-600 px-3 py-1 text-white">{t('printServiceRequestsPage.actions.complete')}</button>}
                 {request.status === 'completed' && <button onClick={() => updateStatus(request.id, 'claimed')} className="rounded bg-purple-600 px-3 py-1 text-white">{t('printServiceRequestsPage.actions.claimed')}</button>}
               </td>

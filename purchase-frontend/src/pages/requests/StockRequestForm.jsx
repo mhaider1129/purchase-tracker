@@ -21,6 +21,7 @@ const createEmptyItem = (overrides = {}) => ({
   sub_category: overrides.sub_category ?? '',
   quantity: 1,
   available_quantity: '',
+  notes: '',
   attachments: [],
 });
 
@@ -353,6 +354,14 @@ const StockRequestForm = () => {
             'qty',
           ])
         );
+        const notes = pickUploadValue(row, [
+          'notes',
+          'note',
+          'comments',
+          'comment',
+          'specs',
+          'specifications',
+        ]);
 
         if ((!id && !name) || !requestedQuantity) {
           skippedRows.push(index + 2);
@@ -375,6 +384,7 @@ const StockRequestForm = () => {
           available_quantity:
             matchedItem?.available_quantity ?? availableQuantity,
           quantity: requestedQuantity,
+          notes,
         });
       });
 
@@ -559,7 +569,10 @@ const StockRequestForm = () => {
       formData.append('project_id', projectId);
     }
     const itemsPayload = selectedItems.map(
-      ({ attachments, category, sub_category, ...rest }) => rest
+      ({ attachments, category, sub_category, notes, ...rest }) => ({
+        ...rest,
+        specs: notes?.trim() || undefined,
+      })
     );
     formData.append('items', JSON.stringify(itemsPayload));
     formData.append('is_urgent', isUrgent ? 'true' : 'false');
@@ -770,7 +783,7 @@ const StockRequestForm = () => {
                 </label>
                 <p className="text-sm text-emerald-900">
                   Upload a CSV file exported from Excel with columns: id, name,
-                  brand, available quantity, requested quantity. Matching by id
+                  brand, available quantity, requested quantity, notes. Matching by id
                   is preferred; otherwise the form will match by item name and
                   brand.
                 </p>
@@ -798,7 +811,7 @@ const StockRequestForm = () => {
               </label>
               <p className="text-sm text-emerald-900 mb-2">
                 Copy rows from Excel and paste them here with the same headers:
-                id, name, brand, available quantity, requested quantity.
+                id, name, brand, available quantity, requested quantity, notes.
               </p>
               <textarea
                 id="stock-items-paste"
@@ -806,7 +819,7 @@ const StockRequestForm = () => {
                 onChange={(e) => setPastedItemsText(e.target.value)}
                 className="w-full min-h-32 p-2 border rounded bg-white font-mono text-sm"
                 placeholder={
-                  'id\tname\tbrand\tavailable quantity\trequested quantity\n123\tGloves\tAcme\t25\t10'
+                  'id\tname\tbrand\tavailable quantity\trequested quantity\tnotes\n123\tGloves\tAcme\t25\t10\tNeeded for isolation rooms'
                 }
                 disabled={isSubmitting || itemsLoading}
               />
@@ -981,6 +994,22 @@ const StockRequestForm = () => {
                         }
                         className="w-full p-2 border rounded"
                         required
+                        disabled={isSubmitting}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-[240px]">
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Notes
+                      </label>
+                      <textarea
+                        value={item.notes}
+                        onChange={(e) =>
+                          handleItemChange(index, 'notes', e.target.value)
+                        }
+                        className="w-full p-2 border rounded"
+                        rows={2}
+                        placeholder="Add delivery, packaging, or usage notes"
                         disabled={isSubmitting}
                       />
                     </div>
