@@ -274,6 +274,9 @@ const AssignedRequestsPage = () => {
   const [bulkUpdatingRequestId, setBulkUpdatingRequestId] = useState(null);
   const [printingRequestId, setPrintingRequestId] = useState(null);
   const [completionStates, setCompletionStates] = useState({});
+  const [manualStatusItem, setManualStatusItem] = useState(null);
+  const [manualStatusForm, setManualStatusForm] = useState({ status: 'completed', comment: '' });
+  const [savingManualStatus, setSavingManualStatus] = useState(false);
   const [, setCompletionFeedback] = useState('');
   const {
     expandedApprovalsId,
@@ -446,6 +449,59 @@ const AssignedRequestsPage = () => {
       ...prev,
       [requestId]: evaluateCompletionState(requestWithDraftCost, itemsOverride),
     }));
+  };
+
+
+  const openManualStatusModal = (item, defaultStatus = 'completed') => {
+    setManualStatusItem(item);
+    setManualStatusForm({
+      status: defaultStatus,
+      comment: item.procurement_comment || item.latest_note || '',
+    });
+  };
+
+  const closeManualStatusModal = () => {
+    if (savingManualStatus) {
+      return;
+    }
+
+    setManualStatusItem(null);
+    setManualStatusForm({ status: 'completed', comment: '' });
+  };
+
+  const submitManualStatus = async (event) => {
+    event.preventDefault();
+
+    if (!manualStatusItem?.id) {
+      return;
+    }
+
+    const requestId = manualStatusItem.request_id || expandedRequestId;
+    setSavingManualStatus(true);
+
+    try {
+      await axios.put(`/requested-items/${manualStatusItem.id}/procurement-status`, {
+        status: manualStatusForm.status,
+        comment: manualStatusForm.comment,
+      });
+      setManualStatusItem(null);
+      setManualStatusForm({ status: 'completed', comment: '' });
+
+      if (requestId) {
+        await fetchItems(requestId);
+      }
+
+      alert(tr('alerts.itemStatusUpdated', 'Item status updated.'));
+    } catch (err) {
+      console.error('❌ Error updating item final status:', err);
+      alert(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          tr('alerts.itemStatusUpdateFailed', 'Failed to update item status.'),
+      );
+    } finally {
+      setSavingManualStatus(false);
+    }
   };
 
   const handleSaveTotalCost = async (requestId) => {
@@ -1401,13 +1457,37 @@ const AssignedRequestsPage = () => {
                               {sectionItems.length === 0 ? (
                                 <p className="mt-3 text-sm italic text-gray-500">{empty}</p>
                               ) : (
-                                sectionItems.map((item, idx) => (
-                                  <ProcurementItemStatusPanel
-                                    key={item.id || idx}
-                                    item={{ ...item, request_id: item.request_id || request.id }}
-                                    onUpdate={() => fetchItems(request.id)}
-                                  />
-                                ))
+                                sectionItems.map((item, idx) => {
+                                  const itemWithRequest = { ...item, request_id: item.request_id || request.id };
+                                  const itemStatus = String(item.procurement_status || '').trim().toLowerCase();
+                                  const canManuallyClose = !['purchased', 'completed', 'not_procured', 'canceled'].includes(itemStatus);
+
+                                  return (
+                                    <div key={item.id || idx} className="mb-3 rounded-xl border border-slate-200 bg-white">
+                                      {canManuallyClose && (
+                                        <div className="flex flex-col gap-2 border-b border-slate-100 bg-amber-50/70 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                                          <p className="text-amber-900">
+                                            {tr(
+                                              'items.manualClose.helper',
+                                              'If no more procurement will happen for this item, close the remaining quantity manually.',
+                                            )}
+                                          </p>
+                                          <button
+                                            type="button"
+                                            onClick={() => openManualStatusModal(itemWithRequest, 'completed')}
+                                            className="self-start rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:self-auto"
+                                          >
+                                            {tr('items.manualClose.cta', 'Close as Completed')}
+                                          </button>
+                                        </div>
+                                      )}
+                                      <ProcurementItemStatusPanel
+                                        item={itemWithRequest}
+                                        onUpdate={() => fetchItems(request.id)}
+                                      />
+                                    </div>
+                                  );
+                                })
                               )}
                             </div>
                           );
@@ -1466,6 +1546,66 @@ const AssignedRequestsPage = () => {
           })
           }
         </>
+      )}
+
+      {manualStatusItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-5 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  {tr('items.manualClose.title', 'Close item procurement')}
+                </h3>
+                <p className="text-sm text-slate-500">{manualStatusItem.item_name}</p>
+              </div>
+              <button type="button" onClick={closeManualStatusModal} className="text-slate-500 hover:text-slate-700">×</button>
+            </div>
+
+            <form onSubmit={submitManualStatus} className="mt-4 space-y-4">
+              <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                {tr(
+                  'items.manualClose.description',
+                  'Use this when the item was partially procured, no further procurement will happen, and the remaining quantity should not block completing the request.',
+                )}
+              </p>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                {tr('items.manualClose.statusLabel', 'Final item status')}
+                <select
+                  value={manualStatusForm.status}
+                  onChange={(event) => setManualStatusForm((prev) => ({ ...prev, status: event.target.value }))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 p-2"
+                >
+                  <option value="completed">{tr('items.manualClose.completedOption', 'Completed / Close remaining quantity')}</option>
+                  <option value="not_procured">{tr('items.manualClose.notProcuredOption', 'Not Procured / Will not be purchased')}</option>
+                  <option value="canceled">{tr('items.manualClose.canceledOption', 'Canceled')}</option>
+                </select>
+              </label>
+
+              <label className="block text-sm font-semibold text-slate-700">
+                {tr('items.manualClose.commentLabel', 'Reason / note')}
+                <textarea
+                  value={manualStatusForm.comment}
+                  onChange={(event) => setManualStatusForm((prev) => ({ ...prev, comment: event.target.value }))}
+                  className="mt-1 min-h-28 w-full rounded-lg border border-slate-300 p-2"
+                  placeholder={tr(
+                    'items.manualClose.commentPlaceholder',
+                    'Explain why this item is being closed and whether any remaining quantity will not be purchased.',
+                  )}
+                />
+              </label>
+
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={closeManualStatusModal} className="rounded-lg border px-4 py-2">
+                  {tr('items.manualClose.cancel', 'Cancel')}
+                </button>
+                <button disabled={savingManualStatus} className="rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-50">
+                  {savingManualStatus ? tr('items.manualClose.saving', 'Saving…') : tr('items.manualClose.save', 'Save status')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </PageShell>
   );
