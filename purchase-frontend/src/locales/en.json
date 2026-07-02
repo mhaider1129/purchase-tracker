@@ -113,7 +113,8 @@
       "downloadFailed": "Failed to download attachment. Please try again.",
       "downloading": "Downloading…",
       "fallback": "Attachment"
-    }
+    },
+    "procuredQuantityPrefix": "Procured quantity:"
   },
   "requestAccount": {
     "title": "Request Access",
@@ -2350,7 +2351,8 @@
         "none": "-- Select Driver --",
         "specChange": "Specification change",
         "volume": "Volume/scale discount"
-      }
+      },
+      "procuredQuantityPrefix": "Procured quantity:"
     },
     "completionScreen": {
       "none": "N/A",

@@ -113,7 +113,8 @@
       "uploading": "جارٍ الرفع…",
       "uploadFailed": "فشل رفع المرفق.",
       "uploadSuccess": "تم رفع المرفق بنجاح."
-    }
+    },
+    "procuredQuantityPrefix": "الكمية المورّدة:"
   },
   "requestAccount": {
     "title": "طلب إنشاء حساب",
@@ -2290,7 +2291,8 @@
         "none": "-- اختر سبب التوفير --",
         "specChange": "تغيير المواصفات",
         "volume": "خصم الكمية/الحجم"
-      }
+      },
+      "procuredQuantityPrefix": "الكمية المورّدة:"
     },
     "completionScreen": {
       "none": "N/A",

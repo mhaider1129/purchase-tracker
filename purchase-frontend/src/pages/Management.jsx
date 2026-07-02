@@ -10,6 +10,7 @@ const initialUserEditState = {
   role: '',
   department_id: '',
   section_id: '',
+  section_ids: [],
   can_request_medication: false,
   warehouse_id: '',
 };
@@ -1064,6 +1065,11 @@ const Management = () => {
       role: user.role || '',
       department_id: user.department_id ? String(user.department_id) : '',
       section_id: user.section_id ? String(user.section_id) : '',
+      section_ids: Array.isArray(user.assigned_section_ids)
+        ? user.assigned_section_ids.map((sectionId) => String(sectionId))
+        : user.section_id
+          ? [String(user.section_id)]
+          : [],
       can_request_medication: Boolean(user.can_request_medication),
       warehouse_id: user.warehouse_id ? String(user.warehouse_id) : '',
     });
@@ -1085,7 +1091,8 @@ const Management = () => {
       await api.patch(`/users/${id}/assign`, {
         role: editData.role,
         department_id: editData.department_id ? Number(editData.department_id) : null,
-        section_id: editData.section_id ? Number(editData.section_id) : null,
+        section_id: editData.section_ids[0] ? Number(editData.section_ids[0]) : null,
+        section_ids: editData.section_ids.map((sectionId) => Number(sectionId)),
         warehouse_id: editData.warehouse_id ? Number(editData.warehouse_id) : null,
         can_request_medication: editData.can_request_medication,
       });
@@ -1480,9 +1487,14 @@ const Management = () => {
               const department = user.department_id
                 ? departmentMap.get(user.department_id)
                 : null;
-              const section = user.section_id
-                ? sectionOptions.get(user.section_id)
-                : null;
+              const assignedSectionNames = Array.isArray(user.assigned_section_ids)
+                ? user.assigned_section_ids.map((sectionId) => sectionOptions.get(sectionId)).filter(Boolean)
+                : [];
+              const section = assignedSectionNames.length > 0
+                ? assignedSectionNames.join(', ')
+                : user.section_id
+                  ? sectionOptions.get(user.section_id)
+                  : null;
               const warehouse = user.warehouse_id
                 ? warehouseMap.get(user.warehouse_id)
                 : null;
@@ -1520,6 +1532,7 @@ const Management = () => {
                             ...editData,
                             department_id: e.target.value,
                             section_id: '',
+                            section_ids: [],
                           })
                         }
                       >
@@ -1541,10 +1554,17 @@ const Management = () => {
                       editData.department_id && (
                         <select
                           className="border p-1"
-                          value={editData.section_id}
-                          onChange={(e) =>
-                            setEditData({ ...editData, section_id: e.target.value })
-                          }
+                          value={editData.section_ids}
+                          multiple
+                          size={Math.min(5, Math.max(2, departments.find((dept) => dept.id === Number(editData.department_id))?.sections?.length || 2))}
+                          onChange={(e) => {
+                            const selectedSectionIds = Array.from(e.target.selectedOptions, (option) => option.value);
+                            setEditData({
+                              ...editData,
+                              section_ids: selectedSectionIds,
+                              section_id: selectedSectionIds[0] || '',
+                            });
+                          }}
                         >
                           <option value="">--Section--</option>
                           {departments

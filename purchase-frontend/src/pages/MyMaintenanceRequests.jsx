@@ -35,7 +35,9 @@ const MyMaintenanceRequests = () => {
   const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [editingRequest, setEditingRequest] = useState(null);
-  const [editForm, setEditForm] = useState({ justification: '', items: [] });
+  const [editForm, setEditForm] = useState({ justification: '', department_id: '', section_id: '', items: [] });
+  const [departments, setDepartments] = useState([]);
+  const [editSections, setEditSections] = useState([]);
   const [editError, setEditError] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
   const {
@@ -70,6 +72,19 @@ const MyMaintenanceRequests = () => {
     }),
     [t],
   );
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await axios.get('/departments');
+        setDepartments(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error('❌ Failed to fetch departments:', err);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -179,6 +194,8 @@ const MyMaintenanceRequests = () => {
     setEditingRequest(request);
     setEditForm({
       justification: request?.justification || '',
+      department_id: request?.department_id ? String(request.department_id) : '',
+      section_id: request?.section_id ? String(request.section_id) : '',
       items: Array.isArray(request?.items) && request.items.length > 0
         ? request.items.map((item) => ({
             item_name: item?.item_name || '',
@@ -193,10 +210,33 @@ const MyMaintenanceRequests = () => {
 
   const closeEditRequest = useCallback(() => {
     setEditingRequest(null);
-    setEditForm({ justification: '', items: [] });
+    setEditForm({ justification: '', department_id: '', section_id: '', items: [] });
     setEditError('');
     setEditSubmitting(false);
   }, []);
+
+  useEffect(() => {
+    const fetchEditSections = async () => {
+      if (!editingRequest || !editForm.department_id) {
+        setEditSections([]);
+        return;
+      }
+
+      try {
+        const res = await axios.get(`/departments/${editForm.department_id}/sections`);
+        const incomingSections = Array.isArray(res.data) ? res.data : [];
+        setEditSections(incomingSections);
+        if (editForm.section_id && !incomingSections.some((section) => String(section.id) === String(editForm.section_id))) {
+          setEditForm((prev) => ({ ...prev, section_id: '' }));
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch edit sections:', err);
+        setEditSections([]);
+      }
+    };
+
+    fetchEditSections();
+  }, [editingRequest, editForm.department_id, editForm.section_id]);
 
   const handleEditItemChange = (index, field, value) => {
     setEditForm((prev) => {
@@ -234,6 +274,16 @@ const MyMaintenanceRequests = () => {
       specs: item.specs?.trim() || undefined,
     }));
 
+    if (!editForm.department_id) {
+      setEditError('Select the correct department.');
+      return;
+    }
+
+    if (editSections.length > 0 && !editForm.section_id) {
+      setEditError('Select the correct section for this department.');
+      return;
+    }
+
     if (sanitizedItems.some((item) => !item.item_name || !Number.isInteger(item.quantity) || item.quantity <= 0)) {
       setEditError('Enter at least one valid item name and whole-number quantity.');
       return;
@@ -245,6 +295,8 @@ const MyMaintenanceRequests = () => {
     try {
       await updateRequest(editingRequest.id, {
         justification: editForm.justification,
+        department_id: Number(editForm.department_id),
+        section_id: editForm.section_id ? Number(editForm.section_id) : null,
         items: sanitizedItems,
       });
 
@@ -254,6 +306,10 @@ const MyMaintenanceRequests = () => {
               ...request,
               justification: editForm.justification,
               status: 'Submitted',
+              department_id: Number(editForm.department_id),
+              section_id: editForm.section_id ? Number(editForm.section_id) : null,
+              department_name: departments.find((dept) => String(dept.id) === String(editForm.department_id))?.name || request.department_name,
+              section_name: editSections.find((section) => String(section.id) === String(editForm.section_id))?.name || '',
               items: sanitizedItems.map((item, idx) => ({
                 ...item,
                 id: editingRequest.items?.[idx]?.id || `${editingRequest.id}-${idx}`,
@@ -849,6 +905,7 @@ const MyMaintenanceRequests = () => {
                 <tr>
                   <th className="border px-3 py-2 text-left">{tr('table.id')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.justification')}</th>
+                  <th className="border px-3 py-2 text-left">Department / Section</th>
                   <th className="border px-3 py-2 text-left">{tr('table.project')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.reference')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.status')}</th>
@@ -889,6 +946,10 @@ const MyMaintenanceRequests = () => {
                       <tr className="odd:bg-white even:bg-gray-50">
                         <td className="border px-3 py-2">{r.id}</td>
                         <td className="border px-3 py-2">{r.justification}</td>
+                        <td className="border px-3 py-2">
+                          <div>{r.department_name || tr('table.notAvailable')}</div>
+                          <div className="text-xs text-gray-500">{r.section_name || tr('table.notAvailable')}</div>
+                        </td>
                         <td className="border px-3 py-2">{r.project_name || tr('table.notAvailable')}</td>
                         <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
                         <td className="border px-3 py-2">
@@ -948,7 +1009,7 @@ const MyMaintenanceRequests = () => {
                       </tr>
                       {isAttachmentsExpanded && (
                         <tr>
-                          <td colSpan={10} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={11} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <RequestAttachmentsSection
                               attachments={attachments}
                               isLoading={attachmentsLoading}
@@ -967,7 +1028,7 @@ const MyMaintenanceRequests = () => {
                       )}
                       {isItemsExpanded && (
                         <tr>
-                          <td colSpan={10} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={11} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <div className="space-y-3">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <h3 className="font-semibold text-gray-700">{itemCopy.heading}</h3>
@@ -1033,7 +1094,7 @@ const MyMaintenanceRequests = () => {
                       )}
                       {isApprovalsExpanded && (
                         <tr>
-                          <td colSpan={10} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={11} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <ApprovalTimeline
                               approvals={approvalsMap[r.id]}
                               isLoading={loadingApprovalsId === r.id}
@@ -1106,6 +1167,37 @@ const MyMaintenanceRequests = () => {
                 rows={3}
               />
             </label>
+            <div className="mb-3 grid gap-3 md:grid-cols-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Department
+                <select
+                  value={editForm.department_id}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, department_id: event.target.value, section_id: '' }))}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                  required
+                >
+                  <option value="">Select department</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>{department.name}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Section
+                <select
+                  value={editForm.section_id}
+                  onChange={(event) => setEditForm((prev) => ({ ...prev, section_id: event.target.value }))}
+                  className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                  disabled={!editForm.department_id || editSections.length === 0}
+                  required={editSections.length > 0}
+                >
+                  <option value="">{editSections.length > 0 ? 'Select section' : 'No section'}</option>
+                  {editSections.map((section) => (
+                    <option key={section.id} value={section.id}>{section.name}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Items</h3>

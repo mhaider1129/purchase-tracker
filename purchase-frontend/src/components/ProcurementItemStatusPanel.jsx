@@ -685,12 +685,20 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
             <h4 className="text-lg font-semibold text-slate-800">
               {item.item_name}
             </h4>
-            <p className="mt-1 text-sm text-slate-500">
-              {tr("itemPanel.requestedQuantityPrefix", "Requested quantity:")}{" "}
-              <span className="font-medium text-slate-700">
-                {formatNumber(requestedQty)}
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+              <span>
+                {tr("itemPanel.requestedQuantityPrefix", "Requested quantity:")}{" "}
+                <span className="font-medium text-slate-700">
+                  {formatNumber(requestedQty)}
+                </span>
               </span>
-            </p>
+              <span>
+                {tr("itemPanel.procuredQuantityPrefix", "Procured quantity:")}{" "}
+                <span className="font-medium text-emerald-700">
+                  {formatNumber(purchasedQtyNumber)}
+                </span>
+              </span>
+            </div>
             {metaDetails.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
                 {metaDetails.map((detail) => (
