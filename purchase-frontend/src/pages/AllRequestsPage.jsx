@@ -1474,6 +1474,7 @@ const AllRequestsPage = () => {
                             <th className="border p-1">Specs</th>
                             <th className="border p-1">Brand</th>
                             <th className="border p-1">Qty</th>
+                            <th className="border p-1">Procured Qty</th>
                             <th className="border p-1">Unit Cost</th>
                             <th className="border p-1">Total</th>
                             <th className="border p-1">Assigned To</th>
@@ -1490,6 +1491,7 @@ const AllRequestsPage = () => {
                               </td>
                               <td className="border p-1 align-top">{item.brand || '—'}</td>
                               <td className="border p-1 align-top">{item.quantity}</td>
+                              <td className="border p-1 align-top">{item.purchased_quantity ?? 0}</td>
                               <td className="border p-1 align-top">{item.unit_cost}</td>
                               <td className="border p-1 align-top">{item.total_cost}</td>
                               <td className="border p-1 align-top">{item.assigned_user_name || '—'}</td>

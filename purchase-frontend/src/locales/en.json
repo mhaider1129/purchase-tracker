@@ -2458,7 +2458,8 @@
         "quantity": "Qty",
         "unitCost": "Unit Cost",
         "total": "Total",
-        "specs": "Specs"
+        "specs": "Specs",
+        "procuredQuantity": "Procured Qty"
       },
       "empty": "No items found."
     },
@@ -3134,7 +3135,8 @@
       "refresh": "Refresh",
       "loadingComms": "Loading communications...",
       "commentsPlaceholder": "Share an update with the SCM team...",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "procuredQuantity": "Procured Qty"
     }
   },
   "approvalsPanel": {

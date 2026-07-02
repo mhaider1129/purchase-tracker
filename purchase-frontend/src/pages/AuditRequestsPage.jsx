@@ -247,6 +247,7 @@ const AuditRequestsPage = () => {
           <td>${escapeHtml(item.specs)}</td>
           <td>${escapeHtml(item.brand)}</td>
           <td>${escapeHtml(item.quantity)}</td>
+          <td>${escapeHtml(item.purchased_quantity ?? 0)}</td>
           <td>${escapeHtml(item.unit_cost)}</td>
           <td>${escapeHtml(item.total_cost)}</td>
         </tr>`).join('');
@@ -271,7 +272,7 @@ const AuditRequestsPage = () => {
           <div class="details">${detailRows.map(([label, value]) => `<div class="detail"><span class="label">${escapeHtml(label)}</span>${escapeHtml(value)}</div>`).join('')}</div>
           <h2>${escapeHtml(tr('print.justification', 'Justification'))}</h2><div class="justification">${escapeHtml(request?.justification)}</div>
           <h2>${escapeHtml(tr('print.items', 'Requested Items'))}</h2>
-          <table><thead><tr><th>${escapeHtml(tr('items.headers.item', 'Item'))}</th><th>${escapeHtml(tr('items.headers.specs', 'Specs'))}</th><th>${escapeHtml(tr('items.headers.brand', 'Brand'))}</th><th>${escapeHtml(tr('items.headers.quantity', 'Qty'))}</th><th>${escapeHtml(tr('items.headers.unitCost', 'Unit Cost'))}</th><th>${escapeHtml(tr('items.headers.total', 'Total'))}</th></tr></thead><tbody>${itemRows || `<tr><td colspan="6">${escapeHtml(tr('items.empty', 'No items found.'))}</td></tr>`}</tbody></table>
+          <table><thead><tr><th>${escapeHtml(tr('items.headers.item', 'Item'))}</th><th>${escapeHtml(tr('items.headers.specs', 'Specs'))}</th><th>${escapeHtml(tr('items.headers.brand', 'Brand'))}</th><th>${escapeHtml(tr('items.headers.quantity', 'Qty'))}</th><th>${escapeHtml(tr('items.headers.procuredQuantity', 'Procured Qty'))}</th><th>${escapeHtml(tr('items.headers.unitCost', 'Unit Cost'))}</th><th>${escapeHtml(tr('items.headers.total', 'Total'))}</th></tr></thead><tbody>${itemRows || `<tr><td colspan="7">${escapeHtml(tr('items.empty', 'No items found.'))}</td></tr>`}</tbody></table>
         </body></html>`);
       printWindow.document.close();
       printWindow.focus();
@@ -487,6 +488,7 @@ const AuditRequestsPage = () => {
                                     <th className="border p-1">{tr('items.headers.specs', 'Specs')}</th>
                                     <th className="border p-1">{tr('items.headers.brand', 'Brand')}</th>
                                     <th className="border p-1">{tr('items.headers.quantity', 'Qty')}</th>
+                                    <th className="border p-1">{tr('items.headers.procuredQuantity', 'Procured Qty')}</th>
                                     <th className="border p-1">{tr('items.headers.unitCost', 'Unit Cost')}</th>
                                     <th className="border p-1">{tr('items.headers.total', 'Total')}</th>
                                   </tr>
@@ -500,6 +502,7 @@ const AuditRequestsPage = () => {
                                       </td>
                                       <td className="border p-1 align-top">{item.brand || '—'}</td>
                                       <td className="border p-1 align-top">{item.quantity}</td>
+                                      <td className="border p-1 align-top">{item.purchased_quantity ?? 0}</td>
                                       <td className="border p-1 align-top">{item.unit_cost}</td>
                                       <td className="border p-1 align-top">{item.total_cost}</td>
                                     </tr>

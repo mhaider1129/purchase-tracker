@@ -2398,7 +2398,8 @@
         "quantity": "الكمية",
         "unitCost": "تكلفة الوحدة",
         "total": "الإجمالي",
-        "specs": "المواصفات"
+        "specs": "المواصفات",
+        "procuredQuantity": "الكمية المورّدة"
       },
       "empty": "لا توجد عناصر."
     },
@@ -3134,7 +3135,8 @@
       "refresh": "تحديث",
       "loadingComms": "جارٍ تحميل المحادثات...",
       "commentsPlaceholder": "شارك تحديثاً مع فريق المشتريات...",
-      "unknown": "غير معروف"
+      "unknown": "غير معروف",
+      "procuredQuantity": "الكمية المورّدة"
     }
   },
   "approvalsPanel": {

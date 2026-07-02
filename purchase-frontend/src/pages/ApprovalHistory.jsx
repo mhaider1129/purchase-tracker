@@ -104,7 +104,13 @@ const ApprovalHistory = () => {
 
   const summarizeRequestItems = (items) => {
     if (!items.length) return 'Open the request items view to load item details';
-    return items.map((requestItem) => `${requestItem.item_name || 'Unnamed item'} (${requestItem.quantity ?? '—'})`).join('; ');
+    return items
+      .map((requestItem) => {
+        const requestedQty = requestItem.quantity ?? '—';
+        const procuredQty = requestItem.purchased_quantity ?? 0;
+        return `${requestItem.item_name || 'Unnamed item'} (requested: ${requestedQty}, procured: ${procuredQty})`;
+      })
+      .join('; ');
   };
 
   const toggleItems = async (requestId) => {
@@ -538,6 +544,7 @@ const ApprovalHistory = () => {
                                     <th className="p-2 font-semibold">{t('approvalHistory.table.specs')}</th>
                                     <th className="p-2 font-semibold">{t('approvalHistory.table.brand')}</th>
                                     <th className="p-2 font-semibold">{t('approvalHistory.table.quantity')}</th>
+                                    <th className="p-2 font-semibold">{t('approvalHistory.table.procuredQuantity')}</th>
                                     <th className="p-2 font-semibold">{t('approvalHistory.table.unitCost')}</th>
                                     <th className="p-2 font-semibold">{t('approvalHistory.table.totalCost')}</th>
                                     <th className="p-2 font-semibold">{t('approvalHistory.table.decision')}</th>
@@ -551,6 +558,7 @@ const ApprovalHistory = () => {
                                         <td className="p-2 text-gray-700 whitespace-pre-wrap">{requestItem.specs || '—'}</td>
                                         <td className="p-2 text-gray-700">{requestItem.brand || '—'}</td>
                                         <td className="p-2 text-gray-700">{requestItem.quantity ?? '—'}</td>
+                                        <td className="p-2 text-gray-700">{requestItem.purchased_quantity ?? 0}</td>
                                         <td className="p-2 text-gray-700">{formatCurrency(requestItem.unit_cost)}</td>
                                         <td className="p-2 text-gray-700">{formatCurrency(requestItem.total_cost)}</td>
                                         <td className="p-2 text-gray-700">{requestItem.approval_status || '—'}</td>
@@ -558,7 +566,7 @@ const ApprovalHistory = () => {
                                     ))
                                   ) : (
                                     <tr>
-                                      <td colSpan={7} className="border-t border-blue-100 p-3 text-center text-gray-500">{t('approvalHistory.table.noItems')}</td>
+                                      <td colSpan={8} className="border-t border-blue-100 p-3 text-center text-gray-500">{t('approvalHistory.table.noItems')}</td>
                                     </tr>
                                   )}
                                 </tbody>
