@@ -23,6 +23,10 @@ const createEmptyItem = (overrides = {}) => ({
   available_quantity: '',
   notes: '',
   attachments: [],
+  contract_id: '',
+  contract_item_id: '',
+  contracted_price: '',
+  contract_title: '',
 });
 
 const hasWarehouseAssignment = (value) => {
@@ -72,6 +76,8 @@ const StockRequestForm = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState('');
+  const [contractItems, setContractItems] = useState([]);
+  const [contractItemsError, setContractItemsError] = useState('');
   const [bulkUploadMessage, setBulkUploadMessage] = useState('');
   const [pastedItemsText, setPastedItemsText] = useState('');
   const navigate = useNavigate();
@@ -229,6 +235,41 @@ const StockRequestForm = () => {
     fetchItems();
   }, [t]);
 
+
+  useEffect(() => {
+    const fetchContractItems = async () => {
+      setContractItemsError('');
+      try {
+        const { data } = await api.get('/contracts/items/active');
+        setContractItems(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load contracted items:', err);
+        setContractItems([]);
+        setContractItemsError(err?.response?.data?.message || 'Contracted items are unavailable right now.');
+      }
+    };
+
+    fetchContractItems();
+  }, []);
+
+  const getEligibleContractItems = useCallback(
+    (item) => {
+      if (!item?.item_name && !item?.stock_item_id) return [];
+      const itemName = String(item.item_name || '').trim().toLowerCase();
+      return contractItems.filter((contractItem) => {
+        const matchesStockId =
+          item.stock_item_id &&
+          contractItem.item_id &&
+          String(contractItem.item_id) === String(item.stock_item_id);
+        const matchesName =
+          itemName &&
+          String(contractItem.item_name || '').trim().toLowerCase() === itemName;
+        return matchesStockId || matchesName;
+      });
+    },
+    [contractItems],
+  );
+
   const handleItemChange = (index, field, value) => {
     setSelectedItems((prev) => {
       const updated = [...prev];
@@ -257,6 +298,10 @@ const StockRequestForm = () => {
           item_name: '',
           brand: '',
           available_quantity: '',
+          contract_id: '',
+          contract_item_id: '',
+          contracted_price: '',
+          contract_title: '',
         };
       } else {
         const matchedItem = itemsList.find(
@@ -271,6 +316,10 @@ const StockRequestForm = () => {
             available_quantity: matchedItem.available_quantity ?? '',
             category: matchedItem.category || current.category,
             sub_category: matchedItem.sub_category || current.sub_category,
+            contract_id: '',
+            contract_item_id: '',
+            contracted_price: '',
+            contract_title: '',
           };
           if (!category && matchedItem.category) {
             setCategory(matchedItem.category);
@@ -287,6 +336,39 @@ const StockRequestForm = () => {
       const next = [...terms];
       next[index] = '';
       return next;
+    });
+  };
+
+
+  const handleContractedItemSelection = (index, contractItemId) => {
+    setSelectedItems((prev) => {
+      const updated = [...prev];
+      const current = { ...updated[index] };
+      if (!contractItemId) {
+        updated[index] = {
+          ...current,
+          contract_id: '',
+          contract_item_id: '',
+          contracted_price: '',
+          contract_title: '',
+        };
+        return updated;
+      }
+
+      const selectedContractItem = contractItems.find(
+        (contractItem) => String(contractItem.id) === String(contractItemId),
+      );
+      if (!selectedContractItem) return updated;
+
+      updated[index] = {
+        ...current,
+        contract_id: selectedContractItem.contract_id,
+        contract_item_id: selectedContractItem.id,
+        contracted_price: selectedContractItem.contracted_price || '',
+        contract_title: selectedContractItem.contract_title || '',
+        unit_cost: selectedContractItem.contracted_price || current.unit_cost,
+      };
+      return updated;
     });
   };
 
@@ -551,6 +633,16 @@ const StockRequestForm = () => {
       return false;
     }
 
+    const missingContractSelection = selectedItems.find((item) => {
+      const eligibleContractItems = getEligibleContractItems(item);
+      return eligibleContractItems.length > 0 && !item.contract_item_id;
+    });
+
+    if (missingContractSelection) {
+      alert(`The item "${missingContractSelection.item_name}" is covered by an active contract. Select the matching contracted item before submitting.`);
+      return false;
+    }
+
     return true;
   };
 
@@ -569,7 +661,7 @@ const StockRequestForm = () => {
       formData.append('project_id', projectId);
     }
     const itemsPayload = selectedItems.map(
-      ({ attachments, category, sub_category, notes, ...rest }) => ({
+      ({ attachments, category, sub_category, notes, contract_title, ...rest }) => ({
         ...rest,
         specs: notes?.trim() || undefined,
       })
@@ -744,6 +836,11 @@ const StockRequestForm = () => {
           {itemsError && (
             <p className="text-sm text-red-600" role="alert">
               {itemsError}
+            </p>
+          )}
+          {contractItemsError && (
+            <p className="text-sm text-amber-700" role="alert">
+              {contractItemsError}
             </p>
           )}
           {itemsLoading && (
@@ -996,6 +1093,37 @@ const StockRequestForm = () => {
                         required
                         disabled={isSubmitting}
                       />
+                    </div>
+
+                    <div className="flex-1 min-w-[260px]">
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Contracted item
+                      </label>
+                      {(() => {
+                        const eligibleContractItems = getEligibleContractItems(item);
+                        return (
+                          <>
+                            <select
+                              value={item.contract_item_id || ''}
+                              onChange={(e) => handleContractedItemSelection(index, e.target.value)}
+                              className="w-full p-2 border rounded"
+                              disabled={isSubmitting || eligibleContractItems.length === 0}
+                            >
+                              <option value="">No contract item selected</option>
+                              {eligibleContractItems.map((contractItem) => (
+                                <option key={contractItem.id} value={contractItem.id}>
+                                  {contractItem.contract_title} • {contractItem.vendor} • {contractItem.contracted_price || '—'} {contractItem.currency || contractItem.contract_currency || ''}
+                                </option>
+                              ))}
+                            </select>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {eligibleContractItems.length
+                                ? 'Select the contracted item when this request is covered by an active contract.'
+                                : 'No active contracted items match this stock item.'}
+                            </p>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     <div className="flex-1 min-w-[240px]">

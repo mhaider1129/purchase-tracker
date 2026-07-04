@@ -311,6 +311,23 @@ const ContractsPage = () => {
   const [checklistSavingId, setChecklistSavingId] = useState(null);
   const [detailTab, setDetailTab] = useState('documents');
   const [contractItems, setContractItems] = useState([]);
+  const [contractItemForm, setContractItemForm] = useState({
+    item_name: '',
+    unit: '',
+    contracted_price: '',
+    currency: '',
+    minimum_order_quantity: '',
+    lead_time_days: '',
+    warranty_terms: '',
+    price_valid_from: '',
+    price_valid_to: '',
+    requested_quantity: '',
+    delivered_quantity: '',
+    notes: '',
+    is_active: true,
+  });
+  const [contractItemError, setContractItemError] = useState('');
+  const [savingContractItem, setSavingContractItem] = useState(false);
   const [approvals, setApprovals] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [, setContractDocuments] = useState([]);
@@ -510,6 +527,7 @@ const ContractsPage = () => {
     const contractId = editingId || viewingContract?.id;
     if (!contractId) return;
     api.get(`/contracts/${contractId}/items`).then(r => setContractItems(r.data || [])).catch(() => setContractItems([]));
+    setContractItemError('');
     api.get(`/contracts/${contractId}/approvals`).then(r => setApprovals(r.data || [])).catch(() => setApprovals([]));
     api.get(`/contracts/${contractId}/document-checklist`).then(r => setChecklist(r.data || [])).catch(() => setChecklist([]));
     api.get(`/contracts/${contractId}/obligations`).then(r=>setObligations(r.data||[])).catch(()=>setObligations([]));
@@ -526,6 +544,66 @@ const ContractsPage = () => {
     api.get(`/contracts/${contractId}/consumption`).then(r => setConsumption(r.data || null)).catch(() => setConsumption(null));
     api.get(`/contracts/${contractId}/risk`).then(r => setRisk(r.data || null)).catch(() => setRisk(null));
   }, [editingId, viewingContract]);
+
+
+  const refreshContractItems = useCallback(async (contractId) => {
+    if (!contractId) {
+      setContractItems([]);
+      return;
+    }
+    const { data } = await api.get(`/contracts/${contractId}/items`);
+    setContractItems(Array.isArray(data) ? data : []);
+  }, []);
+
+  const resetContractItemForm = () => {
+    setContractItemForm({
+      item_name: '',
+      unit: '',
+      contracted_price: '',
+      currency: viewingContract?.currency || formState.currency || '',
+      minimum_order_quantity: '',
+      lead_time_days: '',
+      warranty_terms: '',
+      price_valid_from: '',
+      price_valid_to: '',
+      requested_quantity: '',
+      delivered_quantity: '',
+      notes: '',
+      is_active: true,
+    });
+  };
+
+  const handleContractItemInputChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setContractItemForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleCreateContractItem = async (event) => {
+    event.preventDefault();
+    const contractId = editingId || viewingContract?.id;
+    if (!contractId) return;
+    if (!contractItemForm.item_name.trim()) {
+      setContractItemError('Item name is required.');
+      return;
+    }
+    setSavingContractItem(true);
+    setContractItemError('');
+    try {
+      await api.post(`/contracts/${contractId}/items`, {
+        ...contractItemForm,
+        item_name: contractItemForm.item_name.trim(),
+        currency: contractItemForm.currency || viewingContract?.currency || formState.currency || 'IQD',
+      });
+      resetContractItemForm();
+      await Promise.all([refreshContractItems(contractId), fetchContracts()]);
+      setSuccessMessage('Contracted item added. Requesters can select it when linking purchases to this contract.');
+    } catch (err) {
+      console.error('Failed to add contracted item', err);
+      setContractItemError(err?.response?.data?.message || 'Failed to add contracted item.');
+    } finally {
+      setSavingContractItem(false);
+    }
+  };
 
   const fetchEvaluations = useCallback(async (contractId) => {
     if (!contractId) {
@@ -1923,6 +2001,9 @@ const ContractsPage = () => {
                         Contract
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+                        First party
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Vendor
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
@@ -1951,13 +2032,13 @@ const ContractsPage = () => {
                   <tbody className="divide-y divide-gray-200 bg-white/60 dark:divide-gray-800 dark:bg-gray-900/70">
                     {loading ? (
                       <tr>
-                        <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={10} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           Loading contracts...
                         </td>
                       </tr>
                     ) : sortedContracts.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
+                        <td colSpan={10} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-300">
                           No contracts match your current filters.
                         </td>
                       </tr>
@@ -1990,6 +2071,7 @@ const ContractsPage = () => {
                                 {contract.reference_number || 'No reference'}
                               </div>
                             </td>
+                            <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{contract.first_party || '—'}</td>
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">{contract.vendor}</td>
                             <td className="px-4 py-3 align-top text-gray-700 dark:text-gray-200">
                               {contract.source_request_id ? `#${contract.source_request_id}` : '—'}
@@ -2491,7 +2573,36 @@ const ContractsPage = () => {
                 {detailTab === 'renewals' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/renewal-events`,{renewal_type:'manual',renewal_date:new Date().toISOString().slice(0,10),notice_days:90}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Add Renewal Event</button>{renewalEvents.map((r)=><div key={r.id} className="rounded border p-2 text-sm">{r.renewal_date || '—'} · alert {r.alert_date || '—'} · {r.notice_days} days · {r.status} · {r.decision || '—'} <button className="ml-2 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/renewal-events/${r.id}/decision`,{decision:'renew',decision_notes:'Approved'}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Decide Renew</button></div>)}</div>}
 
                 {detailTab === 'financials' && <div className="space-y-2 text-sm"><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">Remaining: {financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
-                {detailTab === 'items' && <div className="space-y-2">{contractItems.map((it) => <div key={it.id} className="rounded border p-2 text-sm">{it.item_name} - {it.contracted_price || '—'} {it.currency || ''}</div>)}</div>}
+                {detailTab === 'items' && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Contracted items cycle</h3>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        Add every item covered by this agreement. Purchase requesters should select the matching contracted item so ordered quantities, delivery performance, and contract consumption stay connected to this contract.
+                      </p>
+                      <form onSubmit={handleCreateContractItem} className="mt-4 grid gap-3 md:grid-cols-4">
+                        <input name="item_name" value={contractItemForm.item_name} onChange={handleContractItemInputChange} placeholder="Item name *" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input name="unit" value={contractItemForm.unit} onChange={handleContractItemInputChange} placeholder="Unit" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input name="contracted_price" value={contractItemForm.contracted_price} onChange={handleContractItemInputChange} placeholder="Contracted price" type="number" step="0.01" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input name="currency" value={contractItemForm.currency} onChange={handleContractItemInputChange} placeholder={viewingContract?.currency || formState.currency || 'IQD'} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input name="requested_quantity" value={contractItemForm.requested_quantity} onChange={handleContractItemInputChange} placeholder="Contract quantity" type="number" step="0.01" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input name="delivered_quantity" value={contractItemForm.delivered_quantity} onChange={handleContractItemInputChange} placeholder="Delivered quantity" type="number" step="0.01" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input name="lead_time_days" value={contractItemForm.lead_time_days} onChange={handleContractItemInputChange} placeholder="Lead time days" type="number" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input name="notes" value={contractItemForm.notes} onChange={handleContractItemInputChange} placeholder="Notes / requester guidance" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <div className="md:col-span-4 flex items-center justify-between gap-3">
+                          {contractItemError && <p className="text-sm text-red-600">{contractItemError}</p>}
+                          <button type="submit" disabled={savingContractItem} className="ml-auto rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">{savingContractItem ? 'Adding...' : 'Add contracted item'}</button>
+                        </div>
+                      </form>
+                    </div>
+                    {contractItems.length === 0 ? <p className="text-sm text-gray-500">No contracted items have been added yet.</p> : contractItems.map((it) => {
+                      const requested = Number(it.requested_quantity || 0);
+                      const delivered = Number(it.delivered_quantity || 0);
+                      const deliveryPercent = requested > 0 ? Math.min(100, Math.round((delivered / requested) * 100)) : null;
+                      return <div key={it.id} className="rounded border p-3 text-sm dark:border-gray-700"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-gray-900 dark:text-gray-100">{it.item_name}</p><p className="text-gray-600 dark:text-gray-300">{it.unit || 'Unit —'} · {it.contracted_price || '—'} {it.currency || ''} · lead time {it.lead_time_days || '—'} days</p><p className="text-xs text-gray-500">{it.notes || 'No requester guidance.'}</p></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${it.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{it.is_active ? 'Selectable' : 'Inactive'}</span></div><div className="mt-3"><div className="flex justify-between text-xs text-gray-600 dark:text-gray-300"><span>Delivered {delivered || 0} of {requested || '—'}</span><span>{deliveryPercent === null ? 'No contract quantity' : `${deliveryPercent}% delivered`}</span></div>{deliveryPercent !== null && <div className="mt-1 h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div className="h-2 rounded-full bg-emerald-500" style={{ width: `${deliveryPercent}%` }} /></div>}</div></div>;
+                    })}
+                  </div>
+                )}
                 {detailTab === 'approvals' && <div className="space-y-2"><button type="button" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/submit-review`); const {data}=await api.get(`/contracts/${id}/approvals`); setApprovals(data||[]);}} className="rounded bg-blue-600 px-3 py-1 text-sm text-white">Submit for Review</button>{approvals.map((a)=><div key={a.id} className="rounded border p-2 text-sm">L{a.approval_level} {a.stage} - {a.status} {a.is_active ? '(Active)' : ''}</div>)}</div>}
                 {detailTab === 'consumption' && consumption && <div className="text-sm space-y-1"><p>Consumed: {consumption.actual_consumed_value}</p><p>Paid: {consumption.paid_amount}</p><p>Remaining: {consumption.remaining_balance}</p><p>Consumed %: {consumption.consumed_percentage}</p></div>}
                 {detailTab === 'risk' && <div className="text-sm space-y-2"><div className="rounded border p-2"><p>Risk: <span className="font-semibold">{risk?.risk_level || '—'}</span> ({risk?.risk_score ?? '—'})</p><button type="button" className="mt-1 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; const {data}=await api.post(`/contracts/${id}/risk/recalculate`,{}); setRisk(data||null); const h=await api.get(`/contracts/${id}/risk/history`); setRiskHistory(h.data||[]);}}>Recalculate risk</button></div><div className="rounded border p-2"><p className="font-medium">Factors</p><ul className="list-disc pl-5">{(risk?.risk_factors||[]).map((f,i)=><li key={i}><span className="font-medium">{f.label || f.code}</span> (+{f.points}) — {f.explanation}</li>)}</ul></div><div className="rounded border p-2"><p className="font-medium">History</p>{riskHistory.slice(0,5).map((h)=><div key={h.id} className="text-xs">{h.assessed_at}: {h.risk_level} ({h.risk_score})</div>)}</div><div className="rounded border p-2"><p className="font-medium">Dashboard snapshot</p><div className="grid grid-cols-2 gap-1 text-xs md:grid-cols-4"><div>Low: {riskDashboard?.low_count ?? 0}</div><div>Medium: {riskDashboard?.medium_count ?? 0}</div><div>High: {riskDashboard?.high_count ?? 0}</div><div>Critical: {riskDashboard?.critical_count ?? 0}</div><div>Avg: {riskDashboard?.average_risk_score ?? 0}</div></div></div></div>}
