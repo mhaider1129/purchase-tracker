@@ -311,7 +311,10 @@ const ContractsPage = () => {
   const [checklistSavingId, setChecklistSavingId] = useState(null);
   const [detailTab, setDetailTab] = useState('documents');
   const [contractItems, setContractItems] = useState([]);
+  const [stockItems, setStockItems] = useState([]);
+  const [stockItemsError, setStockItemsError] = useState('');
   const [contractItemForm, setContractItemForm] = useState({
+    item_id: '',
     item_name: '',
     unit: '',
     contracted_price: '',
@@ -557,6 +560,7 @@ const ContractsPage = () => {
 
   const resetContractItemForm = () => {
     setContractItemForm({
+      item_id: '',
       item_name: '',
       unit: '',
       contracted_price: '',
@@ -570,6 +574,40 @@ const ContractsPage = () => {
       delivered_quantity: '',
       notes: '',
       is_active: true,
+    });
+  };
+
+
+  useEffect(() => {
+    const fetchStockItems = async () => {
+      setStockItemsError('');
+      try {
+        const { data } = await api.get('/stock-items');
+        setStockItems(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Failed to load stock items for contracts', err);
+        setStockItems([]);
+        setStockItemsError('Stock item catalog is unavailable. You can still define a contracted item by name.');
+      }
+    };
+
+    fetchStockItems();
+  }, []);
+
+  const handleContractStockItemSelection = (event) => {
+    const stockItemId = event.target.value;
+    setContractItemForm((current) => {
+      if (!stockItemId) {
+        return { ...current, item_id: '' };
+      }
+
+      const selectedStockItem = stockItems.find((item) => String(item.id) === String(stockItemId));
+      return {
+        ...current,
+        item_id: stockItemId,
+        item_name: selectedStockItem?.name || current.item_name,
+        unit: selectedStockItem?.unit || current.unit,
+      };
     });
   };
 
@@ -591,6 +629,7 @@ const ContractsPage = () => {
     try {
       await api.post(`/contracts/${contractId}/items`, {
         ...contractItemForm,
+        item_id: contractItemForm.item_id || null,
         item_name: contractItemForm.item_name.trim(),
         currency: contractItemForm.currency || viewingContract?.currency || formState.currency || 'IQD',
       });
@@ -2580,7 +2619,14 @@ const ContractsPage = () => {
                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                         Add every item covered by this agreement. Purchase requesters should select the matching contracted item so ordered quantities, delivery performance, and contract consumption stay connected to this contract.
                       </p>
+                      {stockItemsError && <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">{stockItemsError}</p>}
                       <form onSubmit={handleCreateContractItem} className="mt-4 grid gap-3 md:grid-cols-4">
+                        <select name="item_id" value={contractItemForm.item_id} onChange={handleContractStockItemSelection} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                          <option value="">Define item manually</option>
+                          {stockItems.map((stockItem) => (
+                            <option key={stockItem.id} value={stockItem.id}>{stockItem.name}{stockItem.brand ? ` • ${stockItem.brand}` : ''}</option>
+                          ))}
+                        </select>
                         <input name="item_name" value={contractItemForm.item_name} onChange={handleContractItemInputChange} placeholder="Item name *" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
                         <input name="unit" value={contractItemForm.unit} onChange={handleContractItemInputChange} placeholder="Unit" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
                         <input name="contracted_price" value={contractItemForm.contracted_price} onChange={handleContractItemInputChange} placeholder="Contracted price" type="number" step="0.01" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
@@ -2599,7 +2645,7 @@ const ContractsPage = () => {
                       const requested = Number(it.requested_quantity || 0);
                       const delivered = Number(it.delivered_quantity || 0);
                       const deliveryPercent = requested > 0 ? Math.min(100, Math.round((delivered / requested) * 100)) : null;
-                      return <div key={it.id} className="rounded border p-3 text-sm dark:border-gray-700"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-gray-900 dark:text-gray-100">{it.item_name}</p><p className="text-gray-600 dark:text-gray-300">{it.unit || 'Unit —'} · {it.contracted_price || '—'} {it.currency || ''} · lead time {it.lead_time_days || '—'} days</p><p className="text-xs text-gray-500">{it.notes || 'No requester guidance.'}</p></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${it.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{it.is_active ? 'Selectable' : 'Inactive'}</span></div><div className="mt-3"><div className="flex justify-between text-xs text-gray-600 dark:text-gray-300"><span>Delivered {delivered || 0} of {requested || '—'}</span><span>{deliveryPercent === null ? 'No contract quantity' : `${deliveryPercent}% delivered`}</span></div>{deliveryPercent !== null && <div className="mt-1 h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div className="h-2 rounded-full bg-emerald-500" style={{ width: `${deliveryPercent}%` }} /></div>}</div></div>;
+                      return <div key={it.id} className="rounded border p-3 text-sm dark:border-gray-700"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-gray-900 dark:text-gray-100">{it.item_name}</p>{it.item_id && <p className="text-xs text-blue-600 dark:text-blue-300">Linked stock item #{it.item_id}</p>}<p className="text-gray-600 dark:text-gray-300">{it.unit || 'Unit —'} · {it.contracted_price || '—'} {it.currency || ''} · lead time {it.lead_time_days || '—'} days</p><p className="text-xs text-gray-500">{it.notes || 'No requester guidance.'}</p></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${it.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{it.is_active ? 'Selectable' : 'Inactive'}</span></div><div className="mt-3"><div className="flex justify-between text-xs text-gray-600 dark:text-gray-300"><span>Delivered {delivered || 0} of {requested || '—'}</span><span>{deliveryPercent === null ? 'No contract quantity' : `${deliveryPercent}% delivered`}</span></div>{deliveryPercent !== null && <div className="mt-1 h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div className="h-2 rounded-full bg-emerald-500" style={{ width: `${deliveryPercent}%` }} /></div>}</div></div>;
                     })}
                   </div>
                 )}

@@ -287,48 +287,65 @@ const StockRequestForm = () => {
     });
   };
 
-  const handleItemSelection = (index, stockItemId) => {
+  const clearItemSelection = (index) => {
     setSelectedItems((prev) => {
       const updated = [...prev];
       const current = { ...updated[index] };
-      if (!stockItemId) {
+      updated[index] = {
+        ...current,
+        stock_item_id: '',
+        item_name: '',
+        brand: '',
+        available_quantity: '',
+        contract_id: '',
+        contract_item_id: '',
+        contracted_price: '',
+        contract_title: '',
+      };
+      return updated;
+    });
+
+    setItemSearchTerms((terms) => {
+      const next = [...terms];
+      next[index] = '';
+      return next;
+    });
+  };
+
+  const handleItemSelection = (index, stockItemId) => {
+    if (!stockItemId) {
+      clearItemSelection(index);
+      return;
+    }
+
+    setSelectedItems((prev) => {
+      const updated = [...prev];
+      const current = { ...updated[index] };
+      const matchedItem = itemsList.find(
+        (stock) => String(stock.id) === stockItemId
+      );
+
+      if (matchedItem) {
         updated[index] = {
           ...current,
-          stock_item_id: '',
-          item_name: '',
-          brand: '',
-          available_quantity: '',
+          stock_item_id: matchedItem.id,
+          item_name: matchedItem.name,
+          brand: matchedItem.brand || '',
+          available_quantity: matchedItem.available_quantity ?? '',
+          category: matchedItem.category || current.category,
+          sub_category: matchedItem.sub_category || current.sub_category,
           contract_id: '',
           contract_item_id: '',
           contracted_price: '',
           contract_title: '',
         };
-      } else {
-        const matchedItem = itemsList.find(
-          (stock) => String(stock.id) === stockItemId
-        );
-        if (matchedItem) {
-          updated[index] = {
-            ...current,
-            stock_item_id: matchedItem.id,
-            item_name: matchedItem.name,
-            brand: matchedItem.brand || '',
-            available_quantity: matchedItem.available_quantity ?? '',
-            category: matchedItem.category || current.category,
-            sub_category: matchedItem.sub_category || current.sub_category,
-            contract_id: '',
-            contract_item_id: '',
-            contracted_price: '',
-            contract_title: '',
-          };
-          if (!category && matchedItem.category) {
-            setCategory(matchedItem.category);
-          }
-          if (!subCategory && matchedItem.sub_category) {
-            setSubCategory(matchedItem.sub_category);
-          }
+
+        if (matchedItem.category) {
+          setCategory(matchedItem.category);
         }
+        setSubCategory('');
       }
+
       return updated;
     });
 
@@ -1013,24 +1030,34 @@ const StockRequestForm = () => {
                       <label className="block text-sm text-gray-600 mb-1">
                         Item name
                       </label>
-                      <select
-                        value={item.stock_item_id}
-                        onChange={(e) =>
-                          handleItemSelection(index, e.target.value)
-                        }
-                        className="w-full p-2 border rounded"
-                        required
-                        disabled={isSubmitting || !scopedCatalog.length}
-                      >
-                        <option value="">{t('stockPurchaseRequestForm.fields.chooseItem')}</option>
-                        {filteredOptions.map((stock) => (
-                          <option key={stock.id} value={stock.id}>
-                            {stock.name}
-                            {stock.brand ? ` • ${stock.brand}` : ''} (
-                            {stock.available_quantity ?? '—'} in stock)
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex gap-2">
+                        <select
+                          value={item.stock_item_id}
+                          onChange={(e) =>
+                            handleItemSelection(index, e.target.value)
+                          }
+                          className="w-full p-2 border rounded"
+                          required
+                          disabled={isSubmitting || !scopedCatalog.length}
+                        >
+                          <option value="">{t('stockPurchaseRequestForm.fields.chooseItem')}</option>
+                          {filteredOptions.map((stock) => (
+                            <option key={stock.id} value={stock.id}>
+                              {stock.name}
+                              {stock.brand ? ` • ${stock.brand}` : ''} (
+                              {stock.available_quantity ?? '—'} in stock)
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => clearItemSelection(index)}
+                          className="shrink-0 px-3 py-2 border border-gray-300 rounded text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                          disabled={isSubmitting || !item.stock_item_id}
+                        >
+                          Clear
+                        </button>
+                      </div>
                       {!filteredOptions.length && scopedCatalog.length > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
                           No catalog items match "{searchTerm}".
