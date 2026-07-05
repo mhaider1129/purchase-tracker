@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import saveAs from 'file-saver';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ContractForm from '../components/ContractForm';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
@@ -287,7 +287,9 @@ const initialFormState = {
 const ContractsPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { contractId: routeContractId } = useParams();
   const isCreatePage = location.pathname === '/contracts/new';
+  const isEditPage = Boolean(routeContractId) && location.pathname === `/contracts/${routeContractId}/edit`;
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -722,6 +724,38 @@ const ContractsPage = () => {
     setFormState(initialFormState);
   };
 
+  useEffect(() => {
+    if (!isEditPage || !routeContractId) {
+      return;
+    }
+
+    let isMounted = true;
+    const loadContractForEditing = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const { data } = await api.get(`/contracts/${routeContractId}`);
+        if (isMounted) {
+          handleSelectContract(data);
+        }
+      } catch (err) {
+        console.error('Failed to load contract for editing', err);
+        if (isMounted) {
+          setError(err?.response?.data?.message || 'Unable to load this contract for editing.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadContractForEditing();
+    return () => {
+      isMounted = false;
+    };
+  }, [isEditPage, routeContractId]);
+
   const fetchContractPayments = useCallback(async (contractId) => {
     if (!contractId) {
       setContractPayments([]);
@@ -780,7 +814,7 @@ const ContractsPage = () => {
     fetchContractPayments(viewingContract.id);
   }, [fetchContractPayments, viewingContract?.id]);
 
-  const handleSelectContract = (contract) => {
+  function handleSelectContract(contract) {
     setEditingId(contract.id);
     setViewingContract(contract);
     setFormState({
@@ -894,7 +928,7 @@ const ContractsPage = () => {
     });
     setFormError('');
     setSuccessMessage('');
-  };
+  }
 
   const handleChecklistToggle = async (documentId, checked) => {
     const activeContractId = editingId || viewingContract?.id;
@@ -1812,7 +1846,7 @@ const ContractsPage = () => {
           </div>
         </header>
 
-        {!isCreatePage && (
+        {!isCreatePage && !isEditPage && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <StatCard
             tone="active"
@@ -1864,12 +1898,14 @@ const ContractsPage = () => {
         {!isCreatePage ? (
         <section
           className={`grid gap-6 ${
-            editingId || viewingContract
+            isEditPage
+              ? 'grid-cols-1'
+              : editingId || viewingContract
               ? 'lg:grid-cols-[minmax(0,1.75fr)_minmax(420px,0.95fr)] xl:grid-cols-[minmax(0,2fr)_minmax(500px,1fr)]'
               : 'grid-cols-1'
           }`}
         >
-          <div className="space-y-4">
+          <div className={isEditPage ? 'hidden' : 'space-y-4'}>
             <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex flex-1 gap-3">
@@ -2154,7 +2190,7 @@ const ContractsPage = () => {
                                   type="button"
                                   onClick={(event) => {
                                     event.stopPropagation();
-                                    handleSelectContract(contract);
+                                    navigate(`/contracts/${contract.id}/edit`);
                                   }}
                                   className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                                 >
@@ -2227,6 +2263,8 @@ const ContractsPage = () => {
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                     {isCreatePage
                       ? 'Create a new contract'
+                      : isEditPage
+                      ? 'Edit contract full page'
                       : editingId
                       ? 'Edit contract'
                       : viewingContract
@@ -2236,6 +2274,8 @@ const ContractsPage = () => {
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     {isCreatePage
                       ? 'Capture supplier agreements, contract periods, and renewal information.'
+                      : isEditPage
+                      ? 'Use the full page workspace to update the selected contract and its lifecycle tabs.'
                       : editingId
                       ? 'Update the selected contract. All changes are tracked with timestamps.'
                       : viewingContract
@@ -2555,7 +2595,7 @@ const ContractsPage = () => {
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
-                          onClick={() => handleSelectContract(viewingContract)}
+                          onClick={() => navigate(`/contracts/${viewingContract.id}/edit`)}
                           className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
                           Edit contract

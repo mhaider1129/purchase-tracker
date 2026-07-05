@@ -715,6 +715,15 @@ const AppRoutes = () => (
       }
     />
     <Route
+      path="/contracts/:contractId/edit"
+      element={
+        <ProtectedRoute
+          element={<ContractsPage />}
+          resourceKey="feature.contracts"
+        />
+      }
+    />
+    <Route
       path="/contracts/approvals"
       element={
         <ProtectedRoute
