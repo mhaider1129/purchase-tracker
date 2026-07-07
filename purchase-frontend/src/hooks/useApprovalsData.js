@@ -97,6 +97,8 @@ const useApprovalsData = (user) => {
     [normalizedUserId],
   );
 
+  const getEditableItemComment = useCallback(() => '', []);
+
   const fetchApprovals = useCallback(async () => {
     setLoading(true);
     try {
@@ -237,7 +239,7 @@ const useApprovalsData = (user) => {
         if (!item?.id) return acc;
         acc[item.id] = {
           status: item.approval_status || 'Pending',
-          comments: item.approval_comments || '',
+          comments: getEditableItemComment(item),
         };
         return acc;
       }, {}),
@@ -255,7 +257,7 @@ const useApprovalsData = (user) => {
       [requestId]: getItemSummaryFromItems(fetchedItems),
     }));
     return fetchedItems;
-  }, [getItemSummaryFromItems, itemsMap]);
+  }, [getEditableItemComment, getItemSummaryFromItems, itemsMap]);
 
   const toggleExpand = async (requestId) => {
     const isSameRequest = expandedId === requestId;
@@ -411,7 +413,7 @@ const useApprovalsData = (user) => {
 
       const decision = decisionsForRequest[item.id] || {
         status: item?.approval_status || 'Pending',
-        comments: item?.approval_comments || '',
+        comments: getEditableItemComment(item),
       };
 
       const convertToWarehouseSupply = Boolean(conversionsForRequest[item.id]);
@@ -453,7 +455,7 @@ const useApprovalsData = (user) => {
       }
 
       const statusChanged =
-        status !== (item.approval_status || 'Pending') || commentsValue !== (item.approval_comments || '');
+        status !== (item.approval_status || 'Pending') || commentsValue !== getEditableItemComment(item);
       const quantityChanged = hasQuantityDraft && parsedQuantity !== Number(item.quantity);
 
       if (statusChanged || quantityChanged || convertToWarehouseSupply) {
@@ -541,7 +543,7 @@ const useApprovalsData = (user) => {
           res.data.updatedItems.forEach((item) => {
             existing[item.id] = {
               status: item.approval_status || 'Pending',
-              comments: item.approval_comments || '',
+              comments: getEditableItemComment(item),
             };
           });
 

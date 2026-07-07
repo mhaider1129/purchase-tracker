@@ -36,8 +36,8 @@ const PRINT_TRANSLATIONS = {
     requester: 'Requester',
     assignedTo: 'Assigned To',
     printCount: 'Print Count',
-    lastUpdated: 'Last Updated',
-    approvalOn: 'on',
+    finalApproval: 'Final Approval',
+    approvedAt: 'Approved at',
     finalApprover: 'Final approver',
     printLanguage: 'Print Language',
     english: 'English',
@@ -76,8 +76,8 @@ const PRINT_TRANSLATIONS = {
     requester: 'مقدم الطلب',
     assignedTo: 'مكلف إلى',
     printCount: 'عدد الطباعة',
-    lastUpdated: 'آخر تحديث',
-    approvalOn: 'بتاريخ',
+    finalApproval: 'الموافقة النهائية',
+    approvedAt: 'وافق بتاريخ',
     finalApprover: 'الموافق النهائي',
     printLanguage: 'لغة الطباعة',
     english: 'الإنجليزية',
@@ -319,7 +319,7 @@ const CompletedAssignedRequestsPage = () => {
       const formatFinalApprovalSummary = (name, dateValue) => {
         const formattedDate = formatDate(dateValue);
         if (formattedDate === '—') return formattedDate;
-        return `${name || translate('finalApprover')} ${translate('approvalOn')} ${formattedDate}`;
+        return `${name || translate('finalApprover')} ${translate('approvedAt')} ${formattedDate}`;
       };
 
       const now = escapeHtml(new Date().toLocaleString(locale));
@@ -327,9 +327,9 @@ const CompletedAssignedRequestsPage = () => {
         ? `${request.requester_name}${request.requester_role ? ` (${request.requester_role})` : ''}`
         : request.temporary_requester_name;
 
-      const lastUpdated = request.final_approval?.approved_at
+      const finalApproval = request.final_approval?.approved_at
         ? formatFinalApprovalSummary(request.final_approval.approver_name, request.final_approval.approved_at)
-        : formatDate(request.updated_at);
+        : null;
 
       const detailFields = [
         { label: translate('requestId'), value: request.id },
@@ -342,7 +342,7 @@ const CompletedAssignedRequestsPage = () => {
         { label: translate('section'), value: request.section_name },
         { label: translate('requester'), value: requesterName },
         { label: translate('printCount'), value: print_count },
-        { label: translate('lastUpdated'), value: lastUpdated },
+        { label: translate('finalApproval'), value: finalApproval },
       ]
         .map(({ label, value }) => ({ label, value: formatValue(value) }))
         .filter(({ value }) => value && value !== '—');

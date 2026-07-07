@@ -231,6 +231,18 @@ const AuditRequestsPage = () => {
         return;
       }
 
+      const formatPrintDate = (value) => {
+        if (!value) return '—';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
+      };
+      const finalApproval = request?.final_approval?.approved_at
+        ? `${request.final_approval.approver_name || tr('print.finalApprover', 'Final approver')} ${tr(
+            'print.approvedAt',
+            'Approved at',
+          )} ${formatPrintDate(request.final_approval.approved_at)}`
+        : null;
+
       const detailRows = [
         [tr('print.requestId', 'Request ID'), request?.id || requestId],
         [tr('print.type', 'Type'), request?.request_type],
@@ -240,7 +252,8 @@ const AuditRequestsPage = () => {
         [tr('print.section', 'Section'), request?.section_name],
         [tr('print.project', 'Project'), request?.project_name],
         [tr('print.printCount', 'Print Count'), printCount ?? request?.print_count],
-      ];
+        [tr('print.finalApproval', 'Final Approval'), finalApproval],
+      ].filter(([, value]) => value && value !== '—');
       const itemRows = items.map((item) => `
         <tr>
           <td>${escapeHtml(item.item_name)}</td>

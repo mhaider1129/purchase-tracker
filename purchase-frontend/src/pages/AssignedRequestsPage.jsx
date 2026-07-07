@@ -618,17 +618,17 @@ const AssignedRequestsPage = () => {
         const formattedDate = formatPrintableDate(dateValue);
         if (formattedDate === '—') return formattedDate;
         return `${name || tr('print.finalApprover', 'Final approver')} ${tr(
-          'print.approvalOn',
-          'on',
+          'print.approvedAt',
+          'Approved at',
         )} ${formattedDate}`;
       };
 
-      const lastUpdated = request?.final_approval?.approved_at
+      const finalApproval = request?.final_approval?.approved_at
         ? formatFinalApprovalSummary(
             request.final_approval.approver_name,
             request.final_approval.approved_at,
           )
-        : formatPrintableDate(request?.updated_at);
+        : null;
 
       const detailFields = [
         { label: tr('print.requestId', 'Request ID'), value: request?.id || requestId },
@@ -640,7 +640,7 @@ const AssignedRequestsPage = () => {
         { label: tr('print.createdOn', 'Created On'), value: formatPrintableDate(request?.created_at) },
         { label: tr('print.neededBy', 'Needed By'), value: formatPrintableDate(request?.needed_by) },
         { label: tr('print.printCount', 'Print Count'), value: printCount ?? request?.print_count },
-        { label: tr('print.lastUpdated', 'Last Updated'), value: lastUpdated },
+        { label: tr('print.finalApproval', 'Final Approval'), value: finalApproval },
       ]
         .map(({ label, value }) => ({ label, value: formatPrintableValue(value) }))
         .filter(({ value }) => value && value !== '—');

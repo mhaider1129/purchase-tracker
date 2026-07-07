@@ -98,6 +98,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
     [t],
   );
 
+  const getEditableItemComment = useCallback(() => '', []);
+
   const buildSummaryFromItems = useCallback((items = [], overrides = {}) => {
     const summary = { approved: 0, rejected: 0, pending: 0 };
     if (!Array.isArray(items)) {
@@ -161,7 +163,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
           }
           decisionsByItem[item.id] = {
             status: item?.approval_status || 'Pending',
-            comments: item?.approval_comments || '',
+            comments: getEditableItemComment(item),
           };
         });
 
@@ -194,7 +196,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
     } finally {
       setLoading(false);
     }
-  }, [buildSummaryFromItems, resetApprovals, requestType, t]);
+  }, [buildSummaryFromItems, getEditableItemComment, resetApprovals, requestType, t]);
 
   useEffect(() => {
     fetchRequests();
@@ -453,7 +455,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
         }
         acc[item.id] = {
           status: item?.approval_status || 'Pending',
-          comments: item?.approval_comments || '',
+          comments: getEditableItemComment(item),
         };
         return acc;
       }, {});
@@ -1174,7 +1176,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                         {request.items.map((item) => {
                                           const decision = decisionsForRequest[item.id] || {
                                             status: item?.approval_status || 'Pending',
-                                            comments: item?.approval_comments || '',
+                                            comments: getEditableItemComment(item),
                                           };
                                           const normalizedStatus =
                                             ITEM_STATUS_OPTIONS.includes(decision.status)
