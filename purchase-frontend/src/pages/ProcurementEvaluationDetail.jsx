@@ -189,6 +189,7 @@ const ProcurementEvaluationDetail = () => {
   const [scoreDrafts, setScoreDrafts] = useState({});
   const [summaryDraft, setSummaryDraft] = useState("");
   const [comparisonSort, setComparisonSort] = useState("NAME_ASC");
+  const [comparisonSortOfferId, setComparisonSortOfferId] = useState("ALL");
 
   const readOnly = evaluation?.status === "Finalized";
   const criteriaWeightTotal = useMemo(
@@ -235,15 +236,19 @@ const ProcurementEvaluationDetail = () => {
     [getCostMatrixValue, offers, tests],
   );
   const sortedTests = useMemo(() => {
+    const selectedSortOffer = offers.find(
+      (offer) => String(offer.id) === String(comparisonSortOfferId),
+    );
+    const sortOffers = selectedSortOffer ? [selectedSortOffer] : offers;
     const getTestTotalCost = (test) =>
-      offers.reduce(
+      sortOffers.reduce(
         (sum, offer) =>
           sum +
           Number(getCostMatrixValue(offer.id, test.id).annual_test_cost || 0),
         0,
       );
     const getTestWaste = (test) => {
-      const wasteValues = offers
+      const wasteValues = sortOffers
         .map((offer) =>
           Number(
             getCostMatrixValue(offer.id, test.id).expected_waste_percentage ||
@@ -275,10 +280,15 @@ const ProcurementEvaluationDetail = () => {
       }
       return String(a.test_name || "").localeCompare(String(b.test_name || ""));
     });
-  }, [comparisonSort, getCostMatrixValue, offers, tests]);
+  }, [comparisonSort, comparisonSortOfferId, getCostMatrixValue, offers, tests]);
 
   const exportComparisonExcel = () => {
-    const rows = buildComparisonRows({ tests, offers, costByPair, costDrafts });
+    const rows = buildComparisonRows({
+      tests: sortedTests,
+      offers,
+      costByPair,
+      costDrafts,
+    });
     const blob = buildExcelHtmlBlob(rows, {
       sheetName: "Comparison",
       rtl: document?.documentElement?.dir === "rtl",
@@ -903,6 +913,27 @@ const ProcurementEvaluationDetail = () => {
                 <option value="TOTAL_COST_ASC">
                   Total cost (lowest first)
                 </option>
+              </select>
+              <label
+                className="font-semibold text-slate-700"
+                htmlFor="comparison-sort-offer"
+              >
+                Sort company
+              </label>
+              <select
+                id="comparison-sort-offer"
+                className={inputClass}
+                value={comparisonSortOfferId}
+                onChange={(event) =>
+                  setComparisonSortOfferId(event.target.value)
+                }
+              >
+                <option value="ALL">All companies</option>
+                {offers.map((offer) => (
+                  <option key={offer.id} value={offer.id}>
+                    {offer.offer_name}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="overflow-x-auto">
