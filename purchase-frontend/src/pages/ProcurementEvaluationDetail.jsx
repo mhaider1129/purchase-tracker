@@ -21,6 +21,7 @@ const tabs = [
   "Recommendation",
 ];
 const inputClass = "rounded-lg border border-slate-300 p-2 text-sm";
+const commercialModels = ["PURCHASE", "LEASE", "REAGENT_RENTAL", "PAY_PER_REPORTABLE", "KIT_OWNERSHIP", "HYBRID", "SUBSCRIPTION", "OUTSOURCING", "SERVICE_CONTRACT", "CUSTOM"];
 
 const money = (value) =>
   Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -156,6 +157,8 @@ const ProcurementEvaluationDetail = () => {
     pricing_model: "KIT_OWNERSHIP",
     warranty_years: 0,
     delivery_time_days: "",
+    compliance_status: "PENDING",
+    is_disqualified: false,
   });
   const [testForm, setTestForm] = useState({
     test_name: "",
@@ -167,6 +170,9 @@ const ProcurementEvaluationDetail = () => {
     weight: 0,
     scoring_type: "manual",
     higher_is_better: true,
+    normalization_method: "manual",
+    metric_key: "",
+    is_knockout: false,
   });
   const [costDrafts, setCostDrafts] = useState({});
   const [scoreDrafts, setScoreDrafts] = useState({});
@@ -272,6 +278,8 @@ const ProcurementEvaluationDetail = () => {
         pricing_model: "KIT_OWNERSHIP",
         warranty_years: 0,
         delivery_time_days: "",
+        compliance_status: "PENDING",
+        is_disqualified: false,
       });
       setError("");
       await loadAll();
@@ -299,6 +307,9 @@ const ProcurementEvaluationDetail = () => {
       weight: 0,
       scoring_type: "manual",
       higher_is_better: true,
+      normalization_method: "manual",
+      metric_key: "",
+      is_knockout: false,
     });
     await loadAll();
   };
@@ -326,6 +337,17 @@ const ProcurementEvaluationDetail = () => {
       });
       return next;
     });
+    await loadAll();
+  };
+
+  const clearCostDetails = async (offerId, testId) => {
+    const key = `${offerId}:${testId}`;
+    setCostDrafts((previous) => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
+    await procurementEvaluationsApi.clearCost(id, offerId, testId);
     await loadAll();
   };
 
@@ -576,15 +598,18 @@ const ProcurementEvaluationDetail = () => {
                     })
                   }
                 >
-                  {[
-                    "KIT_OWNERSHIP",
-                    "PAY_PER_REPORTABLE",
-                    "REAGENT_RENTAL",
-                    "HYBRID",
-                  ].map((type) => (
+                  {commercialModels.map((type) => (
                     <option key={type}>{type}</option>
                   ))}
                 </select>
+                <select className={inputClass} value={offerForm.compliance_status} onChange={(e) => setOfferForm({ ...offerForm, compliance_status: e.target.value })}>
+                  {['PENDING', 'COMPLIANT', 'NON_COMPLIANT', 'WAIVED'].map((status) => <option key={status}>{status}</option>)}
+                </select>
+                <input type="number" className={inputClass} placeholder="Lease monthly" onChange={(e) => setOfferForm({ ...offerForm, lease_monthly_payment: e.target.value })} />
+                <input type="number" className={inputClass} placeholder="Subscription base fee" onChange={(e) => setOfferForm({ ...offerForm, subscription_base_fee: e.target.value })} />
+                <input type="number" className={inputClass} placeholder="Included volume" onChange={(e) => setOfferForm({ ...offerForm, included_volume: e.target.value })} />
+                <input type="number" className={inputClass} placeholder="Overage price" onChange={(e) => setOfferForm({ ...offerForm, overage_price: e.target.value })} />
+                <input type="number" className={inputClass} placeholder="Downtime risk cost" onChange={(e) => setOfferForm({ ...offerForm, downtime_cost: e.target.value })} />
                 <button className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white">
                   Add Offer
                 </button>
@@ -622,6 +647,10 @@ const ProcurementEvaluationDetail = () => {
                     <dd>{offer.warranty_years || 0} years</dd>
                     <dt>Delivery</dt>
                     <dd>{offer.delivery_time_days || "—"} days</dd>
+                    <dt>Compliance</dt>
+                    <dd>{offer.compliance_status || "PENDING"}</dd>
+                    <dt>Disqualified</dt>
+                    <dd>{offer.is_disqualified ? "Yes" : "No"}</dd>
                     {offer.pricing_model === "REAGENT_RENTAL" && (
                       <>
                         <dt>Min amount</dt>
@@ -895,14 +924,24 @@ const ProcurementEvaluationDetail = () => {
                               </div>
                             )}
                             {!readOnly && (
-                              <button
-                                type="button"
-                                disabled={!costDrafts[key]}
-                                onClick={() => saveCostMatrix([key])}
-                                className="mt-2 rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300"
-                              >
-                                Save values
-                              </button>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  disabled={!costDrafts[key]}
+                                  onClick={() => saveCostMatrix([key])}
+                                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:bg-slate-300"
+                                >
+                                  Save values
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={!costByPair[key] && !costDrafts[key]}
+                                  onClick={() => clearCostDetails(offer.id, test.id)}
+                                  className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 disabled:border-slate-200 disabled:text-slate-300"
+                                >
+                                  Clear details
+                                </button>
+                              </div>
                             )}
                             <p className="mt-2 font-semibold text-slate-700">
                               Effective:{" "}
@@ -982,6 +1021,10 @@ const ProcurementEvaluationDetail = () => {
                     setCriteriaForm({ ...criteriaForm, weight: e.target.value })
                   }
                 />
+                <input className={inputClass} placeholder="Metric key" value={criteriaForm.metric_key} onChange={(e) => setCriteriaForm({ ...criteriaForm, metric_key: e.target.value })} />
+                <select className={inputClass} value={criteriaForm.normalization_method} onChange={(e) => setCriteriaForm({ ...criteriaForm, normalization_method: e.target.value })}>
+                  {["lowest_best", "highest_best", "target_best", "pass_fail", "manual", "range"].map((method) => <option key={method}>{method}</option>)}
+                </select>
                 <select
                   className={inputClass}
                   value={criteriaForm.scoring_type}
@@ -1008,6 +1051,9 @@ const ProcurementEvaluationDetail = () => {
                     <td>{item.criteria_group}</td>
                     <td>{item.weight}</td>
                     <td>{item.scoring_type}</td>
+                    <td>{item.metric_key || "—"}</td>
+                    <td>{item.normalization_method || "manual"}</td>
+                    <td>{item.is_knockout ? "Knockout" : "Weighted"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1110,6 +1156,7 @@ const ProcurementEvaluationDetail = () => {
                   </p>
                   <h3 className="font-bold">{row.offer_name}</h3>
                   <p>TCO: {money(row.tco_period_cost)}</p>
+                  <p>Risk-adjusted TCO: {money(row.risk_adjusted_tco)}</p>
                   <p>Annual running: {money(row.total_annual_cost)}</p>
                   <p>Avg/test: {money(row.average_cost_per_reported_test)}</p>
                   <p>
@@ -1136,6 +1183,8 @@ const ProcurementEvaluationDetail = () => {
                     <th>Commitment adj.</th>
                     <th>Total annual</th>
                     <th>TCO</th>
+                    <th>Risk-adjusted TCO</th>
+                    <th>Compliance gates</th>
                     <th>Avg/test</th>
                     <th>Score</th>
                     <th>Warning</th>
@@ -1153,6 +1202,8 @@ const ProcurementEvaluationDetail = () => {
                       <td>{money(row.annual_commitment_adjustment)}</td>
                       <td>{money(row.total_annual_cost)}</td>
                       <td>{money(row.tco_period_cost)}</td>
+                      <td>{money(row.risk_adjusted_tco)}</td>
+                      <td>{row.compliance_passed ? "Passed" : "Failed"}{row.knockout_failed ? " / knockout failed" : ""}</td>
                       <td>{money(row.average_cost_per_reported_test)}</td>
                       <td>
                         {Number(row.final_weighted_score || 0).toFixed(2)}
@@ -1385,7 +1436,7 @@ const ProcurementEvaluationDetail = () => {
                   </p>
                 </div>
                 <div className="rounded-xl bg-amber-50 p-4">
-                  <h3 className="font-bold">Warnings</h3>
+                  <h3 className="font-bold">Disqualified offers and warnings</h3>
                   {recommendation.risk_warnings?.length ? (
                     recommendation.risk_warnings.map((item) => (
                       <p key={item} className="text-sm text-amber-800">

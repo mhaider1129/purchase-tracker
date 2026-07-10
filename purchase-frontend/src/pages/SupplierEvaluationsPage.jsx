@@ -92,6 +92,7 @@ const formatScaleInput = (value) =>
   value === null || value === undefined ? '' : String(value);
 
 const initialFormState = {
+  supplier_id: '',
   supplier_name: '',
   evaluation_date: '',
   quality_score: '',
@@ -192,22 +193,12 @@ const SupplierEvaluationsPage = () => {
     ].includes(normalizedRole);
   }, [user]);
 
-  const supplierOptions = useMemo(() => {
-    const names = new Set();
-    evaluations.forEach((evaluation) => {
-      if (evaluation?.supplier_name) {
-        names.add(evaluation.supplier_name);
-      }
-    });
-
-    suppliers.forEach((supplier) => {
-      if (supplier?.name) {
-        names.add(supplier.name);
-      }
-    });
-
-    return Array.from(names).sort((a, b) => a.localeCompare(b));
-  }, [evaluations, suppliers]);
+  const supplierOptions = useMemo(() =>
+    suppliers
+      .filter((supplier) => supplier?.id && supplier?.name)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  [suppliers]);
 
   const fetchSuppliers = useCallback(async () => {
     setSuppliersLoading(true);
@@ -218,7 +209,7 @@ const SupplierEvaluationsPage = () => {
       setSuppliers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load suppliers for evaluations', err);
-      setSuppliersError('Unable to load suppliers. You can still type a supplier name.');
+      setSuppliersError('Unable to load suppliers. Supplier evaluation creation requires a supplier from the master list.');
       setSuppliers([]);
     } finally {
       setSuppliersLoading(false);
@@ -380,7 +371,7 @@ const SupplierEvaluationsPage = () => {
   }, [formSuccess]);
 
   useEffect(() => {
-    if (benchmarkSupplier && !supplierOptions.includes(benchmarkSupplier)) {
+    if (benchmarkSupplier && !supplierOptions.some((supplier) => supplier.name === benchmarkSupplier)) {
       setBenchmarkSupplier('');
     }
   }, [benchmarkSupplier, supplierOptions]);
@@ -403,6 +394,7 @@ const SupplierEvaluationsPage = () => {
       {}
     );
     setFormState({
+      supplier_id: evaluation.supplier_id ? String(evaluation.supplier_id) : '',
       supplier_name: evaluation.supplier_name || '',
       evaluation_date: evaluation.evaluation_date || '',
       quality_score:
@@ -466,6 +458,15 @@ const SupplierEvaluationsPage = () => {
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
+    if (name === 'supplier_id') {
+      const selectedSupplier = suppliers.find((supplier) => String(supplier.id) === value);
+      setFormState((prev) => ({
+        ...prev,
+        supplier_id: value,
+        supplier_name: selectedSupplier?.name || '',
+      }));
+      return;
+    }
     setFormState((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -544,6 +545,7 @@ const SupplierEvaluationsPage = () => {
     }
 
     const payload = {
+      supplier_id: formState.supplier_id ? Number(formState.supplier_id) : undefined,
       supplier_name: formState.supplier_name.trim(),
       evaluation_date: formState.evaluation_date || undefined,
       quality_score: toNumberOrNull(formState.quality_score),
@@ -572,8 +574,8 @@ const SupplierEvaluationsPage = () => {
       },
     };
 
-    if (!payload.supplier_name) {
-      setFormError('Supplier name is required.');
+    if (!payload.supplier_id) {
+      setFormError('Please select a supplier from the master supplier list.');
       return;
     }
 
@@ -995,9 +997,9 @@ const SupplierEvaluationsPage = () => {
                   className="ml-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All suppliers</option>
-                  {supplierOptions.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
+                  {supplierOptions.map((supplier) => (
+                    <option key={supplier.id} value={supplier.name}>
+                      {supplier.name}
                     </option>
                   ))}
                 </select>
@@ -1113,28 +1115,26 @@ const SupplierEvaluationsPage = () => {
             <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium mb-1" htmlFor="supplier_name">
-                    Supplier name<span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium mb-1" htmlFor="supplier_id">
+                    Supplier<span className="text-red-500">*</span>
                   </label>
-                  <input
-                    id="supplier_name"
-                    name="supplier_name"
-                    type="text"
-                    value={formState.supplier_name}
+                  <select
+                    id="supplier_id"
+                    name="supplier_id"
+                    value={formState.supplier_id}
                     onChange={handleInputChange}
                     required
-                    list="supplier-options"
                     className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <datalist id="supplier-options">
-                    {supplierOptions.map((name) => (
-                      <option key={name} value={name} />
+                  >
+                    <option value="">Select supplier</option>
+                    {supplierOptions.map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
                     ))}
-                  </datalist>
+                  </select>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {suppliersLoading
                       ? 'Loading suppliers…'
-                      : suppliersError || 'Start typing to select an existing supplier from the list.'}
+                      : suppliersError || 'Supplier name is stored only as a display copy from the selected supplier record.'}
                   </p>
                 </div>
                 <div>

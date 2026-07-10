@@ -41,8 +41,13 @@ const ProcureToPayInvoicesPage = () => {
   const onCreateInvoice = async () => {
     try {
       setError('');
+      if (!form.supplier_id) {
+        setError('Please select a supplier from the master supplier list.');
+        return;
+      }
+
       await submitInvoice(Number(form.request_id), {
-        supplier_id: form.supplier_id ? Number(form.supplier_id) : undefined,
+        supplier_id: Number(form.supplier_id),
         supplier: selectedSupplier?.name || form.supplier,
         invoice_number: form.invoice_number,
         invoice_date: form.invoice_date,
@@ -99,7 +104,7 @@ const ProcureToPayInvoicesPage = () => {
           <AmountInput className="border rounded px-2 py-1" placeholder="Amount" value={form.subtotal_amount} onChange={(e) => setForm((p) => ({ ...p, subtotal_amount: e.target.value }))} />
         </div>
         <div className="flex items-center gap-2">
-          <button className="bg-blue-600 text-white rounded px-3 py-1" onClick={onCreateInvoice}>Create</button>
+          <button className="bg-blue-600 text-white rounded px-3 py-1 disabled:opacity-50" onClick={onCreateInvoice} disabled={!form.supplier_id}>Create</button>
           <button className="border rounded px-3 py-1" onClick={() => setShowSupplierForm((value) => !value)}>
             {showSupplierForm ? 'Cancel new supplier' : 'Create new supplier'}
           </button>

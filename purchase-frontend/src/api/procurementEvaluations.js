@@ -22,6 +22,7 @@ export const procurementEvaluationsApi = {
   confirmImport: (id, offerId, payload) => api.post(`${base}/${id}/offers/${offerId}/import`, payload).then((res) => res.data),
   importTemplateUrl: `${base}/import/template.csv`,
   bulkSaveCosts: (id, items) => api.put(`${base}/${id}/offer-test-costs/bulk`, { items }).then((res) => res.data),
+  clearCost: (id, offerId, testId) => api.delete(`${base}/${id}/offer-test-costs/${offerId}/${testId}`).then((res) => res.data),
   listCriteria: (id) => api.get(`${base}/${id}/criteria`).then((res) => res.data),
   createCriteria: (id, payload) => api.post(`${base}/${id}/criteria`, payload).then((res) => res.data),
   updateCriteria: (id, criteriaId, payload) => api.patch(`${base}/${id}/criteria/${criteriaId}`, payload).then((res) => res.data),
@@ -33,6 +34,10 @@ export const procurementEvaluationsApi = {
   optimization: (id) => api.get(`${base}/${id}/optimization`).then((res) => res.data),
   breakEven: (id, payload) => api.post(`${base}/${id}/break-even`, payload).then((res) => res.data),
   recommendation: (id) => api.get(`${base}/${id}/recommendation`).then((res) => res.data),
+  complianceMatrix: (id) => api.get(`${base}/${id}/compliance-matrix`).then((res) => res.data),
+  disqualificationReview: (id) => api.get(`${base}/${id}/disqualification-review`).then((res) => res.data),
+  riskAdjustedTco: (id) => api.get(`${base}/${id}/risk-adjusted-tco`).then((res) => res.data),
+  reportSummary: (id) => api.get(`${base}/${id}/report-summary`).then((res) => res.data),
   finalize: (id, payload) => api.patch(`${base}/${id}/finalize`, payload).then((res) => res.data),
 };
 
