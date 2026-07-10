@@ -21,7 +21,18 @@ const tabs = [
   "Recommendation",
 ];
 const inputClass = "rounded-lg border border-slate-300 p-2 text-sm";
-const commercialModels = ["PURCHASE", "LEASE", "REAGENT_RENTAL", "PAY_PER_REPORTABLE", "KIT_OWNERSHIP", "HYBRID", "SUBSCRIPTION", "OUTSOURCING", "SERVICE_CONTRACT", "CUSTOM"];
+const commercialModels = [
+  "PURCHASE",
+  "LEASE",
+  "REAGENT_RENTAL",
+  "PAY_PER_REPORTABLE",
+  "KIT_OWNERSHIP",
+  "HYBRID",
+  "SUBSCRIPTION",
+  "OUTSOURCING",
+  "SERVICE_CONTRACT",
+  "CUSTOM",
+];
 
 const money = (value) =>
   Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -177,6 +188,7 @@ const ProcurementEvaluationDetail = () => {
   const [costDrafts, setCostDrafts] = useState({});
   const [scoreDrafts, setScoreDrafts] = useState({});
   const [summaryDraft, setSummaryDraft] = useState("");
+  const [comparisonSort, setComparisonSort] = useState("NAME_ASC");
 
   const readOnly = evaluation?.status === "Finalized";
   const criteriaWeightTotal = useMemo(
@@ -202,22 +214,68 @@ const ProcurementEvaluationDetail = () => {
     });
     return map;
   }, [costByPair, offers, tests]);
+  const getCostMatrixValue = useCallback(
+    (offerId, testId) => ({
+      pricing_method: "KIT_OWNERSHIP",
+      ...(costByPair[`${offerId}:${testId}`] || {}),
+      ...(costDrafts[`${offerId}:${testId}`] || {}),
+    }),
+    [costByPair, costDrafts],
+  );
   const annualTotalsByOffer = useMemo(
     () =>
       offers.map((offer) => ({
         offerId: offer.id,
         offerName: offer.offer_name,
         annualTotal: tests.reduce((sum, test) => {
-          const key = `${offer.id}:${test.id}`;
-          const current = {
-            ...(costByPair[key] || {}),
-            ...(costDrafts[key] || {}),
-          };
+          const current = getCostMatrixValue(offer.id, test.id);
           return sum + Number(current.annual_test_cost || 0);
         }, 0),
       })),
-    [costByPair, costDrafts, offers, tests],
+    [getCostMatrixValue, offers, tests],
   );
+  const sortedTests = useMemo(() => {
+    const getTestTotalCost = (test) =>
+      offers.reduce(
+        (sum, offer) =>
+          sum +
+          Number(getCostMatrixValue(offer.id, test.id).annual_test_cost || 0),
+        0,
+      );
+    const getTestWaste = (test) => {
+      const wasteValues = offers
+        .map((offer) =>
+          Number(
+            getCostMatrixValue(offer.id, test.id).expected_waste_percentage ||
+              0,
+          ),
+        )
+        .filter((value) => Number.isFinite(value) && value > 0);
+      if (wasteValues.length === 0) return 0;
+      return (
+        wasteValues.reduce((sum, value) => sum + value, 0) / wasteValues.length
+      );
+    };
+
+    return [...tests].sort((a, b) => {
+      if (comparisonSort === "NAME_DESC") {
+        return String(b.test_name || "").localeCompare(
+          String(a.test_name || ""),
+        );
+      }
+      if (comparisonSort === "WASTE_DESC")
+        return getTestWaste(b) - getTestWaste(a);
+      if (comparisonSort === "WASTE_ASC")
+        return getTestWaste(a) - getTestWaste(b);
+      if (comparisonSort === "TOTAL_COST_DESC") {
+        return getTestTotalCost(b) - getTestTotalCost(a);
+      }
+      if (comparisonSort === "TOTAL_COST_ASC") {
+        return getTestTotalCost(a) - getTestTotalCost(b);
+      }
+      return String(a.test_name || "").localeCompare(String(b.test_name || ""));
+    });
+  }, [comparisonSort, getCostMatrixValue, offers, tests]);
 
   const exportComparisonExcel = () => {
     const rows = buildComparisonRows({ tests, offers, costByPair, costDrafts });
@@ -610,14 +668,77 @@ const ProcurementEvaluationDetail = () => {
                     <option key={type}>{type}</option>
                   ))}
                 </select>
-                <select className={inputClass} value={offerForm.compliance_status} onChange={(e) => setOfferForm({ ...offerForm, compliance_status: e.target.value })}>
-                  {['PENDING', 'COMPLIANT', 'NON_COMPLIANT', 'WAIVED'].map((status) => <option key={status}>{status}</option>)}
+                <select
+                  className={inputClass}
+                  value={offerForm.compliance_status}
+                  onChange={(e) =>
+                    setOfferForm({
+                      ...offerForm,
+                      compliance_status: e.target.value,
+                    })
+                  }
+                >
+                  {["PENDING", "COMPLIANT", "NON_COMPLIANT", "WAIVED"].map(
+                    (status) => (
+                      <option key={status}>{status}</option>
+                    ),
+                  )}
                 </select>
-                <input type="number" className={inputClass} placeholder="Lease monthly" onChange={(e) => setOfferForm({ ...offerForm, lease_monthly_payment: e.target.value })} />
-                <input type="number" className={inputClass} placeholder="Subscription base fee" onChange={(e) => setOfferForm({ ...offerForm, subscription_base_fee: e.target.value })} />
-                <input type="number" className={inputClass} placeholder="Included volume" onChange={(e) => setOfferForm({ ...offerForm, included_volume: e.target.value })} />
-                <input type="number" className={inputClass} placeholder="Overage price" onChange={(e) => setOfferForm({ ...offerForm, overage_price: e.target.value })} />
-                <input type="number" className={inputClass} placeholder="Downtime risk cost" onChange={(e) => setOfferForm({ ...offerForm, downtime_cost: e.target.value })} />
+                <input
+                  type="number"
+                  className={inputClass}
+                  placeholder="Lease monthly"
+                  onChange={(e) =>
+                    setOfferForm({
+                      ...offerForm,
+                      lease_monthly_payment: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="number"
+                  className={inputClass}
+                  placeholder="Subscription base fee"
+                  onChange={(e) =>
+                    setOfferForm({
+                      ...offerForm,
+                      subscription_base_fee: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="number"
+                  className={inputClass}
+                  placeholder="Included volume"
+                  onChange={(e) =>
+                    setOfferForm({
+                      ...offerForm,
+                      included_volume: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="number"
+                  className={inputClass}
+                  placeholder="Overage price"
+                  onChange={(e) =>
+                    setOfferForm({
+                      ...offerForm,
+                      overage_price: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="number"
+                  className={inputClass}
+                  placeholder="Downtime risk cost"
+                  onChange={(e) =>
+                    setOfferForm({
+                      ...offerForm,
+                      downtime_cost: e.target.value,
+                    })
+                  }
+                />
                 <button className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white">
                   Add Offer
                 </button>
@@ -759,6 +880,31 @@ const ProcurementEvaluationDetail = () => {
                 </div>
               ))}
             </div>
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm">
+              <label
+                className="font-semibold text-slate-700"
+                htmlFor="comparison-sort"
+              >
+                Sort table
+              </label>
+              <select
+                id="comparison-sort"
+                className={inputClass}
+                value={comparisonSort}
+                onChange={(event) => setComparisonSort(event.target.value)}
+              >
+                <option value="NAME_ASC">Name (A-Z)</option>
+                <option value="NAME_DESC">Name (Z-A)</option>
+                <option value="WASTE_DESC">Waste (highest first)</option>
+                <option value="WASTE_ASC">Waste (lowest first)</option>
+                <option value="TOTAL_COST_DESC">
+                  Total cost (highest first)
+                </option>
+                <option value="TOTAL_COST_ASC">
+                  Total cost (lowest first)
+                </option>
+              </select>
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full border-separate border-spacing-0 text-xs">
                 <thead>
@@ -777,7 +923,7 @@ const ProcurementEvaluationDetail = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {tests.map((test) => (
+                  {sortedTests.map((test) => (
                     <tr key={test.id}>
                       <td className="sticky left-0 border-t bg-white p-2 font-semibold">
                         {test.test_name}
@@ -790,11 +936,7 @@ const ProcurementEvaluationDetail = () => {
                       </td>
                       {offers.map((offer) => {
                         const key = `${offer.id}:${test.id}`;
-                        const current = {
-                          pricing_method: "KIT_OWNERSHIP",
-                          ...(costByPair[key] || {}),
-                          ...(costDrafts[key] || {}),
-                        };
+                        const current = getCostMatrixValue(offer.id, test.id);
                         const cheapest =
                           cheapestByTest[test.id] &&
                           Number(current.annual_test_cost || 0) ===
@@ -943,8 +1085,12 @@ const ProcurementEvaluationDetail = () => {
                                 </button>
                                 <button
                                   type="button"
-                                  disabled={!costByPair[key] && !costDrafts[key]}
-                                  onClick={() => clearCostDetails(offer.id, test.id)}
+                                  disabled={
+                                    !costByPair[key] && !costDrafts[key]
+                                  }
+                                  onClick={() =>
+                                    clearCostDetails(offer.id, test.id)
+                                  }
                                   className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-700 disabled:border-slate-200 disabled:text-slate-300"
                                 >
                                   Clear details
@@ -1029,9 +1175,37 @@ const ProcurementEvaluationDetail = () => {
                     setCriteriaForm({ ...criteriaForm, weight: e.target.value })
                   }
                 />
-                <input className={inputClass} placeholder="Metric key" value={criteriaForm.metric_key} onChange={(e) => setCriteriaForm({ ...criteriaForm, metric_key: e.target.value })} />
-                <select className={inputClass} value={criteriaForm.normalization_method} onChange={(e) => setCriteriaForm({ ...criteriaForm, normalization_method: e.target.value })}>
-                  {["lowest_best", "highest_best", "target_best", "pass_fail", "manual", "range"].map((method) => <option key={method}>{method}</option>)}
+                <input
+                  className={inputClass}
+                  placeholder="Metric key"
+                  value={criteriaForm.metric_key}
+                  onChange={(e) =>
+                    setCriteriaForm({
+                      ...criteriaForm,
+                      metric_key: e.target.value,
+                    })
+                  }
+                />
+                <select
+                  className={inputClass}
+                  value={criteriaForm.normalization_method}
+                  onChange={(e) =>
+                    setCriteriaForm({
+                      ...criteriaForm,
+                      normalization_method: e.target.value,
+                    })
+                  }
+                >
+                  {[
+                    "lowest_best",
+                    "highest_best",
+                    "target_best",
+                    "pass_fail",
+                    "manual",
+                    "range",
+                  ].map((method) => (
+                    <option key={method}>{method}</option>
+                  ))}
                 </select>
                 <select
                   className={inputClass}
@@ -1211,7 +1385,10 @@ const ProcurementEvaluationDetail = () => {
                       <td>{money(row.total_annual_cost)}</td>
                       <td>{money(row.tco_period_cost)}</td>
                       <td>{money(row.risk_adjusted_tco)}</td>
-                      <td>{row.compliance_passed ? "Passed" : "Failed"}{row.knockout_failed ? " / knockout failed" : ""}</td>
+                      <td>
+                        {row.compliance_passed ? "Passed" : "Failed"}
+                        {row.knockout_failed ? " / knockout failed" : ""}
+                      </td>
                       <td>{money(row.average_cost_per_reported_test)}</td>
                       <td>
                         {Number(row.final_weighted_score || 0).toFixed(2)}
@@ -1444,7 +1621,9 @@ const ProcurementEvaluationDetail = () => {
                   </p>
                 </div>
                 <div className="rounded-xl bg-amber-50 p-4">
-                  <h3 className="font-bold">Disqualified offers and warnings</h3>
+                  <h3 className="font-bold">
+                    Disqualified offers and warnings
+                  </h3>
                   {recommendation.risk_warnings?.length ? (
                     recommendation.risk_warnings.map((item) => (
                       <p key={item} className="text-sm text-amber-800">
