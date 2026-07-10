@@ -388,8 +388,16 @@ const ProcurementEvaluationDetail = () => {
   };
 
   const calculate = async () => {
-    await procurementEvaluationsApi.calculate(id);
-    await loadAll();
+    try {
+      await procurementEvaluationsApi.calculate(id);
+      setError("");
+      await loadAll();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Unable to calculate procurement evaluation. Please review offer pricing and item costs.",
+      );
+    }
   };
 
   const loadSensitivity = useCallback(async () => {
