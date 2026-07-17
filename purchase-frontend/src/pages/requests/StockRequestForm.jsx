@@ -12,6 +12,7 @@ import ProjectSelector from '../../components/projects/ProjectSelector';
 import useCurrentUser from '../../hooks/useCurrentUser';
 import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
+import { HOSPITAL_UNITS_OF_MEASURE } from '../../constants/unitsOfMeasure';
 
 const createEmptyItem = (overrides = {}) => ({
   item_name: '',
@@ -20,6 +21,7 @@ const createEmptyItem = (overrides = {}) => ({
   category: overrides.category ?? '',
   sub_category: overrides.sub_category ?? '',
   quantity: 1,
+  unit_of_measure: overrides.unit_of_measure ?? 'Piece',
   available_quantity: '',
   notes: '',
   attachments: [],
@@ -332,6 +334,7 @@ const StockRequestForm = () => {
           item_name: matchedItem.name,
           brand: matchedItem.brand || '',
           available_quantity: matchedItem.available_quantity ?? '',
+          unit_of_measure: matchedItem.unit || current.unit_of_measure || 'Piece',
           category: matchedItem.category || current.category,
           sub_category: matchedItem.sub_category || current.sub_category,
           contract_id: '',
@@ -483,6 +486,7 @@ const StockRequestForm = () => {
           available_quantity:
             matchedItem?.available_quantity ?? availableQuantity,
           quantity: requestedQuantity,
+          unit_of_measure: matchedItem?.unit || 'Piece',
           notes,
         });
       });
@@ -1103,6 +1107,26 @@ const StockRequestForm = () => {
                         className="w-full p-2 border rounded"
                         disabled={isSubmitting}
                       />
+                    </div>
+                    <div className="w-36">
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Unit of measure
+                      </label>
+                      <select
+                        value={item.unit_of_measure}
+                        onChange={(e) =>
+                          handleItemChange(index, 'unit_of_measure', e.target.value)
+                        }
+                        className="w-full p-2 border rounded bg-white"
+                        disabled={isSubmitting}
+                        required
+                      >
+                        {HOSPITAL_UNITS_OF_MEASURE.map((unit) => (
+                          <option key={unit} value={unit}>
+                            {unit}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="w-32">
                       <label className="block text-sm text-gray-600 mb-1">

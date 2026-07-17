@@ -10,6 +10,7 @@ import ProjectSelector from '../../components/projects/ProjectSelector';
 import RequestScheduleField from '../../components/requests/RequestScheduleField';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 import AmountInput from '../../components/ui/AmountInput';
+import { HOSPITAL_UNITS_OF_MEASURE } from '../../constants/unitsOfMeasure';
 
 const NonStockRequestForm = () => {
   const { t } = useTranslation();
@@ -120,6 +121,7 @@ const NonStockRequestForm = () => {
       item_name: '',
       quantity: 1,
       unit_cost: '0',
+      unit_of_measure: 'Piece',
       brand: '',
       available_quantity: '',
       intended_use: '',
@@ -611,7 +613,23 @@ ${templateText}`
                       disabled={isSubmitting}
                     />
                   </div>
-                  <div className="md:col-span-5">
+                  <div className="md:col-span-3">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Unit of measure</label>
+                    <select
+                      value={item.unit_of_measure}
+                      onChange={(e) => handleItemChange(index, 'unit_of_measure', e.target.value)}
+                      className="w-full p-2 border rounded bg-white"
+                      disabled={isSubmitting}
+                      required
+                    >
+                      {HOSPITAL_UNITS_OF_MEASURE.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       {tr('fields.brandLabel')} <span className="text-gray-400">({tr('fields.optionalLabel')})</span>
                     </label>

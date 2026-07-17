@@ -9,10 +9,11 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const Card = ({ title, value }) => (
+const Card = ({ title, value, helper }) => (
   <div className="bg-white shadow rounded p-4 text-center">
     <h3 className="text-sm text-gray-500">{title}</h3>
     <p className="text-xl font-bold text-blue-600">{value}</p>
+    {helper ? <p className="mt-2 text-xs text-gray-500">{helper}</p> : null}
   </div>
 );
 
@@ -48,15 +49,23 @@ const LifecycleAnalytics = () => {
   return (
     <>
       <div className="max-w-5xl mx-auto p-6">
-        <h1 className="text-2xl font-bold text-purple-700 mb-6">Lifecycle Analytics</h1>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <h1 className="text-2xl font-bold text-purple-700 mb-2">Lifecycle Analytics</h1>
+        <p className="mb-6 text-sm text-gray-600">Use this page to monitor PR-to-final-approval and PR-to-PO KPI timing. Direct Purchase PO and CSCC actions feed the PR-to-PO card as soon as the lightweight PO is created.</p>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card
+            title="Avg PR to Final Approval (days)"
+            value={formatDays(data.avg_pr_to_final_approval_days ?? data.avg_approval_time_days)}
+            helper="Request created → final approval timestamp"
+          />
           <Card
             title="Avg Approval Time (days)"
             value={formatDays(data.avg_approval_time_days)}
+            helper="Kept for existing dashboard compatibility"
           />
           <Card
             title="Avg PR to PO Cycle (days)"
             value={formatDays(data.avg_pr_to_po_cycle_days)}
+            helper="Request created → first PO / CSCC send / direct PO"
           />
           <Card title="Bottleneck Stage" value={bottleneckLabel} />
         </div>

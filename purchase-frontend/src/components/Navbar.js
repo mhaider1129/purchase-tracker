@@ -336,8 +336,10 @@ const Navbar = () => {
           resolveFeatureNavItem("approvals", true),
           resolveFeatureNavItem("approvalHistory", true),
           createItem(
-            normalizedRole === "technician",
-            t("navbar.myMaintenance"),
+            ["technician", "engineer"].includes(normalizedRole),
+            normalizedRole === "engineer"
+              ? t("navbar.engineerMaintenanceStatus", { defaultValue: "Maintenance Status" })
+              : t("navbar.myMaintenance"),
             "/my-maintenance-requests",
             "text-orange-600",
           ),

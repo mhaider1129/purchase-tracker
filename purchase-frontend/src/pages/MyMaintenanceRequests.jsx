@@ -12,9 +12,13 @@ import { deriveItemPurchaseState } from '../utils/itemPurchaseStatus';
 import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
 import { updateRequest } from '../api/requests';
+import { useAuth } from '../hooks/useAuth';
 
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const normalizedRole = (user?.role || '').toString().trim().toLowerCase();
+  const isEngineerView = normalizedRole === 'engineer';
   const tr = useCallback(
     (key, options) => t(`myMaintenanceRequestsPage.${key}`, options),
     [t],
@@ -185,9 +189,10 @@ const MyMaintenanceRequests = () => {
 
 
   const canEditBeforeFinalApproval = useCallback((request) => {
+    if (isEngineerView) return false;
     const normalizedStatus = (request?.status || '').trim().toLowerCase();
     return !['approved', 'completed', 'received', 'cancelled'].includes(normalizedStatus);
-  }, []);
+  }, [isEngineerView]);
 
   const openEditRequest = useCallback((request) => {
     setEditError('');
@@ -713,8 +718,18 @@ const MyMaintenanceRequests = () => {
       <div className="max-w-6xl mx-auto p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{t('pageTitles.myMaintenanceRequests')}</h1>
-            <p className="text-sm text-gray-600">{tr('intro')}</p>
+            <h1 className="text-2xl font-bold">
+              {isEngineerView
+                ? tr('engineerTitle', { defaultValue: 'Maintenance Request Status' })
+                : t('pageTitles.myMaintenanceRequests')}
+            </h1>
+            <p className="text-sm text-gray-600">
+              {isEngineerView
+                ? tr('engineerIntro', {
+                    defaultValue: 'Review all submitted maintenance requests, monitor their current status, and filter the queue for the requests you need.',
+                  })
+                : tr('intro')}
+            </p>
           </div>
           <button
             onClick={exportToExcel}

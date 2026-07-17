@@ -572,7 +572,7 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<MyMaintenanceRequests />}
-          allowedRoles={["technician", "SCM", "admin"]}
+          allowedRoles={["technician", "engineer", "SCM", "admin"]}
         />
       }
     />

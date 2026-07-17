@@ -18,6 +18,7 @@ import RequestViewModeToggle from '../components/requests/RequestViewModeToggle'
 import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
 import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
+import { createPurchaseOrder } from '../api/procureToPay';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -224,8 +225,39 @@ const AllRequestsPage = () => {
   const [remindingApproverIds, setRemindingApproverIds] = useState(() => new Set());
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [kpiPoSubmittingId, setKpiPoSubmittingId] = useState(null);
   const [printLanguage, setPrintLanguage] = useState('ar');
   const limit = 10;
+  const getCurrentFilters = useCallback(() => ({
+    filter,
+    sort,
+    requestType,
+    search,
+    requestId,
+    maintenanceRefNumber,
+    currentStep,
+    fromDate,
+    toDate,
+    status,
+    department,
+    section,
+    assignedUser,
+  }), [
+    assignedUser,
+    currentStep,
+    department,
+    filter,
+    fromDate,
+    maintenanceRefNumber,
+    requestId,
+    requestType,
+    search,
+    section,
+    sort,
+    status,
+    toDate,
+  ]);
+  const [appliedFilters, setAppliedFilters] = useState(() => getCurrentFilters());
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -315,26 +347,26 @@ const AllRequestsPage = () => {
     fetchProcurementUsers();
   }, []);
 
-  const fetchRequests = useCallback(async () => {
+  const fetchRequests = useCallback(async (requestedPage = page) => {
     setLoading(true);
     resetAttachments();
     try {
       const res = await axios.get('/requests', {
         params: {
-          filter,
-          sort,
-          request_type: requestType,
-          search,
-          request_id: requestId.trim() || undefined,
-          maintenance_ref_number: maintenanceRefNumber.trim() || undefined,
-          current_step: currentStep || undefined,
-          from_date: fromDate,
-          to_date: toDate,
-          status,
-          department_id: department,
-          section_id: section,
-          assigned_to: assignedUser,
-          page,
+          filter: appliedFilters.filter,
+          sort: appliedFilters.sort,
+          request_type: appliedFilters.requestType,
+          search: appliedFilters.search,
+          request_id: appliedFilters.requestId.trim() || undefined,
+          maintenance_ref_number: appliedFilters.maintenanceRefNumber.trim() || undefined,
+          current_step: appliedFilters.currentStep || undefined,
+          from_date: appliedFilters.fromDate,
+          to_date: appliedFilters.toDate,
+          status: appliedFilters.status,
+          department_id: appliedFilters.department,
+          section_id: appliedFilters.section,
+          assigned_to: appliedFilters.assignedUser,
+          page: requestedPage,
           limit,
         },
       });
@@ -364,19 +396,19 @@ const AllRequestsPage = () => {
 
       const summaryRes = await axios.get('/requests', {
         params: {
-          filter,
-          sort,
-          request_type: requestType,
-          search,
-          request_id: requestId.trim() || undefined,
-          maintenance_ref_number: maintenanceRefNumber.trim() || undefined,
-          current_step: currentStep || undefined,
-          from_date: fromDate,
-          to_date: toDate,
-          status,
-          department_id: department,
-          section_id: section,
-          assigned_to: assignedUser,
+          filter: appliedFilters.filter,
+          sort: appliedFilters.sort,
+          request_type: appliedFilters.requestType,
+          search: appliedFilters.search,
+          request_id: appliedFilters.requestId.trim() || undefined,
+          maintenance_ref_number: appliedFilters.maintenanceRefNumber.trim() || undefined,
+          current_step: appliedFilters.currentStep || undefined,
+          from_date: appliedFilters.fromDate,
+          to_date: appliedFilters.toDate,
+          status: appliedFilters.status,
+          department_id: appliedFilters.department,
+          section_id: appliedFilters.section,
+          assigned_to: appliedFilters.assignedUser,
           page: 1,
           limit: Math.max(total, limit),
         },
@@ -403,22 +435,10 @@ const AllRequestsPage = () => {
       setLoading(false);
     }
     }, [
-    assignedUser,
-    department,
-    filter,
-    currentStep,
-    fromDate,
-    maintenanceRefNumber,
+    appliedFilters,
     page,
-    requestId,
-    requestType,
     resetApprovals,
     resetAttachments,
-    search,
-    section,
-    sort,
-    status,
-    toDate,
   ]);
 
   useEffect(() => {
@@ -434,7 +454,8 @@ const AllRequestsPage = () => {
 
   const applyFilters = () => {
     setPage(1);
-    setFiltersChanged(true);
+    setAppliedFilters(getCurrentFilters());
+    setFiltersChanged(false);
   };
 
   const clearFilters = () => {
@@ -452,7 +473,22 @@ const AllRequestsPage = () => {
     setSection('');
     setAssignedUser('');
     setPage(1);
-    setFiltersChanged(true);
+    setAppliedFilters({
+      filter: '',
+      sort: '',
+      requestType: '',
+      search: '',
+      requestId: '',
+      maintenanceRefNumber: '',
+      currentStep: '',
+      fromDate: '',
+      toDate: '',
+      status: '',
+      department: '',
+      section: '',
+      assignedUser: '',
+    });
+    setFiltersChanged(false);
   };
 
   const toggleItems = async (requestId) => {
@@ -485,6 +521,23 @@ const AllRequestsPage = () => {
 
     await loadAttachmentsForRequest(requestId);
     setExpandedAttachmentsId(requestId);
+  };
+
+
+  const handleCreateKpiPurchaseOrder = async (targetRequestId, fulfillmentMethod) => {
+    const label = fulfillmentMethod === 'CSCC' ? 'send this request to the Central Supply Chain Center' : 'create a direct purchase PO';
+    if (!window.confirm(`This will ${label} for KPI tracking without prices. Continue?`)) return;
+
+    setKpiPoSubmittingId(targetRequestId);
+    try {
+      await createPurchaseOrder(targetRequestId, { fulfillment_method: fulfillmentMethod });
+      await fetchRequests();
+      alert(fulfillmentMethod === 'CSCC' ? 'Request sent to CSCC.' : 'Direct purchase PO created.');
+    } catch (err) {
+      alert(err.response?.data?.error || err.response?.data?.message || `Failed to ${label}.`);
+    } finally {
+      setKpiPoSubmittingId(null);
+    }
   };
 
   const handleExport = async (type) => {
@@ -1348,6 +1401,26 @@ const AllRequestsPage = () => {
                       >
                         {remindingApproverIds.has(request.id) ? 'Sending reminder...' : 'Remind Approver'}
                       </button>
+                    )}
+                    {isPostApprovalStatus(request.status) && (
+                      <>
+                        <button
+                          type="button"
+                          className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700 disabled:opacity-60"
+                          onClick={() => handleCreateKpiPurchaseOrder(request.id, 'DIRECT_PURCHASE')}
+                          disabled={kpiPoSubmittingId === request.id}
+                        >
+                          Direct Purchase PO
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded bg-cyan-700 px-4 py-2 text-white hover:bg-cyan-800 disabled:opacity-60"
+                          onClick={() => handleCreateKpiPurchaseOrder(request.id, 'CSCC')}
+                          disabled={kpiPoSubmittingId === request.id}
+                        >
+                          Send to CSCC
+                        </button>
+                      </>
                     )}
                     {canHardDeleteRequests && (
                       <button

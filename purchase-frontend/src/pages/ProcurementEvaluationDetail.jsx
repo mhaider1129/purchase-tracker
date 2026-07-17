@@ -37,6 +37,12 @@ const commercialModels = [
 const money = (value) =>
   Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
+const applyDiscount = (value, discountPercentage) => {
+  const amount = Number(value || 0);
+  const discount = Math.max(0, Math.min(100, Number(discountPercentage || 0)));
+  return amount * (1 - discount / 100);
+};
+
 const parseNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -50,7 +56,13 @@ const formatPercentInput = (value) => {
     : String(value);
 };
 
-const buildComparisonRows = ({ tests, offers, costByPair, costDrafts }) => {
+const buildComparisonRows = ({
+  tests,
+  offers,
+  costByPair,
+  costDrafts,
+  offerDiscounts = {},
+}) => {
   const headers = [
     "Test",
     "Monthly volume",
@@ -60,6 +72,9 @@ const buildComparisonRows = ({ tests, offers, costByPair, costDrafts }) => {
       `${offer.offer_name} effective cost/reportable test`,
       `${offer.offer_name} monthly cost`,
       `${offer.offer_name} annual cost`,
+      `${offer.offer_name} temporary discount %`,
+      `${offer.offer_name} final monthly cost`,
+      `${offer.offer_name} final annual cost`,
     ]),
   ];
 
@@ -75,12 +90,17 @@ const buildComparisonRows = ({ tests, offers, costByPair, costDrafts }) => {
         ...(costDrafts[key] || {}),
       };
       const annualCost = Number(current.annual_test_cost || 0);
+      const discount = Number(offerDiscounts[offer.id] || 0);
+      const finalAnnualCost = applyDiscount(annualCost, discount);
 
       return [
         current.pricing_method || "KIT_OWNERSHIP",
         Number(current.calculated_effective_cost_per_reported_test || 0),
         annualCost / 12,
         annualCost,
+        discount,
+        finalAnnualCost / 12,
+        finalAnnualCost,
       ];
     }),
   ]);
@@ -105,7 +125,18 @@ const buildComparisonRows = ({ tests, offers, costByPair, costDrafts }) => {
         return sum + Number(current.annual_test_cost || 0);
       }, 0);
 
-      return ["", "", annualTotal / 12, annualTotal];
+      const discount = Number(offerDiscounts[offer.id] || 0);
+      const finalAnnualTotal = applyDiscount(annualTotal, discount);
+
+      return [
+        "",
+        "",
+        annualTotal / 12,
+        annualTotal,
+        discount,
+        finalAnnualTotal / 12,
+        finalAnnualTotal,
+      ];
     }),
   ];
 
@@ -190,6 +221,7 @@ const ProcurementEvaluationDetail = () => {
   const [summaryDraft, setSummaryDraft] = useState("");
   const [comparisonSort, setComparisonSort] = useState("NAME_ASC");
   const [comparisonSortOfferId, setComparisonSortOfferId] = useState("ALL");
+  const [offerDiscounts, setOfferDiscounts] = useState({});
 
   const readOnly = evaluation?.status === "Finalized";
   const criteriaWeightTotal = useMemo(
@@ -225,15 +257,24 @@ const ProcurementEvaluationDetail = () => {
   );
   const annualTotalsByOffer = useMemo(
     () =>
-      offers.map((offer) => ({
-        offerId: offer.id,
-        offerName: offer.offer_name,
-        annualTotal: tests.reduce((sum, test) => {
-          const current = getCostMatrixValue(offer.id, test.id);
-          return sum + Number(current.annual_test_cost || 0);
-        }, 0),
-      })),
-    [getCostMatrixValue, offers, tests],
+      offers
+        .map((offer) => ({
+          offerId: offer.id,
+          offerName: offer.offer_name,
+          annualTotal: tests.reduce((sum, test) => {
+            const current = getCostMatrixValue(offer.id, test.id);
+            return sum + Number(current.annual_test_cost || 0);
+          }, 0),
+          discountPercentage: Number(offerDiscounts[offer.id] || 0),
+        }))
+        .map((offer) => ({
+          ...offer,
+          discountedAnnualTotal: applyDiscount(
+            offer.annualTotal,
+            offer.discountPercentage,
+          ),
+        })),
+    [getCostMatrixValue, offerDiscounts, offers, tests],
   );
   const sortedTests = useMemo(() => {
     const selectedSortOffer = offers.find(
@@ -244,7 +285,10 @@ const ProcurementEvaluationDetail = () => {
       sortOffers.reduce(
         (sum, offer) =>
           sum +
-          Number(getCostMatrixValue(offer.id, test.id).annual_test_cost || 0),
+          applyDiscount(
+            Number(getCostMatrixValue(offer.id, test.id).annual_test_cost || 0),
+            offerDiscounts[offer.id],
+          ),
         0,
       );
     const getTestWaste = (test) => {
@@ -280,7 +324,14 @@ const ProcurementEvaluationDetail = () => {
       }
       return String(a.test_name || "").localeCompare(String(b.test_name || ""));
     });
-  }, [comparisonSort, comparisonSortOfferId, getCostMatrixValue, offers, tests]);
+  }, [
+    comparisonSort,
+    comparisonSortOfferId,
+    getCostMatrixValue,
+    offerDiscounts,
+    offers,
+    tests,
+  ]);
 
   const exportComparisonExcel = () => {
     const rows = buildComparisonRows({
@@ -288,6 +339,7 @@ const ProcurementEvaluationDetail = () => {
       offers,
       costByPair,
       costDrafts,
+      offerDiscounts,
     });
     const blob = buildExcelHtmlBlob(rows, {
       sheetName: "Comparison",
@@ -882,10 +934,36 @@ const ProcurementEvaluationDetail = () => {
                     {offer.offerName}
                   </p>
                   <p className="text-lg font-bold text-indigo-700">
-                    {money(offer.annualTotal)}
+                    {money(offer.discountedAnnualTotal)}
                   </p>
                   <p className="text-xs text-slate-500">
-                    Monthly total: {money(offer.annualTotal / 12)}
+                    Monthly total: {money(offer.discountedAnnualTotal / 12)}
+                  </p>
+                  {offer.discountPercentage > 0 && (
+                    <p className="text-xs text-slate-500 line-through">
+                      Before discount: {money(offer.annualTotal)}
+                    </p>
+                  )}
+                  <label className="mt-3 block text-xs font-semibold text-slate-600">
+                    Temporary discount %
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      className={`${inputClass} mt-1 w-full`}
+                      value={offerDiscounts[offer.offerId] || ""}
+                      onChange={(event) =>
+                        setOfferDiscounts((previous) => ({
+                          ...previous,
+                          [offer.offerId]: event.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                    />
+                  </label>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Study-only discount; it is not saved to the evaluation.
                   </p>
                 </div>
               ))}
@@ -968,6 +1046,15 @@ const ProcurementEvaluationDetail = () => {
                       {offers.map((offer) => {
                         const key = `${offer.id}:${test.id}`;
                         const current = getCostMatrixValue(offer.id, test.id);
+                        const discount = offerDiscounts[offer.id] || 0;
+                        const discountedAnnualCost = applyDiscount(
+                          current.annual_test_cost,
+                          discount,
+                        );
+                        const discountedEffectiveCost = applyDiscount(
+                          current.calculated_effective_cost_per_reported_test,
+                          discount,
+                        );
                         const cheapest =
                           cheapestByTest[test.id] &&
                           Number(current.annual_test_cost || 0) ===
@@ -1129,16 +1216,16 @@ const ProcurementEvaluationDetail = () => {
                               </div>
                             )}
                             <p className="mt-2 font-semibold text-slate-700">
-                              Effective:{" "}
-                              {money(
-                                current.calculated_effective_cost_per_reported_test,
-                              )}{" "}
-                              / Monthly:{" "}
-                              {money(
-                                Number(current.annual_test_cost || 0) / 12,
-                              )}{" "}
-                              / Annual: {money(current.annual_test_cost)}
+                              Final effective: {money(discountedEffectiveCost)}{" "}
+                              / Monthly: {money(discountedAnnualCost / 12)} /
+                              Annual: {money(discountedAnnualCost)}
                             </p>
+                            {Number(discount || 0) > 0 && (
+                              <p className="text-xs text-slate-500">
+                                Before {money(current.annual_test_cost)} ·{" "}
+                                {discount}% temporary discount
+                              </p>
+                            )}
                           </td>
                         );
                       })}
@@ -1150,8 +1237,15 @@ const ProcurementEvaluationDetail = () => {
                     </td>
                     {annualTotalsByOffer.map((offer) => (
                       <td key={offer.offerId} className="p-2 align-top">
-                        <p>Monthly: {money(offer.annualTotal / 12)}</p>
-                        <p>Annual: {money(offer.annualTotal)}</p>
+                        <p>
+                          Monthly: {money(offer.discountedAnnualTotal / 12)}
+                        </p>
+                        <p>Annual: {money(offer.discountedAnnualTotal)}</p>
+                        {offer.discountPercentage > 0 && (
+                          <p className="text-xs font-normal text-slate-500">
+                            Before discount: {money(offer.annualTotal)}
+                          </p>
+                        )}
                       </td>
                     ))}
                   </tr>

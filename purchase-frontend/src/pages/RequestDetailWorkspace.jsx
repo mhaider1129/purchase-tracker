@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import { getDisplayItems } from '../utils/itemUtils';
+import { createPurchaseOrder } from '../api/procureToPay';
 
 const tabs = ['Overview', 'Items', 'Approvals', 'Procurement', 'Timeline', 'Documents', 'Linked Records', 'Communication', 'Audit'];
 const noteTypes = ['internal_note', 'department_follow_up', 'supplier_follow_up', 'clarification', 'finance_note', 'warehouse_note'];
@@ -107,6 +108,7 @@ const RequestDetailWorkspace = () => {
   const [itemStatusTarget, setItemStatusTarget] = useState(null);
   const [itemStatusForm, setItemStatusForm] = useState({ procurement_status: 'not_procured', procurement_comment: '' });
   const [sortItemsAlphabetically, setSortItemsAlphabetically] = useState(false);
+  const [kpiPoSubmitting, setKpiPoSubmitting] = useState(false);
 
   const fetchWorkspace = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -301,6 +303,23 @@ const RequestDetailWorkspace = () => {
     }
   };
 
+
+  const createKpiPurchaseOrder = async (fulfillmentMethod) => {
+    const label = fulfillmentMethod === 'CSCC' ? 'send this request to the Central Supply Chain Center' : 'create a direct purchase PO';
+    if (!window.confirm(`This will ${label} for KPI tracking without prices. Continue?`)) return;
+
+    setKpiPoSubmitting(true);
+    try {
+      await createPurchaseOrder(requestId, { fulfillment_method: fulfillmentMethod });
+      await fetchWorkspace(true);
+      setActiveTab('Linked Records');
+    } catch (err) {
+      alert(err.response?.data?.error || err.response?.data?.message || `Failed to ${label}.`);
+    } finally {
+      setKpiPoSubmitting(false);
+    }
+  };
+
   const printWorkspace = () => window.print();
 
   if (loading) {
@@ -346,6 +365,8 @@ const RequestDetailWorkspace = () => {
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
               {actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(items[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">Register Procurement</button> : null}
+              {actions.has('register_procurement_entry') ? <button onClick={() => createKpiPurchaseOrder('DIRECT_PURCHASE')} disabled={kpiPoSubmitting} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50">Direct Purchase PO</button> : null}
+              {actions.has('register_procurement_entry') ? <button onClick={() => createKpiPurchaseOrder('CSCC')} disabled={kpiPoSubmitting} className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-50">Send to CSCC</button> : null}
               {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Add Note</button> : null}
               {actions.has('mark_request_completed') ? <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} title={completionReadiness.canComplete ? 'Complete this request' : 'Finalize every item and save total cost before completing'} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>Mark Completed</button> : null}
               {actions.has('export_pdf') ? <button onClick={printWorkspace} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100">Print / PDF</button> : null}
