@@ -389,6 +389,11 @@ const AllRequestsPage = () => {
       });
 
       setRequests([...urgentPinnedRequests, ...regularRequests]);
+      // Item rows can be replaced when an edit approval is accepted. Do not keep
+      // the pre-approval response cached after the request list is refreshed.
+      setItemsMap({});
+      setExpandedItemsId(null);
+      setAlphabetizedItemsId(null);
       resetApprovals();
       const total = Number(res?.data?.total) || 0;
       setTotalRequests(total);
@@ -498,17 +503,15 @@ const AllRequestsPage = () => {
       return;
     }
     setAlphabetizedItemsId(null);
-    if (!itemsMap[requestId]) {
-      try {
-        setLoadingItemsId(requestId);
-        const res = await axios.get(`/requests/${requestId}/items`);
-        setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
-      } catch (err) {
-        console.error(`❌ Failed to load items for request ${requestId}:`, err);
-        alert('Failed to load items');
-      } finally {
-        setLoadingItemsId(null);
-      }
+    try {
+      setLoadingItemsId(requestId);
+      const res = await axios.get(`/requests/${requestId}/items`);
+      setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
+    } catch (err) {
+      console.error(`❌ Failed to load items for request ${requestId}:`, err);
+      alert('Failed to load items');
+    } finally {
+      setLoadingItemsId(null);
     }
     setExpandedItemsId(requestId);
   };
