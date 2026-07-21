@@ -436,7 +436,7 @@ const useApprovalsData = (user) => {
               message,
             },
           }));
-          if (options.allowNoChanges) throw new Error(message);
+          if (options.throwOnError) throw new Error(message);
           return;
         }
 
@@ -449,7 +449,7 @@ const useApprovalsData = (user) => {
               message,
             },
           }));
-          if (options.allowNoChanges) throw new Error(message);
+          if (options.throwOnError) throw new Error(message);
           return;
         }
       }
@@ -470,7 +470,7 @@ const useApprovalsData = (user) => {
     }
 
     if (payloadItems.length === 0 && options.allowNoChanges) {
-      return;
+      return true;
     }
 
     if (payloadItems.length === 0) {
@@ -595,6 +595,7 @@ const useApprovalsData = (user) => {
           },
         }));
       }
+      return true;
     } catch (err) {
       console.error('❌ Failed to save item decisions:', err);
       setItemFeedback((prev) => ({
@@ -604,6 +605,10 @@ const useApprovalsData = (user) => {
           message: 'Failed to save item decisions. Please try again.',
         },
       }));
+      if (options.throwOnError) {
+        throw err;
+      }
+      return false;
     } finally {
       setSavingItems((prev) => ({ ...prev, [requestId]: false }));
     }
@@ -680,7 +685,10 @@ const useApprovalsData = (user) => {
     setSummaryFeedback(null);
     try {
       for (const req of selectedRequests) {
-        await saveItemDecisions(req.request_id, req.approval_id, { allowNoChanges: true });
+        await saveItemDecisions(req.request_id, req.approval_id, {
+          allowNoChanges: true,
+          throwOnError: true,
+        });
         const payload = {
           status: summaryDecisions[req.request_id] || 'Approved',
           comments: summaryComments[req.request_id] || '',
@@ -728,6 +736,14 @@ const useApprovalsData = (user) => {
     if (!confirmed) return;
 
     try {
+      // Persist the item-level choices before completing this approval step. Without
+      // this, a rejection selected in the UI can remain Pending in the database and
+      // be auto-approved when the last request-level approval is submitted.
+      await saveItemDecisions(selectedRequestId, selectedApprovalId, {
+        allowNoChanges: true,
+        throwOnError: true,
+      });
+
       const payload = {
         status: selectedDecision,
         comments,

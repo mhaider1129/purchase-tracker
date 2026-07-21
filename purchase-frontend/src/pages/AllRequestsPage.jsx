@@ -17,7 +17,7 @@ import { hasPermission } from '../utils/permissions';
 import RequestViewModeToggle from '../components/requests/RequestViewModeToggle';
 import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
 import PaginationControls from '../components/ui/PaginationControls';
-import { getDisplayItems } from '../utils/itemUtils';
+import { formatOptionalItemText, getDisplayItems } from '../utils/itemUtils';
 import { createPurchaseOrder } from '../api/procureToPay';
 
 const PRINT_TRANSLATIONS = {
@@ -348,6 +348,12 @@ const AllRequestsPage = () => {
   }, []);
 
   const fetchRequests = useCallback(async (requestedPage = page) => {
+    // This callback is also used directly as an event/success handler. React and
+    // child components may pass an event or response object, neither of which is
+    // a valid API page number.
+    const targetPage = Number.isInteger(requestedPage) && requestedPage > 0
+      ? requestedPage
+      : page;
     setLoading(true);
     resetAttachments();
     try {
@@ -366,7 +372,7 @@ const AllRequestsPage = () => {
           department_id: appliedFilters.department,
           section_id: appliedFilters.section,
           assigned_to: appliedFilters.assignedUser,
-          page: requestedPage,
+          page: targetPage,
           limit,
         },
       });
@@ -710,8 +716,9 @@ const AllRequestsPage = () => {
 
       const itemRows = items
         .map((item, index) => {
-          const specsNote = item.specs
-            ? `<div class="item-note"><strong>${translate('specs')}</strong> ${formatValue(item.specs)}</div>`
+          const specs = formatOptionalItemText(item.specs, '');
+          const specsNote = specs
+            ? `<div class="item-note"><strong>${translate('specs')}</strong> ${formatValue(specs)}</div>`
             : '';
           const approvalNote =
             item.approval_status || item.approval_comments
@@ -727,7 +734,7 @@ const AllRequestsPage = () => {
                 <div class="item-name">${formatValue(item.item_name)}</div>
                 ${specsNote || approvalNote ? `<div class="item-notes">${specsNote}${approvalNote}</div>` : ''}
               </td>
-              <td>${formatValue(item.brand)}</td>
+              <td>${formatValue(formatOptionalItemText(item.brand, ''))}</td>
               <td class="numeric">${formatValue(item.quantity)}</td>
               <td class="numeric">${formatValue(item.purchased_quantity)}</td>
               <td class="numeric">${formatAmount(item.unit_cost)}</td>
@@ -1069,7 +1076,7 @@ const AllRequestsPage = () => {
           <button
             type="button"
             className="self-start rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={fetchRequests}
+            onClick={() => fetchRequests()}
             disabled={loading}
           >
             {loading ? 'Refreshing...' : 'Refresh'}
@@ -1563,9 +1570,9 @@ const AllRequestsPage = () => {
                                 {item.item_name}
                               </td>
                               <td className="border p-1 align-top whitespace-pre-wrap text-gray-700">
-                                {item.specs || '—'}
+                                {formatOptionalItemText(item.specs)}
                               </td>
-                              <td className="border p-1 align-top">{item.brand || '—'}</td>
+                              <td className="border p-1 align-top">{formatOptionalItemText(item.brand)}</td>
                               <td className="border p-1 align-top">{item.quantity}</td>
                               <td className="border p-1 align-top">{item.purchased_quantity ?? 0}</td>
                               <td className="border p-1 align-top">{item.unit_cost}</td>

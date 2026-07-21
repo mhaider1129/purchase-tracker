@@ -23,3 +23,12 @@ export const sortItemsAlphabetically = (items = []) =>
 
 export const getDisplayItems = (items = [], shouldSortAlphabetically = false) =>
   shouldSortAlphabetically ? sortItemsAlphabetically(items) : items;
+
+// Older requests can contain a numeric/string zero in optional text columns.
+// Treat that legacy placeholder as missing rather than presenting it as content.
+export const formatOptionalItemText = (value, fallback = '—') => {
+  if (value === null || value === undefined) return fallback;
+
+  const normalized = String(value).trim();
+  return normalized && normalized !== '0' ? normalized : fallback;
+};
