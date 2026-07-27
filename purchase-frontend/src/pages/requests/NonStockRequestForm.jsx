@@ -11,6 +11,7 @@ import RequestScheduleField from '../../components/requests/RequestScheduleField
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 import AmountInput from '../../components/ui/AmountInput';
 import { HOSPITAL_UNITS_OF_MEASURE } from '../../constants/unitsOfMeasure';
+import GenericItemSelector from '../../components/requests/GenericItemSelector';
 
 const NonStockRequestForm = () => {
   const { t } = useTranslation();
@@ -119,6 +120,12 @@ const NonStockRequestForm = () => {
   function getEmptyItem() {
     return {
       item_name: '',
+      generic_item_id: null,
+      request_mode: 'generic_item',
+      catalog_status: 'catalogued',
+      stocking_policy: 'non_stock',
+      restriction_justification: '',
+      pending_item: null,
       quantity: 1,
       unit_cost: '0',
       unit_of_measure: 'Piece',
@@ -382,6 +389,8 @@ ${templateText}`
       if (!item.item_name.trim()) {
         errs.item_name = tr('errors.itemNameRequired');
       }
+      if (item.request_mode === 'generic_item' && !item.generic_item_id) errs.item_name = 'Select an active Generic Item or use “Cannot find the item”.';
+      if (item.request_mode === 'pending_item_creation' && !item.pending_item?.justification?.trim()) errs.item_name = 'Pending Item Master justification is required.';
       if (!item.quantity || Number(item.quantity) < 1) {
         errs.quantity = tr('errors.quantityRequired');
       }
@@ -583,17 +592,7 @@ ${templateText}`
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-5">
                     <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.itemNameLabel')}</label>
-                    <input
-                      type="text"
-                      placeholder={tr('fields.itemNamePlaceholder')}
-                      aria-label={t('nonStockRequestPage.fields.itemNameAria', { index: index + 1 })}
-                      value={item.item_name}
-                      onChange={(e) => handleItemChange(index, 'item_name', e.target.value)}
-                      ref={(node) => { fieldRefs.current[`item-${index}-item_name`] = node; }}
-                      className="w-full p-2 border rounded"
-                      required
-                      disabled={isSubmitting}
-                    />
+                    <GenericItemSelector value={item} disabled={isSubmitting} onChange={(changes)=>setItems(current=>current.map((entry,i)=>i===index?{...entry,...changes}:entry))} />
                     {itemErrors[index]?.item_name && (
                       <p className="text-sm text-red-600 mt-1">{itemErrors[index].item_name}</p>
                     )}

@@ -9,6 +9,7 @@ import {
   submitItemMaster,
   updateItemMaster,
 } from '../api/itemMaster';
+import ItemHierarchyWorkspace from '../components/itemMaster/ItemHierarchyWorkspace';
 
 const CLASSIFICATIONS = [
   'medication',
@@ -193,11 +194,12 @@ export default function ItemMasterPage() {
   return (
     <>
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+        <ItemHierarchyWorkspace />
         <div className="flex items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Item Master</h1>
             <p className="text-sm text-slate-600">Create, validate, approve, and activate standardized items across institutes.</p>
-            <p className="text-xs text-amber-700">Current UI is using legacy item master fields. Normalized hierarchy screens (categories, UOM, manufacturers, brands, variants, conversions) will be wired through new reference endpoints.</p>
+            <p className="text-xs text-amber-700">Legacy compatibility workspace. Commercial fields below remain temporarily available for historical records; create new governed data in the normalized hierarchy.</p>
           </div>
           <button type="button" onClick={startCreate} className="px-4 py-2 rounded bg-blue-600 text-white">New Item</button>
         </div>

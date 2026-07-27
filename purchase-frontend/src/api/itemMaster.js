@@ -65,3 +65,53 @@ export const listItemVariants = async (itemMasterId) => {
   const { data } = await api.get(`/item-master/${itemMasterId}/variants`);
   return data;
 };
+
+export const searchGenericItems = async (params = {}) => {
+  const { data } = await api.get('/item-master/foundation/generic-items', { params });
+  return data;
+};
+
+export const searchApprovedProducts = async (params = {}) => {
+  const { data } = await api.get('/item-master/foundation/products', { params });
+  return data;
+};
+
+export const searchSupplierCatalog = async (params = {}) => {
+  const { data } = await api.get('/item-master/foundation/supplier-catalog', { params });
+  return data;
+};
+
+export const createGenericItem = async payload => {
+  const { data } = await api.post('/item-master/foundation/generic-items', payload);
+  return data;
+};
+
+export const transitionGenericItem = async (id, status) => {
+  const { data } = await api.post(`/item-master/foundation/generic-items/${id}/transition`, { status });
+  return data;
+};
+
+export const submitPendingItem = async payload => {
+  const { data } = await api.post('/item-master/foundation/pending-items', payload);
+  return data;
+};
+
+export const getItemMasterReferences = async () => {
+  const { data } = await api.get('/item-master/foundation/references');
+  return data;
+};
+
+export const listPendingItems = async (params = {}) => {
+  const { data } = await api.get('/item-master/foundation/pending-items', { params });
+  return data;
+};
+
+export const resolvePendingItem = async (id, payload) => {
+  const { data } = await api.post(`/item-master/foundation/pending-items/${id}/resolve`, payload);
+  return data;
+};
+
+export const getLegacyCoverage = async () => {
+  const { data } = await api.get('/item-master/foundation/legacy/coverage');
+  return data;
+};
