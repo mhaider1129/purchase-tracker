@@ -205,6 +205,7 @@ const AllRequestsPage = () => {
   const [filter, setFilter] = useState('');
   const [sort, setSort] = useState('');
   const [requestType, setRequestType] = useState('');
+  const [requestDomain, setRequestDomain] = useState('');
   const [search, setSearch] = useState('');
   const [requestId, setRequestId] = useState('');
   const [maintenanceRefNumber, setMaintenanceRefNumber] = useState('');
@@ -232,6 +233,7 @@ const AllRequestsPage = () => {
     filter,
     sort,
     requestType,
+    requestDomain,
     search,
     requestId,
     maintenanceRefNumber,
@@ -251,6 +253,7 @@ const AllRequestsPage = () => {
     maintenanceRefNumber,
     requestId,
     requestType,
+    requestDomain,
     search,
     section,
     sort,
@@ -362,6 +365,7 @@ const AllRequestsPage = () => {
           filter: appliedFilters.filter,
           sort: appliedFilters.sort,
           request_type: appliedFilters.requestType,
+          request_domain: appliedFilters.requestDomain,
           search: appliedFilters.search,
           request_id: appliedFilters.requestId.trim() || undefined,
           maintenance_ref_number: appliedFilters.maintenanceRefNumber.trim() || undefined,
@@ -410,6 +414,7 @@ const AllRequestsPage = () => {
           filter: appliedFilters.filter,
           sort: appliedFilters.sort,
           request_type: appliedFilters.requestType,
+          request_domain: appliedFilters.requestDomain,
           search: appliedFilters.search,
           request_id: appliedFilters.requestId.trim() || undefined,
           maintenance_ref_number: appliedFilters.maintenanceRefNumber.trim() || undefined,
@@ -473,6 +478,7 @@ const AllRequestsPage = () => {
     setFilter('');
     setSort('');
     setRequestType('');
+    setRequestDomain('');
     setSearch('');
     setRequestId('');
     setMaintenanceRefNumber('');
@@ -488,6 +494,7 @@ const AllRequestsPage = () => {
       filter: '',
       sort: '',
       requestType: '',
+      requestDomain: '',
       search: '',
       requestId: '',
       maintenanceRefNumber: '',
@@ -557,6 +564,7 @@ const AllRequestsPage = () => {
           filter,
           sort,
           request_type: requestType,
+          request_domain: requestDomain,
           search,
           request_id: requestId.trim() || undefined,
           maintenance_ref_number: maintenanceRefNumber.trim() || undefined,
@@ -1119,6 +1127,17 @@ const AllRequestsPage = () => {
               {option.label}
             </option>
           ))}
+        </select>
+
+        <select
+          className="border p-2 rounded"
+          value={requestDomain}
+          onChange={(e) => setRequestDomain(e.target.value)}
+          aria-label="Request domain"
+        >
+          <option value="">All Domains</option>
+          <option value="operational">Operational</option>
+          <option value="medical">Medical</option>
         </select>
 
         <input
