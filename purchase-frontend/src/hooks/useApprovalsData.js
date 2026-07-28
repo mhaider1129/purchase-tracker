@@ -561,7 +561,16 @@ const useApprovalsData = (user) => {
         setRequests((prev) =>
           prev.map((req) =>
             req.request_id === requestId
-              ? { ...req, estimated_cost: res.data.updatedEstimatedCost }
+              ? {
+                  ...req,
+                  estimated_cost: res.data.updatedEstimatedCost,
+                  ...(res.data?.updatedRequestStatus
+                    ? {
+                        status: res.data.updatedRequestStatus,
+                        request_status: res.data.updatedRequestStatus,
+                      }
+                    : {}),
+                }
               : req,
           ),
         );
@@ -575,6 +584,9 @@ const useApprovalsData = (user) => {
       const conversionMessage = res.data?.warehouseSupplyRequestId
         ? ` Converted item(s) to Warehouse Supply Request #${res.data.warehouseSupplyRequestId}.`
         : '';
+      const closedInStockMessage = res.data?.updatedRequestStatus
+        ? ` Request closed as ${res.data.updatedRequestStatus}; later approval steps were stopped.`
+        : '';
 
       if (res.data?.lockedItems?.length) {
         const lockedMessage = `Items locked by previous approvers: ${res.data.lockedItems.join(', ')}.`;
@@ -583,7 +595,7 @@ const useApprovalsData = (user) => {
           ...prev,
           [requestId]: {
             type: 'warning',
-            message: `${lockedMessage}${baseSummaryMessage}${conversionMessage}`,
+            message: `${lockedMessage}${baseSummaryMessage}${conversionMessage}${closedInStockMessage}`,
           },
         }));
       } else {
@@ -591,7 +603,7 @@ const useApprovalsData = (user) => {
           ...prev,
           [requestId]: {
             type: 'success',
-            message: `Item decisions saved. Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.${conversionMessage}`,
+            message: `Item decisions saved. Approved: ${summary.approved}, Rejected: ${summary.rejected}, Pending: ${summary.pending}.${conversionMessage}${closedInStockMessage}`,
           },
         }));
       }
