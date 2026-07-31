@@ -77,6 +77,7 @@ import RfxPortalPage from "./pages/RfxPortalPage";
 import SupplierPortalReadinessPage from "./pages/SupplierPortalReadinessPage";
 import RiskManagementPage from "./pages/RiskManagementPage";
 import ItemMasterPage from "./pages/ItemMasterPage";
+import StockItemMappingWorkspace from "./pages/StockItemMappingWorkspace";
 import ProcureToPayLifecyclePage from "./pages/ProcureToPayLifecyclePage";
 import ProcureToPayGoodsReceiptsPage from "./pages/ProcureToPayGoodsReceiptsPage";
 import ProcureToPayInvoicesPage from "./pages/ProcureToPayInvoicesPage";
@@ -279,6 +280,7 @@ const AppRoutes = () => (
         />
       }
     />
+    <Route path="/item-master/stock-mappings" element={<ProtectedRoute element={<StockItemMappingWorkspace />} requiredPermissions={["item-master.stock-map"]} />} />
     <Route
       path="/item-master"
       element={

@@ -1,0 +1,4 @@
+import {isBulkApprovalSafe} from './StockItemMappingWorkspace';
+const user={permissions:['item-master.stock-map.bulk']};
+const safe=(id)=>({id,generic_item_id:1,approved_product_id:2,parser_version:'v1',hard_exclusions:[],stale:false});
+test('bulk approval requires homogeneous conflict-free fresh targets and permission',()=>{expect(isBulkApprovalSafe([safe(1),safe(2)],user)).toBe(true);expect(isBulkApprovalSafe([safe(1),{...safe(2),generic_item_id:9}],user)).toBe(false);expect(isBulkApprovalSafe([{...safe(1),hard_exclusions:['route_conflict']}],user)).toBe(false);expect(isBulkApprovalSafe([safe(1)],{permissions:[]})).toBe(false);});
