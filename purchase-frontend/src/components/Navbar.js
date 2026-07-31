@@ -229,7 +229,20 @@ const Navbar = () => {
       ["warehouse.manage-supply", "warehouse.view-supply"],
       true,
     );
+    const canManageWarehouseTemplates = hasAccess(
+      currentUser,
+      "feature.warehouseTemplates",
+      ["warehouse.manage-supply"],
+    );
+    const canViewWarehouseRequests = hasAccess(
+      currentUser,
+      "feature.warehouseRequests",
+      ["warehouse.view-supply", "warehouse.manage-supply"],
+    );
     const canViewItemMaster = hasAccess(currentUser, "feature.itemMaster", []);
+    const canMapStockItems = hasAccess(currentUser, null, [
+      "item-master.stock-map",
+    ]);
     const canViewRecalls = hasAccess(currentUser, "feature.itemRecalls", [
       "recalls.view",
       "recalls.manage",
@@ -338,7 +351,7 @@ const Navbar = () => {
           createItem(
             ["technician", "engineer"].includes(normalizedRole),
             normalizedRole === "engineer"
-              ? t("navbar.engineerMaintenanceStatus", { defaultValue: "Maintenance Status" })
+              ? t("navbar.engineerMaintenanceStatus")
               : t("navbar.myMaintenance"),
             "/my-maintenance-requests",
             "text-orange-600",
@@ -357,7 +370,7 @@ const Navbar = () => {
           ),
           createItem(
             hasAccess(currentUser, "feature.auditRequests", ["requests.view-audit"]),
-            "My Audit Registry",
+            t("navbar.myAuditRegistry"),
             "/audit-registry",
             "text-blue-600",
           ),
@@ -366,13 +379,13 @@ const Navbar = () => {
           resolveFeatureNavItem("procurementPlans", canManageProcurement),
           createItem(
             ["admin", "scm", "procurementsupervisor", "procurementspecialist"].includes(normalizedRole),
-            "Procurement Evaluations",
+            t("navbar.procurementEvaluations"),
             "/procurement-evaluations",
             "text-fuchsia-700",
           ),
           createItem(
             canViewDepartmentRequestedItems,
-            "Department Requested Items",
+            t("navbar.departmentRequestedItems"),
             "/department-requested-items",
             "text-indigo-700",
           ),
@@ -386,19 +399,19 @@ const Navbar = () => {
         items: [
           createItem(
             canAccessProcureToPayLifecycle,
-            "Procure-to-Pay Dashboard",
+            t("navbar.procureToPayDashboard"),
             "/procure-to-pay",
             "text-violet-800",
           ),
           createItem(
             canAccessProcureToPayLifecycle,
-            "Procure-to-Pay Lifecycle",
+            t("navbar.procureToPayLifecycle"),
             "/procure-to-pay/lifecycle",
             "text-violet-700",
           ),
           createItem(
             canAccessProcureToPayPurchaseOrders,
-            "Procure-to-Pay PO",
+            t("navbar.procureToPayPurchaseOrders"),
             "/procure-to-pay/purchase-orders",
             "text-slate-700",
           ),
@@ -416,25 +429,25 @@ const Navbar = () => {
           ),
           createItem(
             canAccessProcureToPayMatching,
-            "Procure-to-Pay Matching",
+            t("navbar.procureToPayMatching"),
             "/procure-to-pay/matching",
             "text-amber-700",
           ),
           createItem(
             canAccessProcureToPayAP,
-            "Procure-to-Pay AP",
+            t("navbar.procureToPayAccountsPayable"),
             "/procure-to-pay/accounts-payable",
             "text-cyan-700",
           ),
           createItem(
             canAccessProcureToPayPayments,
-            "Procure-to-Pay Payments",
+            t("navbar.procureToPayPayments"),
             "/procure-to-pay/payments",
             "text-emerald-700",
           ),
           createItem(
             canAccessProcureToPayLifecycle,
-            "Procure-to-Pay Document Flow",
+            t("navbar.procureToPayDocumentFlow"),
             "/procure-to-pay/document-flow",
             "text-purple-700",
           ),
@@ -476,7 +489,7 @@ const Navbar = () => {
           ),
           createItem(
             canManageTechnicalInspections && ["scm", "admin"].includes(normalizedRole),
-            "SCM Inspections Review",
+            t("navbar.scmInspectionsReview"),
             "/technical-inspections/review",
             "text-emerald-700",
           ),
@@ -487,10 +500,28 @@ const Navbar = () => {
             "text-blue-700",
           ),
           createItem(
+            canViewWarehouseRequests,
+            t("navbar.warehouseSupplyRequests"),
+            "/warehouse-supply-requests",
+            "text-blue-700",
+          ),
+          createItem(
+            canManageWarehouseTemplates,
+            t("navbar.warehouseSupplyTemplates"),
+            "/warehouse-supply-templates",
+            "text-teal-700",
+          ),
+          createItem(
             canViewItemMaster,
             t("navbar.itemMaster"),
             "/item-master",
             "text-slate-700",
+          ),
+          createItem(
+            canMapStockItems,
+            t("navbar.stockItemMappings"),
+            "/item-master/stock-mappings",
+            "text-slate-600",
           ),
           createItem(
             canReviewStockItems,
@@ -524,7 +555,7 @@ const Navbar = () => {
           ),
           createItem(
             canAccessBudgetControl,
-            "Budget Control",
+            t("navbar.budgetControl"),
             "/budget-control",
             "text-emerald-800",
           ),
@@ -590,7 +621,7 @@ const Navbar = () => {
           ),
           createItem(
             canAccessSupplierPortalReadiness,
-            "Supplier Portal Readiness",
+            t("navbar.supplierPortalReadiness"),
             "/supplier-portal-readiness",
             "text-emerald-700",
           ),
@@ -632,25 +663,25 @@ const Navbar = () => {
           ),
           createItem(
             canManageContracts,
-            "Contract Templates",
+            t("navbar.contractTemplates"),
             "/contract-templates",
             "text-emerald-600",
           ),
           createItem(
             canManageContracts,
-            "Contract Clauses",
+            t("navbar.contractClauses"),
             "/contract-clauses",
             "text-emerald-600",
           ),
           createItem(
             canManageContracts,
-            "Contract Approvals",
+            t("navbar.contractApprovals"),
             "/contracts/approvals",
             "text-emerald-600",
           ),
           createItem(
             normalizedRole === "scm",
-            "SCM Approval Stages",
+            t("navbar.scmApprovalStages"),
             "/contracts/approval-stage-monitor",
             "text-indigo-700",
           ),
@@ -668,7 +699,7 @@ const Navbar = () => {
         items: [
           createItem(
             true,
-            'My Tasks',
+            t("navbar.myTasks"),
             '/tasks',
             'text-blue-600',
           ),
@@ -837,7 +868,7 @@ const Navbar = () => {
     <nav
       className="sticky top-0 z-50 border-b border-gray-200 bg-gray-100/90 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100"
       role="navigation"
-      aria-label="Main navigation"
+      aria-label={t("navbar.mainNavigation")}
     >
       <div className="flex w-full items-center justify-between px-4 py-3 md:py-4">
         <div className="flex items-center gap-3">

@@ -1,7 +1,7 @@
 export const featureRegistry = {
   openRequests: { path: '/open-requests', nav: { group: 'requests', labelKey: 'navbar.openRequests', color: 'text-green-600' } },
-  approvals: { path: '/approvals', nav: { group: 'requests', label: 'Approvals', color: 'text-sky-700' } },
-  approvalHistory: { path: '/approval-history', nav: { group: 'requests', label: 'Approval History', color: 'text-sky-600' } },
+  approvals: { path: '/approvals', nav: { group: 'requests', labelKey: 'navbar.approvals', color: 'text-sky-700' } },
+  approvalHistory: { path: '/approval-history', nav: { group: 'requests', labelKey: 'navbar.approvalHistory', color: 'text-sky-600' } },
   allRequests: { path: '/all-requests', resourceKey: 'feature.allRequests', requiredPermissions: ['requests.view-all'], nav: { group: 'requests', labelKey: 'navbar.allRequests', color: 'text-indigo-600' } },
   historicalRequests: { path: '/requests/historical', resourceKey: 'feature.historicalRequests', requiredPermissions: ['requests.manage'], allowedRoles: ['admin', 'scm'], nav: { group: 'requests', labelKey: 'navbar.historicalRequests', color: 'text-blue-700' } },
   procurementPlans: { path: '/procurement-plans', resourceKey: 'feature.procurementPlans', requiredPermissions: ['procurement.update-status', 'procurement.update-cost'], nav: { group: 'requests', labelKey: 'navbar.procurementPlans', color: 'text-teal-600' } },
