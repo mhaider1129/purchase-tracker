@@ -12,6 +12,26 @@ import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 import AmountInput from '../../components/ui/AmountInput';
 import { HOSPITAL_UNITS_OF_MEASURE } from '../../constants/unitsOfMeasure';
 
+const ITEM_MASTER_FIELDS = [
+  'generic_item_id',
+  'preferred_product_id',
+  'mandatory_product_id',
+  'request_mode',
+  'catalog_status',
+  'stocking_policy',
+  'preferred_product_reason',
+  'restriction_justification',
+  'item_name_snapshot',
+  'canonical_description_snapshot',
+  'pending_item',
+];
+
+const asFreeTextItem = (item) => {
+  const freeTextItem = { ...item };
+  ITEM_MASTER_FIELDS.forEach((field) => delete freeTextItem[field]);
+  return freeTextItem;
+};
+
 const NonStockRequestForm = () => {
   const { t } = useTranslation();
   const tr = useCallback(
@@ -346,7 +366,7 @@ ${templateText}`
         if (parsed.justification) setJustification(parsed.justification);
         if (parsed.projectId) setProjectId(parsed.projectId);
         if (Array.isArray(parsed.items) && parsed.items.length > 0) {
-          setItems(parsed.items.map((it) => ({ ...getEmptyItem(), ...it, attachments: [] })));
+          setItems(parsed.items.map((it) => ({ ...getEmptyItem(), ...asFreeTextItem(it), attachments: [] })));
         }
       } catch (e) {
         console.warn('Unable to parse saved non-stock draft.', e);
@@ -369,7 +389,7 @@ ${templateText}`
     const payload = {
       justification,
       projectId,
-      items: items.map(({ attachments: _attachments, ...rest }) => rest),
+      items: items.map(({ attachments: _attachments, ...rest }) => asFreeTextItem(rest)),
       updatedAt: new Date().toISOString(),
     };
     window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
@@ -461,7 +481,7 @@ ${templateText}`
     formData.append('target_department_id', targetDeptId);
     formData.append('target_section_id', targetSectionId || '');
     formData.append('client_submission_key', submissionKeyRef.current);
-    const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => rest);
+    const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => asFreeTextItem(rest));
     formData.append('items', JSON.stringify(itemsPayload));
     formData.append('is_urgent', isUrgent ? 'true' : 'false');
     if (scheduledFor) formData.append('scheduled_for', new Date(scheduledFor).toISOString());
