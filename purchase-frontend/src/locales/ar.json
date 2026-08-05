@@ -972,6 +972,22 @@
       "subtitle": "ابدأ بسرعة",
       "badge": "مميز"
     },
+    "finder": {
+      "title": "اعثر على مسار العمل المناسب",
+      "placeholder": "ابحث حسب نوع الطلب أو المهمة أو الفئة...",
+      "clearSearch": "مسح البحث",
+      "categoryLabel": "تصفية مسارات العمل حسب الفئة",
+      "allCategories": "كل الفئات",
+      "results_zero": "لا توجد مسارات عمل متاحة",
+      "results_one": "مسار عمل واحد متاح",
+      "results_two": "مسارا عمل متاحان",
+      "results_few": "{{count}} مسارات عمل متاحة",
+      "results_many": "{{count}} مسار عمل متاح",
+      "results_other": "{{count}} مسار عمل متاح",
+      "noResultsTitle": "لا توجد مسارات عمل مطابقة",
+      "noResultsDescription": "جرّب عبارة بحث أخرى أو اختر فئة مختلفة.",
+      "clearFilters": "مسح جميع عوامل التصفية"
+    },
     "actions": {
       "retry": "إعادة المحاولة",
       "stockRequest": {

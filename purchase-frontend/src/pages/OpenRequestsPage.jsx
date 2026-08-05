@@ -958,8 +958,8 @@ const OpenRequestsPage = () => {
                                           <td className="border p-1">{item.item_name}</td>
                                           <td className="border p-1">{item.brand || '—'}</td>
                                           <td className="border p-1 whitespace-pre-wrap">{item.specs || '—'}</td>
-                                          <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0}</td>
-                                          <td className="border p-1">{purchasedQuantity ?? 0}</td>
+                                          <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0} {item.unit_of_measure || ''}</td>
+                                          <td className="border p-1">{purchasedQuantity ?? 0} {item.unit_of_measure || ''}</td>
                                           <td className="border p-1">{statusLabel}</td>
                                           <td className="border p-1">{item.unit_cost}</td>
                                           <td className="border p-1">{item.total_cost}</td>
@@ -1172,8 +1172,8 @@ const OpenRequestsPage = () => {
                                     <td className="border p-1">{item.item_name}</td>
                                     <td className="border p-1">{item.brand || '—'}</td>
                                     <td className="border p-1 whitespace-pre-wrap">{item.specs || '—'}</td>
-                                    <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0}</td>
-                                    <td className="border p-1">{purchasedQuantity ?? 0}</td>
+                                    <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0} {item.unit_of_measure || ''}</td>
+                                    <td className="border p-1">{purchasedQuantity ?? 0} {item.unit_of_measure || ''}</td>
                                     <td className="border p-1">{statusLabel}</td>
                                     <td className="border p-1">{item.unit_cost}</td>
                                     <td className="border p-1">{item.total_cost}</td>

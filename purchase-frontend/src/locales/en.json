@@ -1032,6 +1032,18 @@
       "subtitle": "Quick start",
       "badge": "Featured"
     },
+    "finder": {
+      "title": "Find the right workflow",
+      "placeholder": "Search by request type, task, or category...",
+      "clearSearch": "Clear search",
+      "categoryLabel": "Filter workflows by category",
+      "allCategories": "All categories",
+      "results_one": "{{count}} workflow available",
+      "results_other": "{{count}} workflows available",
+      "noResultsTitle": "No matching workflows",
+      "noResultsDescription": "Try another search term or choose a different category.",
+      "clearFilters": "Clear all filters"
+    },
     "actions": {
       "retry": "Retry",
       "stockRequest": {

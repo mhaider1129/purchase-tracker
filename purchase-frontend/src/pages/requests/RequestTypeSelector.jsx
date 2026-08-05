@@ -16,12 +16,14 @@ import {
   Printer,
   Package,
   Pill,
+  Search,
   ShieldCheck,
   Sparkles,
   Stethoscope,
   Truck,
   Users,
   Wrench,
+  X,
 } from 'lucide-react';
 import { fetchCurrentUser } from '../../api/currentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
@@ -291,6 +293,8 @@ const RequestTypeSelector = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeGroup, setActiveGroup] = useState('all');
 
   const fetchUserInfo = useCallback(async () => {
     setIsLoading(true);
@@ -352,6 +356,37 @@ const RequestTypeSelector = () => {
       }, 0),
     [visibleGroups]
   );
+
+  const filteredGroups = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+
+    return visibleGroups
+      .filter((group) => activeGroup === 'all' || group.titleKey === activeGroup)
+      .map((group) => ({
+        ...group,
+        actions: group.actions.filter((action) => {
+          if (!normalizedQuery) return true;
+
+          return [
+            t(action.labelKey),
+            t(action.descriptionKey),
+            t(group.titleKey),
+          ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery));
+        }),
+      }))
+      .filter((group) => group.actions.length > 0);
+  }, [activeGroup, searchQuery, t, visibleGroups]);
+
+  const filteredActionCount = useMemo(
+    () => filteredGroups.reduce((count, group) => count + group.actions.length, 0),
+    [filteredGroups]
+  );
+
+  const hasActiveFilters = Boolean(searchQuery.trim()) || activeGroup !== 'all';
+  const clearFilters = () => {
+    setSearchQuery('');
+    setActiveGroup('all');
+  };
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -571,7 +606,7 @@ const RequestTypeSelector = () => {
             </div>
           )}
 
-          {!isLoading && !error && recommendedActions.length > 0 && (
+          {!isLoading && !error && !hasActiveFilters && recommendedActions.length > 0 && (
             <section className="relative overflow-hidden rounded-2xl border border-indigo-100/70 bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 p-5 shadow-xl shadow-indigo-100/50">
               <div className="pointer-events-none absolute -left-10 top-1/3 h-32 w-32 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
               <div className="pointer-events-none absolute -right-16 -bottom-10 h-40 w-40 rounded-full bg-blue-300/20 blur-3xl" aria-hidden="true" />
@@ -590,8 +625,98 @@ const RequestTypeSelector = () => {
             </section>
           )}
 
+          {!isLoading && !error && visibleGroups.length > 0 && (
+            <section
+              className="rounded-2xl border border-indigo-100 bg-white/95 p-4 shadow-sm backdrop-blur"
+              aria-labelledby="request-finder-heading"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div className="flex-1">
+                  <label
+                    id="request-finder-heading"
+                    htmlFor="request-type-search"
+                    className="text-sm font-semibold text-gray-800"
+                  >
+                    {tr('finder.title')}
+                  </label>
+                  <div className="relative mt-2 max-w-xl">
+                    <Search
+                      className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 rtl:left-auto rtl:right-3"
+                      aria-hidden="true"
+                    />
+                    <input
+                      id="request-type-search"
+                      type="search"
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      placeholder={tr('finder.placeholder')}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 rtl:pl-10 rtl:pr-10"
+                    />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 rtl:left-2 rtl:right-auto"
+                        aria-label={tr('finder.clearSearch')}
+                      >
+                        <X className="h-4 w-4" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600" aria-live="polite">
+                  {tr('finder.results', { count: filteredActionCount })}
+                </p>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2" aria-label={tr('finder.categoryLabel')}>
+                <button
+                  type="button"
+                  onClick={() => setActiveGroup('all')}
+                  aria-pressed={activeGroup === 'all'}
+                  className={`rounded-full px-3 py-1.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${
+                    activeGroup === 'all'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                  }`}
+                >
+                  {tr('finder.allCategories')}
+                </button>
+                {visibleGroups.map((group) => (
+                  <button
+                    key={group.titleKey}
+                    type="button"
+                    onClick={() => setActiveGroup(group.titleKey)}
+                    aria-pressed={activeGroup === group.titleKey}
+                    className={`rounded-full px-3 py-1.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${
+                      activeGroup === group.titleKey
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                    }`}
+                  >
+                    {t(group.titleKey)}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className="space-y-6">
-            {visibleGroups.map((group) => (
+            {!isLoading && !error && hasActiveFilters && filteredGroups.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-indigo-200 bg-white/80 px-6 py-10 text-center shadow-sm">
+                <Search className="mx-auto h-8 w-8 text-indigo-300" aria-hidden="true" />
+                <h2 className="mt-3 text-base font-semibold text-gray-900">{tr('finder.noResultsTitle')}</h2>
+                <p className="mt-1 text-sm text-gray-600">{tr('finder.noResultsDescription')}</p>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="mt-4 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+                >
+                  {tr('finder.clearFilters')}
+                </button>
+              </div>
+            )}
+            {filteredGroups.map((group) => (
               <section
                 key={group.titleKey}
                 aria-labelledby={`${group.titleKey.replace(/\./g, '-')}-heading`}

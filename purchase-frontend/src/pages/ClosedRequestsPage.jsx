@@ -816,7 +816,7 @@ const ClosedRequestsPage = () => {
                                                 {item.specs || '—'}
                                               </td>
                                               <td className="px-4 py-2 text-gray-800 dark:text-gray-200">
-                                                {item.quantity ?? '—'}
+                                                {item.quantity ?? '—'} {item.unit_of_measure || ''}
                                                 <div className="text-xs text-gray-500 dark:text-gray-300">
                                                   {tr('receivedProgress', { defaultValue: 'Received' })}: {receivedQty}/{purchasedQty}
                                                 </div>
@@ -1114,7 +1114,7 @@ const ClosedRequestsPage = () => {
                                         </p>
                                       )}
                                       <p className="text-xs text-gray-500 dark:text-gray-300">
-                                        {tr('quantity', { defaultValue: 'Quantity' })}: {item.quantity ?? '—'}
+                                        {tr('quantity', { defaultValue: 'Quantity' })}: {item.quantity ?? '—'} {item.unit_of_measure || ''}
                                       </p>
                                       <p className="text-xs text-gray-500 dark:text-gray-300">
                                         {tr('receivedProgress', { defaultValue: 'Received' })}: {receivedQty}/{purchasedQty}

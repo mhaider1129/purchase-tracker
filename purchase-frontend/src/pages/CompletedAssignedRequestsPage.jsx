@@ -939,10 +939,10 @@ const CompletedAssignedRequestsPage = () => {
                                   </p>
                                 )}
                                 <p className="text-sm text-gray-600 mt-1">
-                                  <span className="font-medium text-gray-700">Requested:</span> {item.quantity}
+                                  <span className="font-medium text-gray-700">Requested:</span> {item.quantity} {item.unit_of_measure || ''}
                                   <span className="mx-2 text-gray-400">•</span>
                                   <span className="font-medium text-gray-700">Purchased:</span>{' '}
-                                  {item.purchased_quantity ?? '—'}
+                                  {item.purchased_quantity ?? '—'} {item.unit_of_measure || ''}
                                   <span className="mx-2 text-gray-400">•</span>
                                   <span className="font-medium text-gray-700">Status:</span> {item.procurement_status || '—'}
                                 </p>

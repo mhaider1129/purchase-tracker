@@ -1592,8 +1592,8 @@ const AllRequestsPage = () => {
                                 {formatOptionalItemText(item.specs)}
                               </td>
                               <td className="border p-1 align-top">{formatOptionalItemText(item.brand)}</td>
-                              <td className="border p-1 align-top">{item.quantity}</td>
-                              <td className="border p-1 align-top">{item.purchased_quantity ?? 0}</td>
+                              <td className="border p-1 align-top">{item.quantity} {item.unit_of_measure || ''}</td>
+                              <td className="border p-1 align-top">{item.purchased_quantity ?? 0} {item.unit_of_measure || ''}</td>
                               <td className="border p-1 align-top">{item.unit_cost}</td>
                               <td className="border p-1 align-top">{item.total_cost}</td>
                               <td className="border p-1 align-top">{item.assigned_user_name || '—'}</td>
