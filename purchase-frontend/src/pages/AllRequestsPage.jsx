@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../api/axios';
 import AssignRequestPanel from '../components/AssignRequestPanel';
-import { printRequest } from '../api/requests';
+import { printRequest, rewireRequestType } from '../api/requests';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import { getRequesterDisplay } from '../utils/requester';
@@ -105,6 +105,7 @@ const REQUEST_TYPE_FILTER_OPTIONS = [
   { value: 'IT Item', label: 'IT Item' },
   { value: 'Maintenance', label: 'Maintenance' },
   { value: 'Printing Logbook', label: 'Logbooks' },
+  { value: 'Warehouse Supply', label: 'Warehouse Supply' },
 ];
 
 // Map roles returned by the API to human friendly step labels
@@ -194,6 +195,8 @@ const AllRequestsPage = () => {
     'all-requests-request-view-mode',
   );
   const [requests, setRequests] = useState([]);
+  const [rewiringRequestId, setRewiringRequestId] = useState(null);
+  const [requestTypeDrafts, setRequestTypeDrafts] = useState({});
   const [expandedAssignId, setExpandedAssignId] = useState(null);
   const [expandedItemsId, setExpandedItemsId] = useState(null);
   const [alphabetizedItemsId, setAlphabetizedItemsId] = useState(null);
@@ -1072,6 +1075,34 @@ const AllRequestsPage = () => {
     }
   };
 
+  const handleRequestTypeChange = async (request) => {
+    const nextType = requestTypeDrafts[request.id] || request.request_type;
+    if (nextType === request.request_type) return;
+    const confirmed = window.confirm(
+      `Change request ${request.id} from ${request.request_type} to ${nextType}? ` +
+        'Its existing approvals will be removed and the correct approval workflow will restart from the first step.',
+    );
+    if (!confirmed) return;
+
+    setRewiringRequestId(request.id);
+    try {
+      const result = await rewireRequestType(request.id, nextType);
+      alert(`✅ ${result.message}`);
+      setRequestTypeDrafts((previous) => {
+        const next = { ...previous };
+        delete next[request.id];
+        return next;
+      });
+      await fetchRequests();
+      window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
+    } catch (err) {
+      console.error(`❌ Failed to change the type of request ${request.id}:`, err);
+      alert(err?.response?.data?.message || 'Failed to change the request type.');
+    } finally {
+      setRewiringRequestId(null);
+    }
+  };
+
   return (
     <>
       <div className="p-6">
@@ -1458,6 +1489,43 @@ const AllRequestsPage = () => {
                       >
                         Delete Permanently
                       </button>
+                    )}
+                    {String(user?.role || '').toUpperCase() === 'SCM' && (
+                      <div className="w-56 rounded-md border border-blue-200 bg-blue-50 p-3 text-left">
+                        <label
+                          className="mb-1 block text-xs font-semibold text-blue-900"
+                          htmlFor={`request-type-${request.id}`}
+                        >
+                          Correct request type
+                        </label>
+                        <select
+                          id={`request-type-${request.id}`}
+                          className="w-full rounded border border-blue-300 bg-white px-2 py-2 text-sm text-gray-900"
+                          value={requestTypeDrafts[request.id] ?? request.request_type}
+                          onChange={(event) =>
+                            setRequestTypeDrafts((previous) => ({
+                              ...previous,
+                              [request.id]: event.target.value,
+                            }))
+                          }
+                          disabled={rewiringRequestId === request.id}
+                        >
+                          {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="mt-2 w-full rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                          onClick={() => handleRequestTypeChange(request)}
+                          disabled={
+                            rewiringRequestId === request.id ||
+                            (requestTypeDrafts[request.id] ?? request.request_type) === request.request_type
+                          }
+                        >
+                          {rewiringRequestId === request.id ? 'Rewiring approvals…' : 'Change & rewire'}
+                        </button>
+                      </div>
                     )}
                     <button
                       className="text-blue-600 underline"

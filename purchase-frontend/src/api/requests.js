@@ -28,6 +28,18 @@ export const updateRequest = async (id, payload, options = {}) => {
   return res.data;
 };
 
+export const rewireRequestType = async (id, requestType, options = {}) => {
+  const trimmedId = String(id || "").trim();
+  if (!trimmedId) throw new Error("A request id is required");
+
+  const res = await api.put(
+    `/requests/${trimmedId}/request-type`,
+    { request_type: requestType },
+    options,
+  );
+  return res.data;
+};
+
 export const getHodApprovers = async (options = {}) => {
   const res = await api.get("/requests/hod-approvers", options);
   return res.data;
@@ -51,6 +63,7 @@ const requestsApi = {
   printRequest,
   getRequestDetails,
   updateRequest,
+  rewireRequestType,
   getHodApprovers,
   getProcurementUsers,
   createHistoricalRequest,

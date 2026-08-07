@@ -475,7 +475,12 @@ const HistoricalRequestsImportPage = () => {
                     </option>
                     {approvers.map((user) => (
                       <option key={user.id} value={user.id}>
-                        {user.name} {user.department_name ? `— ${user.department_name}` : ""}
+                        {user.name}{" "}
+                        {user.role && user.role.toLowerCase() !== "hod"
+                          ? `— ${user.role.toUpperCase()}`
+                          : user.department_name
+                            ? `— ${user.department_name}`
+                            : ""}
                       </option>
                     ))}
                   </select>
