@@ -646,7 +646,13 @@ const ApprovalsPanel = () => {
                   <option value="">{t('approvalsPanel.hodModal.choose')}</option>
                   {hodOptions.map((hod) => (
                     <option key={hod.id} value={hod.id}>
-                      {hod.name || t('approvalsPanel.hodModal.fallback')} {hod.department_name ? `— ${hod.department_name}` : ''}
+                      {[
+                        hod.name || t('approvalsPanel.hodModal.fallback'),
+                        hod.role,
+                        hod.department_name,
+                      ]
+                        .filter(Boolean)
+                        .join(' — ')}
                     </option>
                   ))}
                 </select>
