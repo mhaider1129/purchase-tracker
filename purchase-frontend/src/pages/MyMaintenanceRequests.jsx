@@ -13,6 +13,10 @@ import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
 import { updateRequest } from '../api/requests';
 import { useAuth } from '../hooks/useAuth';
+import {
+  requestMatchesStatusFilter,
+  summarizeRequestStatuses,
+} from '../utils/requestStatus';
 
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
@@ -565,8 +569,7 @@ const MyMaintenanceRequests = () => {
 
     const filteredList = requests
       .filter((request) => {
-        if (statusFilter === 'all') return true;
-        return request.status?.toLowerCase() === statusFilter.toLowerCase();
+        return requestMatchesStatusFilter(request.status, statusFilter);
       })
       .filter((request) => {
         if (!normalizedSearch) return true;
@@ -693,14 +696,7 @@ const MyMaintenanceRequests = () => {
   );
 
   const statusSummary = useMemo(() => {
-    return filteredRequests.reduce(
-      (acc, request) => {
-        const key = request.status?.toLowerCase() || 'unknown';
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-      },
-      { total: filteredRequests.length },
-    );
+    return summarizeRequestStatuses(filteredRequests);
   }, [filteredRequests]);
 
   const resetFilters = () => {

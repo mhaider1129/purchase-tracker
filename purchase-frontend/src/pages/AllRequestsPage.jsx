@@ -130,6 +130,7 @@ const getMaintenanceReference = (request) => {
 
 const CURRENT_STEP_FILTER_OPTIONS = [
   { value: 'Submitted', label: 'Submitted' },
+  { value: 'Available in Stock', label: 'Available in Stock' },
   { value: 'Rejected', label: 'Rejected' },
   { value: 'Completed', label: 'Completed' },
   { value: 'Technical Inspection Pending', label: 'Technical Inspection Pending' },
@@ -139,8 +140,9 @@ const CURRENT_STEP_FILTER_OPTIONS = [
   ...Object.entries(STEP_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
-const getCurrentStep = (req) => {
+export const getCurrentStep = (req) => {
   if (req.status === 'Rejected') return 'Rejected';
+  if (req.status?.toLowerCase() === 'available in stock') return 'Available in Stock';
   if (req.status?.toLowerCase() === 'completed') return 'Completed';
   if (req.status?.toLowerCase() === 'technical_inspection_pending')
     return 'Technical Inspection Pending';
@@ -154,7 +156,7 @@ const getCurrentStep = (req) => {
 };
 
 // Map the current step to a colorful badge
-const getStepColor = (step) => {
+export const getStepColor = (step) => {
   switch (step) {
     case 'Rejected':
       return 'bg-red-100 text-red-800';
@@ -163,6 +165,7 @@ const getStepColor = (step) => {
     case 'Completed':
     case 'Approved':
     case 'Received':
+    case 'Available in Stock':
       return 'bg-green-100 text-green-800';
     case 'Partially Procured':
       return 'bg-amber-100 text-amber-800';
