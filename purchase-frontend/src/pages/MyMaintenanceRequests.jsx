@@ -13,6 +13,7 @@ import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
 import { updateRequest } from '../api/requests';
 import { useAuth } from '../hooks/useAuth';
+import { hasPermission } from '../utils/permissions';
 import {
   requestMatchesStatusFilter,
   summarizeRequestStatuses,
@@ -21,8 +22,7 @@ import {
 const MyMaintenanceRequests = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const normalizedRole = (user?.role || '').toString().trim().toLowerCase();
-  const isEngineerView = normalizedRole === 'engineer';
+  const canViewAllMaintenanceRequests = hasPermission(user, 'maintenance-requests.view-all');
   const tr = useCallback(
     (key, options) => t(`myMaintenanceRequestsPage.${key}`, options),
     [t],
@@ -193,10 +193,10 @@ const MyMaintenanceRequests = () => {
 
 
   const canEditBeforeFinalApproval = useCallback((request) => {
-    if (isEngineerView) return false;
+    if (canViewAllMaintenanceRequests) return false;
     const normalizedStatus = (request?.status || '').trim().toLowerCase();
     return !['approved', 'completed', 'received', 'cancelled'].includes(normalizedStatus);
-  }, [isEngineerView]);
+  }, [canViewAllMaintenanceRequests]);
 
   const openEditRequest = useCallback((request) => {
     setEditError('');
@@ -715,12 +715,12 @@ const MyMaintenanceRequests = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">
-              {isEngineerView
+              {canViewAllMaintenanceRequests
                 ? tr('engineerTitle', { defaultValue: 'Maintenance Request Status' })
                 : t('pageTitles.myMaintenanceRequests')}
             </h1>
             <p className="text-sm text-gray-600">
-              {isEngineerView
+              {canViewAllMaintenanceRequests
                 ? tr('engineerIntro', {
                     defaultValue: 'Review all submitted maintenance requests, monitor their current status, and filter the queue for the requests you need.',
                   })

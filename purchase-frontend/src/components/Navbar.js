@@ -9,6 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useAccessControl } from "../hooks/useAccessControl";
 import { useTheme } from "../theme/ThemeProvider";
 import { featureRegistry } from "../config/featureRegistry";
+import { hasPermission } from "../utils/permissions";
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -157,6 +158,10 @@ const Navbar = () => {
 
     const normalizedRole = user.role?.toLowerCase?.() ?? "";
     const currentUser = user;
+    const canViewAllMaintenanceRequests = hasPermission(
+      currentUser,
+      "maintenance-requests.view-all",
+    );
 
     const canViewAllRequests = hasAccess(currentUser, "feature.allRequests", [
       "requests.view-all",
@@ -349,8 +354,8 @@ const Navbar = () => {
           resolveFeatureNavItem("approvals", true),
           resolveFeatureNavItem("approvalHistory", true),
           createItem(
-            ["technician", "engineer"].includes(normalizedRole),
-            normalizedRole === "engineer"
+            normalizedRole === "technician" || canViewAllMaintenanceRequests,
+            canViewAllMaintenanceRequests
               ? t("navbar.engineerMaintenanceStatus")
               : t("navbar.myMaintenance"),
             "/my-maintenance-requests",
