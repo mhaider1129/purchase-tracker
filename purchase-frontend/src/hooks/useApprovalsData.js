@@ -8,6 +8,15 @@ const STATUS_HIGHLIGHTS = {
   Pending: '',
 };
 
+export const normalizeOptionalEstimatedCost = (rawCost) => {
+  if (rawCost === undefined || rawCost === null || String(rawCost).trim() === '') {
+    return null;
+  }
+
+  const normalized = Number(String(rawCost).replace(/,/g, ''));
+  return Number.isFinite(normalized) && normalized > 0 ? normalized : undefined;
+};
+
 export const FEEDBACK_TEXT_STYLES = {
   success: 'text-green-600',
   error: 'text-red-600',
@@ -690,6 +699,21 @@ const useApprovalsData = (user) => {
       return;
     }
 
+    const normalizedCosts = new Map();
+    if ((user?.role || '').toUpperCase() === 'SCM') {
+      for (const req of selectedRequests) {
+        const normalizedCost = normalizeOptionalEstimatedCost(estimatedCostDrafts[req.request_id]);
+        if (normalizedCost === undefined) {
+          setSummaryFeedback({
+            type: 'error',
+            message: `Enter a positive estimated cost for Request #${req.request_id}.`,
+          });
+          return;
+        }
+        normalizedCosts.set(req.request_id, normalizedCost);
+      }
+    }
+
     const confirmed = window.confirm(`Apply approval decisions to ${selectedRequests.length} request(s)?`);
     if (!confirmed) return;
 
@@ -707,13 +731,9 @@ const useApprovalsData = (user) => {
           is_urgent: canMarkUrgent ? Boolean(req.is_urgent) : false,
         };
         if ((user?.role || '').toUpperCase() === 'SCM') {
-          const rawCost = estimatedCostDrafts[req.request_id];
-          if (rawCost !== undefined && rawCost !== null && String(rawCost).trim() !== '') {
-            const normalized = Number(String(rawCost).replace(/,/g, ''));
-            if (Number.isNaN(normalized) || normalized <= 0) {
-              throw new Error(`Enter a positive estimated cost for Request #${req.request_id}.`);
-            }
-            payload.estimated_cost = normalized;
+          const normalizedCost = normalizedCosts.get(req.request_id);
+          if (normalizedCost !== null) {
+            payload.estimated_cost = normalizedCost;
           }
         }
         await axios.put(`/requests/approval/${req.approval_id}`, payload);

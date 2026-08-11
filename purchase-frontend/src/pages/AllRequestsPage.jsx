@@ -329,6 +329,7 @@ const AllRequestsPage = () => {
     ];
   }, [summaryCounts, totalRequests]);
   const canHardDeleteRequests = hasPermission(user || {}, 'requests.manage');
+  const canReclassifyRequests = hasPermission(user || {}, 'requests.reclassify');
   const canRemindCurrentApprover = String(user?.role || '').trim().toUpperCase() === 'SCM';
   const isSummaryRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
 
@@ -1493,7 +1494,7 @@ const AllRequestsPage = () => {
                         Delete Permanently
                       </button>
                     )}
-                    {String(user?.role || '').toUpperCase() === 'SCM' && (
+                    {canReclassifyRequests && (
                       <div className="w-56 rounded-md border border-blue-200 bg-blue-50 p-3 text-left">
                         <label
                           className="mb-1 block text-xs font-semibold text-blue-900"
