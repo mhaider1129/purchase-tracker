@@ -5,11 +5,19 @@ export const getProcureToPayDashboard = async () => (await api.get('/procure-to-
 export const getLifecycleDetail = async (requestId) => (await api.get(`/procure-to-pay/requests/${requestId}/lifecycle`)).data;
 
 export const createPurchaseOrder = async (requestId, payload) => {
-  if (requestId) {
-    return (await api.post(`/procure-to-pay/requests/${requestId}/purchase-orders`, payload)).data;
+  if (!Array.isArray(payload?.awards) || payload.awards.length === 0
+      || payload.awards.some(({ award_id: awardId, quantity }) => !awardId || quantity == null)) {
+    throw new Error('Purchase order creation requires award selections; legacy manual PO creation is disabled.');
   }
-
-  return (await api.post('/procure-to-pay/purchase-orders', payload)).data;
+  const canonicalPayload = {
+    awards: payload.awards.map(({ award_id: awardId, quantity }) => ({ award_id: awardId, quantity })),
+    expected_delivery_date: payload.expected_delivery_date || null,
+    delivery_location: payload.delivery_location || null,
+    budget_cost_center: payload.budget_cost_center || null,
+  };
+  return (await api.post(requestId
+    ? `/procure-to-pay/requests/${requestId}/purchase-orders`
+    : '/procure-to-pay/purchase-orders', canonicalPayload)).data;
 };
 export const listPurchaseOrders = async (params = {}) => (await api.get('/procure-to-pay/purchase-orders', { params })).data;
 export const listPoSourceRequests = async (params = {}) => (await api.get('/procure-to-pay/po-source-requests', { params })).data;
