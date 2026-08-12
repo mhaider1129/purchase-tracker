@@ -81,7 +81,7 @@ const ProcureToPayInvoicesPage = () => {
       <div className="bg-white p-4 rounded shadow grid md:grid-cols-4 gap-2">
         <input className="border rounded px-2 py-1" placeholder="Search invoice" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} />
         <input className="border rounded px-2 py-1" placeholder="Supplier" value={filters.supplier} onChange={(e) => setFilters((p) => ({ ...p, supplier: e.target.value }))} />
-        <select className="border rounded px-2 py-1" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}><option>ALL</option><option>SUBMITTED</option><option>PENDING_MATCH</option><option>EXCEPTION</option></select>
+        <select className="border rounded px-2 py-1" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}><option>ALL</option><option>AP_INVOICE_SUBMITTED</option><option>MATCH_PENDING</option><option>MATCH_EXCEPTION</option><option>MATCH_VERIFIED</option></select>
         <button className="bg-indigo-600 text-white rounded px-3 py-1" onClick={loadInvoices}>Search</button>
       </div>
 

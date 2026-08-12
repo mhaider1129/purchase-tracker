@@ -22,7 +22,7 @@ export default function ProcureToPayMatchingPage() {
               <td className="p-2">{row.supplier}</td>
               <td className="p-2">{row.match_status}</td>
               <td className="p-2">{(row.mismatch_reasons || []).join(', ') || '-'}</td>
-              <td className="p-2">{row.match_status === 'EXCEPTION' ? 'Yes' : 'No'}</td>
+              <td className="p-2">{row.match_status === 'MATCH_EXCEPTION' ? 'Yes' : 'No'}</td>
               <td className="p-2"><button className="px-2 py-1 border rounded" onClick={async () => { await runInvoiceMatch(row.request_id, row.invoice_id, { policy: 'THREE_WAY' }); await load(); }}>Run Match</button></td>
             </tr>
           ))}
