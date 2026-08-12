@@ -305,9 +305,10 @@ const ProcureToPayLifecyclePage = () => {
         unit_price: item.unit_price === '' ? null : Number(item.unit_price),
         line_notes: item.line_notes || null,
       })),
+      })),
     };
 
-    quickActions(() => createGoodsReceipt(requestId, payload), 'Goods receipt created and warehouse inventory updated');
+    quickActions(() => createGoodsReceipt(requestId, { ...payload, idempotency_key: crypto.randomUUID() }), 'Goods receipt created and warehouse inventory updated');
   };
 
   const handleSubmitInvoice = (event) => {

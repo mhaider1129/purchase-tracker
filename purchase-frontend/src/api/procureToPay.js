@@ -29,7 +29,12 @@ export const issuePurchaseOrder = async (poId, payload = {}) => (await api.post(
 export const cancelPurchaseOrder = async (poId, payload) => (await api.post(`/procure-to-pay/purchase-orders/${poId}/cancel`, payload)).data;
 export const closePurchaseOrder = async (poId, payload = {}) => (await api.post(`/procure-to-pay/purchase-orders/${poId}/close`, payload)).data;
 
-export const createGoodsReceipt = async (requestId, payload) => (await api.post(`/procure-to-pay/requests/${requestId}/receipts`, payload)).data;
+export const createGoodsReceipt = async (requestId, payload) => {
+  if (!payload?.idempotency_key) throw new Error('Goods receipt idempotency_key is required.');
+  return (await api.post(`/procure-to-pay/requests/${requestId}/receipts`, payload, {
+    headers: { 'Idempotency-Key': payload.idempotency_key },
+  })).data;
+};
 export const listReceiptsByRequest = async (requestId) => (await api.get(`/procure-to-pay/requests/${requestId}/receipts`)).data;
 export const listGoodsReceipts = async (params = {}) => (await api.get('/procure-to-pay/goods-receipts', { params })).data;
 export const listOpenPosForReceipt = async () => (await api.get('/procure-to-pay/open-pos-for-receipt')).data;

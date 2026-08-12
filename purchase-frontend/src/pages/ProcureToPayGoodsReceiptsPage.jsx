@@ -109,6 +109,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [receiptForm, setReceiptForm] = useState({
+    warehouse_id: '',
     warehouse_location: '',
     received_at: formatDateTimeLocal(new Date()),
     outcome: 'FULL_RECEIPT',
@@ -277,6 +278,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
     const receiptItems = poItems
       .filter((item) => Number(item.delivered_quantity) > 0)
       .map((item) => ({
+        purchase_order_item_id: item.purchase_order_item_id,
         requested_item_id: item.requested_item_id,
         item_name: item.item_name,
         ordered_quantity: Number(item.ordered_quantity) || 0,
@@ -284,6 +286,10 @@ const ProcureToPayGoodsReceiptsPage = () => {
         damaged_quantity: Number(item.damaged_quantity) || 0,
         short_quantity: Number(item.short_quantity) || 0,
         unit_price: Number(item.unit_price) || 0,
+        batch_number: item.batch_or_serial || null,
+        expiry_date: item.expiry_date || null,
+        warehouse_id: Number(receiptForm.warehouse_id || selectedPo.warehouse_id || selectedPo.supply_warehouse_id) || null,
+        stock_status: item.condition === 'Quarantined' ? 'QUARANTINE' : 'AVAILABLE',
         line_notes: [
           `Batch/Serial: ${item.batch_or_serial || 'N/A'}`,
           `Expiry: ${item.expiry_date || 'N/A'}`,
@@ -302,6 +308,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
     setIsSubmitting(true);
     try {
       await createGoodsReceipt(requestId, {
+        idempotency_key: crypto.randomUUID(),
         purchase_order_id: selectedPo.id,
         warehouse_location: receiptForm.warehouse_location || null,
         received_at: receiptForm.received_at ? new Date(receiptForm.received_at).toISOString() : null,
@@ -526,6 +533,10 @@ const ProcureToPayGoodsReceiptsPage = () => {
             <label className="text-sm text-gray-700">
               Warehouse location
               <input className="mt-1 w-full rounded border px-3 py-2" value={receiptForm.warehouse_location} onChange={(event) => setReceiptForm((prev) => ({ ...prev, warehouse_location: event.target.value }))} placeholder="Receiving bay / warehouse" />
+            </label>
+            <label className="text-sm text-gray-700">
+              Warehouse ID (inventory lines)
+              <input className="mt-1 w-full rounded border px-3 py-2" type="number" min="1" value={receiptForm.warehouse_id} onChange={(event) => setReceiptForm((prev) => ({ ...prev, warehouse_id: event.target.value }))} placeholder="Canonical warehouse ID" />
             </label>
             <label className="text-sm text-gray-700">
               Received at
