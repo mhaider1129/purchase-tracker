@@ -10,6 +10,8 @@ import {
   updateItemMaster,
 } from '../api/itemMaster';
 import ItemHierarchyWorkspace from '../components/itemMaster/ItemHierarchyWorkspace';
+import { useAuth } from '../hooks/useAuth';
+import { hasPermission } from '../utils/permissions';
 
 const CLASSIFICATIONS = [
   'medication',
@@ -71,6 +73,8 @@ const mapItemToForm = item => ({
 });
 
 export default function ItemMasterPage() {
+  const { user } = useAuth();
+  const canMaintainLegacy = hasPermission(user, 'item-master.legacy-maintain');
   const [items, setItems] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -197,11 +201,11 @@ export default function ItemMasterPage() {
         <ItemHierarchyWorkspace />
         <div className="flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Item Master</h1>
-            <p className="text-sm text-slate-600">Create, validate, approve, and activate standardized items across institutes.</p>
+            <h1 className="text-2xl font-bold text-slate-900">Legacy Item Master / Compatibility</h1>
+            <p className="text-sm text-slate-600">Historical records remain available here. Use Item Hierarchy above as the primary creation workspace.</p>
             <p className="text-xs text-amber-700">Legacy compatibility workspace. Commercial fields below remain temporarily available for historical records; create new governed data in the normalized hierarchy.</p>
           </div>
-          <button type="button" onClick={startCreate} className="px-4 py-2 rounded bg-blue-600 text-white">New Item</button>
+          {canMaintainLegacy && <button type="button" onClick={startCreate} className="px-4 py-2 rounded bg-blue-600 text-white">Create Legacy Item</button>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -252,10 +256,10 @@ export default function ItemMasterPage() {
                       <td className="p-2">{item.status}</td>
                       <td className="p-2 space-x-2">
                         <button type="button" className="underline" onClick={() => loadItemDetails(item.id)}>View</button>
-                        {(item.status === 'draft' || item.status === 'rejected') && (
+                        {canMaintainLegacy && (item.status === 'draft' || item.status === 'rejected') && (
                           <button type="button" className="underline" onClick={() => startEdit(item)}>Edit</button>
                         )}
-                        {(item.status === 'draft' || item.status === 'rejected') && (
+                        {canMaintainLegacy && (item.status === 'draft' || item.status === 'rejected') && (
                           <button type="button" className="underline" onClick={() => runAction(() => submitItemMaster(item.id), 'Submitted for approval.')}>Submit</button>
                         )}
                         {item.status === 'pending_approval' && (
@@ -275,8 +279,8 @@ export default function ItemMasterPage() {
             </div>
           </section>
 
-          <section className="bg-white border rounded p-4 space-y-3">
-            <h2 className="font-semibold">{editingId ? `Edit Item #${editingId}` : 'Create Item'}</h2>
+          {canMaintainLegacy && <section className="bg-white border rounded p-4 space-y-3">
+            <h2 className="font-semibold">{editingId ? `Edit Legacy Item #${editingId}` : 'Create Legacy Item'}</h2>
             <form className="space-y-2" onSubmit={submitForm}>
               <input className="w-full border rounded px-3 py-2" name="item_code" value={form.item_code} onChange={onFormChange} placeholder="Item code" required />
               <input className="w-full border rounded px-3 py-2" name="item_name" value={form.item_name} onChange={onFormChange} placeholder="Item name" required />
@@ -327,7 +331,7 @@ export default function ItemMasterPage() {
                 </ul>
               </div>
             )}
-          </section>
+          </section>}
         </div>
       </main>
     </>

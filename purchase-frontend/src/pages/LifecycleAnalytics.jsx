@@ -50,7 +50,7 @@ const LifecycleAnalytics = () => {
     <>
       <div className="max-w-5xl mx-auto p-6">
         <h1 className="text-2xl font-bold text-purple-700 mb-2">Lifecycle Analytics</h1>
-        <p className="mb-6 text-sm text-gray-600">Use this page to monitor PR-to-final-approval and PR-to-PO KPI timing. Direct Purchase PO and CSCC actions feed the PR-to-PO card as soon as the lightweight PO is created.</p>
+        <p className="mb-6 text-sm text-gray-600">Use this page to monitor PR-to-final-approval and PR-to-PO KPI timing. The PR-to-PO card updates when the first governed purchase order is created.</p>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card
             title="Avg PR to Final Approval (days)"
@@ -65,7 +65,7 @@ const LifecycleAnalytics = () => {
           <Card
             title="Avg PR to PO Cycle (days)"
             value={formatDays(data.avg_pr_to_po_cycle_days)}
-            helper="Request created → first PO / CSCC send / direct PO"
+            helper="Request created → first governed PO"
           />
           <Card title="Bottleneck Stage" value={bottleneckLabel} />
         </div>

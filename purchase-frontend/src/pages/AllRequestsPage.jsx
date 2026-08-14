@@ -18,7 +18,6 @@ import RequestViewModeToggle from '../components/requests/RequestViewModeToggle'
 import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
 import PaginationControls from '../components/ui/PaginationControls';
 import { formatOptionalItemText, getDisplayItems } from '../utils/itemUtils';
-import { createPurchaseOrder } from '../api/procureToPay';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -232,7 +231,6 @@ const AllRequestsPage = () => {
   const [remindingApproverIds, setRemindingApproverIds] = useState(() => new Set());
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [kpiPoSubmittingId, setKpiPoSubmittingId] = useState(null);
   const [printLanguage, setPrintLanguage] = useState('ar');
   const limit = 10;
   const getCurrentFilters = useCallback(() => ({
@@ -546,22 +544,6 @@ const AllRequestsPage = () => {
     setExpandedAttachmentsId(requestId);
   };
 
-
-  const handleCreateKpiPurchaseOrder = async (targetRequestId, fulfillmentMethod) => {
-    const label = fulfillmentMethod === 'CSCC' ? 'send this request to the Central Supply Chain Center' : 'create a direct purchase PO';
-    if (!window.confirm(`This will ${label} for KPI tracking without prices. Continue?`)) return;
-
-    setKpiPoSubmittingId(targetRequestId);
-    try {
-      await createPurchaseOrder(targetRequestId, { fulfillment_method: fulfillmentMethod });
-      await fetchRequests();
-      alert(fulfillmentMethod === 'CSCC' ? 'Request sent to CSCC.' : 'Direct purchase PO created.');
-    } catch (err) {
-      alert(err.response?.data?.error || err.response?.data?.message || `Failed to ${label}.`);
-    } finally {
-      setKpiPoSubmittingId(null);
-    }
-  };
 
   const handleExport = async (type) => {
     setLoadingExport(true);
@@ -1467,24 +1449,13 @@ const AllRequestsPage = () => {
                       </button>
                     )}
                     {isPostApprovalStatus(request.status) && (
-                      <>
-                        <button
-                          type="button"
-                          className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700 disabled:opacity-60"
-                          onClick={() => handleCreateKpiPurchaseOrder(request.id, 'DIRECT_PURCHASE')}
-                          disabled={kpiPoSubmittingId === request.id}
-                        >
-                          Direct Purchase PO
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded bg-cyan-700 px-4 py-2 text-white hover:bg-cyan-800 disabled:opacity-60"
-                          onClick={() => handleCreateKpiPurchaseOrder(request.id, 'CSCC')}
-                          disabled={kpiPoSubmittingId === request.id}
-                        >
-                          Send to CSCC
-                        </button>
-                      </>
+                      <Link
+                        to={`/requests/${request.id}/procure-to-pay/purchase-orders`}
+                        className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
+                        title="Create a governed purchase order from approved supplier awards"
+                      >
+                        Create Purchase Order
+                      </Link>
                     )}
                     {canHardDeleteRequests && (
                       <button
