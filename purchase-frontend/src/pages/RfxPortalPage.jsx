@@ -56,6 +56,7 @@ const createEmptyEventItem = () => ({
 });
 
 const createResponseItem = (item = {}) => ({
+  requested_item_id: item.requested_item_id ?? item.id ?? "",
   item_name: item.item_name || "",
   requested_specs: item.specs || "",
   requested_quantity: item.quantity ?? "",
@@ -359,7 +360,17 @@ const RfxPortalPage = () => {
       );
       const payload = {
         ...responseForm,
-        bid_amount: responseForm.bid_amount ? Number(responseForm.bid_amount) : undefined,
+        bid_amount: responseForm.bid_amount || undefined,
+        items: (responseForm.item_responses || []).map((item) => ({
+          requested_item_id: item.requested_item_id,
+          quoted_quantity: item.quantity,
+          unit_price: item.unit_cost,
+          currency: selectedEvent?.currency || "USD",
+          free_quantity: item.free_quantity || "0",
+          brand: item.brand,
+          offered_specs: item.specs,
+          notes: item.notes,
+        })),
         response_data: {
           items: responseForm.item_responses || [],
           totals: {
