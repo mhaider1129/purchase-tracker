@@ -101,6 +101,21 @@ export const getItemMasterReferences = async () => {
   return data;
 };
 
+export const searchItemMasterReferences = async (type, params = {}) => {
+  const { data } = await api.get(`/item-master/foundation/references/${type}`, { params });
+  return data;
+};
+
+export const createItemMasterReference = async (type, payload) => {
+  const { data } = await api.post(`/item-master/foundation/references/${type}`, payload);
+  return data;
+};
+
+export const deactivateItemMasterReference = async (type, id) => {
+  const { data } = await api.delete(`/item-master/foundation/references/${type}/${id}`);
+  return data;
+};
+
 export const listPendingItems = async (params = {}) => {
   const { data } = await api.get('/item-master/foundation/pending-items', { params });
   return data;

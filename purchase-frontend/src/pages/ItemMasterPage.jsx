@@ -198,7 +198,7 @@ export default function ItemMasterPage() {
   return (
     <>
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-4">
-        <ItemHierarchyWorkspace />
+        <ItemHierarchyWorkspace canMaintainReferences={hasPermission(user, 'item-master.references-maintain')} />
         <div className="flex items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Legacy Item Master / Compatibility</h1>

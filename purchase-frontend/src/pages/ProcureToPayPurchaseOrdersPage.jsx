@@ -84,8 +84,12 @@ const ProcureToPayPurchaseOrdersPage = () => {
 
   const buildItemsFromSourceRequest = useCallback((sourceRequest) => {
     const remainingItems = Array.isArray(sourceRequest?.remaining_items) ? sourceRequest.remaining_items : [];
+    const supplierId = remainingItems[0]?.supplier_id;
     const items = remainingItems
+      .filter((item) => !supplierId || item.supplier_id === supplierId)
       .map((item) => ({
+        award_id: item.award_id || null,
+        supplier_id: item.supplier_id || null,
         requested_item_id: item.requested_item_id || null,
         item_name: item.item_name || '',
         quantity: String(item.remaining_quantity ?? item.quantity ?? ''),
@@ -101,6 +105,10 @@ const ProcureToPayPurchaseOrdersPage = () => {
     const sourceRequest = requests.find((request) => String(request.id) === String(requestIdValue));
     if (sourceRequest) {
       setManualItems(buildItemsFromSourceRequest(sourceRequest));
+      const firstAward = sourceRequest.remaining_items?.[0];
+      if (firstAward?.supplier_name) {
+        setManualForm((prev) => ({ ...prev, supplier_name: firstAward.supplier_name, currency: firstAward.currency || prev.currency }));
+      }
     }
   }, [buildItemsFromSourceRequest, sourceRequests]);
 
@@ -164,6 +172,8 @@ const ProcureToPayPurchaseOrdersPage = () => {
 
   const normalizedManualItems = manualItems
     .map((item) => ({
+      award_id: item.award_id || null,
+      supplier_id: item.supplier_id || null,
       requested_item_id: item.requested_item_id || null,
       item_name: item.item_name.trim(),
       quantity: Number(item.quantity) || 0,
@@ -173,6 +183,11 @@ const ProcureToPayPurchaseOrdersPage = () => {
     .filter((item) => item.item_name && item.quantity > 0);
 
   const manualItemsTotal = normalizedManualItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+
+  const selectedAwardSupplierId = normalizedManualItems.find((item) => item.award_id)?.supplier_id;
+  const awardItemsForPo = manualForm.source_document_type === 'PURCHASE_REQUEST'
+    ? normalizedManualItems.filter((item) => !selectedAwardSupplierId || item.supplier_id === selectedAwardSupplierId)
+    : normalizedManualItems;
 
   const resetCreateWorkspace = () => {
     setManualForm(EMPTY_PO_FORM);
@@ -203,8 +218,10 @@ const ProcureToPayPurchaseOrdersPage = () => {
       await action();
       setSuccess(successMessage);
       await load(1);
+      return true;
     } catch (err) {
-      setError(err?.response?.data?.message || 'Action failed');
+      setError(err?.response?.data?.message || err?.message || 'Action failed');
+      return false;
     }
   };
 
@@ -407,13 +424,13 @@ const ProcureToPayPurchaseOrdersPage = () => {
                 return;
               }
               const requestIdForPo = manualForm.source_document_type === 'PURCHASE_REQUEST' ? Number(selectedRequestId) : null;
-              await handleMutation(() => createPurchaseOrder(requestIdForPo, {
+              const created = await handleMutation(() => createPurchaseOrder(requestIdForPo, {
                 ...manualForm,
                 budget_cost_center: billingEntity,
                 terms: [manualForm.terms, manualForm.shipping_terms && `Freight: ${manualForm.shipping_terms}`, manualForm.standalone_reason && `Justification: ${manualForm.standalone_reason}`, manualForm.po_notes && `Notes: ${manualForm.po_notes}`].filter(Boolean).join('\n'),
-                items: normalizedManualItems,
+                awards: awardItemsForPo.map((item) => ({ award_id: item.award_id, quantity: item.quantity })),
               }), 'Purchase order created.');
-              resetCreateWorkspace();
+              if (created) resetCreateWorkspace();
             }}
           >
             Create PO

@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { searchApprovedProducts, searchGenericItems, searchSupplierCatalog } from '../../api/itemMaster';
+import { createItemMasterReference, deactivateItemMasterReference, searchApprovedProducts, searchGenericItems, searchItemMasterReferences, searchSupplierCatalog } from '../../api/itemMaster';
 
 const tabs = [
   { id: 'generic', label: 'Generic Items', help: 'Functional identity and inventory aggregation' },
   { id: 'products', label: 'Approved Products', help: 'Exact manufactured products and approvals' },
   { id: 'catalog', label: 'Supplier Catalog', help: 'Commercial offers, pricing and lead times' },
+  { id: 'uom', label: 'UOMs', help: 'Controlled quantity-unit reference data' },
 ];
 
-export default function ItemHierarchyWorkspace() {
+export default function ItemHierarchyWorkspace({ canMaintainReferences = false }) {
   const [tab, setTab] = useState('generic');
   const [query, setQuery] = useState('');
   const [result, setResult] = useState({ data: [], total: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [referenceForm, setReferenceForm] = useState({ code: '', name: '' });
+  const reload = async () => setResult(tab === 'uom' ? { data: await searchItemMasterReferences('uom', { q: query }), total: 0 } : result);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -20,8 +23,13 @@ export default function ItemHierarchyWorkspace() {
       setLoading(true);
       setError('');
       try {
-        const search = tab === 'generic' ? searchGenericItems : tab === 'products' ? searchApprovedProducts : searchSupplierCatalog;
-        setResult(await search({ q: query, page: 1, page_size: 25 }));
+        if (tab === 'uom') {
+          const data = await searchItemMasterReferences('uom', { q: query });
+          setResult({ data, total: data.length });
+        } else {
+          const search = tab === 'generic' ? searchGenericItems : tab === 'products' ? searchApprovedProducts : searchSupplierCatalog;
+          setResult(await search({ q: query, page: 1, page_size: 25 }));
+        }
       } catch (err) {
         if (!controller.signal.aborted) setError(err.response?.data?.message || 'Unable to load normalized item data. Has the migration been applied?');
       } finally {
@@ -57,14 +65,19 @@ export default function ItemHierarchyWorkspace() {
         </div>
         <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="hierarchy-search">Search the selected level</label>
         <input id="hierarchy-search" className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value={query} onChange={event => setQuery(event.target.value)} placeholder={tab === 'generic' ? 'Code, generic name or canonical description' : tab === 'products' ? 'Product, manufacturer, MPN or regulatory identifier' : 'Supplier, supplier item code or approved product'} />
+        {tab === 'uom' && canMaintainReferences && <form className="mt-3 flex flex-wrap gap-2" onSubmit={async event => { event.preventDefault(); await createItemMasterReference('uom', referenceForm); setReferenceForm({ code: '', name: '' }); await reload(); }}>
+          <input aria-label="UOM code" required className="rounded border px-3 py-2" placeholder="Code (e.g. EA)" value={referenceForm.code} onChange={event => setReferenceForm({ ...referenceForm, code: event.target.value })} />
+          <input aria-label="UOM name" required className="rounded border px-3 py-2" placeholder="Name" value={referenceForm.name} onChange={event => setReferenceForm({ ...referenceForm, name: event.target.value })} />
+          <button className="rounded bg-blue-700 px-4 py-2 text-white" type="submit">Add UOM</button>
+        </form>}
         <div className="mt-4 overflow-auto rounded-lg border border-slate-200">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-              <tr>{tab === 'generic' ? <><th className="p-3">Internal code</th><th className="p-3">Generic identity</th><th className="p-3">Classification</th><th className="p-3">Governance</th></> : tab === 'products' ? <><th className="p-3">Generic item</th><th className="p-3">Exact product</th><th className="p-3">Manufacturer / MPN</th><th className="p-3">Approval</th></> : <><th className="p-3">Supplier</th><th className="p-3">Approved product</th><th className="p-3">Commercial unit</th><th className="p-3">Price / lead time</th></>}</tr>
+              <tr>{tab === 'generic' ? <><th className="p-3">Internal code</th><th className="p-3">Generic identity</th><th className="p-3">Classification</th><th className="p-3">Governance</th></> : tab === 'products' ? <><th className="p-3">Generic item</th><th className="p-3">Exact product</th><th className="p-3">Product packaging</th><th className="p-3">Approval</th></> : tab === 'uom' ? <><th className="p-3">Code</th><th className="p-3">Name</th><th className="p-3">Base-UOM flag</th><th className="p-3">Active status</th></> : <><th className="p-3">Supplier</th><th className="p-3">Approved product</th><th className="p-3">Supplier packaging</th><th className="p-3">Price / lead time</th></>}</tr>
             </thead>
             <tbody>
               {result.data.map(row => <tr key={row.id} className="border-t border-slate-100">
-                {tab === 'generic' ? <><td className="p-3 font-mono text-xs">{row.item_code}</td><td className="p-3"><strong>{row.generic_name}</strong><div className="max-w-xl text-xs text-slate-500">{row.canonical_description}</div></td><td className="p-3">{row.category}<div className="text-xs text-slate-500">{row.item_type} · {row.inventory_uom}</div></td><td className="p-3"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs">{row.lifecycle_status}</span><div className="mt-1 text-xs text-slate-500">{row.interchangeability_policy}</div></td></> : tab === 'products' ? <><td className="p-3"><span className="font-mono text-xs">{row.item_code}</span><div>{row.generic_name}</div></td><td className="p-3 font-medium">{row.product_name}</td><td className="p-3">{row.manufacturer}<div className="font-mono text-xs text-slate-500">{row.manufacturer_part_number}</div></td><td className="p-3">{row.approval_status}</td></> : <><td className="p-3 font-medium">{row.supplier_name}<div className="font-mono text-xs text-slate-500">{row.supplier_item_code}</div></td><td className="p-3">{row.product_name}<div className="text-xs text-slate-500">{row.manufacturer} · {row.generic_name}</div></td><td className="p-3">{row.purchasing_uom}<div className="text-xs text-slate-500">× {row.conversion_factor}</div></td><td className="p-3">{row.unit_price == null ? 'Not priced' : `${row.currency || ''} ${row.unit_price}`}<div className="text-xs text-slate-500">{row.lead_time_days == null ? 'Lead time unknown' : `${row.lead_time_days} days`}</div></td></>}
+                {tab === 'generic' ? <><td className="p-3 font-mono text-xs">{row.item_code}</td><td className="p-3"><strong>{row.generic_name}</strong><div className="max-w-xl text-xs text-slate-500">{row.canonical_description}</div></td><td className="p-3">{row.category}<div className="text-xs text-slate-500">{row.item_type} · {row.inventory_uom}</div></td><td className="p-3"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs">{row.lifecycle_status}</span><div className="mt-1 text-xs text-slate-500">{row.interchangeability_policy}</div></td></> : tab === 'products' ? <><td className="p-3"><span className="font-mono text-xs">{row.item_code}</span><div>{row.generic_name}</div></td><td className="p-3 font-medium">{row.product_name}<div className="text-xs text-slate-500">{row.manufacturer} · {row.manufacturer_part_number}</div></td><td className="p-3">Product UOM: {row.product_uom}<div className="text-xs text-slate-500">1 {row.product_uom} = {row.package_quantity} Generic base units</div></td><td className="p-3">{row.approval_status}</td></> : tab === 'uom' ? <><td className="p-3 font-mono">{row.uom_code}</td><td className="p-3">{row.uom_name}</td><td className="p-3">{row.is_base_uom ? 'Yes' : 'No'}</td><td className="p-3">{row.is_active ? 'Active' : 'Inactive'}{canMaintainReferences && row.is_active && <button className="ml-2 text-red-700 underline" type="button" onClick={async () => { await deactivateItemMasterReference('uom', row.id); await reload(); }}>Deactivate</button>}</td></> : <><td className="p-3 font-medium">{row.supplier_name}<div className="font-mono text-xs text-slate-500">{row.supplier_item_code}</div></td><td className="p-3">{row.product_name}<div className="text-xs text-slate-500">{row.manufacturer} · {row.generic_name}</div></td><td className="p-3">Purchasing UOM: {row.purchasing_uom}<div className="text-xs text-slate-500">Product UOMs per {row.purchasing_uom}: {row.conversion_factor} · MOQ {row.minimum_order_quantity} · multiple {row.order_multiple}</div></td><td className="p-3">{row.unit_price == null ? 'Not priced' : `${row.currency || ''} ${row.unit_price}`}<div className="text-xs text-slate-500">{row.lead_time_days == null ? 'Lead time unknown' : `${row.lead_time_days} days`}</div></td></>}
               </tr>)}
               {!loading && !result.data.length && <tr><td className="p-6 text-center text-slate-500" colSpan="4">No matching records.</td></tr>}
             </tbody>
