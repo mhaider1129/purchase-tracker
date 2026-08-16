@@ -67,6 +67,9 @@ const createResponseItem = (item = {}) => ({
   brand: "",
   notes: "",
   free_quantity: "",
+  approved_product_id: "",
+  supplier_catalog_item_id: "",
+  requested_generic: item.generic_name || item.generic_item_id || "",
 });
 
 const parseNumber = (value) => {
@@ -370,6 +373,8 @@ const RfxPortalPage = () => {
           brand: item.brand,
           offered_specs: item.specs,
           notes: item.notes,
+          approved_product_id: item.approved_product_id || undefined,
+          supplier_catalog_item_id: item.supplier_catalog_item_id || undefined,
         })),
         response_data: {
           items: responseForm.item_responses || [],
@@ -1088,7 +1093,10 @@ const RfxPortalPage = () => {
                                   {t("rfxPortal.requestedSpecsLabel", { specs: item.requested_specs })}
                                 </p>
                               ) : null}
+                              {item.requested_generic ? <p className="mt-1 text-xs font-medium text-blue-700">Requested Generic: {item.requested_generic}</p> : null}
                               <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                <div><label className="block text-xs font-medium text-gray-700">Offered Approved Product ID</label><input value={item.approved_product_id} onChange={(e) => handleResponseItemChange(index, "approved_product_id", e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" required /></div>
+                                <div><label className="block text-xs font-medium text-gray-700">Supplier Catalog Item ID</label><input value={item.supplier_catalog_item_id} onChange={(e) => handleResponseItemChange(index, "supplier_catalog_item_id", e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" required /></div>
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700" htmlFor={`response-unit-${index}`}>
                                     {t("rfxPortal.fields.unitCost")}
