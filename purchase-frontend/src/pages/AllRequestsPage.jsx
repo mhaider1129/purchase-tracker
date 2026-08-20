@@ -221,6 +221,8 @@ const AllRequestsPage = () => {
   const [department, setDepartment] = useState('');
   const [section, setSection] = useState('');
   const [assignedUser, setAssignedUser] = useState('');
+  const [centralSupplyStatus, setCentralSupplyStatus] = useState('');
+  const [updatingCentralSupplyIds, setUpdatingCentralSupplyIds] = useState(() => new Set());
   const [departments, setDepartments] = useState([]);
   const [procurementUsers, setProcurementUsers] = useState([]);
   const [page, setPage] = useState(1);
@@ -248,8 +250,10 @@ const AllRequestsPage = () => {
     department,
     section,
     assignedUser,
+    centralSupplyStatus,
   }), [
     assignedUser,
+    centralSupplyStatus,
     currentStep,
     department,
     filter,
@@ -327,6 +331,7 @@ const AllRequestsPage = () => {
     ];
   }, [summaryCounts, totalRequests]);
   const canHardDeleteRequests = hasPermission(user || {}, 'requests.manage');
+  const canUpdateCentralSupplyStatus = hasPermission(user || {}, 'requests.manage');
   const canReclassifyRequests = hasPermission(user || {}, 'requests.reclassify');
   const canRemindCurrentApprover = String(user?.role || '').trim().toUpperCase() === 'SCM';
   const isSummaryRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
@@ -381,6 +386,7 @@ const AllRequestsPage = () => {
           department_id: appliedFilters.department,
           section_id: appliedFilters.section,
           assigned_to: appliedFilters.assignedUser,
+          central_supply_status: appliedFilters.centralSupplyStatus,
           page: targetPage,
           limit,
         },
@@ -430,6 +436,7 @@ const AllRequestsPage = () => {
           department_id: appliedFilters.department,
           section_id: appliedFilters.section,
           assigned_to: appliedFilters.assignedUser,
+          central_supply_status: appliedFilters.centralSupplyStatus,
           page: 1,
           limit: Math.max(total, limit),
         },
@@ -494,6 +501,7 @@ const AllRequestsPage = () => {
     setDepartment('');
     setSection('');
     setAssignedUser('');
+    setCentralSupplyStatus('');
     setPage(1);
     setAppliedFilters({
       filter: '',
@@ -510,6 +518,7 @@ const AllRequestsPage = () => {
       department: '',
       section: '',
       assignedUser: '',
+      centralSupplyStatus: '',
     });
     setFiltersChanged(false);
   };
@@ -1089,6 +1098,26 @@ const AllRequestsPage = () => {
     }
   };
 
+  const handleCentralSupplyStatus = async (request) => {
+    const sent = !request.sent_to_central_supply_at;
+    setUpdatingCentralSupplyIds((current) => new Set(current).add(request.id));
+    try {
+      const response = await axios.patch(`/requests/${request.id}/central-supply-status`, { sent });
+      setRequests((current) => current.map((entry) => (
+        entry.id === request.id ? { ...entry, ...response.data } : entry
+      )));
+    } catch (err) {
+      console.error('Failed to update Central Supply Chain status:', err);
+      alert(err?.response?.data?.message || 'Failed to update Central Supply Chain status.');
+    } finally {
+      setUpdatingCentralSupplyIds((current) => {
+        const next = new Set(current);
+        next.delete(request.id);
+        return next;
+      });
+    }
+  };
+
   return (
     <>
       <div className="p-6">
@@ -1249,6 +1278,17 @@ const AllRequestsPage = () => {
           ))}
         </select>
 
+        <select
+          className="border p-2 rounded"
+          value={centralSupplyStatus}
+          onChange={(e) => setCentralSupplyStatus(e.target.value)}
+          aria-label="Central Supply Chain status"
+        >
+          <option value="">All Central Supply statuses</option>
+          <option value="not_sent">Not sent to Central Supply</option>
+          <option value="sent">Sent to Central Supply</option>
+        </select>
+
         <div className="flex items-center gap-2">
           <label className="text-sm text-gray-700" htmlFor="print-language">
             {PRINT_TRANSLATIONS[printLanguage].printLanguage}
@@ -1351,6 +1391,15 @@ const AllRequestsPage = () => {
                   <div className={isSummaryRequestView ? 'min-w-0 flex-1 space-y-2' : 'space-y-1'}>
                     <div className="flex items-center gap-3 flex-wrap">
                       <p className="font-semibold text-gray-800">ID: {request.id}</p>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${request.sent_to_central_supply_at ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}
+                        title={request.sent_to_central_supply_at
+                          ? `Sent ${new Date(request.sent_to_central_supply_at).toLocaleString()}`
+                          : 'This request has not been sent to the Central Supply Chain Center'}
+                      >
+                        <span className={`h-2 w-2 rounded-full ${request.sent_to_central_supply_at ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
+                        {request.sent_to_central_supply_at ? 'Sent to Central Supply' : 'Not sent to Central Supply'}
+                      </span>
                       {isUrgent && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
                           <span className="block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
@@ -1425,6 +1474,20 @@ const AllRequestsPage = () => {
                   </div>
 
                   <div className="flex flex-col items-end gap-2">
+                    {canUpdateCentralSupplyStatus && (
+                      <button
+                        type="button"
+                        className={`rounded px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${request.sent_to_central_supply_at ? 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                        onClick={() => handleCentralSupplyStatus(request)}
+                        disabled={updatingCentralSupplyIds.has(request.id)}
+                      >
+                        {updatingCentralSupplyIds.has(request.id)
+                          ? 'Updating...'
+                          : request.sent_to_central_supply_at
+                            ? 'Mark as not sent'
+                            : 'Mark sent to Central Supply'}
+                      </button>
+                    )}
                     <Link
                       to={`/requests/${request.id}`}
                       className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"

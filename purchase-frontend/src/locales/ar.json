@@ -1884,6 +1884,8 @@
   },
   "openRequests": {
     "title": "طلباتي المفتوحة",
+    "print": "طباعة",
+    "printedAt": "تاريخ الطباعة",
     "exportCSV": "تصدير CSV",
     "csvFileName": "طلباتي_المفتوحة",
     "searchLabel": "بحث",
@@ -2058,6 +2060,8 @@
   },
   "closedRequests": {
     "title": "طلباتي المغلقة",
+    "print": "طباعة",
+    "printedAt": "تاريخ الطباعة",
     "exportCSV": "تصدير CSV",
     "cards": {
       "total": "إجمالي الطلبات"

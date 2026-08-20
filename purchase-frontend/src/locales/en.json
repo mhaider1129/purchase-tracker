@@ -1940,6 +1940,8 @@
   },
   "openRequests": {
     "title": "My Open Requests",
+    "print": "Print",
+    "printedAt": "Printed at",
     "exportCSV": "Export CSV",
     "csvFileName": "My_Open_Requests",
     "searchLabel": "Search",
@@ -2114,6 +2116,8 @@
   },
   "closedRequests": {
     "title": "My Closed Requests",
+    "print": "Print",
+    "printedAt": "Printed at",
     "exportCSV": "Export CSV",
     "cards": {
       "total": "Total Requests"

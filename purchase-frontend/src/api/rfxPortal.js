@@ -25,6 +25,11 @@ export const submitRfxResponse = async (id, payload, options = {}) => {
   return response.data;
 };
 
+export const listValidRfxOfferings = async (supplierName, requestedItemId, options = {}) => {
+  const response = await api.get('/rfx-portal/offerings', { ...options, params: { supplier_name: supplierName, requested_item_id: requestedItemId, ...(options.params || {}) } });
+  return response.data?.data || [];
+};
+
 export const analyzeRfxQuotations = async (id, quotations, options = {}) => {
   const response = await api.post(`/rfx-portal/${id}/analyze`, { quotations }, options);
   return response.data;
@@ -41,6 +46,7 @@ const rfxPortalApi = {
   updateRfxStatus,
   listRfxResponses,
   submitRfxResponse,
+  listValidRfxOfferings,
   analyzeRfxQuotations,
   awardRfxResponse,
 };

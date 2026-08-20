@@ -11,6 +11,7 @@ import useCurrentUser from '../hooks/useCurrentUser';
 import { useNavigate } from 'react-router-dom';
 import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
+import PrintableRequestsReport from '../components/requests/PrintableRequestsReport';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -457,19 +458,44 @@ const ClosedRequestsPage = () => {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <PrintableRequestsReport
+        requests={sorted}
+        title={tr('title')}
+        formatDate={(value) => formatDate(value, normalizedLocale)}
+        labels={{
+          ...Object.fromEntries(
+            ['id', 'type', 'project', 'status', 'assigned', 'submitted', 'updated'].map((key) => [
+              key,
+              tr(`table.${key}`),
+            ]),
+          ),
+          printedAt: tr('printedAt'),
+          notAvailable: tr('notAvailable'),
+        }}
+      />
+      <div className="max-w-6xl mx-auto p-6 space-y-6 print:hidden">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
             {tr('title')}
           </h1>
-          <button
-            type="button"
-            onClick={exportCSV}
-            disabled={sorted.length === 0}
-            className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            {tr('exportCSV')}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              disabled={sorted.length === 0}
+              className="inline-flex items-center justify-center rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 dark:bg-gray-900 dark:text-blue-300"
+            >
+              {tr('print')}
+            </button>
+            <button
+              type="button"
+              onClick={exportCSV}
+              disabled={sorted.length === 0}
+              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+            >
+              {tr('exportCSV')}
+            </button>
+          </div>
         </div>
 
         {pendingReceiptRequests.length > 0 && (

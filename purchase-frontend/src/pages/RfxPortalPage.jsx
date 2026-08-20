@@ -7,6 +7,7 @@ import {
   submitRfxResponse,
   updateRfxStatus,
   awardRfxResponse,
+  listValidRfxOfferings,
 } from "../api/rfxPortal";
 import { useAuth } from "../hooks/useAuth";
 import { hasPermission } from "../utils/permissions";
@@ -70,6 +71,7 @@ const createResponseItem = (item = {}) => ({
   approved_product_id: "",
   supplier_catalog_item_id: "",
   requested_generic: item.generic_name || item.generic_item_id || "",
+  offerings: item.offerings || [],
 });
 
 const parseNumber = (value) => {
@@ -281,6 +283,14 @@ const RfxPortalPage = () => {
       items[index] = { ...items[index], [field]: value };
       return { ...prev, item_responses: items };
     });
+  };
+
+  const loadOfferings = async (index, requestedItemId) => {
+    if (!responseForm.supplier_name?.trim() || !requestedItemId) return;
+    try {
+      const offerings = await listValidRfxOfferings(responseForm.supplier_name, requestedItemId);
+      setResponseForm((prev) => ({ ...prev, item_responses: prev.item_responses.map((line,i) => i===index ? {...line,offerings} : line) }));
+    } catch (err) { setError(err?.response?.data?.message || "Unable to load governed supplier offerings"); }
   };
 
   const handleQuotationChange = (index, field, value) => {
@@ -1095,8 +1105,7 @@ const RfxPortalPage = () => {
                               ) : null}
                               {item.requested_generic ? <p className="mt-1 text-xs font-medium text-blue-700">Requested Generic: {item.requested_generic}</p> : null}
                               <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-3">
-                                <div><label className="block text-xs font-medium text-gray-700">Offered Approved Product ID</label><input value={item.approved_product_id} onChange={(e) => handleResponseItemChange(index, "approved_product_id", e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" required /></div>
-                                <div><label className="block text-xs font-medium text-gray-700">Supplier Catalog Item ID</label><input value={item.supplier_catalog_item_id} onChange={(e) => handleResponseItemChange(index, "supplier_catalog_item_id", e.target.value)} className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" required /></div>
+                                <div className="md:col-span-2"><label className="block text-xs font-medium text-gray-700">Governed commercial offering</label><select value={item.supplier_catalog_item_id} onFocus={() => loadOfferings(index,item.requested_item_id)} onChange={(e) => { const offer=item.offerings.find((x)=>String(x.supplier_catalog_item_id)===e.target.value); handleResponseItemChange(index,"supplier_catalog_item_id",e.target.value); handleResponseItemChange(index,"approved_product_id",offer?.approved_product_id || ""); }} className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" required><option value="">Select an approved product and catalog offering</option>{item.offerings.map((offer)=><option key={offer.supplier_catalog_item_id} value={offer.supplier_catalog_item_id}>{offer.is_preferred ? "Preferred — " : ""}{offer.manufacturer} {offer.product_name} · MPN {offer.manufacturer_part_number} · {offer.package_quantity} {offer.product_uom} · buy {offer.purchasing_uom} (×{offer.conversion_factor}) · {offer.supplier_item_code}</option>)}</select></div>
                                 <div>
                                   <label className="block text-xs font-medium text-gray-700" htmlFor={`response-unit-${index}`}>
                                     {t("rfxPortal.fields.unitCost")}
