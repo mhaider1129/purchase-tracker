@@ -93,6 +93,7 @@ import DepartmentRequestedItemsBoard from "./pages/DepartmentRequestedItemsBoard
 import RequestDetailWorkspace from "./pages/RequestDetailWorkspace";
 import ProcurementEvaluationsPage from "./pages/ProcurementEvaluationsPage";
 import ProcurementEvaluationDetail from "./pages/ProcurementEvaluationDetail";
+import SupplyChainPerformancePage from "./pages/SupplyChainPerformancePage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -340,6 +341,15 @@ const AppRoutes = () => (
           element={<ProcureToPayDashboardPage />}
           requiredPermissions={["procure-to-pay.lifecycle.view"]}
           allowedRoles={["scm", "admin", "finance", "financeapprover", "warehousekeeper", "warehousemanager", "procurementspecialist"]}
+        />
+      }
+    />
+    <Route
+      path="/supply-chain-performance"
+      element={
+        <ProtectedRoute
+          element={<SupplyChainPerformancePage />}
+          requiredPermissions={["procurement-performance.view"]}
         />
       }
     />
