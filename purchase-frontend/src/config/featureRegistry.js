@@ -11,6 +11,7 @@ export const featureRegistry = {
   procureToPayLifecycle: { path: '/procure-to-pay/lifecycle', requiredPermissions: ['procure-to-pay.lifecycle.view'], allowedRoles: ['scm','admin','finance','financeapprover','warehousekeeper','warehousemanager','procurementspecialist'], nav: { group: 'procureToPay', label: 'Procure-to-Pay Lifecycle', color: 'text-violet-700' } },
   procureToPayReceipts: { path: '/procure-to-pay/receipts', resourceKey: 'feature.procureToPayReceipts', requiredPermissions: ['procure-to-pay.receipts.manage'], allowedRoles: ['scm','admin','warehousekeeper','warehousemanager'], nav: { group: 'procureToPay', labelKey: 'navbar.procureToPayReceipts', color: 'text-blue-700' } },
   dashboard: { path: '/dashboard', resourceKey: 'feature.dashboard', requiredPermissions: ['dashboard.view'], nav: { group: 'insights', labelKey: 'navbar.dashboard', color: 'text-cyan-600' } },
+  supplyChainPerformance: { path: '/supply-chain-performance', requiredPermissions: ['procurement-performance.view'], nav: { group: 'insights', labelKey: 'navbar.supplyChainPerformance', color: 'text-teal-700' } },
 };
 
 export const featureByPath = Object.values(featureRegistry).reduce((acc, feature) => {

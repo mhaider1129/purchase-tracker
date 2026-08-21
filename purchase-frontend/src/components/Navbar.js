@@ -558,6 +558,7 @@ const Navbar = () => {
             "/dashboard",
             "text-cyan-600",
           ),
+          resolveFeatureNavItem("supplyChainPerformance"),
           createItem(
             canAccessBudgetControl,
             t("navbar.budgetControl"),
