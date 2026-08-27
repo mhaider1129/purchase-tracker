@@ -94,6 +94,8 @@ import RequestDetailWorkspace from "./pages/RequestDetailWorkspace";
 import ProcurementEvaluationsPage from "./pages/ProcurementEvaluationsPage";
 import ProcurementEvaluationDetail from "./pages/ProcurementEvaluationDetail";
 import SupplyChainPerformancePage from "./pages/SupplyChainPerformancePage";
+import InstitutionalPrioritiesPage from "./pages/InstitutionalPrioritiesPage";
+import DepartmentPrioritiesPage from "./pages/DepartmentPrioritiesPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -344,6 +346,8 @@ const AppRoutes = () => (
         />
       }
     />
+    <Route path="/procurement-priorities" element={<ProtectedRoute element={<InstitutionalPrioritiesPage />} />} />
+    <Route path="/procurement-priorities/department" element={<ProtectedRoute element={<DepartmentPrioritiesPage />} requiredPermissions={["procurement-priority.rank-department"]} />} />
     <Route
       path="/supply-chain-performance"
       element={
