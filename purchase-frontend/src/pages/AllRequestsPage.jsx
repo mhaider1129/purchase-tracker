@@ -18,6 +18,7 @@ import RequestViewModeToggle from '../components/requests/RequestViewModeToggle'
 import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
 import PaginationControls from '../components/ui/PaginationControls';
 import { formatOptionalItemText, getDisplayItems } from '../utils/itemUtils';
+import { isCompletedRequestStatus } from '../utils/requestStatus';
 
 const PRINT_TRANSLATIONS = {
   en: {
@@ -176,8 +177,6 @@ export const getStepColor = (step) => {
 };
 
 const normalizeStatus = (status) => String(status || '').trim().toLowerCase();
-
-const isCompletedStatus = (status) => ['completed', 'received'].includes(normalizeStatus(status));
 
 const isPostApprovalStatus = (status) => {
   const normalized = normalizeStatus(status);
@@ -395,7 +394,7 @@ const AllRequestsPage = () => {
       const fetchedRequests = Array.isArray(res?.data?.data) ? [...res.data.data] : [];
       const isCompletedOrRejected = (req) => {
         const normalizedStatus = normalizeStatus(req?.status);
-        return isCompletedStatus(normalizedStatus) || normalizedStatus === 'rejected';
+        return isCompletedRequestStatus(normalizedStatus) || normalizedStatus === 'rejected';
       };
 
       const urgentPinnedRequests = [];
@@ -443,13 +442,20 @@ const AllRequestsPage = () => {
       });
 
       const summaryRequests = Array.isArray(summaryRes?.data?.data) ? summaryRes.data.data : [];
-      const finalizedStatuses = ['approved', 'rejected', 'completed', 'received', 'cancelled'];
+      const finalizedStatuses = [
+        'approved',
+        'rejected',
+        'completed',
+        'received',
+        'available in stock',
+        'cancelled',
+      ];
       const nextSummary = summaryRequests.reduce(
         (acc, req) => {
           const normalizedStatus = normalizeStatus(req?.status);
           if (req?.is_urgent) acc.urgent += 1;
           if (normalizedStatus === 'approved') acc.approved += 1;
-          if (isCompletedStatus(normalizedStatus)) acc.completed += 1;
+          if (isCompletedRequestStatus(normalizedStatus)) acc.completed += 1;
           if (!finalizedStatuses.includes(normalizedStatus)) acc.pending += 1;
           return acc;
         },

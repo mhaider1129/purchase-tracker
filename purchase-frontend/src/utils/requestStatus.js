@@ -1,7 +1,7 @@
 const normalizeRequestStatus = (status) =>
   (status || '').toString().trim().toLowerCase();
 
-const COMPLETED_REQUEST_STATUSES = new Set(['completed', 'received']);
+const COMPLETED_REQUEST_STATUSES = new Set(['completed', 'received', 'available in stock']);
 
 export const isCompletedRequestStatus = (status) =>
   COMPLETED_REQUEST_STATUSES.has(normalizeRequestStatus(status));
@@ -21,7 +21,7 @@ export const summarizeRequestStatuses = (requests = []) =>
       const status = normalizeRequestStatus(request?.status) || 'unknown';
       summary[status] = (summary[status] || 0) + 1;
 
-      if (status === 'received') {
+      if (status === 'received' || status === 'available in stock') {
         summary.completed += 1;
       }
 
