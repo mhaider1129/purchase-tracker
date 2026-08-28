@@ -17,6 +17,8 @@ import {
 } from 'recharts';
 import usePageTranslation from '../utils/usePageTranslation';
 import Card from '../components/Card';
+import { getPublicPriorityQueue } from '../api/procurementPriority';
+import { CurrentProcurementPriorities } from '../components/priority/ProcurementPriorityViews';
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
 const DASHBOARD_REFRESH_EVENT = 'dashboard:refresh';
@@ -28,6 +30,13 @@ const Dashboard = () => {
   const [departmentRequestCosts, setDepartmentRequestCosts] = useState([]);
   const [year, setYear] = useState(new Date().getFullYear());
   const [error, setError] = useState('');
+  const [priorityState, setPriorityState] = useState({ status: 'loading', entries: [] });
+
+  useEffect(() => {
+    let active = true;
+    getPublicPriorityQueue({ limit: 5 }).then(result => active && setPriorityState({ status: 'ready', entries: (result.data || []).slice(0, 5) })).catch(err => active && setPriorityState({ status: err.response?.status === 404 || err.response?.status === 503 ? 'unavailable' : 'error', entries: [] }));
+    return () => { active = false; };
+  }, []);
 
   const formatAmount = (value) =>
     Number(value || 0).toLocaleString(undefined, {
@@ -329,6 +338,7 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold text-purple-700 mb-6">
           {translate('overviewTitle', { defaultValue: '📊 Dashboard Overview' })}
         </h1>
+        <div className="mb-8"><CurrentProcurementPriorities status={priorityState.status} entries={priorityState.entries} /></div>
 
         {/* Overview Highlights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

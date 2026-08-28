@@ -131,6 +131,7 @@ const RequestDetailWorkspace = () => {
   }, []);
 
   const request = workspace?.request || EMPTY_OBJECT;
+  const priority = workspace?.procurement_priority || workspace?.priority_profile || null;
   const items = workspace?.items || EMPTY_ARRAY;
   const approvals = workspace?.approvals || EMPTY_ARRAY;
   const procurementEvents = workspace?.procurement_events || EMPTY_ARRAY;
@@ -405,6 +406,18 @@ const RequestDetailWorkspace = () => {
                 </div>
               </section>
             </div>
+            {priority ? <section aria-labelledby="request-priority-heading" className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <h2 id="request-priority-heading" className="text-lg font-bold text-blue-950">Procurement Priority</h2>
+              <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
+                {priority.department_rank !== undefined && <div><dt className="text-slate-500">Department Rank</dt><dd className="font-semibold">{priority.department_rank ?? '—'}</dd></div>}
+                {priority.institutional_rank !== undefined && <div><dt className="text-slate-500">Institutional Rank</dt><dd className="font-semibold">{priority.institutional_rank ?? '—'}</dd></div>}
+                {priority.system_score !== undefined && <div><dt className="text-slate-500">IPPS Score</dt><dd className="font-semibold">{priority.system_score ?? '—'}</dd></div>}
+                {priority.system_tier !== undefined && <div><dt className="text-slate-500">Tier</dt><dd className="font-semibold">{priority.system_tier ?? '—'}</dd></div>}
+                {priority.priority_group !== undefined && <div><dt className="text-slate-500">Priority Group</dt><dd className="font-semibold">{priority.priority_group || '—'}</dd></div>}
+                {priority.last_recalculated_at !== undefined && <div><dt className="text-slate-500">Last Recalculated</dt><dd className="font-semibold">{formatDateTime(priority.last_recalculated_at)}</dd></div>}
+              </dl>
+              {priority.procurement_case_id ? <Link to={`/procurement-priorities/manage?case=${priority.procurement_case_id}`} className="mt-3 inline-block font-semibold text-blue-700">View Priority Details</Link> : null}
+            </section> : null}
           </div>
         )}
 

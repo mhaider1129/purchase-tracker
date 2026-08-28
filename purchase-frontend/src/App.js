@@ -96,6 +96,7 @@ import ProcurementEvaluationDetail from "./pages/ProcurementEvaluationDetail";
 import SupplyChainPerformancePage from "./pages/SupplyChainPerformancePage";
 import InstitutionalPrioritiesPage from "./pages/InstitutionalPrioritiesPage";
 import DepartmentPrioritiesPage from "./pages/DepartmentPrioritiesPage";
+import ProcurementPriorityManagementPage from "./pages/ProcurementPriorityManagementPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -348,6 +349,7 @@ const AppRoutes = () => (
     />
     <Route path="/procurement-priorities" element={<ProtectedRoute element={<InstitutionalPrioritiesPage />} />} />
     <Route path="/procurement-priorities/department" element={<ProtectedRoute element={<DepartmentPrioritiesPage />} requiredPermissions={["procurement-priority.rank-department"]} />} />
+    <Route path="/procurement-priorities/manage" element={<ProtectedRoute element={<ProcurementPriorityManagementPage />} requiredPermissions={["procurement-priority.manage"]} />} />
     <Route
       path="/supply-chain-performance"
       element={

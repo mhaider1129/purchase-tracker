@@ -8,3 +8,8 @@ export const getPriorityHistory = id => data(axios.get(`/procurement-priority/ca
 export const updatePriorityAssessment = (id,input) => data(axios.put(`/procurement-priority/cases/${id}/assessment`,input));
 export const overrideInstitutionalRank = (id,institutional_rank,reason) => data(axios.put(`/procurement-priority/cases/${id}/institutional-rank`,{institutional_rank,reason}));
 export const createPriorityGroup = input => data(axios.post('/procurement-priority/groups',input));
+export const getPriorityManagementQueue = params => data(axios.get('/procurement-priority/manage',{params}));
+export const reorderInstitutionalPriorities = (entries, reason) => data(axios.put('/procurement-priority/institutional-order',{entries,reason}));
+export const getPriorityGroups = () => data(axios.get('/procurement-priority/groups'));
+export const updatePriorityGroup = (id,input) => data(axios.put(`/procurement-priority/groups/${id}`,input));
+export const archivePriorityGroup = id => data(axios.put(`/procurement-priority/groups/${id}/archive`));

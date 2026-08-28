@@ -264,6 +264,8 @@ const Navbar = () => {
     const canViewDashboard = hasAccess(currentUser, "feature.dashboard", [
       "dashboard.view",
     ]);
+    const canRankDepartmentPriorities = hasPermission(currentUser, "procurement-priority.rank-department");
+    const canManageProcurementPriorities = hasPermission(currentUser, "procurement-priority.manage");
     const canAccessBudgetControl = ["scm", "admin", "finance", "financeapprover", "cfo"].includes(normalizedRole);
     const canViewAnalytics = hasAccess(currentUser, "feature.analytics", [
       "dashboard.view",
@@ -558,6 +560,9 @@ const Navbar = () => {
             "/dashboard",
             "text-cyan-600",
           ),
+          createItem(true, "Institutional Priorities", "/procurement-priorities", "text-blue-700"),
+          createItem(canRankDepartmentPriorities, "Department Priorities", "/procurement-priorities/department", "text-blue-700"),
+          createItem(canManageProcurementPriorities, "Priority Management", "/procurement-priorities/manage", "text-blue-800"),
           resolveFeatureNavItem("supplyChainPerformance"),
           createItem(
             canAccessBudgetControl,
