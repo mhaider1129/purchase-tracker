@@ -57,6 +57,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [decisionDrafts, setDecisionDrafts] = useState({});
   const [feedback, setFeedback] = useState(null);
+  const [rankingGate, setRankingGate] = useState(null);
+  const [rankingSaving, setRankingSaving] = useState(false);
   const [attachmentsMap, setAttachmentsMap] = useState({});
   const [attachmentLoadingMap, setAttachmentLoadingMap] = useState({});
   const [attachmentErrorMap, setAttachmentErrorMap] = useState({});
@@ -590,7 +592,12 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
           payload.estimated_cost = normalizedCost;
         }
 
-        await axios.patch(`/approvals/${request.approval_id}/decision`, payload);
+        const decisionResponse = await axios.patch(`/approvals/${request.approval_id}/decision`, payload);
+        if (decisionResponse.data?.workflowState === 'HOD_RANKING_REQUIRED') {
+          setRankingGate({ ...decisionResponse.data.rankingGate, approvalId: request.approval_id });
+          setFeedback(null);
+          return;
+        }
         setFeedback({
           type: 'success',
           message:
@@ -646,6 +653,29 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
       ...prev,
       [requestId]: '',
     }));
+  };
+
+  const moveRankingCase = (index, offset) => setRankingGate((current) => {
+    const target = index + offset;
+    if (!current || target < 0 || target >= current.queue.length) return current;
+    const queue = [...current.queue];
+    [queue[index], queue[target]] = [queue[target], queue[index]];
+    return { ...current, queue };
+  });
+
+  const completeRanking = async () => {
+    setRankingSaving(true);
+    try {
+      await axios.post(`/approvals/${rankingGate.approvalId}/department-ranking`, {
+        ordered_case_ids: rankingGate.queue.map(row => row.procurement_case_id),
+        version: rankingGate.queue[0]?.row_version,
+      });
+      setRankingGate(null);
+      setFeedback({ type: 'success', message: 'Department ranking saved. Approval has continued.' });
+      await fetchRequests();
+    } catch (err) {
+      setFeedback({ type: 'error', message: err?.response?.data?.message || 'Ranking was not saved; approval remains blocked.' });
+    } finally { setRankingSaving(false); }
   };
 
   const loadAttachments = useCallback(
@@ -776,6 +806,26 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
 
   return (
     <>
+      {rankingGate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="hod-ranking-title">
+          <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
+            <h2 id="hod-ranking-title" className="text-xl font-semibold text-slate-900">Department priority ranking required</h2>
+            <p className="mt-2 text-sm text-slate-600">{rankingGate.instruction}</p>
+            <ol className="mt-5 divide-y rounded-lg border">
+              {rankingGate.queue.map((row, index) => (
+                <li key={row.procurement_case_id} className="flex items-center gap-3 p-3">
+                  <span className="w-7 font-semibold text-slate-500">{index + 1}</span>
+                  <span className="flex-1 text-sm font-medium">{row.public_title || `Requirement ${row.procurement_case_id}`}</span>
+                  {rankingGate.requiredCaseIds.map(String).includes(String(row.procurement_case_id)) && <span className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">This request</span>}
+                  <button type="button" aria-label="Move requirement up" disabled={index === 0} onClick={() => moveRankingCase(index, -1)}><ChevronUp className="h-5 w-5" /></button>
+                  <button type="button" aria-label="Move requirement down" disabled={index === rankingGate.queue.length - 1} onClick={() => moveRankingCase(index, 1)}><ChevronDown className="h-5 w-5" /></button>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-5 flex justify-end"><Button onClick={completeRanking} disabled={rankingSaving}>{rankingSaving ? 'Saving ranking…' : 'Save ranking and continue approval'}</Button></div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
