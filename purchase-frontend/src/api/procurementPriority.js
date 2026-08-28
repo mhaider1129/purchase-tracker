@@ -1,15 +1,42 @@
-import axios from './axios';
-const data = request => request.then(response => response.data);
-export const getPublicPriorityQueue = params => data(axios.get('/procurement-priority/public',{params}));
-export const getDepartmentPriorityQueue = () => data(axios.get('/procurement-priority/department'));
-export const reorderDepartmentPriority = (ordered_case_ids,version) => data(axios.put('/procurement-priority/department/reorder',{ordered_case_ids,version}));
-export const getPriorityProfile = id => data(axios.get(`/procurement-priority/cases/${id}`));
-export const getPriorityHistory = id => data(axios.get(`/procurement-priority/cases/${id}/history`));
-export const updatePriorityAssessment = (id,input) => data(axios.put(`/procurement-priority/cases/${id}/assessment`,input));
-export const overrideInstitutionalRank = (id,institutional_rank,reason) => data(axios.put(`/procurement-priority/cases/${id}/institutional-rank`,{institutional_rank,reason}));
-export const createPriorityGroup = input => data(axios.post('/procurement-priority/groups',input));
-export const getPriorityManagementQueue = params => data(axios.get('/procurement-priority/manage',{params}));
-export const reorderInstitutionalPriorities = (entries, reason) => data(axios.put('/procurement-priority/institutional-order',{entries,reason}));
-export const getPriorityGroups = () => data(axios.get('/procurement-priority/groups'));
-export const updatePriorityGroup = (id,input) => data(axios.put(`/procurement-priority/groups/${id}`,input));
-export const archivePriorityGroup = id => data(axios.put(`/procurement-priority/groups/${id}/archive`));
+import axios from "./axios";
+const data = (request) => request.then((response) => response.data);
+export const getPublicPriorityQueue = (params) =>
+  data(axios.get("/procurement-priority/public", { params }));
+export const getDepartmentPriorityQueue = () =>
+  data(axios.get("/procurement-priority/department"));
+export const reorderDepartmentPriority = (ordered_case_ids, version) =>
+  data(
+    axios.put("/procurement-priority/department/reorder", {
+      ordered_case_ids,
+      version,
+    }),
+  );
+export const getPriorityProfile = (id) =>
+  data(axios.get(`/procurement-priority/cases/${id}`));
+export const getPriorityHistory = (id) =>
+  data(axios.get(`/procurement-priority/cases/${id}/history`));
+export const updatePriorityAssessment = (id, input) =>
+  data(axios.put(`/procurement-priority/cases/${id}/assessment`, input));
+export const previewPriorityAssessment = (id, input) =>
+  data(axios.post(`/procurement-priority/cases/${id}/preview`, input));
+export const overrideInstitutionalRank = (id, institutional_rank, reason) =>
+  data(
+    axios.put(`/procurement-priority/cases/${id}/institutional-rank`, {
+      institutional_rank,
+      reason,
+    }),
+  );
+export const createPriorityGroup = (input) =>
+  data(axios.post("/procurement-priority/groups", input));
+export const getPriorityManagementQueue = (params) =>
+  data(axios.get("/procurement-priority/manage", { params }));
+export const reorderInstitutionalPriorities = (entries, reason) =>
+  data(
+    axios.put("/procurement-priority/institutional-order", { entries, reason }),
+  );
+export const getPriorityGroups = () =>
+  data(axios.get("/procurement-priority/groups"));
+export const updatePriorityGroup = (id, input) =>
+  data(axios.put(`/procurement-priority/groups/${id}`, input));
+export const archivePriorityGroup = (id) =>
+  data(axios.put(`/procurement-priority/groups/${id}/archive`));
