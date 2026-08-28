@@ -31,3 +31,9 @@ test('factor breakdown renders total and tier', () => {
   render(<FactorBreakdown breakdown={{ Aging: '6 / 10' }} score="62.00" tier="P2" />);
   expect(screen.getByText('Aging')).toBeInTheDocument(); expect(screen.getByText('P2')).toBeInTheDocument();
 });
+
+test('missing factor evidence is not fabricated as zero', () => {
+  render(<FactorBreakdown breakdown={null} score={null} tier={null} />);
+  expect(screen.getAllByText('Not assessed').length).toBeGreaterThan(1);
+  expect(screen.queryByText('0 / 100')).not.toBeInTheDocument();
+});

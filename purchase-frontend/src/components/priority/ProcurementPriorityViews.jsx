@@ -7,7 +7,7 @@ const FACTORS = [
   ['Service Risk', 'service_risk', 10], ['Deadline', 'deadline', 8],
   ['Dependency', 'dependency', 5], ['Regulatory', 'regulatory', 4], ['Strategic', 'strategic', 3],
 ];
-const valueFor = (breakdown, label, key) => breakdown?.[key] ?? breakdown?.[label] ?? breakdown?.[`${key}_score`] ?? 0;
+const valueFor = (breakdown, label, key) => breakdown?.[key] ?? breakdown?.[label] ?? breakdown?.[`${key}_score`] ?? null;
 
 export function CurrentProcurementPriorities({ entries = [], status = 'ready' }) {
   return <section aria-labelledby="current-priorities-title" className="rounded-xl border bg-white p-4 shadow-sm">
@@ -27,8 +27,8 @@ export function CurrentProcurementPriorities({ entries = [], status = 'ready' })
 
 export function PriorityFactorBreakdown({ breakdown, score, tier }) {
   return <div><dl aria-label="Priority factor breakdown" className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-2 text-sm">
-    {FACTORS.map(([label, key, maximum]) => <React.Fragment key={key}><dt>{label}</dt><dd className="text-right tabular-nums">{valueFor(breakdown, label, key)} / {maximum}</dd></React.Fragment>)}
-    <dt className="border-t pt-2 font-bold">Total</dt><dd className="border-t pt-2 text-right font-bold tabular-nums">{score ?? 0} / 100</dd>
+    {FACTORS.map(([label, key, maximum]) => { const value=valueFor(breakdown,label,key); return <React.Fragment key={key}><dt>{label}</dt><dd className="text-right tabular-nums">{value == null ? 'Not assessed' : `${value} / ${maximum}`}</dd></React.Fragment>; })}
+    <dt className="border-t pt-2 font-bold">Total</dt><dd className="border-t pt-2 text-right font-bold tabular-nums">{score == null ? 'Not assessed' : `${score} / 100`}</dd>
   </dl><div className="mt-3 flex items-center gap-2 font-semibold">Tier <PriorityTierBadge tier={tier} /></div></div>;
 }
 export const FactorBreakdown = PriorityFactorBreakdown;

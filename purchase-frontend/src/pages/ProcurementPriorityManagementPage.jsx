@@ -608,8 +608,8 @@ export default function ProcurementPriorityManagementPage() {
                 <td>{row.department_rank ?? "—"}</td>
                 <td>{row.age} days</td>
                 <td>{row.impact_level || "—"}</td>
-                <td>{row.service_risk || "—"}</td>
-                <td>{row.deadline_date || "—"}</td>
+                <td>{row.service_risk_level || "—"}</td>
+                <td>{row.deadline_at || "—"}</td>
                 <td>{row.case_status}</td>
                 <td>{row.priority_group_name || "—"}</td>
                 <td>
