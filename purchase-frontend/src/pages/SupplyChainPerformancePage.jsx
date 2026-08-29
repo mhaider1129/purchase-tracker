@@ -12,7 +12,7 @@ export default function SupplyChainPerformancePage() {
     {error && <div role="alert">{error}</div>}
     {SECTIONS.map(section=><section key={section} aria-label={section}><h2 className="text-xl font-semibold">{section}</h2>
       {section==='Executive Overview' && <Metric label="Requested items" metric={data?.metrics?.demand?.requested_items}/>}
-      {section==='Complexity Mix' && <div>{data?.metrics?.complexity?.mix?.map?.(x=><span key={x.class}>Class {x.class}: {x.count} </span>) || data?.metrics?.complexity?.map?.(x=><span key={x.class}>Class {x.class}: {x.count} </span>)}</div>}
+      {section==='Complexity Mix' && <div>{data?.metrics?.complexity?.class_mix?.map?.(x=><span key={x.class}>Class {x.class}: {x.count} </span>)}</div>}
       {section==='Buyer Workload' && <div>{data?.buyers?.map(x=><p key={x.buyer_id}>{x.buyer_name}: {x.workload_units} PWU</p>)}</div>}
       {section==='Pending Root Causes' && <div>{data?.pending?.map(x=><p key={x.root_cause}>{x.root_cause}: {x.count}</p>)}</div>}
       {section==='Strategic / Hard-to-Source Cases' && <div>{data?.highlights?.map(x=><p key={x.case_id}>{x.summary}</p>)}</div>}
