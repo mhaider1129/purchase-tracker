@@ -785,6 +785,9 @@ const AssignedRequestsPage = () => {
       const response = await axios.get(`/requests/${requestId}/rfx`, {
         params: { type },
         responseType: 'blob',
+        // Document generation performs sourcing-readiness checks before rendering.
+        // Do not inherit the shorter timeout intended for ordinary API calls.
+        timeout: 60000,
       });
 
       const blob = new Blob([response.data], {

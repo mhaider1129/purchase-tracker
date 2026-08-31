@@ -3424,7 +3424,6 @@
     "itemsSummary": "{{count}} عنصر",
     "unitsSummary": "{{quantity}} وحدة إجمالاً • {{attachments}} مرفق",
     "remove": "إزالة",
-    "remove": "إزالة",
     "submitHelp": "الخطوة 3: إرسال الطلب للموافقة."
   },
   "spareParts": {
@@ -3501,6 +3500,27 @@
       "generic_item_id": "Generic Item Id",
       "preferred_approved_product_id": "Preferred Approved Product Id",
       "lifecycle_status": "Lifecycle Status"
-    }
+    },
+    "searchGeneric": "بحث الأصناف العامة",
+    "itemMasterError": "تعذر تحميل خيارات دليل الأصناف",
+    "noMapping": "بدون ربط",
+    "noGenericItems": "لا توجد أصناف عامة",
+    "noApprovedProducts": "لا توجد منتجات معتمدة لهذا الصنف",
+    "equipmentManagement": "إدارة المعدات",
+    "searchEquipment": "بحث المعدات",
+    "noEquipment": "لا توجد معدات",
+    "manufacturer": "الشركة المصنعة",
+    "equipmentFilter": "المعدة",
+    "allEquipment": "كل المعدات",
+    "equipment": {
+      "equipment_code": "رمز المعدة",
+      "name": "الاسم",
+      "manufacturer": "الشركة المصنعة",
+      "model": "الطراز",
+      "serial_number": "الرقم التسلسلي",
+      "department": "القسم",
+      "lifecycle_status": "دورة الحياة"
+    },
+    "reapprovalWarning": "سيؤدي تعديل توافق معتمد إلى إعادته إلى قيد الانتظار وطلب الاعتماد الفني مجدداً."
   }
 }

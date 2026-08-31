@@ -100,6 +100,7 @@ import ProcurementPriorityManagementPage from "./pages/ProcurementPriorityManage
 import SparePartsRegisterPage from "./pages/SparePartsRegisterPage";
 import SparePartFormPage from "./pages/SparePartFormPage";
 import SparePartDetailPage from "./pages/SparePartDetailPage";
+import EquipmentManagementPage from "./pages/EquipmentManagementPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -186,6 +187,7 @@ const AppRoutes = () => (
     <Route path="/spare-parts/new" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.create"]} />} />
     <Route path="/spare-parts/:id/edit" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.edit"]} />} />
     <Route path="/spare-parts/:id" element={<ProtectedRoute element={<SparePartDetailPage />} requiredPermissions={["spare-parts.view"]} />} />
+    <Route path="/spare-parts-equipment" element={<ProtectedRoute element={<EquipmentManagementPage />} requiredPermissions={["spare-parts.manage-compatibility"]} />} />
     {/* ✅ Public Routes */}
     <Route path="/login" element={<Login />} />
     <Route path="/request-account" element={<RequestAccount />} />

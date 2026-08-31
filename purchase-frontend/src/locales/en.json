@@ -3500,6 +3500,27 @@
       "generic_item_id": "Generic Item Id",
       "preferred_approved_product_id": "Preferred Approved Product Id",
       "lifecycle_status": "Lifecycle Status"
-    }
+    },
+    "searchGeneric": "Search Generic Items",
+    "itemMasterError": "Unable to load Item Master options",
+    "noMapping": "No mapping",
+    "noGenericItems": "No Generic Items found",
+    "noApprovedProducts": "No approved products for this Generic Item",
+    "equipmentManagement": "Equipment management",
+    "searchEquipment": "Search equipment",
+    "noEquipment": "No equipment found",
+    "manufacturer": "Manufacturer",
+    "equipmentFilter": "Equipment",
+    "allEquipment": "All equipment",
+    "equipment": {
+      "equipment_code": "Equipment code",
+      "name": "Name",
+      "manufacturer": "Manufacturer",
+      "model": "Model",
+      "serial_number": "Serial number",
+      "department": "Department",
+      "lifecycle_status": "Lifecycle"
+    },
+    "reapprovalWarning": "Editing an approved compatibility will reset it to PENDING and require technical reapproval."
   }
 }

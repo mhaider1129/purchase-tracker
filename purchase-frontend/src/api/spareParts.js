@@ -3,8 +3,12 @@ export const listSpareParts=params=>api.get('/spare-parts',{params}).then(r=>r.d
 export const getSparePart=id=>api.get(`/spare-parts/${id}`).then(r=>r.data.data);
 export const createSparePart=body=>api.post('/spare-parts',body).then(r=>r.data.data);
 export const updateSparePart=(id,body)=>api.patch(`/spare-parts/${id}`,body).then(r=>r.data.data);
+export const updateStockPolicy=(id,body)=>api.patch(`/spare-parts/${id}/stock-policy`,body).then(r=>r.data.data);
 export const decideSparePart=(id,decision,reason)=>api.post(`/spare-parts/${id}/technical-approval`,{decision,reason}).then(r=>r.data.data);
 export const listEquipment=params=>api.get('/spare-parts/equipment',{params}).then(r=>r.data);
 export const listCompatibility=id=>api.get(`/spare-parts/${id}/compatibility`).then(r=>r.data.data);
 export const addCompatibility=(id,body)=>api.post(`/spare-parts/${id}/compatibility`,body).then(r=>r.data.data);
+export const updateCompatibility=(id,cid,body)=>api.patch(`/spare-parts/${id}/compatibility/${cid}`,body).then(r=>r.data.data);
 export const decideCompatibility=(id,cid,status)=>api.post(`/spare-parts/${id}/compatibility/${cid}/decision`,{status}).then(r=>r.data.data);
+export const createEquipment=body=>api.post('/spare-parts/equipment',body).then(r=>r.data.data);
+export const updateEquipment=(id,body)=>api.patch(`/spare-parts/equipment/${id}`,body).then(r=>r.data.data);
