@@ -97,6 +97,9 @@ import SupplyChainPerformancePage from "./pages/SupplyChainPerformancePage";
 import InstitutionalPrioritiesPage from "./pages/InstitutionalPrioritiesPage";
 import DepartmentPrioritiesPage from "./pages/DepartmentPrioritiesPage";
 import ProcurementPriorityManagementPage from "./pages/ProcurementPriorityManagementPage";
+import SparePartsRegisterPage from "./pages/SparePartsRegisterPage";
+import SparePartFormPage from "./pages/SparePartFormPage";
+import SparePartDetailPage from "./pages/SparePartDetailPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -179,6 +182,10 @@ const FallbackRedirect = () => {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/spare-parts" element={<ProtectedRoute element={<SparePartsRegisterPage />} requiredPermissions={["spare-parts.view"]} />} />
+    <Route path="/spare-parts/new" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.create"]} />} />
+    <Route path="/spare-parts/:id/edit" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.edit"]} />} />
+    <Route path="/spare-parts/:id" element={<ProtectedRoute element={<SparePartDetailPage />} requiredPermissions={["spare-parts.view"]} />} />
     {/* ✅ Public Routes */}
     <Route path="/login" element={<Login />} />
     <Route path="/request-account" element={<RequestAccount />} />

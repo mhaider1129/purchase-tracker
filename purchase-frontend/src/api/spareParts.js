@@ -1,0 +1,10 @@
+import api from './axios';
+export const listSpareParts=params=>api.get('/spare-parts',{params}).then(r=>r.data);
+export const getSparePart=id=>api.get(`/spare-parts/${id}`).then(r=>r.data.data);
+export const createSparePart=body=>api.post('/spare-parts',body).then(r=>r.data.data);
+export const updateSparePart=(id,body)=>api.patch(`/spare-parts/${id}`,body).then(r=>r.data.data);
+export const decideSparePart=(id,decision,reason)=>api.post(`/spare-parts/${id}/technical-approval`,{decision,reason}).then(r=>r.data.data);
+export const listEquipment=params=>api.get('/spare-parts/equipment',{params}).then(r=>r.data);
+export const listCompatibility=id=>api.get(`/spare-parts/${id}/compatibility`).then(r=>r.data.data);
+export const addCompatibility=(id,body)=>api.post(`/spare-parts/${id}/compatibility`,body).then(r=>r.data.data);
+export const decideCompatibility=(id,cid,status)=>api.post(`/spare-parts/${id}/compatibility/${cid}/decision`,{status}).then(r=>r.data.data);

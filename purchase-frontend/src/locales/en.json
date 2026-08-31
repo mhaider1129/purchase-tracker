@@ -247,7 +247,8 @@
     "home": "Home",
     "notificationsLoadFailed": "Failed to load notifications.",
     "retry": "Retry",
-    "itPrintServiceRequests": "IT Print Service Requests"
+    "itPrintServiceRequests": "IT Print Service Requests",
+    "spareParts": "Spare Parts"
   },
   "pageTitles": {
     "nonStockRequestForm": "Non-Stock Request Form",
@@ -780,7 +781,14 @@
     "approverRole": "Role",
     "approvalDecision": "Decision",
     "approvalComment": "Comment",
-    "approvalDate": "Date"
+    "approvalDate": "Date",
+    "previous": "Previous",
+    "save": "Save",
+    "add": "Add",
+    "yes": "Yes",
+    "no": "No",
+    "approve": "Approve",
+    "reject": "Reject"
   },
   "nonStockRequestPage": {
     "loadingUser": "Loading user information...",
@@ -1043,7 +1051,11 @@
       "results_other": "{{count}} workflows available",
       "noResultsTitle": "No matching workflows",
       "noResultsDescription": "Try another search term or choose a different category.",
-      "clearFilters": "Clear all filters"
+      "clearFilters": "Clear all filters",
+      "results_zero": "{{count}} workflows available",
+      "results_two": "{{count}} workflows available",
+      "results_few": "{{count}} workflows available",
+      "results_many": "{{count}} workflows available"
     },
     "actions": {
       "retry": "Retry",
@@ -3413,5 +3425,81 @@
     "unitsSummary": "{{quantity}} total units • {{attachments}} attachments",
     "remove": "Remove",
     "submitHelp": "Step 3: Submit the request for approval."
+  },
+  "spareParts": {
+    "register": "Approved Spare Parts Register",
+    "subtitle": "Technical maintenance identities and equipment compatibility",
+    "create": "Create spare part",
+    "edit": "Edit spare part",
+    "search": "Search spare parts",
+    "all": "All",
+    "error": "Unable to load spare parts",
+    "empty": "No spare parts found",
+    "criticality": "Criticality",
+    "technical_approval_status": "Technical approval",
+    "lifecycle_status": "Lifecycle",
+    "stocking_policy": "Stocking policy",
+    "reason": "Approval reason or reference",
+    "approvalControlled": "Approval identity and timestamps are controlled by the approval actions.",
+    "genericMapping": "Generic Item",
+    "productMapping": "Preferred Approved Product",
+    "auditHint": "Approval and change events are available through the canonical audit registry.",
+    "selectEquipment": "Select equipment",
+    "submitReview": "Submit for review",
+    "columns": {
+      "code": "Spare Part Code",
+      "name": "Part Name",
+      "manufacturer": "Manufacturer",
+      "oem": "OEM Part Number",
+      "criticality": "Criticality",
+      "approval": "Technical Approval",
+      "stocking": "Stocking Policy",
+      "equipmentCount": "Compatible Equipment",
+      "lifecycle": "Lifecycle",
+      "updated": "Updated At"
+    },
+    "sections": {
+      "identity": "Identity",
+      "technical": "Technical Information",
+      "criticality": "Criticality",
+      "stocking": "Stocking Strategy",
+      "mapping": "Item Master Mapping",
+      "approval": "Approval"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "compatibility": "Compatibility",
+      "itemMaster": "Item Master",
+      "stocking": "Stocking",
+      "audit": "Approval History / Audit"
+    },
+    "decisions": {
+      "APPROVE": "Approve",
+      "CONDITIONALLY_APPROVE": "Conditionally approve",
+      "REJECT": "Reject"
+    },
+    "fields": {
+      "spare_part_code": "Spare Part Code",
+      "name": "Name",
+      "description": "Description",
+      "spare_part_type": "Spare Part Type",
+      "manufacturer_name": "Manufacturer Name",
+      "oem_part_number": "Oem Part Number",
+      "manufacturer_part_number": "Manufacturer Part Number",
+      "drawing_number": "Drawing Number",
+      "revision": "Revision",
+      "technical_specification": "Technical Specification",
+      "criticality": "Criticality",
+      "failure_consequence": "Failure Consequence",
+      "recommended_stocking_policy": "Recommended Stocking Policy",
+      "recommended_min_quantity": "Recommended Min Quantity",
+      "recommended_max_quantity": "Recommended Max Quantity",
+      "recommended_safety_stock": "Recommended Safety Stock",
+      "typical_lead_time_days": "Typical Lead Time Days",
+      "estimated_annual_consumption": "Estimated Annual Consumption",
+      "generic_item_id": "Generic Item Id",
+      "preferred_approved_product_id": "Preferred Approved Product Id",
+      "lifecycle_status": "Lifecycle Status"
+    }
   }
 }

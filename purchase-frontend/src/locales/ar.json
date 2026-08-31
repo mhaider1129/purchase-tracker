@@ -247,7 +247,8 @@
     "home": "الرئيسية",
     "notificationsLoadFailed": "تعذر تحميل الإشعارات.",
     "retry": "إعادة المحاولة",
-    "itPrintServiceRequests": "طلبات خدمة الطباعة لتقنية المعلومات"
+    "itPrintServiceRequests": "طلبات خدمة الطباعة لتقنية المعلومات",
+    "spareParts": "قطع الغيار"
   },
   "pageTitles": {
     "nonStockRequestForm": "نموذج طلب مواد غير مخزنية",
@@ -720,7 +721,14 @@
     "approverRole": "الدور",
     "approvalDecision": "القرار",
     "approvalComment": "التعليق",
-    "approvalDate": "التاريخ"
+    "approvalDate": "التاريخ",
+    "previous": "السابق",
+    "save": "حفظ",
+    "add": "إضافة",
+    "yes": "نعم",
+    "no": "لا",
+    "approve": "اعتماد",
+    "reject": "رفض"
   },
   "nonStockRequestPage": {
     "loadingUser": "جاري تحميل معلومات المستخدم...",
@@ -3416,6 +3424,83 @@
     "itemsSummary": "{{count}} عنصر",
     "unitsSummary": "{{quantity}} وحدة إجمالاً • {{attachments}} مرفق",
     "remove": "إزالة",
+    "remove": "إزالة",
     "submitHelp": "الخطوة 3: إرسال الطلب للموافقة."
+  },
+  "spareParts": {
+    "register": "سجل قطع الغيار المعتمدة",
+    "subtitle": "هويات الصيانة الفنية وتوافق المعدات",
+    "create": "إنشاء قطعة غيار",
+    "edit": "تعديل قطعة غيار",
+    "search": "بحث في قطع الغيار",
+    "all": "الكل",
+    "error": "تعذر تحميل قطع الغيار",
+    "empty": "لا توجد قطع غيار",
+    "criticality": "Criticality",
+    "technical_approval_status": "Technical approval",
+    "lifecycle_status": "Lifecycle",
+    "stocking_policy": "Stocking policy",
+    "reason": "سبب أو مرجع الاعتماد",
+    "approvalControlled": "هوية المعتمد والتوقيت تتحكم بهما إجراءات الاعتماد.",
+    "genericMapping": "الصنف العام",
+    "productMapping": "المنتج المعتمد المفضل",
+    "auditHint": "تتوفر أحداث الاعتماد والتغيير في سجل التدقيق المعتمد.",
+    "selectEquipment": "اختر المعدة",
+    "submitReview": "إرسال للمراجعة",
+    "columns": {
+      "code": "Spare Part Code",
+      "name": "Part Name",
+      "manufacturer": "Manufacturer",
+      "oem": "OEM Part Number",
+      "criticality": "Criticality",
+      "approval": "Technical Approval",
+      "stocking": "Stocking Policy",
+      "equipmentCount": "Compatible Equipment",
+      "lifecycle": "Lifecycle",
+      "updated": "Updated At"
+    },
+    "sections": {
+      "identity": "Identity",
+      "technical": "Technical Information",
+      "criticality": "Criticality",
+      "stocking": "Stocking Strategy",
+      "mapping": "Item Master Mapping",
+      "approval": "Approval"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "compatibility": "Compatibility",
+      "itemMaster": "Item Master",
+      "stocking": "Stocking",
+      "audit": "Approval History / Audit"
+    },
+    "decisions": {
+      "APPROVE": "Approve",
+      "CONDITIONALLY_APPROVE": "Conditionally approve",
+      "REJECT": "Reject"
+    },
+    "fields": {
+      "spare_part_code": "Spare Part Code",
+      "name": "Name",
+      "description": "Description",
+      "spare_part_type": "Spare Part Type",
+      "manufacturer_name": "Manufacturer Name",
+      "oem_part_number": "Oem Part Number",
+      "manufacturer_part_number": "Manufacturer Part Number",
+      "drawing_number": "Drawing Number",
+      "revision": "Revision",
+      "technical_specification": "Technical Specification",
+      "criticality": "Criticality",
+      "failure_consequence": "Failure Consequence",
+      "recommended_stocking_policy": "Recommended Stocking Policy",
+      "recommended_min_quantity": "Recommended Min Quantity",
+      "recommended_max_quantity": "Recommended Max Quantity",
+      "recommended_safety_stock": "Recommended Safety Stock",
+      "typical_lead_time_days": "Typical Lead Time Days",
+      "estimated_annual_consumption": "Estimated Annual Consumption",
+      "generic_item_id": "Generic Item Id",
+      "preferred_approved_product_id": "Preferred Approved Product Id",
+      "lifecycle_status": "Lifecycle Status"
+    }
   }
 }

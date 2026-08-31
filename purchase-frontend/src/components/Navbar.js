@@ -245,6 +245,7 @@ const Navbar = () => {
       ["warehouse.view-supply", "warehouse.manage-supply"],
     );
     const canViewItemMaster = hasAccess(currentUser, "feature.itemMaster", []);
+    const canViewSpareParts = hasPermission(currentUser, "spare-parts.view");
     const canMapStockItems = hasAccess(currentUser, null, [
       "item-master.stock-map",
     ]);
@@ -523,6 +524,12 @@ const Navbar = () => {
             t("navbar.itemMaster"),
             "/item-master",
             "text-slate-700",
+          ),
+          createItem(
+            canViewSpareParts,
+            t("navbar.spareParts"),
+            "/spare-parts",
+            "text-indigo-700",
           ),
           createItem(
             canMapStockItems,
