@@ -39,6 +39,7 @@ import AllRequestsPage from "./pages/AllRequestsPage";
 import AssignedRequestsPage from "./pages/AssignedRequestsPage";
 import AdminTools from "./pages/AdminTools";
 import OrganizationHierarchy from "./pages/OrganizationHierarchy";
+import ApprovalPoliciesPage from "./pages/ApprovalPoliciesPage";
 import Management from "./pages/Management";
 import ChangePassword from "./pages/ChangePassword";
 import IncompleteRequestsPage from "./pages/IncompleteRequestsPage";
@@ -642,6 +643,7 @@ const AppRoutes = () => (
 
     {/* ✅ Admin / SCM Routes */}
     <Route path="/admin/organization" element={<ProtectedRoute element={<OrganizationHierarchy />} />} />
+    <Route path="/admin/approval-policies" element={<ProtectedRoute element={<ApprovalPoliciesPage />} />} />
     <Route
       path="/admin-tools"
       element={
