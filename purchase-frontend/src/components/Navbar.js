@@ -608,6 +608,12 @@ const Navbar = () => {
             "text-yellow-600",
           ),
           createItem(
+            canUseAdminTools,
+            "Organization Hierarchy",
+            "/admin/organization",
+            "text-emerald-600",
+          ),
+          createItem(
             canAccessManagement,
             t("navbar.management"),
             "/management",
