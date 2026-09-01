@@ -4,3 +4,9 @@ export const getOrganizationUnits=params=>api.get('/organization/units',{params}
 export const createOrganizationUnit=data=>api.post('/organization/units',data).then(r=>r.data);
 export const updateOrganizationUnit=(id,data)=>api.patch(`/organization/units/${id}`,data).then(r=>r.data);
 export const moveOrganizationUnit=(id,parentUnitId)=>api.post(`/organization/units/${id}/move`,{parentUnitId}).then(r=>r.data);
+export const getOrganizationUnit=id=>api.get(`/organization/units/${id}`).then(r=>r.data);
+export const archiveOrganizationUnit=id=>api.delete(`/organization/units/${id}`).then(r=>r.data);
+export const getOrganizationPositions=id=>api.get(`/organization/units/${id}/positions`).then(r=>r.data);
+export const createOrganizationPosition=(id,data)=>api.post(`/organization/units/${id}/positions`,data).then(r=>r.data);
+export const updateOrganizationPosition=(id,data)=>api.patch(`/organization/positions/${id}`,data).then(r=>r.data);
+export const archiveOrganizationPosition=id=>api.delete(`/organization/positions/${id}`).then(r=>r.data);

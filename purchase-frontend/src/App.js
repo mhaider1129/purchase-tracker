@@ -641,7 +641,7 @@ const AppRoutes = () => (
     />
 
     {/* ✅ Admin / SCM Routes */}
-    <Route path="/admin/organization" element={<ProtectedRoute element={<OrganizationHierarchy />} requiredPermissions={["organization.manage"]} />} />
+    <Route path="/admin/organization" element={<ProtectedRoute element={<OrganizationHierarchy />} />} />
     <Route
       path="/admin-tools"
       element={
