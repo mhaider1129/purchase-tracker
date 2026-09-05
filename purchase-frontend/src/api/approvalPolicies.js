@@ -1,13 +1,29 @@
-import api from './axios';
-export const listApprovalPolicies=()=>api.get('/approval-policies').then(r=>r.data);
-export const createApprovalPolicy=body=>api.post('/approval-policies',body).then(r=>r.data);
-export const getApprovalPolicy=id=>api.get(`/approval-policies/${id}`).then(r=>r.data);
-export const updateApprovalPolicy=(id,body)=>api.patch(`/approval-policies/${id}`,body).then(r=>r.data);
-export const createApprovalPolicyVersion=(id,body)=>api.post(`/approval-policies/${id}/versions`,body).then(r=>r.data);
-export const getApprovalPolicyVersion=id=>api.get(`/approval-policy-versions/${id}`).then(r=>r.data);
-export const saveApprovalPolicyVersion=(id,body)=>api.patch(`/approval-policy-versions/${id}`,body).then(r=>r.data);
-export const validateApprovalPolicyVersion=id=>api.post(`/approval-policy-versions/${id}/validate`).then(r=>r.data);
-export const enterApprovalPolicyShadow=id=>api.post(`/approval-policy-versions/${id}/enter-shadow`).then(r=>r.data);
-export const getShadowRun=id=>api.get(`/approval-policy-shadow-runs/${id}`).then(r=>r.data);
-export const runApprovalPolicyShadow=(versionId,requestId)=>api.post(`/approval-policy-versions/${versionId}/shadow-run/${requestId}`).then(r=>r.data);
-export const runApprovalPolicyShadowBatch=body=>api.post('/approval-policy-shadow-runs/batch',body).then(r=>r.data);
+import api from "./axios";
+export const listApprovalPolicies = () =>
+  api.get("/approval-policies").then((r) => r.data);
+export const createApprovalPolicy = (body) =>
+  api.post("/approval-policies", body).then((r) => r.data);
+export const getApprovalPolicy = (id) =>
+  api.get(`/approval-policies/${id}`).then((r) => r.data);
+export const updateApprovalPolicy = (id, body) =>
+  api.patch(`/approval-policies/${id}`, body).then((r) => r.data);
+export const createApprovalPolicyVersion = (id, body) =>
+  api.post(`/approval-policies/${id}/versions`, body).then((r) => r.data);
+export const getApprovalPolicyVersion = (id) =>
+  api.get(`/approval-policy-versions/${id}`).then((r) => r.data);
+export const saveApprovalPolicyVersion = (id, body) =>
+  api.patch(`/approval-policy-versions/${id}`, body).then((r) => r.data);
+export const validateApprovalPolicyVersion = (id) =>
+  api.post(`/approval-policy-versions/${id}/validate`).then((r) => r.data);
+export const enterApprovalPolicyShadow = (id) =>
+  api.post(`/approval-policy-versions/${id}/enter-shadow`).then((r) => r.data);
+export const getShadowRun = (id) =>
+  api.get(`/approval-policy-shadow-runs/${id}`).then((r) => r.data);
+export const runApprovalPolicyShadow = (versionId, requestId) =>
+  api
+    .post(`/approval-policy-versions/${versionId}/shadow-run/${requestId}`)
+    .then((r) => r.data);
+export const runApprovalPolicyShadowBatch = (body) =>
+  api.post("/approval-policy-shadow-runs/batch", body).then((r) => r.data);
+export const listShadowRuns = (params) =>
+  api.get("/approval-policy-shadow-runs", { params }).then((r) => r.data);
