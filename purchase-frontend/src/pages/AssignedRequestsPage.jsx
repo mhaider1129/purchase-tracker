@@ -424,7 +424,11 @@ const AssignedRequestsPage = () => {
       fetchAssignedRequests();
     } catch (err) {
       console.error('❌ Error marking request as completed:', err);
-      alert(tr('alerts.markCompletedFailed', '❌ Failed to mark request as completed.'));
+      alert(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          tr('alerts.markCompletedFailed', '❌ Failed to mark request as completed.'),
+      );
     }
   };
 

@@ -176,6 +176,27 @@ export const getStepColor = (step) => {
   }
 };
 
+export const getItemStatus = (item = {}) => {
+  if (normalizeStatus(item.approval_status) === 'rejected') {
+    return { label: 'Rejected', className: 'bg-red-100 text-red-800' };
+  }
+
+  const status = normalizeStatus(item.procurement_status);
+  if (status === 'not_procured') return { label: 'Not Procured', className: 'bg-red-100 text-red-800' };
+  if (['canceled', 'cancelled'].includes(status)) return { label: 'Cancelled', className: 'bg-red-100 text-red-800' };
+  if (['purchased', 'completed'].includes(status)) {
+    return { label: status === 'purchased' ? 'Purchased' : 'Completed', className: 'bg-green-100 text-green-800' };
+  }
+  if (['partially_procured', 'partially procured'].includes(status)) {
+    return { label: 'Partially Procured', className: 'bg-amber-100 text-amber-800' };
+  }
+  if (!status || status === 'pending') return { label: 'Pending', className: 'bg-amber-100 text-amber-800' };
+  return {
+    label: status.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
+    className: 'bg-blue-100 text-blue-800',
+  };
+};
+
 const normalizeStatus = (status) => String(status || '').trim().toLowerCase();
 
 const isPostApprovalStatus = (status) => {
@@ -1691,6 +1712,7 @@ const AllRequestsPage = () => {
                             <th className="border p-1">Procured Qty</th>
                             <th className="border p-1">Unit Cost</th>
                             <th className="border p-1">Total</th>
+                            <th className="border p-1">Status</th>
                             <th className="border p-1">Assigned To</th>
                           </tr>
                         </thead>
@@ -1708,6 +1730,11 @@ const AllRequestsPage = () => {
                               <td className="border p-1 align-top">{item.purchased_quantity ?? 0} {item.unit_of_measure || ''}</td>
                               <td className="border p-1 align-top">{item.unit_cost}</td>
                               <td className="border p-1 align-top">{item.total_cost}</td>
+                              <td className="border p-1 align-top">
+                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${getItemStatus(item).className}`}>
+                                  {getItemStatus(item).label}
+                                </span>
+                              </td>
                               <td className="border p-1 align-top">{item.assigned_user_name || '—'}</td>
                             </tr>
                           ))}

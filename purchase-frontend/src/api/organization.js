@@ -11,3 +11,9 @@ export const getOrganizationPositions=id=>api.get(`/organization/units/${id}/pos
 export const createOrganizationPosition=(id,data)=>api.post(`/organization/units/${id}/positions`,data).then(r=>r.data);
 export const updateOrganizationPosition=(id,data)=>api.patch(`/organization/positions/${id}`,data).then(r=>r.data);
 export const archiveOrganizationPosition=id=>api.delete(`/organization/positions/${id}`).then(r=>r.data);
+export const assignOrganizationHead=(id,data)=>api.post(`/organization/units/${id}/head`,data).then(r=>r.data);
+export const getHeadReconciliation=()=>api.get('/organization/head-reconciliation').then(r=>r.data);
+export const previewHeadReconciliation=()=>api.get('/organization/head-reconciliation/preview').then(r=>r.data);
+export const reconcileOrganizationHead=(id,data)=>api.post(`/organization/units/${id}/reconcile-head`,data).then(r=>r.data);
+export const resolveHeadReconciliation=(id,data)=>api.post(`/organization/units/${id}/reconciliation-decision`,data).then(r=>r.data);
+export const bulkReconcileHeads=unitIds=>api.post('/organization/head-reconciliation/bulk',{unitIds}).then(r=>r.data);

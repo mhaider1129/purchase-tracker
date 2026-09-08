@@ -323,6 +323,7 @@ const ContractForm = ({
             name="status"
             value={formState.status}
             onChange={handleInputChange}
+            disabled={!formState.is_historical_contract && !editingId}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           >
             {statusOptions
@@ -333,6 +334,12 @@ const ContractForm = ({
                 </option>
               ))}
           </select>
+          {!editingId && (
+            <label className="mt-2 flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
+              <input type="checkbox" checked={Boolean(formState.is_historical_contract)} onChange={(event) => handleInputChange({ target: { name: 'is_historical_contract', value: event.target.checked } })} />
+              Historical migration (allows an existing contract to be entered outside draft status)
+            </label>
+          )}
         </div>
         <div>
           <label
@@ -418,28 +425,37 @@ const ContractForm = ({
           )}
         </div>
         <div className="sm:col-span-2">
-          <label
-            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
-            htmlFor="technical_department_ids"
-          >
-            Technical departments involved
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="main_technical_department_id">
+            Main technical department <span className="text-red-600">*</span>
           </label>
+          <select id="main_technical_department_id" name="main_technical_department_id" value={formState.main_technical_department_id || ''} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+            <option value="">Choose the department whose HOD approves first</option>
+            {departments.map((department) => <option key={department.id} value={String(department.id)}>{department.name}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">After this HOD approves, Legal and Finance review in parallel.</p>
+        </div>
+        <div className="sm:col-span-2">
+          <span className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Secondary technical departments and assigned sections</span>
           <div className="grid gap-2 sm:grid-cols-2">
             {departments.map((department) => {
-              const checked = (formState.technical_department_ids || []).includes(String(department.id));
+              if (String(department.id) === String(formState.main_technical_department_id)) return null;
+              const review = (formState.secondary_technical_reviews || []).find((item) => String(item.department_id) === String(department.id));
               return (
-                <label key={department.id} className="flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={() => {
-                      const current = Array.isArray(formState.technical_department_ids) ? formState.technical_department_ids : [];
-                      const next = checked ? current.filter((id) => id !== String(department.id)) : [...current, String(department.id)];
-                      handleInputChange({ target: { name: 'technical_department_ids', value: next } });
-                    }}
-                  />
-                  {department.name}
-                </label>
+                <div key={department.id} className="rounded border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={Boolean(review)} onChange={() => {
+                      const current = formState.secondary_technical_reviews || [];
+                      const next = review ? current.filter((item) => String(item.department_id) !== String(department.id)) : [...current, { department_id: String(department.id), sections: [] }];
+                      handleInputChange({ target: { name: 'secondary_technical_reviews', value: next } });
+                    }} />
+                    {department.name}
+                  </label>
+                  {review && <input className="mt-2 w-full rounded border px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-900" placeholder="Sections, comma separated (e.g. Function, Safety)" value={(review.sections || []).join(', ')} onChange={(event) => {
+                    const sections = event.target.value.split(',').map((part) => part.trim()).filter(Boolean);
+                    const next = (formState.secondary_technical_reviews || []).map((item) => String(item.department_id) === String(department.id) ? { ...item, sections } : item);
+                    handleInputChange({ target: { name: 'secondary_technical_reviews', value: next } });
+                  }} />}
+                </div>
               );
             })}
           </div>

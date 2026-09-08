@@ -8,6 +8,9 @@ const noteTypes = ['internal_note', 'department_follow_up', 'supplier_follow_up'
 const EMPTY_ARRAY = [];
 const EMPTY_OBJECT = {};
 
+export const isRejectedItem = (item) => String(item?.approval_status || '').trim().toLowerCase() === 'rejected';
+export const getWorkspaceItemStatus = (item) => isRejectedItem(item) ? 'Rejected' : (item?.procurement_status || 'Pending');
+
 const statusClasses = {
   approved: 'bg-emerald-100 text-emerald-800',
   completed: 'bg-emerald-100 text-emerald-800',
@@ -141,6 +144,7 @@ const RequestDetailWorkspace = () => {
   const auditLogs = workspace?.audit_logs || EMPTY_ARRAY;
   const timeline = workspace?.timeline || EMPTY_ARRAY;
   const actions = new Set(workspace?.available_actions || EMPTY_ARRAY);
+  const procurableItems = useMemo(() => items.filter((item) => !isRejectedItem(item)), [items]);
   const displayedItems = useMemo(
     () => getDisplayItems(items, sortItemsAlphabetically),
     [items, sortItemsAlphabetically],
@@ -170,6 +174,7 @@ const RequestDetailWorkspace = () => {
   }, {}), [attachments]);
 
   const openProcurementModal = (item) => {
+    if (!item || isRejectedItem(item)) return;
     setProcurementItemSearch('');
     setProcurementForm((prev) => ({ ...prev, item_id: item?.item_id || item?.id || '', procurement_quantity: '', procurement_unit_of_measure: item?.unit_of_measure || '', units_per_package: '1', unit_cost: '', supplier_id: item?.supplier_id || '', procurement_note: '' }));
     setProcurementModalOpen(true);
@@ -177,9 +182,9 @@ const RequestDetailWorkspace = () => {
 
   const filteredProcurementItems = useMemo(() => {
     const query = procurementItemSearch.trim().toLowerCase();
-    if (!query) return items;
+    if (!query) return procurableItems;
 
-    return items.filter((item) => [
+    return procurableItems.filter((item) => [
       item.item_name,
       item.brand,
       item.category,
@@ -187,14 +192,14 @@ const RequestDetailWorkspace = () => {
       item.intended_use,
       item.supplier_name,
     ].some((value) => String(value || '').toLowerCase().includes(query)));
-  }, [items, procurementItemSearch]);
+  }, [procurableItems, procurementItemSearch]);
 
   const selectedProcurementItem = items.find((item) => String(item.item_id || item.id) === String(procurementForm.item_id));
 
   const completionReadiness = useMemo(() => {
     const finalizedStatuses = new Set(['purchased', 'completed', 'not_procured', 'canceled']);
     const hasSavedCost = request.estimated_cost !== null && request.estimated_cost !== undefined && request.estimated_cost !== '' && Number(request.estimated_cost) >= 0;
-    const incompleteItems = items.filter((item) => !finalizedStatuses.has(String(item.procurement_status || '').trim().toLowerCase()));
+    const incompleteItems = items.filter((item) => !isRejectedItem(item) && !finalizedStatuses.has(String(item.procurement_status || '').trim().toLowerCase()));
     return {
       canComplete: hasSavedCost && items.length > 0 && incompleteItems.length === 0,
       hasSavedCost,
@@ -349,7 +354,7 @@ const RequestDetailWorkspace = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
-              {actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(items[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">Register Procurement</button> : null}
+              {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(procurableItems[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">Register Procurement</button> : null}
               {actions.has('create_po') ? <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} title="Create a governed purchase order from approved supplier awards" className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">Create Purchase Order</Link> : null}
               {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Add Note</button> : null}
               {actions.has('mark_request_completed') ? <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} title={completionReadiness.canComplete ? 'Complete this request' : 'Finalize every item and save total cost before completing'} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>Mark Completed</button> : null}
@@ -442,7 +447,7 @@ const RequestDetailWorkspace = () => {
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Item</th><th className="px-4 py-3">Specs</th><th className="px-4 py-3">Intended use</th><th className="px-4 py-3">Unit of measure</th><th className="px-4 py-3">Requested</th><th className="px-4 py-3">Purchased</th><th className="px-4 py-3">Remaining</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Supplier</th><th className="px-4 py-3">Latest unit cost</th><th className="px-4 py-3 print:hidden">Actions</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{item.unit_of_measure || '—'}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{item.procurement_status}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') ? <><button onClick={() => openItemStatusModal(item, 'completed')} className="rounded bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Close as Completed</button><button onClick={() => openItemStatusModal(item, 'not_procured')} className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Not Procured</button><button onClick={() => openItemStatusModal(item, 'canceled')} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Cancel Item</button></> : null}</div></td></tr>)}
+                  {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{item.unit_of_measure || '—'}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{getWorkspaceItemStatus(item)}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') && !isRejectedItem(item) ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') && !isRejectedItem(item) ? <><button onClick={() => openItemStatusModal(item, 'completed')} className="rounded bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Close as Completed</button><button onClick={() => openItemStatusModal(item, 'not_procured')} className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Not Procured</button><button onClick={() => openItemStatusModal(item, 'canceled')} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Cancel Item</button></> : null}</div></td></tr>)}
                   {items.length === 0 ? <tr><td colSpan="11" className="p-6"><EmptyState>No requested items found.</EmptyState></td></tr> : null}
                 </tbody>
               </table>
@@ -459,7 +464,7 @@ const RequestDetailWorkspace = () => {
 
         {activeTab === 'Procurement' && (
           <section className="space-y-4">
-            {actions.has('register_procurement_entry') ? <button onClick={() => openProcurementModal(historyItem || items[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white print:hidden">Register Procurement Entry</button> : null}
+            {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(isRejectedItem(historyItem) ? procurableItems[0] : (historyItem || procurableItems[0]))} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white print:hidden">Register Procurement Entry</button> : null}
             {Object.entries(groupedProcurementEvents).filter(([itemId]) => !historyItem || String(historyItem.item_id || historyItem.id) === String(itemId)).map(([itemId, group]) => <div key={itemId} className="rounded-2xl bg-white p-5 shadow-sm"><h3 className="text-lg font-bold text-slate-900">{group.item_name}</h3><div className="mt-4 overflow-x-auto"><table className="min-w-full text-sm"><thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-2 pr-4">Date</th><th className="py-2 pr-4">Purchased as</th><th className="py-2 pr-4">Requested qty</th><th className="py-2 pr-4">Previous</th><th className="py-2 pr-4">New</th><th className="py-2 pr-4">Remaining</th><th className="py-2 pr-4">Unit cost</th><th className="py-2 pr-4">Supplier</th><th className="py-2 pr-4">Note</th></tr></thead><tbody>{group.events.map((event) => <tr key={event.event_id} className="border-t"><td className="py-2 pr-4">{formatDate(event.procurement_date || event.created_at)}</td><td className="py-2 pr-4">{event.procurement_quantity || event.event_quantity} {event.procurement_unit_of_measure || ''}{Number(event.units_per_package || 1) > 1 ? ` × ${event.units_per_package}` : ''}</td><td className="py-2 pr-4">{event.event_quantity}</td><td className="py-2 pr-4">{event.previous_purchased_quantity}</td><td className="py-2 pr-4">{event.new_purchased_quantity}</td><td className="py-2 pr-4">{event.remaining_quantity}</td><td className="py-2 pr-4">{formatMoney(event.unit_cost)}</td><td className="py-2 pr-4">{event.supplier_name || '—'}</td><td className="py-2 pr-4">{event.note || '—'}</td></tr>)}</tbody></table></div></div>)}
             {historyItem ? <button onClick={() => setHistoryItem(null)} className="text-sm font-semibold text-blue-700 print:hidden">Show all procurement history</button> : null}
             {procurementEvents.length === 0 ? <EmptyState>No procurement events yet.</EmptyState> : null}

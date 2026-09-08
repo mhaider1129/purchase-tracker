@@ -280,6 +280,9 @@ const initialFormState = {
   end_user_department_id: '',
   contract_manager_id: '',
   technical_department_ids: [],
+  main_technical_department_id: '',
+  secondary_technical_reviews: [],
+  is_historical_contract: false,
   supplier_id: '',
   source_request_id: '',
 };
@@ -925,6 +928,11 @@ const ContractsPage = () => {
       technical_department_ids: Array.isArray(contract.technical_department_ids)
         ? contract.technical_department_ids.map((id) => String(id))
         : [],
+      main_technical_department_id: contract.main_technical_department_id ? String(contract.main_technical_department_id) : '',
+      secondary_technical_reviews: Array.isArray(contract.secondary_technical_reviews)
+        ? contract.secondary_technical_reviews.map((review) => ({ ...review, department_id: String(review.department_id) }))
+        : [],
+      is_historical_contract: Boolean(contract.is_historical_contract),
     });
     setFormError('');
     setSuccessMessage('');
@@ -949,7 +957,7 @@ const ContractsPage = () => {
   const handleInputChange = (event) => {
     const { name, value, selectedOptions } = event.target;
 
-    if (name === 'technical_department_ids' || name === 'delivery_packaging_requirements' || name === 'delivery_transportation_requirements' || name === 'payment_methods') {
+    if (name === 'technical_department_ids' || name === 'secondary_technical_reviews' || name === 'delivery_packaging_requirements' || name === 'delivery_transportation_requirements' || name === 'payment_methods') {
       const selected = Array.isArray(value) ? value : Array.from(selectedOptions || [], (option) => option.value);
       setFormState((prev) => ({ ...prev, [name]: selected }));
       return;
@@ -1224,6 +1232,13 @@ const ContractsPage = () => {
           .filter((id) => Number.isInteger(id) && id > 0)
       : [];
     payload.technical_department_ids = technicalIds;
+    payload.main_technical_department_id = formState.main_technical_department_id ? Number(formState.main_technical_department_id) : null;
+    payload.secondary_technical_reviews = (formState.secondary_technical_reviews || []).map((review) => ({ department_id: Number(review.department_id), sections: review.sections || [] }));
+    payload.is_historical_contract = Boolean(formState.is_historical_contract);
+    if (!editingId && !payload.is_historical_contract && !payload.main_technical_department_id) {
+      setFormError('Choose the main technical department before creating this draft.');
+      return;
+    }
 
     setSaving(true);
 

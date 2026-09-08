@@ -16,6 +16,19 @@ const CustodyIssueForm = () => {
     custodyType: 'personal',
     custodyCode: '',
     departmentId: '',
+    assetCategory: '',
+    assetTag: '',
+    manufacturer: '',
+    model: '',
+    serialNumber: '',
+    conditionAtIssue: '',
+    building: '',
+    floor: '',
+    room: '',
+    sectionUnit: '',
+    costCenter: '',
+    preExistingCondition: '',
+    acknowledgmentAccepted: false,
   });
 
   const [departments, setDepartments] = useState([]);
@@ -95,7 +108,7 @@ const CustodyIssueForm = () => {
   }, [recipientQuery, form.custodyType, t]);
 
   useEffect(() => {
-    if (form.custodyType === 'departmental') {
+    if (form.custodyType !== 'personal') {
       setSelectedRecipient(null);
       setRecipientQuery('');
       setRecipientResults([]);
@@ -127,6 +140,9 @@ const CustodyIssueForm = () => {
       custodyType: form.custodyType,
       custodyCode: '',
       departmentId: '',
+      assetCategory: '', assetTag: '', manufacturer: '', model: '', serialNumber: '',
+      conditionAtIssue: '', building: '', floor: '', room: '', sectionUnit: '',
+      costCenter: '', preExistingCondition: '', acknowledgmentAccepted: false,
     });
     setSelectedRecipient(null);
     setRecipientQuery('');
@@ -136,8 +152,11 @@ const CustodyIssueForm = () => {
   const formIsValid = useMemo(() => {
     if (!form.itemName.trim()) return false;
     if (!form.quantity || Number.isNaN(Number(form.quantity))) return false;
+    if (!form.conditionAtIssue) return false;
+    if (!form.acknowledgmentAccepted) return false;
     if (form.custodyType === 'personal' && !selectedRecipient) return false;
     if (form.custodyType === 'departmental' && !form.departmentId) return false;
+    if (form.custodyType === 'location' && (!form.departmentId || !form.room.trim())) return false;
     return true;
   }, [form, selectedRecipient]);
 
@@ -161,7 +180,20 @@ const CustodyIssueForm = () => {
       custodian_user_id:
         form.custodyType === 'personal' ? selectedRecipient?.id : undefined,
       custodian_department_id:
-        form.custodyType === 'departmental' ? Number(form.departmentId) : undefined,
+        form.custodyType !== 'personal' ? Number(form.departmentId) : undefined,
+      asset_category: form.assetCategory || undefined,
+      asset_tag: form.assetTag.trim() || undefined,
+      manufacturer: form.manufacturer.trim() || undefined,
+      model: form.model.trim() || undefined,
+      serial_number: form.serialNumber.trim() || undefined,
+      condition_at_issue: form.conditionAtIssue,
+      building: form.building.trim() || undefined,
+      floor: form.floor.trim() || undefined,
+      room: form.room.trim() || undefined,
+      section_unit: form.sectionUnit.trim() || undefined,
+      cost_center: form.costCenter.trim() || undefined,
+      pre_existing_condition: form.preExistingCondition.trim() || undefined,
+      acknowledgment_accepted: form.acknowledgmentAccepted,
     };
 
     try {
@@ -179,9 +211,27 @@ const CustodyIssueForm = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-3xl mx-auto p-6">
-        <h1 className="text-2xl font-semibold mb-6">{t('custodyIssuePage.title')}</h1>
+      <div className="max-w-5xl mx-auto p-6">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-semibold">{t('custodyIssuePage.title')}</h1>
+          <p className="mt-1 text-xl font-semibold" dir="rtl">نموذج عهدة الموجودات الثابتة والأثاث</p>
+          <p className="mt-2 text-sm text-gray-500">{t('custodyIssuePage.subtitle')}</p>
+        </div>
         <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
+          <section>
+            <h2 className="text-lg font-semibold border-b pb-2">{t('custodyIssuePage.sections.assignment')}</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <div><span className="block text-sm font-medium text-gray-700">{t('custodyIssuePage.fields.formNumber')}</span><span className="mt-1 block rounded bg-gray-100 px-3 py-2 text-gray-500">{t('custodyIssuePage.fields.generated')}</span></div>
+              <div><span className="block text-sm font-medium text-gray-700">{t('custodyIssuePage.fields.issueDate')}</span><span className="mt-1 block rounded bg-gray-100 px-3 py-2 text-gray-700">{new Date().toLocaleDateString()}</span></div>
+              {['sectionUnit', 'costCenter', 'building', 'floor', 'room'].map((name) => (
+                <div key={name}><label htmlFor={name} className="block text-sm font-medium text-gray-700">{t(`custodyIssuePage.fields.${name}`)}{name === 'room' && form.custodyType === 'location' ? ' *' : ''}</label><input id={name} name={name} value={form[name]} onChange={handleInputChange} className="mt-1 block w-full rounded border border-gray-300 px-3 py-2" required={name === 'room' && form.custodyType === 'location'} /></div>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold border-b pb-2">{t('custodyIssuePage.sections.asset')}</h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="itemName" className="block text-sm font-medium text-gray-700">
               {t('custodyIssuePage.fields.itemName')}
@@ -197,6 +247,11 @@ const CustodyIssueForm = () => {
               required
             />
           </div>
+
+              <div><label htmlFor="assetCategory" className="block text-sm font-medium text-gray-700">{t('custodyIssuePage.fields.assetCategory')}</label><select id="assetCategory" name="assetCategory" value={form.assetCategory} onChange={handleInputChange} className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"><option value="">{t('custodyIssuePage.fields.selectCategory')}</option>{['Furniture', 'IT Equipment', 'Medical Equipment', 'Electrical Equipment', 'Office Equipment', 'Other'].map((category) => <option key={category} value={category}>{t(`custodyIssuePage.categories.${category}`)}</option>)}</select></div>
+              {[['assetTag', false], ['manufacturer', false], ['model', false], ['serialNumber', false]].map(([name]) => <div key={name}><label htmlFor={name} className="block text-sm font-medium text-gray-700">{t(`custodyIssuePage.fields.${name}`)}</label><input id={name} name={name} value={form[name]} onChange={handleInputChange} className="mt-1 block w-full rounded border border-gray-300 px-3 py-2" /></div>)}
+
+              <div><label htmlFor="conditionAtIssue" className="block text-sm font-medium text-gray-700">{t('custodyIssuePage.fields.conditionAtIssue')} *</label><select id="conditionAtIssue" name="conditionAtIssue" value={form.conditionAtIssue} onChange={handleInputChange} required className="mt-1 block w-full rounded border border-gray-300 px-3 py-2"><option value="">{t('custodyIssuePage.fields.selectCondition')}</option>{['New', 'Excellent', 'Good', 'Fair', 'Damaged / Defective'].map((condition) => <option key={condition} value={condition}>{t(`custodyIssuePage.conditions.${condition}`)}</option>)}</select></div>
 
           <div>
             <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
@@ -214,6 +269,12 @@ const CustodyIssueForm = () => {
               required
             />
           </div>
+            </div>
+            <div className="mt-4"><label htmlFor="preExistingCondition" className="block text-sm font-medium text-gray-700">{t('custodyIssuePage.fields.preExistingCondition')}</label><textarea id="preExistingCondition" name="preExistingCondition" rows="2" value={form.preExistingCondition} onChange={handleInputChange} className="mt-1 block w-full rounded border border-gray-300 px-3 py-2" placeholder={t('custodyIssuePage.fields.preExistingPlaceholder')} /></div>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold border-b pb-2">{t('custodyIssuePage.sections.accountability')}</h2>
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700">
@@ -242,6 +303,10 @@ const CustodyIssueForm = () => {
                   onChange={handleInputChange}
                 />
                 <span>{t('custodyIssuePage.fields.personal')}</span>
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input type="radio" name="custodyType" value="location" checked={form.custodyType === 'location'} onChange={handleInputChange} />
+                <span>{t('custodyIssuePage.fields.location')}</span>
               </label>
               <label className="inline-flex items-center gap-2">
                 <input
@@ -313,7 +378,7 @@ const CustodyIssueForm = () => {
             </div>
           )}
 
-          {form.custodyType === 'departmental' && (
+          {form.custodyType !== 'personal' && (
             <div>
               <label htmlFor="departmentId" className="block text-sm font-medium text-gray-700">
                 {t('custodyIssuePage.fields.department')}
@@ -353,6 +418,21 @@ const CustodyIssueForm = () => {
               onChange={handleInputChange}
             />
           </div>
+          </section>
+
+          <section className="rounded border border-blue-200 bg-blue-50 p-4">
+            <h2 className="font-semibold text-blue-950">{t('custodyIssuePage.sections.acknowledgment')}</h2>
+            <div className="mt-3 space-y-3 text-sm leading-6 text-gray-800">
+              <p>{t('custodyIssuePage.acknowledgment.receipt')}</p><p>{t('custodyIssuePage.acknowledgment.care')}</p><p>{t('custodyIssuePage.acknowledgment.report')}</p><p>{t('custodyIssuePage.acknowledgment.return')}</p><p className="font-medium">{t('custodyIssuePage.acknowledgment.investigation')}</p><p className="rounded bg-white p-3">{t('custodyIssuePage.acknowledgment.historical')}</p>
+            </div>
+            <label className="mt-4 flex items-start gap-3 font-medium text-gray-900"><input type="checkbox" name="acknowledgmentAccepted" checked={form.acknowledgmentAccepted} onChange={(event) => setForm((prev) => ({ ...prev, acknowledgmentAccepted: event.target.checked }))} className="mt-1" required /><span>{t('custodyIssuePage.acknowledgment.accept')}</span></label>
+          </section>
+
+          <section className="rounded border p-4">
+            <h2 className="font-semibold">{t('custodyIssuePage.sections.approvals')}</h2>
+            <p className="mt-2 text-sm text-gray-600">{t('custodyIssuePage.approvalNote')}</p>
+            <div className="mt-3 grid gap-3 text-sm md:grid-cols-3"><div>{t('custodyIssuePage.roles.custodian')}</div><div>{t('custodyIssuePage.roles.departmentHead')}</div><div>{t('custodyIssuePage.roles.assetRepresentative')}</div></div>
+          </section>
 
           {feedback.type !== 'idle' && (
             <div

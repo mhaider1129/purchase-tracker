@@ -3351,7 +3351,15 @@
     }
   },
   "custodyIssuePage": {
-    "title": "Issue Custody Record",
+    "title": "FIXED ASSET & FURNITURE CUSTODY FORM",
+    "subtitle": "Records what was issued, where it is assigned, and who is accountable for its custody.",
+    "sections": {
+      "assignment": "Assignment details",
+      "asset": "Asset details and condition",
+      "accountability": "Custody assignment",
+      "acknowledgment": "Custody acknowledgment",
+      "approvals": "Acceptance and approvals"
+    },
     "fields": {
       "itemName": "Item Name",
       "itemNamePlaceholder": "Enter item name",
@@ -3362,6 +3370,7 @@
       "custodyType": "Custody Type",
       "personal": "Personal custody",
       "departmental": "Departmental custody",
+      "location": "Location / room custody",
       "recipientSearch": "Search by name, email, or employee ID",
       "department": "Department",
       "selectDepartment": "Select department",
@@ -3370,7 +3379,55 @@
       "description": "Description",
       "custodian": "Custodian",
       "employeeId": "Employee ID: {{id}}",
-      "selectedCustodian": "Selected custodian: {{name}} ({{email}}{{employeeId}})"
+      "selectedCustodian": "Selected custodian: {{name}} ({{email}}{{employeeId}})",
+      "formNumber": "Custody Form No.",
+      "generated": "Generated after submission",
+      "issueDate": "Issue Date",
+      "sectionUnit": "Section / Unit",
+      "costCenter": "Cost Center",
+      "building": "Building",
+      "floor": "Floor",
+      "room": "Room",
+      "assetCategory": "Asset Category",
+      "selectCategory": "Select category",
+      "assetTag": "Asset Tag",
+      "manufacturer": "Brand / Manufacturer",
+      "model": "Model",
+      "serialNumber": "Serial No.",
+      "conditionAtIssue": "Condition at Issue",
+      "selectCondition": "Select condition",
+      "preExistingCondition": "Pre-existing condition / deficiencies at custody registration",
+      "preExistingPlaceholder": "Record all existing wear, damage, missing accessories, or modifications"
+    },
+    "categories": {
+      "Furniture": "Furniture",
+      "IT Equipment": "IT Equipment",
+      "Medical Equipment": "Medical Equipment",
+      "Electrical Equipment": "Electrical Equipment",
+      "Office Equipment": "Office Equipment",
+      "Other": "Other"
+    },
+    "conditions": {
+      "New": "New",
+      "Excellent": "Excellent",
+      "Good": "Good",
+      "Fair": "Fair",
+      "Damaged / Defective": "Damaged / Defective — details required"
+    },
+    "acknowledgment": {
+      "receipt": "I acknowledge receipt of the assets listed above in the stated condition and confirm that they have been assigned to me/my department for official institutional use.",
+      "care": "I undertake to exercise reasonable care in safeguarding these assets and to use them only for their intended and authorized purposes. The assets remain Institute property at all times and shall not be transferred, relocated, exchanged, disposed of, or reassigned without following approved asset procedures.",
+      "report": "I agree to promptly report any loss, theft, damage, malfunction, or unauthorized movement to the appropriate department.",
+      "return": "Upon transfer, reassignment, termination, replacement, or Institute request, assets under my custody shall be returned or formally transferred through the approved process.",
+      "investigation": "Any loss or damage shall be investigated under applicable Institute policies. Financial or administrative responsibility, where applicable, will be determined from the investigation findings and relevant regulations.",
+      "historical": "For existing assets, this acceptance confirms physical presence and custody as of the form date. It does not accept responsibility for loss, damage, modification, or deterioration occurring before that date.",
+      "accept": "I have reviewed and accept this custody acknowledgment."
+    },
+    "approvalNote": "Submission starts the electronic acceptance route. The custodian (where applicable), Department Head, and Fixed Asset / Warehouse representative approve in sequence.",
+    "roles": {
+      "custodian": "Custodian acceptance",
+      "departmentHead": "Department Head approval",
+      "assetRepresentative": "Fixed Asset / Warehouse verification"
     },
     "states": {
       "searching": "Searching recipients..."
