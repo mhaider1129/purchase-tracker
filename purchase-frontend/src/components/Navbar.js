@@ -218,6 +218,7 @@ const Navbar = () => {
     const canAccessCustody = hasAccess(currentUser, "feature.custody", [
       "warehouse.manage-supply",
     ]);
+    const canAccessFixedAssets = hasPermission(currentUser, "fixed-assets.view");
     const canAccessMaintenanceStock = hasAccess(
       currentUser,
       "feature.maintenanceStock",
@@ -459,6 +460,21 @@ const Navbar = () => {
             "/procure-to-pay/document-flow",
             "text-purple-700",
           ),
+        ].filter(Boolean),
+      },
+      {
+        id: "fixedAssets",
+        label: "FIXED ASSETS",
+        items: [
+          createItem(canAccessFixedAssets, "Dashboard", "/fixed-assets/dashboard", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "Asset Register", "/fixed-assets/register", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "Register Asset", "/fixed-assets/new", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "Movements", "/fixed-assets/movements", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "Physical Locations", "/fixed-assets/locations", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "RFID Events", "/fixed-assets/events", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "RFID Readers", "/fixed-assets/readers", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "RFID Portals", "/fixed-assets/portals", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "Exceptions", "/fixed-assets/exceptions", "text-rose-700"),
         ].filter(Boolean),
       },
       {

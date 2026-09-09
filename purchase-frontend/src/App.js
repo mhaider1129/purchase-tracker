@@ -103,6 +103,7 @@ import SparePartsRegisterPage from "./pages/SparePartsRegisterPage";
 import SparePartFormPage from "./pages/SparePartFormPage";
 import SparePartDetailPage from "./pages/SparePartDetailPage";
 import EquipmentManagementPage from "./pages/EquipmentManagementPage";
+import FixedAssetsWorkspace from "./pages/FixedAssetsWorkspace";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -185,6 +186,8 @@ const FallbackRedirect = () => {
 
 const AppRoutes = () => (
   <Routes>
+    <Route path="/fixed-assets/*" element={<ProtectedRoute element={<FixedAssetsWorkspace />} requiredPermissions={["fixed-assets.view"]} />} />
+    <Route path="/fixed-assets/register/:id" element={<ProtectedRoute element={<FixedAssetsWorkspace />} requiredPermissions={["fixed-assets.view"]} />} />
     <Route path="/spare-parts" element={<ProtectedRoute element={<SparePartsRegisterPage />} requiredPermissions={["spare-parts.view"]} />} />
     <Route path="/spare-parts/new" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.create"]} />} />
     <Route path="/spare-parts/:id/edit" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.edit"]} />} />
