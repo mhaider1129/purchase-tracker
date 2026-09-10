@@ -1,0 +1,11 @@
+import React from 'react';
+import {MemoryRouter,Routes,Route} from 'react-router-dom';
+import {render,screen,waitFor} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import FixedAssetsWorkspace from './FixedAssetsWorkspace';
+import {fixedAssetsApi} from '../api/fixedAssets';
+jest.mock('../api/fixedAssets',()=>({fixedAssetsApi:{dashboard:jest.fn(),list:jest.fn(),categories:jest.fn(),get:jest.fn(),tags:jest.fn()}}));
+const show=path=>render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/fixed-assets/*" element={<FixedAssetsWorkspace/>}/></Routes></MemoryRouter>);
+beforeEach(()=>jest.clearAllMocks());
+test('dashboard renders real grouped and recent data',async()=>{fixedAssetsApi.dashboard.mockResolvedValue({total_active:2,capital:1,controlled:1,tagged:1,untagged:1,under_maintenance:0,missing:0,exceptions:1,by_category:[{label:'Clinical',value:2}],by_department:[],by_location:[],operational_status_mix:[],recent_movements:[{id:1,asset_number:'WICI-A-000001',status:'APPROVED'}],recent_exceptions:[{id:2,exception_type:'UNKNOWN_TAG',severity:'MEDIUM'}]});show('/fixed-assets/dashboard');expect(await screen.findByText('Clinical')).toBeInTheDocument();expect(screen.getByText('WICI-A-000001')).toBeInTheDocument();expect(screen.getByText('UNKNOWN_TAG')).toBeInTheDocument();});
+test('register debounces search and provides pagination controls',async()=>{jest.useFakeTimers();fixedAssetsApi.list.mockResolvedValue({data:[],pagination:{page:1,pages:0}});show('/fixed-assets/register');await userEvent.setup({advanceTimers:jest.advanceTimersByTime}).type(screen.getByLabelText('Search assets'),'pump');jest.advanceTimersByTime(350);await waitFor(()=>expect(fixedAssetsApi.list).toHaveBeenLastCalledWith(expect.objectContaining({search:'pump'})));expect(screen.getByText(/Page 1 of 0/)).toBeInTheDocument();jest.useRealTimers();});
