@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from '../api/axios';
 import { extractItems } from '../utils/itemUtils';
 
@@ -15,6 +15,20 @@ export const normalizeOptionalEstimatedCost = (rawCost) => {
 
   const normalized = Number(String(rawCost).replace(/,/g, ''));
   return Number.isFinite(normalized) && normalized > 0 ? normalized : undefined;
+};
+
+export const getApprovalActionErrorMessage = (error) => {
+  const responseMessage = error?.response?.data?.message || error?.response?.data?.error;
+
+  if (typeof responseMessage === 'string' && responseMessage.trim()) {
+    return responseMessage.trim();
+  }
+
+  if (error?.response?.status === 409) {
+    return 'This approval changed while you were working on it. Refresh the approval list and try again.';
+  }
+
+  return 'Failed to process your decision. Please try again.';
 };
 
 export const FEEDBACK_TEXT_STYLES = {
@@ -34,6 +48,8 @@ const useApprovalsData = (user) => {
   const [selectedApprovalId, setSelectedApprovalId] = useState(null);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [selectedDecision, setSelectedDecision] = useState('');
+  const [decisionSubmitting, setDecisionSubmitting] = useState(false);
+  const decisionSubmissionLock = useRef(false);
   const [comments, setComments] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
   const [itemDecisions, setItemDecisions] = useState({});
@@ -750,6 +766,8 @@ const useApprovalsData = (user) => {
   };
 
   const submitDecision = async () => {
+    if (decisionSubmissionLock.current) return;
+
     if (user?.role === 'SCM') {
       const trimmedCost = estimatedCost.trim();
       if (trimmedCost !== '') {
@@ -766,6 +784,9 @@ const useApprovalsData = (user) => {
       `Are you sure you want to ${selectedDecision.toLowerCase()} Request #${selectedRequestId}?`,
     );
     if (!confirmed) return;
+
+    decisionSubmissionLock.current = true;
+    setDecisionSubmitting(true);
 
     try {
       // Persist the item-level choices before completing this approval step. Without
@@ -808,7 +829,10 @@ const useApprovalsData = (user) => {
       resetCommentModal();
     } catch (err) {
       console.error('❌ Action failed:', err);
-      alert('Failed to process your decision. Please try again.');
+      alert(getApprovalActionErrorMessage(err));
+    } finally {
+      decisionSubmissionLock.current = false;
+      setDecisionSubmitting(false);
     }
   };
 
@@ -1175,6 +1199,7 @@ const useApprovalsData = (user) => {
     canMarkUrgent,
     clearFilters,
     comments,
+    decisionSubmitting,
     downloadingAttachmentId,
     error,
     estimatedCost,

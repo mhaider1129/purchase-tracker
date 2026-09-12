@@ -59,6 +59,7 @@ const ApprovalsPanel = () => {
     handleItemStatusChange,
     handleModalEstimatedCostChange,
     hasActiveFilters,
+    decisionSubmitting,
     hodOptions,
     hodOptionsError,
     hodOptionsLoading,
@@ -733,8 +734,10 @@ const ApprovalsPanel = () => {
               </div>
             )}
             <div className="mt-4 flex justify-end gap-3">
-              <Button onClick={submitDecision}>{t('approvalsPanel.actions.submit')}</Button>
-              <Button variant="ghost" onClick={resetCommentModal}>
+              <Button onClick={submitDecision} isLoading={decisionSubmitting} disabled={decisionSubmitting}>
+                {t('approvalsPanel.actions.submit')}
+              </Button>
+              <Button variant="ghost" onClick={resetCommentModal} disabled={decisionSubmitting}>
                 {t('approvalsPanel.actions.cancel')}
               </Button>
             </div>
