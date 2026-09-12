@@ -10,7 +10,8 @@ const flatten=tree=>{const out=[];const walk=(xs,parent,path=[])=>xs.forEach(x=>
 const validParentTypes={INSTITUTE:[],EXECUTIVE_OFFICE:['INSTITUTE','EXECUTIVE_OFFICE'],DIRECTORATE:['INSTITUTE','EXECUTIVE_OFFICE','DIRECTORATE'],DEPARTMENT:['INSTITUTE','EXECUTIVE_OFFICE','DIRECTORATE'],SECTION:['DEPARTMENT'],UNIT:['INSTITUTE','EXECUTIVE_OFFICE','DIRECTORATE','DEPARTMENT','SECTION','UNIT']};
 const withDisplayPaths=units=>{const byId=new Map(units.map(unit=>[String(unit.id),unit]));const pathFor=(unit,visited=new Set())=>{if(!unit||visited.has(String(unit.id)))return[];const next=new Set(visited).add(String(unit.id));return[...pathFor(byId.get(String(unit.parent_unit_id)),next),unit.name]};return units.map(unit=>({...unit,displayPath:pathFor(unit)}))};
 const canParent=(unitType,parent)=>!parent||validParentTypes[unitType]?.includes(parent.unit_type);
-const positionStatus=(p,today=new Date().toISOString().slice(0,10))=>!p.is_active?'ARCHIVED':!p.user_id?'VACANT':p.effective_from&&p.effective_from>today?'FUTURE':p.effective_to&&p.effective_to<today?'EXPIRED':'ACTIVE';
+const dateOnly=value=>value?String(value).slice(0,10):'';
+const positionStatus=(p,today=new Date().toISOString().slice(0,10))=>!p.is_active?'ARCHIVED':!p.user_id?'VACANT':p.effective_from&&dateOnly(p.effective_from)>dateOnly(today)?'FUTURE':p.effective_to&&dateOnly(p.effective_to)<dateOnly(today)?'EXPIRED':'ACTIVE';
 
 function Dialog({title,children,onClose}){return <div className="org-modal-backdrop" role="presentation"><section className="org-modal" role="dialog" aria-modal="true" aria-label={title}><button aria-label="Close" className="close" onClick={onClose}>×</button><h2>{title}</h2>{children}</section></div>}
 function ErrorText({error}){return error?<p className="form-error" role="alert">{error}</p>:null}
