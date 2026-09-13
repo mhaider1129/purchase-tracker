@@ -5,6 +5,7 @@ import ContractForm from '../components/ContractForm';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
 import { listContractDocuments } from '../api/contracts';
+import { searchApprovedProducts, searchGenericItems, searchSupplierCatalog } from '../api/itemMaster';
 import { useAuth } from '../hooks/useAuth';
 
 const parseJson = (value) => {
@@ -318,7 +319,13 @@ const ContractsPage = () => {
   const [contractItems, setContractItems] = useState([]);
   const [stockItems, setStockItems] = useState([]);
   const [stockItemsError, setStockItemsError] = useState('');
+  const [contractGenerics, setContractGenerics] = useState([]);
+  const [contractProducts, setContractProducts] = useState([]);
+  const [contractCatalogItems, setContractCatalogItems] = useState([]);
   const [contractItemForm, setContractItemForm] = useState({
+    generic_item_id: '',
+    approved_product_id: '',
+    supplier_catalog_item_id: '',
     item_id: '',
     item_name: '',
     unit: '',
@@ -565,6 +572,9 @@ const ContractsPage = () => {
 
   const resetContractItemForm = () => {
     setContractItemForm({
+      generic_item_id: '',
+      approved_product_id: '',
+      supplier_catalog_item_id: '',
       item_id: '',
       item_name: '',
       unit: '',
@@ -599,6 +609,20 @@ const ContractsPage = () => {
     fetchStockItems();
   }, []);
 
+  useEffect(() => {
+    searchGenericItems({ limit: 100, lifecycle_status: 'active' }).then(result => setContractGenerics(result.data || [])).catch(() => setContractGenerics([]));
+  }, []);
+
+  useEffect(() => {
+    if (!contractItemForm.generic_item_id) { setContractProducts([]); return; }
+    searchApprovedProducts({ generic_item_id: contractItemForm.generic_item_id, approval_status: 'approved', limit: 100 }).then(result => setContractProducts(result.data || [])).catch(() => setContractProducts([]));
+  }, [contractItemForm.generic_item_id]);
+
+  useEffect(() => {
+    if (!contractItemForm.approved_product_id) { setContractCatalogItems([]); return; }
+    searchSupplierCatalog({ approved_product_id: contractItemForm.approved_product_id, supplier_id: viewingContract?.supplier_id || formState.supplier_id || undefined, limit: 100 }).then(result => setContractCatalogItems(result.data || [])).catch(() => setContractCatalogItems([]));
+  }, [contractItemForm.approved_product_id, viewingContract?.supplier_id, formState.supplier_id]);
+
   const handleContractStockItemSelection = (event) => {
     const stockItemId = event.target.value;
     setContractItemForm((current) => {
@@ -610,7 +634,6 @@ const ContractsPage = () => {
       return {
         ...current,
         item_id: stockItemId,
-        item_name: selectedStockItem?.name || current.item_name,
         unit: selectedStockItem?.unit || current.unit,
       };
     });
@@ -621,12 +644,24 @@ const ContractsPage = () => {
     setContractItemForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const handleContractGenericSelection = (event) => {
+    const genericItemId = event.target.value;
+    const selected = contractGenerics.find(item => String(item.id) === genericItemId);
+    setContractItemForm(current => ({ ...current, generic_item_id: genericItemId, approved_product_id: '', supplier_catalog_item_id: '', item_name: selected?.generic_name || '' }));
+  };
+
+  const handleContractProductSelection = (event) => {
+    const approvedProductId = event.target.value;
+    const selected = contractProducts.find(item => String(item.id) === approvedProductId);
+    setContractItemForm(current => ({ ...current, approved_product_id: approvedProductId, supplier_catalog_item_id: '', item_name: selected?.product_name || current.item_name }));
+  };
+
   const handleCreateContractItem = async (event) => {
     event.preventDefault();
     const contractId = editingId || viewingContract?.id;
     if (!contractId) return;
-    if (!contractItemForm.item_name.trim()) {
-      setContractItemError('Item name is required.');
+    if (!contractItemForm.generic_item_id) {
+      setContractItemError('Select a canonical Generic Item.');
       return;
     }
     setSavingContractItem(true);
@@ -2676,13 +2711,25 @@ const ContractsPage = () => {
                       </p>
                       {stockItemsError && <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">{stockItemsError}</p>}
                       <form onSubmit={handleCreateContractItem} className="mt-4 grid gap-3 md:grid-cols-4">
+                        <select required aria-label="Generic Item" name="generic_item_id" value={contractItemForm.generic_item_id} onChange={handleContractGenericSelection} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                          <option value="">Select Generic Item *</option>
+                          {contractGenerics.map(item => <option key={item.id} value={item.id}>{item.item_code} — {item.generic_name}</option>)}
+                        </select>
+                        <select aria-label="Approved Product" name="approved_product_id" value={contractItemForm.approved_product_id} onChange={handleContractProductSelection} disabled={!contractItemForm.generic_item_id} className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                          <option value="">Generic coverage — any approved product</option>
+                          {contractProducts.map(item => <option key={item.id} value={item.id}>{item.manufacturer} — {item.product_name}</option>)}
+                        </select>
+                        <select aria-label="Supplier Catalog Item" name="supplier_catalog_item_id" value={contractItemForm.supplier_catalog_item_id} onChange={handleContractItemInputChange} disabled={!contractItemForm.approved_product_id} className="rounded-md border border-gray-300 px-3 py-2 text-sm disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                          <option value="">No supplier-specific catalog offer</option>
+                          {contractCatalogItems.map(item => <option key={item.id} value={item.id}>{item.supplier_item_code} — {item.supplier_description || item.product_name}</option>)}
+                        </select>
                         <select name="item_id" value={contractItemForm.item_id} onChange={handleContractStockItemSelection} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-                          <option value="">Define item manually</option>
+                          <option value="">No warehouse Stock Item mapping</option>
                           {stockItems.map((stockItem) => (
                             <option key={stockItem.id} value={stockItem.id}>{stockItem.name}{stockItem.brand ? ` • ${stockItem.brand}` : ''}</option>
                           ))}
                         </select>
-                        <input name="item_name" value={contractItemForm.item_name} onChange={handleContractItemInputChange} placeholder="Item name *" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input readOnly name="item_name" value={contractItemForm.item_name} placeholder="Canonical item name" className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
                         <input name="unit" value={contractItemForm.unit} onChange={handleContractItemInputChange} placeholder="Unit" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
                         <input name="contracted_price" value={contractItemForm.contracted_price} onChange={handleContractItemInputChange} placeholder="Contracted price" type="number" step="0.01" className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
                         <input name="currency" value={contractItemForm.currency} onChange={handleContractItemInputChange} placeholder={viewingContract?.currency || formState.currency || 'IQD'} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />

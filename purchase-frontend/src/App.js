@@ -192,7 +192,8 @@ const AppRoutes = () => (
     <Route path="/spare-parts/new" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.create"]} />} />
     <Route path="/spare-parts/:id/edit" element={<ProtectedRoute element={<SparePartFormPage />} requiredPermissions={["spare-parts.edit"]} />} />
     <Route path="/spare-parts/:id" element={<ProtectedRoute element={<SparePartDetailPage />} requiredPermissions={["spare-parts.view"]} />} />
-    <Route path="/spare-parts-equipment" element={<ProtectedRoute element={<EquipmentManagementPage />} requiredPermissions={["spare-parts.manage-compatibility"]} />} />
+    <Route path="/equipment" element={<ProtectedRoute element={<EquipmentManagementPage />} requiredPermissions={["equipment.view"]} />} />
+    <Route path="/spare-parts-equipment" element={<Navigate to="/equipment" replace />} />
     {/* ✅ Public Routes */}
     <Route path="/login" element={<Login />} />
     <Route path="/request-account" element={<RequestAccount />} />
