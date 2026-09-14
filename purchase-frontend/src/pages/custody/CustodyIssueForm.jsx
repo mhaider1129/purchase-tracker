@@ -6,21 +6,23 @@ import {
   searchCustodyRecipients,
 } from '../../api/custody';
 import { Button } from '../../components/ui/Button';
+import { useLocation } from 'react-router-dom';
 
 const CustodyIssueForm = () => {
   const { t } = useTranslation();
+  const linkedAsset = useLocation().state?.asset;
   const [form, setForm] = useState({
-    itemName: '',
-    quantity: '',
-    description: '',
+    itemName: linkedAsset?.description || '',
+    quantity: linkedAsset ? '1' : '',
+    description: linkedAsset ? `Canonical fixed asset ${linkedAsset.asset_number}` : '',
     custodyType: 'personal',
     custodyCode: '',
     departmentId: '',
     assetCategory: '',
     assetTag: '',
-    manufacturer: '',
-    model: '',
-    serialNumber: '',
+    manufacturer: linkedAsset?.manufacturer || '',
+    model: linkedAsset?.model || '',
+    serialNumber: linkedAsset?.serial_number || '',
     conditionAtIssue: '',
     building: '',
     floor: '',
@@ -194,6 +196,7 @@ const CustodyIssueForm = () => {
       cost_center: form.costCenter.trim() || undefined,
       pre_existing_condition: form.preExistingCondition.trim() || undefined,
       acknowledgment_accepted: form.acknowledgmentAccepted,
+      asset_id: linkedAsset?.id,
     };
 
     try {
