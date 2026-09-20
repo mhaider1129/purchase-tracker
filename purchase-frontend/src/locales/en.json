@@ -1953,6 +1953,13 @@
   },
   "openRequests": {
     "title": "My Open Requests",
+    "eyebrow": "Request center",
+    "subtitle": "Track progress, review approvals, and manage every request in one place.",
+    "filterTitle": "Find a request",
+    "filterHint": "Refine the list using any combination of filters.",
+    "resultsCount": "{{count}} requests found",
+    "activeFilters": "{{count}} active filters",
+    "emptyTitle": "No requests found",
     "print": "Print",
     "printedAt": "Printed at",
     "exportCSV": "Export CSV",
@@ -3196,6 +3203,12 @@
   "approvalsPanel": {
     "title": "Pending & On-Hold Approvals",
     "subtitle": "Review, pause, or continue approval requests from your departments.",
+    "queue": {
+      "eyebrow": "Decision workspace",
+      "title": "Approval queue",
+      "showing": "Showing {{visible}} of {{total}} requests",
+      "filtered": "Filters applied"
+    },
     "actions": {
       "refresh": "Refresh",
       "refreshAria": "Refresh approvals list",
@@ -3227,6 +3240,7 @@
       "totalPending": "Total Pending",
       "urgent": "Urgent",
       "estimatedTotal": "Estimated Total (IQD)",
+      "oldestWaiting": "Days oldest has waited",
       "requestsByType": "Requests by Type",
       "noTypeData": "No type data"
     },

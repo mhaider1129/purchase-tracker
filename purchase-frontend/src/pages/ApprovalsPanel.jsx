@@ -1,35 +1,38 @@
 //src/pages/ApprovalsPanel.js
-import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useTranslation } from "react-i18next";
+import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlertTriangle,
-  Building2,
+  ArrowRight,
+  Clock3,
   FileText,
   Loader2,
   PackageCheck,
   RefreshCcw,
-} from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import useCurrentUser from '../hooks/useCurrentUser';
-import useApprovalsData from '../hooks/useApprovalsData';
-import ApprovalsFilters from '../components/approvals/ApprovalsFilters';
-import ApprovalRequestCard from '../components/approvals/ApprovalRequestCard';
-import AttachmentsPanel from '../components/approvals/AttachmentsPanel';
-import ItemDecisionTable from '../components/approvals/ItemDecisionTable';
-import { getRequesterDisplay } from '../utils/requester';
-import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
-import AmountInput from '../components/ui/AmountInput';
-import ApprovalTimeline from '../components/ApprovalTimeline';
-import useApprovalTimeline from '../hooks/useApprovalTimeline';
-import RequestViewModeToggle from '../components/requests/RequestViewModeToggle';
-import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
+} from "lucide-react";
+import { Button } from "../components/ui/Button";
+import useCurrentUser from "../hooks/useCurrentUser";
+import useApprovalsData from "../hooks/useApprovalsData";
+import ApprovalsFilters from "../components/approvals/ApprovalsFilters";
+import ApprovalRequestCard from "../components/approvals/ApprovalRequestCard";
+import AttachmentsPanel from "../components/approvals/AttachmentsPanel";
+import ItemDecisionTable from "../components/approvals/ItemDecisionTable";
+import { getRequesterDisplay } from "../utils/requester";
+import GuidedWorkflowPanel from "../components/GuidedWorkflowPanel";
+import AmountInput from "../components/ui/AmountInput";
+import ApprovalTimeline from "../components/ApprovalTimeline";
+import useApprovalTimeline from "../hooks/useApprovalTimeline";
+import RequestViewModeToggle from "../components/requests/RequestViewModeToggle";
+import usePersistedRequestViewMode, {
+  REQUEST_VIEW_MODES,
+} from "../hooks/usePersistedRequestViewMode";
 
 const ApprovalsPanel = () => {
   const { t } = useTranslation();
   const [onboardingVersion, setOnboardingVersion] = useState(0);
   const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
-    'approvals-request-view-mode',
+    "approvals-request-view-mode",
   );
   const { user } = useCurrentUser();
   const {
@@ -115,148 +118,192 @@ const ApprovalsPanel = () => {
   } = useApprovalTimeline();
 
   const filterLabels = {
-    searchPlaceholder: t('approvalsPanel.filters.searchPlaceholder'),
-    typeLabel: t('approvalsPanel.filters.requestType'),
-    typeAllLabel: t('approvalsPanel.filters.allTypes'),
-    urgencyLabel: t('approvalsPanel.filters.urgency'),
-    sortLabel: t('approvalsPanel.filters.sortBy'),
-    resetLabel: t('approvalsPanel.filters.reset'),
+    searchPlaceholder: t("approvalsPanel.filters.searchPlaceholder"),
+    typeLabel: t("approvalsPanel.filters.requestType"),
+    typeAllLabel: t("approvalsPanel.filters.allTypes"),
+    urgencyLabel: t("approvalsPanel.filters.urgency"),
+    sortLabel: t("approvalsPanel.filters.sortBy"),
+    resetLabel: t("approvalsPanel.filters.reset"),
     urgencyOptions: [
-      { value: 'all', label: t('approvalsPanel.filters.urgencyAll') },
-      { value: 'urgent', label: t('approvalsPanel.filters.urgentOnly') },
-      { value: 'non-urgent', label: t('approvalsPanel.filters.nonUrgent') },
+      { value: "all", label: t("approvalsPanel.filters.urgencyAll") },
+      { value: "urgent", label: t("approvalsPanel.filters.urgentOnly") },
+      { value: "non-urgent", label: t("approvalsPanel.filters.nonUrgent") },
     ],
     sortOptions: [
-      { value: 'newest', label: t('approvalsPanel.filters.newest') },
-      { value: 'oldest', label: t('approvalsPanel.filters.oldest') },
-      { value: 'costHigh', label: t('approvalsPanel.filters.costHigh') },
-      { value: 'costLow', label: t('approvalsPanel.filters.costLow') },
+      { value: "newest", label: t("approvalsPanel.filters.newest") },
+      { value: "oldest", label: t("approvalsPanel.filters.oldest") },
+      { value: "costHigh", label: t("approvalsPanel.filters.costHigh") },
+      { value: "costLow", label: t("approvalsPanel.filters.costLow") },
     ],
   };
 
   const itemLabels = {
-    heading: t('approvalsPanel.items.heading'),
-    saveLabel: t('approvalsPanel.items.save'),
-    quantityLabel: t('approvalsPanel.items.qty'),
-    availableLabel: t('approvalsPanel.items.availableQty'),
-    unitCostLabel: t('approvalsPanel.items.unitCost'),
-    totalCostLabel: t('approvalsPanel.items.total'),
-    decisionLabel: t('approvalsPanel.items.decision'),
-    commentsLabel: t('approvalsPanel.items.comments'),
-    approvedLabel: t('approvalsPanel.items.approved'),
-    rejectedLabel: t('approvalsPanel.items.rejected'),
-    pendingLabel: t('approvalsPanel.items.pending'),
-    emptyLabel: t('approvalsPanel.items.empty'),
-    convertToWarehouseSupplyLabel: 'Warehouse stock',
+    heading: t("approvalsPanel.items.heading"),
+    saveLabel: t("approvalsPanel.items.save"),
+    quantityLabel: t("approvalsPanel.items.qty"),
+    availableLabel: t("approvalsPanel.items.availableQty"),
+    unitCostLabel: t("approvalsPanel.items.unitCost"),
+    totalCostLabel: t("approvalsPanel.items.total"),
+    decisionLabel: t("approvalsPanel.items.decision"),
+    commentsLabel: t("approvalsPanel.items.comments"),
+    approvedLabel: t("approvalsPanel.items.approved"),
+    rejectedLabel: t("approvalsPanel.items.rejected"),
+    pendingLabel: t("approvalsPanel.items.pending"),
+    emptyLabel: t("approvalsPanel.items.empty"),
+    convertToWarehouseSupplyLabel: "Warehouse stock",
   };
 
   const modalTitles = {
-    hod: t('approvalsPanel.hodModal.title'),
-    hodDescription: t('approvalsPanel.hodModal.description'),
-    hodSelect: t('approvalsPanel.hodModal.select'),
+    hod: t("approvalsPanel.hodModal.title"),
+    hodDescription: t("approvalsPanel.hodModal.description"),
+    hodSelect: t("approvalsPanel.hodModal.select"),
   };
   const autoCompletedOnboardingSteps = [
-    hasActiveFilters ? 'filter_queue' : null,
-    expandedId ? 'review_items' : null,
-    selectedDecision ? 'submit_decision' : null,
+    hasActiveFilters ? "filter_queue" : null,
+    expandedId ? "review_items" : null,
+    selectedDecision ? "submit_decision" : null,
   ].filter(Boolean);
   const isCompactRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
+  const queueInsights = useMemo(() => {
+    const timestamps = requests
+      .map((request) =>
+        new Date(request.created_at || request.request_date).getTime(),
+      )
+      .filter(Number.isFinite);
+    const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
 
+    return {
+      visible: filteredRequests.length,
+      oldestDays:
+        oldestTimestamp == null
+          ? null
+          : Math.max(0, Math.floor((Date.now() - oldestTimestamp) / 86400000)),
+    };
+  }, [filteredRequests.length, requests]);
 
   return (
     <>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold text-slate-900">{t('approvalsPanel.title')}</h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-600">
-              {t('approvalsPanel.subtitle')}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {approvalSummary.canUse && (
-              <Button
-                onClick={() => approvalSummary.open(filteredRequests)}
-                disabled={loading || filteredRequests.length === 0 || approvalSummary.loadingItems}
-                isLoading={approvalSummary.loadingItems}
-              >
-                {approvalSummary.loadingItems ? 'Preparing summary…' : 'Approval summary'}
-              </Button>
-            )}
-            <Button onClick={fetchApprovals} variant="secondary" aria-label={t('approvalsPanel.actions.refreshAria')}>
-              {loading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin text-slate-600" aria-hidden />
-              ) : (
-                <RefreshCcw className="mr-2 h-4 w-4 text-slate-600" aria-hidden />
+        <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-6 text-white shadow-xl shadow-slate-200 sm:px-7 sm:py-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">
+                {t("approvalsPanel.queue.eyebrow")}
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight text-white">
+                {t("approvalsPanel.title")}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                {t("approvalsPanel.subtitle")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {approvalSummary.canUse && (
+                <Button
+                  onClick={() => approvalSummary.open(filteredRequests)}
+                  disabled={
+                    loading ||
+                    filteredRequests.length === 0 ||
+                    approvalSummary.loadingItems
+                  }
+                  isLoading={approvalSummary.loadingItems}
+                >
+                  {approvalSummary.loadingItems
+                    ? "Preparing summary…"
+                    : "Approval summary"}
+                </Button>
               )}
-              {t('approvalsPanel.actions.refresh')}
-            </Button>
+              <Button
+                onClick={fetchApprovals}
+                variant="secondary"
+                className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+                aria-label={t("approvalsPanel.actions.refreshAria")}
+              >
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <RefreshCcw className="mr-2 h-4 w-4" aria-hidden />
+                )}
+                {t("approvalsPanel.actions.refresh")}
+              </Button>
+            </div>
           </div>
-        </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+              <PackageCheck
+                className="mb-3 h-5 w-5 text-blue-300"
+                aria-hidden
+              />
+              <p className="text-2xl font-semibold">{summary.total}</p>
+              <p className="text-sm text-slate-300">
+                {t("approvalsPanel.stats.totalPending")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setUrgencyFilter("urgent")}
+              className="group rounded-xl border border-amber-300/20 bg-amber-300/10 p-4 text-left transition hover:bg-amber-300/20 focus:outline-none focus:ring-2 focus:ring-amber-300"
+            >
+              <div className="flex items-center justify-between">
+                <AlertTriangle className="h-5 w-5 text-amber-300" aria-hidden />
+                <ArrowRight
+                  className="h-4 w-4 text-amber-200 transition group-hover:translate-x-1"
+                  aria-hidden
+                />
+              </div>
+              <p className="mt-3 text-2xl font-semibold">{summary.urgent}</p>
+              <p className="text-sm text-slate-300">
+                {t("approvalsPanel.stats.urgent")}
+              </p>
+            </button>
+            <div className="rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+              <FileText className="mb-3 h-5 w-5 text-emerald-300" aria-hidden />
+              <p className="truncate text-2xl font-semibold">
+                {summary.estimatedTotal.toLocaleString()}
+              </p>
+              <p className="text-sm text-slate-300">
+                {t("approvalsPanel.stats.estimatedTotal")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+              <Clock3 className="mb-3 h-5 w-5 text-violet-300" aria-hidden />
+              <p className="text-2xl font-semibold">
+                {queueInsights.oldestDays == null
+                  ? "—"
+                  : queueInsights.oldestDays}
+              </p>
+              <p className="text-sm text-slate-300">
+                {t("approvalsPanel.stats.oldestWaiting")}
+              </p>
+            </div>
+          </div>
+        </header>
         <div className="mt-4">
           <GuidedWorkflowPanel
             key={onboardingVersion}
-            title={t('approvalsPanel.onboarding.title')}
-            subtitle={t('approvalsPanel.onboarding.subtitle')}
+            title={t("approvalsPanel.onboarding.title")}
+            subtitle={t("approvalsPanel.onboarding.subtitle")}
             storageKey="onboarding-approvals"
             onCompleteStep={() => setOnboardingVersion((v) => v + 1)}
             autoCompleteStepIds={autoCompletedOnboardingSteps}
             steps={[
-              { id: 'filter_queue', title: t('approvalsPanel.onboarding.filterTitle'), tip: t('approvalsPanel.onboarding.filterTip') },
-              { id: 'review_items', title: t('approvalsPanel.onboarding.reviewTitle'), tip: t('approvalsPanel.onboarding.reviewTip') },
-              { id: 'submit_decision', title: t('approvalsPanel.onboarding.decisionTitle'), tip: t('approvalsPanel.onboarding.decisionTip') },
+              {
+                id: "filter_queue",
+                title: t("approvalsPanel.onboarding.filterTitle"),
+                tip: t("approvalsPanel.onboarding.filterTip"),
+              },
+              {
+                id: "review_items",
+                title: t("approvalsPanel.onboarding.reviewTitle"),
+                tip: t("approvalsPanel.onboarding.reviewTip"),
+              },
+              {
+                id: "submit_decision",
+                title: t("approvalsPanel.onboarding.decisionTitle"),
+                tip: t("approvalsPanel.onboarding.decisionTip"),
+              },
             ]}
           />
-        </div>
-
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">{t('approvalsPanel.stats.totalPending')}</p>
-                <p className="text-2xl font-semibold text-slate-900">{summary.total}</p>
-              </div>
-              <PackageCheck className="h-8 w-8 text-blue-600" aria-hidden />
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">{t('approvalsPanel.stats.urgent')}</p>
-                <p className="text-2xl font-semibold text-slate-900">{summary.urgent}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-amber-600" aria-hidden />
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">{t('approvalsPanel.stats.estimatedTotal')}</p>
-                <p className="text-2xl font-semibold text-slate-900">{summary.estimatedTotal.toLocaleString()}</p>
-              </div>
-              <FileText className="h-8 w-8 text-emerald-600" aria-hidden />
-            </div>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">{t('approvalsPanel.stats.requestsByType')}</p>
-                {Object.keys(summary.byType).length === 0 ? (
-                  <p className="mt-1 text-sm text-slate-500">{t('approvalsPanel.stats.noTypeData')}</p>
-                ) : (
-                  <ul className="mt-2 space-y-1 text-sm text-slate-700">
-                    {Object.entries(summary.byType).map(([type, count]) => (
-                      <li key={type} className="flex items-center justify-between">
-                        <span>{type}</span>
-                        <span className="font-semibold text-slate-900">{count}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              <Building2 className="h-8 w-8 text-emerald-600" aria-hidden />
-            </div>
-          </div>
         </div>
 
         <ApprovalsFilters
@@ -278,35 +325,62 @@ const ApprovalsPanel = () => {
           className="mt-4"
           value={requestViewMode}
           onChange={setRequestViewMode}
-          title={t('approvalsPanel.requestView.title')}
-          description={t('approvalsPanel.requestView.description')}
-          detailedLabel={t('approvalsPanel.requestView.detailed')}
-          summaryLabel={t('approvalsPanel.requestView.summary')}
-          ariaLabel={t('approvalsPanel.requestView.aria')}
+          title={t("approvalsPanel.requestView.title")}
+          description={t("approvalsPanel.requestView.description")}
+          detailedLabel={t("approvalsPanel.requestView.detailed")}
+          summaryLabel={t("approvalsPanel.requestView.summary")}
+          ariaLabel={t("approvalsPanel.requestView.aria")}
         />
 
         <div className="mt-6">
+          {!loading && !error && requests.length > 0 && (
+            <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  {t("approvalsPanel.queue.title")}
+                </h2>
+                <p className="text-sm text-slate-500">
+                  {t("approvalsPanel.queue.showing", {
+                    visible: queueInsights.visible,
+                    total: summary.total,
+                  })}
+                </p>
+              </div>
+              {hasActiveFilters && (
+                <span className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                  {t("approvalsPanel.queue.filtered")}
+                </span>
+              )}
+            </div>
+          )}
           {loading ? (
             <div className="flex items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white py-16">
-              <Loader2 className="mr-3 h-6 w-6 animate-spin text-blue-600" aria-hidden />
-              <span className="text-sm text-slate-600">{t('approvalsPanel.states.loading')}</span>
+              <Loader2
+                className="mr-3 h-6 w-6 animate-spin text-blue-600"
+                aria-hidden
+              />
+              <span className="text-sm text-slate-600">
+                {t("approvalsPanel.states.loading")}
+              </span>
             </div>
           ) : error ? (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">{error}</div>
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-rose-700">
+              {error}
+            </div>
           ) : requests.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-              {t('approvalsPanel.states.empty')}
+              {t("approvalsPanel.states.empty")}
             </div>
           ) : filteredRequests.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-              <p>{t('approvalsPanel.states.emptyFiltered')}</p>
+              <p>{t("approvalsPanel.states.emptyFiltered")}</p>
               {hasActiveFilters && (
                 <button
                   type="button"
                   className="mt-2 text-sm font-medium text-blue-600 underline"
                   onClick={clearFilters}
                 >
-                  {t('approvalsPanel.states.clearFilters')}
+                  {t("approvalsPanel.states.clearFilters")}
                 </button>
               )}
             </div>
@@ -321,8 +395,8 @@ const ApprovalsPanel = () => {
                 const attachmentsError = attachmentErrorMap[req.request_id];
                 const isExpanded = expandedId === req.request_id;
                 const requesterDisplay = getRequesterDisplay(req);
-                const approvalStatus = req.approval_status || 'Pending';
-                const isOnHold = approvalStatus.toLowerCase() === 'on hold';
+                const approvalStatus = req.approval_status || "Pending";
+                const isOnHold = approvalStatus.toLowerCase() === "on hold";
                 const holdLoading = Boolean(holdLoadingMap[req.approval_id]);
 
                 return (
@@ -344,23 +418,28 @@ const ApprovalsPanel = () => {
                   >
                     <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
                       <div className="order-2 space-y-4 lg:order-1">
-                        {user?.role === 'SCM' && (
+                        {user?.role === "SCM" && (
                           <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
                             <label
                               htmlFor={`scm-estimated-cost-${req.request_id}`}
                               className="block text-sm font-medium text-blue-900"
                             >
-                              {t('approvalsPanel.cost.updateEstimated')}
+                              {t("approvalsPanel.cost.updateEstimated")}
                             </label>
                             <AmountInput
                               id={`scm-estimated-cost-${req.request_id}`}
                               className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                              placeholder={t('approvalsPanel.cost.placeholder')}
-                              value={estimatedCostDrafts[req.request_id] ?? ''}
-                              onChange={(event) => handleEstimatedCostDraftChange(req.request_id, event.target.value)}
+                              placeholder={t("approvalsPanel.cost.placeholder")}
+                              value={estimatedCostDrafts[req.request_id] ?? ""}
+                              onChange={(event) =>
+                                handleEstimatedCostDraftChange(
+                                  req.request_id,
+                                  event.target.value,
+                                )
+                              }
                             />
                             <p className="mt-1 text-xs text-blue-800">
-                              {t('approvalsPanel.cost.helper')}
+                              {t("approvalsPanel.cost.helper")}
                             </p>
                           </div>
                         )}
@@ -371,30 +450,56 @@ const ApprovalsPanel = () => {
                           error={attachmentsError}
                           downloadingId={downloadingAttachmentId}
                           onDownload={handleDownloadAttachment}
-                          onView={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
+                          onView={(url) =>
+                            window.open(url, "_blank", "noopener,noreferrer")
+                          }
                         />
 
                         <ItemDecisionTable
                           items={itemsMap[req.request_id] || []}
                           decisions={itemDecisions[req.request_id] || {}}
-                          quantityDrafts={itemQuantityDrafts[req.request_id] || {}}
+                          quantityDrafts={
+                            itemQuantityDrafts[req.request_id] || {}
+                          }
                           canEdit={canEditItems}
                           isItemLockedForUser={isItemLockedForUser}
                           onStatusChange={(itemId, status) =>
-                            handleItemStatusChange(req.request_id, itemId, status)
+                            handleItemStatusChange(
+                              req.request_id,
+                              itemId,
+                              status,
+                            )
                           }
                           onCommentChange={(itemId, value) =>
-                            handleItemCommentChange(req.request_id, itemId, value)
+                            handleItemCommentChange(
+                              req.request_id,
+                              itemId,
+                              value,
+                            )
                           }
                           onQuantityChange={(itemId, value) =>
-                            handleItemQuantityChange(req.request_id, itemId, value)
+                            handleItemQuantityChange(
+                              req.request_id,
+                              itemId,
+                              value,
+                            )
                           }
-                          canConvertToWarehouseSupply={canConvertItemsToWarehouseSupply(req)}
-                          warehouseConversionSelections={warehouseConversionItems[req.request_id] || {}}
+                          canConvertToWarehouseSupply={canConvertItemsToWarehouseSupply(
+                            req,
+                          )}
+                          warehouseConversionSelections={
+                            warehouseConversionItems[req.request_id] || {}
+                          }
                           onWarehouseConversionToggle={(itemId, checked) =>
-                            handleWarehouseConversionToggle(req.request_id, itemId, checked)
+                            handleWarehouseConversionToggle(
+                              req.request_id,
+                              itemId,
+                              checked,
+                            )
                           }
-                          onSave={() => saveItemDecisions(req.request_id, req.approval_id)}
+                          onSave={() =>
+                            saveItemDecisions(req.request_id, req.approval_id)
+                          }
                           saving={!!savingItems[req.request_id]}
                           summary={itemSummaries[req.request_id]}
                           feedback={itemFeedback[req.request_id]}
@@ -405,7 +510,7 @@ const ApprovalsPanel = () => {
                       <div className="order-1 space-y-4 lg:order-2">
                         {req.is_urgent && (
                           <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700">
-                            {t('approvalsPanel.status.requiresAttention')}
+                            {t("approvalsPanel.status.requiresAttention")}
                           </div>
                         )}
 
@@ -414,7 +519,7 @@ const ApprovalsPanel = () => {
                             to={`/requests/${req.request_id}`}
                             className="inline-flex w-full items-center justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                           >
-                            {t('approvalsPanel.actions.openWorkspace')}
+                            {t("approvalsPanel.actions.openWorkspace")}
                           </Link>
                           <Button
                             variant="secondary"
@@ -423,64 +528,94 @@ const ApprovalsPanel = () => {
                             isLoading={loadingApprovalsId === req.request_id}
                           >
                             <FileText className="h-4 w-4" aria-hidden />
-                            {expandedApprovalsId === req.request_id ? t('approvalsPanel.actions.hideApprovals') : t('approvalsPanel.actions.viewApprovals')}
+                            {expandedApprovalsId === req.request_id
+                              ? t("approvalsPanel.actions.hideApprovals")
+                              : t("approvalsPanel.actions.viewApprovals")}
                           </Button>
                           {expandedApprovalsId === req.request_id && (
                             <div className="mt-3 rounded-md border border-slate-200 bg-white p-3">
                               <ApprovalTimeline
                                 approvals={approvalsMap[req.request_id]}
-                                isLoading={loadingApprovalsId === req.request_id}
+                                isLoading={
+                                  loadingApprovalsId === req.request_id
+                                }
                                 isUrgent={Boolean(req?.is_urgent)}
                               />
                             </div>
                           )}
                         </div>
-      <div className="space-y-3">
-        <Button
-          variant="outline"
+                        <div className="space-y-3">
+                          <Button
+                            variant="outline"
                             onClick={() =>
-                              toggleApprovalHoldStatus(req.approval_id, req.request_id, !isOnHold)
+                              toggleApprovalHoldStatus(
+                                req.approval_id,
+                                req.request_id,
+                                !isOnHold,
+                              )
                             }
                             isLoading={holdLoading}
                           >
-                            {isOnHold ? t('approvalsPanel.actions.resumeApproval') : t('approvalsPanel.actions.putOnHold')}
+                            {isOnHold
+                              ? t("approvalsPanel.actions.resumeApproval")
+                              : t("approvalsPanel.actions.putOnHold")}
                           </Button>
                           {isOnHold && (
                             <p className="text-xs text-amber-700">
-                              {t('approvalsPanel.status.onHoldHelp')}
+                              {t("approvalsPanel.status.onHoldHelp")}
                             </p>
                           )}
-                          {user?.role === 'SCM' && (
-                            <Button variant="secondary" onClick={() => openHodModal(req.request_id)}>
-                              {t('approvalsPanel.actions.sendToHod')}
-                            </Button>
-                          )}
-                          {req.request_type === 'Maintenance' && req.approval_level === 1 && (
+                          {user?.role === "SCM" && (
                             <Button
                               variant="secondary"
-                              onClick={() => reassignToDepartmentRequester(req.request_id, req.approval_id)}
-                              disabled={isOnHold}
+                              onClick={() => openHodModal(req.request_id)}
                             >
-                              {t('approvalsPanel.actions.assignRequester')}
+                              {t("approvalsPanel.actions.sendToHod")}
                             </Button>
                           )}
+                          {req.request_type === "Maintenance" &&
+                            req.approval_level === 1 && (
+                              <Button
+                                variant="secondary"
+                                onClick={() =>
+                                  reassignToDepartmentRequester(
+                                    req.request_id,
+                                    req.approval_id,
+                                  )
+                                }
+                                disabled={isOnHold}
+                              >
+                                {t("approvalsPanel.actions.assignRequester")}
+                              </Button>
+                            )}
                           <Button
-                            onClick={() => openCommentModal(req.approval_id, req.request_id, 'Approved')}
+                            onClick={() =>
+                              openCommentModal(
+                                req.approval_id,
+                                req.request_id,
+                                "Approved",
+                              )
+                            }
                             disabled={isOnHold}
                           >
-                            {t('approvalsPanel.actions.approve')}
+                            {t("approvalsPanel.actions.approve")}
                           </Button>
                           <Button
                             variant="destructive"
-                            onClick={() => openCommentModal(req.approval_id, req.request_id, 'Rejected')}
+                            onClick={() =>
+                              openCommentModal(
+                                req.approval_id,
+                                req.request_id,
+                                "Rejected",
+                              )
+                            }
                             disabled={isOnHold}
                           >
-                            {t('approvalsPanel.actions.reject')}
+                            {t("approvalsPanel.actions.reject")}
                           </Button>
-
-        </div>
-      </div>
-    </div>
+                        </div>
+                      </div>
+                    </div>
                   </ApprovalRequestCard>
                 );
               })}
@@ -488,7 +623,6 @@ const ApprovalsPanel = () => {
           )}
         </div>
       </div>
-
 
       {approvalSummary.feedback && !approvalSummary.show && (
         <div className="fixed bottom-4 right-4 z-50 max-w-md rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-700 shadow-xl">
@@ -500,9 +634,13 @@ const ApprovalsPanel = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-lg bg-white shadow-xl">
             <div className="border-b border-slate-200 p-5">
-              <h2 className="text-xl font-semibold text-slate-900">Pending approvals summary</h2>
+              <h2 className="text-xl font-semibold text-slate-900">
+                Pending approvals summary
+              </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Review all pending requests in one window. Every request starts toggled to approve; switch a request to reject or remove it to handle it later in the normal flow.
+                Review all pending requests in one window. Every request starts
+                toggled to approve; switch a request to reject or remove it to
+                handle it later in the normal flow.
               </p>
             </div>
             <div className="max-h-[65vh] space-y-4 overflow-y-auto p-5">
@@ -517,45 +655,83 @@ const ApprovalsPanel = () => {
                 </div>
               ) : (
                 approvalSummary.requestIds.map((requestId) => {
-                  const req = requests.find((candidate) => candidate.request_id === requestId);
+                  const req = requests.find(
+                    (candidate) => candidate.request_id === requestId,
+                  );
                   if (!req) return null;
                   const items = itemsMap[requestId] || [];
                   return (
-                    <section key={requestId} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <section
+                      key={requestId}
+                      className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                    >
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                          <h3 className="text-lg font-semibold text-slate-900">Request #{requestId}</h3>
+                          <h3 className="text-lg font-semibold text-slate-900">
+                            Request #{requestId}
+                          </h3>
                           <dl className="mt-2 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
-                            <div><dt className="font-medium text-slate-500">Department</dt><dd>{req.department_name || '—'}</dd></div>
-                            <div><dt className="font-medium text-slate-500">Section</dt><dd>{req.section_name || '—'}</dd></div>
-                            <div><dt className="font-medium text-slate-500">Related project</dt><dd>{req.project_name || 'Not applicable'}</dd></div>
-                            <div><dt className="font-medium text-slate-500">Requester</dt><dd>{getRequesterDisplay(req)}</dd></div>
+                            <div>
+                              <dt className="font-medium text-slate-500">
+                                Department
+                              </dt>
+                              <dd>{req.department_name || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="font-medium text-slate-500">
+                                Section
+                              </dt>
+                              <dd>{req.section_name || "—"}</dd>
+                            </div>
+                            <div>
+                              <dt className="font-medium text-slate-500">
+                                Related project
+                              </dt>
+                              <dd>{req.project_name || "Not applicable"}</dd>
+                            </div>
+                            <div>
+                              <dt className="font-medium text-slate-500">
+                                Requester
+                              </dt>
+                              <dd>{getRequesterDisplay(req)}</dd>
+                            </div>
                           </dl>
                           <div className="mt-3 text-sm text-slate-700">
-                            <span className="font-medium text-slate-500">Justification: </span>
-                            {req.justification || 'No justification provided.'}
+                            <span className="font-medium text-slate-500">
+                              Justification:{" "}
+                            </span>
+                            {req.justification || "No justification provided."}
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 sm:min-w-56">
                           <div className="inline-flex rounded-md border border-slate-300 bg-white p-1">
-                            {['Approved', 'Rejected'].map((decision) => (
+                            {["Approved", "Rejected"].map((decision) => (
                               <button
                                 key={decision}
                                 type="button"
                                 className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${
-                                  approvalSummary.decisions[requestId] === decision
-                                    ? decision === 'Approved'
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'bg-rose-600 text-white'
-                                    : 'text-slate-600 hover:bg-slate-100'
+                                  approvalSummary.decisions[requestId] ===
+                                  decision
+                                    ? decision === "Approved"
+                                      ? "bg-emerald-600 text-white"
+                                      : "bg-rose-600 text-white"
+                                    : "text-slate-600 hover:bg-slate-100"
                                 }`}
-                                onClick={() => approvalSummary.setDecision(requestId, decision)}
+                                onClick={() =>
+                                  approvalSummary.setDecision(
+                                    requestId,
+                                    decision,
+                                  )
+                                }
                               >
-                                {decision === 'Approved' ? 'Approve' : 'Reject'}
+                                {decision === "Approved" ? "Approve" : "Reject"}
                               </button>
                             ))}
                           </div>
-                          <Button variant="secondary" onClick={() => approvalSummary.remove(requestId)}>
+                          <Button
+                            variant="secondary"
+                            onClick={() => approvalSummary.remove(requestId)}
+                          >
                             Remove from summary
                           </Button>
                         </div>
@@ -563,18 +739,33 @@ const ApprovalsPanel = () => {
                       <textarea
                         className="mt-3 h-20 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         placeholder="Optional decision comments for this request"
-                        value={approvalSummary.comments[requestId] || ''}
-                        onChange={(event) => approvalSummary.setComment(requestId, event.target.value)}
+                        value={approvalSummary.comments[requestId] || ""}
+                        onChange={(event) =>
+                          approvalSummary.setComment(
+                            requestId,
+                            event.target.value,
+                          )
+                        }
                       />
-                      {user?.role === 'SCM' && (
+                      {user?.role === "SCM" && (
                         <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
-                          <label className="block text-sm font-medium text-blue-900" htmlFor={`summary-cost-${requestId}`}>Estimated cost</label>
+                          <label
+                            className="block text-sm font-medium text-blue-900"
+                            htmlFor={`summary-cost-${requestId}`}
+                          >
+                            Estimated cost
+                          </label>
                           <AmountInput
                             id={`summary-cost-${requestId}`}
                             className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                            placeholder={t('approvalsPanel.cost.placeholder')}
-                            value={estimatedCostDrafts[requestId] ?? ''}
-                            onChange={(event) => handleEstimatedCostDraftChange(requestId, event.target.value)}
+                            placeholder={t("approvalsPanel.cost.placeholder")}
+                            value={estimatedCostDrafts[requestId] ?? ""}
+                            onChange={(event) =>
+                              handleEstimatedCostDraftChange(
+                                requestId,
+                                event.target.value,
+                              )
+                            }
                           />
                         </div>
                       )}
@@ -585,13 +776,31 @@ const ApprovalsPanel = () => {
                           quantityDrafts={itemQuantityDrafts[requestId] || {}}
                           canEdit
                           isItemLockedForUser={isItemLockedForUser}
-                          onStatusChange={(itemId, status) => handleItemStatusChange(requestId, itemId, status)}
-                          onCommentChange={(itemId, value) => handleItemCommentChange(requestId, itemId, value)}
-                          onQuantityChange={(itemId, value) => handleItemQuantityChange(requestId, itemId, value)}
-                          canConvertToWarehouseSupply={canConvertItemsToWarehouseSupply(req)}
-                          warehouseConversionSelections={warehouseConversionItems[requestId] || {}}
-                          onWarehouseConversionToggle={(itemId, checked) => handleWarehouseConversionToggle(requestId, itemId, checked)}
-                          onSave={() => saveItemDecisions(requestId, req.approval_id)}
+                          onStatusChange={(itemId, status) =>
+                            handleItemStatusChange(requestId, itemId, status)
+                          }
+                          onCommentChange={(itemId, value) =>
+                            handleItemCommentChange(requestId, itemId, value)
+                          }
+                          onQuantityChange={(itemId, value) =>
+                            handleItemQuantityChange(requestId, itemId, value)
+                          }
+                          canConvertToWarehouseSupply={canConvertItemsToWarehouseSupply(
+                            req,
+                          )}
+                          warehouseConversionSelections={
+                            warehouseConversionItems[requestId] || {}
+                          }
+                          onWarehouseConversionToggle={(itemId, checked) =>
+                            handleWarehouseConversionToggle(
+                              requestId,
+                              itemId,
+                              checked,
+                            )
+                          }
+                          onSave={() =>
+                            saveItemDecisions(requestId, req.approval_id)
+                          }
                           saving={!!savingItems[requestId]}
                           summary={itemSummaries[requestId]}
                           feedback={itemFeedback[requestId]}
@@ -606,12 +815,19 @@ const ApprovalsPanel = () => {
             <div className="flex justify-end gap-3 border-t border-slate-200 p-5">
               <Button
                 onClick={approvalSummary.submit}
-                disabled={approvalSummary.requestIds.length === 0 || approvalSummary.submitting}
+                disabled={
+                  approvalSummary.requestIds.length === 0 ||
+                  approvalSummary.submitting
+                }
                 isLoading={approvalSummary.submitting}
               >
                 Take approval decision
               </Button>
-              <Button variant="ghost" onClick={approvalSummary.close} disabled={approvalSummary.submitting}>
+              <Button
+                variant="ghost"
+                onClick={approvalSummary.close}
+                disabled={approvalSummary.submitting}
+              >
                 Cancel
               </Button>
             </div>
@@ -623,16 +839,21 @@ const ApprovalsPanel = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h2 className="text-lg font-semibold">{modalTitles.hod}</h2>
-            <p className="mt-1 text-sm text-slate-600">{modalTitles.hodDescription}</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {modalTitles.hodDescription}
+            </p>
 
             {hodOptionsLoading ? (
               <div className="mt-4 flex items-center gap-2 text-slate-600">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span>{t('approvalsPanel.hodModal.loading')}</span>
+                <span>{t("approvalsPanel.hodModal.loading")}</span>
               </div>
             ) : (
               <div className="mt-4 space-y-2">
-                <label htmlFor="hod-select" className="text-sm font-medium text-slate-700">
+                <label
+                  htmlFor="hod-select"
+                  className="text-sm font-medium text-slate-700"
+                >
                   {modalTitles.hodSelect}
                 </label>
                 <select
@@ -641,31 +862,37 @@ const ApprovalsPanel = () => {
                   value={selectedHodId}
                   onChange={(e) => {
                     setSelectedHodId(e.target.value);
-                    setHodOptionsError('');
+                    setHodOptionsError("");
                   }}
                 >
-                  <option value="">{t('approvalsPanel.hodModal.choose')}</option>
+                  <option value="">
+                    {t("approvalsPanel.hodModal.choose")}
+                  </option>
                   {hodOptions.map((hod) => (
                     <option key={hod.id} value={hod.id}>
                       {[
-                        hod.name || t('approvalsPanel.hodModal.fallback'),
+                        hod.name || t("approvalsPanel.hodModal.fallback"),
                         hod.role,
                         hod.department_name,
                       ]
                         .filter(Boolean)
-                        .join(' — ')}
+                        .join(" — ")}
                     </option>
                   ))}
                 </select>
                 {!hodOptionsLoading && hodOptions.length === 0 && (
-                  <p className="text-sm text-slate-500">{t('approvalsPanel.hodModal.empty')}</p>
+                  <p className="text-sm text-slate-500">
+                    {t("approvalsPanel.hodModal.empty")}
+                  </p>
                 )}
-                {hodOptionsError && <p className="text-sm text-red-600">{hodOptionsError}</p>}
+                {hodOptionsError && (
+                  <p className="text-sm text-red-600">{hodOptionsError}</p>
+                )}
               </div>
             )}
 
             <p className="mt-3 text-xs text-slate-500">
-              {t('approvalsPanel.hodModal.helper')}
+              {t("approvalsPanel.hodModal.helper")}
             </p>
 
             <div className="mt-4 flex justify-end gap-3">
@@ -674,13 +901,21 @@ const ApprovalsPanel = () => {
                 isLoading={hodSubmitLoading}
                 disabled={hodSubmitLoading || hodOptionsLoading}
               >
-                {t('approvalsPanel.actions.send')}
+                {t("approvalsPanel.actions.send")}
               </Button>
-              <Button variant="ghost" onClick={() => setSelectedHodId('')} disabled={hodSubmitLoading}>
-                {t('approvalsPanel.actions.clear')}
+              <Button
+                variant="ghost"
+                onClick={() => setSelectedHodId("")}
+                disabled={hodSubmitLoading}
+              >
+                {t("approvalsPanel.actions.clear")}
               </Button>
-              <Button variant="ghost" onClick={closeHodModal} disabled={hodSubmitLoading}>
-                {t('approvalsPanel.actions.cancel')}
+              <Button
+                variant="ghost"
+                onClick={closeHodModal}
+                disabled={hodSubmitLoading}
+              >
+                {t("approvalsPanel.actions.cancel")}
               </Button>
             </div>
           </div>
@@ -691,32 +926,49 @@ const ApprovalsPanel = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
             <h2 className="text-lg font-semibold">
-              {t('approvalsPanel.decisionModal.title', { decision: selectedDecision === 'Approved' ? t('approvalsPanel.actions.approve') : t('approvalsPanel.actions.reject'), id: selectedRequestId })}
+              {t("approvalsPanel.decisionModal.title", {
+                decision:
+                  selectedDecision === "Approved"
+                    ? t("approvalsPanel.actions.approve")
+                    : t("approvalsPanel.actions.reject"),
+                id: selectedRequestId,
+              })}
             </h2>
             <textarea
               className="mt-3 h-28 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder={t('approvalsPanel.decisionModal.commentsPlaceholder')}
+              placeholder={t(
+                "approvalsPanel.decisionModal.commentsPlaceholder",
+              )}
               value={comments}
               onChange={(e) => setComments(e.target.value)}
             />
-            {user?.role === 'SCM' && (
+            {user?.role === "SCM" && (
               <div className="mt-3">
-                <label htmlFor="estimated-cost" className="block text-sm font-medium text-slate-700">
-                  {t('approvalsPanel.cost.modalLabel')}
+                <label
+                  htmlFor="estimated-cost"
+                  className="block text-sm font-medium text-slate-700"
+                >
+                  {t("approvalsPanel.cost.modalLabel")}
                 </label>
                 <AmountInput
                   id="estimated-cost"
                   className={`mt-1 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    estimatedCostError ? 'border-red-500' : 'border-slate-300'
+                    estimatedCostError ? "border-red-500" : "border-slate-300"
                   }`}
-                  placeholder={t('approvalsPanel.cost.modalPlaceholder')}
+                  placeholder={t("approvalsPanel.cost.modalPlaceholder")}
                   value={estimatedCost}
-                  onChange={(e) => handleModalEstimatedCostChange(e.target.value)}
+                  onChange={(e) =>
+                    handleModalEstimatedCostChange(e.target.value)
+                  }
                 />
                 <p className="mt-1 text-xs text-slate-500">
-                  {t('approvalsPanel.cost.modalHelper')}
+                  {t("approvalsPanel.cost.modalHelper")}
                 </p>
-                {estimatedCostError && <p className="mt-1 text-xs text-red-600">{estimatedCostError}</p>}
+                {estimatedCostError && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {estimatedCostError}
+                  </p>
+                )}
               </div>
             )}
             {canMarkUrgent && (
@@ -729,16 +981,27 @@ const ApprovalsPanel = () => {
                   className="h-4 w-4"
                 />
                 <label htmlFor="urgent" className="text-sm font-medium">
-                  {t('approvalsPanel.decisionModal.markUrgent')} <span className="font-semibold text-red-600">{t('approvalsPanel.stats.urgent')}</span>
+                  {t("approvalsPanel.decisionModal.markUrgent")}{" "}
+                  <span className="font-semibold text-red-600">
+                    {t("approvalsPanel.stats.urgent")}
+                  </span>
                 </label>
               </div>
             )}
             <div className="mt-4 flex justify-end gap-3">
-              <Button onClick={submitDecision} isLoading={decisionSubmitting} disabled={decisionSubmitting}>
-                {t('approvalsPanel.actions.submit')}
+              <Button
+                onClick={submitDecision}
+                isLoading={decisionSubmitting}
+                disabled={decisionSubmitting}
+              >
+                {t("approvalsPanel.actions.submit")}
               </Button>
-              <Button variant="ghost" onClick={resetCommentModal} disabled={decisionSubmitting}>
-                {t('approvalsPanel.actions.cancel')}
+              <Button
+                variant="ghost"
+                onClick={resetCommentModal}
+                disabled={decisionSubmitting}
+              >
+                {t("approvalsPanel.actions.cancel")}
               </Button>
             </div>
           </div>

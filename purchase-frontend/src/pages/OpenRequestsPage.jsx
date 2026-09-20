@@ -1,5 +1,11 @@
 // src/pages/OpenRequestsPage.jsx
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { updateRequest } from '../api/requests';
@@ -14,6 +20,20 @@ import { extractItems, getDisplayItems } from '../utils/itemUtils';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import PaginationControls from '../components/ui/PaginationControls';
 import PrintableRequestsReport from '../components/requests/PrintableRequestsReport';
+import {
+  CheckCircle2,
+  ChevronRight,
+  CircleDashed,
+  Clock3,
+  Download,
+  FileText,
+  Filter,
+  Inbox,
+  Printer,
+  Search,
+  Sparkles,
+  X,
+} from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -50,6 +70,13 @@ const mapStatusColor = (status) => {
       return 'bg-red-100 text-red-700 ring-red-200';
     case 'pending':
       return 'bg-yellow-100 text-yellow-700 ring-yellow-200';
+    case 'completed':
+    case 'received':
+      return 'bg-blue-100 text-blue-700 ring-blue-200';
+    case 'in_progress':
+      return 'bg-violet-100 text-violet-700 ring-violet-200';
+    case 'on_hold':
+      return 'bg-orange-100 text-orange-700 ring-orange-200';
     default:
       return 'bg-gray-100 text-gray-700 ring-gray-200';
   }
@@ -59,11 +86,11 @@ const OpenRequestsPage = () => {
   const { t: translate, i18n } = useTranslation();
   const tr = useMemo(
     () => (key, options) => translate(`openRequests.${key}`, options),
-    [translate]
+    [translate],
   );
   const te = useMemo(
     () => (key, options) => translate(`edit.${key}`, options),
-    [translate]
+    [translate],
   );
 
   const [requests, setRequests] = useState([]);
@@ -123,7 +150,7 @@ const OpenRequestsPage = () => {
         date: translate('common.approvalDate'),
       },
     }),
-    [translate]
+    [translate],
   );
 
   useEffect(() => {
@@ -149,25 +176,36 @@ const OpenRequestsPage = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, requestType, statusFilter, sortOrder, requests.length, fromDate, toDate]);
+  }, [
+    search,
+    requestType,
+    statusFilter,
+    sortOrder,
+    requests.length,
+    fromDate,
+    toDate,
+  ]);
 
   const statusCounts = useMemo(() => {
-    return requests.reduce(
-      (acc, req) => {
-        const key = (req.status || '').toLowerCase();
-        if (!key) {
-          return acc;
-        }
-
-        acc[key] = (acc[key] || 0) + 1;
+    return requests.reduce((acc, req) => {
+      const key = (req.status || '').toLowerCase();
+      if (!key) {
         return acc;
-      },
-      {}
-    );
+      }
+
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
   }, [requests]);
 
   const statusCards = useMemo(() => {
-    const finalizedStatuses = ['approved', 'rejected', 'completed', 'received', 'cancelled'];
+    const finalizedStatuses = [
+      'approved',
+      'rejected',
+      'completed',
+      'received',
+      'cancelled',
+    ];
     const pendingCount = requests.reduce((count, req) => {
       const status = (req?.status || '').toLowerCase();
       return finalizedStatuses.includes(status) ? count : count + 1;
@@ -182,17 +220,23 @@ const OpenRequestsPage = () => {
       },
       {
         key: 'pending',
-        label: translate('openRequests.statuses.pending', { defaultValue: 'Pending' }),
+        label: translate('openRequests.statuses.pending', {
+          defaultValue: 'Pending',
+        }),
         count: pendingCount,
       },
       {
         key: 'approved',
-        label: translate('openRequests.statuses.approved', { defaultValue: 'Approved' }),
+        label: translate('openRequests.statuses.approved', {
+          defaultValue: 'Approved',
+        }),
         count: statusCounts.approved || 0,
       },
       {
         key: 'completed',
-        label: translate('openRequests.statuses.completed', { defaultValue: 'Completed' }),
+        label: translate('openRequests.statuses.completed', {
+          defaultValue: 'Completed',
+        }),
         count: statusCounts.completed || 0,
       },
     ];
@@ -200,7 +244,7 @@ const OpenRequestsPage = () => {
 
   const uniqueTypes = useMemo(() => {
     return Array.from(
-      new Set(requests.map((req) => req.request_type).filter(Boolean))
+      new Set(requests.map((req) => req.request_type).filter(Boolean)),
     ).sort((a, b) => a.localeCompare(b));
   }, [requests]);
 
@@ -210,10 +254,18 @@ const OpenRequestsPage = () => {
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const normalizedStatus = statusFilter === 'all' ? '' : statusFilter.toLowerCase();
-    const normalizedType = requestType === 'all' ? '' : requestType.toLowerCase();
+    const normalizedStatus =
+      statusFilter === 'all' ? '' : statusFilter.toLowerCase();
+    const normalizedType =
+      requestType === 'all' ? '' : requestType.toLowerCase();
 
-    const finalizedStatuses = ['completed', 'received', 'approved', 'rejected', 'cancelled'];
+    const finalizedStatuses = [
+      'completed',
+      'received',
+      'approved',
+      'rejected',
+      'cancelled',
+    ];
 
     return requests.filter((req) => {
       const status = (req.status || '').toLowerCase();
@@ -221,8 +273,8 @@ const OpenRequestsPage = () => {
       const matchesStatus = !normalizedStatus
         ? true
         : normalizedStatus === 'pending'
-        ? !finalizedStatuses.includes(status)
-        : status === normalizedStatus;
+          ? !finalizedStatuses.includes(status)
+          : status === normalizedStatus;
       const matchesType = !normalizedType || type === normalizedType;
 
       const matchesSearch =
@@ -242,7 +294,13 @@ const OpenRequestsPage = () => {
       const matchesFromDate = !fromDate || createdAt >= new Date(fromDate);
       const matchesToDate = !toDate || createdAt <= new Date(toDate);
 
-      return matchesStatus && matchesType && matchesSearch && matchesFromDate && matchesToDate;
+      return (
+        matchesStatus &&
+        matchesType &&
+        matchesSearch &&
+        matchesFromDate &&
+        matchesToDate
+      );
     });
   }, [requests, search, statusFilter, requestType, fromDate, toDate]);
 
@@ -256,6 +314,22 @@ const OpenRequestsPage = () => {
   }, [filtered, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE));
+  const activeFilterCount = [
+    search.trim(),
+    requestType !== 'all',
+    statusFilter !== 'all',
+    fromDate,
+    toDate,
+  ].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setSearch('');
+    setRequestType('all');
+    setStatusFilter('all');
+    setSortOrder('newest');
+    setFromDate('');
+    setToDate('');
+  };
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return sorted.slice(start, start + ITEMS_PER_PAGE);
@@ -264,7 +338,8 @@ const OpenRequestsPage = () => {
   const getCurrentStage = (req) => {
     const normalizedStatus = req.status?.toLowerCase();
 
-    if (!req.status) return tr('stageUnknown', { defaultValue: 'Status unavailable' });
+    if (!req.status)
+      return tr('stageUnknown', { defaultValue: 'Status unavailable' });
 
     if (['approved', 'rejected', 'completed'].includes(normalizedStatus)) {
       return tr('stageFinalized', { status: req.status });
@@ -297,7 +372,10 @@ const OpenRequestsPage = () => {
         try {
           setLoadingId(requestId);
           const res = await api.get(`/requests/${requestId}/items`);
-          setItemsMap((prev) => ({ ...prev, [requestId]: extractItems(res.data) }));
+          setItemsMap((prev) => ({
+            ...prev,
+            [requestId]: extractItems(res.data),
+          }));
         } catch (err) {
           console.error('❌ Failed to load items:', err);
         } finally {
@@ -347,7 +425,13 @@ const OpenRequestsPage = () => {
   const canEditRequest = useCallback((req) => {
     const normalizedStatus = (req?.status || '').toLowerCase();
     const approvalsStarted = Boolean(req?.has_approval_activity);
-    const finalizedStatuses = ['approved', 'rejected', 'completed', 'received', 'cancelled'];
+    const finalizedStatuses = [
+      'approved',
+      'rejected',
+      'completed',
+      'received',
+      'cancelled',
+    ];
     return !approvalsStarted && !finalizedStatuses.includes(normalizedStatus);
   }, []);
 
@@ -431,7 +515,9 @@ const OpenRequestsPage = () => {
       brand: item.brand?.trim() || undefined,
       quantity: Number(item.quantity),
       unit_cost:
-        item.unit_cost === '' || item.unit_cost === null || item.unit_cost === undefined
+        item.unit_cost === '' ||
+        item.unit_cost === null ||
+        item.unit_cost === undefined
           ? null
           : Number(item.unit_cost),
       specs: item.specs?.trim() || undefined,
@@ -443,7 +529,10 @@ const OpenRequestsPage = () => {
     }
 
     const hasInvalidItem = sanitizedItems.some(
-      (item) => !item.item_name || !Number.isFinite(item.quantity) || item.quantity <= 0,
+      (item) =>
+        !item.item_name ||
+        !Number.isFinite(item.quantity) ||
+        item.quantity <= 0,
     );
 
     if (hasInvalidItem) {
@@ -463,7 +552,11 @@ const OpenRequestsPage = () => {
       setRequests((prev) =>
         prev.map((req) =>
           req.id === editingRequest.id
-            ? { ...req, justification: editForm.justification, updated_at: updatedAt }
+            ? {
+                ...req,
+                justification: editForm.justification,
+                updated_at: updatedAt,
+              }
             : req,
         ),
       );
@@ -483,7 +576,8 @@ const OpenRequestsPage = () => {
     } catch (err) {
       console.error('❌ Failed to update request:', err);
       const message =
-        err?.response?.data?.error || te('error', { defaultValue: 'Failed to update request.' });
+        err?.response?.data?.error ||
+        te('error', { defaultValue: 'Failed to update request.' });
       setEditError(message);
     } finally {
       setEditSubmitting(false);
@@ -508,7 +602,10 @@ const OpenRequestsPage = () => {
         req.status,
         req.assigned_user_name || tr('notAvailable'),
         formatDate(req.updated_at || req.created_at, normalizedLocale),
-        formatItemSpecsForExport(req.items || itemsMap[req.id] || [], tr('notAvailable')),
+        formatItemSpecsForExport(
+          req.items || itemsMap[req.id] || [],
+          tr('notAvailable'),
+        ),
       ]),
     ];
 
@@ -559,7 +656,9 @@ const OpenRequestsPage = () => {
       return;
     }
 
-    const targetIndex = sorted.findIndex((req) => String(req.id) === rawFocusId);
+    const targetIndex = sorted.findIndex(
+      (req) => String(req.id) === rawFocusId,
+    );
 
     if (targetIndex === -1) {
       setFocusedRequestId(null);
@@ -585,7 +684,7 @@ const OpenRequestsPage = () => {
 
     window.requestAnimationFrame(() => {
       const element = document.querySelector(
-        `[data-request-id="${targetRequest.id}"]`
+        `[data-request-id="${targetRequest.id}"]`,
       );
       if (element?.scrollIntoView) {
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -608,39 +707,62 @@ const OpenRequestsPage = () => {
         formatDate={(value) => formatDate(value, normalizedLocale)}
         labels={{
           ...Object.fromEntries(
-            ['id', 'type', 'project', 'status', 'assigned', 'submitted', 'updated'].map((key) => [
-              key,
-              tr(`table.${key}`),
-            ]),
+            [
+              'id',
+              'type',
+              'project',
+              'status',
+              'assigned',
+              'submitted',
+              'updated',
+            ].map((key) => [key, tr(`table.${key}`)]),
           ),
           printedAt: tr('printedAt'),
           notAvailable: tr('notAvailable'),
         }}
       />
-      <div className="max-w-6xl mx-auto p-6 space-y-6 print:hidden">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            {tr('title')}
-          </h1>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              disabled={sorted.length === 0}
-              className="inline-flex items-center justify-center rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 dark:bg-gray-900 dark:text-blue-300"
-            >
-              {tr('print')}
-            </button>
-            <button
-              type="button"
-              onClick={exportCSV}
-              disabled={sorted.length === 0}
-              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-            >
-              {tr('exportCSV')}
-            </button>
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 print:hidden sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-6 py-7 text-white shadow-xl sm:px-8">
+          <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl" />
+          <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
+          <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-blue-100">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                {tr('eyebrow', { defaultValue: 'Request center' })}
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                {tr('title')}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">
+                {tr('subtitle', {
+                  defaultValue:
+                    'Track progress, review approvals, and manage every request in one place.',
+                })}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                disabled={sorted.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Printer className="h-4 w-4" aria-hidden="true" />
+                {tr('print')}
+              </button>
+              <button
+                type="button"
+                onClick={exportCSV}
+                disabled={sorted.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                {tr('exportCSV')}
+              </button>
+            </div>
           </div>
-        </div>
+        </section>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {statusCards.map(({ key, label, count, isTotal }) => {
@@ -651,110 +773,191 @@ const OpenRequestsPage = () => {
                 type="button"
                 onClick={() => handleStatusCardClick(key)}
                 disabled={isTotal}
-                className={`group rounded-xl border p-4 text-start shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`group relative overflow-hidden rounded-2xl border p-5 text-start shadow-sm transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isTotal
-                    ? 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 cursor-default'
+                    ? 'cursor-default border-slate-200 bg-white dark:border-gray-700 dark:bg-gray-800'
                     : isActive
-                    ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30'
-                    : 'border-gray-200 bg-white hover:border-blue-400 dark:border-gray-700 dark:bg-gray-800'
+                      ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30'
+                      : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800'
                 } ${isTotal ? '' : 'disabled:cursor-not-allowed'}`}
               >
-                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  {label}
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                  {count}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                      {count}
+                    </p>
+                  </div>
+                  <span
+                    className={`rounded-xl p-2.5 ${isActive ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 dark:bg-gray-700 dark:text-gray-200'}`}
+                  >
+                    {key === 'total' && (
+                      <FileText className="h-5 w-5" aria-hidden="true" />
+                    )}
+                    {key === 'pending' && (
+                      <Clock3 className="h-5 w-5" aria-hidden="true" />
+                    )}
+                    {key === 'approved' && (
+                      <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+                    )}
+                    {key === 'completed' && (
+                      <CircleDashed className="h-5 w-5" aria-hidden="true" />
+                    )}
+                  </span>
+                </div>
+                {!isTotal && (
+                  <ChevronRight
+                    className="absolute bottom-4 right-4 h-4 w-4 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-blue-500"
+                    aria-hidden="true"
+                  />
+                )}
               </button>
             );
           })}
         </div>
 
-        <div className="flex flex-col gap-3 md:flex-row md:items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('searchLabel')}
-            </label>
-            <input
-              type="search"
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-              placeholder={tr('searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="rounded-lg bg-blue-50 p-2 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                <Filter className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {tr('filterTitle', { defaultValue: 'Find a request' })}
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {tr('filterHint', {
+                    defaultValue:
+                      'Refine the list using any combination of filters.',
+                  })}
+                </p>
+              </div>
+            </div>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 dark:text-blue-300 dark:hover:bg-blue-950/40"
+              >
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                {tr('filters.clear')} ({activeFilterCount})
+              </button>
+            )}
           </div>
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.fromDate')}
-            </label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-            />
-          </div>
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.toDate')}
-            </label>
-            <input
-              type="date"
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-            />
-          </div>
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.type')}
-            </label>
-            <select
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-              value={requestType}
-              onChange={(e) => setRequestType(e.target.value)}
-            >
-              <option value="all">{tr('filters.allTypes')}</option>
-              {uniqueTypes.map((type) => (
-                <option key={type} value={type.toLowerCase()}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.status')}
-            </label>
-            <select
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">{tr('filters.allStatuses')}</option>
-              {statusCards
-                .filter(({ isTotal }) => !isTotal)
-                .map(({ key, label }) => (
-                  <option key={key} value={key}>
-                    {label}
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-7 lg:items-end">
+            <div className="md:col-span-2 lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {tr('searchLabel')}
+              </label>
+              <div className="relative mt-1">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  placeholder={tr('searchPlaceholder')}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {tr('filters.fromDate')}
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {tr('filters.toDate')}
+              </label>
+              <input
+                type="date"
+                className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {tr('filters.type')}
+              </label>
+              <select
+                className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                value={requestType}
+                onChange={(e) => setRequestType(e.target.value)}
+              >
+                <option value="all">{tr('filters.allTypes')}</option>
+                {uniqueTypes.map((type) => (
+                  <option key={type} value={type.toLowerCase()}>
+                    {type}
                   </option>
                 ))}
-            </select>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {tr('filters.status')}
+              </label>
+              <select
+                className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">{tr('filters.allStatuses')}</option>
+                {statusCards
+                  .filter(({ isTotal }) => !isTotal)
+                  .map(({ key, label }) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {tr('filters.sort')}
+              </label>
+              <select
+                className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="newest">{tr('sort.newest')}</option>
+                <option value="oldest">{tr('sort.oldest')}</option>
+              </select>
+            </div>
           </div>
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.sort')}
-            </label>
-            <select
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-            >
-              <option value="newest">{tr('sort.newest')}</option>
-              <option value="oldest">{tr('sort.oldest')}</option>
-            </select>
+        </section>
+
+        {!loading && !error && (
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <p className="font-medium text-gray-700 dark:text-gray-200">
+              {tr('resultsCount', {
+                defaultValue: '{{count}} requests found',
+                count: sorted.length,
+              })}
+            </p>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                {tr('activeFilters', {
+                  defaultValue: '{{count}} active filters',
+                  count: activeFilterCount,
+                })}
+              </span>
+            )}
           </div>
-        </div>
+        )}
 
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-400 dark:bg-red-900/30 dark:text-red-200">
@@ -763,9 +966,36 @@ const OpenRequestsPage = () => {
         )}
 
         {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-300">{tr('loading')}</p>
+          <div className="space-y-3" aria-label={tr('loading')} role="status">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="h-20 animate-pulse rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 via-white to-slate-50 dark:border-gray-700 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800"
+              />
+            ))}
+            <span className="sr-only">{tr('loading')}</span>
+          </div>
         ) : sorted.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-300">{tr('emptyState')}</p>
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-12 text-center dark:border-gray-700 dark:bg-gray-800/50">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm dark:bg-gray-800 dark:text-gray-300">
+              <Inbox className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <h2 className="mt-4 font-semibold text-gray-900 dark:text-gray-100">
+              {tr('emptyTitle', { defaultValue: 'No requests found' })}
+            </h2>
+            <p className="mx-auto mt-1 max-w-md text-sm text-gray-500 dark:text-gray-300">
+              {tr('emptyState')}
+            </p>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                {tr('filters.clear')}
+              </button>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="hidden overflow-x-auto rounded-lg border border-gray-200 shadow-sm dark:border-gray-700 md:block">
@@ -813,19 +1043,29 @@ const OpenRequestsPage = () => {
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {paginated.map((req) => {
                     const normalizedStatus = (req.status || '').toLowerCase();
-                    const statusLabel = translate(`openRequests.statuses.${normalizedStatus}`, {
-                      defaultValue:
-                        normalizedStatus.length > 0
-                          ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
-                          : tr('notAvailable'),
-                    });
+                    const statusLabel = translate(
+                      `openRequests.statuses.${normalizedStatus}`,
+                      {
+                        defaultValue:
+                          normalizedStatus.length > 0
+                            ? normalizedStatus.charAt(0).toUpperCase() +
+                              normalizedStatus.slice(1)
+                            : tr('notAvailable'),
+                      },
+                    );
                     const attachments = attachmentsMap[req.id] || [];
-                    const attachmentsLoading = Boolean(attachmentLoadingMap[req.id]);
+                    const attachmentsLoading = Boolean(
+                      attachmentLoadingMap[req.id],
+                    );
                     const attachmentsError = attachmentErrorMap[req.id];
                     const attachmentsButtonLabel =
                       expandedAttachmentsId === req.id
-                        ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
-                        : tr('viewAttachments', { defaultValue: 'View Attachments' });
+                        ? tr('hideAttachments', {
+                            defaultValue: 'Hide Attachments',
+                          })
+                        : tr('viewAttachments', {
+                            defaultValue: 'View Attachments',
+                          });
 
                     const canEdit = canEditRequest(req);
 
@@ -853,7 +1093,7 @@ const OpenRequestsPage = () => {
                           <td className="px-4 py-3">
                             <span
                               className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${mapStatusColor(
-                                normalizedStatus
+                                normalizedStatus,
                               )}`}
                             >
                               {statusLabel}
@@ -879,15 +1119,17 @@ const OpenRequestsPage = () => {
                               >
                                 Workspace
                               </Link>
-                            <button
-                              type="button"
-                              onClick={() => openEditRequest(req)}
-                              disabled={!canEdit || loadingId === req.id}
-                              title={!canEdit ? te('lockedTooltip') : undefined}
-                              className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
-                            >
-                              {te('buttonLabel')}
-                            </button>
+                              <button
+                                type="button"
+                                onClick={() => openEditRequest(req)}
+                                disabled={!canEdit || loadingId === req.id}
+                                title={
+                                  !canEdit ? te('lockedTooltip') : undefined
+                                }
+                                className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                              >
+                                {te('buttonLabel')}
+                              </button>
                             </div>
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
@@ -907,7 +1149,9 @@ const OpenRequestsPage = () => {
                               disabled={loadingId === req.id}
                               className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                             >
-                              {expandedId === req.id ? tr('hideItems') : tr('showItems')}
+                              {expandedId === req.id
+                                ? tr('hideItems')
+                                : tr('showItems')}
                             </button>
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
@@ -923,35 +1167,59 @@ const OpenRequestsPage = () => {
                         </tr>
                         {expandedAttachmentsId === req.id && (
                           <tr>
-                            <td colSpan={12} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td
+                              colSpan={12}
+                              className="bg-gray-50 px-4 py-4 dark:bg-gray-800"
+                            >
                               <RequestAttachmentsSection
                                 attachments={attachments}
                                 isLoading={attachmentsLoading}
                                 error={attachmentsError}
                                 onDownload={handleDownloadAttachment}
-                                downloadingAttachmentId={downloadingAttachmentId}
-                                onRetry={() => loadAttachmentsForRequest(req.id, { force: true })}
-                                title={tr('attachmentsTitle', { defaultValue: 'Attachments' })}
-                                emptyMessage={tr('attachmentsEmpty', { defaultValue: 'No attachments uploaded.' })}
-                                loadingMessage={tr('attachmentsLoading', { defaultValue: 'Loading attachments…' })}
+                                downloadingAttachmentId={
+                                  downloadingAttachmentId
+                                }
+                                onRetry={() =>
+                                  loadAttachmentsForRequest(req.id, {
+                                    force: true,
+                                  })
+                                }
+                                title={tr('attachmentsTitle', {
+                                  defaultValue: 'Attachments',
+                                })}
+                                emptyMessage={tr('attachmentsEmpty', {
+                                  defaultValue: 'No attachments uploaded.',
+                                })}
+                                loadingMessage={tr('attachmentsLoading', {
+                                  defaultValue: 'Loading attachments…',
+                                })}
                               />
                             </td>
                           </tr>
                         )}
                         {expandedId === req.id && (
                           <tr>
-                            <td colSpan={12} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td
+                              colSpan={12}
+                              className="bg-gray-50 px-4 py-4 dark:bg-gray-800"
+                            >
                               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                                <h3 className="font-semibold">{tr('requestedItems')}</h3>
+                                <h3 className="font-semibold">
+                                  {tr('requestedItems')}
+                                </h3>
                                 {itemsMap[req.id]?.length > 1 && (
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      setAlphabetizedItemsId((prev) => (prev === req.id ? null : req.id))
+                                      setAlphabetizedItemsId((prev) =>
+                                        prev === req.id ? null : req.id,
+                                      )
                                     }
                                     className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                                   >
-                                    {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                                    {alphabetizedItemsId === req.id
+                                      ? 'Original order'
+                                      : 'Sort A-Z'}
                                   </button>
                                 )}
                               </div>
@@ -959,56 +1227,103 @@ const OpenRequestsPage = () => {
                                 <table className="w-full text-sm border">
                                   <thead>
                                     <tr className="bg-gray-100">
-                                      <th className="border p-1">{tr('item')}</th>
-                                      <th className="border p-1">{tr('brand')}</th>
-                                      <th className="border p-1">{tr('specs', { defaultValue: 'Specs' })}</th>
-                                      <th className="border p-1">{tr('qty')}</th>
-                                      <th className="border p-1">{tr('purchasedQty')}</th>
-                                      <th className="border p-1">{tr('itemStatus')}</th>
-                                      <th className="border p-1">{tr('unitCost')}</th>
-                                      <th className="border p-1">{tr('total')}</th>
+                                      <th className="border p-1">
+                                        {tr('item')}
+                                      </th>
+                                      <th className="border p-1">
+                                        {tr('brand')}
+                                      </th>
+                                      <th className="border p-1">
+                                        {tr('specs', { defaultValue: 'Specs' })}
+                                      </th>
+                                      <th className="border p-1">
+                                        {tr('qty')}
+                                      </th>
+                                      <th className="border p-1">
+                                        {tr('purchasedQty')}
+                                      </th>
+                                      <th className="border p-1">
+                                        {tr('itemStatus')}
+                                      </th>
+                                      <th className="border p-1">
+                                        {tr('unitCost')}
+                                      </th>
+                                      <th className="border p-1">
+                                        {tr('total')}
+                                      </th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {getDisplayItems(itemsMap[req.id], alphabetizedItemsId === req.id).map((item, idx) => {
+                                    {getDisplayItems(
+                                      itemsMap[req.id],
+                                      alphabetizedItemsId === req.id,
+                                    ).map((item, idx) => {
                                       const {
                                         statusKey,
                                         quantity: normalizedQuantity,
                                         purchasedQuantity,
                                       } = deriveItemPurchaseState(item);
                                       const statusLabel =
-                                        tr(`itemStatusLabels.${statusKey}`) ?? tr('itemStatusLabels.notPurchased');
+                                        tr(`itemStatusLabels.${statusKey}`) ??
+                                        tr('itemStatusLabels.notPurchased');
 
                                       return (
                                         <tr key={item.id ?? idx}>
-                                          <td className="border p-1">{item.item_name}</td>
-                                          <td className="border p-1">{item.brand || '—'}</td>
-                                          <td className="border p-1 whitespace-pre-wrap">{item.specs || '—'}</td>
-                                          <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0} {item.unit_of_measure || ''}</td>
-                                          <td className="border p-1">{purchasedQuantity ?? 0} {item.unit_of_measure || ''}</td>
-                                          <td className="border p-1">{statusLabel}</td>
-                                          <td className="border p-1">{item.unit_cost}</td>
-                                          <td className="border p-1">{item.total_cost}</td>
+                                          <td className="border p-1">
+                                            {item.item_name}
+                                          </td>
+                                          <td className="border p-1">
+                                            {item.brand || '—'}
+                                          </td>
+                                          <td className="border p-1 whitespace-pre-wrap">
+                                            {item.specs || '—'}
+                                          </td>
+                                          <td className="border p-1">
+                                            {normalizedQuantity ??
+                                              item.quantity ??
+                                              0}{' '}
+                                            {item.unit_of_measure || ''}
+                                          </td>
+                                          <td className="border p-1">
+                                            {purchasedQuantity ?? 0}{' '}
+                                            {item.unit_of_measure || ''}
+                                          </td>
+                                          <td className="border p-1">
+                                            {statusLabel}
+                                          </td>
+                                          <td className="border p-1">
+                                            {item.unit_cost}
+                                          </td>
+                                          <td className="border p-1">
+                                            {item.total_cost}
+                                          </td>
                                         </tr>
                                       );
                                     })}
                                   </tbody>
                                 </table>
                               ) : (
-                                <p className="text-sm text-gray-500">{tr('noItemsForRequest')}</p>
+                                <p className="text-sm text-gray-500">
+                                  {tr('noItemsForRequest')}
+                                </p>
                               )}
                             </td>
                           </tr>
                         )}
                         {expandedApprovalsId === req.id && (
                           <tr>
-                            <td colSpan={12} className="bg-gray-50 px-4 py-4 dark:bg-gray-800">
+                            <td
+                              colSpan={12}
+                              className="bg-gray-50 px-4 py-4 dark:bg-gray-800"
+                            >
                               <ApprovalTimeline
                                 approvals={approvalsMap[req.id]}
                                 isLoading={loadingApprovalsId === req.id}
                                 labels={timelineLabels}
                                 isUrgent={Boolean(req?.is_urgent)}
-                                formatDate={(value) => formatDate(value, normalizedLocale)}
+                                formatDate={(value) =>
+                                  formatDate(value, normalizedLocale)
+                                }
                               />
                             </td>
                           </tr>
@@ -1023,19 +1338,29 @@ const OpenRequestsPage = () => {
             <div className="space-y-3 md:hidden">
               {paginated.map((req) => {
                 const normalizedStatus = (req.status || '').toLowerCase();
-                const statusLabel = translate(`openRequests.statuses.${normalizedStatus}`, {
-                  defaultValue:
-                    normalizedStatus.length > 0
-                      ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
-                      : tr('notAvailable'),
-                });
+                const statusLabel = translate(
+                  `openRequests.statuses.${normalizedStatus}`,
+                  {
+                    defaultValue:
+                      normalizedStatus.length > 0
+                        ? normalizedStatus.charAt(0).toUpperCase() +
+                          normalizedStatus.slice(1)
+                        : tr('notAvailable'),
+                  },
+                );
                 const attachments = attachmentsMap[req.id] || [];
-                const attachmentsLoading = Boolean(attachmentLoadingMap[req.id]);
+                const attachmentsLoading = Boolean(
+                  attachmentLoadingMap[req.id],
+                );
                 const attachmentsError = attachmentErrorMap[req.id];
                 const attachmentsButtonLabel =
                   expandedAttachmentsId === req.id
-                    ? tr('hideAttachments', { defaultValue: 'Hide Attachments' })
-                    : tr('viewAttachments', { defaultValue: 'View Attachments' });
+                    ? tr('hideAttachments', {
+                        defaultValue: 'Hide Attachments',
+                      })
+                    : tr('viewAttachments', {
+                        defaultValue: 'View Attachments',
+                      });
 
                 const canEdit = canEditRequest(req);
 
@@ -1053,7 +1378,12 @@ const OpenRequestsPage = () => {
                   >
                     <header className="flex items-start justify-between gap-3">
                       <div>
-                        <Link to={`/requests/${req.id}`} className="mb-2 inline-flex rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white">Open Workspace</Link>
+                        <Link
+                          to={`/requests/${req.id}`}
+                          className="mb-2 inline-flex rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
+                        >
+                          Open Workspace
+                        </Link>
                         <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                           {tr('table.id')} #{req.id}
                         </p>
@@ -1061,12 +1391,13 @@ const OpenRequestsPage = () => {
                           {req.request_type || tr('notAvailable')}
                         </h2>
                         <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                          {tr('table.project')}: {req.project_name || tr('notAvailable')}
+                          {tr('table.project')}:{' '}
+                          {req.project_name || tr('notAvailable')}
                         </p>
                       </div>
                       <span
                         className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${mapStatusColor(
-                          normalizedStatus
+                          normalizedStatus,
                         )}`}
                       >
                         {statusLabel}
@@ -1076,17 +1407,25 @@ const OpenRequestsPage = () => {
                     <dl className="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-300">
                       {req.assigned_user_name && (
                         <div className="flex justify-between gap-3">
-                          <dt className="font-medium">{tr('table.assigned')}</dt>
-                          <dd className="text-right">{req.assigned_user_name}</dd>
+                          <dt className="font-medium">
+                            {tr('table.assigned')}
+                          </dt>
+                          <dd className="text-right">
+                            {req.assigned_user_name}
+                          </dd>
                         </div>
                       )}
                       <div className="flex justify-between gap-3">
                         <dt className="font-medium">{tr('table.submitted')}</dt>
-                        <dd className="text-right">{formatDate(req.created_at, normalizedLocale)}</dd>
+                        <dd className="text-right">
+                          {formatDate(req.created_at, normalizedLocale)}
+                        </dd>
                       </div>
                       <div className="flex justify-between gap-3">
                         <dt className="font-medium">{tr('table.updated')}</dt>
-                        <dd className="text-right">{formatDate(req.updated_at, normalizedLocale)}</dd>
+                        <dd className="text-right">
+                          {formatDate(req.updated_at, normalizedLocale)}
+                        </dd>
                       </div>
                       <div className="flex justify-between gap-3">
                         <dt className="font-medium">{tr('table.stage')}</dt>
@@ -1096,8 +1435,12 @@ const OpenRequestsPage = () => {
 
                     {req.justification && (
                       <div className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                        <p className="font-medium">{tr('table.justification')}</p>
-                        <p className="mt-1 whitespace-pre-line">{req.justification}</p>
+                        <p className="font-medium">
+                          {tr('table.justification')}
+                        </p>
+                        <p className="mt-1 whitespace-pre-line">
+                          {req.justification}
+                        </p>
                       </div>
                     )}
 
@@ -1117,7 +1460,9 @@ const OpenRequestsPage = () => {
                         disabled={loadingId === req.id}
                         className="ml-2 inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
-                        {expandedId === req.id ? tr('hideItems') : tr('showItems')}
+                        {expandedId === req.id
+                          ? tr('hideItems')
+                          : tr('showItems')}
                       </button>
                       <button
                         type="button"
@@ -1145,10 +1490,18 @@ const OpenRequestsPage = () => {
                           error={attachmentsError}
                           onDownload={handleDownloadAttachment}
                           downloadingAttachmentId={downloadingAttachmentId}
-                          onRetry={() => loadAttachmentsForRequest(req.id, { force: true })}
-                          title={tr('attachmentsTitle', { defaultValue: 'Attachments' })}
-                          emptyMessage={tr('attachmentsEmpty', { defaultValue: 'No attachments uploaded.' })}
-                          loadingMessage={tr('attachmentsLoading', { defaultValue: 'Loading attachments…' })}
+                          onRetry={() =>
+                            loadAttachmentsForRequest(req.id, { force: true })
+                          }
+                          title={tr('attachmentsTitle', {
+                            defaultValue: 'Attachments',
+                          })}
+                          emptyMessage={tr('attachmentsEmpty', {
+                            defaultValue: 'No attachments uploaded.',
+                          })}
+                          loadingMessage={tr('attachmentsLoading', {
+                            defaultValue: 'Loading attachments…',
+                          })}
                         />
                       </div>
                     )}
@@ -1156,16 +1509,22 @@ const OpenRequestsPage = () => {
                     {expandedId === req.id && (
                       <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                          <h3 className="font-semibold">{tr('requestedItems')}</h3>
+                          <h3 className="font-semibold">
+                            {tr('requestedItems')}
+                          </h3>
                           {itemsMap[req.id]?.length > 1 && (
                             <button
                               type="button"
                               onClick={() =>
-                                setAlphabetizedItemsId((prev) => (prev === req.id ? null : req.id))
+                                setAlphabetizedItemsId((prev) =>
+                                  prev === req.id ? null : req.id,
+                                )
                               }
                               className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                             >
-                              {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                              {alphabetizedItemsId === req.id
+                                ? 'Original order'
+                                : 'Sort A-Z'}
                             </button>
                           )}
                         </div>
@@ -1175,41 +1534,71 @@ const OpenRequestsPage = () => {
                               <tr className="bg-gray-100">
                                 <th className="border p-1">{tr('item')}</th>
                                 <th className="border p-1">{tr('brand')}</th>
-                                <th className="border p-1">{tr('specs', { defaultValue: 'Specs' })}</th>
+                                <th className="border p-1">
+                                  {tr('specs', { defaultValue: 'Specs' })}
+                                </th>
                                 <th className="border p-1">{tr('qty')}</th>
-                                <th className="border p-1">{tr('purchasedQty')}</th>
-                                <th className="border p-1">{tr('itemStatus')}</th>
+                                <th className="border p-1">
+                                  {tr('purchasedQty')}
+                                </th>
+                                <th className="border p-1">
+                                  {tr('itemStatus')}
+                                </th>
                                 <th className="border p-1">{tr('unitCost')}</th>
                                 <th className="border p-1">{tr('total')}</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {getDisplayItems(itemsMap[req.id], alphabetizedItemsId === req.id).map((item, idx) => {
+                              {getDisplayItems(
+                                itemsMap[req.id],
+                                alphabetizedItemsId === req.id,
+                              ).map((item, idx) => {
                                 const {
                                   statusKey,
                                   quantity: normalizedQuantity,
                                   purchasedQuantity,
                                 } = deriveItemPurchaseState(item);
                                 const statusLabel =
-                                  tr(`itemStatusLabels.${statusKey}`) ?? tr('itemStatusLabels.notPurchased');
+                                  tr(`itemStatusLabels.${statusKey}`) ??
+                                  tr('itemStatusLabels.notPurchased');
 
                                 return (
                                   <tr key={item.id ?? idx}>
-                                    <td className="border p-1">{item.item_name}</td>
-                                    <td className="border p-1">{item.brand || '—'}</td>
-                                    <td className="border p-1 whitespace-pre-wrap">{item.specs || '—'}</td>
-                                    <td className="border p-1">{normalizedQuantity ?? item.quantity ?? 0} {item.unit_of_measure || ''}</td>
-                                    <td className="border p-1">{purchasedQuantity ?? 0} {item.unit_of_measure || ''}</td>
-                                    <td className="border p-1">{statusLabel}</td>
-                                    <td className="border p-1">{item.unit_cost}</td>
-                                    <td className="border p-1">{item.total_cost}</td>
+                                    <td className="border p-1">
+                                      {item.item_name}
+                                    </td>
+                                    <td className="border p-1">
+                                      {item.brand || '—'}
+                                    </td>
+                                    <td className="border p-1 whitespace-pre-wrap">
+                                      {item.specs || '—'}
+                                    </td>
+                                    <td className="border p-1">
+                                      {normalizedQuantity ?? item.quantity ?? 0}{' '}
+                                      {item.unit_of_measure || ''}
+                                    </td>
+                                    <td className="border p-1">
+                                      {purchasedQuantity ?? 0}{' '}
+                                      {item.unit_of_measure || ''}
+                                    </td>
+                                    <td className="border p-1">
+                                      {statusLabel}
+                                    </td>
+                                    <td className="border p-1">
+                                      {item.unit_cost}
+                                    </td>
+                                    <td className="border p-1">
+                                      {item.total_cost}
+                                    </td>
                                   </tr>
                                 );
                               })}
                             </tbody>
                           </table>
                         ) : (
-                          <p className="text-sm text-gray-500">{tr('noItemsForRequest')}</p>
+                          <p className="text-sm text-gray-500">
+                            {tr('noItemsForRequest')}
+                          </p>
                         )}
                       </div>
                     )}
@@ -1220,7 +1609,9 @@ const OpenRequestsPage = () => {
                           isLoading={loadingApprovalsId === req.id}
                           labels={timelineLabels}
                           isUrgent={Boolean(req?.is_urgent)}
-                          formatDate={(value) => formatDate(value, normalizedLocale)}
+                          formatDate={(value) =>
+                            formatDate(value, normalizedLocale)
+                          }
                         />
                       </div>
                     )}
@@ -1234,7 +1625,10 @@ const OpenRequestsPage = () => {
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               className="border-t border-gray-200 pt-4 dark:border-gray-700 md:justify-between"
-              summary={translate('common.pageOf', { current: currentPage, total: totalPages })}
+              summary={translate('common.pageOf', {
+                current: currentPage,
+                total: totalPages,
+              })}
               previousLabel={translate('common.prev')}
               nextLabel={translate('common.next')}
             />
@@ -1248,7 +1642,8 @@ const OpenRequestsPage = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  {te('title')} {editingRequest?.id ? `#${editingRequest.id}` : ''}
+                  {te('title')}{' '}
+                  {editingRequest?.id ? `#${editingRequest.id}` : ''}
                 </h2>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
                   {te('subtitle')}
@@ -1279,7 +1674,12 @@ const OpenRequestsPage = () => {
                   className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                   rows={3}
                   value={editForm.justification}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, justification: e.target.value }))}
+                  onChange={(e) =>
+                    setEditForm((prev) => ({
+                      ...prev,
+                      justification: e.target.value,
+                    }))
+                  }
                   placeholder={te('justificationPlaceholder')}
                 />
               </div>
@@ -1312,7 +1712,13 @@ const OpenRequestsPage = () => {
                         <input
                           type="text"
                           value={item.item_name}
-                          onChange={(e) => handleEditItemChange(idx, 'item_name', e.target.value)}
+                          onChange={(e) =>
+                            handleEditItemChange(
+                              idx,
+                              'item_name',
+                              e.target.value,
+                            )
+                          }
                           className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                           required
                         />
@@ -1324,7 +1730,9 @@ const OpenRequestsPage = () => {
                         <input
                           type="text"
                           value={item.brand}
-                          onChange={(e) => handleEditItemChange(idx, 'brand', e.target.value)}
+                          onChange={(e) =>
+                            handleEditItemChange(idx, 'brand', e.target.value)
+                          }
                           className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                         />
                       </div>
@@ -1339,7 +1747,13 @@ const OpenRequestsPage = () => {
                           type="number"
                           min="1"
                           value={item.quantity}
-                          onChange={(e) => handleEditItemChange(idx, 'quantity', e.target.value)}
+                          onChange={(e) =>
+                            handleEditItemChange(
+                              idx,
+                              'quantity',
+                              e.target.value,
+                            )
+                          }
                           className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                           required
                         />
@@ -1353,7 +1767,13 @@ const OpenRequestsPage = () => {
                           min="0"
                           step="1"
                           value={item.unit_cost}
-                          onChange={(e) => handleEditItemChange(idx, 'unit_cost', e.target.value)}
+                          onChange={(e) =>
+                            handleEditItemChange(
+                              idx,
+                              'unit_cost',
+                              e.target.value,
+                            )
+                          }
                           className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                         />
                       </div>
@@ -1366,7 +1786,9 @@ const OpenRequestsPage = () => {
                       <textarea
                         rows={2}
                         value={item.specs}
-                        onChange={(e) => handleEditItemChange(idx, 'specs', e.target.value)}
+                        onChange={(e) =>
+                          handleEditItemChange(idx, 'specs', e.target.value)
+                        }
                         className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                         placeholder={te('specsPlaceholder')}
                       />
