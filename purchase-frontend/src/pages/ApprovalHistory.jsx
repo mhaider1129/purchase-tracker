@@ -7,6 +7,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import useCurrentUser from '../hooks/useCurrentUser';
 import useStatusCommunications from '../hooks/useStatusCommunications';
+import { Download, FileText, History, RotateCcw, Search } from 'lucide-react';
 
 const ApprovalHistory = () => {
   const { t } = useTranslation();
@@ -281,20 +282,26 @@ const ApprovalHistory = () => {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4">{t('approvalHistory.title')}</h1>
+      <div className="mx-auto max-w-7xl p-4 sm:p-6">
+        <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-lg sm:p-8">
+          <div className="pointer-events-none absolute -right-12 -top-20 h-52 w-52 rounded-full bg-indigo-500/20 blur-3xl" />
+          <div className="relative flex items-start gap-4">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/10"><History className="h-6 w-6 text-indigo-200" aria-hidden /></span>
+            <div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('approvalHistory.title')}</h1><p className="mt-1 text-sm text-slate-300">Review decisions, request context, and follow-up activity in one place.</p></div>
+          </div>
+        </div>
 
         {/* 🔍 Filters */}
-        <div className="flex flex-wrap gap-4 items-end mb-6">
+        <div className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex-1 min-w-[220px]">
             <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.search')}</label>
-            <input
+            <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden /><input
               type="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder={t('approvalHistory.filters.searchPlaceholder')}
-              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              className="w-full rounded-lg border py-2 pl-9 pr-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            /></div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.status')}</label>
@@ -347,9 +354,9 @@ const ApprovalHistory = () => {
 
           <button
             onClick={resetFilters}
-            className="px-4 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
-            Reset
+            <RotateCcw className="h-4 w-4" aria-hidden /> Reset
           </button>
         </div>
 
@@ -358,16 +365,16 @@ const ApprovalHistory = () => {
           <button
             onClick={downloadCSV}
             title="Export to CSV"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-emerald-700"
           >
-            Download CSV
+            <Download className="h-4 w-4" aria-hidden /> Download CSV
           </button>
           <button
             onClick={downloadPDF}
             title="Export to PDF"
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm hover:bg-slate-50"
           >
-            Download PDF
+            <FileText className="h-4 w-4 text-rose-600" aria-hidden /> Download PDF
           </button>
           <div className="ml-auto flex items-center text-sm text-gray-500">
             <span>
@@ -409,7 +416,7 @@ const ApprovalHistory = () => {
           <p>{t('approvalHistory.states.empty')}</p>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50 text-left uppercase tracking-wide text-xs text-gray-500">
                   <tr>

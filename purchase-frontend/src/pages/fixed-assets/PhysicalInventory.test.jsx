@@ -1,0 +1,5 @@
+import fs from'fs';import path from'path';
+const source=fs.readFileSync(path.join(__dirname,'PhysicalInventory.jsx'),'utf8');
+test('integrates create, counting, repeat-scan and discrepancy feedback',()=>{expect(source).toContain('Create inventory session');expect(source).toContain('Start counting & freeze snapshot');expect(source).toContain('ALREADY_SCANNED');expect(source).toContain('WRONG_LOCATION');expect(source).toContain('UNKNOWN_IDENTIFIER')});
+test('supports missing review, discovery and governed reconciliation actions',()=>{expect(source).toContain('Unregistered asset found');expect(source).toContain('Create Movement');expect(source).toContain('Acknowledge');expect(source).toContain('Dismiss');expect(source).toContain('Discrepancies')});
+test('permission gates mutations and completed sessions are read only',()=>{for(const permission of ['fixed-assets.inventory.create','fixed-assets.inventory.count','fixed-assets.inventory.review','fixed-assets.inventory.resolve'])expect(source).toContain(permission);expect(source).toContain("['COMPLETED','CANCELLED'].includes(s.status)")});

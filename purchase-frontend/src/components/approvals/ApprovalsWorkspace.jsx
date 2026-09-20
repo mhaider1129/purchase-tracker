@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { saveAs } from 'file-saver';
 import {
   Building2,
+  Clock3,
   ChevronDown,
   ChevronUp,
   Download,
@@ -827,12 +828,17 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
         </div>
       )}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6 text-white shadow-lg sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-slate-900">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
+              <Clock3 className="h-3.5 w-3.5" aria-hidden /> Live approval queue
+            </div>
+            <h1 className="text-3xl font-semibold tracking-tight text-white">
               {t('maintenanceHODApprovals.title')}
             </h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
               {t('maintenanceHODApprovals.subtitle')}
             </p>
           </div>
@@ -853,6 +859,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
               <Download className="mr-2 h-4 w-4" aria-hidden />
               {t('maintenanceHODApprovals.actions.export')}
             </Button>
+          </div>
           </div>
         </div>
 
@@ -903,7 +910,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
           </div>
         </div>
 
-        <div className="mt-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="flex flex-1 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
               <Search className="h-4 w-4 text-slate-500" aria-hidden />

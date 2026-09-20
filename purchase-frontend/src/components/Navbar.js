@@ -471,6 +471,8 @@ const Navbar = () => {
           createItem(canAccessFixedAssets, "Register Asset", "/fixed-assets/new", "text-cyan-700"),
           createItem(canAccessFixedAssets, "Movements", "/fixed-assets/movements", "text-cyan-700"),
           createItem(canAccessFixedAssets, "Physical Locations", "/fixed-assets/locations", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "Physical Inventory", "/fixed-assets/inventory", "text-cyan-700"),
+          createItem(canAccessFixedAssets, "Reconciliation", "/fixed-assets/reconciliation", "text-cyan-700"),
           createItem(canAccessFixedAssets, "RFID Events", "/fixed-assets/events", "text-cyan-700"),
           createItem(canAccessFixedAssets, "RFID Readers", "/fixed-assets/readers", "text-cyan-700"),
           createItem(canAccessFixedAssets, "RFID Portals", "/fixed-assets/portals", "text-cyan-700"),

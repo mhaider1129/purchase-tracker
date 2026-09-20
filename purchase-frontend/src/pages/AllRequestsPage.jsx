@@ -1678,10 +1678,10 @@ const AllRequestsPage = () => {
                 )}
 
                 {expandedItemsId === request.id && (
-                  <div className="mt-4 border-t pt-2">
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                       <div>
-                        <h3 className="font-semibold">Requested Items</h3>
+                        <h3 className="font-semibold text-slate-800">Requested Items</h3>
                         <p className="text-xs text-gray-500">
                           Sort items in this request view only; the saved request order is unchanged.
                         </p>
@@ -1741,9 +1741,9 @@ const AllRequestsPage = () => {
                         </tbody>
                       </table>
                   ) : (
-                    <p className="text-sm text-gray-500">No items found.</p>
+                    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No items found.</div>
                   )}
-                </div>
+                </section>
               )}
 
               {expandedApprovalsId === request.id && (

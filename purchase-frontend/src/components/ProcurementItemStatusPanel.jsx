@@ -610,7 +610,6 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
   // Retain legacy status-form helpers for backward compatibility while this page routes procurement updates through the shared register-procurement flow.
   void saving;
-  void setShowMoreDetails;
   void originalUnitCost;
   void savingsDriverOptions;
   void handleSave;
@@ -782,6 +781,16 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
           </div>
         </div>
 
+        <div className="mt-3" aria-label={`${formatNumber(purchasedQtyNumber)} of ${formatNumber(requestedQty)} procured`}>
+          <div className="mb-1 flex justify-between text-xs font-medium text-slate-500">
+            <span>{tr("itemPanel.progress", "Procurement progress")}</span>
+            <span>{requestedQty > 0 ? Math.min(100, Math.round((purchasedQtyNumber / requestedQty) * 100)) : 0}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${requestedQty > 0 ? Math.min(100, (purchasedQtyNumber / requestedQty) * 100) : 0}%` }} />
+          </div>
+        </div>
+
         <div className="mt-4 flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-slate-600">
             <span className="font-semibold text-slate-700">
@@ -811,6 +820,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
             >
               {tr("itemPanel.procurementHistory.open", "Procurement History")} ({procurementEventsCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMoreDetails((visible) => !visible)}
+              aria-expanded={showMoreDetails}
+              className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${showMoreDetails ? "border-blue-300 bg-blue-50 text-blue-700" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"}`}
+            >
+              {showMoreDetails ? tr("itemPanel.attachments.hide", "Hide attachments") : tr("itemPanel.attachments.show", "Attachments")} ({attachments.length})
             </button>
           </div>
         </div>
