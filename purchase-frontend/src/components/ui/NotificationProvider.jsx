@@ -216,7 +216,10 @@ export const NotificationProvider = ({
             pushToast({
               title: notification.title || "New notification",
               message: notification.message,
-              type: notification.metadata?.level || notification.metadata?.variant || "info",
+              type:
+                notification.metadata?.level ||
+                notification.metadata?.variant ||
+                "info",
             });
           });
         }
@@ -250,6 +253,30 @@ export const NotificationProvider = ({
         setInbox((prev) =>
           prev.filter((notification) => notification.id !== id),
         );
+        fetchNotifications({ silent: true });
+      }
+    },
+    [fetchNotifications],
+  );
+
+  const markNotificationsAsRead = useCallback(
+    async (ids) => {
+      const uniqueIds = [
+        ...new Set((Array.isArray(ids) ? ids : []).filter(Boolean)),
+      ];
+      if (uniqueIds.length === 0) {
+        return;
+      }
+
+      setInbox((prev) =>
+        prev.filter((notification) => !uniqueIds.includes(notification.id)),
+      );
+
+      try {
+        await axios.patch("/notifications/read-many", { ids: uniqueIds });
+      } catch (err) {
+        console.error("❌ Failed to mark related notifications as read:", err);
+      } finally {
         fetchNotifications({ silent: true });
       }
     },
@@ -331,7 +358,10 @@ export const NotificationProvider = ({
     window.addEventListener(API_ACTION_NOTIFICATION_EVENT, handleApiAction);
 
     return () => {
-      window.removeEventListener(API_ACTION_NOTIFICATION_EVENT, handleApiAction);
+      window.removeEventListener(
+        API_ACTION_NOTIFICATION_EVENT,
+        handleApiAction,
+      );
     };
   }, [pushToast]);
 
@@ -350,6 +380,7 @@ export const NotificationProvider = ({
     () => ({
       notifications: inbox,
       remove: markNotificationAsRead,
+      removeMany: markNotificationsAsRead,
       clearAll: markAllNotificationsAsRead,
       refresh: fetchNotifications,
       isLoading,
@@ -363,6 +394,7 @@ export const NotificationProvider = ({
       isLoading,
       error,
       markNotificationAsRead,
+      markNotificationsAsRead,
       markAllNotificationsAsRead,
       pushToast,
     ],

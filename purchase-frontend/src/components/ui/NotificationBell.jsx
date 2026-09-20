@@ -95,7 +95,9 @@ const formatTimestamp = (value) => {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   if (diffMs >= 0 && diffMs < 24 * 60 * 60 * 1000) {
-    const relative = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+    const relative = new Intl.RelativeTimeFormat(undefined, {
+      numeric: "auto",
+    });
     const diffMinutes = Math.round(diffMs / (60 * 1000));
 
     if (diffMinutes < 1) return "just now";
@@ -108,7 +110,7 @@ const formatTimestamp = (value) => {
   return date.toLocaleString();
 };
 
-const resolveNotificationDestination = (notification) => {
+export const resolveNotificationDestination = (notification) => {
   const metadata = notification?.metadata || {};
   const rawLink = notification?.link;
   const linkRequestId = (() => {
@@ -153,16 +155,19 @@ const resolveNotificationDestination = (notification) => {
     return withRequestFocus("/approvals");
   }
 
-  if (
-    action === "procurement_assignment" ||
-    action === "request_ready_for_assignment"
-  ) {
+  if (action === "procurement_assignment") {
+    if (requestId !== null && requestId !== undefined && requestId !== "") {
+      return { path: `/requests/${encodeURIComponent(requestId)}` };
+    }
+
+    return { path: "/assigned-requests" };
+  }
+
+  if (action === "request_ready_for_assignment") {
     return withRequestFocus("/open-requests");
   }
 
-  if (
-    action === "request_completed"
-  ) {
+  if (action === "request_completed") {
     return withRequestFocus("/closed-requests");
   }
 
@@ -199,11 +204,33 @@ const resolveNotificationDestination = (notification) => {
   return { external: true, url: rawLink };
 };
 
+export const getNotificationDestinationKey = (notification) => {
+  const destination = resolveNotificationDestination(notification);
+
+  if (destination?.path) {
+    return destination.path.split(/[?#]/, 1)[0].replace(/\/+$/, "") || "/";
+  }
+
+  if (destination?.external && destination.url) {
+    return `external:${destination.url}`;
+  }
+
+  return null;
+};
+
 const NotificationBell = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { notifications, remove, clearAll, refresh, isLoading, unreadCount, error } =
-    useNotificationContext();
+  const {
+    notifications,
+    remove,
+    removeMany,
+    clearAll,
+    refresh,
+    isLoading,
+    unreadCount,
+    error,
+  } = useNotificationContext();
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
@@ -274,9 +301,23 @@ const NotificationBell = () => {
         return;
       }
 
-      remove(notification.id);
-
       const destination = resolveNotificationDestination(notification);
+      const destinationKey = getNotificationDestinationKey(notification);
+      const relatedIds = destinationKey
+        ? notifications
+            .filter(
+              (candidate) =>
+                getNotificationDestinationKey(candidate) === destinationKey,
+            )
+            .map((candidate) => candidate.id)
+            .filter(Boolean)
+        : [notification.id].filter(Boolean);
+
+      if (relatedIds.length > 1) {
+        removeMany(relatedIds);
+      } else {
+        remove(notification.id);
+      }
 
       if (destination?.external && destination.url) {
         setIsOpen(false);
@@ -295,7 +336,7 @@ const NotificationBell = () => {
         navigate(notification.link);
       }
     },
-    [navigate, remove],
+    [navigate, notifications, remove, removeMany],
   );
 
   const handleDismiss = useCallback(
@@ -329,7 +370,9 @@ const NotificationBell = () => {
         <div
           ref={panelRef}
           className={`absolute z-[1001] mt-2 w-80 max-w-xs rounded-lg border border-gray-200 bg-white/95 p-3 shadow-xl backdrop-blur dark:border-gray-700 dark:bg-gray-900/95 ${
-            i18n.dir() === "rtl" ? "left-0 origin-top-left" : "right-0 origin-top-right"
+            i18n.dir() === "rtl"
+              ? "left-0 origin-top-left"
+              : "right-0 origin-top-right"
           }`}
           role="dialog"
           aria-label={t("navbar.notifications")}
@@ -361,7 +404,10 @@ const NotificationBell = () => {
 
           {!!error && !isLoading ? (
             <div className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-700 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-200">
-              {t("navbar.notificationsLoadFailed", "Could not refresh notifications.")}
+              {t(
+                "navbar.notificationsLoadFailed",
+                "Could not refresh notifications.",
+              )}
               <button
                 type="button"
                 onClick={() => refresh()}
