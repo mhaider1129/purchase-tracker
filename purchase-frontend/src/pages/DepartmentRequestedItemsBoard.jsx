@@ -6,6 +6,21 @@ import {
   previewDepartmentFollowUpMessage,
   saveDepartmentFollowUpNote,
 } from "../api/departmentRequestedItems";
+import ProcurementPageHeader from "../components/layout/ProcurementPageHeader";
+import {
+  AlertTriangle,
+  Building2,
+  ClipboardList,
+  Clock3,
+  Download,
+  FileSpreadsheet,
+  Filter,
+  MessageSquareText,
+  PackageOpen,
+  RefreshCw,
+  Search,
+  Send,
+} from "lucide-react";
 
 const emptyFilters = {
   department_id: "",
@@ -334,7 +349,7 @@ const DepartmentRequestedItemsBoard = () => {
   );
 
   const renderTable = (tableRows) => (
-    <div className="overflow-x-auto">
+    <div className="workspace-results overflow-x-auto border-0 shadow-none">
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
           <tr>
@@ -356,7 +371,7 @@ const DepartmentRequestedItemsBoard = () => {
               <td className="px-3 py-2">{renderStatus(row)}</td>
               <td className="px-3 py-2">{row.required_delivery_date || "—"}</td>
               <td className="px-3 py-2">{row.days_since_request}</td>
-              <td className="px-3 py-2"><div className="flex flex-wrap gap-2"><button onClick={() => navigate(`/requests/${row.request_id}`)} className="text-blue-600 hover:underline">Open Request</button><button onClick={() => setNoteModal({ open: true, itemIds: [row.item_id] })} className="text-emerald-700 hover:underline">Add Follow-Up</button><button onClick={() => generateMessage([row])} className="text-purple-700 hover:underline">Copy Message</button></div></td>
+              <td className="px-3 py-2"><div className="flex flex-wrap gap-1.5"><button onClick={() => navigate(`/requests/${row.request_id}`)} className="rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">Open Request</button><button onClick={() => setNoteModal({ open: true, itemIds: [row.item_id] })} className="rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Add Follow-Up</button><button onClick={() => generateMessage([row])} className="rounded-md bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100">Copy Message</button></div></td>
             </tr>
           ))}
         </tbody>
@@ -365,25 +380,50 @@ const DepartmentRequestedItemsBoard = () => {
   );
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4">
-      <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-700 p-6 text-white shadow">
-        <h1 className="text-2xl font-bold">Department Requested Items Board</h1>
-        <p className="mt-2 text-blue-100">Consolidated item-level visibility for SCM communication, department follow-up, and open demand monitoring.</p>
-      </div>
+    <div className="procurement-workspace mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <ProcurementPageHeader
+        title="Department Requested Items Board"
+        eyebrow="Demand coordination"
+        icon={ClipboardList}
+        description="Consolidated item-level visibility for SCM communication, department follow-up, and open demand monitoring."
+        actions={(
+          <button
+            type="button"
+            onClick={() => fetchRows(1)}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-60"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
+            {loading ? "Refreshing…" : "Refresh data"}
+          </button>
+        )}
+      />
 
-      <div className="grid gap-4 md:grid-cols-5">
-        {[['Open Items', summary.total_open_items], ['Departments With Open Requests', summary.total_departments], ['Overdue Items', summary.overdue_items], ['Emergency Items', summary.emergency_items], ['Partially Procured Items', summary.partially_procured_items]].map(([label, value]) => (
-          <div key={label} className="rounded-xl border bg-white p-4 shadow-sm"><div className="text-sm text-gray-500">{label}</div><div className="mt-2 text-2xl font-bold text-gray-900">{value ?? 0}</div></div>
+      <div className="workspace-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {[
+          { label: 'Open Items', value: summary.total_open_items, icon: PackageOpen, tone: 'bg-blue-50 text-blue-700' },
+          { label: 'Departments With Open Requests', value: summary.total_departments, icon: Building2, tone: 'bg-indigo-50 text-indigo-700' },
+          { label: 'Overdue Items', value: summary.overdue_items, icon: Clock3, tone: 'bg-amber-50 text-amber-700' },
+          { label: 'Emergency Items', value: summary.emergency_items, icon: AlertTriangle, tone: 'bg-red-50 text-red-700' },
+          { label: 'Partially Procured Items', value: summary.partially_procured_items, icon: ClipboardList, tone: 'bg-violet-50 text-violet-700' },
+        ].map(({ label, value, icon: Icon, tone }) => (
+          <div key={label} className="flex items-start justify-between gap-3">
+            <div><div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</div><div className="mt-2 text-3xl font-bold text-slate-900">{value ?? 0}</div></div>
+            <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${tone}`}><Icon className="h-5 w-5" aria-hidden="true" /></span>
+          </div>
         ))}
       </div>
 
-      <div className="rounded-xl border bg-white p-4 shadow-sm">
+      <section className="workspace-filter-panel">
+        <div className="mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-700"><Filter className="h-5 w-5" aria-hidden="true" /></span>
+          <div><h2 className="font-semibold text-slate-900">Find requested items</h2><p className="text-sm text-slate-500">Filter demand by ownership, workflow status, dates, or urgency.</p></div>
+        </div>
         <div className="grid gap-3 md:grid-cols-4">
           <select value={filters.department_id} onChange={(e) => updateFilter("department_id", e.target.value)} className="rounded border p-2"><option value="">All Departments</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
           <select value={filters.section_id} onChange={(e) => updateFilter("section_id", e.target.value)} className="rounded border p-2"><option value="">All Sections</option>{activeSections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
           <select value={filters.requester_id} onChange={(e) => updateFilter("requester_id", e.target.value)} className="rounded border p-2"><option value="">All Requesters</option>{requesters.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
-          <label className="sr-only" htmlFor="requested-items-search">Search requested items</label><input id="requested-items-search" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search items, requests, departments" className="rounded border p-2" />
-          <select value={filters.request_type} onChange={(e) => updateFilter("request_type", e.target.value)} className="rounded border p-2"><option value="">All Request Types</option>{requestTypes.map((v) => <option key={v}>{v}</option>)}</select>
+          <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" /><input aria-label="Search requested items" value={filters.search} onChange={(e) => updateFilter("search", e.target.value)} placeholder="Search items, requests, departments" className="w-full rounded border py-2 pl-9 pr-3" /></div>          <select value={filters.request_type} onChange={(e) => updateFilter("request_type", e.target.value)} className="rounded border p-2"><option value="">All Request Types</option>{requestTypes.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.approval_status} onChange={(e) => updateFilter("approval_status", e.target.value)} className="rounded border p-2"><option value="">Approval Status</option>{approvalStatuses.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.procurement_status} onChange={(e) => updateFilter("procurement_status", e.target.value)} className="rounded border p-2"><option value="">Procurement Status</option>{procurementStatuses.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.group_by} onChange={(e) => updateFilter("group_by", e.target.value)} className="rounded border p-2"><option value="department">Grouped by Department</option><option value="section">Grouped by Section</option><option value="none">Flat Table</option></select>
@@ -395,15 +435,15 @@ const DepartmentRequestedItemsBoard = () => {
           <label className="flex items-center gap-2"><input type="checkbox" checked={filters.overdue_only} onChange={(e) => updateFilter("overdue_only", e.target.checked)} /> Overdue Only</label>
           <label className="flex items-center gap-2"><input type="checkbox" checked={filters.include_completed} onChange={(e) => updateFilter("include_completed", e.target.checked)} /> Include Completed</label>
         </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button onClick={() => fetchRows(1)} className="rounded bg-blue-700 px-4 py-2 font-semibold text-white">Refresh</button>
-          <button onClick={() => generateMessage()} className="rounded bg-purple-700 px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={actionLoading || !rows.length}>{actionLoading ? "Working..." : "Generate Follow-Up Message"}</button>
-          <button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} className="rounded bg-emerald-700 px-4 py-2 font-semibold text-white" disabled={!selectedRows.length}>Add Follow-Up Note</button>
-          <button onClick={exportExcel} className="rounded border px-4 py-2 font-semibold text-gray-700" disabled={exporting}>{exporting ? "Exporting..." : "Export Excel (all results)"}</button>
-          <button onClick={exportCsv} className="rounded border px-4 py-2 font-semibold text-gray-700">Export CSV (current page)</button>
-          {hasActiveFilters && <button onClick={resetFilters} className="rounded border border-red-200 px-4 py-2 font-semibold text-red-700 hover:bg-red-50">Clear Filters</button>}
+        <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
+          <button onClick={() => generateMessage()} className="inline-flex items-center gap-2 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-violet-700"><MessageSquareText className="h-4 w-4" aria-hidden="true" />Generate Follow-Up</button>
+          <button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50" disabled={!selectedRows.length}><Send className="h-4 w-4" aria-hidden="true" />Add Follow-Up Note</button>
+          <div className="ml-auto flex flex-wrap gap-2">
+            <button onClick={exportExcel} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" disabled={exporting}><FileSpreadsheet className="h-4 w-4" aria-hidden="true" />{exporting ? "Exporting..." : "Excel · all results"}</button>
+            <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"><Download className="h-4 w-4" aria-hidden="true" />CSV · current page</button>
+          </div>
         </div>
-      </div>
+      </section>
 
       {error && <div className="rounded border border-red-200 bg-red-50 p-3 text-red-700">{error}</div>}
       {actionMessage && !error && <div role="status" className="flex items-center justify-between rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800"><span>{actionMessage}</span><button onClick={() => setActionMessage("")} aria-label="Dismiss notification" className="font-bold">×</button></div>}
@@ -412,12 +452,20 @@ const DepartmentRequestedItemsBoard = () => {
       {!loading && selectedRows.length > 0 && <div role="status" aria-label={`${selectedRows.length} item${selectedRows.length === 1 ? "" : "s"} selected`} className="sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 p-4 text-white shadow-lg"><div><span className="font-bold">{selectedRows.length}</span> item{selectedRows.length === 1 ? "" : "s"} selected{selectedDepartmentCount > 1 && <span className="ml-2 text-xs text-amber-300">Choose one department for follow-up actions</span>}</div><div className="flex flex-wrap gap-2"><button onClick={() => generateMessage(selectedRows)} className="rounded bg-purple-600 px-3 py-2 text-sm font-semibold">Prepare message</button><button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} disabled={selectedDepartmentCount > 1} title={selectedDepartmentCount > 1 ? "Follow-up notes must be scoped to one department" : ""} className="rounded bg-emerald-600 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Add note</button><button onClick={() => setSelectedItems(new Set())} className="rounded border border-slate-500 px-3 py-2 text-sm font-semibold">Clear selection</button></div></div>}
 
       {!loading && filters.group_by !== "none" && grouped.map((group, index) => (
-        <div key={`${group.department_id || group.section_id || index}`} className="rounded-xl border bg-white shadow-sm">
-          <button className="flex w-full items-center justify-between p-4 text-left" onClick={() => setExpanded((cur) => ({ ...cur, [index]: !cur[index] }))}>
-            <div><h2 className="text-lg font-bold text-gray-900">{group.department_name || group.section_name || group.requester_name || group.request_type_name || "Unassigned"}</h2><p className="text-sm text-gray-500">Open: {group.open_items_count} · Overdue: {group.overdue_count} · Emergency: {group.emergency_count} · Partial: {group.partially_procured_count || 0} · Last request: {group.last_request_date ? new Date(group.last_request_date).toLocaleDateString() : "—"}</p></div>
-            <span className="text-2xl">{expanded[index] ? "−" : "+"}</span>
+        <div key={`${group.department_id || group.section_id || index}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
+          <button className="flex w-full items-center justify-between gap-4 p-5 text-left hover:bg-slate-50" onClick={() => setExpanded((cur) => ({ ...cur, [index]: !cur[index] }))}>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">{group.department_name || group.section_name || group.requester_name}</h2>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold">
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-700">{group.open_items_count} open</span>
+                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">{group.overdue_count} overdue</span>
+                <span className="rounded-full bg-red-50 px-2.5 py-1 text-red-700">{group.emergency_count} emergency</span>
+                <span className="px-1 py-1 font-medium text-slate-500">Last request {group.last_request_date ? new Date(group.last_request_date).toLocaleDateString() : "—"}</span>
+              </div>
+            </div>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-xl font-medium text-slate-600">{expanded[index] ? "−" : "+"}</span>
           </button>
-          {expanded[index] && <div className="border-t">{renderTable(group.items || [])}</div>}
+          {expanded[index] && <div className="border-t border-slate-200">{renderTable(group.items || [])}</div>}
         </div>
       ))}
 
