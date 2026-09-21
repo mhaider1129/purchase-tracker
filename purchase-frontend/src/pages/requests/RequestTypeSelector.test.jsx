@@ -8,6 +8,7 @@ import { fetchCurrentUser } from '../../api/currentUser';
 jest.mock('../../api/currentUser');
 
 beforeEach(() => {
+  localStorage.clear();
   fetchCurrentUser.mockResolvedValue({
     data: {
       role: 'requester',
@@ -26,6 +27,27 @@ const renderSelector = () =>
       <RequestTypeSelector />
     </MemoryRouter>
   );
+
+test('saves frequently used workflows as persistent shortcuts', async () => {
+  const user = userEvent.setup();
+  renderSelector();
+
+  const saveButtons = await screen.findAllByRole('button', {
+    name: 'Save Non-Stock Request to shortcuts',
+  });
+  await user.click(saveButtons[0]);
+
+  expect(screen.getByRole('heading', { name: 'Saved workflows' })).toBeInTheDocument();
+  expect(localStorage.getItem('request-type-selector-favorites')).toBe(
+    JSON.stringify(['/requests/non-stock'])
+  );
+
+  const removeButtons = screen.getAllByRole('button', {
+    name: 'Remove Non-Stock Request from shortcuts',
+  });
+  await user.click(removeButtons[0]);
+  expect(screen.queryByRole('heading', { name: 'Saved workflows' })).not.toBeInTheDocument();
+});
 
 test('searches the available workflows by label and description', async () => {
   const user = userEvent.setup();

@@ -19,6 +19,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  Star,
   Stethoscope,
   Truck,
   Users,
@@ -29,7 +30,8 @@ import { fetchCurrentUser } from '../../api/currentUser';
 import { HelpTooltip } from '../../components/ui/HelpTooltip';
 
 const BASE_BUTTON_STYLE =
-  'block w-full py-2 px-4 rounded text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm';
+  'block w-full rounded-xl px-4 py-3 text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm';
+const FAVORITES_STORAGE_KEY = 'request-type-selector-favorites';
 const hasWarehouseAssignment = (value) => {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0;
@@ -295,6 +297,14 @@ const RequestTypeSelector = () => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeGroup, setActiveGroup] = useState('all');
+  const [favoritePaths, setFavoritePaths] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]');
+      return Array.isArray(saved) ? saved.filter((path) => typeof path === 'string') : [];
+    } catch {
+      return [];
+    }
+  });
 
   const fetchUserInfo = useCallback(async () => {
     setIsLoading(true);
@@ -408,6 +418,29 @@ const RequestTypeSelector = () => {
     return flattened.slice(0, 3);
   }, [visibleGroups]);
 
+  const favoriteActions = useMemo(() => {
+    const availableActions = visibleGroups.flatMap((group) => group.actions);
+    return favoritePaths
+      .map((path) => availableActions.find((action) => action.path === path))
+      .filter(Boolean);
+  }, [favoritePaths, visibleGroups]);
+
+  const toggleFavorite = (path) => {
+    setFavoritePaths((currentPaths) => {
+      const nextPaths = currentPaths.includes(path)
+        ? currentPaths.filter((favoritePath) => favoritePath !== path)
+        : [...currentPaths, path];
+
+      try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(nextPaths));
+      } catch {
+        // Keep favorites usable for the current session if storage is unavailable.
+      }
+
+      return nextPaths;
+    });
+  };
+
   const completeOnboardingForPath = useCallback((path) => {
     const creationPaths = [
       '/requests/stock',
@@ -451,19 +484,20 @@ const RequestTypeSelector = () => {
   const renderActionCard = (action, isFeatured = false) => {
     const Icon = action.icon;
     const description = action.descriptionKey ? t(action.descriptionKey) : '';
+    const isFavorite = favoritePaths.includes(action.path);
 
     return (
-      <button
-        key={action.path}
-        type="button"
-        onClick={() => {
-          completeOnboardingForPath(action.path);
-          handleNavigate(action.path);
-        }}
-        className={`${BASE_BUTTON_STYLE} ${action.buttonClassName} text-left transition-transform duration-150 hover:-translate-y-0.5`}
-        aria-label={t(action.ariaLabelKey)}
-      >
-        <div className="flex items-start gap-3">
+      <article key={action.path} className="relative h-full">
+        <button
+          type="button"
+          onClick={() => {
+            completeOnboardingForPath(action.path);
+            handleNavigate(action.path);
+          }}
+          className={`${BASE_BUTTON_STYLE} ${action.buttonClassName} h-full text-left transition-transform duration-150 hover:-translate-y-0.5`}
+          aria-label={t(action.ariaLabelKey)}
+        >
+          <div className="flex items-start gap-3 pr-8 rtl:pl-8 rtl:pr-0">
           {Icon && (
             <span
               className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white shadow-inner ${
@@ -486,8 +520,24 @@ const RequestTypeSelector = () => {
               <p className="mt-1 text-sm leading-snug text-white/90">{description}</p>
             )}
           </div>
-        </div>
-      </button>
+          </div>
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleFavorite(action.path)}
+          className={`absolute right-2 top-2 rounded-full p-2 transition focus:outline-none focus:ring-2 focus:ring-white/80 rtl:left-2 rtl:right-auto ${
+            isFavorite
+              ? 'bg-white text-amber-500 shadow-sm'
+              : 'bg-black/10 text-white/80 hover:bg-white/20 hover:text-white'
+          }`}
+          aria-label={tr(isFavorite ? 'favorites.remove' : 'favorites.add', {
+            name: t(action.labelKey),
+          })}
+          aria-pressed={isFavorite}
+        >
+          <Star className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} aria-hidden="true" />
+        </button>
+      </article>
     );
   };
 
@@ -621,6 +671,31 @@ const RequestTypeSelector = () => {
               </div>
               <div className="relative mt-4 grid gap-3 md:grid-cols-3">
                 {recommendedActions.map((action) => renderActionCard(action, true))}
+              </div>
+            </section>
+          )}
+
+          {!isLoading && !error && !hasActiveFilters && favoriteActions.length > 0 && (
+            <section
+              className="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm"
+              aria-labelledby="favorite-workflows-heading"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                  <Star className="h-5 w-5 fill-current" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                    {tr('favorites.eyebrow')}
+                  </p>
+                  <h2 id="favorite-workflows-heading" className="text-lg font-semibold text-gray-900">
+                    {tr('favorites.title')}
+                  </h2>
+                  <p className="text-sm text-gray-600">{tr('favorites.description')}</p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {favoriteActions.map((action) => renderActionCard(action))}
               </div>
             </section>
           )}
