@@ -1,109 +1,130 @@
 // src/pages/CompletedAssignedRequestsPage.jsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import axios from '../api/axios';
-import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
-import useRequestAttachments from '../hooks/useRequestAttachments';
-import { printRequest } from '../api/requests';
-import { getRequesterDisplay } from '../utils/requester';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import axios from "../api/axios";
+import RequestAttachmentsSection from "../components/RequestAttachmentsSection";
+import useRequestAttachments from "../hooks/useRequestAttachments";
+import { printRequest } from "../api/requests";
+import { getRequesterDisplay } from "../utils/requester";
+import { Archive, FileText, RotateCcw, Search, Settings2 } from "lucide-react";
 
 const PRINT_TRANSLATIONS = {
   en: {
-    purchaseSummary: 'Purchase Request Summary',
-    generatedOn: 'Generated on',
-    requestDetails: 'Request Details',
-    justification: 'Justification',
-    requestedItems: 'Requested Items',
-    specs: 'Specs:',
-    approval: 'Approval:',
-    approvalSeparator: ' – ',
-    noItems: 'No line items recorded.',
-    tableHeaders: ['#', 'Item', 'Brand', 'Qty', 'Purchased Qty', 'Unit Cost', 'Total Cost'],
-    grandTotal: 'Grand Total',
-    preparedBy: 'Prepared By',
-    reviewedBy: 'Reviewed By',
-    approvedBy: 'Approved By',
-    requestId: 'Request ID',
-    status: 'Status',
-    requestType: 'Request Type',
-    requestDomain: 'Request Domain',
-    createdOn: 'Created On',
-    neededBy: 'Needed By',
-    estimatedCost: 'Estimated Cost',
-    maintenanceRef: 'Maintenance Ref #',
-    project: 'Project',
-    department: 'Department',
-    section: 'Section',
-    requester: 'Requester',
-    assignedTo: 'Assigned To',
-    printCount: 'Print Count',
-    finalApproval: 'Final Approval',
-    approvedAt: 'Approved at',
-    finalApprover: 'Final approver',
-    printLanguage: 'Print Language',
-    english: 'English',
-    arabic: 'Arabic',
-    printSuccess: 'Request printed successfully (Print Count: {count})',
-    yes: 'Yes',
-    no: 'No',
-    printConfirm: 'Printing this request will increase its print count. Do you want to continue?',
+    purchaseSummary: "Purchase Request Summary",
+    generatedOn: "Generated on",
+    requestDetails: "Request Details",
+    justification: "Justification",
+    requestedItems: "Requested Items",
+    specs: "Specs:",
+    approval: "Approval:",
+    approvalSeparator: " – ",
+    noItems: "No line items recorded.",
+    tableHeaders: [
+      "#",
+      "Item",
+      "Brand",
+      "Qty",
+      "Purchased Qty",
+      "Unit Cost",
+      "Total Cost",
+    ],
+    grandTotal: "Grand Total",
+    preparedBy: "Prepared By",
+    reviewedBy: "Reviewed By",
+    approvedBy: "Approved By",
+    requestId: "Request ID",
+    status: "Status",
+    requestType: "Request Type",
+    requestDomain: "Request Domain",
+    createdOn: "Created On",
+    neededBy: "Needed By",
+    estimatedCost: "Estimated Cost",
+    maintenanceRef: "Maintenance Ref #",
+    project: "Project",
+    department: "Department",
+    section: "Section",
+    requester: "Requester",
+    assignedTo: "Assigned To",
+    printCount: "Print Count",
+    finalApproval: "Final Approval",
+    approvedAt: "Approved at",
+    finalApprover: "Final approver",
+    printLanguage: "Print Language",
+    english: "English",
+    arabic: "Arabic",
+    printSuccess: "Request printed successfully (Print Count: {count})",
+    yes: "Yes",
+    no: "No",
+    printConfirm:
+      "Printing this request will increase its print count. Do you want to continue?",
   },
   ar: {
-    purchaseSummary: 'ملخص طلب الشراء',
-    generatedOn: 'تم الإنشاء في',
-    requestDetails: 'تفاصيل الطلب',
-    justification: 'المبررات',
-    requestedItems: 'المواد المطلوبة',
-    specs: 'المواصفات:',
-    approval: 'الاعتماد:',
-    approvalSeparator: ' – ',
-    noItems: 'لا توجد بنود مسجلة.',
-    tableHeaders: ['#', 'المادة', 'العلامة التجارية', 'الكمية', 'الكمية المشتراة', 'تكلفة الوحدة', 'إجمالي التكلفة'],
-    grandTotal: 'الإجمالي',
-    preparedBy: 'أعدها',
-    reviewedBy: 'تمت مراجعتها من',
-    approvedBy: 'تم اعتمادها من',
-    requestId: 'رقم الطلب',
-    status: 'الحالة',
-    requestType: 'نوع الطلب',
-    requestDomain: 'مجال الطلب',
-    createdOn: 'تاريخ الإنشاء',
-    neededBy: 'مطلوب في',
-    estimatedCost: 'التكلفة التقديرية',
-    maintenanceRef: 'رقم مرجع الصيانة',
-    project: 'المشروع',
-    department: 'القسم',
-    section: 'الشعبة',
-    requester: 'مقدم الطلب',
-    assignedTo: 'مكلف إلى',
-    printCount: 'عدد الطباعة',
-    finalApproval: 'الموافقة النهائية',
-    approvedAt: 'وافق بتاريخ',
-    finalApprover: 'الموافق النهائي',
-    printLanguage: 'لغة الطباعة',
-    english: 'الإنجليزية',
-    arabic: 'العربية',
-    printSuccess: 'تم طباعة الطلب بنجاح (عدد الطباعة: {count})',
-    yes: 'نعم',
-    no: 'لا',
-    printConfirm: 'طباعة هذا الطلب ستزيد عداد الطباعة. هل تريد المتابعة؟',
+    purchaseSummary: "ملخص طلب الشراء",
+    generatedOn: "تم الإنشاء في",
+    requestDetails: "تفاصيل الطلب",
+    justification: "المبررات",
+    requestedItems: "المواد المطلوبة",
+    specs: "المواصفات:",
+    approval: "الاعتماد:",
+    approvalSeparator: " – ",
+    noItems: "لا توجد بنود مسجلة.",
+    tableHeaders: [
+      "#",
+      "المادة",
+      "العلامة التجارية",
+      "الكمية",
+      "الكمية المشتراة",
+      "تكلفة الوحدة",
+      "إجمالي التكلفة",
+    ],
+    grandTotal: "الإجمالي",
+    preparedBy: "أعدها",
+    reviewedBy: "تمت مراجعتها من",
+    approvedBy: "تم اعتمادها من",
+    requestId: "رقم الطلب",
+    status: "الحالة",
+    requestType: "نوع الطلب",
+    requestDomain: "مجال الطلب",
+    createdOn: "تاريخ الإنشاء",
+    neededBy: "مطلوب في",
+    estimatedCost: "التكلفة التقديرية",
+    maintenanceRef: "رقم مرجع الصيانة",
+    project: "المشروع",
+    department: "القسم",
+    section: "الشعبة",
+    requester: "مقدم الطلب",
+    assignedTo: "مكلف إلى",
+    printCount: "عدد الطباعة",
+    finalApproval: "الموافقة النهائية",
+    approvedAt: "وافق بتاريخ",
+    finalApprover: "الموافق النهائي",
+    printLanguage: "لغة الطباعة",
+    english: "الإنجليزية",
+    arabic: "العربية",
+    printSuccess: "تم طباعة الطلب بنجاح (عدد الطباعة: {count})",
+    yes: "نعم",
+    no: "لا",
+    printConfirm: "طباعة هذا الطلب ستزيد عداد الطباعة. هل تريد المتابعة؟",
   },
 };
 
 const CompletedAssignedRequestsPage = () => {
-  const PRINT_TEMPLATE_URL_STORAGE_KEY = 'print_template_background_url';
-  const PRINT_TEMPLATE_FILE_STORAGE_KEY = 'print_template_background_file';
+  const PRINT_TEMPLATE_URL_STORAGE_KEY = "print_template_background_url";
+  const PRINT_TEMPLATE_FILE_STORAGE_KEY = "print_template_background_file";
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
   const [itemsCache, setItemsCache] = useState({});
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [printLanguage, setPrintLanguage] = useState('ar');
-  const [printTemplateUrl, setPrintTemplateUrl] = useState(() => localStorage.getItem(PRINT_TEMPLATE_URL_STORAGE_KEY) || '');
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFilter, setDateFilter] = useState("all");
+  const [printLanguage, setPrintLanguage] = useState("ar");
+  const [showPrintSettings, setShowPrintSettings] = useState(false);
+  const [printTemplateUrl, setPrintTemplateUrl] = useState(
+    () => localStorage.getItem(PRINT_TEMPLATE_URL_STORAGE_KEY) || "",
+  );
   const [printTemplateFileData, setPrintTemplateFileData] = useState(
-    () => localStorage.getItem(PRINT_TEMPLATE_FILE_STORAGE_KEY) || '',
+    () => localStorage.getItem(PRINT_TEMPLATE_FILE_STORAGE_KEY) || "",
   );
 
   const {
@@ -120,23 +141,29 @@ const CompletedAssignedRequestsPage = () => {
     setLoading(true);
     try {
       resetAttachments();
-      const res = await axios.get('/requests/completed-assigned', {
+      const res = await axios.get("/requests/completed-assigned", {
         params: { search },
       });
       setRequests(res.data.data || []);
     } catch (err) {
-      console.error('❌ Failed to fetch completed requests:', err);
-      alert('Error loading completed requests.');
+      console.error("❌ Failed to fetch completed requests:", err);
+      alert("Error loading completed requests.");
     } finally {
       setLoading(false);
     }
   }, [resetAttachments, search]);
 
   useEffect(() => {
-    localStorage.setItem(PRINT_TEMPLATE_URL_STORAGE_KEY, printTemplateUrl.trim());
+    localStorage.setItem(
+      PRINT_TEMPLATE_URL_STORAGE_KEY,
+      printTemplateUrl.trim(),
+    );
   }, [printTemplateUrl]);
   useEffect(() => {
-    localStorage.setItem(PRINT_TEMPLATE_FILE_STORAGE_KEY, printTemplateFileData);
+    localStorage.setItem(
+      PRINT_TEMPLATE_FILE_STORAGE_KEY,
+      printTemplateFileData,
+    );
   }, [printTemplateFileData]);
 
   const toggleItems = async (requestId) => {
@@ -153,8 +180,11 @@ const CompletedAssignedRequestsPage = () => {
         const res = await axios.get(`/requests/${requestId}/items`);
         setItemsCache((prev) => ({ ...prev, [requestId]: res.data.items }));
       } catch (err) {
-        console.error(`❌ Failed to fetch items for request ${requestId}:`, err);
-        alert('Error loading request items.');
+        console.error(
+          `❌ Failed to fetch items for request ${requestId}:`,
+          err,
+        );
+        alert("Error loading request items.");
         return;
       }
     }
@@ -190,11 +220,11 @@ const CompletedAssignedRequestsPage = () => {
     const now = new Date();
 
     return requests.filter((req) => {
-      if (typeFilter !== 'all' && req.request_type !== typeFilter) {
+      if (typeFilter !== "all" && req.request_type !== typeFilter) {
         return false;
       }
 
-      if (dateFilter !== 'all') {
+      if (dateFilter !== "all") {
         const completedAt = new Date(req.completed_at);
         if (Number.isNaN(completedAt.getTime())) {
           return false;
@@ -202,15 +232,15 @@ const CompletedAssignedRequestsPage = () => {
 
         const diffInDays = (now - completedAt) / (1000 * 60 * 60 * 24);
 
-        if (dateFilter === '7' && diffInDays > 7) {
+        if (dateFilter === "7" && diffInDays > 7) {
           return false;
         }
 
-        if (dateFilter === '30' && diffInDays > 30) {
+        if (dateFilter === "30" && diffInDays > 30) {
           return false;
         }
 
-        if (dateFilter === '90' && diffInDays > 90) {
+        if (dateFilter === "90" && diffInDays > 90) {
           return false;
         }
       }
@@ -219,9 +249,13 @@ const CompletedAssignedRequestsPage = () => {
     });
   }, [requests, typeFilter, dateFilter]);
 
+  const hasActiveFilters = Boolean(
+    search || typeFilter !== "all" || dateFilter !== "all",
+  );
+
   const typeBreakdown = useMemo(() => {
     return filteredRequests.reduce((acc, req) => {
-      const type = req.request_type || 'Other';
+      const type = req.request_type || "Other";
       acc[type] = (acc[type] || 0) + 1;
       return acc;
     }, {});
@@ -230,79 +264,89 @@ const CompletedAssignedRequestsPage = () => {
   const formatDateTime = (value) => {
     const date = value ? new Date(value) : null;
     if (!date || Number.isNaN(date.getTime())) {
-      return '—';
+      return "—";
     }
 
     return new Intl.DateTimeFormat(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
 
   const handleResetFilters = () => {
-    setSearch('');
-    setTypeFilter('all');
-    setDateFilter('all');
+    setSearch("");
+    setTypeFilter("all");
+    setDateFilter("all");
   };
 
   const handleTemplateFileChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
-      alert('Template file is too large. Please use a file under 10MB.');
+      alert("Template file is too large. Please use a file under 10MB.");
       return;
     }
-    if (!file.type.startsWith('image/')) {
-      alert('Word files are not supported directly. Please export your Word template as PNG/JPG first.');
+    if (!file.type.startsWith("image/")) {
+      alert(
+        "Word files are not supported directly. Please export your Word template as PNG/JPG first.",
+      );
       return;
     }
     const reader = new FileReader();
-    reader.onload = () => setPrintTemplateFileData(typeof reader.result === 'string' ? reader.result : '');
+    reader.onload = () =>
+      setPrintTemplateFileData(
+        typeof reader.result === "string" ? reader.result : "",
+      );
     reader.readAsDataURL(file);
   };
 
   const handlePrint = async (requestId) => {
     const translate = (key) =>
-      PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
+      PRINT_TRANSLATIONS[printLanguage]?.[key] ||
+      PRINT_TRANSLATIONS.en[key] ||
+      key;
 
-    const shouldPrint = window.confirm(translate('printConfirm'));
+    const shouldPrint = window.confirm(translate("printConfirm"));
     if (!shouldPrint) return;
 
     try {
       const data = await printRequest(requestId, { language: printLanguage });
       const { request, items, message, print_count } = data;
 
-      const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
-      const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';
-      const win = window.open('', '_blank');
+      const locale = printLanguage === "ar" ? "ar-EG" : "en-US";
+      const direction = printLanguage === "ar" ? "rtl" : "ltr";
+      const win = window.open("", "_blank");
       if (!win) {
-        alert('Please enable popups to print the request.');
+        alert("Please enable popups to print the request.");
         return;
       }
 
       const escapeHtml = (unsafe) => {
-        if (unsafe === null || unsafe === undefined) return '';
+        if (unsafe === null || unsafe === undefined) return "";
         return String(unsafe)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       };
 
       const formatValue = (value) => {
-        if (value === null || value === undefined || value === '') return '—';
-        if (typeof value === 'boolean') return value ? translate('yes') : translate('no');
+        if (value === null || value === undefined || value === "") return "—";
+        if (typeof value === "boolean")
+          return value ? translate("yes") : translate("no");
         return escapeHtml(value);
       };
 
       const formatDate = (value) => {
-        if (!value) return '—';
+        if (!value) return "—";
         const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString(locale));
+        return Number.isNaN(date.getTime())
+          ? "—"
+          : escapeHtml(date.toLocaleString(locale));
       };
 
       const formatAmount = (value) => {
@@ -312,40 +356,49 @@ const CompletedAssignedRequestsPage = () => {
           numeric.toLocaleString(locale, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })
+          }),
         );
       };
 
       const formatFinalApprovalSummary = (name, dateValue) => {
         const formattedDate = formatDate(dateValue);
-        if (formattedDate === '—') return formattedDate;
-        return `${name || translate('finalApprover')} ${translate('approvedAt')} ${formattedDate}`;
+        if (formattedDate === "—") return formattedDate;
+        return `${name || translate("finalApprover")} ${translate("approvedAt")} ${formattedDate}`;
       };
 
       const now = escapeHtml(new Date().toLocaleString(locale));
       const requesterName = request.requester_name
-        ? `${request.requester_name}${request.requester_role ? ` (${request.requester_role})` : ''}`
+        ? `${request.requester_name}${request.requester_role ? ` (${request.requester_role})` : ""}`
         : request.temporary_requester_name;
 
       const finalApproval = request.final_approval?.approved_at
-        ? formatFinalApprovalSummary(request.final_approval.approver_name, request.final_approval.approved_at)
+        ? formatFinalApprovalSummary(
+            request.final_approval.approver_name,
+            request.final_approval.approved_at,
+          )
         : null;
 
       const detailFields = [
-        { label: translate('requestId'), value: request.id },
-        { label: translate('status'), value: request.status },
-        { label: translate('createdOn'), value: formatDate(request.created_at) },
-        { label: translate('neededBy'), value: formatDate(request.needed_by) },
-        { label: translate('maintenanceRef'), value: request.maintenance_ref_number },
-        { label: translate('project'), value: request.project_name },
-        { label: translate('department'), value: request.department_name },
-        { label: translate('section'), value: request.section_name },
-        { label: translate('requester'), value: requesterName },
-        { label: translate('printCount'), value: print_count },
-        { label: translate('finalApproval'), value: finalApproval },
+        { label: translate("requestId"), value: request.id },
+        { label: translate("status"), value: request.status },
+        {
+          label: translate("createdOn"),
+          value: formatDate(request.created_at),
+        },
+        { label: translate("neededBy"), value: formatDate(request.needed_by) },
+        {
+          label: translate("maintenanceRef"),
+          value: request.maintenance_ref_number,
+        },
+        { label: translate("project"), value: request.project_name },
+        { label: translate("department"), value: request.department_name },
+        { label: translate("section"), value: request.section_name },
+        { label: translate("requester"), value: requesterName },
+        { label: translate("printCount"), value: print_count },
+        { label: translate("finalApproval"), value: finalApproval },
       ]
         .map(({ label, value }) => ({ label, value: formatValue(value) }))
-        .filter(({ value }) => value && value !== '—');
+        .filter(({ value }) => value && value !== "—");
 
       const detailGrid = detailFields
         .map(
@@ -353,9 +406,9 @@ const CompletedAssignedRequestsPage = () => {
             <div class="detail-item">
               <span class="detail-label">${escapeHtml(label)}</span>
               <span class="detail-value">${value}</span>
-            </div>`
+            </div>`,
         )
-        .join('');
+        .join("");
 
       const totalCost = items.reduce((sum, item) => {
         const value = Number(item.total_cost);
@@ -365,23 +418,23 @@ const CompletedAssignedRequestsPage = () => {
       const itemRows = items
         .map((item, index) => {
           const specsNote = item.specs
-            ? `<div class="item-note"><strong>${translate('specs')}</strong> ${formatValue(item.specs)}</div>`
-            : '';
+            ? `<div class="item-note"><strong>${translate("specs")}</strong> ${formatValue(item.specs)}</div>`
+            : "";
           const approvalNote =
             item.approval_status || item.approval_comments
-              ? `<div class="item-note"><strong>${translate('approval')}</strong> ${formatValue(item.approval_status)}${
+              ? `<div class="item-note"><strong>${translate("approval")}</strong> ${formatValue(item.approval_status)}${
                   item.approval_comments
-                    ? `${translate('approvalSeparator')}${formatValue(item.approval_comments)}`
-                    : ''
+                    ? `${translate("approvalSeparator")}${formatValue(item.approval_comments)}`
+                    : ""
                 }</div>`
-              : '';
+              : "";
 
           return `
             <tr>
               <td>${index + 1}</td>
               <td>
                 <div class="item-name">${formatValue(item.item_name)}</div>
-                ${specsNote || approvalNote ? `<div class="item-notes">${specsNote}${approvalNote}</div>` : ''}
+                ${specsNote || approvalNote ? `<div class="item-notes">${specsNote}${approvalNote}</div>` : ""}
               </td>
               <td>${formatValue(item.brand)}</td>
               <td class="numeric">${formatValue(item.quantity)}</td>
@@ -390,15 +443,16 @@ const CompletedAssignedRequestsPage = () => {
               <td class="numeric">${formatAmount(item.total_cost)}</td>
             </tr>`;
         })
-        .join('');
+        .join("");
 
       const justification = request.justification
         ? `<section class="section">
-            <h2>${translate('justification')}</h2>
-            <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
+            <h2>${translate("justification")}</h2>
+            <p>${escapeHtml(request.justification).replace(/\n/g, "<br />")}</p>
           </section>`
-        : '';
-      const templateBackground = printTemplateFileData || printTemplateUrl.trim();
+        : "";
+      const templateBackground =
+        printTemplateFileData || printTemplateUrl.trim();
       const templateCss = templateBackground
         ? `
               body::before {
@@ -411,7 +465,7 @@ const CompletedAssignedRequestsPage = () => {
                 z-index: 0;
               }
               .page { position: relative; z-index: 1; }`
-        : '';
+        : "";
 
       const body = `
         <!DOCTYPE html>
@@ -419,7 +473,7 @@ const CompletedAssignedRequestsPage = () => {
           <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>${translate('requestId')} ${escapeHtml(request.id)}</title>
+            <title>${translate("requestId")} ${escapeHtml(request.id)}</title>
             <style>
               :root {
                 color-scheme: light;
@@ -606,14 +660,14 @@ const CompletedAssignedRequestsPage = () => {
             <div class="page">
               <header>
                 <div>
-                  <h1>${translate('purchaseSummary')}</h1>
-                  <p>${translate('generatedOn')} ${now}</p>
+                  <h1>${translate("purchaseSummary")}</h1>
+                  <p>${translate("generatedOn")} ${now}</p>
                 </div>
-                <span class="print-badge">${translate('printCount')}: ${formatValue(print_count)}</span>
+                <span class="print-badge">${translate("printCount")}: ${formatValue(print_count)}</span>
               </header>
 
               <section class="section">
-                <h2>${translate('requestDetails')}</h2>
+                <h2>${translate("requestDetails")}</h2>
                 <div class="details-grid">
                   ${detailGrid}
                 </div>
@@ -622,22 +676,22 @@ const CompletedAssignedRequestsPage = () => {
               ${justification}
 
               <section class="section">
-                <h2>${translate('requestedItems')}</h2>
+                <h2>${translate("requestedItems")}</h2>
                 <table class="items-table">
                   <thead>
                     <tr>
                       ${PRINT_TRANSLATIONS[printLanguage].tableHeaders
                         .map((header) => `<th>${escapeHtml(header)}</th>`)
-                        .join('')}
+                        .join("")}
                     </tr>
                   </thead>
                   <tbody>
                     ${
                       itemRows ||
-                      `<tr><td colspan="7" style="text-align:center; padding: 24px;">${translate('noItems')}</td></tr>`
+                      `<tr><td colspan="7" style="text-align:center; padding: 24px;">${translate("noItems")}</td></tr>`
                     }
                     <tr class="totals-row">
-                      <td colspan="6">${translate('grandTotal')}</td>
+                      <td colspan="6">${translate("grandTotal")}</td>
                       <td class="numeric">${formatAmount(totalCost)}</td>
                     </tr>
                   </tbody>
@@ -645,13 +699,13 @@ const CompletedAssignedRequestsPage = () => {
               </section>
 
               <section class="signature-blocks">
-                <div class="signature">${translate('preparedBy')}</div>
-                <div class="signature">${translate('reviewedBy')}</div>
-                <div class="signature">${translate('approvedBy')}</div>
+                <div class="signature">${translate("preparedBy")}</div>
+                <div class="signature">${translate("reviewedBy")}</div>
+                <div class="signature">${translate("approvedBy")}</div>
               </section>
 
               <footer>
-                ${translate('requestId')} ${escapeHtml(request.id)} • ${now}
+                ${translate("requestId")} ${escapeHtml(request.id)} • ${now}
               </footer>
             </div>
           </body>
@@ -665,15 +719,14 @@ const CompletedAssignedRequestsPage = () => {
         win.print();
       };
 
-      const successMessage = (PRINT_TRANSLATIONS[printLanguage]?.printSuccess || '').replace(
-        '{count}',
-        formatValue(print_count)
-      );
+      const successMessage = (
+        PRINT_TRANSLATIONS[printLanguage]?.printSuccess || ""
+      ).replace("{count}", formatValue(print_count));
 
       alert(successMessage || message);
     } catch (err) {
-      console.error('❌ Failed to print request:', err);
-      alert('❌ Failed to print request.');
+      console.error("❌ Failed to print request:", err);
+      alert("❌ Failed to print request.");
     }
   };
 
@@ -693,40 +746,59 @@ const CompletedAssignedRequestsPage = () => {
   );
 
   return (
-    <>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">My Completed Requests</h1>
-            <p className="text-sm text-gray-600">
-              Review the purchases you have completed, apply quick filters, and dive into the
-              fulfillment details for each request.
+    <div className="min-h-screen bg-slate-50/70 dark:bg-gray-950">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-6 text-white shadow-lg sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-50">
+                <Archive size={14} aria-hidden="true" /> Request archive
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                My Completed Requests
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-blue-100 sm:text-base">
+                Review completed purchases, quickly find a request, and inspect
+                its fulfillment details.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-center backdrop-blur-sm">
+              <p className="text-3xl font-bold">{filteredRequests.length}</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-blue-100">
+                Showing now
+              </p>
+            </div>
+          </div>
+        </header>
+        <section className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <p className="flex items-center gap-2 text-xs uppercase tracking-wide text-gray-500">
+              <FileText size={15} /> Completed
+            </p>
+            <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
+              {requests.length}
+            </p>
+            <p className="mt-1 text-sm text-gray-500">
+              Total requests in your archive.
             </p>
           </div>
-        </div>
-
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Completed</p>
-            <p className="mt-2 text-2xl font-semibold text-gray-900">{filteredRequests.length}</p>
-            <p className="text-sm text-gray-500 mt-1">
-              Requests that match your current filters.
+          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:col-span-2">
+            <p className="text-xs uppercase tracking-wide text-gray-500">
+              Breakdown by request type
             </p>
-          </div>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:col-span-2">
-            <p className="text-xs uppercase tracking-wide text-gray-500">Breakdown by request type</p>
             {Object.keys(typeBreakdown).length === 0 ? (
-              <p className="text-sm text-gray-500 mt-2">No data available for the selected filters.</p>
+              <p className="mt-2 text-sm text-gray-500">
+                No data available for the selected filters.
+              </p>
             ) : (
-              <ul className="flex flex-wrap gap-2 mt-3">
+              <ul className="mt-3 flex flex-wrap gap-2">
                 {Object.entries(typeBreakdown).map(([type, count]) => (
                   <li
                     key={type}
-                    className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm text-blue-700"
+                    className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-sm text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200"
                   >
                     <span className="font-medium">{type}</span>
-                    <span className="text-xs rounded-full border border-blue-200 bg-white px-2 py-0.5">
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs dark:bg-blue-900">
                       {count}
                     </span>
                   </li>
@@ -735,109 +807,147 @@ const CompletedAssignedRequestsPage = () => {
             )}
           </div>
         </section>
-
-        <section className="flex flex-col gap-3 md:flex-row md:items-end">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700">Search</label>
-            <input
-              type="search"
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Search by requester, justification, or ID"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700">Request type</label>
-            <select
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="all">All types</option>
-              {requestTypeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:min-w-80">
-            <label className="block text-sm font-medium text-gray-700">Template File</label>
-            <div className="mt-1 flex items-center gap-2">
-              <input
-                type="file"
-                accept="image/*,.heic,.heif"
-                className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                onChange={handleTemplateFileChange}
-              />
-              {printTemplateFileData ? (
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-5">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label
+                className="block text-sm font-medium text-gray-700 dark:text-gray-200"
+                htmlFor="completed-search"
+              >
+                Search
+              </label>
+              <div className="relative mt-1">
+                <Search
+                  size={17}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  id="completed-search"
+                  type="search"
+                  className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800"
+                  placeholder="Requester, justification, or ID"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Request type
+              </label>
+              <select
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="all">All types</option>
+                {requestTypeOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                Completion date
+              </label>
+              <select
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+              >
+                <option value="all">Any time</option>
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </div>
+            <div className="flex items-end gap-2">
+              <button
+                type="button"
+                className="inline-flex h-[42px] flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                onClick={() => setShowPrintSettings((value) => !value)}
+                aria-expanded={showPrintSettings}
+              >
+                <Settings2 size={17} /> Print settings
+              </button>
+              {hasActiveFilters && (
                 <button
                   type="button"
-                  className="inline-flex h-9 items-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  onClick={() => setPrintTemplateFileData('')}
+                  className="inline-flex h-[42px] items-center justify-center rounded-lg border border-gray-300 px-3 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
+                  onClick={handleResetFilters}
+                  aria-label="Reset filters"
+                  title="Reset filters"
                 >
-                  Clear
+                  <RotateCcw size={17} />
                 </button>
-              ) : null}
+              )}
             </div>
           </div>
-          <div className="md:min-w-80">
-            <label className="block text-sm font-medium text-gray-700">Print Template URL</label>
-            <input
-              type="url"
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="https://example.com/internal-form-template.png"
-              value={printTemplateUrl}
-              onChange={(e) => setPrintTemplateUrl(e.target.value)}
-            />
-          </div>
-
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700">Completion date</label>
-            <select
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            >
-              <option value="all">Any time</option>
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-            </select>
-          </div>
-
-          <div className="md:w-48">
-            <label className="block text-sm font-medium text-gray-700">
-              {PRINT_TRANSLATIONS[printLanguage].printLanguage}
-            </label>
-            <select
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              value={printLanguage}
-              onChange={(e) => setPrintLanguage(e.target.value)}
-            >
-              <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
-              <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
-            </select>
-          </div>
-
-          <button
-            type="button"
-            className="md:self-start inline-flex h-10 items-center justify-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-            onClick={handleResetFilters}
-          >
-            Reset filters
-          </button>
+          {showPrintSettings && (
+            <div className="mt-5 grid gap-4 border-t border-gray-100 pt-5 dark:border-gray-800 md:grid-cols-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Template image
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="file"
+                    accept="image/*,.heic,.heif"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-800"
+                    onChange={handleTemplateFileChange}
+                  />
+                  {printTemplateFileData && (
+                    <button
+                      type="button"
+                      className="rounded-lg border px-3 text-sm"
+                      onClick={() => setPrintTemplateFileData("")}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Template URL
+                </label>
+                <input
+                  type="url"
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+                  placeholder="https://example.com/template.png"
+                  value={printTemplateUrl}
+                  onChange={(e) => setPrintTemplateUrl(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  {PRINT_TRANSLATIONS[printLanguage].printLanguage}
+                </label>
+                <select
+                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm dark:border-gray-700 dark:bg-gray-800"
+                  value={printLanguage}
+                  onChange={(e) => setPrintLanguage(e.target.value)}
+                >
+                  <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
+                  <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
+                </select>
+              </div>
+            </div>
+          )}
         </section>
 
         {loading ? (
           renderLoadingState()
         ) : filteredRequests.length === 0 ? (
           <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 shadow-sm">
-            <p className="text-lg font-medium text-gray-700">No completed requests found.</p>
+            <p className="text-lg font-medium text-gray-700">
+              No completed requests found.
+            </p>
             <p className="mt-2 text-sm text-gray-500">
-              Try adjusting your search or filter selections to see more results.
+              Try adjusting your search or filter selections to see more
+              results.
             </p>
           </div>
         ) : (
@@ -846,137 +956,179 @@ const CompletedAssignedRequestsPage = () => {
               const isUrgent = Boolean(req?.is_urgent);
               const requesterDisplay = getRequesterDisplay(req);
               const articleClasses = [
-                'rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-200',
-                isUrgent ? 'border-red-300 hover:border-red-300 ring-1 ring-red-200/70 bg-red-50/70' : '',
+                "rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-200",
+                isUrgent
+                  ? "border-red-300 hover:border-red-300 ring-1 ring-red-200/70 bg-red-50/70"
+                  : "",
               ]
                 .filter(Boolean)
-                .join(' ');
-                return (
-                  <article
-                    key={req.id}
-                    className={articleClasses}
-                  >
-                    <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <h3 className="text-xl font-semibold text-gray-900">Request #{req.id}</h3>
-                          {req.request_type && (
-                            <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-sm font-medium">
-                              {req.request_type}
-                            </span>
-                          )}
-                          {isUrgent && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
-                              <span className="block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
-                              Urgent
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Completed {formatDateTime(req.completed_at)}
-                        </p>
+                .join(" ");
+              return (
+                <article key={req.id} className={articleClasses}>
+                  <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h3 className="text-xl font-semibold text-gray-900">
+                          Request #{req.id}
+                        </h3>
+                        {req.request_type && (
+                          <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-sm font-medium">
+                            {req.request_type}
+                          </span>
+                        )}
+                        {isUrgent && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                            <span
+                              className="block h-2 w-2 rounded-full bg-red-500"
+                              aria-hidden="true"
+                            />
+                            Urgent
+                          </span>
+                        )}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        <p>
-                          <span className="font-medium text-gray-700">Submitted by:</span>{' '}
-                          {requesterDisplay}
-                        </p>
-                      </div>
-                    </header>
-
-                    {req.justification && (
-                      <p className="mt-4 text-gray-700">
-                        <span className="font-medium text-gray-900">Justification:</span> {req.justification}
+                      <p className="text-sm text-gray-500 mt-1">
+                        Completed {formatDateTime(req.completed_at)}
                       </p>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      <p>
+                        <span className="font-medium text-gray-700">
+                          Submitted by:
+                        </span>{" "}
+                        {requesterDisplay}
+                      </p>
+                    </div>
+                  </header>
+
+                  {req.justification && (
+                    <p className="mt-4 text-gray-700">
+                      <span className="font-medium text-gray-900">
+                        Justification:
+                      </span>{" "}
+                      {req.justification}
+                    </p>
+                  )}
+
+                  <footer className="mt-4 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handlePrint(req.id)}
+                      className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-200"
+                    >
+                      <span aria-hidden="true">🖨</span>
+                      <span>Print</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleItems(req.id)}
+                      className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      <span>
+                        {expandedRequestId === req.id
+                          ? "Hide Items"
+                          : "View Items"}
+                      </span>
+                      <span aria-hidden="true">
+                        {expandedRequestId === req.id ? "▲" : "▼"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleAttachments(req.id)}
+                      className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
+                      disabled={Boolean(attachmentLoadingMap[req.id])}
+                    >
+                      <span>
+                        {expandedAttachmentsId === req.id
+                          ? "Hide Attachments"
+                          : "View Attachments"}
+                      </span>
+                      <span aria-hidden="true">
+                        {expandedAttachmentsId === req.id ? "▲" : "▼"}
+                      </span>
+                    </button>
+
+                    {expandedRequestId === req.id && (
+                      <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
+                        {itemsCache[req.id]?.length > 0 ? (
+                          itemsCache[req.id].map((item) => (
+                            <div
+                              key={item.id}
+                              className="rounded-md border border-gray-100 bg-gray-50 p-3"
+                            >
+                              <p className="text-sm font-semibold text-gray-800">
+                                {item.item_name}
+                                {item.brand && (
+                                  <span className="text-gray-500">
+                                    {" "}
+                                    ({item.brand})
+                                  </span>
+                                )}
+                              </p>
+                              {item.specs && (
+                                <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">
+                                  <span className="font-medium text-gray-700">
+                                    Specs:
+                                  </span>{" "}
+                                  {item.specs}
+                                </p>
+                              )}
+                              <p className="text-sm text-gray-600 mt-1">
+                                <span className="font-medium text-gray-700">
+                                  Requested:
+                                </span>{" "}
+                                {item.quantity} {item.unit_of_measure || ""}
+                                <span className="mx-2 text-gray-400">•</span>
+                                <span className="font-medium text-gray-700">
+                                  Purchased:
+                                </span>{" "}
+                                {item.purchased_quantity ?? "—"}{" "}
+                                {item.unit_of_measure || ""}
+                                <span className="mx-2 text-gray-400">•</span>
+                                <span className="font-medium text-gray-700">
+                                  Status:
+                                </span>{" "}
+                                {item.procurement_status || "—"}
+                              </p>
+                              {item.procurement_comment && (
+                                <p className="text-sm text-gray-500 italic mt-2">
+                                  {item.procurement_comment}
+                                </p>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No items found.
+                          </p>
+                        )}
+                      </div>
                     )}
 
-                    <footer className="mt-4 flex flex-wrap items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handlePrint(req.id)}
-                        className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-200"
-                      >
-                        <span aria-hidden="true">🖨</span>
-                        <span>Print</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => toggleItems(req.id)}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-                      >
-                        <span>{expandedRequestId === req.id ? 'Hide Items' : 'View Items'}</span>
-                        <span aria-hidden="true">{expandedRequestId === req.id ? '▲' : '▼'}</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => toggleAttachments(req.id)}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-                        disabled={Boolean(attachmentLoadingMap[req.id])}
-                      >
-                        <span>
-                          {expandedAttachmentsId === req.id ? 'Hide Attachments' : 'View Attachments'}
-                        </span>
-                        <span aria-hidden="true">{expandedAttachmentsId === req.id ? '▲' : '▼'}</span>
-                      </button>
-
-                      {expandedRequestId === req.id && (
-                        <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
-                          {itemsCache[req.id]?.length > 0 ? (
-                            itemsCache[req.id].map((item) => (
-                              <div
-                                key={item.id}
-                                className="rounded-md border border-gray-100 bg-gray-50 p-3"
-                              >
-                                <p className="text-sm font-semibold text-gray-800">
-                                  {item.item_name}
-                                  {item.brand && <span className="text-gray-500"> ({item.brand})</span>}
-                                </p>
-                                {item.specs && (
-                                  <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">
-                                    <span className="font-medium text-gray-700">Specs:</span> {item.specs}
-                                  </p>
-                                )}
-                                <p className="text-sm text-gray-600 mt-1">
-                                  <span className="font-medium text-gray-700">Requested:</span> {item.quantity} {item.unit_of_measure || ''}
-                                  <span className="mx-2 text-gray-400">•</span>
-                                  <span className="font-medium text-gray-700">Purchased:</span>{' '}
-                                  {item.purchased_quantity ?? '—'} {item.unit_of_measure || ''}
-                                  <span className="mx-2 text-gray-400">•</span>
-                                  <span className="font-medium text-gray-700">Status:</span> {item.procurement_status || '—'}
-                                </p>
-                                {item.procurement_comment && (
-                                  <p className="text-sm text-gray-500 italic mt-2">{item.procurement_comment}</p>
-                                )}
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-sm text-gray-500">No items found.</p>
-                          )}
-                        </div>
-                      )}
-
-                      {expandedAttachmentsId === req.id && (
-                        <div className="mt-4 border-t border-gray-100 pt-4">
-                          <RequestAttachmentsSection
-                            attachments={attachmentsMap[req.id] || []}
-                            isLoading={Boolean(attachmentLoadingMap[req.id])}
-                            error={attachmentErrorMap[req.id]}
-                            onDownload={handleDownloadAttachment}
-                            downloadingAttachmentId={downloadingAttachmentId}
-                            onRetry={() => loadAttachmentsForRequest(req.id, { force: true })}
-                          />
-                        </div>
-                      )}
-                    </footer>
-                  </article>
-                );
-              })}
+                    {expandedAttachmentsId === req.id && (
+                      <div className="mt-4 border-t border-gray-100 pt-4">
+                        <RequestAttachmentsSection
+                          attachments={attachmentsMap[req.id] || []}
+                          isLoading={Boolean(attachmentLoadingMap[req.id])}
+                          error={attachmentErrorMap[req.id]}
+                          onDownload={handleDownloadAttachment}
+                          downloadingAttachmentId={downloadingAttachmentId}
+                          onRetry={() =>
+                            loadAttachmentsForRequest(req.id, { force: true })
+                          }
+                        />
+                      </div>
+                    )}
+                  </footer>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

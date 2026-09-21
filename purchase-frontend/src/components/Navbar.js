@@ -2,7 +2,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import useDarkMode from "../hooks/useDarkMode";
-import { Menu, X, Sun, Moon, Contrast, ChevronDown, Search, XCircle, House } from "lucide-react";
+import {
+  Menu,
+  X,
+  Sun,
+  Moon,
+  Contrast,
+  ChevronDown,
+  Search,
+  XCircle,
+  ShoppingBasket,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./ui/NotificationBell";
 import { useAuth } from "../hooks/useAuth";
@@ -102,8 +112,7 @@ const Navbar = () => {
       .join("")
       .toUpperCase();
 
-  const escapeRegExp = (value) =>
-    value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const highlightMatch = (label) => {
     const trimmedQuery = navSearch.trim();
@@ -115,7 +124,10 @@ const Navbar = () => {
     const queryRegex = new RegExp(`(${escapeRegExp(trimmedQuery)})`, "ig");
     return label.split(queryRegex).map((part, index) =>
       part.toLowerCase() === trimmedQuery.toLowerCase() ? (
-        <mark key={`${part}-${index}`} className="rounded bg-yellow-200 px-1 py-0.5 text-gray-900">
+        <mark
+          key={`${part}-${index}`}
+          className="rounded bg-yellow-200 px-1 py-0.5 text-gray-900"
+        >
           {part}
         </mark>
       ) : (
@@ -144,7 +156,11 @@ const Navbar = () => {
     return (
       <button
         type="button"
-        onClick={() => navigate(path)}
+        onClick={() => {
+          navigate(path);
+          setOpenGroup(null);
+          setIsOpen(false);
+        }}
         className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses} ${extraClasses}`}
         aria-current={isActive ? "page" : undefined}
       >
@@ -181,7 +197,11 @@ const Navbar = () => {
       "feature.procurementQueues",
       ["procurement.update-status"],
     );
-    const canViewDepartmentRequestedItems = ["admin", "scm", "procurementsupervisor"].includes(normalizedRole);
+    const canViewDepartmentRequestedItems = [
+      "admin",
+      "scm",
+      "procurementsupervisor",
+    ].includes(normalizedRole);
     const canAccessProcureToPayReceipts = hasAccess(
       currentUser,
       "feature.procureToPayReceipts",
@@ -202,9 +222,11 @@ const Navbar = () => {
       "feature.procureToPayInvoices",
       ["procure-to-pay.match.manage"],
     );
-    const canAccessProcureToPayAP = hasAccess(currentUser, "feature.procureToPayInvoices", [
-      "finance.verify",
-    ]);
+    const canAccessProcureToPayAP = hasAccess(
+      currentUser,
+      "feature.procureToPayInvoices",
+      ["finance.verify"],
+    );
     const canAccessProcureToPayPayments = hasAccess(
       currentUser,
       "feature.procureToPayInvoices",
@@ -218,7 +240,10 @@ const Navbar = () => {
     const canAccessCustody = hasAccess(currentUser, "feature.custody", [
       "warehouse.manage-supply",
     ]);
-    const canAccessFixedAssets = hasPermission(currentUser, "fixed-assets.view");
+    const canAccessFixedAssets = hasPermission(
+      currentUser,
+      "fixed-assets.view",
+    );
     const canAccessMaintenanceStock = hasAccess(
       currentUser,
       "feature.maintenanceStock",
@@ -266,9 +291,21 @@ const Navbar = () => {
     const canViewDashboard = hasAccess(currentUser, "feature.dashboard", [
       "dashboard.view",
     ]);
-    const canRankDepartmentPriorities = hasPermission(currentUser, "procurement-priority.rank-department");
-    const canManageProcurementPriorities = hasPermission(currentUser, "procurement-priority.manage");
-    const canAccessBudgetControl = ["scm", "admin", "finance", "financeapprover", "cfo"].includes(normalizedRole);
+    const canRankDepartmentPriorities = hasPermission(
+      currentUser,
+      "procurement-priority.rank-department",
+    );
+    const canManageProcurementPriorities = hasPermission(
+      currentUser,
+      "procurement-priority.manage",
+    );
+    const canAccessBudgetControl = [
+      "scm",
+      "admin",
+      "finance",
+      "financeapprover",
+      "cfo",
+    ].includes(normalizedRole);
     const canViewAnalytics = hasAccess(currentUser, "feature.analytics", [
       "dashboard.view",
     ]);
@@ -326,28 +363,29 @@ const Navbar = () => {
     const createItem = (condition, label, path, color) =>
       condition ? { label, path, color } : null;
 
+    const resolveFeatureNavItem = (featureKey, conditionOverride = null) => {
+      const feature = featureRegistry[featureKey];
+      if (!feature?.nav) return null;
 
-  const resolveFeatureNavItem = (featureKey, conditionOverride = null) => {
-    const feature = featureRegistry[featureKey];
-    if (!feature?.nav) return null;
+      const condition =
+        conditionOverride ??
+        hasAccess(
+          currentUser,
+          feature.resourceKey,
+          feature.requiredPermissions ?? [],
+          feature.requireAllPermissions,
+        );
 
-    const condition =
-      conditionOverride ??
-      hasAccess(
-        currentUser,
-        feature.resourceKey,
-        feature.requiredPermissions ?? [],
-        feature.requireAllPermissions,
-      );
+      if (!condition) return null;
 
-    if (!condition) return null;
-
-    return {
-      label: feature.nav.labelKey ? t(feature.nav.labelKey) : feature.nav.label,
-      path: feature.path,
-      color: feature.nav.color ?? "text-black",
+      return {
+        label: feature.nav.labelKey
+          ? t(feature.nav.labelKey)
+          : feature.nav.label,
+        path: feature.path,
+        color: feature.nav.color ?? "text-black",
+      };
     };
-  };
 
     const navGroups = [
       {
@@ -378,7 +416,9 @@ const Navbar = () => {
             "text-gray-600",
           ),
           createItem(
-            hasAccess(currentUser, "feature.auditRequests", ["requests.view-audit"]),
+            hasAccess(currentUser, "feature.auditRequests", [
+              "requests.view-audit",
+            ]),
             t("navbar.myAuditRegistry"),
             "/audit-registry",
             "text-blue-600",
@@ -387,7 +427,12 @@ const Navbar = () => {
           resolveFeatureNavItem("historicalRequests", canImportHistorical),
           resolveFeatureNavItem("procurementPlans", canManageProcurement),
           createItem(
-            ["admin", "scm", "procurementsupervisor", "procurementspecialist"].includes(normalizedRole),
+            [
+              "admin",
+              "scm",
+              "procurementsupervisor",
+              "procurementspecialist",
+            ].includes(normalizedRole),
             t("navbar.procurementEvaluations"),
             "/procurement-evaluations",
             "text-fuchsia-700",
@@ -399,7 +444,10 @@ const Navbar = () => {
             "text-indigo-700",
           ),
           resolveFeatureNavItem("assignedRequests", canHandleProcurementQueues),
-          resolveFeatureNavItem("completedAssigned", canHandleProcurementQueues),
+          resolveFeatureNavItem(
+            "completedAssigned",
+            canHandleProcurementQueues,
+          ),
         ].filter(Boolean),
       },
       {
@@ -466,17 +514,72 @@ const Navbar = () => {
         id: "fixedAssets",
         label: "FIXED ASSETS",
         items: [
-          createItem(canAccessFixedAssets, "Dashboard", "/fixed-assets/dashboard", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "Asset Register", "/fixed-assets/register", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "Register Asset", "/fixed-assets/new", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "Movements", "/fixed-assets/movements", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "Physical Locations", "/fixed-assets/locations", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "Physical Inventory", "/fixed-assets/inventory", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "Reconciliation", "/fixed-assets/reconciliation", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "RFID Events", "/fixed-assets/events", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "RFID Readers", "/fixed-assets/readers", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "RFID Portals", "/fixed-assets/portals", "text-cyan-700"),
-          createItem(canAccessFixedAssets, "Exceptions", "/fixed-assets/exceptions", "text-rose-700"),
+          createItem(
+            canAccessFixedAssets,
+            "Dashboard",
+            "/fixed-assets/dashboard",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "Asset Register",
+            "/fixed-assets/register",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "Register Asset",
+            "/fixed-assets/new",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "Movements",
+            "/fixed-assets/movements",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "Physical Locations",
+            "/fixed-assets/locations",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "Physical Inventory",
+            "/fixed-assets/inventory",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "Reconciliation",
+            "/fixed-assets/reconciliation",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "RFID Events",
+            "/fixed-assets/events",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "RFID Readers",
+            "/fixed-assets/readers",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "RFID Portals",
+            "/fixed-assets/portals",
+            "text-cyan-700",
+          ),
+          createItem(
+            canAccessFixedAssets,
+            "Exceptions",
+            "/fixed-assets/exceptions",
+            "text-rose-700",
+          ),
         ].filter(Boolean),
       },
       {
@@ -514,7 +617,8 @@ const Navbar = () => {
             "text-emerald-600",
           ),
           createItem(
-            canManageTechnicalInspections && ["scm", "admin"].includes(normalizedRole),
+            canManageTechnicalInspections &&
+              ["scm", "admin"].includes(normalizedRole),
             t("navbar.scmInspectionsReview"),
             "/technical-inspections/review",
             "text-emerald-700",
@@ -585,9 +689,24 @@ const Navbar = () => {
             "/dashboard",
             "text-cyan-600",
           ),
-          createItem(true, "Institutional Priorities", "/procurement-priorities", "text-blue-700"),
-          createItem(canRankDepartmentPriorities, "Department Priorities", "/procurement-priorities/department", "text-blue-700"),
-          createItem(canManageProcurementPriorities, "Priority Management", "/procurement-priorities/manage", "text-blue-800"),
+          createItem(
+            true,
+            "Institutional Priorities",
+            "/procurement-priorities",
+            "text-blue-700",
+          ),
+          createItem(
+            canRankDepartmentPriorities,
+            "Department Priorities",
+            "/procurement-priorities/department",
+            "text-blue-700",
+          ),
+          createItem(
+            canManageProcurementPriorities,
+            "Priority Management",
+            "/procurement-priorities/manage",
+            "text-blue-800",
+          ),
           resolveFeatureNavItem("supplyChainPerformance"),
           createItem(
             canAccessBudgetControl,
@@ -739,12 +858,7 @@ const Navbar = () => {
         id: "account",
         label: t("navbar.groups.account"),
         items: [
-          createItem(
-            true,
-            t("navbar.myTasks"),
-            '/tasks',
-            'text-blue-600',
-          ),
+          createItem(true, t("navbar.myTasks"), "/tasks", "text-blue-600"),
           createItem(
             true,
             t("navbar.myEvaluations"),
@@ -824,7 +938,7 @@ const Navbar = () => {
                 }
                 onMouseEnter={() => handleGroupMouseEnter(group.id)}
                 onFocus={() => handleGroupMouseEnter(group.id)}
-                className="flex items-center gap-1 rounded-md bg-white/70 px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-800"
+                className={`flex items-center gap-1 rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${group.items.some((item) => location.pathname === item.path || (item.path !== "/" && location.pathname.startsWith(`${item.path}/`))) ? "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200" : "border-transparent bg-white/70 text-gray-700 hover:border-gray-200 hover:bg-white dark:bg-gray-800/70 dark:text-gray-100 dark:hover:bg-gray-800"}`}
                 aria-haspopup="true"
                 aria-expanded={openGroup === group.id}
               >
@@ -837,7 +951,7 @@ const Navbar = () => {
               </button>
               <div
                 role="menu"
-                className={`absolute left-0 top-full z-20 mt-2 w-64 rounded-md border border-gray-200 bg-white/95 p-2 shadow-lg transition-all dark:border-gray-700 dark:bg-gray-900/95 ${
+                className={`absolute left-0 top-full z-20 mt-2 max-h-[70vh] w-72 overflow-y-auto rounded-xl border border-gray-200 bg-white/95 p-2 shadow-xl backdrop-blur transition-all dark:border-gray-700 dark:bg-gray-900/95 ${
                   openGroup === group.id
                     ? "visible translate-y-0 opacity-100"
                     : "invisible -translate-y-1 opacity-0"
@@ -908,7 +1022,7 @@ const Navbar = () => {
 
   return (
     <nav
-      className="sticky top-0 z-50 border-b border-gray-200 bg-gray-100/90 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100"
+      className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/90 shadow-sm backdrop-blur-xl dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-100"
       role="navigation"
       aria-label={t("navbar.mainNavigation")}
     >
@@ -917,14 +1031,14 @@ const Navbar = () => {
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white/80 p-2 text-blue-700 transition hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800/80 dark:text-blue-300 dark:hover:bg-gray-700"
+            className="inline-flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 p-2.5 text-white shadow-md transition hover:scale-105 hover:shadow-lg"
             aria-label={t("navbar.home", { defaultValue: "Home" })}
             title={t("navbar.home", { defaultValue: "Home" })}
           >
-            <House size={18} aria-hidden="true" />
+            <ShoppingBasket size={20} aria-hidden="true" />
           </button>
           <h1
-            className="cursor-pointer text-xl font-semibold tracking-tight text-blue-700 dark:text-blue-300 md:text-2xl"
+            className="cursor-pointer text-lg font-bold tracking-tight text-gray-900 dark:text-white md:text-xl"
             onClick={() => navigate("/")}
           >
             {t("navbar.purchaseTracker")}
@@ -932,8 +1046,12 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white/80 px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:border-gray-700 dark:bg-gray-800/80 dark:focus-within:ring-offset-gray-900 md:flex">
-            <Search size={16} className="text-gray-500 dark:text-gray-400" aria-hidden="true" />
+          <div className="hidden items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-gray-700 dark:bg-gray-800 md:flex">
+            <Search
+              size={16}
+              className="text-gray-500 dark:text-gray-400"
+              aria-hidden="true"
+            />
             <input
               type="text"
               value={navSearch}
@@ -982,7 +1100,13 @@ const Navbar = () => {
                     : t("navbar.lightMode")
               }
             >
-              {theme === themes.highContrast ? <Contrast size={18} /> : darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === themes.highContrast ? (
+                <Contrast size={18} />
+              ) : darkMode ? (
+                <Sun size={18} />
+              ) : (
+                <Moon size={18} />
+              )}
             </button>
           </div>
 
@@ -1013,7 +1137,11 @@ const Navbar = () => {
             </button>
           </div>
           <div className="flex items-center gap-2 rounded-md border border-gray-200 bg-white/90 px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:border-gray-700 dark:bg-gray-800/90 dark:focus-within:ring-offset-gray-900">
-            <Search size={16} className="text-gray-500 dark:text-gray-400" aria-hidden="true" />
+            <Search
+              size={16}
+              className="text-gray-500 dark:text-gray-400"
+              aria-hidden="true"
+            />
             <input
               type="text"
               value={navSearch}
