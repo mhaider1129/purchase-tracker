@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import {
@@ -21,6 +21,8 @@ const emptyFilters = {
   overdue_only: false,
   include_completed: false,
   group_by: "department",
+  sort_by: "",
+  sort_dir: "asc",
 };
 
 const requestTypes = ["Stock", "Non-Stock", "Medical Device", "Medication", "IT Item", "Maintenance", "Warehouse Supply", "Printing Logbook"];
@@ -30,6 +32,15 @@ const procurementStatuses = ["pending", "partially procured", "Fully Procured", 
 const Badge = ({ children, className = "" }) => (
   <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${className}`}>{children}</span>
 );
+
+const sortableColumns = {
+  request_date: "Request date",
+  item_name: "Item",
+  remaining_quantity: "Remaining",
+  procurement_status: "Status",
+  required_delivery_date: "Required date",
+  days_since_request: "Age",
+};
 
 const toCsvValue = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
@@ -84,6 +95,7 @@ const escapeHtml = (value) =>
 const DepartmentRequestedItemsBoard = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState(emptyFilters);
+  const [searchInput, setSearchInput] = useState("");
   const [departments, setDepartments] = useState([]);
   const [requesters, setRequesters] = useState([]);
   const [rows, setRows] = useState([]);
@@ -96,10 +108,15 @@ const DepartmentRequestedItemsBoard = () => {
   const [expanded, setExpanded] = useState({});
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [messagePreview, setMessagePreview] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   const [noteModal, setNoteModal] = useState({ open: false, itemIds: [] });
   const [noteForm, setNoteForm] = useState({ note: "", department_response: "", next_follow_up_date: "" });
+  const requestSequence = useRef(0);
+  const pageLimit = useRef(100);
 
   const selectedRows = useMemo(() => rows.filter((row) => selectedItems.has(row.item_id)), [rows, selectedItems]);
+  const selectedDepartmentCount = useMemo(() => new Set(selectedRows.map((row) => row.department_id)).size, [selectedRows]);
 
   useEffect(() => {
     api.get("/departments").then((res) => setDepartments(res.data || [])).catch(() => setDepartments([]));
@@ -116,21 +133,9 @@ const DepartmentRequestedItemsBoard = () => {
       .catch(() => setRequesters([]));
   }, [filters.department_id, filters.section_id]);
 
-  useEffect(() => {
-    fetchRows(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
-
-  const activeSections = useMemo(() => {
-    if (!filters.department_id) return departments.flatMap((department) => department.sections || []);
-    return departments.find((department) => String(department.id) === String(filters.department_id))?.sections || [];
-  }, [departments, filters.department_id]);
-
-  const updateFilter = (key, value) => {
-    setFilters((current) => ({ ...current, [key]: value, ...(key === "department_id" ? { section_id: "", requester_id: "" } : {}), ...(key === "section_id" ? { requester_id: "" } : {}) }));
-  };
-
-  const fetchRows = async (page = pagination.page, limit = pagination.limit) => {
+  const fetchRows = useCallback(async (page = 1, limit = pageLimit.current) => {
+    const requestId = requestSequence.current + 1;
+    requestSequence.current = requestId;
     setLoading(true);
     setError("");
     try {
@@ -144,17 +149,39 @@ const DepartmentRequestedItemsBoard = () => {
       };
       Object.keys(params).forEach((key) => (params[key] === "" || params[key] === false) && delete params[key]);
       const response = await getDepartmentRequestedItems(params);
+      if (requestId !== requestSequence.current) return;
       setRows(response.data || []);
       setGrouped(response.grouped || []);
       setSummary(response.summary || {});
-      setPagination(response.pagination || pagination);
+      setPagination(response.pagination || { page, limit, total: 0, total_pages: 0 });
+      pageLimit.current = response.pagination?.limit || limit;
       setExpanded((response.grouped || []).reduce((acc, group, index) => ({ ...acc, [index]: index < 3 }), {}));
       setSelectedItems(new Set());
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load department requested items.");
+      if (requestId === requestSequence.current) setError(err.response?.data?.message || "Failed to load department requested items.");
     } finally {
-      setLoading(false);
+      if (requestId === requestSequence.current) setLoading(false);
     }
+  }, [filters]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setFilters((current) => current.search === searchInput ? current : { ...current, search: searchInput });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchRows(1);
+  }, [filters, fetchRows]);
+
+  const activeSections = useMemo(() => {
+    if (!filters.department_id) return departments.flatMap((department) => department.sections || []);
+    return departments.find((department) => String(department.id) === String(filters.department_id))?.sections || [];
+  }, [departments, filters.department_id]);
+
+  const updateFilter = (key, value) => {
+    setFilters((current) => ({ ...current, [key]: value, ...(key === "department_id" ? { section_id: "", requester_id: "" } : {}), ...(key === "section_id" ? { requester_id: "" } : {}) }));
   };
 
   const toggleSelected = (itemId) => {
@@ -167,11 +194,22 @@ const DepartmentRequestedItemsBoard = () => {
 
   const generateMessage = async (scopeRows = selectedRows.length ? selectedRows : rows) => {
     if (!scopeRows.length) return;
-    const departmentId = scopeRows[0].department_id;
-    const itemIds = scopeRows.map((row) => row.item_id);
-    const response = await previewDepartmentFollowUpMessage({ department_id: departmentId, item_ids: itemIds, message_type: "whatsapp" });
-    setMessagePreview(response.message || "");
-    if (navigator.clipboard && response.message) await navigator.clipboard.writeText(response.message);
+    const departmentRows = scopeRows.filter((row) => row.department_id === scopeRows[0].department_id);
+    if (departmentRows.length !== scopeRows.length) {
+      setError("Follow-up messages can only include items from one department. Select a single department and try again.");
+      return;
+    }
+    setActionLoading(true);
+    setError("");
+    try {
+      const response = await previewDepartmentFollowUpMessage({ department_id: departmentRows[0].department_id, item_ids: departmentRows.map((row) => row.item_id), message_type: "whatsapp" });
+      setMessagePreview(response.message || "");
+      setActionMessage(`Follow-up message prepared for ${departmentRows.length} item${departmentRows.length === 1 ? "" : "s"}.`);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to prepare the follow-up message.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const fetchAllRowsForExport = async () => {
@@ -234,17 +272,57 @@ const DepartmentRequestedItemsBoard = () => {
   const saveNote = async () => {
     const scopeRows = noteModal.itemIds.length ? rows.filter((row) => noteModal.itemIds.includes(row.item_id)) : selectedRows;
     if (!scopeRows.length) return;
-    await saveDepartmentFollowUpNote({
-      item_ids: scopeRows.map((row) => row.item_id),
-      department_id: scopeRows[0].department_id,
-      note: noteForm.note,
-      department_response: noteForm.department_response,
-      next_follow_up_date: noteForm.next_follow_up_date || null,
-    });
-    setNoteModal({ open: false, itemIds: [] });
-    setNoteForm({ note: "", department_response: "", next_follow_up_date: "" });
-    fetchRows();
+    if (new Set(scopeRows.map((row) => row.department_id)).size > 1) {
+      setError("Follow-up notes can only include items from one department. Select a single department and try again.");
+      setNoteModal({ open: false, itemIds: [] });
+      return;
+    }
+    if (!noteForm.note.trim()) return;
+    setActionLoading(true);
+    setError("");
+    try {
+      await saveDepartmentFollowUpNote({
+        item_ids: scopeRows.map((row) => row.item_id),
+        department_id: scopeRows[0].department_id,
+        note: noteForm.note,
+        department_response: noteForm.department_response,
+        next_follow_up_date: noteForm.next_follow_up_date || null,
+      });
+      setNoteModal({ open: false, itemIds: [] });
+      setNoteForm({ note: "", department_response: "", next_follow_up_date: "" });
+      setActionMessage(`Follow-up note saved for ${scopeRows.length} item${scopeRows.length === 1 ? "" : "s"}.`);
+      fetchRows(pagination.page);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save the follow-up note.");
+    } finally {
+      setActionLoading(false);
+    }
   };
+
+  const toggleAll = (tableRows, checked) => {
+    setSelectedItems((current) => {
+      const next = new Set(current);
+      tableRows.forEach((row) => checked ? next.add(row.item_id) : next.delete(row.item_id));
+      return next;
+    });
+  };
+
+  const setSort = (sortBy) => {
+    setFilters((current) => ({
+      ...current,
+      sort_by: sortBy,
+      sort_dir: current.sort_by === sortBy && current.sort_dir === "asc" ? "desc" : "asc",
+    }));
+  };
+
+  const resetFilters = () => {
+    setSearchInput("");
+    setFilters(emptyFilters);
+  };
+
+  const hasActiveFilters = Object.entries(filters).some(([key, value]) =>
+    !["group_by", "sort_by", "sort_dir"].includes(key) && value !== emptyFilters[key]
+  );
 
   const renderStatus = (row) => (
     <div className="flex flex-wrap gap-1">
@@ -260,13 +338,13 @@ const DepartmentRequestedItemsBoard = () => {
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
           <tr>
-            <th className="px-3 py-2">Select</th><th className="px-3 py-2">Request ID</th><th className="px-3 py-2">Section</th><th className="px-3 py-2">Requester</th><th className="px-3 py-2">Item</th><th className="px-3 py-2">Specs</th><th className="px-3 py-2">Requested</th><th className="px-3 py-2">Purchased</th><th className="px-3 py-2">Remaining</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Required Date</th><th className="px-3 py-2">Days</th><th className="px-3 py-2">Actions</th>
+            <th className="px-3 py-2"><span className="sr-only">Select items</span><input aria-label="Select all items in this table" type="checkbox" checked={tableRows.length > 0 && tableRows.every((row) => selectedItems.has(row.item_id))} onChange={(e) => toggleAll(tableRows, e.target.checked)} /></th><th className="px-3 py-2">Request ID</th><th className="px-3 py-2">Section</th><th className="px-3 py-2">Requester</th><th className="px-3 py-2"><button onClick={() => setSort("item_name")} className="font-semibold hover:text-blue-700">Item {filters.sort_by === "item_name" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">Specs</th><th className="px-3 py-2">Requested</th><th className="px-3 py-2">Purchased</th><th className="px-3 py-2"><button onClick={() => setSort("remaining_quantity")} className="font-semibold hover:text-blue-700">Remaining {filters.sort_by === "remaining_quantity" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2"><button onClick={() => setSort("procurement_status")} className="font-semibold hover:text-blue-700">Status {filters.sort_by === "procurement_status" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">Required Date</th><th className="px-3 py-2"><button onClick={() => setSort("days_since_request")} className="font-semibold hover:text-blue-700">Age {filters.sort_by === "days_since_request" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">Actions</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">
           {tableRows.map((row) => (
             <tr key={row.item_id} className={`${row.overdue_flag ? "bg-amber-50" : ""} ${row.emergency_flag ? "ring-1 ring-red-100" : ""}`}>
-              <td className="px-3 py-2"><input type="checkbox" checked={selectedItems.has(row.item_id)} onChange={() => toggleSelected(row.item_id)} /></td>
+              <td className="px-3 py-2"><input aria-label={`Select ${row.item_name}`} type="checkbox" checked={selectedItems.has(row.item_id)} onChange={() => toggleSelected(row.item_id)} /></td>
               <td className="px-3 py-2 font-semibold text-blue-700">#{row.request_number || row.request_id}</td>
               <td className="px-3 py-2">{row.section_name || "—"}</td>
               <td className="px-3 py-2"><div>{row.requester_name || "—"}</div><div className="text-xs text-gray-500">{row.requester_phone || row.requester_email}</div></td>
@@ -304,11 +382,13 @@ const DepartmentRequestedItemsBoard = () => {
           <select value={filters.department_id} onChange={(e) => updateFilter("department_id", e.target.value)} className="rounded border p-2"><option value="">All Departments</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
           <select value={filters.section_id} onChange={(e) => updateFilter("section_id", e.target.value)} className="rounded border p-2"><option value="">All Sections</option>{activeSections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
           <select value={filters.requester_id} onChange={(e) => updateFilter("requester_id", e.target.value)} className="rounded border p-2"><option value="">All Requesters</option>{requesters.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
-          <input value={filters.search} onChange={(e) => updateFilter("search", e.target.value)} placeholder="Search items, requests, departments" className="rounded border p-2" />
+          <label className="sr-only" htmlFor="requested-items-search">Search requested items</label><input id="requested-items-search" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search items, requests, departments" className="rounded border p-2" />
           <select value={filters.request_type} onChange={(e) => updateFilter("request_type", e.target.value)} className="rounded border p-2"><option value="">All Request Types</option>{requestTypes.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.approval_status} onChange={(e) => updateFilter("approval_status", e.target.value)} className="rounded border p-2"><option value="">Approval Status</option>{approvalStatuses.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.procurement_status} onChange={(e) => updateFilter("procurement_status", e.target.value)} className="rounded border p-2"><option value="">Procurement Status</option>{procurementStatuses.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.group_by} onChange={(e) => updateFilter("group_by", e.target.value)} className="rounded border p-2"><option value="department">Grouped by Department</option><option value="section">Grouped by Section</option><option value="none">Flat Table</option></select>
+          <select value={filters.sort_by} onChange={(e) => updateFilter("sort_by", e.target.value)} className="rounded border p-2" aria-label="Sort requested items"><option value="">Default sorting</option>{Object.entries(sortableColumns).map(([value, label]) => <option key={value} value={value}>Sort by {label}</option>)}</select>
+          <select value={filters.sort_dir} onChange={(e) => updateFilter("sort_dir", e.target.value)} className="rounded border p-2" aria-label="Sort direction" disabled={!filters.sort_by}><option value="asc">Ascending</option><option value="desc">Descending</option></select>
           <input type="date" value={filters.date_from} onChange={(e) => updateFilter("date_from", e.target.value)} className="rounded border p-2" />
           <input type="date" value={filters.date_to} onChange={(e) => updateFilter("date_to", e.target.value)} className="rounded border p-2" />
           <label className="flex items-center gap-2"><input type="checkbox" checked={filters.emergency_only} onChange={(e) => updateFilter("emergency_only", e.target.checked)} /> Emergency Only</label>
@@ -317,20 +397,24 @@ const DepartmentRequestedItemsBoard = () => {
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <button onClick={() => fetchRows(1)} className="rounded bg-blue-700 px-4 py-2 font-semibold text-white">Refresh</button>
-          <button onClick={() => generateMessage()} className="rounded bg-purple-700 px-4 py-2 font-semibold text-white">Generate Follow-Up Message</button>
+          <button onClick={() => generateMessage()} className="rounded bg-purple-700 px-4 py-2 font-semibold text-white disabled:opacity-50" disabled={actionLoading || !rows.length}>{actionLoading ? "Working..." : "Generate Follow-Up Message"}</button>
           <button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} className="rounded bg-emerald-700 px-4 py-2 font-semibold text-white" disabled={!selectedRows.length}>Add Follow-Up Note</button>
           <button onClick={exportExcel} className="rounded border px-4 py-2 font-semibold text-gray-700" disabled={exporting}>{exporting ? "Exporting..." : "Export Excel (all results)"}</button>
           <button onClick={exportCsv} className="rounded border px-4 py-2 font-semibold text-gray-700">Export CSV (current page)</button>
+          {hasActiveFilters && <button onClick={resetFilters} className="rounded border border-red-200 px-4 py-2 font-semibold text-red-700 hover:bg-red-50">Clear Filters</button>}
         </div>
       </div>
 
       {error && <div className="rounded border border-red-200 bg-red-50 p-3 text-red-700">{error}</div>}
+      {actionMessage && !error && <div role="status" className="flex items-center justify-between rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800"><span>{actionMessage}</span><button onClick={() => setActionMessage("")} aria-label="Dismiss notification" className="font-bold">×</button></div>}
       {loading && <div className="rounded border bg-white p-4 text-gray-600">Loading department requested items...</div>}
+
+      {!loading && selectedRows.length > 0 && <div role="status" aria-label={`${selectedRows.length} item${selectedRows.length === 1 ? "" : "s"} selected`} className="sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 p-4 text-white shadow-lg"><div><span className="font-bold">{selectedRows.length}</span> item{selectedRows.length === 1 ? "" : "s"} selected{selectedDepartmentCount > 1 && <span className="ml-2 text-xs text-amber-300">Choose one department for follow-up actions</span>}</div><div className="flex flex-wrap gap-2"><button onClick={() => generateMessage(selectedRows)} className="rounded bg-purple-600 px-3 py-2 text-sm font-semibold">Prepare message</button><button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} disabled={selectedDepartmentCount > 1} title={selectedDepartmentCount > 1 ? "Follow-up notes must be scoped to one department" : ""} className="rounded bg-emerald-600 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Add note</button><button onClick={() => setSelectedItems(new Set())} className="rounded border border-slate-500 px-3 py-2 text-sm font-semibold">Clear selection</button></div></div>}
 
       {!loading && filters.group_by !== "none" && grouped.map((group, index) => (
         <div key={`${group.department_id || group.section_id || index}`} className="rounded-xl border bg-white shadow-sm">
           <button className="flex w-full items-center justify-between p-4 text-left" onClick={() => setExpanded((cur) => ({ ...cur, [index]: !cur[index] }))}>
-            <div><h2 className="text-lg font-bold text-gray-900">{group.department_name || group.section_name || group.requester_name}</h2><p className="text-sm text-gray-500">Open: {group.open_items_count} · Overdue: {group.overdue_count} · Emergency: {group.emergency_count} · Last request: {group.last_request_date ? new Date(group.last_request_date).toLocaleDateString() : "—"}</p></div>
+            <div><h2 className="text-lg font-bold text-gray-900">{group.department_name || group.section_name || group.requester_name || group.request_type_name || "Unassigned"}</h2><p className="text-sm text-gray-500">Open: {group.open_items_count} · Overdue: {group.overdue_count} · Emergency: {group.emergency_count} · Partial: {group.partially_procured_count || 0} · Last request: {group.last_request_date ? new Date(group.last_request_date).toLocaleDateString() : "—"}</p></div>
             <span className="text-2xl">{expanded[index] ? "−" : "+"}</span>
           </button>
           {expanded[index] && <div className="border-t">{renderTable(group.items || [])}</div>}
@@ -338,6 +422,8 @@ const DepartmentRequestedItemsBoard = () => {
       ))}
 
       {!loading && filters.group_by === "none" && <div className="rounded-xl border bg-white shadow-sm">{renderTable(rows)}</div>}
+
+      {!loading && rows.length === 0 && !error && <div className="rounded-xl border border-dashed bg-white p-10 text-center shadow-sm"><div className="text-lg font-semibold text-gray-800">No requested items found</div><p className="mt-1 text-sm text-gray-500">Try changing the filters or include completed items.</p>{hasActiveFilters && <button onClick={resetFilters} className="mt-4 rounded bg-blue-700 px-4 py-2 font-semibold text-white">Clear Filters</button>}</div>}
 
       {!loading && pagination.total > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-4 text-sm text-gray-700 shadow-sm">
@@ -351,6 +437,7 @@ const DepartmentRequestedItemsBoard = () => {
                 value={pagination.limit}
                 onChange={(e) => {
                   const nextLimit = Number(e.target.value);
+                  pageLimit.current = nextLimit;
                   setPagination((current) => ({ ...current, limit: nextLimit, page: 1 }));
                   fetchRows(1, nextLimit);
                 }}
