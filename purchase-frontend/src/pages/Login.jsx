@@ -1,19 +1,26 @@
-// src/pages/Login.js
-
-import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import api from '../api/axios';
-import { fetchCurrentUser } from '../api/currentUser';
-import LanguageSwitcher from '../components/LanguageSwitcher';
-import { useAuth } from '../hooks/useAuth';
+import React, { useEffect, useRef, useState } from "react";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Store,
+  UserRound,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import api from "../api/axios";
+import { fetchCurrentUser } from "../api/currentUser";
+import AuthShell from "../components/auth/AuthShell";
+import { useAuth } from "../hooks/useAuth";
 
 const Login = () => {
   const { t } = useTranslation();
-  const [loginIdentifier, setLoginIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
   const emailInputRef = useRef(null);
   const navigate = useNavigate();
   const { login: persistToken, logout } = useAuth();
@@ -22,146 +29,195 @@ const Login = () => {
     emailInputRef.current?.focus();
   }, []);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setLoading(true);
-    setErrorMsg('');
-
+    setErrorMsg("");
     const trimmedLoginIdentifier = loginIdentifier.trim();
 
     if (!trimmedLoginIdentifier || !password) {
-      setErrorMsg(t('login.emailPasswordRequired'));
+      setErrorMsg(t("login.emailPasswordRequired"));
       setLoading(false);
       return;
     }
 
     try {
-      const res = await api.post('/auth/login/', {
+      const res = await api.post("/auth/login/", {
         login: trimmedLoginIdentifier,
         password,
       });
-
       const token = res.data.token;
-      if (!token) throw new Error('No token returned from server');
-
-      // ✅ Persist the token through the auth context so protected routes react immediately
+      if (!token) throw new Error("No token returned from server");
       persistToken(token);
 
       try {
         const userRes = await fetchCurrentUser();
-        const user = userRes.data;
-
-        if (!user || user.is_active === false) {
-          setErrorMsg(t('login.accountInactive'));
+        if (!userRes.data || userRes.data.is_active === false) {
+          setErrorMsg(t("login.accountInactive"));
           logout();
           return;
         }
       } catch (profileError) {
-        console.error('❌ Failed to load user profile:', profileError);
-        setErrorMsg(t('login.errorCredentials'));
+        console.error("Failed to load user profile:", profileError);
+        setErrorMsg(t("login.errorCredentials"));
         logout();
         return;
       }
-
-      // ✅ Redirect all users to the request type selector
-      navigate('/');
-    } catch (err) {
-      console.error('❌ Login failed:', err);
-      setErrorMsg(err?.response?.data?.message || t('login.errorCredentials'));
+      navigate("/");
+    } catch (error) {
+      console.error("Login failed:", error);
+      setErrorMsg(
+        error?.response?.data?.message || t("login.errorCredentials"),
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 to-white dark:from-gray-800 dark:to-gray-900 px-4">
-      <LanguageSwitcher className="self-end mb-4" />
-      <form
-        onSubmit={handleLogin}
-        className="bg-white dark:bg-gray-800 p-8 shadow-md rounded w-full max-w-sm border border-gray-200 dark:border-gray-700"
-        >
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">{t('login.title')}</h2>
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white py-3 pe-4 ps-11 text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-slate-700 dark:bg-slate-900 dark:text-white";
 
+  return (
+    <AuthShell>
+      <div className="mb-8">
+        <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+          {t("login.welcome")}
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+          {t("login.title")}
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
+          {t("login.subtitle")}
+        </p>
+      </div>
+
+      <form onSubmit={handleLogin} className="space-y-5" noValidate>
         {errorMsg && (
-          <div className="mb-4 text-sm text-red-600 bg-red-100 px-3 py-2 rounded border border-red-200">
+          <div
+            role="alert"
+            className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+          >
             {errorMsg}
           </div>
         )}
 
-        <div className="mb-4">
+        <div>
           <label
             htmlFor="login-email"
-            className="block mb-1 text-gray-700 dark:text-gray-300"
+            className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
-            {t('login.loginIdentifier')}
+            {t("login.loginIdentifier")}
           </label>
-          <input
-            id="login-email"
-            ref={emailInputRef}
-            type="text"
-            className="w-full p-2 border border-gray-300 rounded"
-            value={loginIdentifier}
-            onChange={(e) => setLoginIdentifier(e.target.value)}
-            required
-          />
+          <div className="relative">
+            <UserRound
+              className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
+            <input
+              id="login-email"
+              ref={emailInputRef}
+              type="text"
+              autoComplete="username"
+              className={inputClass}
+              value={loginIdentifier}
+              onChange={(event) => setLoginIdentifier(event.target.value)}
+              placeholder={t("login.identifierPlaceholder")}
+              required
+            />
+          </div>
         </div>
 
-        <div className="mb-6">
+        <div>
           <label
             htmlFor="login-password"
-            className="block mb-1 text-gray-700 dark:text-gray-300"
+            className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
-            {t('login.password')}
+            {t("login.password")}
           </label>
-          <input
-            id="login-password"
-            type="password"
-            className="w-full p-2 border border-gray-300 rounded"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="relative">
+            <KeyRound
+              className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              aria-hidden="true"
+            />
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              className={`${inputClass} pe-12`}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder={t("login.passwordPlaceholder")}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              className="absolute end-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-slate-800"
+              aria-label={
+                showPassword
+                  ? t("login.hideCharacters")
+                  : t("login.showCharacters")
+              }
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`w-full text-white py-2 rounded transition duration-200 ${
-            loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-          }`}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? t('login.loggingIn') : t('login.button')}
+          {loading ? t("login.loggingIn") : t("login.button")}{" "}
+          {!loading && (
+            <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
+          )}
         </button>
       </form>
 
-      <div className="mt-6 w-full max-w-sm">
-        <div className="rounded border border-blue-200 bg-blue-50/60 p-4 shadow-sm dark:border-blue-500/30 dark:bg-blue-900/30">
-          <p className="text-base font-semibold text-blue-800 dark:text-blue-100">
-            {t('login.supplierPortalTitle')}
-          </p>
-          <p className="mt-1 text-sm text-blue-700 dark:text-blue-200">
-            {t('login.supplierPortalDescription')}
-          </p>
-          <Link
-            to="/rfx-portal"
-            className="mt-3 inline-flex items-center justify-center rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-          >
-            {t('login.supplierPortalCta')}
-          </Link>
-        </div>
+      <div className="my-7 flex items-center gap-3 text-xs uppercase tracking-wider text-slate-400">
+        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
+        <span>{t("login.otherAccess")}</span>
+        <span className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
       </div>
 
-      <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
-        {t('login.requestAccessPrompt')}{' '}
-        <Link to="/request-account" className="text-blue-600 hover:underline dark:text-blue-400">
-          {t('login.requestAccessLink')}
+      <Link
+        to="/rfx-portal"
+        className="group flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-700"
+      >
+        <span className="grid h-10 w-10 flex-none place-items-center rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+          <Store className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold text-slate-900 dark:text-white">
+            {t("login.supplierPortalTitle")}
+          </span>
+          <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+            {t("login.supplierPortalDescription")}
+          </span>
+        </span>
+        <ArrowRight
+          className="h-4 w-4 flex-none text-slate-400 transition group-hover:translate-x-1 group-hover:text-blue-600 rtl:rotate-180 rtl:group-hover:-translate-x-1"
+          aria-hidden="true"
+        />
+        <span className="sr-only">{t("login.supplierPortalCta")}</span>
+      </Link>
+
+      <p className="mt-7 text-center text-sm text-slate-500 dark:text-slate-400">
+        {t("login.requestAccessPrompt")}{" "}
+        <Link
+          to="/request-account"
+          className="font-semibold text-blue-600 hover:text-blue-700 hover:underline dark:text-blue-400"
+        >
+          {t("login.requestAccessLink")}
         </Link>
       </p>
-
-      <p className="mt-2 text-sm text-gray-500">
-        {t('login.copyright', { year: new Date().getFullYear() })}
-      </p>
-    </div>
+    </AuthShell>
   );
 };
 

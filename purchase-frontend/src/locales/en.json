@@ -1,6 +1,8 @@
 {
   "login": {
     "title": "Warith Procurement Login",
+    "welcome": "Welcome back",
+    "subtitle": "Sign in to securely manage purchase requests and approvals.",
     "email": "Email",
     "password": "Password",
     "button": "Login",
@@ -14,7 +16,26 @@
     "supplierPortalDescription": "Access RFQs and submit bids directly from the supplier portal without signing in.",
     "supplierPortalCta": "Open supplier portal",
     "copyright": "© {{year}} Warith International Cancer Institute",
-    "loginIdentifier": "Email, employee ID, or phone number"
+    "loginIdentifier": "Email, employee ID, or phone number",
+    "identifierPlaceholder": "Enter your account identifier",
+    "passwordPlaceholder": "Enter your password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "showCharacters": "Show characters",
+    "hideCharacters": "Hide characters",
+    "otherAccess": "Other access"
+  },
+  "authShell": {
+    "brand": "Warith Procurement",
+    "organization": "Warith International Cancer Institute",
+    "badge": "Secure procurement workspace",
+    "headline": "Purchasing, approvals, and visibility—all in one place.",
+    "description": "A streamlined workspace that keeps every request moving and every stakeholder informed.",
+    "benefits": {
+      "visibility": "Track requests from submission through fulfillment",
+      "approvals": "Keep reviews and approvals moving efficiently",
+      "security": "Role-based access protects sensitive information"
+    }
   },
   "register": {
     "title": "Register New User",
@@ -118,6 +139,7 @@
   },
   "requestAccount": {
     "title": "Request Access",
+    "eyebrow": "Join the workspace",
     "subtitle": "Fill in your details and the Supply Chain Manager will review your request.",
     "name": "Full Name",
     "email": "Email",
@@ -147,7 +169,12 @@
     "loadInstitutesError": "We could not load the institutes list. Please try again later.",
     "loadDepartmentsError": "We could not load the departments list. Please try again later.",
     "backToLogin": "Already have access?",
-    "loginLink": "Back to login"
+    "loginLink": "Back to login",
+    "personalDetails": "Your details",
+    "personalDetailsHint": "Tell us how to identify and contact you.",
+    "organizationDetails": "Organization details",
+    "organizationDetailsHint": "Choose where you work so we can route your request.",
+    "reviewNote": "Requests are reviewed by the Supply Chain Manager before access is granted."
   },
   "navbar": {
     "approvals": "Approvals",
@@ -2136,9 +2163,15 @@
   },
   "closedRequests": {
     "title": "My Closed Requests",
+    "eyebrow": "Request archive",
+    "subtitle": "Review outcomes, track item receipts, and access the complete history of your finalized requests.",
     "print": "Print",
     "printedAt": "Printed at",
     "exportCSV": "Export CSV",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing...",
+    "resultCount_one": "{{count}} request",
+    "resultCount_other": "{{count}} requests",
     "cards": {
       "total": "Total Requests"
     },
@@ -2155,6 +2188,7 @@
     "searchLabel": "Search",
     "searchPlaceholder": "Search by type, justification, status, assignee, or ID",
     "filters": {
+      "title": "Find a request",
       "type": "Request Type",
       "status": "Status",
       "sort": "Sort By",
@@ -2182,6 +2216,7 @@
     "startTechnicalInspection": "Open Technical Inspection",
     "errorLoading": "Failed to load closed requests.",
     "loading": "Loading closed requests...",
+    "emptyTitle": "No requests found",
     "emptyState": "No closed requests match your filters.",
     "csvFileName": "closed_requests"
   },
@@ -3560,6 +3595,7 @@
       "drawing_number": "Drawing Number",
       "revision": "Revision",
       "technical_specification": "Technical Specification",
+      "stock_item_id": "Stock Item",
       "criticality": "Criticality",
       "failure_consequence": "Failure Consequence",
       "recommended_stocking_policy": "Recommended Stocking Policy",
@@ -3570,6 +3606,7 @@
       "estimated_annual_consumption": "Estimated Annual Consumption",
       "generic_item_id": "Generic Item Id",
       "preferred_approved_product_id": "Preferred Approved Product Id",
+      "stock_item_id": "Stock Item",
       "lifecycle_status": "Lifecycle Status"
     },
     "searchGeneric": "Search Generic Items",

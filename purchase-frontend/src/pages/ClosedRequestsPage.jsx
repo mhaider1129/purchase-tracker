@@ -12,6 +12,19 @@ import { useNavigate } from 'react-router-dom';
 import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
 import PrintableRequestsReport from '../components/requests/PrintableRequestsReport';
+import {
+  Archive,
+  CheckCircle2,
+  Download,
+  FileText,
+  Filter,
+  PackageCheck,
+  Printer,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  XCircle,
+} from 'lucide-react';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -70,6 +83,7 @@ const ClosedRequestsPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState('newest');
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedAttachmentsId, setExpandedAttachmentsId] = useState(null);
@@ -302,7 +316,7 @@ const ClosedRequestsPage = () => {
     };
 
     fetchClosed();
-  }, [resetApprovals, resetAttachments, tr]);
+  }, [refreshKey, resetApprovals, resetAttachments, tr]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -403,6 +417,9 @@ const ClosedRequestsPage = () => {
   }, [filtered, sortOrder]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE));
+  const activeFilterCount = [search.trim(), requestType !== 'all', statusFilter !== 'all'].filter(
+    Boolean,
+  ).length;
   const paginated = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return sorted.slice(start, start + ITEMS_PER_PAGE);
@@ -473,51 +490,86 @@ const ClosedRequestsPage = () => {
           notAvailable: tr('notAvailable'),
         }}
       />
-      <div className="max-w-6xl mx-auto p-6 space-y-6 print:hidden">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-            {tr('title')}
+      <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 print:hidden">
+        <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-blue-800 px-5 py-6 text-white shadow-lg sm:px-7">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="hidden rounded-xl bg-white/10 p-3 ring-1 ring-white/15 sm:inline-flex">
+                <Archive className="h-6 w-6" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">
+                  {tr("eyebrow")}
+                </p>
+                <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">
+                  {tr("title")}
           </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
+                  {tr("subtitle")}
+                </p>
+              </div>
+            </div>
           <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setRefreshKey((value) => value + 1)}
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                  aria-hidden="true"
+                />
+                {loading ? tr("refreshing") : tr("refresh")}
+              </button>
             <button
               type="button"
               onClick={() => window.print()}
               disabled={sorted.length === 0}
-              className="inline-flex items-center justify-center rounded-md border border-blue-600 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 dark:bg-gray-900 dark:text-blue-300"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {tr('print')}
+                <Printer className="h-4 w-4" aria-hidden="true" />
+                {tr("print")}
             </button>
             <button
               type="button"
               onClick={exportCSV}
               disabled={sorted.length === 0}
-              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-900 shadow-sm transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {tr('exportCSV')}
+                <Download className="h-4 w-4" aria-hidden="true" />
+                {tr("exportCSV")}
             </button>
           </div>
         </div>
+        </section>
 
         {pendingReceiptRequests.length > 0 && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm dark:border-amber-700/70 dark:bg-amber-900/30 dark:text-amber-100">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm font-semibold">
-                  {tr('receiptPromptTitle', { defaultValue: 'Receipt confirmation required' })}
+                  {tr("receiptPromptTitle", {
+                    defaultValue: "Receipt confirmation required",
+                  })}
                 </p>
                 <p className="text-sm">
-                  {tr('receiptPromptMessage', {
+                  {tr("receiptPromptMessage", {
                     defaultValue:
-                      'You have completed requests with items pending receipt confirmation. Open the items and mark them as received.',
+                      "You have completed requests with items pending receipt confirmation. Open the items and mark them as received.",
                   })}
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => setExpandedItemsId(pendingReceiptRequests[0]?.id || null)}
+                onClick={() =>
+                  setExpandedItemsId(pendingReceiptRequests[0]?.id || null)
+                }
                 className="inline-flex items-center justify-center rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900 transition hover:bg-amber-100 dark:border-amber-500 dark:bg-transparent dark:text-amber-100 dark:hover:bg-amber-900/40"
               >
-                {tr('reviewPendingReceipts', { defaultValue: 'Review pending receipt items' })}
+                {tr("reviewPendingReceipts", {
+                  defaultValue: "Review pending receipt items",
+                })}
               </button>
             </div>
           </div>
@@ -532,48 +584,86 @@ const ClosedRequestsPage = () => {
                 type="button"
                 onClick={() => handleStatusCardClick(key)}
                 disabled={isTotal}
-                className={`group rounded-xl border p-4 text-start shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`group flex items-center justify-between rounded-xl border p-4 text-start shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   isTotal
-                    ? 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 cursor-default'
+                    ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 cursor-default"
                     : isActive
-                    ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30'
-                    : 'border-gray-200 bg-white hover:border-blue-400 dark:border-gray-700 dark:bg-gray-800'
-                } ${isTotal ? '' : 'disabled:cursor-not-allowed'}`}
+                      ? "border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30"
+                      : "border-gray-200 bg-white hover:border-blue-400 dark:border-gray-700 dark:bg-gray-800"
+                } ${isTotal ? "" : "disabled:cursor-not-allowed"}`}
               >
-                <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {label}
                 </p>
-                <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                  <p className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">
                   {count}
                 </p>
+                </div>
+                <span
+                  className={`rounded-lg p-2 ${isActive ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"}`}
+                >
+                  {key === "completed" ? (
+                    <CheckCircle2 className="h-5 w-5" />
+                  ) : key === "rejected" ? (
+                    <XCircle className="h-5 w-5" />
+                  ) : isTotal ? (
+                    <FileText className="h-5 w-5" />
+                  ) : (
+                    <PackageCheck className="h-5 w-5" />
+                  )}
+                </span>
               </button>
             );
           })}
         </div>
 
+        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-blue-600" aria-hidden="true" />
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                {tr("filters.title")}
+              </h2>
+              {activeFilterCount > 0 && (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-200">
+                  {activeFilterCount}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {tr("resultCount", { count: sorted.length })}
+            </p>
+          </div>
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('searchLabel')}
+                {tr("searchLabel")}
             </label>
+              <div className="relative mt-1">
+                <Search
+                  className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400"
+                  aria-hidden="true"
+                />
             <input
               type="search"
-              className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-              placeholder={tr('searchPlaceholder')}
+                  className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                  placeholder={tr("searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+            </div>
           <div className="md:w-48">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.type')}
+                {tr("filters.type")}
             </label>
             <select
               className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
               value={requestType}
               onChange={(e) => setRequestType(e.target.value)}
             >
-              <option value="all">{tr('filters.allTypes')}</option>
+                <option value="all">{tr("filters.allTypes")}</option>
               {uniqueTypes.map((type) => (
                 <option key={type} value={type.toLowerCase()}>
                   {type}
@@ -583,14 +673,14 @@ const ClosedRequestsPage = () => {
           </div>
           <div className="md:w-48">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.status')}
+                {tr("filters.status")}
             </label>
             <select
               className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="all">{tr('filters.allStatuses')}</option>
+                <option value="all">{tr("filters.allStatuses")}</option>
               {statusCards
                 .filter(({ isTotal }) => !isTotal)
                 .map(({ key, label }) => (
@@ -602,25 +692,28 @@ const ClosedRequestsPage = () => {
           </div>
           <div className="md:w-48">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              {tr('filters.sort')}
+                {tr("filters.sort")}
             </label>
             <select
               className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
             >
-              <option value="newest">{tr('sort.newest')}</option>
-              <option value="oldest">{tr('sort.oldest')}</option>
+                <option value="newest">{tr("sort.newest")}</option>
+                <option value="oldest">{tr("sort.oldest")}</option>
             </select>
           </div>
           <button
             type="button"
             onClick={handleClearFilters}
-            className="md:self-start inline-flex h-10 items-center justify-center rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+              disabled={activeFilterCount === 0 && sortOrder === "newest"}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-gray-300 px-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
           >
-            {tr('filters.clear')}
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              {tr("filters.clear")}
           </button>
         </div>
+        </section>
 
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-400 dark:bg-red-900/30 dark:text-red-200">
@@ -629,9 +722,37 @@ const ClosedRequestsPage = () => {
         )}
 
         {loading ? (
-          <p className="text-sm text-gray-500 dark:text-gray-300">{tr('loading')}</p>
+          <div className="space-y-3" role="status" aria-live="polite">
+            <span className="sr-only">{tr("loading")}</span>
+            {[0, 1, 2].map((row) => (
+              <div
+                key={row}
+                className="h-16 animate-pulse rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800"
+              />
+            ))}
+          </div>
         ) : sorted.length === 0 ? (
-          <p className="text-sm text-gray-500 dark:text-gray-300">{tr('emptyState')}</p>
+          <div className="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center dark:border-gray-700 dark:bg-gray-800">
+            <Archive
+              className="mx-auto h-10 w-10 text-gray-400"
+              aria-hidden="true"
+            />
+            <h2 className="mt-3 font-semibold text-gray-900 dark:text-gray-100">
+              {tr("emptyTitle")}
+            </h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-300">
+              {tr("emptyState")}
+            </p>
+            {activeFilterCount > 0 && (
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="mt-4 text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-300"
+              >
+                {tr("filters.clear")}
+              </button>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="hidden overflow-x-auto rounded-lg border border-gray-200 shadow-sm dark:border-gray-700 md:block">

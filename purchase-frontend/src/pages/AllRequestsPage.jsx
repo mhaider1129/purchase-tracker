@@ -1,220 +1,275 @@
 // src/pages/AllRequestsPage.jsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import axios from '../api/axios';
-import AssignRequestPanel from '../components/AssignRequestPanel';
-import { printRequest, rewireRequestType } from '../api/requests';
-import ApprovalTimeline from '../components/ApprovalTimeline';
-import useApprovalTimeline from '../hooks/useApprovalTimeline';
-import { getRequesterDisplay } from '../utils/requester';
-import Card from '../components/Card';
-import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
-import useRequestAttachments from '../hooks/useRequestAttachments';
-import useCurrentUser from '../hooks/useCurrentUser';
-import useStatusCommunications from '../hooks/useStatusCommunications';
-import useDirectPurchaseCommunications from '../hooks/useDirectPurchaseCommunications';
-import { hasPermission } from '../utils/permissions';
-import RequestViewModeToggle from '../components/requests/RequestViewModeToggle';
-import usePersistedRequestViewMode, { REQUEST_VIEW_MODES } from '../hooks/usePersistedRequestViewMode';
-import PaginationControls from '../components/ui/PaginationControls';
-import { formatOptionalItemText, getDisplayItems } from '../utils/itemUtils';
-import { isCompletedRequestStatus } from '../utils/requestStatus';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "../api/axios";
+import AssignRequestPanel from "../components/AssignRequestPanel";
+import { printRequest, rewireRequestType } from "../api/requests";
+import ApprovalTimeline from "../components/ApprovalTimeline";
+import useApprovalTimeline from "../hooks/useApprovalTimeline";
+import { getRequesterDisplay } from "../utils/requester";
+import Card from "../components/Card";
+import RequestAttachmentsSection from "../components/RequestAttachmentsSection";
+import useRequestAttachments from "../hooks/useRequestAttachments";
+import useCurrentUser from "../hooks/useCurrentUser";
+import useStatusCommunications from "../hooks/useStatusCommunications";
+import useDirectPurchaseCommunications from "../hooks/useDirectPurchaseCommunications";
+import { hasPermission } from "../utils/permissions";
+import RequestViewModeToggle from "../components/requests/RequestViewModeToggle";
+import usePersistedRequestViewMode, {
+  REQUEST_VIEW_MODES,
+} from "../hooks/usePersistedRequestViewMode";
+import PaginationControls from "../components/ui/PaginationControls";
+import { formatOptionalItemText, getDisplayItems } from "../utils/itemUtils";
+import { isCompletedRequestStatus } from "../utils/requestStatus";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  Download,
+  Filter,
+  ListChecks,
+  RefreshCw,
+  Search,
+  SlidersHorizontal,
+  Timer,
+  X,
+} from "lucide-react";
 
 const PRINT_TRANSLATIONS = {
   en: {
-    purchaseSummary: 'Purchase Request Summary',
-    generatedOn: 'Generated on',
-    requestDetails: 'Request Details',
-    justification: 'Justification',
-    requestedItems: 'Requested Items',
-    specs: 'Specs:',
-    approval: 'Approval:',
-    approvalSeparator: ' – ',
-    noItems: 'No line items recorded.',
-    tableHeaders: ['#', 'Item', 'Brand', 'Qty', 'Purchased Qty', 'Unit Cost', 'Total Cost'],
-    grandTotal: 'Grand Total',
-    preparedBy: 'Prepared By',
-    reviewedBy: 'Reviewed By',
-    approvedBy: 'Approved By',
-    requestId: 'Request ID',
-    status: 'Status',
-    requestType: 'Request Type',
-    createdOn: 'Created On',
-    neededBy: 'Needed By',
-    estimatedCost: 'Estimated Cost',
-    maintenanceRef: 'Maintenance Ref #',
-    project: 'Project',
-    department: 'Department',
-    section: 'Section',
-    requester: 'Requester',
-    printCount: 'Print Count',
-    finalApproval: 'Final Approval',
-    approvedAt: 'Approved at',
-    finalApprover: 'Final approver',
-    printLanguage: 'Print Language',
-    english: 'English',
-    arabic: 'Arabic',
-    yes: 'Yes',
-    no: 'No',
-    printConfirm: 'Print this request? This will not increase its print count.',
+    purchaseSummary: "Purchase Request Summary",
+    generatedOn: "Generated on",
+    requestDetails: "Request Details",
+    justification: "Justification",
+    requestedItems: "Requested Items",
+    specs: "Specs:",
+    approval: "Approval:",
+    approvalSeparator: " – ",
+    noItems: "No line items recorded.",
+    tableHeaders: [
+      "#",
+      "Item",
+      "Brand",
+      "Qty",
+      "Purchased Qty",
+      "Unit Cost",
+      "Total Cost",
+    ],
+    grandTotal: "Grand Total",
+    preparedBy: "Prepared By",
+    reviewedBy: "Reviewed By",
+    approvedBy: "Approved By",
+    requestId: "Request ID",
+    status: "Status",
+    requestType: "Request Type",
+    createdOn: "Created On",
+    neededBy: "Needed By",
+    estimatedCost: "Estimated Cost",
+    maintenanceRef: "Maintenance Ref #",
+    project: "Project",
+    department: "Department",
+    section: "Section",
+    requester: "Requester",
+    printCount: "Print Count",
+    finalApproval: "Final Approval",
+    approvedAt: "Approved at",
+    finalApprover: "Final approver",
+    printLanguage: "Print Language",
+    english: "English",
+    arabic: "Arabic",
+    yes: "Yes",
+    no: "No",
+    printConfirm: "Print this request? This will not increase its print count.",
   },
   ar: {
-    purchaseSummary: 'ملخص طلب الشراء',
-    generatedOn: 'تم الإنشاء في',
-    requestDetails: 'تفاصيل الطلب',
-    justification: 'المبررات',
-    requestedItems: 'المواد المطلوبة',
-    specs: 'المواصفات:',
-    approval: 'الاعتماد:',
-    approvalSeparator: ' – ',
-    noItems: 'لا توجد بنود مسجلة.',
-    tableHeaders: ['#', 'المادة', 'العلامة التجارية', 'الكمية', 'الكمية المشتراة', 'تكلفة الوحدة', 'إجمالي التكلفة'],
-    grandTotal: 'الإجمالي',
-    preparedBy: 'أعدها',
-    reviewedBy: 'تمت مراجعتها من',
-    approvedBy: 'تم اعتمادها من',
-    requestId: 'رقم الطلب',
-    status: 'الحالة',
-    requestType: 'نوع الطلب',
-    createdOn: 'تاريخ الإنشاء',
-    neededBy: 'مطلوب في',
-    estimatedCost: 'التكلفة التقديرية',
-    maintenanceRef: 'رقم مرجع الصيانة',
-    project: 'المشروع',
-    department: 'القسم',
-    section: 'الشعبة',
-    requester: 'مقدم الطلب',
-    printCount: 'عدد الطباعة',
-    finalApproval: 'الموافقة النهائية',
-    approvedAt: 'وافق بتاريخ',
-    finalApprover: 'المعتمد النهائي',
-    printLanguage: 'لغة الطباعة',
-    english: 'الإنجليزية',
-    arabic: 'العربية',
-    yes: 'نعم',
-    no: 'لا',
-    printConfirm: 'هل تريد طباعة هذا الطلب؟ لن يزيد هذا عدد الطباعة.',
+    purchaseSummary: "ملخص طلب الشراء",
+    generatedOn: "تم الإنشاء في",
+    requestDetails: "تفاصيل الطلب",
+    justification: "المبررات",
+    requestedItems: "المواد المطلوبة",
+    specs: "المواصفات:",
+    approval: "الاعتماد:",
+    approvalSeparator: " – ",
+    noItems: "لا توجد بنود مسجلة.",
+    tableHeaders: [
+      "#",
+      "المادة",
+      "العلامة التجارية",
+      "الكمية",
+      "الكمية المشتراة",
+      "تكلفة الوحدة",
+      "إجمالي التكلفة",
+    ],
+    grandTotal: "الإجمالي",
+    preparedBy: "أعدها",
+    reviewedBy: "تمت مراجعتها من",
+    approvedBy: "تم اعتمادها من",
+    requestId: "رقم الطلب",
+    status: "الحالة",
+    requestType: "نوع الطلب",
+    createdOn: "تاريخ الإنشاء",
+    neededBy: "مطلوب في",
+    estimatedCost: "التكلفة التقديرية",
+    maintenanceRef: "رقم مرجع الصيانة",
+    project: "المشروع",
+    department: "القسم",
+    section: "الشعبة",
+    requester: "مقدم الطلب",
+    printCount: "عدد الطباعة",
+    finalApproval: "الموافقة النهائية",
+    approvedAt: "وافق بتاريخ",
+    finalApprover: "المعتمد النهائي",
+    printLanguage: "لغة الطباعة",
+    english: "الإنجليزية",
+    arabic: "العربية",
+    yes: "نعم",
+    no: "لا",
+    printConfirm: "هل تريد طباعة هذا الطلب؟ لن يزيد هذا عدد الطباعة.",
   },
 };
-const DASHBOARD_REFRESH_EVENT = 'dashboard:refresh';
+const DASHBOARD_REFRESH_EVENT = "dashboard:refresh";
 const REQUEST_TYPE_FILTER_OPTIONS = [
-  { value: 'Stock', label: 'Stock' },
-  { value: 'Non-Stock', label: 'Non-Stock' },
-  { value: 'Medical Device', label: 'Medical Device' },
-  { value: 'Medication', label: 'Medication' },
-  { value: 'IT Item', label: 'IT Item' },
-  { value: 'Maintenance', label: 'Maintenance' },
-  { value: 'Printing Logbook', label: 'Logbooks' },
-  { value: 'Warehouse Supply', label: 'Warehouse Supply' },
+  { value: "Stock", label: "Stock" },
+  { value: "Non-Stock", label: "Non-Stock" },
+  { value: "Medical Device", label: "Medical Device" },
+  { value: "Medication", label: "Medication" },
+  { value: "IT Item", label: "IT Item" },
+  { value: "Maintenance", label: "Maintenance" },
+  { value: "Printing Logbook", label: "Logbooks" },
+  { value: "Warehouse Supply", label: "Warehouse Supply" },
 ];
 
 // Map roles returned by the API to human friendly step labels
 const STEP_LABELS = {
-  HOD: 'HOD Approval',
-  CMO: 'CMO Approval',
-  SCM: 'SCM Approval',
-  COO: 'COO Approval',
-  CEO: 'CEO Approval',
-  CFO: 'CFO Approval',
-  WarehouseManager: 'Warehouse Manager Approval',
-  WarehouseKeeper: 'Warehouse Keeper Approval',
-  ProcurementSpecialist: 'Procurement Specialist Action',
+  HOD: "HOD Approval",
+  CMO: "CMO Approval",
+  SCM: "SCM Approval",
+  COO: "COO Approval",
+  CEO: "CEO Approval",
+  CFO: "CFO Approval",
+  WarehouseManager: "Warehouse Manager Approval",
+  WarehouseKeeper: "Warehouse Keeper Approval",
+  ProcurementSpecialist: "Procurement Specialist Action",
 };
 
 const getMaintenanceReference = (request) => {
-  if (request?.request_type !== 'Maintenance') return null;
+  if (request?.request_type !== "Maintenance") return null;
   const reference = request?.maintenance_ref_number;
-  return reference === null || reference === undefined || reference === '' ? '—' : reference;
+  return reference === null || reference === undefined || reference === ""
+    ? "—"
+    : reference;
 };
 
-
 const CURRENT_STEP_FILTER_OPTIONS = [
-  { value: 'Submitted', label: 'Submitted' },
-  { value: 'Available in Stock', label: 'Available in Stock' },
-  { value: 'Rejected', label: 'Rejected' },
-  { value: 'Completed', label: 'Completed' },
-  { value: 'Technical Inspection Pending', label: 'Technical Inspection Pending' },
-  { value: 'Received', label: 'Received' },
-  { value: 'Partially Procured', label: 'Partially Procured' },
-  { value: 'Approved', label: 'Approved' },
+  { value: "Submitted", label: "Submitted" },
+  { value: "Available in Stock", label: "Available in Stock" },
+  { value: "Rejected", label: "Rejected" },
+  { value: "Completed", label: "Completed" },
+  {
+    value: "Technical Inspection Pending",
+    label: "Technical Inspection Pending",
+  },
+  { value: "Received", label: "Received" },
+  { value: "Partially Procured", label: "Partially Procured" },
+  { value: "Approved", label: "Approved" },
   ...Object.entries(STEP_LABELS).map(([value, label]) => ({ value, label })),
 ];
 
 export const getCurrentStep = (req) => {
-  if (req.status === 'Rejected') return 'Rejected';
-  if (req.status?.toLowerCase() === 'available in stock') return 'Available in Stock';
-  if (req.status?.toLowerCase() === 'completed') return 'Completed';
-  if (req.status?.toLowerCase() === 'technical_inspection_pending')
-    return 'Technical Inspection Pending';
-  if (req.status?.toLowerCase() === 'received') return 'Received';
-  if (req.status?.toLowerCase() === 'partially procured') return 'Partially Procured';
-  if (req.status === 'Approved' && !req.current_approver_role) return 'Approved';
+  if (req.status === "Rejected") return "Rejected";
+  if (req.status?.toLowerCase() === "available in stock")
+    return "Available in Stock";
+  if (req.status?.toLowerCase() === "completed") return "Completed";
+  if (req.status?.toLowerCase() === "technical_inspection_pending")
+    return "Technical Inspection Pending";
+  if (req.status?.toLowerCase() === "received") return "Received";
+  if (req.status?.toLowerCase() === "partially procured")
+    return "Partially Procured";
+  if (req.status === "Approved" && !req.current_approver_role)
+    return "Approved";
   if (req.current_approver_role) {
-    return STEP_LABELS[req.current_approver_role] || `${req.current_approver_role} Approval`;
+    return (
+      STEP_LABELS[req.current_approver_role] ||
+      `${req.current_approver_role} Approval`
+    );
   }
-  return 'Submitted';
+  return "Submitted";
 };
 
 // Map the current step to a colorful badge
 export const getStepColor = (step) => {
   switch (step) {
-    case 'Rejected':
-      return 'bg-red-100 text-red-800';
-    case 'Technical Inspection Pending':
-      return 'bg-amber-100 text-amber-800';
-    case 'Completed':
-    case 'Approved':
-    case 'Received':
-    case 'Available in Stock':
-      return 'bg-green-100 text-green-800';
-    case 'Partially Procured':
-      return 'bg-amber-100 text-amber-800';
-    case 'Submitted':
-      return 'bg-gray-100 text-gray-800';
+    case "Rejected":
+      return "bg-red-100 text-red-800";
+    case "Technical Inspection Pending":
+      return "bg-amber-100 text-amber-800";
+    case "Completed":
+    case "Approved":
+    case "Received":
+    case "Available in Stock":
+      return "bg-green-100 text-green-800";
+    case "Partially Procured":
+      return "bg-amber-100 text-amber-800";
+    case "Submitted":
+      return "bg-gray-100 text-gray-800";
     default:
-      return 'bg-blue-100 text-blue-800';
+      return "bg-blue-100 text-blue-800";
   }
 };
 
 export const getItemStatus = (item = {}) => {
-  if (normalizeStatus(item.approval_status) === 'rejected') {
-    return { label: 'Rejected', className: 'bg-red-100 text-red-800' };
+  if (normalizeStatus(item.approval_status) === "rejected") {
+    return { label: "Rejected", className: "bg-red-100 text-red-800" };
   }
 
   const status = normalizeStatus(item.procurement_status);
-  if (status === 'not_procured') return { label: 'Not Procured', className: 'bg-red-100 text-red-800' };
-  if (['canceled', 'cancelled'].includes(status)) return { label: 'Cancelled', className: 'bg-red-100 text-red-800' };
-  if (['purchased', 'completed'].includes(status)) {
-    return { label: status === 'purchased' ? 'Purchased' : 'Completed', className: 'bg-green-100 text-green-800' };
+  if (status === "not_procured")
+    return { label: "Not Procured", className: "bg-red-100 text-red-800" };
+  if (["canceled", "cancelled"].includes(status))
+    return { label: "Cancelled", className: "bg-red-100 text-red-800" };
+  if (["purchased", "completed"].includes(status)) {
+    return {
+      label: status === "purchased" ? "Purchased" : "Completed",
+      className: "bg-green-100 text-green-800",
+    };
   }
-  if (['partially_procured', 'partially procured'].includes(status)) {
-    return { label: 'Partially Procured', className: 'bg-amber-100 text-amber-800' };
+  if (["partially_procured", "partially procured"].includes(status)) {
+    return {
+      label: "Partially Procured",
+      className: "bg-amber-100 text-amber-800",
+    };
   }
-  if (!status || status === 'pending') return { label: 'Pending', className: 'bg-amber-100 text-amber-800' };
+  if (!status || status === "pending")
+    return { label: "Pending", className: "bg-amber-100 text-amber-800" };
   return {
-    label: status.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase()),
-    className: 'bg-blue-100 text-blue-800',
+    label: status
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+    className: "bg-blue-100 text-blue-800",
   };
 };
 
-const normalizeStatus = (status) => String(status || '').trim().toLowerCase();
+const normalizeStatus = (status) =>
+  String(status || "")
+    .trim()
+    .toLowerCase();
 
 const isPostApprovalStatus = (status) => {
   const normalized = normalizeStatus(status);
   return [
-    'approved',
-    'assigned',
-    'partially procured',
-    'technical_inspection_pending',
-    'completed',
-    'received',
+    "approved",
+    "assigned",
+    "partially procured",
+    "technical_inspection_pending",
+    "completed",
+    "received",
   ].includes(normalized);
 };
 
 const AllRequestsPage = () => {
   const { user } = useCurrentUser();
   const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
-    'all-requests-request-view-mode',
+    "all-requests-request-view-mode",
   );
   const [requests, setRequests] = useState([]);
   const [rewiringRequestId, setRewiringRequestId] = useState(null);
@@ -227,68 +282,83 @@ const AllRequestsPage = () => {
   const [expandedDirectCommId, setExpandedDirectCommId] = useState(null);
   const [itemsMap, setItemsMap] = useState({});
   const [loadingItemsId, setLoadingItemsId] = useState(null);
-  const [filter, setFilter] = useState('');
-  const [sort, setSort] = useState('');
-  const [requestType, setRequestType] = useState('');
-  const [requestDomain, setRequestDomain] = useState('');
-  const [search, setSearch] = useState('');
-  const [requestId, setRequestId] = useState('');
-  const [maintenanceRefNumber, setMaintenanceRefNumber] = useState('');
-  const [currentStep, setCurrentStep] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [status, setStatus] = useState('');
-  const [department, setDepartment] = useState('');
-  const [section, setSection] = useState('');
-  const [assignedUser, setAssignedUser] = useState('');
-  const [centralSupplyStatus, setCentralSupplyStatus] = useState('');
-  const [updatingCentralSupplyIds, setUpdatingCentralSupplyIds] = useState(() => new Set());
+  const [filter, setFilter] = useState("");
+  const [sort, setSort] = useState("");
+  const [requestType, setRequestType] = useState("");
+  const [requestDomain, setRequestDomain] = useState("");
+  const [search, setSearch] = useState("");
+  const [requestId, setRequestId] = useState("");
+  const [maintenanceRefNumber, setMaintenanceRefNumber] = useState("");
+  const [currentStep, setCurrentStep] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [status, setStatus] = useState("");
+  const [department, setDepartment] = useState("");
+  const [section, setSection] = useState("");
+  const [assignedUser, setAssignedUser] = useState("");
+  const [centralSupplyStatus, setCentralSupplyStatus] = useState("");
+  const [updatingCentralSupplyIds, setUpdatingCentralSupplyIds] = useState(
+    () => new Set(),
+  );
   const [departments, setDepartments] = useState([]);
   const [procurementUsers, setProcurementUsers] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRequests, setTotalRequests] = useState(0);
-  const [summaryCounts, setSummaryCounts] = useState({ urgent: 0, approved: 0, pending: 0, completed: 0 });
+  const [summaryCounts, setSummaryCounts] = useState({
+    urgent: 0,
+    approved: 0,
+    pending: 0,
+    completed: 0,
+  });
   const [loadingExport, setLoadingExport] = useState(false);
-  const [remindingApproverIds, setRemindingApproverIds] = useState(() => new Set());
+  const [remindingApproverIds, setRemindingApproverIds] = useState(
+    () => new Set(),
+  );
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [printLanguage, setPrintLanguage] = useState('ar');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [printLanguage, setPrintLanguage] = useState("ar");
   const limit = 10;
-  const getCurrentFilters = useCallback(() => ({
-    filter,
-    sort,
-    requestType,
-    requestDomain,
-    search,
-    requestId,
-    maintenanceRefNumber,
-    currentStep,
-    fromDate,
-    toDate,
-    status,
-    department,
-    section,
-    assignedUser,
-    centralSupplyStatus,
-  }), [
-    assignedUser,
-    centralSupplyStatus,
-    currentStep,
-    department,
-    filter,
-    fromDate,
-    maintenanceRefNumber,
-    requestId,
-    requestType,
-    requestDomain,
-    search,
-    section,
-    sort,
-    status,
-    toDate,
-  ]);
-  const [appliedFilters, setAppliedFilters] = useState(() => getCurrentFilters());
+  const getCurrentFilters = useCallback(
+    () => ({
+      filter,
+      sort,
+      requestType,
+      requestDomain,
+      search,
+      requestId,
+      maintenanceRefNumber,
+      currentStep,
+      fromDate,
+      toDate,
+      status,
+      department,
+      section,
+      assignedUser,
+      centralSupplyStatus,
+    }),
+    [
+      assignedUser,
+      centralSupplyStatus,
+      currentStep,
+      department,
+      filter,
+      fromDate,
+      maintenanceRefNumber,
+      requestId,
+      requestType,
+      requestDomain,
+      search,
+      section,
+      sort,
+      status,
+      toDate,
+    ],
+  );
+  const [appliedFilters, setAppliedFilters] = useState(() =>
+    getCurrentFilters(),
+  );
   const {
     expandedApprovalsId,
     approvalsMap,
@@ -343,26 +413,72 @@ const AllRequestsPage = () => {
 
   const requestSummary = useMemo(() => {
     return [
-      { label: 'Total requests', value: totalRequests },
-      { label: 'Urgent requests', value: summaryCounts.urgent },
-      { label: 'Approved', value: summaryCounts.approved },
-      { label: 'Pending', value: summaryCounts.pending },
-      { label: 'Completed', value: summaryCounts.completed },
+      {
+        label: "Total requests",
+        value: totalRequests,
+        icon: ListChecks,
+        tone: "blue",
+      },
+      {
+        label: "Urgent requests",
+        value: summaryCounts.urgent,
+        icon: AlertTriangle,
+        tone: "red",
+      },
+      {
+        label: "Approved",
+        value: summaryCounts.approved,
+        icon: CheckCircle2,
+        tone: "emerald",
+      },
+      {
+        label: "Pending",
+        value: summaryCounts.pending,
+        icon: Timer,
+        tone: "amber",
+      },
+      {
+        label: "Completed",
+        value: summaryCounts.completed,
+        icon: CheckCircle2,
+        tone: "violet",
+      },
     ];
   }, [summaryCounts, totalRequests]);
-  const canHardDeleteRequests = hasPermission(user || {}, 'requests.manage');
-  const canUpdateCentralSupplyStatus = hasPermission(user || {}, 'requests.manage');
-  const canReclassifyRequests = hasPermission(user || {}, 'requests.reclassify');
-  const canRemindCurrentApprover = String(user?.role || '').trim().toUpperCase() === 'SCM';
+  const activeFilterCount = useMemo(
+    () =>
+      Object.entries(appliedFilters).filter(
+        ([key, value]) => key !== "sort" && Boolean(value),
+      ).length,
+    [appliedFilters],
+  );
+  const hasDraftFilterChanges = useMemo(
+    () =>
+      JSON.stringify(getCurrentFilters()) !== JSON.stringify(appliedFilters),
+    [appliedFilters, getCurrentFilters],
+  );
+  const canHardDeleteRequests = hasPermission(user || {}, "requests.manage");
+  const canUpdateCentralSupplyStatus = hasPermission(
+    user || {},
+    "requests.manage",
+  );
+  const canReclassifyRequests = hasPermission(
+    user || {},
+    "requests.reclassify",
+  );
+  const canRemindCurrentApprover =
+    String(user?.role || "")
+      .trim()
+      .toUpperCase() === "SCM";
   const isSummaryRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
 
   useEffect(() => {
     const fetchDeps = async () => {
       try {
-        const res = await axios.get('/departments');
+        const res = await axios.get("/departments");
         setDepartments(res.data);
       } catch (err) {
-        console.error('❌ Failed to load departments:', err);
+        console.error("❌ Failed to load departments:", err);
       }
     };
     fetchDeps();
@@ -371,130 +487,138 @@ const AllRequestsPage = () => {
   useEffect(() => {
     const fetchProcurementUsers = async () => {
       try {
-        const res = await axios.get('/requests/procurement-users');
+        const res = await axios.get("/requests/procurement-users");
         setProcurementUsers(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
-        console.error('❌ Failed to load assigned-user filter options:', err);
+        console.error("❌ Failed to load assigned-user filter options:", err);
       }
     };
     fetchProcurementUsers();
   }, []);
 
-  const fetchRequests = useCallback(async (requestedPage = page) => {
-    // This callback is also used directly as an event/success handler. React and
-    // child components may pass an event or response object, neither of which is
-    // a valid API page number.
-    const targetPage = Number.isInteger(requestedPage) && requestedPage > 0
-      ? requestedPage
-      : page;
-    setLoading(true);
-    resetAttachments();
-    try {
-      const res = await axios.get('/requests', {
-        params: {
-          filter: appliedFilters.filter,
-          sort: appliedFilters.sort,
-          request_type: appliedFilters.requestType,
-          request_domain: appliedFilters.requestDomain,
-          search: appliedFilters.search,
-          request_id: appliedFilters.requestId.trim() || undefined,
-          maintenance_ref_number: appliedFilters.maintenanceRefNumber.trim() || undefined,
-          current_step: appliedFilters.currentStep || undefined,
-          from_date: appliedFilters.fromDate,
-          to_date: appliedFilters.toDate,
-          status: appliedFilters.status,
-          department_id: appliedFilters.department,
-          section_id: appliedFilters.section,
-          assigned_to: appliedFilters.assignedUser,
-          central_supply_status: appliedFilters.centralSupplyStatus,
-          page: targetPage,
-          limit,
-        },
-      });
+  const fetchRequests = useCallback(
+    async (requestedPage = page) => {
+      // This callback is also used directly as an event/success handler. React and
+      // child components may pass an event or response object, neither of which is
+      // a valid API page number.
+      const targetPage =
+        Number.isInteger(requestedPage) && requestedPage > 0
+          ? requestedPage
+          : page;
+      setLoading(true);
+      resetAttachments();
+      try {
+        const res = await axios.get("/requests", {
+          params: {
+            filter: appliedFilters.filter,
+            sort: appliedFilters.sort,
+            request_type: appliedFilters.requestType,
+            request_domain: appliedFilters.requestDomain,
+            search: appliedFilters.search,
+            request_id: appliedFilters.requestId.trim() || undefined,
+            maintenance_ref_number:
+              appliedFilters.maintenanceRefNumber.trim() || undefined,
+            current_step: appliedFilters.currentStep || undefined,
+            from_date: appliedFilters.fromDate,
+            to_date: appliedFilters.toDate,
+            status: appliedFilters.status,
+            department_id: appliedFilters.department,
+            section_id: appliedFilters.section,
+            assigned_to: appliedFilters.assignedUser,
+            central_supply_status: appliedFilters.centralSupplyStatus,
+            page: targetPage,
+            limit,
+          },
+        });
 
-      const fetchedRequests = Array.isArray(res?.data?.data) ? [...res.data.data] : [];
-      const isCompletedOrRejected = (req) => {
-        const normalizedStatus = normalizeStatus(req?.status);
-        return isCompletedRequestStatus(normalizedStatus) || normalizedStatus === 'rejected';
-      };
-
-      const urgentPinnedRequests = [];
-      const regularRequests = [];
-
-      fetchedRequests.forEach((req) => {
-        if (req?.is_urgent && !isCompletedOrRejected(req)) {
-          urgentPinnedRequests.push(req);
-        } else {
-          regularRequests.push(req);
-        }
-      });
-
-      setRequests([...urgentPinnedRequests, ...regularRequests]);
-      // Item rows can be replaced when an edit approval is accepted. Do not keep
-      // the pre-approval response cached after the request list is refreshed.
-      setItemsMap({});
-      setExpandedItemsId(null);
-      setAlphabetizedItemsId(null);
-      resetApprovals();
-      const total = Number(res?.data?.total) || 0;
-      setTotalRequests(total);
-      setTotalPages(Math.ceil(total / limit));
-
-      const summaryRes = await axios.get('/requests', {
-        params: {
-          filter: appliedFilters.filter,
-          sort: appliedFilters.sort,
-          request_type: appliedFilters.requestType,
-          request_domain: appliedFilters.requestDomain,
-          search: appliedFilters.search,
-          request_id: appliedFilters.requestId.trim() || undefined,
-          maintenance_ref_number: appliedFilters.maintenanceRefNumber.trim() || undefined,
-          current_step: appliedFilters.currentStep || undefined,
-          from_date: appliedFilters.fromDate,
-          to_date: appliedFilters.toDate,
-          status: appliedFilters.status,
-          department_id: appliedFilters.department,
-          section_id: appliedFilters.section,
-          assigned_to: appliedFilters.assignedUser,
-          central_supply_status: appliedFilters.centralSupplyStatus,
-          page: 1,
-          limit: Math.max(total, limit),
-        },
-      });
-
-      const summaryRequests = Array.isArray(summaryRes?.data?.data) ? summaryRes.data.data : [];
-      const finalizedStatuses = [
-        'approved',
-        'rejected',
-        'completed',
-        'received',
-        'available in stock',
-        'cancelled',
-      ];
-      const nextSummary = summaryRequests.reduce(
-        (acc, req) => {
+        const fetchedRequests = Array.isArray(res?.data?.data)
+          ? [...res.data.data]
+          : [];
+        const isCompletedOrRejected = (req) => {
           const normalizedStatus = normalizeStatus(req?.status);
-          if (req?.is_urgent) acc.urgent += 1;
-          if (normalizedStatus === 'approved') acc.approved += 1;
-          if (isCompletedRequestStatus(normalizedStatus)) acc.completed += 1;
-          if (!finalizedStatuses.includes(normalizedStatus)) acc.pending += 1;
-          return acc;
-        },
-        { urgent: 0, approved: 0, pending: 0, completed: 0 },
-      );
-      setSummaryCounts(nextSummary);
-    } catch (err) {
-      console.error(err);
-      alert('❌ Failed to fetch requests.');
-    } finally {
-      setLoading(false);
-    }
-    }, [
-    appliedFilters,
-    page,
-    resetApprovals,
-    resetAttachments,
-  ]);
+          return (
+            isCompletedRequestStatus(normalizedStatus) ||
+            normalizedStatus === "rejected"
+          );
+        };
+
+        const urgentPinnedRequests = [];
+        const regularRequests = [];
+
+        fetchedRequests.forEach((req) => {
+          if (req?.is_urgent && !isCompletedOrRejected(req)) {
+            urgentPinnedRequests.push(req);
+          } else {
+            regularRequests.push(req);
+          }
+        });
+
+        setRequests([...urgentPinnedRequests, ...regularRequests]);
+        // Item rows can be replaced when an edit approval is accepted. Do not keep
+        // the pre-approval response cached after the request list is refreshed.
+        setItemsMap({});
+        setExpandedItemsId(null);
+        setAlphabetizedItemsId(null);
+        resetApprovals();
+        const total = Number(res?.data?.total) || 0;
+        setTotalRequests(total);
+        setTotalPages(Math.ceil(total / limit));
+
+        const summaryRes = await axios.get("/requests", {
+          params: {
+            filter: appliedFilters.filter,
+            sort: appliedFilters.sort,
+            request_type: appliedFilters.requestType,
+            request_domain: appliedFilters.requestDomain,
+            search: appliedFilters.search,
+            request_id: appliedFilters.requestId.trim() || undefined,
+            maintenance_ref_number:
+              appliedFilters.maintenanceRefNumber.trim() || undefined,
+            current_step: appliedFilters.currentStep || undefined,
+            from_date: appliedFilters.fromDate,
+            to_date: appliedFilters.toDate,
+            status: appliedFilters.status,
+            department_id: appliedFilters.department,
+            section_id: appliedFilters.section,
+            assigned_to: appliedFilters.assignedUser,
+            central_supply_status: appliedFilters.centralSupplyStatus,
+            page: 1,
+            limit: Math.max(total, limit),
+          },
+        });
+
+        const summaryRequests = Array.isArray(summaryRes?.data?.data)
+          ? summaryRes.data.data
+          : [];
+        const finalizedStatuses = [
+          "approved",
+          "rejected",
+          "completed",
+          "received",
+          "available in stock",
+          "cancelled",
+        ];
+        const nextSummary = summaryRequests.reduce(
+          (acc, req) => {
+            const normalizedStatus = normalizeStatus(req?.status);
+            if (req?.is_urgent) acc.urgent += 1;
+            if (normalizedStatus === "approved") acc.approved += 1;
+            if (isCompletedRequestStatus(normalizedStatus)) acc.completed += 1;
+            if (!finalizedStatuses.includes(normalizedStatus)) acc.pending += 1;
+            return acc;
+          },
+          { urgent: 0, approved: 0, pending: 0, completed: 0 },
+        );
+        setSummaryCounts(nextSummary);
+      } catch (err) {
+        console.error(err);
+        alert("❌ Failed to fetch requests.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [appliedFilters, page, resetApprovals, resetAttachments],
+  );
 
   useEffect(() => {
     if (filtersChanged) {
@@ -514,38 +638,38 @@ const AllRequestsPage = () => {
   };
 
   const clearFilters = () => {
-    setFilter('');
-    setSort('');
-    setRequestType('');
-    setRequestDomain('');
-    setSearch('');
-    setRequestId('');
-    setMaintenanceRefNumber('');
-    setCurrentStep('');
-    setFromDate('');
-    setToDate('');
-    setStatus('');
-    setDepartment('');
-    setSection('');
-    setAssignedUser('');
-    setCentralSupplyStatus('');
+    setFilter("");
+    setSort("");
+    setRequestType("");
+    setRequestDomain("");
+    setSearch("");
+    setRequestId("");
+    setMaintenanceRefNumber("");
+    setCurrentStep("");
+    setFromDate("");
+    setToDate("");
+    setStatus("");
+    setDepartment("");
+    setSection("");
+    setAssignedUser("");
+    setCentralSupplyStatus("");
     setPage(1);
     setAppliedFilters({
-      filter: '',
-      sort: '',
-      requestType: '',
-      requestDomain: '',
-      search: '',
-      requestId: '',
-      maintenanceRefNumber: '',
-      currentStep: '',
-      fromDate: '',
-      toDate: '',
-      status: '',
-      department: '',
-      section: '',
-      assignedUser: '',
-      centralSupplyStatus: '',
+      filter: "",
+      sort: "",
+      requestType: "",
+      requestDomain: "",
+      search: "",
+      requestId: "",
+      maintenanceRefNumber: "",
+      currentStep: "",
+      fromDate: "",
+      toDate: "",
+      status: "",
+      department: "",
+      section: "",
+      assignedUser: "",
+      centralSupplyStatus: "",
     });
     setFiltersChanged(false);
   };
@@ -563,7 +687,7 @@ const AllRequestsPage = () => {
       setItemsMap((prev) => ({ ...prev, [requestId]: res.data.items || [] }));
     } catch (err) {
       console.error(`❌ Failed to load items for request ${requestId}:`, err);
-      alert('Failed to load items');
+      alert("Failed to load items");
     } finally {
       setLoadingItemsId(null);
     }
@@ -579,7 +703,6 @@ const AllRequestsPage = () => {
     await loadAttachmentsForRequest(requestId);
     setExpandedAttachmentsId(requestId);
   };
-
 
   const handleExport = async (type) => {
     setLoadingExport(true);
@@ -601,18 +724,18 @@ const AllRequestsPage = () => {
           section_id: section,
           assigned_to: assignedUser,
         },
-        responseType: 'blob',
+        responseType: "blob",
       });
 
       const blob = new Blob([res.data], {
-        type: type === 'csv' ? 'text/csv' : 'application/pdf',
+        type: type === "csv" ? "text/csv" : "application/pdf",
       });
 
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
 
-      const dateStr = new Date().toISOString().split('T')[0];
+      const dateStr = new Date().toISOString().split("T")[0];
       link.download = `purchase_requests_${dateStr}.${type}`;
 
       link.click();
@@ -627,9 +750,11 @@ const AllRequestsPage = () => {
 
   const handlePrint = async (requestId) => {
     const translate = (key) =>
-      PRINT_TRANSLATIONS[printLanguage]?.[key] || PRINT_TRANSLATIONS.en[key] || key;
+      PRINT_TRANSLATIONS[printLanguage]?.[key] ||
+      PRINT_TRANSLATIONS.en[key] ||
+      key;
 
-    const shouldPrint = window.confirm(translate('printConfirm'));
+    const shouldPrint = window.confirm(translate("printConfirm"));
     if (!shouldPrint) return;
 
     try {
@@ -637,36 +762,44 @@ const AllRequestsPage = () => {
         incrementPrintCount: false,
         language: printLanguage,
       });
-      const { request, items, message = 'Request ready for printing.', print_count } = data;
+      const {
+        request,
+        items,
+        message = "Request ready for printing.",
+        print_count,
+      } = data;
 
-      const locale = printLanguage === 'ar' ? 'ar-EG' : 'en-US';
-      const direction = printLanguage === 'ar' ? 'rtl' : 'ltr';
-      const win = window.open('', '_blank');
+      const locale = printLanguage === "ar" ? "ar-EG" : "en-US";
+      const direction = printLanguage === "ar" ? "rtl" : "ltr";
+      const win = window.open("", "_blank");
       if (!win) {
-        alert('Please enable popups to print the request.');
+        alert("Please enable popups to print the request.");
         return;
       }
 
       const escapeHtml = (unsafe) => {
-        if (unsafe === null || unsafe === undefined) return '';
+        if (unsafe === null || unsafe === undefined) return "";
         return String(unsafe)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
       };
 
       const formatValue = (value) => {
-        if (value === null || value === undefined || value === '') return '—';
-        if (typeof value === 'boolean') return value ? translate('yes') : translate('no');
+        if (value === null || value === undefined || value === "") return "—";
+        if (typeof value === "boolean")
+          return value ? translate("yes") : translate("no");
         return escapeHtml(value);
       };
 
       const formatDate = (value) => {
-        if (!value) return '—';
+        if (!value) return "—";
         const date = new Date(value);
-        return Number.isNaN(date.getTime()) ? '—' : escapeHtml(date.toLocaleString(locale));
+        return Number.isNaN(date.getTime())
+          ? "—"
+          : escapeHtml(date.toLocaleString(locale));
       };
 
       const formatAmount = (value) => {
@@ -676,18 +809,18 @@ const AllRequestsPage = () => {
           numeric.toLocaleString(locale, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })
+          }),
         );
       };
 
       const formatFinalApprovalSummary = (name, dateValue) => {
         const formattedDate = formatDate(dateValue);
-        if (formattedDate === '—') return formattedDate;
-        return `${name || translate('finalApprover')} ${translate('approvedAt')} ${formattedDate}`;
+        if (formattedDate === "—") return formattedDate;
+        return `${name || translate("finalApprover")} ${translate("approvedAt")} ${formattedDate}`;
       };
 
       const now = escapeHtml(new Date().toLocaleString(locale));
-      const isMaintenanceRequest = request.request_type === 'Maintenance';
+      const isMaintenanceRequest = request.request_type === "Maintenance";
       const maintenanceAssignedToRequester =
         isMaintenanceRequest &&
         request.initiated_by_technician_id &&
@@ -709,28 +842,37 @@ const AllRequestsPage = () => {
           : request.requester_role;
 
       const requesterDisplay = requesterName
-        ? `${requesterName}${requesterRole ? ` (${requesterRole})` : ''}`
+        ? `${requesterName}${requesterRole ? ` (${requesterRole})` : ""}`
         : requesterName;
 
       const finalApproval = request.final_approval?.approved_at
-        ? formatFinalApprovalSummary(request.final_approval.approver_name, request.final_approval.approved_at)
+        ? formatFinalApprovalSummary(
+            request.final_approval.approver_name,
+            request.final_approval.approved_at,
+          )
         : null;
 
       const detailFields = [
-        { label: translate('requestId'), value: request.id },
-        { label: translate('status'), value: request.status },
-        { label: translate('createdOn'), value: formatDate(request.created_at) },
-        { label: translate('neededBy'), value: formatDate(request.needed_by) },
-        { label: translate('maintenanceRef'), value: request.maintenance_ref_number },
-        { label: translate('project'), value: request.project_name },
-        { label: translate('department'), value: request.department_name },
-        { label: translate('section'), value: request.section_name },
-        { label: translate('requester'), value: requesterDisplay },
-        { label: translate('printCount'), value: print_count },
-        { label: translate('finalApproval'), value: finalApproval },
+        { label: translate("requestId"), value: request.id },
+        { label: translate("status"), value: request.status },
+        {
+          label: translate("createdOn"),
+          value: formatDate(request.created_at),
+        },
+        { label: translate("neededBy"), value: formatDate(request.needed_by) },
+        {
+          label: translate("maintenanceRef"),
+          value: request.maintenance_ref_number,
+        },
+        { label: translate("project"), value: request.project_name },
+        { label: translate("department"), value: request.department_name },
+        { label: translate("section"), value: request.section_name },
+        { label: translate("requester"), value: requesterDisplay },
+        { label: translate("printCount"), value: print_count },
+        { label: translate("finalApproval"), value: finalApproval },
       ]
         .map(({ label, value }) => ({ label, value: formatValue(value) }))
-        .filter(({ value }) => value && value !== '—');
+        .filter(({ value }) => value && value !== "—");
 
       const detailGrid = detailFields
         .map(
@@ -738,9 +880,9 @@ const AllRequestsPage = () => {
             <div class="detail-item">
               <span class="detail-label">${escapeHtml(label)}</span>
               <span class="detail-value">${value}</span>
-            </div>`
+            </div>`,
         )
-        .join('');
+        .join("");
 
       const totalCost = items.reduce((sum, item) => {
         const value = Number(item.total_cost);
@@ -749,39 +891,41 @@ const AllRequestsPage = () => {
 
       const itemRows = items
         .map((item, index) => {
-          const specs = formatOptionalItemText(item.specs, '');
+          const specs = formatOptionalItemText(item.specs, "");
           const specsNote = specs
-            ? `<div class="item-note"><strong>${translate('specs')}</strong> ${formatValue(specs)}</div>`
-            : '';
+            ? `<div class="item-note"><strong>${translate("specs")}</strong> ${formatValue(specs)}</div>`
+            : "";
           const approvalNote =
             item.approval_status || item.approval_comments
-              ? `<div class="item-note"><strong>${translate('approval')}</strong> ${formatValue(item.approval_status)}${
-                  item.approval_comments ? `${translate('approvalSeparator')}${formatValue(item.approval_comments)}` : ''
+              ? `<div class="item-note"><strong>${translate("approval")}</strong> ${formatValue(item.approval_status)}${
+                  item.approval_comments
+                    ? `${translate("approvalSeparator")}${formatValue(item.approval_comments)}`
+                    : ""
                 }</div>`
-              : '';
+              : "";
 
           return `
             <tr>
               <td>${index + 1}</td>
               <td>
                 <div class="item-name">${formatValue(item.item_name)}</div>
-                ${specsNote || approvalNote ? `<div class="item-notes">${specsNote}${approvalNote}</div>` : ''}
+                ${specsNote || approvalNote ? `<div class="item-notes">${specsNote}${approvalNote}</div>` : ""}
               </td>
-              <td>${formatValue(formatOptionalItemText(item.brand, ''))}</td>
+              <td>${formatValue(formatOptionalItemText(item.brand, ""))}</td>
               <td class="numeric">${formatValue(item.quantity)}</td>
               <td class="numeric">${formatValue(item.purchased_quantity)}</td>
               <td class="numeric">${formatAmount(item.unit_cost)}</td>
               <td class="numeric">${formatAmount(item.total_cost)}</td>
             </tr>`;
         })
-        .join('');
+        .join("");
 
       const justification = request.justification
         ? `<section class="section">
-            <h2>${translate('justification')}</h2>
-            <p>${escapeHtml(request.justification).replace(/\n/g, '<br />')}</p>
+            <h2>${translate("justification")}</h2>
+            <p>${escapeHtml(request.justification).replace(/\n/g, "<br />")}</p>
           </section>`
-        : '';
+        : "";
 
       const body = `
         <!DOCTYPE html>
@@ -820,7 +964,7 @@ const AllRequestsPage = () => {
                 border-bottom: 3px solid #2563eb;
                 padding-bottom: 16px;
                 margin-bottom: 24px;
-                flex-direction: ${direction === 'rtl' ? 'row-reverse' : 'row'};
+                flex-direction: ${direction === "rtl" ? "row-reverse" : "row"};
               }
               header h1 {
                 margin: 0;
@@ -859,14 +1003,14 @@ const AllRequestsPage = () => {
                 color: #6b7280;
                 text-transform: uppercase;
                 margin-bottom: 4px;
-                text-align: ${direction === 'rtl' ? 'right' : 'left'};
+                text-align: ${direction === "rtl" ? "right" : "left"};
               }
               .detail-value {
                 font-weight: 600;
                 font-size: 15px;
                 color: #111827;
                 word-break: break-word;
-                text-align: ${direction === 'rtl' ? 'right' : 'left'};
+                text-align: ${direction === "rtl" ? "right" : "left"};
               }
               .section {
                 margin-bottom: 24px;
@@ -979,14 +1123,14 @@ const AllRequestsPage = () => {
             <div class="page">
               <header>
                 <div>
-                  <h1>${translate('purchaseSummary')}</h1>
-                  <p>${translate('generatedOn')} ${now}</p>
+                  <h1>${translate("purchaseSummary")}</h1>
+                  <p>${translate("generatedOn")} ${now}</p>
                 </div>
-                <span class="print-badge">${translate('printCount')}: ${formatValue(print_count)}</span>
+                <span class="print-badge">${translate("printCount")}: ${formatValue(print_count)}</span>
               </header>
 
               <section class="section">
-                <h2>${translate('requestDetails')}</h2>
+                <h2>${translate("requestDetails")}</h2>
                 <div class="details-grid">
                   ${detailGrid}
                 </div>
@@ -995,22 +1139,22 @@ const AllRequestsPage = () => {
               ${justification}
 
               <section class="section">
-                <h2>${translate('requestedItems')}</h2>
+                <h2>${translate("requestedItems")}</h2>
                 <table class="items-table">
                   <thead>
                     <tr>
                       ${PRINT_TRANSLATIONS[printLanguage].tableHeaders
                         .map((header) => `<th>${escapeHtml(header)}</th>`)
-                        .join('')}
+                        .join("")}
                     </tr>
                   </thead>
                   <tbody>
                     ${
                       itemRows ||
-                      `<tr><td colspan="7" style="text-align:center; padding: 24px;">${translate('noItems')}</td></tr>`
+                      `<tr><td colspan="7" style="text-align:center; padding: 24px;">${translate("noItems")}</td></tr>`
                     }
                     <tr class="totals-row">
-                      <td colspan="6">${translate('grandTotal')}</td>
+                      <td colspan="6">${translate("grandTotal")}</td>
                       <td class="numeric">${formatAmount(totalCost)}</td>
                     </tr>
                   </tbody>
@@ -1018,13 +1162,13 @@ const AllRequestsPage = () => {
               </section>
 
               <section class="signature-blocks">
-                <div class="signature">${translate('preparedBy')}</div>
-                <div class="signature">${translate('reviewedBy')}</div>
-                <div class="signature">${translate('approvedBy')}</div>
+                <div class="signature">${translate("preparedBy")}</div>
+                <div class="signature">${translate("reviewedBy")}</div>
+                <div class="signature">${translate("approvedBy")}</div>
               </section>
 
               <footer>
-                ${translate('requestId')} ${escapeHtml(request.id)} • ${now}
+                ${translate("requestId")} ${escapeHtml(request.id)} • ${now}
               </footer>
             </div>
           </body>
@@ -1040,8 +1184,8 @@ const AllRequestsPage = () => {
 
       alert(message);
     } catch (err) {
-      console.error('❌ Failed to print request:', err);
-      alert('❌ Failed to print request.');
+      console.error("❌ Failed to print request:", err);
+      alert("❌ Failed to print request.");
     }
   };
 
@@ -1053,11 +1197,18 @@ const AllRequestsPage = () => {
 
     setRemindingApproverIds((prev) => new Set(prev).add(requestId));
     try {
-      const res = await axios.post(`/approvals/request/${requestId}/remind-current`);
-      alert(res?.data?.message || '✅ Approval reminder email sent.');
+      const res = await axios.post(
+        `/approvals/request/${requestId}/remind-current`,
+      );
+      alert(res?.data?.message || "✅ Approval reminder email sent.");
     } catch (err) {
-      console.error(`❌ Failed to remind current approver for request ${requestId}:`, err);
-      alert(err?.response?.data?.message || '❌ Failed to send approval reminder.');
+      console.error(
+        `❌ Failed to remind current approver for request ${requestId}:`,
+        err,
+      );
+      alert(
+        err?.response?.data?.message || "❌ Failed to send approval reminder.",
+      );
     } finally {
       setRemindingApproverIds((prev) => {
         const next = new Set(prev);
@@ -1073,27 +1224,30 @@ const AllRequestsPage = () => {
     );
     if (!confirmed) return;
 
-    const password = window.prompt('Enter your password to confirm this deletion:');
+    const password = window.prompt(
+      "Enter your password to confirm this deletion:",
+    );
     if (password === null) return;
     if (!password.trim()) {
-      alert('Password is required to delete a request.');
+      alert("Password is required to delete a request.");
       return;
     }
 
     try {
-      await axios.post('/auth/verify-password', { password });
+      await axios.post("/auth/verify-password", { password });
       await axios.delete(`/requests/${requestId}/hard-delete`);
       if (expandedAssignId === requestId) setExpandedAssignId(null);
       if (expandedItemsId === requestId) setExpandedItemsId(null);
       if (expandedAttachmentsId === requestId) setExpandedAttachmentsId(null);
-      if (expandedCommunicationId === requestId) setExpandedCommunicationId(null);
+      if (expandedCommunicationId === requestId)
+        setExpandedCommunicationId(null);
       if (expandedDirectCommId === requestId) setExpandedDirectCommId(null);
-      alert('✅ Request deleted permanently.');
+      alert("✅ Request deleted permanently.");
       fetchRequests();
       window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
     } catch (err) {
       console.error(`❌ Failed to delete request ${requestId}:`, err);
-      alert(err?.response?.data?.message || 'Failed to delete request.');
+      alert(err?.response?.data?.message || "Failed to delete request.");
     }
   };
 
@@ -1102,7 +1256,7 @@ const AllRequestsPage = () => {
     if (nextType === request.request_type) return;
     const confirmed = window.confirm(
       `Change request ${request.id} from ${request.request_type} to ${nextType}? ` +
-        'Its existing approvals will be removed and the correct approval workflow will restart from the first step.',
+        "Its existing approvals will be removed and the correct approval workflow will restart from the first step.",
     );
     if (!confirmed) return;
 
@@ -1118,8 +1272,13 @@ const AllRequestsPage = () => {
       await fetchRequests();
       window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
     } catch (err) {
-      console.error(`❌ Failed to change the type of request ${request.id}:`, err);
-      alert(err?.response?.data?.message || 'Failed to change the request type.');
+      console.error(
+        `❌ Failed to change the type of request ${request.id}:`,
+        err,
+      );
+      alert(
+        err?.response?.data?.message || "Failed to change the request type.",
+      );
     } finally {
       setRewiringRequestId(null);
     }
@@ -1129,13 +1288,21 @@ const AllRequestsPage = () => {
     const sent = !request.sent_to_central_supply_at;
     setUpdatingCentralSupplyIds((current) => new Set(current).add(request.id));
     try {
-      const response = await axios.patch(`/requests/${request.id}/central-supply-status`, { sent });
-      setRequests((current) => current.map((entry) => (
-        entry.id === request.id ? { ...entry, ...response.data } : entry
-      )));
+      const response = await axios.patch(
+        `/requests/${request.id}/central-supply-status`,
+        { sent },
+      );
+      setRequests((current) =>
+        current.map((entry) =>
+          entry.id === request.id ? { ...entry, ...response.data } : entry,
+        ),
+      );
     } catch (err) {
-      console.error('Failed to update Central Supply Chain status:', err);
-      alert(err?.response?.data?.message || 'Failed to update Central Supply Chain status.');
+      console.error("Failed to update Central Supply Chain status:", err);
+      alert(
+        err?.response?.data?.message ||
+          "Failed to update Central Supply Chain status.",
+      );
     } finally {
       setUpdatingCentralSupplyIds((current) => {
         const next = new Set(current);
@@ -1145,796 +1312,1133 @@ const AllRequestsPage = () => {
     }
   };
 
+  const fieldClass =
+    "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+  const filterLabelClass =
+    "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500";
+  const summaryToneClasses = {
+    blue: "bg-blue-50 text-blue-700 ring-blue-100",
+    red: "bg-red-50 text-red-700 ring-red-100",
+    emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    amber: "bg-amber-50 text-amber-700 ring-amber-100",
+    violet: "bg-violet-50 text-violet-700 ring-violet-100",
+  };
+
   return (
-    <>
-      <div className="p-6">
-      <Card className="mb-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold mb-1">All Purchase Requests</h1>
-            <p className="text-sm text-gray-600">Track all submitted requests, filter quickly, and take actions by request.</p>
+    <div className="min-h-screen bg-slate-50/70 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1600px]">
+        <section className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 px-6 py-7 text-white shadow-xl shadow-blue-950/10 sm:px-8">
+          <div
+            className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl"
+            aria-hidden="true"
+          />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
+                <ListChecks size={15} aria-hidden="true" /> Procurement
+                workspace
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                All purchase requests
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">
+                Review demand, follow approvals, and move every request from
+                submission to completion.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="inline-flex h-11 items-center justify-center gap-2 self-start rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => fetchRequests()}
+              disabled={loading}
+            >
+              <RefreshCw
+                size={17}
+                className={loading ? "animate-spin" : ""}
+                aria-hidden="true"
+              />
+              {loading ? "Refreshing…" : "Refresh data"}
+            </button>
           </div>
-          <button
-            type="button"
-            className="self-start rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => fetchRequests()}
-            disabled={loading}
-          >
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
-      </Card>
+        </section>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {requestSummary.map((item) => (
-          <Card key={item.label}>
-            <p className="text-xs uppercase tracking-wide text-slate-500">{item.label}</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-900">{item.value}</p>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="mb-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-          <p className="text-sm font-medium text-gray-700">Filters & export</p>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>Showing <strong className="text-gray-700">{requests.length}</strong> of <strong className="text-gray-700">{totalRequests}</strong> request(s)</span>
-            {filtersChanged && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">Unsaved filter changes</span>}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-3 items-end">
-          <select className="border p-2 rounded" value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="">All Requests</option>
-            <option value="unassigned">Unassigned Only</option>
-        </select>
-
-        <select className="border p-2 rounded" value={sort} onChange={(e) => setSort(e.target.value)}>
-          <option value="">Newest First</option>
-          <option value="assigned">Sort by Assigned</option>
-        </select>
-
-        <select className="border p-2 rounded" value={requestType} onChange={(e) => setRequestType(e.target.value)}>
-          <option value="">All Types</option>
-          {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="border p-2 rounded"
-          value={requestDomain}
-          onChange={(e) => setRequestDomain(e.target.value)}
-          aria-label="Request domain"
+        <section
+          className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5"
+          aria-label="Request overview"
         >
-          <option value="">All Domains</option>
-          <option value="operational">Operational</option>
-          <option value="medical">Medical</option>
-        </select>
-
-        <input
-          type="text"
-          className="border p-2 rounded"
-          placeholder="Search keyword"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-
-        <input
-          type="text"
-          className="border p-2 rounded"
-          placeholder="Request ID"
-          value={requestId}
-          onChange={(e) => setRequestId(e.target.value)}
-        />
-
-        <input
-          type="text"
-          className="border p-2 rounded"
-          placeholder="Maintenance Reference Number"
-          value={maintenanceRefNumber}
-          onChange={(e) => setMaintenanceRefNumber(e.target.value)}
-        />
-
-        <select className="border p-2 rounded" value={currentStep} onChange={(e) => setCurrentStep(e.target.value)}>
-          <option value="">All Current Steps</option>
-          {CURRENT_STEP_FILTER_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          className="border p-2 rounded"
-          value={fromDate}
-          onChange={(e) => setFromDate(e.target.value)}
-        />
-
-        <input
-          type="date"
-          className="border p-2 rounded"
-          value={toDate}
-          onChange={(e) => setToDate(e.target.value)}
-        />
-
-        <select className="border p-2 rounded" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Partially Procured">Partially Procured</option>
-          <option value="Received">Received</option>
-          <option value="Rejected">Rejected</option>
-          <option value="Completed">Completed</option>
-        </select>
-
-        <select
-          className="border p-2 rounded"
-          value={department}
-          onChange={(e) => {
-            setDepartment(e.target.value);
-            setSection('');
-          }}
-        >
-          <option value="">All Departments</option>
-          {departments.map((dep) => (
-            <option key={dep.id} value={dep.id}>
-              {dep.name}
-            </option>
-          ))}
-        </select>
-
-        <select className="border p-2 rounded" value={section} onChange={(e) => setSection(e.target.value)}>
-          <option value="">All Sections</option>
-          {sectionOptions.map((sec) => (
-            <option key={sec.id} value={sec.id}>
-              {department ? sec.name : `${sec.departmentName} — ${sec.name}`}
-            </option>
-          ))}
-        </select>
-
-        <select className="border p-2 rounded" value={assignedUser} onChange={(e) => setAssignedUser(e.target.value)}>
-          <option value="">All Assigned Users</option>
-          <option value="unassigned">Unassigned</option>
-          {procurementUsers.map((procurementUser) => (
-            <option key={procurementUser.id} value={procurementUser.id}>
-              {procurementUser.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="border p-2 rounded"
-          value={centralSupplyStatus}
-          onChange={(e) => setCentralSupplyStatus(e.target.value)}
-          aria-label="Central Supply Chain status"
-        >
-          <option value="">All Central Supply statuses</option>
-          <option value="not_sent">Not sent to Central Supply</option>
-          <option value="sent">Sent to Central Supply</option>
-        </select>
-
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-700" htmlFor="print-language">
-            {PRINT_TRANSLATIONS[printLanguage].printLanguage}
-          </label>
-          <select
-            id="print-language"
-            className="border p-2 rounded"
-            value={printLanguage}
-            onChange={(e) => setPrintLanguage(e.target.value)}
-          >
-            <option value="en">{PRINT_TRANSLATIONS.en.english}</option>
-            <option value="ar">{PRINT_TRANSLATIONS.en.arabic}</option>
-          </select>
-        </div>
-
-        <button
-          onClick={applyFilters}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Apply Filters
-        </button>
-
-        <button
-          onClick={clearFilters}
-          className="bg-white text-gray-700 border px-4 py-2 rounded hover:bg-gray-50"
-        >
-          Clear Filters
-        </button>
-
-        <button
-          onClick={() => handleExport('csv')}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          disabled={loadingExport}
-        >
-          {loadingExport ? 'Exporting...' : 'Export CSV'}
-        </button>
-
-        <button
-          onClick={() => handleExport('pdf')}
-          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          disabled={loadingExport}
-        >
-          {loadingExport ? 'Exporting...' : 'Export PDF'}
-        </button>
-        </div>
-      </Card>
-
-      <RequestViewModeToggle
-        className="mb-4"
-        value={requestViewMode}
-        onChange={setRequestViewMode}
-        description="Use summary view to scan IT, stock, non-stock, maintenance, and other request types without opening every detailed card."
-      />
-
-      {loading ? (
-        <p className="text-gray-600">Loading requests...</p>
-      ) : requests.length === 0 ? (
-        <Card><p className="text-sm text-gray-600">No requests found for the selected filters. Try adjusting or clearing filters.</p></Card>
-      ) : (
-        <div className="space-y-4">
-          {requests.map((request) => {
-            const step = getCurrentStep(request);
-            const isUrgent = Boolean(request?.is_urgent);
-            const cardClasses = isUrgent
-              ? 'border-red-300 ring-1 ring-red-200/70 bg-red-50/70'
-              : '';
-            const requesterDisplay = getRequesterDisplay(request);
-            const showCommunication =
-              canViewCommunication && isPostApprovalStatus(request.status);
-            const isCommunicationExpanded = expandedCommunicationId === request.id;
-            const showDirectPurchaseSection = canDocumentDirectPurchase && isUrgent;
-            const isDirectPurchaseExpanded = expandedDirectCommId === request.id;
-            const statusLabel = request.status || step;
-            const loadedItems = itemsMap[request.id] || [];
-            const itemCount = Number(
-              request.item_count ?? request.items_count ?? loadedItems.length ?? 0,
-            );
-            const attachmentCount = Number(
-              request.attachment_count ?? request.attachments_count ?? (attachmentsMap[request.id] || []).length,
-            );
-            const estimatedCostValue = Number(request.estimated_cost || 0);
-            const assignedDisplay = request.assigned_user_name
-              ? `${request.assigned_user_name} (${request.assigned_user_role})`
-              : request.split_assignees?.length > 0
-              ? `Split among ${request.split_assignees.map((user) => user.name).join(', ')}`
-              : 'Not Assigned';
-
-            const toggleCommunication = (requestId) => {
-              const nextId = expandedCommunicationId === requestId ? null : requestId;
-              setExpandedCommunicationId(nextId);
-
-              if (nextId && !communicationList[requestId] && !communicationLoading[requestId]) {
-                refreshCommunications(requestId);
-              }
-            };
-
+          {requestSummary.map((item) => {
+            const SummaryIcon = item.icon;
             return (
-              <Card key={request.id} className={`transition ${cardClasses}`}>
-                <div className="flex justify-between items-start gap-4 flex-wrap">
-                  <div className={isSummaryRequestView ? 'min-w-0 flex-1 space-y-2' : 'space-y-1'}>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <p className="font-semibold text-gray-800">ID: {request.id}</p>
-                      <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${request.sent_to_central_supply_at ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}
-                        title={request.sent_to_central_supply_at
-                          ? `Sent ${new Date(request.sent_to_central_supply_at).toLocaleString()}`
-                          : 'This request has not been sent to the Central Supply Chain Center'}
-                      >
-                        <span className={`h-2 w-2 rounded-full ${request.sent_to_central_supply_at ? 'bg-emerald-500' : 'bg-amber-500'}`} aria-hidden="true" />
-                        {request.sent_to_central_supply_at ? 'Sent to Central Supply' : 'Not sent to Central Supply'}
-                      </span>
-                      {isUrgent && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
-                          <span className="block h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
-                          Urgent
+              <Card
+                key={item.label}
+                className="group flex min-h-[112px] items-center justify-between overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+                    {item.value.toLocaleString()}
+                  </p>
+                </div>
+                <span
+                  className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 ${summaryToneClasses[item.tone]}`}
+                >
+                  <SummaryIcon size={21} aria-hidden="true" />
+                </span>
+              </Card>
+            );
+          })}
+        </section>
+
+        <Card className="mb-5 overflow-hidden !p-0">
+          <div className="border-b border-slate-200 bg-white px-5 py-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3">
+                <span className="grid h-9 w-9 place-items-center rounded-lg bg-blue-50 text-blue-700">
+                  <Filter size={18} aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="font-semibold text-slate-900">
+                    Find requests
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Showing {requests.length} of{" "}
+                    {totalRequests.toLocaleString()} requests
+                  </p>
+                </div>
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
+                    {activeFilterCount} active
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {hasDraftFilterChanges && (
+                  <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                    Changes not applied
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedFilters((value) => !value)}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  aria-expanded={showAdvancedFilters}
+                >
+                  <SlidersHorizontal size={16} aria-hidden="true" /> More
+                  filters{" "}
+                  <ChevronDown
+                    size={15}
+                    className={`transition ${showAdvancedFilters ? "rotate-180" : ""}`}
+                    aria-hidden="true"
+                  />
+                </button>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  disabled={!activeFilterCount && !hasDraftFilterChanges}
+                  className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40"
+                >
+                  <X size={16} aria-hidden="true" /> Clear
+                </button>
+              </div>
+            </div>
+          </div>
+          <form
+            className="bg-white p-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              applyFilters();
+            }}
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+              <label className="sm:col-span-2 lg:col-span-2">
+                <span className={filterLabelClass}>Search</span>
+                <span className="relative block">
+                  <Search
+                    size={17}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="search"
+                    className={`${fieldClass} pl-9`}
+                    placeholder="ID, requester, project, or keyword"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </span>
+              </label>
+              <label>
+                <span className={filterLabelClass}>Status</span>
+                <select
+                  className={fieldClass}
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="">All statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Partially Procured">Partially Procured</option>
+                  <option value="Received">Received</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </label>
+              <label>
+                <span className={filterLabelClass}>Request type</span>
+                <select
+                  className={fieldClass}
+                  value={requestType}
+                  onChange={(e) => setRequestType(e.target.value)}
+                >
+                  <option value="">All types</option>
+                  {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className={filterLabelClass}>Department</span>
+                <select
+                  className={fieldClass}
+                  value={department}
+                  onChange={(e) => {
+                    setDepartment(e.target.value);
+                    setSection("");
+                  }}
+                >
+                  <option value="">All departments</option>
+                  {departments.map((dep) => (
+                    <option key={dep.id} value={dep.id}>
+                      {dep.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span className={filterLabelClass}>Current step</span>
+                <select
+                  className={fieldClass}
+                  value={currentStep}
+                  onChange={(e) => setCurrentStep(e.target.value)}
+                >
+                  <option value="">All current steps</option>
+                  {CURRENT_STEP_FILTER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {showAdvancedFilters && (
+              <div className="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+                <label>
+                  <span className={filterLabelClass}>Assignment</span>
+                  <select
+                    className={fieldClass}
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                  >
+                    <option value="">All requests</option>
+                    <option value="unassigned">Unassigned only</option>
+                  </select>
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Sort order</span>
+                  <select
+                    className={fieldClass}
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                  >
+                    <option value="">Newest first</option>
+                    <option value="assigned">Assigned first</option>
+                  </select>
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Domain</span>
+                  <select
+                    className={fieldClass}
+                    value={requestDomain}
+                    onChange={(e) => setRequestDomain(e.target.value)}
+                  >
+                    <option value="">All domains</option>
+                    <option value="operational">Operational</option>
+                    <option value="medical">Medical</option>
+                  </select>
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Request ID</span>
+                  <input
+                    className={fieldClass}
+                    placeholder="Exact ID"
+                    value={requestId}
+                    onChange={(e) => setRequestId(e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Maintenance ref.</span>
+                  <input
+                    className={fieldClass}
+                    placeholder="Reference number"
+                    value={maintenanceRefNumber}
+                    onChange={(e) => setMaintenanceRefNumber(e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Section</span>
+                  <select
+                    className={fieldClass}
+                    value={section}
+                    onChange={(e) => setSection(e.target.value)}
+                  >
+                    <option value="">All sections</option>
+                    {sectionOptions.map((sec) => (
+                      <option key={sec.id} value={sec.id}>
+                        {department
+                          ? sec.name
+                          : `${sec.departmentName} — ${sec.name}`}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Assigned user</span>
+                  <select
+                    className={fieldClass}
+                    value={assignedUser}
+                    onChange={(e) => setAssignedUser(e.target.value)}
+                  >
+                    <option value="">All assigned users</option>
+                    <option value="unassigned">Unassigned</option>
+                    {procurementUsers.map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Central Supply</span>
+                  <select
+                    className={fieldClass}
+                    value={centralSupplyStatus}
+                    onChange={(e) => setCentralSupplyStatus(e.target.value)}
+                  >
+                    <option value="">Any transfer status</option>
+                    <option value="not_sent">Not sent</option>
+                    <option value="sent">Sent</option>
+                  </select>
+                </label>
+                <label>
+                  <span className={filterLabelClass}>From date</span>
+                  <input
+                    type="date"
+                    className={fieldClass}
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span className={filterLabelClass}>To date</span>
+                  <input
+                    type="date"
+                    className={fieldClass}
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                  />
+                </label>
+                <label>
+                  <span className={filterLabelClass}>Print language</span>
+                  <select
+                    id="print-language"
+                    className={fieldClass}
+                    value={printLanguage}
+                    onChange={(e) => setPrintLanguage(e.target.value)}
+                  >
+                    <option value="en">English</option>
+                    <option value="ar">Arabic</option>
+                  </select>
+                </label>
+              </div>
+            )}
+            <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-slate-500">
+                Press Enter to apply your filters.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExport("csv")}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  disabled={loadingExport}
+                >
+                  <Download size={16} aria-hidden="true" /> CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport("pdf")}
+                  className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                  disabled={loadingExport}
+                >
+                  <Download size={16} aria-hidden="true" /> PDF
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                >
+                  <Search size={16} aria-hidden="true" /> Apply filters
+                </button>
+              </div>
+            </div>
+          </form>
+        </Card>
+
+        <RequestViewModeToggle
+          className="mb-4"
+          value={requestViewMode}
+          onChange={setRequestViewMode}
+          description="Use summary view to scan IT, stock, non-stock, maintenance, and other request types without opening every detailed card."
+        />
+
+        {loading ? (
+          <p className="text-gray-600">Loading requests...</p>
+        ) : requests.length === 0 ? (
+          <Card>
+            <p className="text-sm text-gray-600">
+              No requests found for the selected filters. Try adjusting or
+              clearing filters.
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {requests.map((request) => {
+              const step = getCurrentStep(request);
+              const isUrgent = Boolean(request?.is_urgent);
+              const cardClasses = isUrgent
+                ? "border-red-300 ring-1 ring-red-200/70 bg-red-50/70"
+                : "";
+              const requesterDisplay = getRequesterDisplay(request);
+              const showCommunication =
+                canViewCommunication && isPostApprovalStatus(request.status);
+              const isCommunicationExpanded =
+                expandedCommunicationId === request.id;
+              const showDirectPurchaseSection =
+                canDocumentDirectPurchase && isUrgent;
+              const isDirectPurchaseExpanded =
+                expandedDirectCommId === request.id;
+              const statusLabel = request.status || step;
+              const loadedItems = itemsMap[request.id] || [];
+              const itemCount = Number(
+                request.item_count ??
+                  request.items_count ??
+                  loadedItems.length ??
+                  0,
+              );
+              const attachmentCount = Number(
+                request.attachment_count ??
+                  request.attachments_count ??
+                  (attachmentsMap[request.id] || []).length,
+              );
+              const estimatedCostValue = Number(request.estimated_cost || 0);
+              const assignedDisplay = request.assigned_user_name
+                ? `${request.assigned_user_name} (${request.assigned_user_role})`
+                : request.split_assignees?.length > 0
+                  ? `Split among ${request.split_assignees.map((user) => user.name).join(", ")}`
+                  : "Not Assigned";
+
+              const toggleCommunication = (requestId) => {
+                const nextId =
+                  expandedCommunicationId === requestId ? null : requestId;
+                setExpandedCommunicationId(nextId);
+
+                if (
+                  nextId &&
+                  !communicationList[requestId] &&
+                  !communicationLoading[requestId]
+                ) {
+                  refreshCommunications(requestId);
+                }
+              };
+
+              return (
+                <Card key={request.id} className={`transition ${cardClasses}`}>
+                  <div className="flex justify-between items-start gap-4 flex-wrap">
+                    <div
+                      className={
+                        isSummaryRequestView
+                          ? "min-w-0 flex-1 space-y-2"
+                          : "space-y-1"
+                      }
+                    >
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <p className="font-semibold text-gray-800">
+                          ID: {request.id}
+                        </p>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${request.sent_to_central_supply_at ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
+                          title={
+                            request.sent_to_central_supply_at
+                              ? `Sent ${new Date(request.sent_to_central_supply_at).toLocaleString()}`
+                              : "This request has not been sent to the Central Supply Chain Center"
+                          }
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${request.sent_to_central_supply_at ? "bg-emerald-500" : "bg-amber-500"}`}
+                            aria-hidden="true"
+                          />
+                          {request.sent_to_central_supply_at
+                            ? "Sent to Central Supply"
+                            : "Not sent to Central Supply"}
                         </span>
-                      )}
-                      {isSummaryRequestView && (
+                        {isUrgent && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
+                            <span
+                              className="block h-2 w-2 rounded-full bg-red-500"
+                              aria-hidden="true"
+                            />
+                            Urgent
+                          </span>
+                        )}
+                        {isSummaryRequestView && (
+                          <>
+                            <span
+                              className={`px-2 py-1 rounded text-xs font-semibold ${getStepColor(step)}`}
+                            >
+                              {step}
+                            </span>
+                            <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                              {request.request_type || "Request"}
+                            </span>
+                          </>
+                        )}
+                      </div>
+
+                      {isSummaryRequestView ? (
                         <>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${getStepColor(step)}`}>
-                            {step}
-                          </span>
-                          <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-                            {request.request_type || 'Request'}
-                          </span>
+                          <p className="line-clamp-2 text-sm font-medium text-gray-800">
+                            {request.justification ||
+                              "No justification provided."}
+                          </p>
+                          <div
+                            className="flex flex-wrap gap-2 text-xs font-medium text-slate-600"
+                            aria-label={`Summary for request ${request.id}`}
+                          >
+                            {getMaintenanceReference(request) && (
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                                Maintenance Ref #:{" "}
+                                {getMaintenanceReference(request)}
+                              </span>
+                            )}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              Project: {request.project_name || "—"}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              Department: {request.department_name || "—"}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              Requester: {requesterDisplay}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              Assigned: {assignedDisplay}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              Items:{" "}
+                              {Number.isFinite(itemCount) ? itemCount : 0}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              Attachments: {attachmentCount}
+                            </span>
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
+                              Estimated: {estimatedCostValue.toLocaleString()}{" "}
+                              IQD
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p>
+                            <strong>Type:</strong> {request.request_type}
+                          </p>
+                          {getMaintenanceReference(request) && (
+                            <p>
+                              <strong>Maintenance Ref #:</strong>{" "}
+                              {getMaintenanceReference(request)}
+                            </p>
+                          )}
+                          <p>
+                            <strong>Project:</strong>{" "}
+                            {request.project_name || "—"}
+                          </p>
+                          <p>
+                            <strong>Department:</strong>{" "}
+                            {request.department_name || "—"}
+                          </p>
+                          <p>
+                            <strong>Section:</strong>{" "}
+                            {request.section_name || "—"}
+                          </p>
+                          <p>
+                            <strong>Requester:</strong> {requesterDisplay}
+                          </p>
+                          <p>
+                            <strong>Justification:</strong>{" "}
+                            {request.justification}
+                          </p>
+                          <p>
+                            <strong>Assigned To:</strong> {assignedDisplay}
+                          </p>
+                          <p>
+                            <strong>Current Step:</strong>{" "}
+                            <span
+                              className={`px-2 py-1 rounded ${getStepColor(step)}`}
+                            >
+                              {step}
+                            </span>
+                            {request.current_approver_role &&
+                              request.current_approval_level && (
+                                <> (Level {request.current_approval_level})</>
+                              )}
+                          </p>
                         </>
                       )}
                     </div>
 
-                    {isSummaryRequestView ? (
-                      <>
-                        <p className="line-clamp-2 text-sm font-medium text-gray-800">
-                          {request.justification || 'No justification provided.'}
-                        </p>
-                        <div className="flex flex-wrap gap-2 text-xs font-medium text-slate-600" aria-label={`Summary for request ${request.id}`}>
-                          {getMaintenanceReference(request) && (
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">Maintenance Ref #: {getMaintenanceReference(request)}</span>
-                          )}
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Project: {request.project_name || '—'}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Department: {request.department_name || '—'}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Requester: {requesterDisplay}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Assigned: {assignedDisplay}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Items: {Number.isFinite(itemCount) ? itemCount : 0}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Attachments: {attachmentCount}</span>
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5">Estimated: {estimatedCostValue.toLocaleString()} IQD</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <p><strong>Type:</strong> {request.request_type}</p>
-                        {getMaintenanceReference(request) && (
-                          <p>
-                            <strong>Maintenance Ref #:</strong> {getMaintenanceReference(request)}
-                          </p>
-                        )}
-                        <p>
-                          <strong>Project:</strong> {request.project_name || '—'}
-                        </p>
-                        <p>
-                          <strong>Department:</strong> {request.department_name || '—'}
-                        </p>
-                        <p>
-                          <strong>Section:</strong> {request.section_name || '—'}
-                        </p>
-                        <p>
-                          <strong>Requester:</strong> {requesterDisplay}
-                        </p>
-                        <p><strong>Justification:</strong> {request.justification}</p>
-                        <p>
-                          <strong>Assigned To:</strong> {assignedDisplay}
-                        </p>
-                        <p>
-                          <strong>Current Step:</strong>{' '}
-                          <span className={`px-2 py-1 rounded ${getStepColor(step)}`}>
-                            {step}
-                          </span>
-                          {request.current_approver_role && request.current_approval_level && (
-                            <> (Level {request.current_approval_level})</>
-                          )}
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col items-end gap-2">
-                    {canUpdateCentralSupplyStatus && (
-                      <button
-                        type="button"
-                        className={`rounded px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${request.sent_to_central_supply_at ? 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
-                        onClick={() => handleCentralSupplyStatus(request)}
-                        disabled={updatingCentralSupplyIds.has(request.id)}
-                      >
-                        {updatingCentralSupplyIds.has(request.id)
-                          ? 'Updating...'
-                          : request.sent_to_central_supply_at
-                            ? 'Mark as not sent'
-                            : 'Mark sent to Central Supply'}
-                      </button>
-                    )}
-                    <Link
-                      to={`/requests/${request.id}`}
-                      className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                    >
-                      Open Workspace
-                    </Link>
-                    <button
-                      className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
-                      onClick={() => handlePrint(request.id)}
-                    >
-                      Print
-                    </button>
-                    {canRemindCurrentApprover && (
-                      <button
-                        type="button"
-                        className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        onClick={() => handleRemindCurrentApprover(request.id)}
-                        disabled={remindingApproverIds.has(request.id) || !request.current_approver_role}
-                        title={request.current_approver_role ? 'Email a reminder to the current approver' : 'No current approver to remind'}
-                      >
-                        {remindingApproverIds.has(request.id) ? 'Sending reminder...' : 'Remind Approver'}
-                      </button>
-                    )}
-                    {isPostApprovalStatus(request.status) && (
-                      <Link
-                        to={`/requests/${request.id}/procure-to-pay/purchase-orders`}
-                        className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
-                        title="Create a governed purchase order from approved supplier awards"
-                      >
-                        Create Purchase Order
-                      </Link>
-                    )}
-                    {canHardDeleteRequests && (
-                      <button
-                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                        onClick={() => handleHardDelete(request.id)}
-                      >
-                        Delete Permanently
-                      </button>
-                    )}
-                    {canReclassifyRequests && (
-                      <div className="w-56 rounded-md border border-blue-200 bg-blue-50 p-3 text-left">
-                        <label
-                          className="mb-1 block text-xs font-semibold text-blue-900"
-                          htmlFor={`request-type-${request.id}`}
-                        >
-                          Correct request type
-                        </label>
-                        <select
-                          id={`request-type-${request.id}`}
-                          className="w-full rounded border border-blue-300 bg-white px-2 py-2 text-sm text-gray-900"
-                          value={requestTypeDrafts[request.id] ?? request.request_type}
-                          onChange={(event) =>
-                            setRequestTypeDrafts((previous) => ({
-                              ...previous,
-                              [request.id]: event.target.value,
-                            }))
-                          }
-                          disabled={rewiringRequestId === request.id}
-                        >
-                          {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
+                    <div className="flex flex-col items-end gap-2">
+                      {canUpdateCentralSupplyStatus && (
                         <button
                           type="button"
-                          className="mt-2 w-full rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-                          onClick={() => handleRequestTypeChange(request)}
-                          disabled={
-                            rewiringRequestId === request.id ||
-                            (requestTypeDrafts[request.id] ?? request.request_type) === request.request_type
-                          }
+                          className={`rounded px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 ${request.sent_to_central_supply_at ? "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50" : "bg-emerald-600 text-white hover:bg-emerald-700"}`}
+                          onClick={() => handleCentralSupplyStatus(request)}
+                          disabled={updatingCentralSupplyIds.has(request.id)}
                         >
-                          {rewiringRequestId === request.id ? 'Rewiring approvals…' : 'Change & rewire'}
+                          {updatingCentralSupplyIds.has(request.id)
+                            ? "Updating..."
+                            : request.sent_to_central_supply_at
+                              ? "Mark as not sent"
+                              : "Mark sent to Central Supply"}
                         </button>
-                      </div>
-                    )}
-                    <button
-                      className="text-blue-600 underline"
-                      onClick={() => toggleItems(request.id)}
-                      disabled={loadingItemsId === request.id}
-                    >
-                      {expandedItemsId === request.id ? 'Hide Items' : 'View Items'}
-                    </button>
-                    <button
-                      className="text-blue-600 underline"
-                      onClick={() => toggleAttachments(request.id)}
-                      disabled={attachmentLoadingMap[request.id]}
-                    >
-                      {expandedAttachmentsId === request.id ? 'Hide Attachments' : 'View Attachments'}
-                    </button>
-                    <button
-                      className="text-blue-600 underline"
-                      onClick={() => toggleApprovals(request.id)}
-                      disabled={loadingApprovalsId === request.id}
-                    >
-                      {expandedApprovalsId === request.id ? 'Hide Approvals' : 'View Approvals'}
-                    </button>
-                    {showCommunication && (
-                      <button
-                        className="text-indigo-700 underline"
-                        onClick={() => toggleCommunication(request.id)}
-                        disabled={communicationLoading[request.id]}
+                      )}
+                      <Link
+                        to={`/requests/${request.id}`}
+                        className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
                       >
-                        {isCommunicationExpanded ? 'Hide Status Chat' : 'View Status Chat'}
-                      </button>
-                    )}
-                    {showDirectPurchaseSection && (
+                        Open Workspace
+                      </Link>
                       <button
-                        className="text-amber-700 underline"
-                        onClick={() =>
-                          setExpandedDirectCommId(
-                            isDirectPurchaseExpanded ? null : request.id
-                          )
-                        }
-                        disabled={directPurchaseSending[request.id]}
+                        className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
+                        onClick={() => handlePrint(request.id)}
                       >
-                        {isDirectPurchaseExpanded
-                          ? 'Hide Direct Purchase Note'
-                          : 'Document Direct Purchase'}
+                        Print
                       </button>
-                    )}
-                    {request.status === 'Approved' && (
-                      <button
-                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                        onClick={() =>
-                          setExpandedAssignId(
-                            expandedAssignId === request.id ? null : request.id
-                          )
-                        }
-                      >
-                        {expandedAssignId === request.id
-                          ? 'Hide'
-                          : request.assigned_user_name
-                          ? 'Reassign'
-                          : 'Assign'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {expandedAssignId === request.id && (
-                  <AssignRequestPanel
-                    requestId={request.id}
-                    currentAssignee={request.assigned_user_name}
-                    onSuccess={fetchRequests}
-                  />
-                )}
-
-                {expandedAttachmentsId === request.id && (
-                  <div className="mt-4 border-t pt-2">
-                    <RequestAttachmentsSection
-                      attachments={attachmentsMap[request.id] || []}
-                      isLoading={Boolean(attachmentLoadingMap[request.id])}
-                      error={attachmentErrorMap[request.id]}
-                      onDownload={handleDownloadAttachment}
-                      downloadingAttachmentId={downloadingAttachmentId}
-                      onRetry={() => loadAttachmentsForRequest(request.id, { force: true })}
-                    />
-                  </div>
-                )}
-
-                {expandedItemsId === request.id && (
-                  <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">Requested Items</h3>
-                        <p className="text-xs text-gray-500">
-                          Sort items in this request view only; the saved request order is unchanged.
-                        </p>
-                      </div>
-                      {itemsMap[request.id]?.length > 1 && (
+                      {canRemindCurrentApprover && (
                         <button
                           type="button"
-                          aria-pressed={alphabetizedItemsId === request.id}
+                          className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
                           onClick={() =>
-                            setAlphabetizedItemsId((prev) => (prev === request.id ? null : request.id))
+                            handleRemindCurrentApprover(request.id)
                           }
-                          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100"
+                          disabled={
+                            remindingApproverIds.has(request.id) ||
+                            !request.current_approver_role
+                          }
+                          title={
+                            request.current_approver_role
+                              ? "Email a reminder to the current approver"
+                              : "No current approver to remind"
+                          }
                         >
-                          {alphabetizedItemsId === request.id ? 'Original order' : 'Sort A-Z'}
+                          {remindingApproverIds.has(request.id)
+                            ? "Sending reminder..."
+                            : "Remind Approver"}
+                        </button>
+                      )}
+                      {isPostApprovalStatus(request.status) && (
+                        <Link
+                          to={`/requests/${request.id}/procure-to-pay/purchase-orders`}
+                          className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
+                          title="Create a governed purchase order from approved supplier awards"
+                        >
+                          Create Purchase Order
+                        </Link>
+                      )}
+                      {canHardDeleteRequests && (
+                        <button
+                          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                          onClick={() => handleHardDelete(request.id)}
+                        >
+                          Delete Permanently
+                        </button>
+                      )}
+                      {canReclassifyRequests && (
+                        <div className="w-56 rounded-md border border-blue-200 bg-blue-50 p-3 text-left">
+                          <label
+                            className="mb-1 block text-xs font-semibold text-blue-900"
+                            htmlFor={`request-type-${request.id}`}
+                          >
+                            Correct request type
+                          </label>
+                          <select
+                            id={`request-type-${request.id}`}
+                            className="w-full rounded border border-blue-300 bg-white px-2 py-2 text-sm text-gray-900"
+                            value={
+                              requestTypeDrafts[request.id] ??
+                              request.request_type
+                            }
+                            onChange={(event) =>
+                              setRequestTypeDrafts((previous) => ({
+                                ...previous,
+                                [request.id]: event.target.value,
+                              }))
+                            }
+                            disabled={rewiringRequestId === request.id}
+                          >
+                            {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="mt-2 w-full rounded bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={() => handleRequestTypeChange(request)}
+                            disabled={
+                              rewiringRequestId === request.id ||
+                              (requestTypeDrafts[request.id] ??
+                                request.request_type) === request.request_type
+                            }
+                          >
+                            {rewiringRequestId === request.id
+                              ? "Rewiring approvals…"
+                              : "Change & rewire"}
+                          </button>
+                        </div>
+                      )}
+                      <button
+                        className="text-blue-600 underline"
+                        onClick={() => toggleItems(request.id)}
+                        disabled={loadingItemsId === request.id}
+                      >
+                        {expandedItemsId === request.id
+                          ? "Hide Items"
+                          : "View Items"}
+                      </button>
+                      <button
+                        className="text-blue-600 underline"
+                        onClick={() => toggleAttachments(request.id)}
+                        disabled={attachmentLoadingMap[request.id]}
+                      >
+                        {expandedAttachmentsId === request.id
+                          ? "Hide Attachments"
+                          : "View Attachments"}
+                      </button>
+                      <button
+                        className="text-blue-600 underline"
+                        onClick={() => toggleApprovals(request.id)}
+                        disabled={loadingApprovalsId === request.id}
+                      >
+                        {expandedApprovalsId === request.id
+                          ? "Hide Approvals"
+                          : "View Approvals"}
+                      </button>
+                      {showCommunication && (
+                        <button
+                          className="text-indigo-700 underline"
+                          onClick={() => toggleCommunication(request.id)}
+                          disabled={communicationLoading[request.id]}
+                        >
+                          {isCommunicationExpanded
+                            ? "Hide Status Chat"
+                            : "View Status Chat"}
+                        </button>
+                      )}
+                      {showDirectPurchaseSection && (
+                        <button
+                          className="text-amber-700 underline"
+                          onClick={() =>
+                            setExpandedDirectCommId(
+                              isDirectPurchaseExpanded ? null : request.id,
+                            )
+                          }
+                          disabled={directPurchaseSending[request.id]}
+                        >
+                          {isDirectPurchaseExpanded
+                            ? "Hide Direct Purchase Note"
+                            : "Document Direct Purchase"}
+                        </button>
+                      )}
+                      {request.status === "Approved" && (
+                        <button
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                          onClick={() =>
+                            setExpandedAssignId(
+                              expandedAssignId === request.id
+                                ? null
+                                : request.id,
+                            )
+                          }
+                        >
+                          {expandedAssignId === request.id
+                            ? "Hide"
+                            : request.assigned_user_name
+                              ? "Reassign"
+                              : "Assign"}
                         </button>
                       )}
                     </div>
-                    {loadingItemsId === request.id ? (
-                      <p className="text-gray-500">Loading items...</p>
-                    ) : itemsMap[request.id]?.length > 0 ? (
-                      <table className="w-full text-sm border">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border p-1">Item</th>
-                            <th className="border p-1">Specs</th>
-                            <th className="border p-1">Brand</th>
-                            <th className="border p-1">Qty</th>
-                            <th className="border p-1">Procured Qty</th>
-                            <th className="border p-1">Unit Cost</th>
-                            <th className="border p-1">Total</th>
-                            <th className="border p-1">Status</th>
-                            <th className="border p-1">Assigned To</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {getDisplayItems(itemsMap[request.id], alphabetizedItemsId === request.id).map((item, idx) => (
-                            <tr key={item.id ?? idx}>
-                              <td className="border p-1 align-top font-medium text-gray-900">
-                                {item.item_name}
-                              </td>
-                              <td className="border p-1 align-top whitespace-pre-wrap text-gray-700">
-                                {formatOptionalItemText(item.specs)}
-                              </td>
-                              <td className="border p-1 align-top">{formatOptionalItemText(item.brand)}</td>
-                              <td className="border p-1 align-top">{item.quantity} {item.unit_of_measure || ''}</td>
-                              <td className="border p-1 align-top">{item.purchased_quantity ?? 0} {item.unit_of_measure || ''}</td>
-                              <td className="border p-1 align-top">{item.unit_cost}</td>
-                              <td className="border p-1 align-top">{item.total_cost}</td>
-                              <td className="border p-1 align-top">
-                                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${getItemStatus(item).className}`}>
-                                  {getItemStatus(item).label}
-                                </span>
-                              </td>
-                              <td className="border p-1 align-top">{item.assigned_user_name || '—'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                  ) : (
-                    <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">No items found.</div>
-                  )}
-                </section>
-              )}
-
-              {expandedApprovalsId === request.id && (
-                <div className="mt-4 border-t pt-2">
-                  <ApprovalTimeline
-                    approvals={approvalsMap[request.id]}
-                    isLoading={loadingApprovalsId === request.id}
-                    isUrgent={Boolean(request?.is_urgent)}
-                  />
-                </div>
-              )}
-
-              {showDirectPurchaseSection && isDirectPurchaseExpanded && (
-                <div className="mt-4 border-t pt-3 space-y-3 rounded border-amber-200 bg-amber-50 px-3 py-3">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-semibold text-amber-900">
-                        Urgent Direct Purchase Communication
-                      </p>
-                      <p className="text-xs text-amber-700">
-                        Document urgent department-led purchasing so supply chain can align and follow up.
-                      </p>
-                    </div>
-                    <p className="text-xs text-amber-800 font-medium">
-                      Recipients: Supply Chain + Requesting Department
-                    </p>
                   </div>
 
-                  {directPurchaseError[request.id] && (
-                    <p className="text-xs text-rose-700">{directPurchaseError[request.id]}</p>
-                  )}
-                  {directPurchaseSuccess[request.id] && (
-                    <p className="text-xs text-emerald-700">{directPurchaseSuccess[request.id]}</p>
+                  {expandedAssignId === request.id && (
+                    <AssignRequestPanel
+                      requestId={request.id}
+                      currentAssignee={request.assigned_user_name}
+                      onSuccess={fetchRequests}
+                    />
                   )}
 
-                  <div className="grid gap-3 md:grid-cols-2">
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs font-semibold text-amber-900">
-                        What is being purchased directly?
-                      </label>
-                      <textarea
-                        className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                        rows={3}
-                        placeholder="Describe the items or services procured directly and who initiated it."
-                        value={directPurchaseDrafts[request.id] || ''}
-                        onChange={(event) =>
-                          setDirectPurchaseDrafts((prev) => ({
-                            ...prev,
-                            [request.id]: event.target.value,
-                          }))
+                  {expandedAttachmentsId === request.id && (
+                    <div className="mt-4 border-t pt-2">
+                      <RequestAttachmentsSection
+                        attachments={attachmentsMap[request.id] || []}
+                        isLoading={Boolean(attachmentLoadingMap[request.id])}
+                        error={attachmentErrorMap[request.id]}
+                        onDownload={handleDownloadAttachment}
+                        downloadingAttachmentId={downloadingAttachmentId}
+                        onRetry={() =>
+                          loadAttachmentsForRequest(request.id, { force: true })
                         }
                       />
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs font-semibold text-amber-900">
-                        Urgency / policy alignment notes (optional)
-                      </label>
-                      <textarea
-                        className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
-                        rows={3}
-                        placeholder="Share the urgency reason, risk, or policy guidance needed from supply chain."
-                        value={directPurchaseUrgency[request.id] || ''}
-                        onChange={(event) =>
-                          setDirectPurchaseUrgency((prev) => ({
-                            ...prev,
-                            [request.id]: event.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                  </div>
+                  )}
 
-                  <div className="flex items-center gap-3">
-                    <button
-                      className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 disabled:opacity-70"
-                      onClick={() => handleSendDirectCommunication(request.id)}
-                      disabled={!!directPurchaseSending[request.id]}
-                    >
-                      {directPurchaseSending[request.id] ? 'Sending...' : 'Send update'}
-                    </button>
-                    <p className="text-xs text-amber-800">
-                      These notes are logged to the request and shared with supply chain stakeholders.
-                    </p>
-                  </div>
-
-                  {(directPurchaseEntries[request.id] || []).slice(0, 3).map((entry) => (
-                    <div
-                      key={entry.id}
-                      className="rounded border border-amber-100 bg-white px-3 py-2 text-xs text-slate-700"
-                    >
-                      <div className="flex flex-wrap justify-between gap-1">
-                        <span className="font-semibold text-amber-900">
-                          Direct purchase documented
-                        </span>
-                        <span className="text-slate-500">
-                          {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
-                        </span>
-                      </div>
-                      <p className="mt-1 whitespace-pre-wrap text-slate-700">{entry.comments}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {showCommunication && isCommunicationExpanded && (
-                <div className="mt-4 border-t pt-3 space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-semibold text-indigo-900">SCM Status Communication</p>
-                      <p className="text-xs text-indigo-700">
-                        Discuss the status of this approved request (current status: {statusLabel}).
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-indigo-700 underline"
-                      onClick={() => refreshCommunications(request.id)}
-                      disabled={communicationLoading[request.id]}
-                    >
-                      Refresh
-                    </button>
-                  </div>
-
-                  <div className="space-y-2">
-                    {communicationLoading[request.id] && (
-                      <p className="text-xs text-indigo-700">Loading communications...</p>
-                    )}
-                    {communicationError[request.id] && (
-                      <p className="text-xs text-rose-600">{communicationError[request.id]}</p>
-                    )}
-                    {communicationSuccess[request.id] && (
-                      <p className="text-xs text-emerald-700">{communicationSuccess[request.id]}</p>
-                    )}
-
-                    {(communicationList[request.id] || []).slice(0, 6).map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="rounded border border-indigo-100 bg-white px-3 py-2 text-xs text-slate-700"
-                      >
-                        <div className="flex flex-wrap justify-between gap-1">
-                          <span className="font-semibold text-indigo-900">{entry.actor_name || 'Unknown'}</span>
-                          <span className="text-slate-500">{entry.status_at_time || 'Pending'}</span>
-                          <span className="text-slate-400">
-                            {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
-                          </span>
+                  {expandedItemsId === request.id && (
+                    <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h3 className="font-semibold text-slate-800">
+                            Requested Items
+                          </h3>
+                          <p className="text-xs text-gray-500">
+                            Sort items in this request view only; the saved
+                            request order is unchanged.
+                          </p>
                         </div>
-                        <p className="mt-1 whitespace-pre-wrap text-slate-700">{entry.comments}</p>
+                        {itemsMap[request.id]?.length > 1 && (
+                          <button
+                            type="button"
+                            aria-pressed={alphabetizedItemsId === request.id}
+                            onClick={() =>
+                              setAlphabetizedItemsId((prev) =>
+                                prev === request.id ? null : request.id,
+                              )
+                            }
+                            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100"
+                          >
+                            {alphabetizedItemsId === request.id
+                              ? "Original order"
+                              : "Sort A-Z"}
+                          </button>
+                        )}
                       </div>
-                    ))}
+                      {loadingItemsId === request.id ? (
+                        <p className="text-gray-500">Loading items...</p>
+                      ) : itemsMap[request.id]?.length > 0 ? (
+                        <table className="w-full text-sm border">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="border p-1">Item</th>
+                              <th className="border p-1">Specs</th>
+                              <th className="border p-1">Brand</th>
+                              <th className="border p-1">Qty</th>
+                              <th className="border p-1">Procured Qty</th>
+                              <th className="border p-1">Unit Cost</th>
+                              <th className="border p-1">Total</th>
+                              <th className="border p-1">Status</th>
+                              <th className="border p-1">Assigned To</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {getDisplayItems(
+                              itemsMap[request.id],
+                              alphabetizedItemsId === request.id,
+                            ).map((item, idx) => (
+                              <tr key={item.id ?? idx}>
+                                <td className="border p-1 align-top font-medium text-gray-900">
+                                  {item.item_name}
+                                </td>
+                                <td className="border p-1 align-top whitespace-pre-wrap text-gray-700">
+                                  {formatOptionalItemText(item.specs)}
+                                </td>
+                                <td className="border p-1 align-top">
+                                  {formatOptionalItemText(item.brand)}
+                                </td>
+                                <td className="border p-1 align-top">
+                                  {item.quantity} {item.unit_of_measure || ""}
+                                </td>
+                                <td className="border p-1 align-top">
+                                  {item.purchased_quantity ?? 0}{" "}
+                                  {item.unit_of_measure || ""}
+                                </td>
+                                <td className="border p-1 align-top">
+                                  {item.unit_cost}
+                                </td>
+                                <td className="border p-1 align-top">
+                                  {item.total_cost}
+                                </td>
+                                <td className="border p-1 align-top">
+                                  <span
+                                    className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${getItemStatus(item).className}`}
+                                  >
+                                    {getItemStatus(item).label}
+                                  </span>
+                                </td>
+                                <td className="border p-1 align-top">
+                                  {item.assigned_user_name || "—"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                          No items found.
+                        </div>
+                      )}
+                    </section>
+                  )}
 
-                    {canSendCommunication && (
-                      <div className="space-y-2">
-                        <textarea
-                          className="w-full rounded border border-indigo-200 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                          rows={3}
-                          placeholder="Share an update with the SCM team..."
-                          value={communicationDrafts[request.id] || ''}
-                          onChange={(event) =>
-                            setCommunicationDrafts((prev) => ({
-                              ...prev,
-                              [request.id]: event.target.value,
-                            }))
-                          }
-                        />
+                  {expandedApprovalsId === request.id && (
+                    <div className="mt-4 border-t pt-2">
+                      <ApprovalTimeline
+                        approvals={approvalsMap[request.id]}
+                        isLoading={loadingApprovalsId === request.id}
+                        isUrgent={Boolean(request?.is_urgent)}
+                      />
+                    </div>
+                  )}
+
+                  {showDirectPurchaseSection && isDirectPurchaseExpanded && (
+                    <div className="mt-4 border-t pt-3 space-y-3 rounded border-amber-200 bg-amber-50 px-3 py-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-amber-900">
+                            Urgent Direct Purchase Communication
+                          </p>
+                          <p className="text-xs text-amber-700">
+                            Document urgent department-led purchasing so supply
+                            chain can align and follow up.
+                          </p>
+                        </div>
+                        <p className="text-xs text-amber-800 font-medium">
+                          Recipients: Supply Chain + Requesting Department
+                        </p>
+                      </div>
+
+                      {directPurchaseError[request.id] && (
+                        <p className="text-xs text-rose-700">
+                          {directPurchaseError[request.id]}
+                        </p>
+                      )}
+                      {directPurchaseSuccess[request.id] && (
+                        <p className="text-xs text-emerald-700">
+                          {directPurchaseSuccess[request.id]}
+                        </p>
+                      )}
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs font-semibold text-amber-900">
+                            What is being purchased directly?
+                          </label>
+                          <textarea
+                            className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                            rows={3}
+                            placeholder="Describe the items or services procured directly and who initiated it."
+                            value={directPurchaseDrafts[request.id] || ""}
+                            onChange={(event) =>
+                              setDirectPurchaseDrafts((prev) => ({
+                                ...prev,
+                                [request.id]: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs font-semibold text-amber-900">
+                            Urgency / policy alignment notes (optional)
+                          </label>
+                          <textarea
+                            className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
+                            rows={3}
+                            placeholder="Share the urgency reason, risk, or policy guidance needed from supply chain."
+                            value={directPurchaseUrgency[request.id] || ""}
+                            onChange={(event) =>
+                              setDirectPurchaseUrgency((prev) => ({
+                                ...prev,
+                                [request.id]: event.target.value,
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
                         <button
-                          className="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 disabled:opacity-70"
-                          onClick={() => handleSendCommunication(request.id, statusLabel)}
-                          disabled={!!communicationSending[request.id]}
+                          className="bg-amber-600 text-white px-4 py-2 rounded hover:bg-amber-700 disabled:opacity-70"
+                          onClick={() =>
+                            handleSendDirectCommunication(request.id)
+                          }
+                          disabled={!!directPurchaseSending[request.id]}
                         >
-                          {communicationSending[request.id] ? 'Sending...' : 'Send to SCM'}
+                          {directPurchaseSending[request.id]
+                            ? "Sending..."
+                            : "Send update"}
+                        </button>
+                        <p className="text-xs text-amber-800">
+                          These notes are logged to the request and shared with
+                          supply chain stakeholders.
+                        </p>
+                      </div>
+
+                      {(directPurchaseEntries[request.id] || [])
+                        .slice(0, 3)
+                        .map((entry) => (
+                          <div
+                            key={entry.id}
+                            className="rounded border border-amber-100 bg-white px-3 py-2 text-xs text-slate-700"
+                          >
+                            <div className="flex flex-wrap justify-between gap-1">
+                              <span className="font-semibold text-amber-900">
+                                Direct purchase documented
+                              </span>
+                              <span className="text-slate-500">
+                                {entry.timestamp
+                                  ? new Date(entry.timestamp).toLocaleString()
+                                  : ""}
+                              </span>
+                            </div>
+                            <p className="mt-1 whitespace-pre-wrap text-slate-700">
+                              {entry.comments}
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+
+                  {showCommunication && isCommunicationExpanded && (
+                    <div className="mt-4 border-t pt-3 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-indigo-900">
+                            SCM Status Communication
+                          </p>
+                          <p className="text-xs text-indigo-700">
+                            Discuss the status of this approved request (current
+                            status: {statusLabel}).
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-indigo-700 underline"
+                          onClick={() => refreshCommunications(request.id)}
+                          disabled={communicationLoading[request.id]}
+                        >
+                          Refresh
                         </button>
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </Card>
-            );
-          })}
-        </div>
-      )}
 
-      <PaginationControls
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        className="mt-6"
-        summary={`Page ${page} of ${totalPages}`}
-      />
-     </div>
-    </>
+                      <div className="space-y-2">
+                        {communicationLoading[request.id] && (
+                          <p className="text-xs text-indigo-700">
+                            Loading communications...
+                          </p>
+                        )}
+                        {communicationError[request.id] && (
+                          <p className="text-xs text-rose-600">
+                            {communicationError[request.id]}
+                          </p>
+                        )}
+                        {communicationSuccess[request.id] && (
+                          <p className="text-xs text-emerald-700">
+                            {communicationSuccess[request.id]}
+                          </p>
+                        )}
+
+                        {(communicationList[request.id] || [])
+                          .slice(0, 6)
+                          .map((entry) => (
+                            <div
+                              key={entry.id}
+                              className="rounded border border-indigo-100 bg-white px-3 py-2 text-xs text-slate-700"
+                            >
+                              <div className="flex flex-wrap justify-between gap-1">
+                                <span className="font-semibold text-indigo-900">
+                                  {entry.actor_name || "Unknown"}
+                                </span>
+                                <span className="text-slate-500">
+                                  {entry.status_at_time || "Pending"}
+                                </span>
+                                <span className="text-slate-400">
+                                  {entry.timestamp
+                                    ? new Date(entry.timestamp).toLocaleString()
+                                    : ""}
+                                </span>
+                              </div>
+                              <p className="mt-1 whitespace-pre-wrap text-slate-700">
+                                {entry.comments}
+                              </p>
+                            </div>
+                          ))}
+
+                        {canSendCommunication && (
+                          <div className="space-y-2">
+                            <textarea
+                              className="w-full rounded border border-indigo-200 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                              rows={3}
+                              placeholder="Share an update with the SCM team..."
+                              value={communicationDrafts[request.id] || ""}
+                              onChange={(event) =>
+                                setCommunicationDrafts((prev) => ({
+                                  ...prev,
+                                  [request.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <button
+                              className="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 disabled:opacity-70"
+                              onClick={() =>
+                                handleSendCommunication(request.id, statusLabel)
+                              }
+                              disabled={!!communicationSending[request.id]}
+                            >
+                              {communicationSending[request.id]
+                                ? "Sending..."
+                                : "Send to SCM"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        <PaginationControls
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          className="mt-6"
+          summary={`Page ${page} of ${totalPages}`}
+        />
+      </div>
+    </div>
   );
 };
 
