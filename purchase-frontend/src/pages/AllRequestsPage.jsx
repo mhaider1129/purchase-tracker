@@ -1326,8 +1326,8 @@ const AllRequestsPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/70 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1600px]">
-        <section className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 px-6 py-7 text-white shadow-xl shadow-blue-950/10 sm:px-8">
+      <div className="procurement-workspace mx-auto max-w-7xl">
+        <section className="relative mb-6 overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-6 py-7 text-white shadow-xl shadow-blue-950/10 sm:px-8">
           <div
             className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl"
             aria-hidden="true"
@@ -1363,7 +1363,7 @@ const AllRequestsPage = () => {
         </section>
 
         <section
-          className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5"
+          className="workspace-kpi-grid mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5"
           aria-label="Request overview"
         >
           {requestSummary.map((item) => {
@@ -1391,7 +1391,7 @@ const AllRequestsPage = () => {
           })}
         </section>
 
-        <Card className="mb-5 overflow-hidden !p-0">
+        <Card className="workspace-filter-panel mb-5 overflow-hidden !p-0">
           <div className="border-b border-slate-200 bg-white px-5 py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="flex items-center gap-3">

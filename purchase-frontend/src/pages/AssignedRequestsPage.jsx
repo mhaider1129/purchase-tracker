@@ -1271,7 +1271,7 @@ const AssignedRequestsPage = () => {
         </div>
       ) : (
         <>
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="workspace-filter-panel mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
               <span
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600"

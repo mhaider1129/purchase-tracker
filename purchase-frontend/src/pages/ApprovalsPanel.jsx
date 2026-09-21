@@ -183,8 +183,8 @@ const ApprovalsPanel = () => {
 
   return (
     <>
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-6 text-white shadow-xl shadow-slate-200 sm:px-7 sm:py-7">
+      <div className="procurement-workspace mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <header className="overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-6 text-white shadow-xl shadow-slate-200 sm:px-7 sm:py-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">
@@ -228,7 +228,7 @@ const ApprovalsPanel = () => {
               </Button>
             </div>
           </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="workspace-kpi-grid mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
               <PackageCheck
                 className="mb-3 h-5 w-5 text-blue-300"

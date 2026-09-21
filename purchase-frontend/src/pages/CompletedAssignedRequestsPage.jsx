@@ -747,8 +747,8 @@ const CompletedAssignedRequestsPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/70 dark:bg-gray-950">
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-6 text-white shadow-lg sm:p-8">
+      <div className="procurement-workspace mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <header className="overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6 text-white shadow-lg sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-50">
@@ -770,7 +770,7 @@ const CompletedAssignedRequestsPage = () => {
             </div>
           </div>
         </header>
-        <section className="grid gap-3 sm:grid-cols-3">
+        <section className="workspace-kpi-grid grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <p className="flex items-center gap-2 text-xs uppercase tracking-wide text-gray-500">
               <FileText size={15} /> Completed
@@ -807,7 +807,7 @@ const CompletedAssignedRequestsPage = () => {
             )}
           </div>
         </section>
-        <section className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-5">
+        <section className="workspace-filter-panel rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900 sm:p-5">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
               <label

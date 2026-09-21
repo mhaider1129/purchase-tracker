@@ -11,7 +11,7 @@ import {
   ChevronDown,
   Search,
   XCircle,
-  ShoppingBasket,
+  Blocks,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./ui/NotificationBell";
@@ -1035,7 +1035,7 @@ const Navbar = () => {
             aria-label={t("navbar.home", { defaultValue: "Home" })}
             title={t("navbar.home", { defaultValue: "Home" })}
           >
-            <ShoppingBasket size={20} aria-hidden="true" />
+            <Blocks size={20} aria-hidden="true" />
           </button>
           <h1
             className="cursor-pointer text-lg font-bold tracking-tight text-gray-900 dark:text-white md:text-xl"

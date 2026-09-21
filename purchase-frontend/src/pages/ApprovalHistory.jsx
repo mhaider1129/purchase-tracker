@@ -282,8 +282,8 @@ const ApprovalHistory = () => {
 
   return (
     <>
-      <div className="mx-auto max-w-7xl p-4 sm:p-6">
-        <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-6 text-white shadow-lg sm:p-8">
+      <div className="procurement-workspace mx-auto max-w-7xl p-4 sm:p-6">
+        <div className="relative mb-6 overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6 text-white shadow-lg sm:p-8">
           <div className="pointer-events-none absolute -right-12 -top-20 h-52 w-52 rounded-full bg-indigo-500/20 blur-3xl" />
           <div className="relative flex items-start gap-4">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-white/10"><History className="h-6 w-6 text-indigo-200" aria-hidden /></span>
@@ -292,7 +292,7 @@ const ApprovalHistory = () => {
         </div>
 
         {/* 🔍 Filters */}
-        <div className="mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="workspace-filter-panel mb-6 flex flex-wrap items-end gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex-1 min-w-[220px]">
             <label className="block text-sm font-medium mb-1">{t('approvalHistory.filters.search')}</label>
             <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden /><input
@@ -384,7 +384,7 @@ const ApprovalHistory = () => {
         </div>
 
         {/* 📊 Stats */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 mb-6">
+        <div className="workspace-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 mb-6">
           <div className="p-4 border rounded-lg bg-white shadow-sm">
             <p className="text-sm text-gray-500">{t('approvalHistory.summary.total')}</p>
             <p className="text-2xl font-semibold text-gray-900">{summary.total}</p>
@@ -416,7 +416,7 @@ const ApprovalHistory = () => {
           <p>{t('approvalHistory.states.empty')}</p>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div className="workspace-results overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50 text-left uppercase tracking-wide text-xs text-gray-500">
                   <tr>

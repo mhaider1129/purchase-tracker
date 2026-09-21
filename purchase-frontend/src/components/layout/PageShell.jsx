@@ -1,4 +1,5 @@
 import React from "react";
+import ProcurementPageHeader from "./ProcurementPageHeader";
 
 const PageShell = ({
   title,
@@ -7,31 +8,28 @@ const PageShell = ({
   filters,
   kpis,
   children,
+  eyebrow,
+  icon,
 }) => {
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
-      <header className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
-            {description ? (
-              <p className="mt-2 text-sm text-slate-600">{description}</p>
-            ) : null}
-          </div>
-          {actions ? (
-            <div className="flex flex-wrap items-center gap-2">{actions}</div>
-          ) : null}
-        </div>
+    <div className="procurement-workspace mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <ProcurementPageHeader
+        title={title}
+        description={description}
+        eyebrow={eyebrow}
+        icon={icon}
+        actions={actions}
+      >
         {filters ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="rounded-xl border border-white/10 bg-white/10 p-3 backdrop-blur-sm">
             {filters}
           </div>
         ) : null}
-      </header>
+      </ProcurementPageHeader>
 
       {Array.isArray(kpis) && kpis.length > 0 ? (
         <section
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          className="workspace-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
           aria-label="KPI summary strip"
         >
           {kpis.map((kpi) => (

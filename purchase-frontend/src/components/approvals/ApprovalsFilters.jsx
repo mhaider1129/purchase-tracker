@@ -46,7 +46,7 @@ const ApprovalsFilters = ({
   return (
     <section
       aria-label="Approval filters"
-      className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+      className="workspace-filter-panel mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
     >
       {tabs?.options?.length ? (
         <div

@@ -490,8 +490,8 @@ const ClosedRequestsPage = () => {
           notAvailable: tr('notAvailable'),
         }}
       />
-      <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 print:hidden">
-        <section className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-blue-800 px-5 py-6 text-white shadow-lg sm:px-7">
+      <div className="procurement-workspace mx-auto max-w-7xl space-y-6 p-4 sm:p-6 print:hidden">
+        <section className="overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-6 text-white shadow-lg sm:px-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
               <span className="hidden rounded-xl bg-white/10 p-3 ring-1 ring-white/15 sm:inline-flex">
@@ -575,7 +575,7 @@ const ClosedRequestsPage = () => {
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="workspace-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {statusCards.map(({ key, label, count, isTotal }) => {
             const isActive = !isTotal && statusFilter === key;
             return (
@@ -618,7 +618,7 @@ const ClosedRequestsPage = () => {
           })}
         </div>
 
-        <section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <section className="workspace-filter-panel rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-blue-600" aria-hidden="true" />

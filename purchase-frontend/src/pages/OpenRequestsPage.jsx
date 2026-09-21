@@ -721,8 +721,8 @@ const OpenRequestsPage = () => {
           notAvailable: tr('notAvailable'),
         }}
       />
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 print:hidden sm:px-6 lg:px-8">
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-6 py-7 text-white shadow-xl sm:px-8">
+      <div className="procurement-workspace mx-auto max-w-7xl space-y-6 px-4 py-6 print:hidden sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-6 py-7 text-white shadow-xl sm:px-8">
           <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl" />
           <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
           <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -764,7 +764,7 @@ const OpenRequestsPage = () => {
           </div>
         </section>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="workspace-kpi-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {statusCards.map(({ key, label, count, isTotal }) => {
             const isActive = !isTotal && statusFilter === key;
             return (
@@ -818,7 +818,7 @@ const OpenRequestsPage = () => {
           })}
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-5">
+        <section className="workspace-filter-panel rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="rounded-lg bg-blue-50 p-2 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
