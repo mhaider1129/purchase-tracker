@@ -15,6 +15,18 @@ import { updateRequest } from '../api/requests';
 import { useAuth } from '../hooks/useAuth';
 import { hasPermission } from '../utils/permissions';
 import {
+  Activity,
+  CheckCircle2,
+  Clock3,
+  Download,
+  FileText,
+  Filter,
+  Search,
+  Send,
+  Wrench,
+  XCircle,
+} from 'lucide-react';
+import {
   requestMatchesStatusFilter,
   summarizeRequestStatuses,
 } from '../utils/requestStatus';
@@ -695,9 +707,35 @@ const MyMaintenanceRequests = () => {
     currentPage * itemsPerPage,
   );
 
-  const statusSummary = useMemo(() => {
-    return summarizeRequestStatuses(filteredRequests);
-  }, [filteredRequests]);
+  const statusSummary = useMemo(() => summarizeRequestStatuses(requests), [requests]);
+
+  const hasActiveFilters = Boolean(
+    statusFilter !== 'all'
+      || searchTerm
+      || referenceSearch
+      || requesterSearch
+      || startDate
+      || endDate
+      || sortDirection !== 'desc',
+  );
+
+  const statusCards = [
+    { key: 'all', label: tr('summary.total'), value: statusSummary.total, icon: FileText, tone: 'slate' },
+    { key: 'approved', label: statusLabels.approved, value: statusSummary.approved, icon: CheckCircle2, tone: 'emerald' },
+    { key: 'pending', label: statusLabels.pending, value: statusSummary.pending, icon: Clock3, tone: 'amber' },
+    { key: 'rejected', label: statusLabels.rejected, value: statusSummary.rejected, icon: XCircle, tone: 'rose' },
+    { key: 'submitted', label: statusLabels.submitted, value: statusSummary.submitted, icon: Send, tone: 'sky' },
+    { key: 'completed', label: statusLabels.completed, value: statusSummary.completed, icon: Activity, tone: 'indigo' },
+  ];
+
+  const statusCardStyles = {
+    slate: 'border-slate-200 bg-white text-slate-700',
+    emerald: 'border-emerald-200 bg-emerald-50/70 text-emerald-700',
+    amber: 'border-amber-200 bg-amber-50/70 text-amber-700',
+    rose: 'border-rose-200 bg-rose-50/70 text-rose-700',
+    sky: 'border-sky-200 bg-sky-50/70 text-sky-700',
+    indigo: 'border-indigo-200 bg-indigo-50/70 text-indigo-700',
+  };
 
   const resetFilters = () => {
     setStatusFilter('all');
@@ -711,28 +749,40 @@ const MyMaintenanceRequests = () => {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">
+      <div className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
+        <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 px-6 py-7 text-white shadow-lg sm:px-8">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/10 blur-2xl" />
+          <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="hidden rounded-xl bg-white/10 p-3 ring-1 ring-white/15 sm:block">
+              <Wrench className="h-6 w-6 text-blue-200" aria-hidden="true" />
+            </div>
+            <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
+              {tr('eyebrow', { defaultValue: 'Maintenance operations' })}
+            </p>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
               {canViewAllMaintenanceRequests
                 ? tr('engineerTitle', { defaultValue: 'Maintenance Request Status' })
                 : t('pageTitles.myMaintenanceRequests')}
             </h1>
-            <p className="text-sm text-gray-600">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
               {canViewAllMaintenanceRequests
                 ? tr('engineerIntro', {
                     defaultValue: 'Review all submitted maintenance requests, monitor their current status, and filter the queue for the requests you need.',
                   })
                 : tr('intro')}
             </p>
+            </div>
           </div>
           <button
             onClick={exportToExcel}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300"
           >
+            <Download className="h-4 w-4" aria-hidden="true" />
             {tr('actions.exportExcel')}
           </button>
+          </div>
         </div>
 
         {error && (
@@ -772,46 +822,60 @@ const MyMaintenanceRequests = () => {
           </div>
         ) : (
           <>
-            <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6 mb-6">
-              <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-gray-500">{tr('summary.total')}</p>
-                <p className="mt-1 text-2xl font-semibold">{statusSummary.total || 0}</p>
-              </div>
-              <div className="rounded-lg border border-green-200 bg-green-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-green-700">{statusLabels.approved}</p>
-                <p className="mt-1 text-xl font-semibold text-green-800">{statusSummary.approved || 0}</p>
-              </div>
-              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-yellow-700">{statusLabels.pending}</p>
-                <p className="mt-1 text-xl font-semibold text-yellow-800">{statusSummary.pending || 0}</p>
-              </div>
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-red-700">{statusLabels.rejected}</p>
-                <p className="mt-1 text-xl font-semibold text-red-800">{statusSummary.rejected || 0}</p>
-              </div>
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-blue-700">{statusLabels.submitted}</p>
-                <p className="mt-1 text-xl font-semibold text-blue-800">{statusSummary.submitted || 0}</p>
-              </div>
-              <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
-                <p className="text-xs uppercase tracking-wide text-indigo-700">{statusLabels.completed}</p>
-                <p className="mt-1 text-xl font-semibold text-indigo-800">{statusSummary.completed || 0}</p>
-              </div>
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+              {statusCards.map(({ key, label, value, icon: Icon, tone }) => {
+                const selected = statusFilter === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setStatusFilter(key)}
+                    aria-pressed={selected}
+                    className={`group rounded-xl border p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${statusCardStyles[tone]} ${selected ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-wide opacity-80">{label}</span>
+                      <Icon className="h-4 w-4 opacity-70" aria-hidden="true" />
+                    </div>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{value || 0}</p>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="mb-6 grid gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-6 lg:grid-cols-8">
+            <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-lg bg-blue-50 p-2 text-blue-700"><Filter className="h-4 w-4" aria-hidden="true" /></span>
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">{tr('filters.heading', { defaultValue: 'Filter requests' })}</h2>
+                    <p className="text-xs text-slate-500">{tr('filters.helper', { defaultValue: 'Narrow the queue by request details, status, or date.' })}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={resetFilters}
+                  disabled={!hasActiveFilters}
+                  className="text-sm font-semibold text-blue-600 hover:text-blue-800 disabled:cursor-not-allowed disabled:text-slate-400"
+                >
+                  {tr('filters.reset')}
+                </button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-6 lg:grid-cols-8">
               <div className="md:col-span-2">
                 <label htmlFor="search" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
                   {tr('filters.searchLabel')}
                 </label>
-                <input
-                  id="search"
-                  type="text"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder={tr('filters.searchPlaceholder')}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
-                />
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" aria-hidden="true" />
+                  <input
+                    id="search"
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder={tr('filters.searchPlaceholder')}
+                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                </div>
               </div>
               <div>
                 <label htmlFor="reference" className="mb-1 block text-xs font-semibold uppercase text-gray-600">
@@ -901,17 +965,19 @@ const MyMaintenanceRequests = () => {
                   <option value="asc">{tr('filters.sortOptions.asc')}</option>
                 </select>
               </div>
-              <div className="md:col-span-6 lg:col-span-8 flex justify-end">
-                <button
-                  onClick={resetFilters}
-                  className="text-sm font-medium text-blue-600 hover:underline"
-                >
-                  {tr('filters.reset')}
-                </button>
               </div>
             </div>
 
-            <table className="w-full border text-sm mb-4">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">{tr('results.heading', { defaultValue: 'Request queue' })}</h2>
+                <p className="text-sm text-slate-500">{tr('results.count', { count: filteredRequests.length, defaultValue: `${filteredRequests.length} matching requests` })}</p>
+              </div>
+              {hasActiveFilters && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{tr('results.filtered', { defaultValue: 'Filters applied' })}</span>}
+            </div>
+
+            <div className="mb-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+            <table className="min-w-[1250px] w-full text-sm">
               <thead className="bg-gray-100">
                 <tr>
                   <th className="border px-3 py-2 text-left">{tr('table.id')}</th>
@@ -927,7 +993,7 @@ const MyMaintenanceRequests = () => {
                   <th className="border px-3 py-2 text-left">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100">
                 {paginated.map((r) => {
                   const isApprovalsExpanded =
                     String(expandedApprovalsId) === String(r.id);
@@ -954,7 +1020,7 @@ const MyMaintenanceRequests = () => {
 
                   return (
                     <React.Fragment key={r.id}>
-                      <tr className="odd:bg-white even:bg-gray-50">
+                      <tr className="bg-white transition hover:bg-blue-50/40">
                         <td className="border px-3 py-2">{r.id}</td>
                         <td className="border px-3 py-2">{r.justification}</td>
                         <td className="border px-3 py-2">
@@ -1120,6 +1186,14 @@ const MyMaintenanceRequests = () => {
                 })}
               </tbody>
             </table>
+            {filteredRequests.length === 0 && (
+              <div className="border-t border-slate-200 px-6 py-12 text-center">
+                <Search className="mx-auto h-8 w-8 text-slate-300" aria-hidden="true" />
+                <p className="mt-3 font-semibold text-slate-700">{tr('results.empty', { defaultValue: 'No requests match these filters' })}</p>
+                <button type="button" onClick={resetFilters} className="mt-2 text-sm font-semibold text-blue-600 hover:text-blue-800">{tr('filters.reset')}</button>
+              </div>
+            )}
+            </div>
 
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
               <div className="flex items-center gap-2 text-sm">
@@ -1149,7 +1223,7 @@ const MyMaintenanceRequests = () => {
 
             <p className="mt-3 text-xs text-gray-500">
               {tr('pagination.showingRange', {
-                start: (currentPage - 1) * itemsPerPage + 1,
+                start: filteredRequests.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1,
                 end: Math.min(currentPage * itemsPerPage, filteredRequests.length),
                 total: filteredRequests.length,
               })}

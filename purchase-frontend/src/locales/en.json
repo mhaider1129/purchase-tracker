@@ -1420,6 +1420,7 @@
     }
   },
   "myMaintenanceRequestsPage": {
+    "eyebrow": "Maintenance operations",
     "errors": {
       "loadFailed": "We could not load your maintenance requests. Please try again later."
     },
@@ -1510,6 +1511,8 @@
       "sheetName": "Maintenance Requests"
     },
     "filters": {
+      "heading": "Filter requests",
+      "helper": "Narrow the queue by request details, status, or date.",
       "searchLabel": "Search",
       "searchPlaceholder": "Search justification, project, department, or items",
       "referenceLabel": "Reference #",
@@ -1528,6 +1531,13 @@
         "asc": "Oldest first"
       },
       "reset": "Reset filters"
+    },
+    "results": {
+      "heading": "Request queue",
+      "count": "{{count}} matching request",
+      "count_plural": "{{count}} matching requests",
+      "filtered": "Filters applied",
+      "empty": "No requests match these filters"
     },
     "table": {
       "id": "ID",
