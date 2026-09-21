@@ -11,6 +11,7 @@ import AmountInput from '../components/ui/AmountInput';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import { getDisplayItems } from '../utils/itemUtils';
 import { getRequesterDisplay } from '../utils/requester';
+import { getRequestProgress, sortAssignedRequests } from '../utils/assignedRequests';
 import usePageTranslation from '../utils/usePageTranslation';
 
 const SEARCHABLE_REQUEST_FIELDS = [
@@ -260,6 +261,7 @@ const AssignedRequestsPage = () => {
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [completionFilter, setCompletionFilter] = useState('all');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('priority');
   const [sortItemsAlphabetically, setSortItemsAlphabetically] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
   const [items, setItems] = useState([]);
@@ -1005,12 +1007,18 @@ const AssignedRequestsPage = () => {
     });
   }, [completionFilter, completionStates, departmentFilter, requests, searchTerm, typeFilter, urgencyFilter]);
 
+  const visibleRequests = useMemo(
+    () => sortAssignedRequests(filteredRequests, sortBy),
+    [filteredRequests, sortBy],
+  );
+
   const resetFilters = () => {
     setSearchTerm('');
     setTypeFilter('all');
     setDepartmentFilter('all');
     setCompletionFilter('all');
     setUrgencyFilter('all');
+    setSortBy('priority');
   };
 
   const pageKpis = useMemo(() => {
@@ -1075,7 +1083,7 @@ const AssignedRequestsPage = () => {
       ) : (
         <>
           <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-6">
               <div className="lg:col-span-2">
                 <label htmlFor="assigned-request-search" className="mb-1 block text-sm font-medium text-slate-700">
                   {tr('filters.searchLabel', 'Search assigned requests')}
@@ -1151,6 +1159,22 @@ const AssignedRequestsPage = () => {
                   <option value="standard">{tr('filters.standardOnly', 'Standard only')}</option>
                 </select>
               </div>
+              <div>
+                <label htmlFor="assigned-request-sort" className="mb-1 block text-sm font-medium text-slate-700">
+                  {tr('filters.sortLabel', 'Sort by')}
+                </label>
+                <select
+                  id="assigned-request-sort"
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value)}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="priority">{tr('filters.priorityFirst', 'Priority first')}</option>
+                  <option value="newest">{tr('filters.newestFirst', 'Newest first')}</option>
+                  <option value="oldest">{tr('filters.oldestFirst', 'Oldest first')}</option>
+                  <option value="progress">{tr('filters.mostProgress', 'Most progress')}</option>
+                </select>
+              </div>
             </div>
             <div className="mt-4 flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
               <span>
@@ -1173,12 +1197,13 @@ const AssignedRequestsPage = () => {
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
               <p className="text-sm text-slate-600">{tr('filters.noResults', 'No assigned requests match your search or filters.')}</p>
             </div>
-          ) : filteredRequests.map((request) => {
+          ) : visibleRequests.map((request) => {
             const summary = request.status_summary || {};
             const autoTotal =
               autoTotals[request.id] ?? summary.items_total_cost ?? null;
             const isUrgent = Boolean(request?.is_urgent);
             const requesterDisplay = getRequesterDisplay(request);
+            const progress = getRequestProgress(request);
             const completionState =
               completionStates[request.id] || {
                 canComplete: false,
@@ -1207,6 +1232,11 @@ const AssignedRequestsPage = () => {
                           {tr('requestCard.urgent', 'Urgent')}
                         </span>
                       )}
+                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${completionState.canComplete ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
+                        {completionState.canComplete
+                          ? tr('requestCard.ready', 'Ready to complete')
+                          : tr('requestCard.inProgress', 'In progress')}
+                      </span>
                     </div>
                     <p className="text-sm text-gray-500">
                       <strong className="text-gray-700">{tr('requestCard.type', 'Type')}:</strong> {request.request_type}
@@ -1304,6 +1334,19 @@ const AssignedRequestsPage = () => {
                         )}
                       </div>
                     )}
+                  </div>
+                </div>
+
+                <div className="mt-5" aria-label={tr('requestCard.progressLabel', 'Procurement progress')}>
+                  <div className="mb-1.5 flex items-center justify-between text-xs font-medium text-slate-600">
+                    <span>{tr('requestCard.progressLabel', 'Procurement progress')}</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`h-full rounded-full transition-all ${progress === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
+                      style={{ width: `${progress}%` }}
+                    />
                   </div>
                 </div>
 
