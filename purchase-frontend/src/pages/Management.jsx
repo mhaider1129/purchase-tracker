@@ -3037,6 +3037,9 @@ const Management = () => {
       );
     }
 
+    const filteredPermissions = availablePermissions.filter((permission) =>
+      matchesManagementSearch(permission.name, permission.description, permission.code));
+
     return (
       <div className="space-y-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
@@ -3080,9 +3083,13 @@ const Management = () => {
             </p>
           ) : availablePermissions.length === 0 ? (
             <p className="text-sm text-gray-600">No permissions available.</p>
+          ) : filteredPermissions.length === 0 ? (
+            <p className="text-sm text-gray-600">
+              No permissions match “{managementSearch.trim()}”.
+            </p>
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
-              {availablePermissions.map((permission) => {
+              {filteredPermissions.map((permission) => {
                 const checked = selectedUserPermissions.includes(permission.code);
                 return (
                   <label
@@ -3134,11 +3141,18 @@ const Management = () => {
       );
     }
 
-    const sortedResources = [...uiResources].sort((a, b) => {
-      const labelA = a.label?.toLowerCase?.() ?? '';
-      const labelB = b.label?.toLowerCase?.() ?? '';
-      return labelA.localeCompare(labelB);
-    });
+    const sortedResources = [...uiResources]
+      .filter((resource) => matchesManagementSearch(
+        resource.label,
+        resource.description,
+        resource.key,
+        ...(resource.permissions || []),
+      ))
+      .sort((a, b) => {
+        const labelA = a.label?.toLowerCase?.() ?? '';
+        const labelB = b.label?.toLowerCase?.() ?? '';
+        return labelA.localeCompare(labelB);
+      });
 
     const interfaceError = accessConfigError || uiAccessLoadError;
 
@@ -3161,8 +3175,12 @@ const Management = () => {
         <div className="overflow-x-auto rounded border border-gray-200 bg-white p-4 shadow-sm">
           {uiAccessLoading ? (
             <p>Loading interface access configuration...</p>
-          ) : sortedResources.length === 0 ? (
+          ) : uiResources.length === 0 ? (
             <p className="text-sm text-gray-600">No interface resources have been registered yet.</p>
+          ) : sortedResources.length === 0 ? (
+            <p className="text-sm text-gray-600">
+              No interface access entries match “{managementSearch.trim()}”.
+            </p>
           ) : (
             <table className="min-w-full text-sm">
               <thead>
@@ -3575,7 +3593,7 @@ const Management = () => {
                   {React.createElement(currentTab[2], { className: 'h-5 w-5', 'aria-hidden': true })}
                 </span>
                 <div><h3 id="management-section-title" className="text-lg font-bold text-slate-900">{currentTab[0]}</h3><p className="text-sm text-slate-500">{currentTab[1]}</p></div>
-                {['departments', 'warehouses', 'projects', 'roles', 'routes', 'autoAssignments'].includes(tab) && (
+                {['departments', 'warehouses', 'projects', 'roles', 'routes', 'autoAssignments', 'permissions', 'interfaceAccess'].includes(tab) && (
                   <label className="relative sm:ml-auto sm:w-72">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
                     <span className="sr-only">Search {currentTab[0].toLowerCase()}</span>
