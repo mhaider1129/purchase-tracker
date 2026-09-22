@@ -5,6 +5,10 @@ import { useAccessControl } from '../hooks/useAccessControl';
 import { hasPermission, hasAnyPermission } from '../utils/permissions';
 import useWarehouses from '../hooks/useWarehouses';
 import { defaultContractApprovalRules } from '../config/contractApprovalRules';
+import {
+  Building2, ChevronRight, FileSliders, FolderKanban, KeyRound, Network,
+  Printer, Route, ShieldCheck, UserCog, Users, Warehouse,
+} from 'lucide-react';
 
 const initialUserEditState = {
   role: '',
@@ -42,6 +46,21 @@ const initialAutoAssignmentRule = {
   warehouse_id: '',
   assignee_user_id: '',
   is_active: true,
+};
+
+const managementTabs = {
+  users: ['Users', 'Accounts and team assignments', Users, 'People'],
+  accountRequests: ['Account requests', 'Review pending access requests', UserCog, 'People'],
+  roles: ['Roles', 'Maintain organizational roles', ShieldCheck, 'People'],
+  departments: ['Departments', 'Structure departments and sections', Building2, 'Organization'],
+  warehouses: ['Warehouses', 'Manage inventory locations', Warehouse, 'Organization'],
+  projects: ['Projects', 'Control project visibility', FolderKanban, 'Organization'],
+  routes: ['Approval routes', 'Configure request approval paths', Route, 'Workflow'],
+  autoAssignments: ['Auto assignments', 'Route work to the right owners', Network, 'Workflow'],
+  printServices: ['Print services', 'Department printing preferences', Printer, 'Workflow'],
+  contractApprovalRules: ['Contract rules', 'Contract approval stages and gates', FileSliders, 'Workflow'],
+  permissions: ['Permissions', 'Fine-grained user capabilities', KeyRound, 'Access control'],
+  interfaceAccess: ['Interface access', 'Map features to permissions', ShieldCheck, 'Access control'],
 };
 
 const DepartmentVisibilityChecklist = ({
@@ -1398,6 +1417,16 @@ const Management = () => {
     () => projects.filter((project) => project.is_active !== false).length,
     [projects]
   );
+  const navigationGroups = useMemo(
+    () => ['People', 'Organization', 'Workflow', 'Access control']
+      .map((group) => ({
+        group,
+        items: availableTabs.filter((id) => managementTabs[id]?.[3] === group),
+      }))
+      .filter(({ items }) => items.length),
+    [availableTabs],
+  );
+  const currentTab = managementTabs[tab] || managementTabs.users;
   const renderUsers = () => {
     if (!canViewUsers) {
       return (
@@ -3428,156 +3457,41 @@ const Management = () => {
             </div>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-xl bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-2">
-                {canViewUsers && (
-                  <button
-                    onClick={() => setTab('users')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'users'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Users
-                  </button>
-                )}
-                {canManageAccountRequests && (
-                  <button
-                    onClick={() => setTab('accountRequests')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'accountRequests'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Account Requests
-                  </button>
-                )}
-                {canManageDepartments && (
-                  <button
-                    onClick={() => setTab('departments')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'departments'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Departments
-                  </button>
-                )}
-                {canManageDepartments && (
-                  <button
-                    onClick={() => setTab('warehouses')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'warehouses'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Warehouses
-                  </button>
-                )}
-                {canManageRoutes && (
-                  <button
-                    onClick={() => setTab('routes')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'routes'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Approval Routes
-                  </button>
-                )}
-                {canManageAutoAssignments && (
-                  <button
-                    onClick={() => setTab('autoAssignments')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'autoAssignments'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Auto Assignments
-                  </button>
-                )}
-                {canManagePrintServiceSettings && (
-                  <button
-                    onClick={() => setTab('printServices')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'printServices'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Print Services
-                  </button>
-                )}
-                {canManageProjects && (
-                  <button
-                    onClick={() => setTab('projects')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'projects'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Projects
-                  </button>
-                )}
-                {canManageRoles && (
-                  <button
-                    onClick={() => setTab('roles')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'roles'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Roles
-                  </button>
-                )}
-                {canManagePermissions && (
-                  <>
-                    <button
-                      onClick={() => setTab('permissions')}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                        tab === 'permissions'
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                      }`}
-                    >
-                      Permissions
-                    </button>
-                    <button
-                      onClick={() => setTab('interfaceAccess')}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                        tab === 'interfaceAccess'
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                      }`}
-                    >
-                      Interface Access
-                    </button>
-                  </>
-                )}
-                {canManageContractApprovalRules && (
-                  <button
-                    onClick={() => setTab('contractApprovalRules')}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                      tab === 'contractApprovalRules'
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-slate-700 hover:bg-blue-50 border border-slate-200'
-                    }`}
-                  >
-                    Contract Approval Rules
-                  </button>
-                )}
+          <div className="mt-8 grid items-start gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
+            <aside className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:sticky lg:top-6" aria-label="Management sections">
+              <div className="px-3 pb-3 pt-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Administration</p>
+                <p className="mt-1 text-sm text-slate-600">Choose a workspace to manage.</p>
               </div>
-            </div>
-
+              <nav className="space-y-4">
+                {navigationGroups.map(({ group, items }) => (
+                  <div key={group}>
+                    <p className="mb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">{group}</p>
+                    <div className="space-y-1">
+                      {items.map((id) => {
+                        const [label, , Icon] = managementTabs[id];
+                        const selected = tab === id;
+                        return (
+                          <button key={id} type="button" onClick={() => setTab(id)} aria-current={selected ? 'page' : undefined}
+                            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${selected ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'}`}>
+                            <Icon className={`h-4 w-4 shrink-0 ${selected ? 'text-blue-100' : 'text-slate-400'}`} aria-hidden="true" />
+                            <span className="flex-1">{label}</span>
+                            <ChevronRight className={`h-4 w-4 ${selected ? 'opacity-80' : 'opacity-0 group-hover:opacity-40'}`} aria-hidden="true" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </nav>
+            </aside>
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-labelledby="management-section-title">
+              <header className="flex items-center gap-4 border-b border-slate-200 px-5 py-5">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+                  {React.createElement(currentTab[2], { className: 'h-5 w-5', 'aria-hidden': true })}
+                </span>
+                <div><h3 id="management-section-title" className="text-lg font-bold text-slate-900">{currentTab[0]}</h3><p className="text-sm text-slate-500">{currentTab[1]}</p></div>
+              </header>
             <div className="p-4">
               {tab === 'users' && renderUsers()}
               {tab === 'accountRequests' && renderAccountRequests()}
@@ -3592,6 +3506,7 @@ const Management = () => {
               {tab === 'interfaceAccess' && renderInterfaceAccess()}
               {tab === 'contractApprovalRules' && renderContractApprovalRules()}
             </div>
+            </section>
           </div>
         </div>
       </div>
