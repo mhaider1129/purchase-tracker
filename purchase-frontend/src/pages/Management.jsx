@@ -7,7 +7,7 @@ import useWarehouses from '../hooks/useWarehouses';
 import { defaultContractApprovalRules } from '../config/contractApprovalRules';
 import {
   Building2, ChevronRight, FileSliders, FolderKanban, KeyRound, Network,
-  Printer, Route, ShieldCheck, UserCog, Users, Warehouse,
+  Printer, Route, Search, ShieldCheck, UserCog, Users, Warehouse,
 } from 'lucide-react';
 
 const initialUserEditState = {
@@ -171,6 +171,10 @@ const Management = () => {
   const [savingWarehouse, setSavingWarehouse] = useState(false);
   const [editingWarehouseId, setEditingWarehouseId] = useState(null);
   const [editingWarehouseName, setEditingWarehouseName] = useState('');
+  const [editingDepartment, setEditingDepartment] = useState(null);
+  const [editingSection, setEditingSection] = useState(null);
+  const [organizationMessage, setOrganizationMessage] = useState('');
+  const [managementSearch, setManagementSearch] = useState('');
 
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
@@ -423,6 +427,8 @@ const Management = () => {
       setTab(availableTabs[0]);
     }
   }, [availableTabs, tab]);
+
+  useEffect(() => setManagementSearch(''), [tab]);
 
   useEffect(() => {
     if (canManagePermissions) {
@@ -1233,6 +1239,34 @@ const Management = () => {
     }
   };
 
+  const saveDepartment = async () => {
+    const name = editingDepartment?.name?.trim();
+    if (!name) return setDepartmentsError('Department name is required.');
+    setDepartmentsError('');
+    try {
+      await api.put(`/departments/${editingDepartment.id}`, { name, type: editingDepartment.type });
+      setEditingDepartment(null);
+      setOrganizationMessage('Department updated successfully.');
+      fetchDepartments();
+    } catch (err) {
+      setDepartmentsError(err?.response?.data?.message || 'Unable to update department.');
+    }
+  };
+
+  const saveSection = async () => {
+    const name = editingSection?.name?.trim();
+    if (!name) return setDepartmentsError('Section name is required.');
+    setDepartmentsError('');
+    try {
+      await api.put(`/departments/${editingSection.departmentId}/sections/${editingSection.id}`, { name });
+      setEditingSection(null);
+      setOrganizationMessage('Section updated successfully.');
+      fetchDepartments();
+    } catch (err) {
+      setDepartmentsError(err?.response?.data?.message || 'Unable to update section.');
+    }
+  };
+
   const startEditingWarehouse = (warehouse) => {
     setEditingWarehouseId(warehouse.id);
     setEditingWarehouseName(warehouse.name || '');
@@ -1401,6 +1435,26 @@ const Management = () => {
         return bTime - aTime;
       });
   }, [accountRequests, requestFilters]);
+
+  const matchesManagementSearch = (...values) => {
+    const query = managementSearch.trim().toLowerCase();
+    return !query || values.some((value) => String(value || '').toLowerCase().includes(query));
+  };
+  const filteredDepartments = departments.filter((department) => matchesManagementSearch(
+    department.name, department.type, ...(department.sections || []).map((section) => section.name),
+  ));
+  const filteredWarehouses = warehouses.filter((warehouse) =>
+    matchesManagementSearch(warehouse.name, warehouse.type));
+  const filteredRoles = roles.filter((role) => matchesManagementSearch(role.name));
+  const filteredProjects = projects.filter((project) => matchesManagementSearch(
+    project.name, project.is_active === false ? 'inactive' : 'active', formatProjectVisibility(project),
+  ));
+  const filteredRoutes = routes.filter((route) => matchesManagementSearch(
+    route.request_type, route.department_type, route.role, warehouseMap[route.warehouse_id]?.name,
+  ));
+  const filteredAutoAssignmentRules = autoAssignmentRules.filter((rule) => matchesManagementSearch(
+    rule.request_type, rule.assignee_name, rule.assignee_email, warehouseMap[rule.warehouse_id]?.name,
+  ));
 
   const procurementAssigneeUsers = useMemo(
     () => users.filter((entry) =>
@@ -1837,6 +1891,7 @@ const Management = () => {
         {departmentsError && (
           <p className="mb-2 text-sm text-red-600">{departmentsError}</p>
         )}
+        {organizationMessage && <p className="mb-2 text-sm text-green-700">{organizationMessage}</p>}
       {loadingDepartments ? (
         <p>Loading departments...</p>
       ) : (
@@ -1847,27 +1902,56 @@ const Management = () => {
                 <th className="p-2">Department</th>
                 <th className="p-2">Type</th>
                 <th className="p-2">Sections</th>
+                <th className="p-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {departments.map((dept) => (
+              {filteredDepartments.map((dept) => (
                 <tr key={dept.id} className="border-b">
-                  <td className="p-2 font-medium">{dept.name}</td>
+                  <td className="p-2 font-medium">
+                    {editingDepartment?.id === dept.id ? (
+                      <input className="w-full rounded border px-2 py-1" value={editingDepartment.name}
+                        onChange={(e) => setEditingDepartment({ ...editingDepartment, name: e.target.value })} />
+                    ) : dept.name}
+                  </td>
                   <td className="p-2">
-                    <span className="rounded-full bg-blue-100 px-2 py-1 text-xs uppercase tracking-wide text-blue-700">
-                      {dept.type}
-                    </span>
+                    {editingDepartment?.id === dept.id ? (
+                      <select className="rounded border px-2 py-1" value={editingDepartment.type?.toLowerCase()}
+                        onChange={(e) => setEditingDepartment({ ...editingDepartment, type: e.target.value })}>
+                        <option value="medical">Medical</option>
+                        <option value="operational">Operational</option>
+                      </select>
+                    ) : <span className="rounded-full bg-blue-100 px-2 py-1 text-xs uppercase tracking-wide text-blue-700">{dept.type}</span>}
                   </td>
                   <td className="p-2">
                     {dept.sections?.length ? (
                       <ul className="ml-4 list-disc">
                         {dept.sections.map((section) => (
-                          <li key={section.id}>{section.name}</li>
+                          <li key={section.id} className="mb-1">
+                            {editingSection?.id === section.id ? (
+                              <span className="inline-flex gap-1">
+                                <input className="rounded border px-2 py-1" value={editingSection.name}
+                                  onChange={(e) => setEditingSection({ ...editingSection, name: e.target.value })} />
+                                <button className="text-green-700" onClick={saveSection}>Save</button>
+                                <button className="text-gray-600" onClick={() => setEditingSection(null)}>Cancel</button>
+                              </span>
+                            ) : <span>{section.name}{' '}<button className="text-xs text-blue-700 hover:underline"
+                              onClick={() => setEditingSection({ id: section.id, departmentId: dept.id, name: section.name })}>Edit</button></span>}
+                          </li>
                         ))}
                       </ul>
                     ) : (
                       '—'
                     )}
+                  </td>
+                  <td className="p-2">
+                    {editingDepartment?.id === dept.id ? (
+                      <span className="flex gap-2">
+                        <button className="text-green-700 hover:underline" onClick={saveDepartment}>Save</button>
+                        <button className="text-gray-600 hover:underline" onClick={() => setEditingDepartment(null)}>Cancel</button>
+                      </span>
+                    ) : <button className="text-blue-700 hover:underline"
+                      onClick={() => setEditingDepartment({ id: dept.id, name: dept.name, type: dept.type })}>Edit</button>}
                   </td>
                 </tr>
               ))}
@@ -1960,7 +2044,7 @@ const Management = () => {
         <div className="overflow-x-auto">
           {warehousesLoading ? (
             <p>Loading warehouses...</p>
-          ) : warehouses.length === 0 ? (
+          ) : filteredWarehouses.length === 0 ? (
             <p>No warehouses found.</p>
           ) : (
             <table className="min-w-full text-sm">
@@ -1972,7 +2056,7 @@ const Management = () => {
                 </tr>
               </thead>
               <tbody>
-                {warehouses.map((warehouse) => (
+                {filteredWarehouses.map((warehouse) => (
                   <tr key={warehouse.id} className="border-b">
                     <td className="p-2 font-medium">
                       {editingWarehouseId === warehouse.id ? (
@@ -2099,7 +2183,7 @@ const Management = () => {
             </tr>
           </thead>
           <tbody>
-            {routes.map((route) => {
+            {filteredRoutes.map((route) => {
               const editing = editRoutes[route.id];
               const data = editing || route;
               return (
@@ -2524,7 +2608,7 @@ const Management = () => {
               </tr>
             </thead>
             <tbody>
-              {autoAssignmentRules.map((rule) => {
+              {filteredAutoAssignmentRules.map((rule) => {
                 const isEditing = editingAutoAssignmentId === rule.id;
                 return (
                   <tr key={rule.id} className="border-b align-top">
@@ -2745,7 +2829,7 @@ const Management = () => {
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           {rolesLoading ? (
             <p className="p-4">Loading roles...</p>
-          ) : roles.length === 0 ? (
+          ) : filteredRoles.length === 0 ? (
             <div className="flex items-start gap-3 p-4 text-sm text-gray-700">
               <div className="mt-0.5 h-8 w-8 flex-shrink-0 rounded-full bg-blue-50 text-center text-base font-semibold leading-8 text-blue-700">
                 ℹ️
@@ -2764,7 +2848,7 @@ const Management = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {roles.map((role) => (
+                {filteredRoles.map((role) => (
                   <tr key={role.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 align-middle">
                       {editingRole.id === role.id ? (
@@ -2884,7 +2968,7 @@ const Management = () => {
         <div className="overflow-x-auto rounded border bg-white shadow-sm">
           {loadingProjects ? (
             <p className="p-4">Loading projects...</p>
-          ) : projects.length === 0 ? (
+          ) : filteredProjects.length === 0 ? (
             <p className="p-4 text-sm text-gray-600">No projects available.</p>
           ) : (
             <table className="min-w-full text-sm">
@@ -2898,7 +2982,7 @@ const Management = () => {
               </tr>
             </thead>
             <tbody>
-              {projects.map((project) => {
+              {filteredProjects.map((project) => {
                 const createdAt = project.created_at ? new Date(project.created_at) : null;
                 return (
                   <tr key={project.id} className="border-b">
@@ -3486,11 +3570,20 @@ const Management = () => {
               </nav>
             </aside>
             <section className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-labelledby="management-section-title">
-              <header className="flex items-center gap-4 border-b border-slate-200 px-5 py-5">
+              <header className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center">
                 <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                   {React.createElement(currentTab[2], { className: 'h-5 w-5', 'aria-hidden': true })}
                 </span>
                 <div><h3 id="management-section-title" className="text-lg font-bold text-slate-900">{currentTab[0]}</h3><p className="text-sm text-slate-500">{currentTab[1]}</p></div>
+                {['departments', 'warehouses', 'projects', 'roles', 'routes', 'autoAssignments'].includes(tab) && (
+                  <label className="relative sm:ml-auto sm:w-72">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                    <span className="sr-only">Search {currentTab[0].toLowerCase()}</span>
+                    <input type="search" value={managementSearch} onChange={(e) => setManagementSearch(e.target.value)}
+                      placeholder={`Search ${currentTab[0].toLowerCase()}`}
+                      className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100" />
+                  </label>
+                )}
               </header>
             <div className="p-4">
               {tab === 'users' && renderUsers()}
