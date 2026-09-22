@@ -27,3 +27,7 @@ export const runApprovalPolicyShadowBatch = (body) =>
   api.post("/approval-policy-shadow-runs/batch", body).then((r) => r.data);
 export const listShadowRuns = (params) =>
   api.get("/approval-policy-shadow-runs", { params }).then((r) => r.data);
+export const simulateApprovalPolicy = (versionId, body) =>
+  api.post(`/approval-policy-versions/${versionId}/simulate`, body).then((r) => r.data);
+export const getApprovalPolicyReadiness = () =>
+  api.get("/approval-policy-readiness").then((r) => r.data);

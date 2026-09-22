@@ -538,7 +538,9 @@ export function PolicyDetail({
   options = {},
 }) {
   const [selected, setSelected] = useState(),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [editingMetadata,setEditingMetadata]=useState(false),
+    [metadata,setMetadata]=useState({name:policy.name,description:policy.description||""});
   const createVersion = async () => {
     try {
       const v = await api.createApprovalPolicyVersion(policy.id, {});
@@ -557,20 +559,9 @@ export function PolicyDetail({
       {error && <p role="alert">{error}</p>}
       {canManage && (
         <>
-          <button
-            onClick={async () => {
-              const name = window.prompt("Policy name", policy.name);
-              if (name)
-                try {
-                  await api.updateApprovalPolicy(policy.id, { name });
-                } catch (e) {
-                  setError(message(e));
-                }
-            }}
-          >
-            Edit policy metadata
-          </button>
+          <button onClick={()=>setEditingMetadata(true)}>Edit policy metadata</button>
           <button onClick={createVersion}>Create Draft Version</button>
+          {editingMetadata&&<form aria-label="Edit policy metadata" onSubmit={async event=>{event.preventDefault();try{await api.updateApprovalPolicy(policy.id,metadata);setEditingMetadata(false);}catch(e){setError(message(e));}}}><label>Name<input aria-label="Policy name" required value={metadata.name} onChange={e=>setMetadata({...metadata,name:e.target.value})}/></label><label>Description<textarea aria-label="Policy description" value={metadata.description} onChange={e=>setMetadata({...metadata,description:e.target.value})}/></label><button>Save metadata</button><button type="button" onClick={()=>setEditingMetadata(false)}>Cancel</button></form>}
         </>
       )}
       <h2>Versions</h2>
@@ -812,6 +803,13 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
     </section>
   );
 }
+export function PolicySimulator({ versions = [], departments = [] }) {
+  const [form,setForm]=useState({versionId:"",departmentId:"",requestType:"NON_STOCK",estimatedAmount:"",isStockRequest:false,isMaintenanceRequest:false,isMedicalDeviceRequest:false,isMedicalRequest:false,warehouseRequired:false});
+  const [result,setResult]=useState(),[error,setError]=useState("");
+  const run=async event=>{event.preventDefault();setError("");try{setResult(await api.simulateApprovalPolicy(form.versionId,{...form,versionId:undefined,departmentId:form.departmentId||null,estimatedAmount:form.estimatedAmount||null}));}catch(e){setError(message(e));}};
+  return <section aria-label="Policy simulator"><h2>Policy Simulator</h2><p>Diagnostic only. No request, approval, notification, or workflow record is created.</p><form onSubmit={run}><label>Policy version<select aria-label="Simulation policy version" required value={form.versionId} onChange={e=>setForm({...form,versionId:e.target.value})}><option value="">Select</option>{versions.map(v=><option key={v.id} value={v.id}>{v.policyName} — Version {v.version_number}</option>)}</select></label><label>Department<select aria-label="Simulation department" value={form.departmentId} onChange={e=>setForm({...form,departmentId:e.target.value})}><option value="">None</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><label>Request type<input aria-label="Simulation request type" value={form.requestType} onChange={e=>setForm({...form,requestType:e.target.value})}/></label><label>Estimated amount<input aria-label="Simulation amount" inputMode="decimal" value={form.estimatedAmount} onChange={e=>setForm({...form,estimatedAmount:e.target.value})}/></label>{[['isStockRequest','Stock'],['isMaintenanceRequest','Maintenance'],['isMedicalDeviceRequest','Medical device'],['isMedicalRequest','Medical'],['warehouseRequired','Warehouse required']].map(([key,label])=><label key={key}><input type="checkbox" checked={form[key]} onChange={e=>setForm({...form,[key]:e.target.checked})}/>{label}</label>)}<button>Simulate route</button></form>{error&&<p role="alert">{error}</p>}{result&&<><h3>Resolved route</h3><p>Matched rules: {result.matchedRules.map(r=>r.code).join(', ')||'None'}</p>{result.steps.map((s,i)=><article key={i} className="rounded border p-3"><strong>Level {s.approvalLevel}: {s.displayName}</strong><p>Purpose: {s.semanticKey}</p><p>Required authority: {s.requestedAuthority||s.resolverType}</p><p>Position holder: {s.positionHolderName||'Unresolved'}</p>{s.actingApproverName&&<p>Acting approver: {s.actingApproverName}</p>}<p>Resolution: {s.resolutionStatus}{s.duplicatePrincipal?' · DUPLICATE_PRINCIPAL':''}</p>{s.resolutionReason&&<p>{s.resolutionReason}</p>}</article>)}</>}</section>;
+}
+export function CutoverReadiness(){const[data,setData]=useState(),[error,setError]=useState("");useEffect(()=>{api.getApprovalPolicyReadiness().then(setData).catch(e=>setError(message(e)))},[]);return <section aria-label="Live cutover readiness"><h2>Live-cutover readiness</h2>{error&&<p role="alert">{error}</p>}{!data&&!error&&<p>Loading readiness diagnostics…</p>}{data&&<><strong>{data.cutoverStatus}</strong><p>Live routing: {data.liveRoutingEnabled?'ENABLED':'DISABLED'}</p>{Object.entries(data).filter(([k])=>!['cutoverStatus','liveRoutingEnabled'].includes(k)).map(([group,values])=><article key={group}><h3>{group.toUpperCase()}</h3>{Object.entries(values).map(([k,v])=><p key={k}>{k.replaceAll('_',' ')}: <strong>{v}</strong></p>)}</article>)}</>}</section>}
 export default function ApprovalPoliciesPage({ canManage = true }) {
   const [items, setItems] = useState(null);
   const [orgOptions, setOrgOptions] = useState({
@@ -823,6 +821,7 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState();
   const [dashboard, setDashboard] = useState(false);
+  const [simulator,setSimulator]=useState(false),[readiness,setReadiness]=useState(false);
   const load = () => {
     setError("");
     Promise.all([api.listApprovalPolicies(), getOrganizationOptions()])
@@ -880,6 +879,8 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
           <button onClick={() => setDashboard((x) => !x)}>
             Shadow validation dashboard
           </button>
+          <button onClick={()=>setSimulator(x=>!x)}>Policy simulator</button>
+          <button onClick={()=>setReadiness(x=>!x)}>Cutover readiness</button>
           {creating && (
             <form
               onSubmit={async (ev) => {
@@ -957,6 +958,8 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
               departments={orgOptions.departments}
             />
           )}
+          {simulator&&<PolicySimulator versions={versions} departments={orgOptions.departments}/>}
+          {readiness&&<CutoverReadiness/>}
         </>
       )}
     </main>
