@@ -10,6 +10,22 @@ const EMPTY_OBJECT = {};
 
 export const isRejectedItem = (item) => String(item?.approval_status || '').trim().toLowerCase() === 'rejected';
 export const getWorkspaceItemStatus = (item) => isRejectedItem(item) ? 'Rejected' : (item?.procurement_status || 'Pending');
+export const filterWorkspaceItems = (items, query = '', status = 'all') => {
+  const normalizedQuery = query.trim().toLowerCase();
+  return items.filter((item) => {
+    const itemStatus = String(getWorkspaceItemStatus(item)).trim().toLowerCase();
+    const matchesStatus = status === 'all' || itemStatus === status;
+    const matchesQuery = !normalizedQuery || [
+      item.item_name,
+      item.brand,
+      item.category,
+      item.specs,
+      item.intended_use,
+      item.supplier_name,
+    ].some((value) => String(value || '').toLowerCase().includes(normalizedQuery));
+    return matchesStatus && matchesQuery;
+  });
+};
 
 const statusClasses = {
   approved: 'bg-emerald-100 text-emerald-800',
@@ -82,7 +98,7 @@ const ModalShell = ({ title, children, onClose }) => (
     <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-        <button type="button" onClick={onClose} className="rounded-full px-3 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+        <button type="button" aria-label={`Close ${title}`} onClick={onClose} className="rounded-full px-3 py-1 text-slate-500 hover:bg-slate-100">✕</button>
       </div>
       {children}
     </div>
@@ -110,6 +126,8 @@ const RequestDetailWorkspace = () => {
   const [itemStatusTarget, setItemStatusTarget] = useState(null);
   const [itemStatusForm, setItemStatusForm] = useState({ procurement_status: 'not_procured', procurement_comment: '' });
   const [sortItemsAlphabetically, setSortItemsAlphabetically] = useState(false);
+  const [itemQuery, setItemQuery] = useState('');
+  const [itemStatusFilter, setItemStatusFilter] = useState('all');
 
   const fetchWorkspace = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -146,8 +164,8 @@ const RequestDetailWorkspace = () => {
   const actions = new Set(workspace?.available_actions || EMPTY_ARRAY);
   const procurableItems = useMemo(() => items.filter((item) => !isRejectedItem(item)), [items]);
   const displayedItems = useMemo(
-    () => getDisplayItems(items, sortItemsAlphabetically),
-    [items, sortItemsAlphabetically],
+    () => getDisplayItems(filterWorkspaceItems(items, itemQuery, itemStatusFilter), sortItemsAlphabetically),
+    [items, itemQuery, itemStatusFilter, sortItemsAlphabetically],
   );
 
   const summary = useMemo(() => {
@@ -158,6 +176,21 @@ const RequestDetailWorkspace = () => {
     const pendingApprovals = approvals.filter((approval) => String(approval.status || '').toLowerCase() === 'pending').length;
     return { totalItems, fullyProcured, partiallyProcured, remainingQuantity, pendingApprovals, attachmentsCount: attachments.length };
   }, [items, approvals, attachments]);
+
+  const procurementProgress = useMemo(() => {
+    const requested = procurableItems.reduce((sum, item) => sum + Number(item.requested_quantity || 0), 0);
+    const purchased = procurableItems.reduce((sum, item) => sum + Math.min(Number(item.purchased_quantity || 0), Number(item.requested_quantity || 0)), 0);
+    return requested > 0 ? Math.min(100, Math.round((purchased / requested) * 100)) : 0;
+  }, [procurableItems]);
+
+  const tabCounts = {
+    Items: items.length,
+    Approvals: approvals.length,
+    Timeline: timeline.length,
+    Documents: attachments.length,
+    Communication: notes.length,
+    Audit: auditLogs.length,
+  };
 
   const groupedProcurementEvents = useMemo(() => procurementEvents.reduce((acc, event) => {
     const key = event.requested_item_id || 'unknown';
@@ -362,8 +395,8 @@ const RequestDetailWorkspace = () => {
               <button onClick={() => fetchWorkspace(true)} disabled={refreshing} className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">{refreshing ? 'Refreshing…' : 'Refresh'}</button>
             </div>
           </div>
-          <div className="mt-4 flex gap-2 overflow-x-auto print:hidden">
-            {tabs.map((tab) => <button key={tab} onClick={() => setActiveTab(tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{tab}</button>)}
+          <div role="tablist" aria-label="Request workspace sections" className="mt-4 flex gap-2 overflow-x-auto print:hidden">
+            {tabs.map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{tab}{tabCounts[tab] !== undefined ? <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${activeTab === tab ? 'bg-white/20' : 'bg-white'}`}>{tabCounts[tab]}</span> : null}</button>)}
           </div>
         </div>
       </div>
@@ -379,6 +412,13 @@ const RequestDetailWorkspace = () => {
               <Card title="Pending approvals" value={summary.pendingApprovals} />
               <Card title="Attachments" value={summary.attachmentsCount} />
             </div>
+            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="procurement-progress-heading">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div><h2 id="procurement-progress-heading" className="font-bold text-slate-900">Procurement progress</h2><p className="mt-1 text-sm text-slate-500">Based on purchased quantity across approved request items.</p></div>
+                <p className="text-2xl font-black text-blue-700">{procurementProgress}%</p>
+              </div>
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-label="Procurement progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow={procurementProgress}><div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all" style={{ width: `${procurementProgress}%` }} /></div>
+            </section>
             {actions.has('mark_request_completed') ? (
               <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm print:hidden">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -428,11 +468,14 @@ const RequestDetailWorkspace = () => {
 
         {activeTab === 'Items' && (
           <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 print:hidden">
+            <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 px-4 py-3 print:hidden">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Requested items</h2>
                 <p className="text-xs text-slate-500">Sorting only changes this view and does not update the saved request.</p>
               </div>
+              <div className="flex flex-1 flex-wrap items-end justify-end gap-2">
+                <label className="min-w-[15rem] text-xs font-semibold text-slate-600">Search items<input type="search" value={itemQuery} onChange={(event) => setItemQuery(event.target.value)} placeholder="Name, specs, use, or supplier" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
+                <label className="text-xs font-semibold text-slate-600">Status<select value={itemStatusFilter} onChange={(event) => setItemStatusFilter(event.target.value)} className="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"><option value="all">All statuses</option>{Array.from(new Set(items.map((item) => String(getWorkspaceItemStatus(item)).trim().toLowerCase()))).sort().map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}</select></label>
               {items.length > 1 ? (
                 <button
                   type="button"
@@ -442,13 +485,14 @@ const RequestDetailWorkspace = () => {
                   {sortItemsAlphabetically ? 'Original order' : 'Sort A-Z'}
                 </button>
               ) : null}
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Item</th><th className="px-4 py-3">Specs</th><th className="px-4 py-3">Intended use</th><th className="px-4 py-3">Unit of measure</th><th className="px-4 py-3">Requested</th><th className="px-4 py-3">Purchased</th><th className="px-4 py-3">Remaining</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Supplier</th><th className="px-4 py-3">Latest unit cost</th><th className="px-4 py-3 print:hidden">Actions</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{item.unit_of_measure || '—'}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{getWorkspaceItemStatus(item)}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') && !isRejectedItem(item) ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') && !isRejectedItem(item) ? <><button onClick={() => openItemStatusModal(item, 'completed')} className="rounded bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Close as Completed</button><button onClick={() => openItemStatusModal(item, 'not_procured')} className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Not Procured</button><button onClick={() => openItemStatusModal(item, 'canceled')} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Cancel Item</button></> : null}</div></td></tr>)}
-                  {items.length === 0 ? <tr><td colSpan="11" className="p-6"><EmptyState>No requested items found.</EmptyState></td></tr> : null}
+                  {displayedItems.length === 0 ? <tr><td colSpan="11" className="p-6"><EmptyState>{items.length === 0 ? 'No requested items found.' : 'No items match the current filters.'}</EmptyState></td></tr> : null}
                 </tbody>
               </table>
             </div>

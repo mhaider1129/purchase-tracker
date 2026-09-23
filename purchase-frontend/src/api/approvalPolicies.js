@@ -15,6 +15,8 @@ export const saveApprovalPolicyVersion = (id, body) =>
   api.patch(`/approval-policy-versions/${id}`, body).then((r) => r.data);
 export const validateApprovalPolicyVersion = (id) =>
   api.post(`/approval-policy-versions/${id}/validate`).then((r) => r.data);
+export const getApprovalPolicyVersionReadiness = (id) =>
+  api.get(`/approval-policy-versions/${id}/readiness`).then((r) => r.data);
 export const enterApprovalPolicyShadow = (id) =>
   api.post(`/approval-policy-versions/${id}/enter-shadow`).then((r) => r.data);
 export const getShadowRun = (id) =>

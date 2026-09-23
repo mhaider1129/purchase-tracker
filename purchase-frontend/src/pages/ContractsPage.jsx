@@ -7,6 +7,7 @@ import api from '../api/axios';
 import { listContractDocuments } from '../api/contracts';
 import { searchApprovedProducts, searchGenericItems, searchSupplierCatalog } from '../api/itemMaster';
 import { useAuth } from '../hooks/useAuth';
+import { ArrowUpDown, FilePlus2, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
 
 const parseJson = (value) => {
   if (value === null || value === undefined) {
@@ -108,6 +109,14 @@ const renewalOptions = [
   { value: 'all', label: 'All renewals' },
   { value: 'expiring', label: 'Expiring soon' },
   { value: 'expired', label: 'Expired' },
+];
+
+const sortOptions = [
+  { value: 'attention', label: 'Needs attention' },
+  { value: 'updated', label: 'Recently updated' },
+  { value: 'expiry', label: 'Renewal date' },
+  { value: 'value_desc', label: 'Highest value' },
+  { value: 'title', label: 'Contract name' },
 ];
 
 const EXPIRING_SOON_THRESHOLD_DAYS = 30;
@@ -300,6 +309,7 @@ const ContractsPage = () => {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [renewalFilter, setRenewalFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('attention');
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -1496,6 +1506,30 @@ const ContractsPage = () => {
 
   const sortedContracts = useMemo(() => {
     return [...filteredContracts].sort((a, b) => {
+      if (sortBy === 'updated') {
+        return (b.updated_at || '').localeCompare(a.updated_at || '');
+      }
+      if (sortBy === 'expiry') {
+        const aDays = typeof a.days_until_expiry === 'number' ? a.days_until_expiry : Number.MAX_SAFE_INTEGER;
+        const bDays = typeof b.days_until_expiry === 'number' ? b.days_until_expiry : Number.MAX_SAFE_INTEGER;
+        return aDays - bDays;
+      }
+      if (sortBy === 'value_desc') {
+        return (toIqd(b.contract_value, b.currency) || 0) - (toIqd(a.contract_value, a.currency) || 0);
+      }
+      if (sortBy === 'title') {
+        return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' });
+      }
+
+      const attentionRank = (contract) => {
+        if (contract.is_expired) return 0;
+        if (isExpiringSoon(contract)) return 1;
+        if ((contract.status || '').toLowerCase() === 'under_review') return 2;
+        return 3;
+      };
+      const rankDifference = attentionRank(a) - attentionRank(b);
+      if (rankDifference !== 0) return rankDifference;
+
       const statusA = (a.status || '').toLowerCase();
       const statusB = (b.status || '').toLowerCase();
 
@@ -1505,7 +1539,15 @@ const ContractsPage = () => {
 
       return statusA.localeCompare(statusB);
     });
-  }, [filteredContracts]);
+  }, [filteredContracts, isExpiringSoon, sortBy]);
+
+  const hasActiveFilters = statusFilter !== 'all' || renewalFilter !== 'all' || Boolean(searchInput);
+  const clearFilters = () => {
+    setSearchInput('');
+    setSearchTerm('');
+    setStatusFilter('all');
+    setRenewalFilter('all');
+  };
 
   const exportContractsToCsv = useCallback(() => {
     if (sortedContracts.length === 0) {
@@ -1881,17 +1923,29 @@ const ContractsPage = () => {
   return (
     <>
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <header className="mb-8">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <header className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-6 py-7 text-white shadow-xl sm:px-8">
+          <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-32 left-1/3 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Contract management</h1>
-              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                Track active agreements, update contract details, and keep visibility on upcoming renewals.
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                <ShieldAlert className="h-3.5 w-3.5" aria-hidden="true" /> Contract intelligence
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Contracts workspace</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100/80">
+                Monitor agreement health, renewal exposure, and committed spend from one operational view.
               </p>
             </div>
-            <div className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-              <div className="font-semibold">{contracts.length} contracts</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{activeCount} active</div>
+            <div className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/10 px-5 py-3 shadow-inner backdrop-blur">
+              <div>
+                <div className="text-2xl font-bold">{contracts.length}</div>
+                <div className="text-xs text-blue-100/70">Total agreements</div>
+              </div>
+              <div className="h-10 w-px bg-white/15" />
+              <div>
+                <div className="text-2xl font-bold text-emerald-300">{activeCount}</div>
+                <div className="text-xs text-blue-100/70">Active now</div>
+              </div>
             </div>
           </div>
         </header>
@@ -1945,6 +1999,25 @@ const ContractsPage = () => {
         </div>
         )}
 
+        {!isCreatePage && !isEditPage && (expiredCount > 0 || expiringSoonCount > 0) && (
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-amber-800/60 dark:bg-amber-950/30">
+            <div className="flex items-start gap-3">
+              <span className="rounded-xl bg-amber-100 p-2 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
+                <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="font-semibold text-amber-950 dark:text-amber-100">Portfolio attention required</p>
+                <p className="mt-0.5 text-sm text-amber-800 dark:text-amber-200/80">
+                  {expiredCount} expired and {expiringSoonCount} expiring within {EXPIRING_SOON_THRESHOLD_DAYS} days.
+                </p>
+              </div>
+            </div>
+            <button type="button" onClick={() => setRenewalFilter(expiredCount ? 'expired' : 'expiring')} className="rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-800 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2 dark:bg-amber-500 dark:text-amber-950">
+              Review priority contracts
+            </button>
+          </div>
+        )}
+
         {!isCreatePage ? (
         <section
           className={`grid gap-6 ${
@@ -1958,18 +2031,19 @@ const ContractsPage = () => {
           <div className={isEditPage ? 'hidden' : 'space-y-4'}>
             <div className="flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex flex-1 gap-3">
-                  <div className="flex-1">
+                <div className="flex flex-1 flex-col gap-3 lg:flex-row">
+                  <div className="relative flex-1">
                     <label htmlFor="contracts-search" className="sr-only">
                       Search contracts
                     </label>
+                    <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" aria-hidden="true" />
                     <input
                       id="contracts-search"
                       type="search"
                       placeholder="Search by title, vendor, or reference"
                       value={searchInput}
                       onChange={(event) => setSearchInput(event.target.value)}
-                      className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                      className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
                     />
                   </div>
                   <div className="w-full sm:w-48">
@@ -2006,6 +2080,13 @@ const ContractsPage = () => {
                       ))}
                     </select>
                   </div>
+                  <div className="relative w-full sm:w-48">
+                    <label htmlFor="contracts-sort" className="sr-only">Sort contracts</label>
+                    <ArrowUpDown className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" aria-hidden="true" />
+                    <select id="contracts-sort" value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                      {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-2">
                   <button
@@ -2025,9 +2106,9 @@ const ContractsPage = () => {
                   <button
                     type="button"
                     onClick={fetchContracts}
-                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                   >
-                    Refresh
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" /> Refresh
                   </button>
                   <button
                     type="button"
@@ -2044,12 +2125,20 @@ const ContractsPage = () => {
                       setFormState(initialFormState);
                       navigate('/contracts/new');
                     }}
-                    className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    className="inline-flex items-center justify-center gap-2 rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                   >
-                    Create new contract
+                    <FilePlus2 className="h-4 w-4" aria-hidden="true" /> Create contract
                   </button>
                 </div>
               </div>
+              {hasActiveFilters && (
+                <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
+                  <span>Showing {sortedContracts.length} of {contracts.length} contracts with active filters</span>
+                  <button type="button" onClick={clearFilters} className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
+                    <X className="h-3.5 w-3.5" aria-hidden="true" /> Clear filters
+                  </button>
+                </div>
+              )}
               {error && (
                 <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300">
                   {error}

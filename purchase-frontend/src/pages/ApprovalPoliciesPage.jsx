@@ -213,6 +213,7 @@ function ResolverReference({ step, onChange, options = {} }) {
 export function VersionDetail({ version, onRefresh, options = {} }) {
   const [draft, setDraft] = useState(() => ({ rules: version.rules || [] })),
     [validation, setValidation] = useState(null),
+    [routingReadiness, setRoutingReadiness] = useState(null),
     [error, setError] = useState(""),
     [saving, setSaving] = useState(false);
   useEffect(() => setDraft({ rules: version.rules || [] }), [version]);
@@ -253,6 +254,14 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
       setError(message(e));
     }
   };
+  const checkReadiness = async () => {
+    setError("");
+    try {
+      setRoutingReadiness(await api.getApprovalPolicyVersionReadiness(version.id));
+    } catch (e) {
+      setError(message(e));
+    }
+  };
   return (
     <section className="space-y-4">
       <header>
@@ -283,6 +292,16 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
           ))}
           {validation.warnings?.map((x) => (
             <p key={x}>Warning: {x}</p>
+          ))}
+        </div>
+      )}
+      {routingReadiness && (
+        <div role="status" aria-label="Current routing readiness">
+          <strong>Routing readiness: {routingReadiness.status}</strong>
+          <p>Structural validation: {routingReadiness.structurallyValid ? "PASS" : "FAIL"}</p>
+          <p>Currently routable: {routingReadiness.currentlyRoutable ? "YES" : "NO"}</p>
+          {[...(routingReadiness.errors || []), ...(routingReadiness.warnings || [])].map((item, index) => (
+            <p key={`${item.code}-${item.stepId || item.ruleId || index}`}>{item.code}: {item.message}</p>
           ))}
         </div>
       )}
@@ -528,6 +547,7 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
       {version.status === "VALIDATED" && (
         <button onClick={enter}>Enter Shadow Mode</button>
       )}
+      <button onClick={checkReadiness}>Check routing readiness</button>
     </section>
   );
 }
