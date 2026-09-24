@@ -48,7 +48,6 @@ import IncompleteOperationalRequestsPage from "./pages/IncompleteOperationalRequ
 import Dashboard from "./pages/Dashboard";
 import CompletedAssignedRequestsPage from "./pages/CompletedAssignedRequestsPage";
 import ClosedRequestsPage from "./pages/ClosedRequestsPage";
-import MaintenanceStockPage from "./pages/MaintenanceStockPage";
 import ProcurementPlansPage from "./pages/ProcurementPlansPage";
 import RequestSubmittedPage from "./pages/requests/RequestSubmittedPage";
 import WarehouseSupplyTemplatesPage from "./pages/WarehouseSupplyTemplatesPage";
@@ -630,15 +629,6 @@ const AppRoutes = () => (
       }
     />
 
-    <Route
-      path="/maintenance-stock"
-      element={
-        <ProtectedRoute
-          element={<MaintenanceStockPage />}
-          resourceKey="feature.maintenanceStock"
-        />
-      }
-    />
     <Route
       path="/warehouse-supply-templates"
       element={

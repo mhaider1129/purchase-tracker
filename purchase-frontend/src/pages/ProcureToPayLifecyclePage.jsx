@@ -16,6 +16,21 @@ import { useAuth } from '../hooks/useAuth';
 import { hasAnyPermission } from '../utils/permissions';
 import { useSuppliers } from '../hooks/useSuppliers';
 import GuidedWorkflowPanel from '../components/GuidedWorkflowPanel';
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  CircleDollarSign,
+  ClipboardCheck,
+  FileCheck2,
+  FileText,
+  Landmark,
+  PackageCheck,
+  RefreshCw,
+  SearchCheck,
+  ShoppingCart,
+  Warehouse,
+} from 'lucide-react';
 
 
 const formatTimelineDate = (value) => {
@@ -23,6 +38,44 @@ const formatTimelineDate = (value) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toLocaleString('en-GB');
+};
+
+const formatState = (value, fallback = 'Not started') => String(value || fallback)
+  .replace(/_/g, ' ')
+  .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+const LIFECYCLE_STAGES = [
+  { id: 'request', label: 'Request', hint: 'Approved demand', icon: ClipboardCheck },
+  { id: 'order', label: 'Purchase order', hint: 'Supplier commitment', icon: ShoppingCart },
+  { id: 'receipt', label: 'Goods receipt', hint: 'Delivery confirmed', icon: PackageCheck },
+  { id: 'invoice', label: 'Invoice', hint: 'Supplier billing', icon: FileText },
+  { id: 'match', label: '3-way match', hint: 'Controls validated', icon: SearchCheck },
+  { id: 'pay', label: 'Payment', hint: 'Liability settled', icon: CircleDollarSign },
+];
+
+const getLifecycleStageState = (payload = {}) => {
+  payload = payload || {};
+  const hasMatch = (payload.match_results || []).some((entry) => {
+    const status = String(entry.match_status || '').toLowerCase();
+    return status.includes('match') && !status.includes('unmatch');
+  });
+  const hasPaid = (payload.payments || []).some((entry) => String(entry.payment_status || '').toLowerCase() === 'paid');
+  const completed = [
+    true,
+    (payload.purchase_orders || []).length > 0,
+    (payload.receipts || []).length > 0,
+    (payload.invoices || []).length > 0,
+    hasMatch,
+    hasPaid,
+  ];
+  const firstIncomplete = completed.findIndex((value) => !value);
+  const activeIndex = firstIncomplete === -1 ? completed.length - 1 : firstIncomplete;
+  return {
+    completed,
+    activeIndex,
+    completedCount: completed.filter(Boolean).length,
+    progress: Math.round((completed.filter(Boolean).length / completed.length) * 100),
+  };
 };
 
 const buildTransactionTimeline = (payload = {}) => {
@@ -188,6 +241,7 @@ const ProcureToPayLifecyclePage = () => {
 
   const availableReceipts = data?.receipts || [];
   const transactionTimeline = useMemo(() => buildTransactionTimeline(data), [data]);
+  const lifecycleStageState = useMemo(() => getLifecycleStageState(data), [data]);
 
   const autoCompletedOnboardingSteps = useMemo(() => {
     const invoices = data?.invoices || [];
@@ -208,8 +262,8 @@ const ProcureToPayLifecyclePage = () => {
     const toType = (value) => String(value || '').toUpperCase();
     const uniqueById = (arr = []) => {
       const seen = new Set();
-      return arr.filter((entry) => {
-        const id = String(entry?.id || entry?.target_document_id || entry?.source_document_id || Math.random());
+      return arr.filter((entry, index) => {
+        const id = String(entry?.id || entry?.target_document_id || entry?.source_document_id || `${entry?.target_document_type || 'record'}-${index}`);
         if (seen.has(id)) return false;
         seen.add(id);
         return true;
@@ -344,23 +398,83 @@ const ProcureToPayLifecyclePage = () => {
 
   if (!hasRequestContext) {
     return (
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-bold">Procure-to-Pay Lifecycle</h1>
-        <div className="rounded border bg-white p-4 space-y-2">
-          <p className="text-sm text-gray-700">Open a specific request lifecycle from request pages, or start from the Procure-to-Pay dashboard.</p>
-          <div className="flex flex-wrap gap-2">
-            <Link to="/procure-to-pay" className="rounded bg-violet-700 px-3 py-1 text-white">Go to Procure-to-Pay Dashboard</Link>
-            <Link to="/open-requests" className="rounded border px-3 py-1">Open Requests</Link>
+      <main className="min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 px-6 py-10 text-white sm:px-10">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-200">Operations control center</p>
+            <h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">Procure-to-Pay Lifecycle</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Follow every handoff from approved demand to supplier payment in one governed, auditable workspace.</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link to="/procure-to-pay" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-violet-900 shadow-sm transition hover:bg-violet-50">Open P2P dashboard <ArrowRight size={16} /></Link>
+              <Link to="/open-requests" className="rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20">Browse open requests</Link>
+            </div>
+          </div>
+          <div className="grid gap-px bg-slate-200 sm:grid-cols-3">
+            {[
+              [ShoppingCart, 'Order', 'Convert approved demand into a controlled supplier commitment.'],
+              [PackageCheck, 'Receive & match', 'Capture delivery evidence and resolve invoice exceptions.'],
+              [Landmark, 'Post & pay', 'Complete finance controls with a traceable settlement.'],
+            ].map(([Icon, title, description]) => (
+              <div key={title} className="bg-white p-6">
+                <Icon className="text-violet-700" size={22} />
+                <h2 className="mt-4 font-bold text-slate-900">{title}</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   if (loading) return <div className="p-6">Loading lifecycle...</div>;
 
   return (
-    <div className="p-6 space-y-4">
+    <main className="min-h-screen space-y-6 bg-slate-50 p-4 sm:p-6 lg:p-8">
+      <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 text-white shadow-xl shadow-slate-200">
+        <div className="px-5 py-6 sm:px-8 sm:py-8">
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-violet-200">
+                <Link to="/procure-to-pay" className="hover:text-white">Procure-to-Pay</Link>
+                <ChevronRight size={14} />
+                <span>Request #{requestId}</span>
+              </div>
+              <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Procurement lifecycle</h1>
+              <p className="mt-2 max-w-2xl text-sm text-slate-300">One connected record for operational handoffs, financial controls, and audit evidence.</p>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
+              <div className="relative h-12 w-12 rounded-full bg-white/10" style={{ background: `conic-gradient(#a78bfa ${lifecycleStageState.progress}%, rgba(255,255,255,.12) 0)` }}>
+                <div className="absolute inset-1.5 flex items-center justify-center rounded-full bg-indigo-950 text-xs font-bold">{lifecycleStageState.progress}%</div>
+              </div>
+              <div>
+                <p className="text-xs text-slate-300">Lifecycle progress</p>
+                <p className="font-bold">{lifecycleStageState.completedCount} of {LIFECYCLE_STAGES.length} stages</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-6" aria-label="Procure-to-pay progress">
+            {LIFECYCLE_STAGES.map((stage, index) => {
+              const Icon = stage.icon;
+              const complete = lifecycleStageState.completed[index];
+              const active = lifecycleStageState.activeIndex === index && !complete;
+              return (
+                <div key={stage.id} className={`relative rounded-2xl border p-3.5 ${complete ? 'border-emerald-400/30 bg-emerald-400/10' : active ? 'border-violet-300/60 bg-white/15' : 'border-white/10 bg-white/5'}`}>
+                  <div className="flex items-center justify-between">
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${complete ? 'bg-emerald-400 text-slate-950' : active ? 'bg-violet-300 text-violet-950' : 'bg-white/10 text-slate-400'}`}>
+                      {complete ? <Check size={17} strokeWidth={3} /> : <Icon size={17} />}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">0{index + 1}</span>
+                  </div>
+                  <p className="mt-3 text-sm font-bold">{stage.label}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-400">{complete ? 'Complete' : active ? 'Current stage' : stage.hint}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
       <GuidedWorkflowPanel
         key={onboardingVersion}
         title="First-run walkthrough: Procure-to-pay lifecycle"
@@ -374,30 +488,50 @@ const ProcureToPayLifecyclePage = () => {
           { id: 'match_and_pay', title: 'Run match and complete payment', tip: 'Verify ledger posting before marking invoices as paid.' },
         ]}
       />
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Procurement Lifecycle · Request #{requestId}</h1>
-        <div className="flex flex-wrap gap-2">
-          <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} className="rounded bg-slate-700 px-3 py-1 text-white">PO</Link>
-          <Link to={`/requests/${requestId}/procure-to-pay/receipts`} className="rounded bg-blue-600 px-3 py-1 text-white">GRPO</Link>
-          <Link to={`/requests/${requestId}/procure-to-pay/invoices`} className="rounded bg-indigo-600 px-3 py-1 text-white">A/P Invoice</Link>
-          <Link to={`/requests/${requestId}/procure-to-pay/matching`} className="rounded bg-amber-600 px-3 py-1 text-white">Matching</Link>
-          <Link to={`/requests/${requestId}/procure-to-pay/accounts-payable`} className="rounded bg-cyan-700 px-3 py-1 text-white">Accounts Payable</Link>
-          <Link to={`/requests/${requestId}/procure-to-pay/payments`} className="rounded bg-emerald-700 px-3 py-1 text-white">Payments</Link>
-          <Link to={`/requests/${requestId}/procure-to-pay/document-flow`} className="rounded bg-purple-700 px-3 py-1 text-white">Document Flow</Link>
-        </div>
-      </div>
+      <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Lifecycle workspaces">
+        {[
+          ['PO', 'purchase-orders'], ['GRPO', 'receipts'], ['A/P Invoice', 'invoices'], ['Matching', 'matching'],
+          ['Accounts Payable', 'accounts-payable'], ['Payments', 'payments'], ['Document Flow', 'document-flow'],
+        ].map(([label, path]) => <Link key={path} to={`/requests/${requestId}/procure-to-pay/${path}`} className="whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-violet-50 hover:text-violet-800">{label}</Link>)}
+      </nav>
       {error && <div className="rounded bg-red-50 px-3 py-2 text-red-700">{error}</div>}
       {success && <div className="rounded bg-emerald-50 px-3 py-2 text-emerald-700">{success}</div>}
 
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          [ShoppingCart, 'Procurement state', formatState(data?.lifecycle?.procurement_state), 'bg-violet-50 text-violet-700'],
+          [Landmark, 'Finance state', formatState(data?.lifecycle?.finance_state), 'bg-emerald-50 text-emerald-700'],
+          [Warehouse, 'Assigned warehouse', data?.request?.supply_warehouse_name || 'Not assigned', 'bg-blue-50 text-blue-700'],
+          [FileCheck2, 'Linked documents', chainCards.reduce((sum, [, records]) => sum + records.length, 0), 'bg-amber-50 text-amber-700'],
+        ].map(([Icon, label, value, tone]) => (
+          <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tone}`}><Icon size={20} /></div>
+            <p className="mt-4 text-xs font-bold uppercase tracking-wider text-slate-500">{label}</p>
+            <p className="mt-1 font-bold text-slate-900">{value}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="bg-white shadow rounded p-4">
-          <h2 className="font-semibold">Lifecycle Detail View</h2>
-          <p>Procurement State: <strong>{data?.lifecycle?.procurement_state || 'N/A'}</strong></p>
-          <p>Finance State: <strong>{data?.lifecycle?.finance_state || 'N/A'}</strong></p>
-          <p>Assigned Warehouse: <strong>{data?.request?.supply_warehouse_name || 'Not assigned'}</strong></p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div><h2 className="font-bold text-slate-900">Transaction timeline</h2><p className="mt-1 text-sm text-slate-500">Milestones and approval evidence</p></div>
+            <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"><RefreshCw size={14} /> Refresh</button>
+          </div>
+          <ol className="mt-5 space-y-3">
+            {transactionTimeline.map((step, index) => (
+              <li key={step.title} className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-full ${step.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>{step.done ? <Check size={13} strokeWidth={3} /> : <span className="h-2 w-2 rounded-full bg-current" />}</span>
+                  {index !== transactionTimeline.length - 1 && <span className="h-full w-px bg-slate-200" />}
+                </div>
+                <div className="pb-2"><p className="text-sm font-semibold text-slate-800">{step.title}</p>{step.detail && <p className="text-xs text-slate-600">{step.detail}</p>}<p className="text-xs text-slate-400">{formatTimelineDate(step.at) || (step.done ? 'Completed · timestamp unavailable' : 'Pending')}</p></div>
+              </li>
+            ))}
+          </ol>
         </div>
 
-        <div className="bg-white shadow rounded p-4 space-y-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
           <h2 className="font-semibold">Unified Procurement Transaction Chain</h2>
           <p className="text-sm text-gray-600">This request now behaves as one chain across Request → RFQ → Quotation → Evaluation → PO → GRN → Invoice → Payment → Supplier Score → Contract.</p>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -421,27 +555,7 @@ const ProcureToPayLifecyclePage = () => {
           </div>
         </div>
 
-        <div className="bg-white shadow rounded p-4">
-          <h2 className="font-semibold">Transaction Timeline</h2>
-          <p className="text-sm text-gray-600 mb-3">End-to-end workflow visibility for operations, audit, and executive reporting.</p>
-          <ol className="space-y-3">
-            {transactionTimeline.map((step, index) => (
-              <li key={step.title} className="flex gap-3">
-                <div className="flex flex-col items-center">
-                  <span className={`mt-1 h-3 w-3 rounded-full ${step.done ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                  {index !== transactionTimeline.length - 1 && <span className="h-full w-px bg-gray-200" />}
-                </div>
-                <div className="pb-1">
-                  <p className="text-sm font-medium">{step.title}</p>
-                  {step.detail && <p className="text-xs text-gray-600">{step.detail}</p>}
-                  <p className="text-xs text-gray-500">{formatTimelineDate(step.at) || (step.done ? 'Completed (timestamp unavailable)' : 'Pending')}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
       </div>
-
 
       <div className="grid xl:grid-cols-2 gap-4">
         <form className="bg-white shadow rounded p-4 space-y-3" onSubmit={handleSubmitReceipt}>
@@ -641,7 +755,7 @@ const ProcureToPayLifecyclePage = () => {
           {(data?.payments || []).map((payment) => <li key={payment.id}>{payment.payment_status} · {payment.amount_paid}</li>)}
         </ul>
       </div>
-    </div>
+    </main>
   );
 };
 

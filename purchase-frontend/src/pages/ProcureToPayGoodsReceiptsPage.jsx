@@ -1,6 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
+  AlertTriangle,
+  ArrowRight,
+  Boxes,
+  CheckCircle2,
+  ClipboardCheck,
+  FileSearch,
+  PackageCheck,
+  Search,
+  ShieldCheck,
+  Truck,
+  Warehouse,
+} from 'lucide-react';
+import {
   createGoodsReceipt,
   getPurchaseOrderDetail,
   listGoodsReceipts,
@@ -58,6 +71,8 @@ const OUTCOME_OPTIONS = [
 const CONDITION_OPTIONS = ['Good', 'Damaged', 'Expired', 'Needs technical review', 'Missing documents'];
 const INSPECTION_OPTIONS = ['Quantity check', 'Technical inspection', 'Quality inspection', 'Documentation review'];
 
+const formatQuantity = (value) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(Number(value) || 0);
+
 const formatDateTimeLocal = (value) => {
   if (!value) return '';
   const date = new Date(value);
@@ -108,6 +123,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [poSearch, setPoSearch] = useState('');
   const [receiptForm, setReceiptForm] = useState({
     warehouse_id: '',
     warehouse_location: '',
@@ -198,6 +214,13 @@ const ProcureToPayGoodsReceiptsPage = () => {
     [openPos, selectedPoId]
   );
 
+  const filteredOpenPos = useMemo(() => {
+    const query = poSearch.trim().toLowerCase();
+    if (!query) return openPos;
+    return openPos.filter((po) => [po.po_number, po.supplier_name, po.request_id]
+      .some((value) => String(value || '').toLowerCase().includes(query)));
+  }, [openPos, poSearch]);
+
   const discrepancyDetected = useMemo(
     () =>
       receiptForm.outcome !== 'FULL_RECEIPT' ||
@@ -224,6 +247,16 @@ const ProcureToPayGoodsReceiptsPage = () => {
       { ordered: 0, previouslyReceived: 0, delivered: 0, damaged: 0, short: 0 }
     );
   }, [poItems]);
+
+  const lineIssues = useMemo(() => poItems.reduce((issues, item) => {
+    const delivered = Number(item.delivered_quantity) || 0;
+    const remaining = Number(item.remaining_quantity) || 0;
+    const damaged = Number(item.damaged_quantity) || 0;
+    const short = Number(item.short_quantity) || 0;
+    if (delivered > remaining) issues.push(`${item.item_name}: delivered quantity exceeds the open PO quantity.`);
+    if (damaged + short > delivered) issues.push(`${item.item_name}: damaged and short quantities exceed delivered quantity.`);
+    return issues;
+  }, []), [poItems]);
 
   const updateLine = (index, field, value) => {
     setPoItems((prev) =>
@@ -305,6 +338,11 @@ const ProcureToPayGoodsReceiptsPage = () => {
       return;
     }
 
+    if (lineIssues.length > 0) {
+      setError(lineIssues[0]);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await createGoodsReceipt(requestId, {
@@ -344,27 +382,36 @@ const ProcureToPayGoodsReceiptsPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Goods Receipt / Inspection Module</h1>
-          <p className="max-w-4xl text-sm text-gray-600">
-            Confirm what was actually delivered, verify that it meets quantity, technical, quality, and documentation requirements,
-            then post the Goods Receipt Note so warehouse stock and discrepancy status stay accurate.
-          </p>
+    <main className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
+      <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-7 text-white shadow-xl sm:px-8 sm:py-9">
+        <div className="absolute -right-20 -top-24 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl" />
+        <div className="relative flex flex-col justify-between gap-6 xl:flex-row xl:items-end">
+          <div>
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300"><PackageCheck size={16} /> Procure-to-pay · Receiving</div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Goods receipt & inspection</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Verify every delivery against its purchase order, capture quality findings, and post trusted inventory in one guided workspace.</p>
+          </div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            <Link to="/procure-to-pay/purchase-orders" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 font-semibold transition hover:bg-white/20"><FileSearch size={16} /> Purchase orders</Link>
+            <Link to="/procure-to-pay/document-flow" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 transition hover:bg-cyan-300">Document flow <ArrowRight size={16} /></Link>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link to="/procure-to-pay/purchase-orders" className="rounded border px-3 py-1">Purchase Orders</Link>
-          <Link to="/procure-to-pay/invoices" className="rounded border px-3 py-1">Invoice Matching</Link>
-          <Link to="/procure-to-pay/document-flow" className="rounded bg-slate-800 px-3 py-1 text-white">Document Flow</Link>
-        </div>
-      </div>
+      </section>
 
-      {error && <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
-      {success && <div className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
+      {error && <div role="alert" className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><AlertTriangle className="mt-0.5 shrink-0" size={18} />{error}</div>}
+      {success && <div role="status" className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><CheckCircle2 className="mt-0.5 shrink-0" size={18} />{success}</div>}
+
+      <section aria-label="Receiving overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Open purchase orders', value: openPos.length, detail: 'Awaiting full or partial receipt', icon: Truck, tone: 'bg-blue-50 text-blue-700' },
+          { label: 'Receipts in register', value: rows.length, detail: 'Matching the current filters', icon: ClipboardCheck, tone: 'bg-violet-50 text-violet-700' },
+          { label: 'Selected PO lines', value: poItems.length, detail: selectedPoSummary?.po_number || 'Choose an order to begin', icon: Boxes, tone: 'bg-cyan-50 text-cyan-700' },
+          { label: 'Delivery exceptions', value: poItems.filter((item) => item.condition !== 'Good' || Number(item.damaged_quantity) > 0 || Number(item.short_quantity) > 0).length, detail: discrepancyDetected ? 'Review before posting' : 'No issues recorded', icon: ShieldCheck, tone: discrepancyDetected ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700' },
+        ].map(({ label, value, detail, icon: Icon, tone }) => <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-sm font-semibold text-slate-500">{label}</p><p className="mt-2 text-3xl font-bold tracking-tight text-slate-950">{value}</p></div><span className={`rounded-xl p-2.5 ${tone}`}><Icon size={20} /></span></div><p className="mt-3 truncate text-xs text-slate-500">{detail}</p></article>)}
+      </section>
 
       <div className="grid gap-4 xl:grid-cols-[2fr,1fr]">
-        <section className="rounded bg-white p-4 shadow space-y-3">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
           <div>
             <h2 className="font-semibold text-slate-900">Main purpose</h2>
             <p className="mt-1 text-sm text-gray-600">Confirm what was actually delivered and whether it meets requirements before stock is posted.</p>
@@ -390,7 +437,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
           </div>
         </section>
 
-        <aside className="rounded bg-white p-4 shadow space-y-4">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
           <div>
             <h2 className="font-semibold text-slate-900">Completion point</h2>
             <p className="mt-1 text-sm text-gray-600">Receipt is posted accurately and stock / discrepancy status is updated.</p>
@@ -412,7 +459,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
         </aside>
       </div>
 
-      <section className="rounded bg-white p-4 shadow space-y-4">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-semibold">Receipt register</h2>
           {isLoading && <span className="text-sm text-gray-500">Loading receipts…</span>}
@@ -466,12 +513,18 @@ const ProcureToPayGoodsReceiptsPage = () => {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[1.1fr,1.9fr]">
-        <section className="rounded bg-white p-4 shadow space-y-3">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-semibold">Open POs awaiting receipt</h2>
             <span className="text-sm text-gray-500">{openPos.length} open</span>
           </div>
           <p className="text-sm text-gray-600">Start with a purchase order, then compare expected items against the actual delivery and post the result.</p>
+
+          <label className="relative block">
+            <span className="sr-only">Search open purchase orders</span>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm" value={poSearch} onChange={(event) => setPoSearch(event.target.value)} placeholder="Search PO, supplier, or request…" />
+          </label>
 
           <select
             className="w-full rounded border px-3 py-2 text-sm"
@@ -479,7 +532,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
             onChange={(event) => setSelectedPoId(event.target.value)}
           >
             <option value="">Select PO for inspection</option>
-            {openPos.map((po) => (
+            {filteredOpenPos.map((po) => (
               <option key={po.id} value={po.id}>
                 {po.po_number} · {po.supplier_name || 'Supplier not set'} · {Number(po.received_qty || 0)}/{Number(po.ordered_qty || 0)} received
               </option>
@@ -487,7 +540,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
           </select>
 
           <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-            {openPos.map((po) => {
+            {filteredOpenPos.map((po) => {
               const isActive = String(po.id) === String(selectedPoId);
               return (
                 <button
@@ -501,15 +554,15 @@ const ProcureToPayGoodsReceiptsPage = () => {
                     <span className="text-xs text-gray-500">Request #{po.request_id || 'N/A'}</span>
                   </div>
                   <p className="mt-1 text-gray-600">{po.supplier_name || 'Supplier not set'}</p>
-                  <p className="mt-1 text-xs text-gray-500">Ordered: {Number(po.ordered_qty || 0).toFixed(2)} · Received: {Number(po.received_qty || 0).toFixed(2)}</p>
+                  <p className="mt-1 text-xs text-gray-500">Ordered: {formatQuantity(po.ordered_qty)} · Received: {formatQuantity(po.received_qty)}</p>
                 </button>
               );
             })}
-            {openPos.length === 0 && <p className="text-sm text-gray-500">No open purchase orders are waiting for receipt.</p>}
+            {filteredOpenPos.length === 0 && <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-gray-500">No open purchase orders match your search.</p>}
           </div>
         </section>
 
-        <form className="rounded bg-white p-4 shadow space-y-4" onSubmit={handleSubmit}>
+        <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4" onSubmit={handleSubmit}>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="font-semibold">Inspection and receipt posting</h2>
@@ -550,8 +603,8 @@ const ProcureToPayGoodsReceiptsPage = () => {
             </label>
             <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
               <p className="font-medium">Receipt totals</p>
-              <p>Ordered {totals.ordered.toFixed(2)} · Previously received {totals.previouslyReceived.toFixed(2)}</p>
-              <p>Delivered now {totals.delivered.toFixed(2)} · Damaged {totals.damaged.toFixed(2)} · Short {totals.short.toFixed(2)}</p>
+              <p>Ordered {formatQuantity(totals.ordered)} · Previously received {formatQuantity(totals.previouslyReceived)}</p>
+              <p>Delivered now {formatQuantity(totals.delivered)} · Damaged {formatQuantity(totals.damaged)} · Short {formatQuantity(totals.short)}</p>
             </div>
           </div>
 
@@ -573,6 +626,13 @@ const ProcureToPayGoodsReceiptsPage = () => {
               })}
             </div>
           </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div><p className="text-sm font-semibold text-slate-900">Delivery lines</p><p className="text-xs text-slate-500">Record actual quantities and inspection findings.</p></div>
+            <button type="button" disabled={!poItems.length} onClick={() => setPoItems((items) => items.map((item) => ({ ...item, delivered_quantity: item.remaining_quantity })))} className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40">Receive all remaining</button>
+          </div>
+
+          {lineIssues.length > 0 && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{lineIssues[0]}</div>}
 
           <div className="overflow-x-auto rounded border">
             <table className="w-full min-w-[1100px] text-sm">
@@ -633,14 +693,15 @@ const ProcureToPayGoodsReceiptsPage = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-60" type="submit" disabled={isSubmitting || !selectedPoId}>
+            <button className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 font-semibold text-emerald-950 shadow-sm transition hover:bg-emerald-400 disabled:opacity-60" type="submit" disabled={isSubmitting || !selectedPoId || lineIssues.length > 0}>
+              <Warehouse size={18} />
               {isSubmitting ? 'Posting receipt…' : 'Post Goods Receipt Note'}
             </button>
             <span className="text-sm text-gray-500">Inventory updates automatically after posting.</span>
           </div>
         </form>
       </div>
-    </div>
+    </main>
   );
 };
 

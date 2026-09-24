@@ -37,7 +37,6 @@ const MaintenanceRequestForm = () => {
   const [attachments, setAttachments] = useState([]);
   const [formError, setFormError] = useState('');
   const [projectId, setProjectId] = useState('');
-  const [stockItems, setStockItems] = useState([]);
   const { user: currentUser } = useCurrentUser();
   const navigate = useNavigate();
 
@@ -53,15 +52,6 @@ const MaintenanceRequestForm = () => {
     };
     fetchDepartments();
 
-    const fetchStock = async () => {
-      try {
-        const res = await axios.get('/maintenance-stock');
-        setStockItems(res.data || []);
-      } catch (err) {
-        console.error('Failed to load maintenance stock:', err);
-      }
-    };
-    fetchStock();
   }, [tr]);
 
   useEffect(() => {
@@ -373,28 +363,6 @@ const MaintenanceRequestForm = () => {
             disabled={submitting}
             user={currentUser}
           />
-
-          {stockItems.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-semibold mb-2">{tr('stock.heading')}</h4>
-              <table className="w-full text-sm border">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="border p-2 text-left">{tr('stock.item')}</th>
-                    <th className="border p-2 text-left">{tr('stock.quantity')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stockItems.map((s) => (
-                    <tr key={s.id}>
-                      <td className="border p-2">{s.item_name}</td>
-                      <td className="border p-2">{s.quantity}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
 
           <div>
             <h4 className="font-semibold mb-2">{tr('items.heading')}</h4>

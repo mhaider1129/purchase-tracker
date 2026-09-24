@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { AlertTriangle, CheckCircle2, Clock3, FilePlus2, PackageCheck, RefreshCw, Search, ShoppingCart } from 'lucide-react';
 import {
   approvePurchaseOrder,
   cancelPurchaseOrder,
@@ -27,12 +28,18 @@ const STATUS_LABELS = {
   PO_CANCELLED: 'Cancelled',
 };
 
-const SOURCE_TYPES = [
-  { value: 'PURCHASE_REQUEST', label: 'Linked to Purchase Request' },
-  { value: 'MANUAL_PO', label: 'Standalone PO' },
-  { value: 'RFQ_QUOTATION', label: 'Linked to RFQ / Quotation' },
-  { value: 'ACTIVE_CONTRACT', label: 'Linked to Contract' },
-];
+const SOURCE_TYPES = [{ value: 'PURCHASE_REQUEST', label: 'Approved purchase request award' }];
+
+const STATUS_STYLES = {
+  PO_DRAFT: 'bg-slate-100 text-slate-700 ring-slate-200',
+  PO_PENDING_APPROVAL: 'bg-amber-50 text-amber-800 ring-amber-200',
+  PO_APPROVED: 'bg-blue-50 text-blue-700 ring-blue-200',
+  PO_ISSUED: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+  PO_PARTIAL: 'bg-violet-50 text-violet-700 ring-violet-200',
+  PO_DELIVERED: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+  PO_CLOSED: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+  PO_CANCELLED: 'bg-red-50 text-red-700 ring-red-200',
+};
 
 const WORKSPACE_TABS = ['Overview', 'Items', 'Receipts / GRNs', 'Invoices', 'Documents', 'Communication', 'Timeline', 'Audit'];
 
@@ -45,7 +52,7 @@ const EMPTY_PO_FORM = {
   payment_terms: '',
   terms: '',
   supplier_contact_email: '',
-  source_document_type: 'MANUAL_PO',
+  source_document_type: 'PURCHASE_REQUEST',
   source_document_id: '',
   standalone_reason: '',
   currency: 'USD',
@@ -72,6 +79,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
   const [manualItems, setManualItems] = useState([EMPTY_MANUAL_ITEM]);
   const [activeTab, setActiveTab] = useState('Overview');
   const [busyPoId, setBusyPoId] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -127,15 +135,23 @@ const ProcureToPayPurchaseOrdersPage = () => {
       request_id: scopedRequestId || undefined,
     };
 
-    const [poRes, requestRes] = await Promise.all([
-      listPurchaseOrders(params),
-      listPoSourceRequests(requestsParams),
-    ]);
+    setLoading(true);
+    setError('');
+    try {
+      const [poRes, requestRes] = await Promise.all([
+        listPurchaseOrders(params),
+        listPoSourceRequests(requestsParams),
+      ]);
 
-    const nextSourceRequests = requestRes?.data || [];
-    setRows(poRes?.data || []);
-    setPagination(poRes?.pagination || { page: 1, page_size: 20, total: 0 });
-    setSourceRequests(nextSourceRequests);
+      const nextSourceRequests = requestRes?.data || [];
+      setRows(poRes?.data || []);
+      setPagination(poRes?.pagination || { page: 1, page_size: 20, total: 0 });
+      setSourceRequests(nextSourceRequests);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'We could not load purchase orders. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }, [filters.search, filters.status, filters.supplier, pagination.page, pagination.page_size, scopedRequestId]);
 
   useEffect(() => {
@@ -183,6 +199,13 @@ const ProcureToPayPurchaseOrdersPage = () => {
     .filter((item) => item.item_name && item.quantity > 0);
 
   const manualItemsTotal = normalizedManualItems.reduce((sum, item) => sum + item.quantity * item.unit_price, 0);
+
+  const pageMetrics = useMemo(() => ({
+    value: rows.reduce((sum, po) => sum + Number(po.total_amount || 0), 0),
+    awaitingApproval: rows.filter((po) => po.status === 'PO_PENDING_APPROVAL').length,
+    receiving: rows.filter((po) => ['PO_ISSUED', 'PO_PARTIAL'].includes(po.status)).length,
+    completed: rows.filter((po) => ['PO_DELIVERED', 'PO_CLOSED'].includes(po.status)).length,
+  }), [rows]);
 
   const selectedAwardSupplierId = normalizedManualItems.find((item) => item.award_id)?.supplier_id;
   const awardItemsForPo = manualForm.source_document_type === 'PURCHASE_REQUEST'
@@ -327,22 +350,52 @@ const ProcureToPayPurchaseOrdersPage = () => {
   };
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">Purchase Orders</h1>
-      {scopedRequestId && (
-        <p className="text-sm text-gray-600">Showing purchase orders linked to Request #{scopedRequestId}.</p>
-      )}
-      {error && <div className="rounded bg-red-50 px-3 py-2 text-red-700">{error}</div>}
-      {success && <div className="rounded bg-emerald-50 px-3 py-2 text-emerald-700">{success}</div>}
+    <main className="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-6 lg:p-8">
+      <section className="relative overflow-hidden rounded-3xl bg-slate-950 px-6 py-7 text-white shadow-xl sm:px-8">
+        <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-indigo-500/20 blur-3xl" />
+        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div>
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-indigo-300"><ShoppingCart size={16} /> Source to order</div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Purchase Orders</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">Turn approved supplier awards into controlled orders, then follow approval, issue, and receipt progress in one workspace.</p>
+            {scopedRequestId && <p className="mt-2 text-sm font-medium text-indigo-200">Filtered to purchase request #{scopedRequestId}</p>}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" onClick={() => load(1)} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-60">
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
+            </button>
+            <button type="button" onClick={openCreateWorkspace} className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold shadow-lg hover:bg-indigo-400">
+              <FilePlus2 size={17} /> Create PO
+            </button>
+          </div>
+        </div>
+      </section>
 
-      <div className="bg-white p-4 rounded shadow grid md:grid-cols-4 gap-2">
-        <input className="border rounded px-2 py-1" placeholder="Search PO / supplier / request" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} />
-        <input className="border rounded px-2 py-1" placeholder="Supplier" value={filters.supplier} onChange={(e) => setFilters((p) => ({ ...p, supplier: e.target.value }))} />
-        <select className="border rounded px-2 py-1" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}>
+      {error && <div role="alert" className="flex items-center gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-800"><AlertTriangle size={19} />{error}</div>}
+      {success && <div role="status" className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800"><CheckCircle2 size={19} />{success}</div>}
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Purchase order summary">
+        {[
+          { label: 'Visible order value', value: `${formatAmount(pageMetrics.value)} ${rows[0]?.currency || ''}`, helper: 'Current results page', icon: ShoppingCart, tone: 'text-indigo-700 bg-indigo-50' },
+          { label: 'Awaiting approval', value: pageMetrics.awaitingApproval, helper: 'Needs an approval decision', icon: Clock3, tone: 'text-amber-700 bg-amber-50' },
+          { label: 'In receiving', value: pageMetrics.receiving, helper: 'Issued or partially received', icon: PackageCheck, tone: 'text-violet-700 bg-violet-50' },
+          { label: 'Delivered / closed', value: pageMetrics.completed, helper: 'Fulfilled on this page', icon: CheckCircle2, tone: 'text-emerald-700 bg-emerald-50' },
+        ].map(({ label, value, helper, icon: Icon, tone }) => (
+          <article key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className={`mb-4 inline-flex rounded-xl p-2.5 ${tone}`}><Icon size={20} /></div>
+            <p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{helper}</p>
+          </article>
+        ))}
+      </section>
+
+      <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[2fr_1fr_1fr_auto]" onSubmit={(event) => { event.preventDefault(); load(1); }}>
+        <label className="relative"><span className="sr-only">Search purchase orders</span><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><input className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-3" placeholder="Search PO number, supplier, or request" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} /></label>
+        <input aria-label="Filter by supplier" className="rounded-xl border border-slate-300 px-3 py-2.5" placeholder="Supplier" value={filters.supplier} onChange={(e) => setFilters((p) => ({ ...p, supplier: e.target.value }))} />
+        <select aria-label="Filter by status" className="rounded-xl border border-slate-300 px-3 py-2.5" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}>
           {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status] || status}</option>)}
         </select>
-        <button className="bg-indigo-600 text-white rounded px-3 py-1" onClick={() => load(1)}>Search</button>
-      </div>
+        <button type="submit" className="rounded-xl bg-slate-900 px-5 py-2.5 font-semibold text-white hover:bg-slate-700">Apply filters</button>
+      </form>
 
       {!isCreating ? (
         <div className="bg-white p-4 rounded shadow flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -357,7 +410,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
           <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
             <div>
               <h2 className="font-semibold">Create PO workstation</h2>
-              <p className="text-xs text-gray-600">Create one PO as a purchase-request-linked, standalone, RFQ/quotation-linked, or contract-linked document. Billing entity is applied automatically from your user institute.</p>
+              <p className="text-xs text-gray-600">Create a governed PO from an approved supplier award. Billing entity is applied automatically from your user institute.</p>
             </div>
             <button type="button" className="rounded border px-3 py-1 text-sm" onClick={resetCreateWorkspace}>Back to PO list</button>
           </div>
@@ -438,7 +491,12 @@ const ProcureToPayPurchaseOrdersPage = () => {
         </div>
       )}
 
-      <div className="bg-white rounded shadow p-3">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="font-bold text-slate-900">Order register</h2>
+          <p className="mt-1 text-sm text-slate-500">{pagination.total} purchase order{pagination.total === 1 ? '' : 's'} match the current view.</p>
+        </div>
+        <div className="p-3">
         <div className="mb-3 flex flex-wrap gap-2 border-b pb-2">
           {WORKSPACE_TABS.map((tab) => (
             <button key={tab} type="button" className={`rounded px-3 py-1 text-sm ${activeTab === tab ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setActiveTab(tab)}>{tab}</button>
@@ -449,15 +507,15 @@ const ProcureToPayPurchaseOrdersPage = () => {
         <table className="w-full text-sm">
           <thead className="bg-gray-50"><tr><th className="p-2 text-left">PO Number</th><th className="p-2 text-left">Supplier</th><th className="p-2 text-left">Business Status</th><th className="p-2 text-left">System Code</th><th className="p-2 text-left">Source</th><th className="p-2 text-left">Delivery / Budget</th><th className="p-2 text-left">Date</th><th className="p-2 text-right">Total</th><th className="p-2 text-left">Items</th><th className="p-2 text-left">Actions</th></tr></thead>
           <tbody>
-            {rows.map((po) => (
-              <tr key={po.id} className="border-t align-top">
-                <td className="p-2">{po.po_number}</td>
+            {!loading && rows.map((po) => (
+              <tr key={po.id} className="border-t align-top transition hover:bg-slate-50/80">
+                <td className="p-2"><span className="font-semibold text-slate-900">{po.po_number}</span></td>
                 <td className="p-2">
                   <div>{po.supplier_name || '-'}</div>
                   <div className="text-xs text-gray-500">{po.contract_reference || 'No contract ref'}</div>
                 </td>
-                <td className="p-2">{STATUS_LABELS[po.status] || po.business_status || '-'}</td>
-                <td className="p-2">{po.system_status_code || po.status}</td>
+                <td className="p-2"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${STATUS_STYLES[po.status] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>{STATUS_LABELS[po.status] || po.business_status || '-'}</span></td>
+                <td className="p-2 font-mono text-xs text-slate-500">{po.system_status_code || po.status}</td>
                 <td className="p-2 text-xs"><div>{po.source_document_type || (po.request_id ? 'PURCHASE_REQUEST' : 'MANUAL_PO')}</div><div>{po.request_id ? `PR #${po.request_id}` : po.source_document_id || '-'}</div></td>
                 <td className="p-2 text-xs text-gray-700">
                   <div>{po.delivery_location || '-'}</div>
@@ -481,10 +539,13 @@ const ProcureToPayPurchaseOrdersPage = () => {
                 <td className="p-2 min-w-[240px]">{renderRowActions(po)}</td>
               </tr>
             ))}
+            {loading && Array.from({ length: 4 }).map((_, index) => <tr key={`loading-${index}`} className="border-t"><td colSpan="10" className="p-3"><div className="h-10 animate-pulse rounded-lg bg-slate-100" /></td></tr>)}
+            {!loading && rows.length === 0 && <tr><td colSpan="10" className="px-6 py-16 text-center"><ShoppingCart className="mx-auto h-10 w-10 text-slate-300" /><p className="mt-3 font-semibold text-slate-700">No purchase orders found</p><p className="mt-1 text-sm text-slate-500">Adjust the filters or create an order from an approved supplier award.</p></td></tr>}
           </tbody>
         </table>
         </div>
-      </div>
+        </div>
+      </section>
 
       <div className="flex flex-col items-center justify-between gap-3 text-sm md:flex-row">
         <span>Total: {pagination.total}</span>
@@ -495,7 +556,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
           summary={`Page ${pagination.page} of ${Math.ceil(pagination.total / pagination.page_size)}`}
         />
       </div>
-    </div>
+    </main>
   );
 };
 

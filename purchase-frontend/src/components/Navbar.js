@@ -244,11 +244,6 @@ const Navbar = () => {
       currentUser,
       "fixed-assets.view",
     );
-    const canAccessMaintenanceStock = hasAccess(
-      currentUser,
-      "feature.maintenanceStock",
-      ["warehouse.manage-supply"],
-    );
     const canManageTechnicalInspections = hasAccess(
       currentUser,
       "feature.technicalInspections",
@@ -603,12 +598,6 @@ const Navbar = () => {
             t("navbar.custodyApprovals"),
             "/custody/approvals",
             "text-indigo-400",
-          ),
-          createItem(
-            canAccessMaintenanceStock,
-            t("navbar.maintenanceStock"),
-            "/maintenance-stock",
-            "text-teal-600",
           ),
           createItem(
             canManageTechnicalInspections,

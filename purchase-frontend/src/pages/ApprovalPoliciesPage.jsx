@@ -1039,112 +1039,180 @@ export function PolicySimulator({ versions = [], departments = [] }) {
       setError(message(e));
     }
   };
+  const flags = [
+    ["isStockRequest", "Stock request"],
+    ["isMaintenanceRequest", "Maintenance"],
+    ["isMedicalDeviceRequest", "Medical device"],
+    ["isMedicalRequest", "Medical request"],
+    ["warehouseRequired", "Warehouse required"],
+  ];
   return (
-    <section aria-label="Policy simulator">
-      <h2>Policy Simulator</h2>
-      <p>
-        Diagnostic only. No request, approval, notification, or workflow record
-        is created.
-      </p>
-      <form onSubmit={run}>
-        <label>
-          Policy version
-          <select
-            aria-label="Simulation policy version"
-            required
-            value={form.versionId}
-            onChange={(e) => setForm({ ...form, versionId: e.target.value })}
-          >
-            <option value="">Select</option>
-            {versions.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.policyName} — Version {v.version_number}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Department
-          <select
-            aria-label="Simulation department"
-            value={form.departmentId}
-            onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-          >
-            <option value="">None</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Request type
-          <input
-            aria-label="Simulation request type"
-            value={form.requestType}
-            onChange={(e) => setForm({ ...form, requestType: e.target.value })}
-          />
-        </label>
-        <label>
-          Estimated amount
-          <input
-            aria-label="Simulation amount"
-            inputMode="decimal"
-            value={form.estimatedAmount}
-            onChange={(e) =>
-              setForm({ ...form, estimatedAmount: e.target.value })
-            }
-          />
-        </label>
-        {[
-          ["isStockRequest", "Stock"],
-          ["isMaintenanceRequest", "Maintenance"],
-          ["isMedicalDeviceRequest", "Medical device"],
-          ["isMedicalRequest", "Medical"],
-          ["warehouseRequired", "Warehouse required"],
-        ].map(([key, label]) => (
-          <label key={key}>
-            <input
-              type="checkbox"
-              checked={form[key]}
-              onChange={(e) => setForm({ ...form, [key]: e.target.checked })}
-            />
-            {label}
-          </label>
-        ))}
-        <button>Simulate route</button>
-      </form>
-      {error && <p role="alert">{error}</p>}
-      {result && (
-        <>
-          <h3>Resolved route</h3>
+    <section
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+      aria-label="Policy simulator"
+    >
+      <header className="border-b border-slate-200 bg-slate-50/70 px-6 py-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-blue-100 p-2.5 text-blue-700">
+            <SlidersHorizontal className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold text-slate-900">Policy simulator</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Preview the route a policy would resolve for a hypothetical
+              request.
+            </p>
+          </div>
+        </div>
+      </header>
+      <div className="space-y-6 p-6">
+        <div className="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            Matched rules:{" "}
-            {result.matchedRules.map((r) => r.code).join(", ") || "None"}
+            <strong>Diagnostic only.</strong> No request, approval,
+            notification, or workflow record will be created.
           </p>
-          {result.steps.map((s, i) => (
-            <article key={i} className="rounded border p-3">
-              <strong>
-                Level {s.approvalLevel}: {s.displayName}
-              </strong>
-              <p>Purpose: {s.semanticKey}</p>
-              <p>
-                Required authority: {s.requestedAuthority || s.resolverType}
-              </p>
-              <p>Position holder: {s.positionHolderName || "Unresolved"}</p>
-              {s.actingApproverName && (
-                <p>Acting approver: {s.actingApproverName}</p>
-              )}
-              <p>
-                Resolution: {s.resolutionStatus}
-                {s.duplicatePrincipal ? " · DUPLICATE_PRINCIPAL" : ""}
-              </p>
-              {s.resolutionReason && <p>{s.resolutionReason}</p>}
-            </article>
-          ))}
-        </>
-      )}
+        </div>
+        <form className="space-y-6" onSubmit={run}>
+          <div className="grid gap-5 md:grid-cols-2">
+            <label className={labelClass}>
+              Policy version
+              <select
+                className={fieldClass}
+                aria-label="Simulation policy version"
+                required
+                value={form.versionId}
+                onChange={(e) =>
+                  setForm({ ...form, versionId: e.target.value })
+                }
+              >
+                <option value="">Select a policy version</option>
+                {versions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.policyName} — Version {v.version_number}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Department
+              <select
+                className={fieldClass}
+                aria-label="Simulation department"
+                value={form.departmentId}
+                onChange={(e) =>
+                  setForm({ ...form, departmentId: e.target.value })
+                }
+              >
+                <option value="">No department selected</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              Request type
+              <input
+                className={fieldClass}
+                aria-label="Simulation request type"
+                value={form.requestType}
+                onChange={(e) =>
+                  setForm({ ...form, requestType: e.target.value })
+                }
+              />
+            </label>
+            <label className={labelClass}>
+              Estimated amount
+              <input
+                className={fieldClass}
+                aria-label="Simulation amount"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={form.estimatedAmount}
+                onChange={(e) =>
+                  setForm({ ...form, estimatedAmount: e.target.value })
+                }
+              />
+            </label>
+          </div>
+          <fieldset>
+            <legend className={labelClass}>Request characteristics</legend>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {flags.map(([key, label]) => (
+                <label
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium transition ${form[key] ? "border-blue-300 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}
+                  key={key}
+                >
+                  <input
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                    type="checkbox"
+                    checked={form[key]}
+                    onChange={(e) =>
+                      setForm({ ...form, [key]: e.target.checked })
+                    }
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className="flex justify-end border-t border-slate-100 pt-5">
+            <button className={primaryButtonClass} disabled={!form.versionId}>
+              <Play className="h-4 w-4" /> Simulate route
+            </button>
+          </div>
+        </form>
+        {error && (
+          <div
+            className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            <CircleAlert className="h-4 w-4" />
+            {error}
+          </div>
+        )}
+        {result && (
+          <section className="rounded-xl border border-slate-200 bg-slate-50/60 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-semibold text-slate-900">Resolved route</h3>
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Simulation complete
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-slate-600">
+              Matched rules:{" "}
+              {result.matchedRules.map((r) => r.code).join(", ") || "None"}
+            </p>
+            <div className="mt-4 grid gap-3">
+              {result.steps.map((s, i) => (
+                <article
+                  key={i}
+                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <strong>
+                    Level {s.approvalLevel}: {s.displayName}
+                  </strong>
+                  <p>Purpose: {s.semanticKey}</p>
+                  <p>
+                    Required authority: {s.requestedAuthority || s.resolverType}
+                  </p>
+                  <p>Position holder: {s.positionHolderName || "Unresolved"}</p>
+                  {s.actingApproverName && (
+                    <p>Acting approver: {s.actingApproverName}</p>
+                  )}
+                  <p>
+                    Resolution: {s.resolutionStatus}
+                    {s.duplicatePrincipal ? " · DUPLICATE_PRINCIPAL" : ""}
+                  </p>
+                  {s.resolutionReason && <p>{s.resolutionReason}</p>}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </section>
   );
 }
@@ -1158,32 +1226,97 @@ export function CutoverReadiness() {
       .catch((e) => setError(message(e)));
   }, []);
   return (
-    <section aria-label="Live cutover readiness">
-      <h2>Live-cutover readiness</h2>
-      {error && <p role="alert">{error}</p>}
-      {!data && !error && <p>Loading readiness diagnostics…</p>}
-      {data && (
-        <>
-          <strong>{data.cutoverStatus}</strong>
-          <p>
-            Live routing: {data.liveRoutingEnabled ? "ENABLED" : "DISABLED"}
-          </p>
-          {Object.entries(data)
-            .filter(
-              ([k]) => !["cutoverStatus", "liveRoutingEnabled"].includes(k),
-            )
-            .map(([group, values]) => (
-              <article key={group}>
-                <h3>{group.toUpperCase()}</h3>
-                {Object.entries(values).map(([k, v]) => (
-                  <p key={k}>
-                    {k.replaceAll("_", " ")}: <strong>{v}</strong>
-                  </p>
+    <section
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+      aria-label="Live cutover readiness"
+    >
+      <header className="border-b border-slate-200 bg-slate-50/70 px-6 py-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+            <ShieldCheck className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold text-slate-900">
+              Live-cutover readiness
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Review the safeguards required before policy routing can control
+              live requests.
+            </p>
+          </div>
+        </div>
+      </header>
+      <div className="space-y-5 p-6">
+        {error && (
+          <div
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+        {!data && !error && (
+          <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-5 text-sm text-slate-600">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Loading readiness diagnostics…
+          </div>
+        )}
+        {data && (
+          <>
+            <div
+              className={`flex flex-col justify-between gap-4 rounded-xl border p-5 sm:flex-row sm:items-center ${data.cutoverStatus === "READY" ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}
+            >
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-600">
+                  Current cutover status
+                </p>
+                <strong className="mt-1 block text-2xl text-slate-900">
+                  {data.cutoverStatus}
+                </strong>
+              </div>
+              <span
+                className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${data.liveRoutingEnabled ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"}`}
+              >
+                <span
+                  className={`h-2 w-2 rounded-full ${data.liveRoutingEnabled ? "bg-white" : "bg-slate-500"}`}
+                />
+                Live routing {data.liveRoutingEnabled ? "enabled" : "disabled"}
+              </span>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {Object.entries(data)
+                .filter(
+                  ([k]) => !["cutoverStatus", "liveRoutingEnabled"].includes(k),
+                )
+                .map(([group, values]) => (
+                  <article
+                    className="rounded-xl border border-slate-200 bg-white p-5"
+                    key={group}
+                  >
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      {group.replaceAll("_", " ")}
+                    </h3>
+                    <dl className="mt-3 divide-y divide-slate-100">
+                      {Object.entries(values).map(([k, v]) => (
+                        <div
+                          className="flex items-center justify-between gap-4 py-2.5 first:pt-0 last:pb-0"
+                          key={k}
+                        >
+                          <dt className="text-sm capitalize text-slate-600">
+                            {k.replaceAll("_", " ")}
+                          </dt>
+                          <dd className="rounded-md bg-slate-100 px-2 py-1 text-sm font-semibold text-slate-900">
+                            {String(v)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </article>
                 ))}
-              </article>
-            ))}
-        </>
-      )}
+            </div>
+          </>
+        )}
+      </div>
     </section>
   );
 }
@@ -1442,95 +1575,101 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
               </div>
             </form>
           )}
-          {items.length === 0 ? (
-            <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
-              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-                <GitBranch className="h-7 w-7" />
-              </span>
-              <h2 className="mt-4 text-lg font-semibold text-slate-900">
-                Build your first approval policy
-              </h2>
-              <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
-                Start with a draft, validate every resolver, then safely compare
-                it in shadow mode before cutover.
-              </p>
-              {canManage && (
-                <button
-                  className={`${primaryButtonClass} mt-6`}
-                  onClick={() => setCreating(true)}
-                >
-                  <Plus className="h-4 w-4" /> Create your first policy
-                </button>
-              )}
-            </section>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="font-semibold text-slate-900">
-                  Policy registry
+          {!dashboard &&
+            !simulator &&
+            !readiness &&
+            (items.length === 0 ? (
+              <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <GitBranch className="h-7 w-7" />
+                </span>
+                <h2 className="mt-4 text-lg font-semibold text-slate-900">
+                  Build your first approval policy
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Versioned routing policies and their current validation state.
+                <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                  Start with a draft, validate every resolver, then safely
+                  compare it in shadow mode before cutover.
                 </p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
-                      <th className="px-5 py-3">Name</th>
-                      <th className="px-5 py-3">Code</th>
-                      <th className="px-5 py-3">Status</th>
-                      <th className="px-5 py-3">Shadow version</th>
-                      <th className="px-5 py-3">Last updated</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((p) => (
-                      <tr
-                        key={p.id}
-                        className="border-t border-slate-100 hover:bg-slate-50/70"
-                      >
-                        <td className="px-5 py-4 font-semibold text-slate-900">
-                          {p.name}
-                        </td>
-                        <td className="px-5 py-4 font-mono text-xs text-slate-600">
-                          {p.code}
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                            {p.is_active === false
-                              ? "INACTIVE"
-                              : p.shadow_status || "DRAFT"}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-slate-600">
-                          {display(p.shadow_version_number)}
-                        </td>
-                        <td className="px-5 py-4 text-slate-600">
-                          {display(p.updated_at)}
-                        </td>
-                        <td className="px-5 py-4 text-right">
-                          <button
-                            className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
-                            onClick={async () => {
-                              try {
-                                setSelected(await api.getApprovalPolicy(p.id));
-                              } catch (e) {
-                                setError(message(e));
-                              }
-                            }}
-                          >
-                            Open Policy <ArrowRight className="h-4 w-4" />
-                          </button>
-                        </td>
+                {canManage && (
+                  <button
+                    className={`${primaryButtonClass} mt-6`}
+                    onClick={() => setCreating(true)}
+                  >
+                    <Plus className="h-4 w-4" /> Create your first policy
+                  </button>
+                )}
+              </section>
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 px-5 py-4">
+                  <h2 className="font-semibold text-slate-900">
+                    Policy registry
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Versioned routing policies and their current validation
+                    state.
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                        <th className="px-5 py-3">Name</th>
+                        <th className="px-5 py-3">Code</th>
+                        <th className="px-5 py-3">Status</th>
+                        <th className="px-5 py-3">Shadow version</th>
+                        <th className="px-5 py-3">Last updated</th>
+                        <th></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {items.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="border-t border-slate-100 hover:bg-slate-50/70"
+                        >
+                          <td className="px-5 py-4 font-semibold text-slate-900">
+                            {p.name}
+                          </td>
+                          <td className="px-5 py-4 font-mono text-xs text-slate-600">
+                            {p.code}
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                              {p.is_active === false
+                                ? "INACTIVE"
+                                : p.shadow_status || "DRAFT"}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-slate-600">
+                            {display(p.shadow_version_number)}
+                          </td>
+                          <td className="px-5 py-4 text-slate-600">
+                            {display(p.updated_at)}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
+                              onClick={async () => {
+                                try {
+                                  setSelected(
+                                    await api.getApprovalPolicy(p.id),
+                                  );
+                                } catch (e) {
+                                  setError(message(e));
+                                }
+                              }}
+                            >
+                              Open Policy <ArrowRight className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            ))}
           {dashboard && (
             <ShadowDashboard
               versions={versions}

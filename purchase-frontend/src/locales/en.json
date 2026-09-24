@@ -182,7 +182,6 @@
     "openRequests": "My Open Requests",
     "myMaintenance": "My Maintenance Requests",
     "engineerMaintenanceStatus": "Maintenance Status",
-    "maintenanceStock": "Maintenance Stock",
     "technicalInspections": "Technical Inspections",
     "warehouseInventory": "Warehouse Inventory",
     "itemMaster": "Item Master Data",
@@ -285,7 +284,6 @@
     "itRequest": "IT Request",
     "auditRequests": "Audit Requests Page",
     "myMaintenanceRequests": "My Maintenance Requests",
-    "maintenanceStock": "Maintenance Stock",
     "warehouseInventory": "Warehouse Inventory",
     "custodyApprovals": "Custody Approvals",
     "custodyIssued": "Issued Custodies"
@@ -941,11 +939,6 @@
       "temporaryRequesterNameAria": "Requester name",
       "temporaryRequesterNamePlaceholder": "Requester name"
     },
-    "stock": {
-      "heading": "Available Maintenance Stock",
-      "item": "Item",
-      "quantity": "Qty"
-    },
     "items": {
       "heading": "Requested Items",
       "itemNamePlaceholder": "Item Name",
@@ -1566,45 +1559,6 @@
       "next": "Next",
       "pageOf": "Page {{current}} of {{total}}",
       "showingRange": "Showing {{start}}-{{end}} of {{total}} requests"
-    }
-  },
-  "maintenanceStockPage": {
-    "errors": {
-      "loadFailed": "Failed to load maintenance stock.",
-      "nameRequired": "Item name is required.",
-      "negativeQuantity": "Quantity cannot be negative.",
-      "saveFailed": "Failed to save item."
-    },
-    "confirmSave": "Save changes to this item?",
-    "success": {
-      "saved": "Stock item saved successfully."
-    },
-    "loading": "Loading...",
-    "intro": "Track current maintenance inventory and adjust quantities as needed.",
-    "filters": {
-      "searchPlaceholder": "Search items",
-      "sortName": "Sort A-Z",
-      "sortQuantity": "Sort Qty"
-    },
-    "summary": {
-      "visibleItems": "Visible Items:",
-      "totalQuantity": "Total Quantity:"
-    },
-    "table": {
-      "item": "Item",
-      "quantity": "Quantity",
-      "actions": "Actions"
-    },
-    "emptyState": "No items match your filters.",
-    "warnings": {
-      "lowStock": "Low stock warning"
-    },
-    "actions": {
-      "save": "Save",
-      "add": "Add"
-    },
-    "newItem": {
-      "namePlaceholder": "New item"
     }
   },
   "warehouseInventory": {

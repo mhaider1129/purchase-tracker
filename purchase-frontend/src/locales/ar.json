@@ -182,7 +182,6 @@
     "openRequests": "طلبات الشراء المفتوحة",
     "myMaintenance": "طلباتي للصيانة",
     "engineerMaintenanceStatus": "حالة الصيانة",
-    "maintenanceStock": "مخزون الصيانة",
     "technicalInspections": "الفحوصات الفنية",
     "warehouseInventory": "رصيد المخزن",
     "itemMaster": "بيانات الأصناف الرئيسية",
@@ -285,7 +284,6 @@
     "itRequest": "طلب تقنية المعلومات",
     "auditRequests": "صفحة طلبات التدقيق",
     "myMaintenanceRequests": "طلباتي للصيانة",
-    "maintenanceStock": "مخزون الصيانة",
     "warehouseInventory": "رصيد المخزن",
     "custodyApprovals": "موافقات الذمم",
     "custodyIssued": "الذمم المصدرة"
@@ -880,11 +878,6 @@
       "selectHodRequester": "اختر رئيس القسم كمقدم طلب",
       "temporaryRequesterNameAria": "اسم مقدم الطلب",
       "temporaryRequesterNamePlaceholder": "اسم مقدم الطلب"
-    },
-    "stock": {
-      "heading": "المخزون المتاح للصيانة",
-      "item": "الصنف",
-      "quantity": "الكمية"
     },
     "items": {
       "heading": "الأصناف المطلوبة",
@@ -1506,45 +1499,6 @@
       "next": "التالي",
       "pageOf": "الصفحة {{current}} من {{total}}",
       "showingRange": "يتم عرض {{start}}-{{end}} من أصل {{total}} طلبًا"
-    }
-  },
-  "maintenanceStockPage": {
-    "errors": {
-      "loadFailed": "تعذر تحميل مخزون الصيانة.",
-      "nameRequired": "اسم الصنف مطلوب.",
-      "negativeQuantity": "لا يمكن أن تكون الكمية سالبة.",
-      "saveFailed": "تعذر حفظ الصنف."
-    },
-    "confirmSave": "هل تريد حفظ التعديلات على هذا الصنف؟",
-    "success": {
-      "saved": "تم حفظ الصنف بنجاح."
-    },
-    "loading": "جاري التحميل...",
-    "intro": "تابع مخزون الصيانة الحالي وعدل الكميات حسب الحاجة.",
-    "filters": {
-      "searchPlaceholder": "ابحث عن الأصناف",
-      "sortName": "ترتيب أبجدي",
-      "sortQuantity": "ترتيب حسب الكمية"
-    },
-    "summary": {
-      "visibleItems": "الأصناف المعروضة:",
-      "totalQuantity": "إجمالي الكمية:"
-    },
-    "table": {
-      "item": "الصنف",
-      "quantity": "الكمية",
-      "actions": "الإجراءات"
-    },
-    "emptyState": "لا توجد أصناف تطابق المرشحات.",
-    "warnings": {
-      "lowStock": "تحذير: مخزون منخفض"
-    },
-    "actions": {
-      "save": "حفظ",
-      "add": "إضافة"
-    },
-    "newItem": {
-      "namePlaceholder": "صنف جديد"
     }
   },
   "warehouseInventory": {
