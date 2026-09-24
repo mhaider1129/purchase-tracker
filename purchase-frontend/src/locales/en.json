@@ -358,6 +358,14 @@
         "specs": "Specs (optional)"
       }
     },
+    "csv": {
+      "title": "Add items from a CSV",
+      "help": "Upload a CSV to replace the item rows below. Item name and quantity are required.",
+      "template": "Download template",
+      "upload": "Upload CSV",
+      "success": "Imported {{count}} items from {{file}}",
+      "error": "Could not import CSV: {{message}}"
+    },
     "summary": {
       "total": "Estimated total",
       "note": "Totals are calculated from item quantities and unit costs."

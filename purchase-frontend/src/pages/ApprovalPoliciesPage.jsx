@@ -1,6 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as api from "../api/approvalPolicies";
 import { getOrganizationOptions } from "../api/organization";
+import {
+  Activity,
+  ArrowRight,
+  Beaker,
+  CheckCircle2,
+  FileStack,
+  GitBranch,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+} from "lucide-react";
 export const CONDITION_TYPES = [
   "REQUEST_TYPE_EQUALS",
   "DEPARTMENT_EQUALS",
@@ -864,6 +875,15 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
         })),
     [items],
   );
+  const policyStats = useMemo(() => {
+    const policies = items || [];
+    return {
+      total: policies.length,
+      shadow: policies.filter((policy) => policy.shadow_version_id).length,
+      active: policies.filter((policy) => policy.is_active !== false).length,
+      drafts: policies.filter((policy) => !policy.shadow_version_id).length,
+    };
+  }, [items]);
   if (selected)
     return (
       <main className="mx-auto max-w-7xl p-6">
@@ -876,13 +896,27 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
       </main>
     );
   return (
-    <main className="mx-auto max-w-7xl space-y-4 p-6">
-      <header>
-        <h1>Approval Policy Administration</h1>
-        <p>
-          Configure and validate shadow policies. Existing approval routing
-          remains authoritative.
-        </p>
+    <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-6 py-7 text-white shadow-xl sm:px-8">
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/10 blur-2xl" aria-hidden="true" />
+        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="max-w-2xl">
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
+              <ShieldCheck className="h-4 w-4" /> Governance control center
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Approval Engine 2.0</h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
+              Design, validate, and safely test intelligent approval routes before they reach production.
+              Existing approval routing remains authoritative.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20" onClick={load}>
+              <RefreshCw className="h-4 w-4" /> Refresh
+            </button>
+            {canManage && <button className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-400" onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Create Policy</button>}
+          </div>
+        </div>
       </header>
       {error && (
         <div>
@@ -893,16 +927,23 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
       {!items && !error && <p>Loading approval policies…</p>}
       {items && (
         <>
-          {canManage && (
-            <button onClick={() => setCreating(true)}>Create Policy</button>
-          )}
-          <button onClick={() => setDashboard((x) => !x)}>
-            Shadow validation dashboard
-          </button>
-          <button onClick={()=>setSimulator(x=>!x)}>Policy simulator</button>
-          <button onClick={()=>setReadiness(x=>!x)}>Cutover readiness</button>
+          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Approval policy summary">
+            {[
+              ["Total policies", policyStats.total, FileStack, "bg-blue-50 text-blue-700"],
+              ["Active policies", policyStats.active, CheckCircle2, "bg-emerald-50 text-emerald-700"],
+              ["In shadow mode", policyStats.shadow, Beaker, "bg-violet-50 text-violet-700"],
+              ["Awaiting validation", policyStats.drafts, Activity, "bg-amber-50 text-amber-700"],
+            ].map(([label, value, Icon, tone]) => <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-2 text-3xl font-bold text-slate-900">{value}</p></div><span className={`rounded-xl p-3 ${tone}`}><Icon className="h-5 w-5" /></span></div></article>)}
+          </section>
+
+          <nav className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Approval engine tools">
+            <button className={`rounded-lg px-4 py-2 text-sm font-semibold ${dashboard ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} onClick={() => setDashboard((x) => !x)}>Shadow validation dashboard</button>
+            <button className={`rounded-lg px-4 py-2 text-sm font-semibold ${simulator ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} onClick={()=>setSimulator(x=>!x)}>Policy simulator</button>
+            <button className={`rounded-lg px-4 py-2 text-sm font-semibold ${readiness ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} onClick={()=>setReadiness(x=>!x)}>Cutover readiness</button>
+          </nav>
           {creating && (
             <form
+              className="grid gap-4 rounded-xl border border-blue-200 bg-blue-50/60 p-5 shadow-sm md:grid-cols-2"
               onSubmit={async (ev) => {
                 ev.preventDefault();
                 const data = new FormData(ev.currentTarget);
@@ -919,43 +960,34 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
                 }
               }}
             >
-              <input aria-label="Name" name="name" required />
-              <input aria-label="Code" name="code" required />
-              <textarea aria-label="Description" name="description" />
-              <button>Create</button>
-              <button type="button" onClick={() => setCreating(false)}>
+              <label className="text-sm font-medium text-slate-700">Policy name<input className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2" aria-label="Name" name="name" required /></label>
+              <label className="text-sm font-medium text-slate-700">Policy code<input className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2" aria-label="Code" name="code" required /></label>
+              <label className="text-sm font-medium text-slate-700 md:col-span-2">Description<textarea className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2" aria-label="Description" name="description" rows="2" /></label>
+              <div className="flex gap-2 md:col-span-2"><button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Create</button>
+              <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700" type="button" onClick={() => setCreating(false)}>
                 Cancel
-              </button>
+              </button></div>
             </form>
           )}
           {items.length === 0 ? (
-            <p>No approval policies have been created.</p>
+            <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><GitBranch className="h-7 w-7" /></span><h2 className="mt-4 text-lg font-semibold text-slate-900">Build your first approval policy</h2><p className="mx-auto mt-2 max-w-md text-sm text-slate-500">No approval policies have been created. Start with a draft, validate every resolver, then safely compare it in shadow mode.</p></section>
           ) : (
-            <table>
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-200 px-5 py-4"><h2 className="font-semibold text-slate-900">Policy registry</h2><p className="mt-1 text-sm text-slate-500">Versioned routing policies and their current validation state.</p></div><div className="overflow-x-auto"><table className="min-w-full text-sm">
               <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Code</th>
-                  <th>Status</th>
-                  <th>Shadow version</th>
-                  <th>Last updated</th>
+                <tr className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                  <th className="px-5 py-3">Name</th><th className="px-5 py-3">Code</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Shadow version</th><th className="px-5 py-3">Last updated</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.name}</td>
-                    <td>{p.code}</td>
-                    <td>
-                      {p.is_active === false
-                        ? "INACTIVE"
-                        : p.shadow_status || "DRAFT"}
-                    </td>
-                    <td>{display(p.shadow_version_number)}</td>
-                    <td>{display(p.updated_at)}</td>
-                    <td>
+                  <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50/70">
+                    <td className="px-5 py-4 font-semibold text-slate-900">{p.name}</td><td className="px-5 py-4 font-mono text-xs text-slate-600">{p.code}</td>
+                    <td className="px-5 py-4"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{p.is_active === false ? "INACTIVE" : p.shadow_status || "DRAFT"}</span></td>
+                    <td className="px-5 py-4 text-slate-600">{display(p.shadow_version_number)}</td><td className="px-5 py-4 text-slate-600">{display(p.updated_at)}</td>
+                    <td className="px-5 py-4 text-right">
                       <button
+                        className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
                         onClick={async () => {
                           try {
                             setSelected(await api.getApprovalPolicy(p.id));
@@ -964,13 +996,13 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
                           }
                         }}
                       >
-                        Open Policy
+                        Open Policy <ArrowRight className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div></div>
           )}
           {dashboard && (
             <ShadowDashboard

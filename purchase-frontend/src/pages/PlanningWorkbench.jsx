@@ -1,5 +1,14 @@
-
 import React, { useMemo, useState } from "react";
+import { ArrowRight, CalendarRange, PackageCheck, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   calculateSafetyStock as calculateSafetyStockApi,
   fetchPlanningDefaults,
@@ -52,6 +61,23 @@ const defaultReplenishmentPolicy = {
   review_period_days: 7,
   lot_size: 0,
   is_active: true,
+};
+
+export const summarizeForecast = (forecast = []) => {
+  const quantities = forecast.map((entry) => Number(entry.forecast_qty) || 0);
+  const total = quantities.reduce((sum, quantity) => sum + quantity, 0);
+  const average = quantities.length ? total / quantities.length : 0;
+  const peakIndex = quantities.indexOf(Math.max(...quantities));
+  const first = quantities[0] || 0;
+  const last = quantities[quantities.length - 1] || 0;
+  const change = first ? ((last - first) / first) * 100 : 0;
+
+  return {
+    total,
+    average,
+    change,
+    peak: peakIndex >= 0 ? forecast[peakIndex] : null,
+  };
 };
 
 const PlanningWorkbench = () => {
@@ -389,6 +415,28 @@ const PlanningWorkbench = () => {
       </div>
     );
   }, [mrpResult]);
+
+  const forecastInsights = useMemo(
+    () => summarizeForecast(forecastResult?.forecast),
+    [forecastResult],
+  );
+
+  const forecastChartData = useMemo(() => {
+    const history = (forecastResult?.history || []).map((entry) => ({
+      period: entry.bucket,
+      actual: Number(entry.quantity) || 0,
+      forecast: null,
+    }));
+    const forecast = (forecastResult?.forecast || []).map((entry) => ({
+      period: entry.month,
+      actual: null,
+      forecast: Number(entry.forecast_qty) || 0,
+    }));
+    if (history.length && forecast.length) {
+      forecast.unshift({ ...history[history.length - 1], forecast: history[history.length - 1].actual });
+    }
+    return [...history, ...forecast];
+  }, [forecastResult]);
 
   return (
     <>
@@ -1289,26 +1337,192 @@ const PlanningWorkbench = () => {
         </section>
 
         {forecastResult && (
-          <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
+          <section className="overflow-hidden rounded-xl border border-blue-100 bg-white shadow-sm">
+            <div className="flex flex-col gap-4 border-b border-blue-100 bg-gradient-to-r from-slate-950 to-blue-950 p-6 text-white sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Forecast output</h2>
-                <p className="text-sm text-gray-600">
-                  History and projected monthly demand for {forecastResult.item_name}.
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
+                  Decision-ready forecast
+                </p>
+                <h2 className="mt-1 text-xl font-semibold">
+                  {forecastResult.item_name}
+                </h2>
+                <p className="mt-1 text-sm text-slate-300">
+                  History and projected monthly demand for{" "}
+                  {forecastResult.item_name}.
                 </p>
                 {forecastResult.history_source && (
-                  <p className="text-xs text-indigo-700">
-                    History source: {forecastResult.history_source === 'monthly_dispensing' ? 'Monthly dispensing feeds' : 'Request demand logs'}
+                  <p className="mt-2 text-xs text-blue-200">
+                    History source:{" "}
+                    {forecastResult.history_source === "monthly_dispensing"
+                      ? "Monthly dispensing feeds"
+                      : "Request demand logs"}
                   </p>
                 )}
               </div>
-              <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Output</span>
+              <button
+                type="button"
+                onClick={adoptForecastForMrp}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-blue-950 shadow-sm transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-950"
+              >
+                Build supply plan{" "}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
             </div>
-            <div className="mt-4 space-y-4">
+
+            <div className="space-y-6 p-6">
+              <div
+                className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+                aria-label="Forecast summary"
+              >
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span className="text-xs font-semibold uppercase tracking-wide">
+                      Horizon demand
+                    </span>
+                    <CalendarRange className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-950">
+                    {formatNumber(forecastInsights.total)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    units across {forecastResult.forecast.length} months
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span className="text-xs font-semibold uppercase tracking-wide">
+                      Monthly run rate
+                    </span>
+                    <PackageCheck className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-950">
+                    {formatNumber(forecastInsights.average)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    average forecast demand
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span className="text-xs font-semibold uppercase tracking-wide">
+                      Peak month
+                    </span>
+                    <TrendingUp className="h-4 w-4" aria-hidden="true" />
+                  </div>
+                  <p className="mt-2 text-2xl font-bold text-slate-950">
+                    {formatNumber(forecastInsights.peak?.forecast_qty)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {forecastInsights.peak?.month || "No projection"}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span className="text-xs font-semibold uppercase tracking-wide">
+                      Horizon trend
+                    </span>
+                    {forecastInsights.change >= 0 ? (
+                      <TrendingUp className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </div>
+                  <p
+                    className={`mt-2 text-2xl font-bold ${forecastInsights.change > 0 ? "text-amber-700" : "text-emerald-700"}`}
+                  >
+                    {forecastInsights.change > 0 ? "+" : ""}
+                    {forecastInsights.change.toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    first to final forecast month
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-slate-200 p-4">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="font-semibold text-slate-900">
+                      Demand trajectory
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Actual history transitions into the approved planning
+                      scenario.
+                    </p>
+                  </div>
+                  <div className="flex gap-3 text-xs text-slate-600">
+                    <span>
+                      <span className="mr-1 inline-block h-2 w-2 rounded-full bg-slate-400" />
+                      Actual
+                    </span>
+                    <span>
+                      <span className="mr-1 inline-block h-2 w-2 rounded-full bg-blue-600" />
+                      Forecast
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className="h-72 w-full"
+                  aria-label="Historical and forecast demand chart"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={forecastChartData}
+                      margin={{ top: 8, right: 12, left: 0, bottom: 8 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#e2e8f0"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="period"
+                        tick={{ fontSize: 11, fill: "#64748b" }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: "#64748b" }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => formatNumber(value)}
+                      />
+                      <Tooltip
+                        formatter={(value) => formatNumber(value)}
+                        contentStyle={{
+                          borderRadius: 8,
+                          borderColor: "#cbd5e1",
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="actual"
+                        name="Actual"
+                        stroke="#94a3b8"
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="forecast"
+                        name="Forecast"
+                        stroke="#2563eb"
+                        strokeWidth={3}
+                        dot={{ r: 3 }}
+                        connectNulls={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
               {forecastTable}
               {forecastResult.history?.length > 0 && (
                 <details className="rounded border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
-                  <summary className="cursor-pointer font-semibold text-gray-800">View history used</summary>
+                  <summary className="cursor-pointer font-semibold text-gray-800">
+                    View history used
+                  </summary>
                   <ul className="mt-2 space-y-1 text-xs text-gray-600">
                     {forecastResult.history.map((entry) => (
                       <li key={entry.bucket}>

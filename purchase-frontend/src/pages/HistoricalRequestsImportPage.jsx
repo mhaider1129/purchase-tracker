@@ -3,6 +3,10 @@ import { useTranslation } from "react-i18next";
 import apiRequests from "../api/requests";
 import Card from "../components/Card";
 import AmountInput from "../components/ui/AmountInput";
+import {
+  historicalItemsCsvTemplate,
+  parseHistoricalItemsCsv,
+} from "../utils/historicalRequestItemsCsv";
 
 const REQUEST_STATUS_OPTIONS = ["Approved", "Received", "Completed"];
 
@@ -46,6 +50,7 @@ const HistoricalRequestsImportPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [csvMessage, setCsvMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -107,6 +112,36 @@ const HistoricalRequestsImportPage = () => {
 
   const removeItem = (index) => {
     setItems((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const downloadCsvTemplate = () => {
+    const blob = new Blob([historicalItemsCsvTemplate()], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "historical-request-items-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importCsvItems = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setCsvMessage("");
+    setErrorMessage("");
+    try {
+      const importedItems = parseHistoricalItemsCsv(await file.text());
+      setItems(importedItems);
+      setCsvMessage(t("historicalRequests.csv.success", "Imported {{count}} items from {{file}}", {
+        count: importedItems.length,
+        file: file.name,
+      }));
+    } catch (error) {
+      setErrorMessage(t("historicalRequests.csv.error", "Could not import CSV: {{message}}", {
+        message: error.message,
+      }));
+    }
   };
 
   const validatePayload = () => {
@@ -549,6 +584,45 @@ const HistoricalRequestsImportPage = () => {
                   >
                     {t("historicalRequests.items.add", "Add item")}
                   </button>
+                </div>
+
+                <div className="rounded-lg border border-dashed border-blue-300 bg-blue-50 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="font-semibold text-blue-950">
+                        {t("historicalRequests.csv.title", "Add items from a CSV")}
+                      </h3>
+                      <p className="mt-1 text-sm text-blue-800">
+                        {t(
+                          "historicalRequests.csv.help",
+                          "Upload a CSV to replace the item rows below. Item name and quantity are required.",
+                        )}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={downloadCsvTemplate}
+                        className="rounded border border-blue-600 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+                      >
+                        {t("historicalRequests.csv.template", "Download template")}
+                      </button>
+                      <label className="cursor-pointer rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+                        {t("historicalRequests.csv.upload", "Upload CSV")}
+                        <input
+                          type="file"
+                          accept=".csv,text/csv"
+                          className="sr-only"
+                          onChange={importCsvItems}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  {csvMessage && (
+                    <p className="mt-3 text-sm font-medium text-green-700" role="status">
+                      {csvMessage}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-4">
