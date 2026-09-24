@@ -6,11 +6,16 @@ import {
   ArrowRight,
   Beaker,
   CheckCircle2,
+  CircleAlert,
+  Clock3,
   FileStack,
   GitBranch,
+  History,
+  Play,
   Plus,
   RefreshCw,
   ShieldCheck,
+  SlidersHorizontal,
 } from "lucide-react";
 export const CONDITION_TYPES = [
   "REQUEST_TYPE_EQUALS",
@@ -75,6 +80,12 @@ const blankStep = () => ({
   resolverReference: "",
   required: true,
 });
+const fieldClass =
+  "mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+const labelClass =
+  "block text-xs font-semibold uppercase tracking-wide text-slate-600";
+const primaryButtonClass =
+  "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
 export function ShadowComparison({ run }) {
   const facts = run.facts_snapshot || run.facts || {},
     differences = run.differences || run.comparison?.differences || [],
@@ -268,7 +279,9 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
   const checkReadiness = async () => {
     setError("");
     try {
-      setRoutingReadiness(await api.getApprovalPolicyVersionReadiness(version.id));
+      setRoutingReadiness(
+        await api.getApprovalPolicyVersionReadiness(version.id),
+      );
     } catch (e) {
       setError(message(e));
     }
@@ -309,10 +322,21 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
       {routingReadiness && (
         <div role="status" aria-label="Current routing readiness">
           <strong>Routing readiness: {routingReadiness.status}</strong>
-          <p>Structural validation: {routingReadiness.structurallyValid ? "PASS" : "FAIL"}</p>
-          <p>Currently routable: {routingReadiness.currentlyRoutable ? "YES" : "NO"}</p>
-          {[...(routingReadiness.errors || []), ...(routingReadiness.warnings || [])].map((item, index) => (
-            <p key={`${item.code}-${item.stepId || item.ruleId || index}`}>{item.code}: {item.message}</p>
+          <p>
+            Structural validation:{" "}
+            {routingReadiness.structurallyValid ? "PASS" : "FAIL"}
+          </p>
+          <p>
+            Currently routable:{" "}
+            {routingReadiness.currentlyRoutable ? "YES" : "NO"}
+          </p>
+          {[
+            ...(routingReadiness.errors || []),
+            ...(routingReadiness.warnings || []),
+          ].map((item, index) => (
+            <p key={`${item.code}-${item.stepId || item.ruleId || index}`}>
+              {item.code}: {item.message}
+            </p>
           ))}
         </div>
       )}
@@ -570,8 +594,11 @@ export function PolicyDetail({
 }) {
   const [selected, setSelected] = useState(),
     [error, setError] = useState(""),
-    [editingMetadata,setEditingMetadata]=useState(false),
-    [metadata,setMetadata]=useState({name:policy.name,description:policy.description||""});
+    [editingMetadata, setEditingMetadata] = useState(false),
+    [metadata, setMetadata] = useState({
+      name: policy.name,
+      description: policy.description || "",
+    });
   const createVersion = async () => {
     try {
       const v = await api.createApprovalPolicyVersion(policy.id, {});
@@ -590,9 +617,50 @@ export function PolicyDetail({
       {error && <p role="alert">{error}</p>}
       {canManage && (
         <>
-          <button onClick={()=>setEditingMetadata(true)}>Edit policy metadata</button>
+          <button onClick={() => setEditingMetadata(true)}>
+            Edit policy metadata
+          </button>
           <button onClick={createVersion}>Create Draft Version</button>
-          {editingMetadata&&<form aria-label="Edit policy metadata" onSubmit={async event=>{event.preventDefault();try{await api.updateApprovalPolicy(policy.id,metadata);setEditingMetadata(false);}catch(e){setError(message(e));}}}><label>Name<input aria-label="Policy name" required value={metadata.name} onChange={e=>setMetadata({...metadata,name:e.target.value})}/></label><label>Description<textarea aria-label="Policy description" value={metadata.description} onChange={e=>setMetadata({...metadata,description:e.target.value})}/></label><button>Save metadata</button><button type="button" onClick={()=>setEditingMetadata(false)}>Cancel</button></form>}
+          {editingMetadata && (
+            <form
+              aria-label="Edit policy metadata"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                try {
+                  await api.updateApprovalPolicy(policy.id, metadata);
+                  setEditingMetadata(false);
+                } catch (e) {
+                  setError(message(e));
+                }
+              }}
+            >
+              <label>
+                Name
+                <input
+                  aria-label="Policy name"
+                  required
+                  value={metadata.name}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, name: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Description
+                <textarea
+                  aria-label="Policy description"
+                  value={metadata.description}
+                  onChange={(e) =>
+                    setMetadata({ ...metadata, description: e.target.value })
+                  }
+                />
+              </label>
+              <button>Save metadata</button>
+              <button type="button" onClick={() => setEditingMetadata(false)}>
+                Cancel
+              </button>
+            </form>
+          )}
         </>
       )}
       <h2>Versions</h2>
@@ -709,75 +777,300 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
     ["ambiguous", "Ambiguous"],
   ];
   return (
-    <section>
-      <h2>POLICY VALIDATION / SHADOW ANALYSIS</h2>
-      <label>
-        Policy version
-        <select
-          aria-label="Shadow policy version"
-          required
-          value={form.policyVersionId}
-          onChange={(e) =>
-            setForm({ ...form, policyVersionId: e.target.value })
-          }
-        >
-          <option value="">Select</option>
-          {versions.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.policyName} — Version {v.version_number}
-            </option>
-          ))}
-        </select>
-      </label>
-      <section>
-        <h3>Individual request</h3>
-        <p>
-          Temporary UX debt: enter a numeric request ID. The server verifies
-          that the request belongs to the authenticated institute.
-        </p>
-        <label>
-          Request ID
-          <input
-            aria-label="Request ID"
-            inputMode="numeric"
-            value={form.requestId}
-            onChange={(e) => setForm({ ...form, requestId: e.target.value })}
-          />
+    <section
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+      aria-label="Policy validation and shadow analysis"
+    >
+      <header className="border-b border-slate-200 bg-slate-50/70 px-6 py-5">
+        <div className="flex items-start gap-3">
+          <span className="rounded-xl bg-violet-100 p-2.5 text-violet-700">
+            <Beaker className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold text-slate-900">
+              Policy validation &amp; shadow analysis
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Compare proposed routing against live behavior without affecting
+              active requests.
+            </p>
+          </div>
+        </div>
+      </header>
+      <div className="space-y-6 p-6">
+        <label className={labelClass}>
+          Shadow policy version
+          <select
+            className={`${fieldClass} max-w-xl`}
+            aria-label="Shadow policy version"
+            required
+            value={form.policyVersionId}
+            onChange={(e) =>
+              setForm({ ...form, policyVersionId: e.target.value })
+            }
+          >
+            <option value="">Select a validated version</option>
+            {versions.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.policyName} — Version {v.version_number}
+              </option>
+            ))}
+          </select>
         </label>
-        <button
-          type="button"
-          disabled={!form.policyVersionId}
-          onClick={runSingle}
-        >
-          Run Shadow
-        </button>
-      </section>
-      <form onSubmit={runBatch}>
-        <h3>Batch analysis</h3>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <section className="rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center gap-2">
+              <Play className="h-4 w-4 text-blue-600" />
+              <h3 className="font-semibold text-slate-900">
+                Test an individual request
+              </h3>
+            </div>
+            <p className="mt-2 text-sm leading-5 text-slate-500">
+              Enter a request ID to compare its current route with the selected
+              policy. Your live workflow will not change.
+            </p>
+            <div className="mt-5 flex items-end gap-3">
+              <label className={`${labelClass} flex-1`}>
+                Request ID
+                <input
+                  className={fieldClass}
+                  aria-label="Request ID"
+                  inputMode="numeric"
+                  placeholder="e.g. 10482"
+                  value={form.requestId}
+                  onChange={(e) =>
+                    setForm({ ...form, requestId: e.target.value })
+                  }
+                />
+              </label>
+              <button
+                className={primaryButtonClass}
+                type="button"
+                disabled={!form.policyVersionId}
+                onClick={runSingle}
+              >
+                <Play className="h-4 w-4" /> Run Shadow
+              </button>
+            </div>
+          </section>
+          <form
+            className="rounded-xl border border-slate-200 p-5"
+            onSubmit={runBatch}
+          >
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-blue-600" />
+              <h3 className="font-semibold text-slate-900">
+                Run a batch analysis
+              </h3>
+            </div>
+            <p className="mt-2 text-sm text-slate-500">
+              Sample historical requests using optional filters.
+            </p>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <label className={labelClass}>
+                Date from
+                <input
+                  className={fieldClass}
+                  type="date"
+                  value={form.dateFrom}
+                  onChange={(e) =>
+                    setForm({ ...form, dateFrom: e.target.value })
+                  }
+                />
+              </label>
+              <label className={labelClass}>
+                Date to
+                <input
+                  className={fieldClass}
+                  type="date"
+                  value={form.dateTo}
+                  onChange={(e) => setForm({ ...form, dateTo: e.target.value })}
+                />
+              </label>
+              <label className={labelClass}>
+                Department
+                <select
+                  className={fieldClass}
+                  aria-label="Shadow department"
+                  value={form.departmentId}
+                  onChange={(e) =>
+                    setForm({ ...form, departmentId: e.target.value })
+                  }
+                >
+                  <option value="">All</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className={labelClass}>
+                Request type
+                <input
+                  className={fieldClass}
+                  placeholder="All request types"
+                  value={form.requestType}
+                  onChange={(e) =>
+                    setForm({ ...form, requestType: e.target.value })
+                  }
+                />
+              </label>
+              <label className={labelClass}>
+                Sample limit
+                <input
+                  className={fieldClass}
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={form.limit}
+                  onChange={(e) => setForm({ ...form, limit: e.target.value })}
+                />
+              </label>
+              <div className="flex items-end">
+                <button
+                  className={`${primaryButtonClass} w-full`}
+                  disabled={!form.policyVersionId}
+                >
+                  <Beaker className="h-4 w-4" /> Run shadow analysis
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        {error && (
+          <div
+            className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            <CircleAlert className="h-4 w-4" />
+            {error}
+          </div>
+        )}
+        {result && (
+          <section className="rounded-xl border border-slate-200 p-5">
+            <h3 className="font-semibold text-slate-900">Batch results</h3>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {fields.map(([key, label]) => (
+                <div className="rounded-lg bg-slate-50 p-3" key={key}>
+                  <p className="text-xs font-medium text-slate-500">{label}:</p>
+                  <strong className="mt-1 block text-xl text-slate-900">
+                    {result[key] || 0}
+                  </strong>
+                </div>
+              ))}
+            </div>
+            <h3 className="mt-5 text-sm font-semibold text-slate-700">
+              Generated runs
+            </h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(result.runs || []).map((run) => (
+                <button
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                  key={run.id}
+                  onClick={() => openRun(run.id)}
+                >
+                  Open generated run {run.id}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+        <section className="rounded-xl border border-slate-200 p-5">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-slate-500" />
+            <h3 className="font-semibold text-slate-900">Recent shadow runs</h3>
+          </div>
+          {existingRuns.length === 0 && (
+            <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-7 text-center">
+              <Clock3 className="mx-auto h-5 w-5 text-slate-400" />
+              <p className="mt-2 text-sm font-medium text-slate-600">
+                No shadow runs yet
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Completed comparisons will appear here.
+              </p>
+            </div>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {existingRuns.map((run) => (
+              <button
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                key={run.id}
+                onClick={() => openRun(run.id)}
+              >
+                Open shadow run {run.id}
+              </button>
+            ))}
+          </div>
+        </section>
+        {comparison && <ShadowComparison run={comparison} />}
+      </div>
+    </section>
+  );
+}
+export function PolicySimulator({ versions = [], departments = [] }) {
+  const [form, setForm] = useState({
+    versionId: "",
+    departmentId: "",
+    requestType: "NON_STOCK",
+    estimatedAmount: "",
+    isStockRequest: false,
+    isMaintenanceRequest: false,
+    isMedicalDeviceRequest: false,
+    isMedicalRequest: false,
+    warehouseRequired: false,
+  });
+  const [result, setResult] = useState(),
+    [error, setError] = useState("");
+  const run = async (event) => {
+    event.preventDefault();
+    setError("");
+    try {
+      setResult(
+        await api.simulateApprovalPolicy(form.versionId, {
+          ...form,
+          versionId: undefined,
+          departmentId: form.departmentId || null,
+          estimatedAmount: form.estimatedAmount || null,
+        }),
+      );
+    } catch (e) {
+      setError(message(e));
+    }
+  };
+  return (
+    <section aria-label="Policy simulator">
+      <h2>Policy Simulator</h2>
+      <p>
+        Diagnostic only. No request, approval, notification, or workflow record
+        is created.
+      </p>
+      <form onSubmit={run}>
         <label>
-          Date from
-          <input
-            type="date"
-            value={form.dateFrom}
-            onChange={(e) => setForm({ ...form, dateFrom: e.target.value })}
-          />
-        </label>
-        <label>
-          Date to
-          <input
-            type="date"
-            value={form.dateTo}
-            onChange={(e) => setForm({ ...form, dateTo: e.target.value })}
-          />
+          Policy version
+          <select
+            aria-label="Simulation policy version"
+            required
+            value={form.versionId}
+            onChange={(e) => setForm({ ...form, versionId: e.target.value })}
+          >
+            <option value="">Select</option>
+            {versions.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.policyName} — Version {v.version_number}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Department
           <select
-            aria-label="Shadow department"
+            aria-label="Simulation department"
             value={form.departmentId}
             onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
           >
-            <option value="">All</option>
+            <option value="">None</option>
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -788,59 +1081,112 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
         <label>
           Request type
           <input
+            aria-label="Simulation request type"
             value={form.requestType}
             onChange={(e) => setForm({ ...form, requestType: e.target.value })}
           />
         </label>
         <label>
-          Sample limit
+          Estimated amount
           <input
-            type="number"
-            min="1"
-            max="100"
-            value={form.limit}
-            onChange={(e) => setForm({ ...form, limit: e.target.value })}
+            aria-label="Simulation amount"
+            inputMode="decimal"
+            value={form.estimatedAmount}
+            onChange={(e) =>
+              setForm({ ...form, estimatedAmount: e.target.value })
+            }
           />
         </label>
-        <button disabled={!form.policyVersionId}>Run shadow analysis</button>
+        {[
+          ["isStockRequest", "Stock"],
+          ["isMaintenanceRequest", "Maintenance"],
+          ["isMedicalDeviceRequest", "Medical device"],
+          ["isMedicalRequest", "Medical"],
+          ["warehouseRequired", "Warehouse required"],
+        ].map(([key, label]) => (
+          <label key={key}>
+            <input
+              type="checkbox"
+              checked={form[key]}
+              onChange={(e) => setForm({ ...form, [key]: e.target.checked })}
+            />
+            {label}
+          </label>
+        ))}
+        <button>Simulate route</button>
       </form>
       {error && <p role="alert">{error}</p>}
       {result && (
         <>
-          <div>
-            {fields.map(([key, label]) => (
-              <p key={key}>
-                {label}: <strong>{result[key] || 0}</strong>
+          <h3>Resolved route</h3>
+          <p>
+            Matched rules:{" "}
+            {result.matchedRules.map((r) => r.code).join(", ") || "None"}
+          </p>
+          {result.steps.map((s, i) => (
+            <article key={i} className="rounded border p-3">
+              <strong>
+                Level {s.approvalLevel}: {s.displayName}
+              </strong>
+              <p>Purpose: {s.semanticKey}</p>
+              <p>
+                Required authority: {s.requestedAuthority || s.resolverType}
               </p>
-            ))}
-          </div>
-          <h3>Generated runs</h3>
-          {(result.runs || []).map((run) => (
-            <button key={run.id} onClick={() => openRun(run.id)}>
-              Open generated run {run.id}
-            </button>
+              <p>Position holder: {s.positionHolderName || "Unresolved"}</p>
+              {s.actingApproverName && (
+                <p>Acting approver: {s.actingApproverName}</p>
+              )}
+              <p>
+                Resolution: {s.resolutionStatus}
+                {s.duplicatePrincipal ? " · DUPLICATE_PRINCIPAL" : ""}
+              </p>
+              {s.resolutionReason && <p>{s.resolutionReason}</p>}
+            </article>
           ))}
         </>
       )}
-      <section>
-        <h3>Existing shadow runs</h3>
-        {existingRuns.map((run) => (
-          <button key={run.id} onClick={() => openRun(run.id)}>
-            Open shadow run {run.id}
-          </button>
-        ))}
-      </section>
-      {comparison && <ShadowComparison run={comparison} />}
     </section>
   );
 }
-export function PolicySimulator({ versions = [], departments = [] }) {
-  const [form,setForm]=useState({versionId:"",departmentId:"",requestType:"NON_STOCK",estimatedAmount:"",isStockRequest:false,isMaintenanceRequest:false,isMedicalDeviceRequest:false,isMedicalRequest:false,warehouseRequired:false});
-  const [result,setResult]=useState(),[error,setError]=useState("");
-  const run=async event=>{event.preventDefault();setError("");try{setResult(await api.simulateApprovalPolicy(form.versionId,{...form,versionId:undefined,departmentId:form.departmentId||null,estimatedAmount:form.estimatedAmount||null}));}catch(e){setError(message(e));}};
-  return <section aria-label="Policy simulator"><h2>Policy Simulator</h2><p>Diagnostic only. No request, approval, notification, or workflow record is created.</p><form onSubmit={run}><label>Policy version<select aria-label="Simulation policy version" required value={form.versionId} onChange={e=>setForm({...form,versionId:e.target.value})}><option value="">Select</option>{versions.map(v=><option key={v.id} value={v.id}>{v.policyName} — Version {v.version_number}</option>)}</select></label><label>Department<select aria-label="Simulation department" value={form.departmentId} onChange={e=>setForm({...form,departmentId:e.target.value})}><option value="">None</option>{departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><label>Request type<input aria-label="Simulation request type" value={form.requestType} onChange={e=>setForm({...form,requestType:e.target.value})}/></label><label>Estimated amount<input aria-label="Simulation amount" inputMode="decimal" value={form.estimatedAmount} onChange={e=>setForm({...form,estimatedAmount:e.target.value})}/></label>{[['isStockRequest','Stock'],['isMaintenanceRequest','Maintenance'],['isMedicalDeviceRequest','Medical device'],['isMedicalRequest','Medical'],['warehouseRequired','Warehouse required']].map(([key,label])=><label key={key}><input type="checkbox" checked={form[key]} onChange={e=>setForm({...form,[key]:e.target.checked})}/>{label}</label>)}<button>Simulate route</button></form>{error&&<p role="alert">{error}</p>}{result&&<><h3>Resolved route</h3><p>Matched rules: {result.matchedRules.map(r=>r.code).join(', ')||'None'}</p>{result.steps.map((s,i)=><article key={i} className="rounded border p-3"><strong>Level {s.approvalLevel}: {s.displayName}</strong><p>Purpose: {s.semanticKey}</p><p>Required authority: {s.requestedAuthority||s.resolverType}</p><p>Position holder: {s.positionHolderName||'Unresolved'}</p>{s.actingApproverName&&<p>Acting approver: {s.actingApproverName}</p>}<p>Resolution: {s.resolutionStatus}{s.duplicatePrincipal?' · DUPLICATE_PRINCIPAL':''}</p>{s.resolutionReason&&<p>{s.resolutionReason}</p>}</article>)}</>}</section>;
+export function CutoverReadiness() {
+  const [data, setData] = useState(),
+    [error, setError] = useState("");
+  useEffect(() => {
+    api
+      .getApprovalPolicyReadiness()
+      .then(setData)
+      .catch((e) => setError(message(e)));
+  }, []);
+  return (
+    <section aria-label="Live cutover readiness">
+      <h2>Live-cutover readiness</h2>
+      {error && <p role="alert">{error}</p>}
+      {!data && !error && <p>Loading readiness diagnostics…</p>}
+      {data && (
+        <>
+          <strong>{data.cutoverStatus}</strong>
+          <p>
+            Live routing: {data.liveRoutingEnabled ? "ENABLED" : "DISABLED"}
+          </p>
+          {Object.entries(data)
+            .filter(
+              ([k]) => !["cutoverStatus", "liveRoutingEnabled"].includes(k),
+            )
+            .map(([group, values]) => (
+              <article key={group}>
+                <h3>{group.toUpperCase()}</h3>
+                {Object.entries(values).map(([k, v]) => (
+                  <p key={k}>
+                    {k.replaceAll("_", " ")}: <strong>{v}</strong>
+                  </p>
+                ))}
+              </article>
+            ))}
+        </>
+      )}
+    </section>
+  );
 }
-export function CutoverReadiness(){const[data,setData]=useState(),[error,setError]=useState("");useEffect(()=>{api.getApprovalPolicyReadiness().then(setData).catch(e=>setError(message(e)))},[]);return <section aria-label="Live cutover readiness"><h2>Live-cutover readiness</h2>{error&&<p role="alert">{error}</p>}{!data&&!error&&<p>Loading readiness diagnostics…</p>}{data&&<><strong>{data.cutoverStatus}</strong><p>Live routing: {data.liveRoutingEnabled?'ENABLED':'DISABLED'}</p>{Object.entries(data).filter(([k])=>!['cutoverStatus','liveRoutingEnabled'].includes(k)).map(([group,values])=><article key={group}><h3>{group.toUpperCase()}</h3>{Object.entries(values).map(([k,v])=><p key={k}>{k.replaceAll('_',' ')}: <strong>{v}</strong></p>)}</article>)}</>}</section>}
 export default function ApprovalPoliciesPage({ canManage = true }) {
   const [items, setItems] = useState(null);
   const [orgOptions, setOrgOptions] = useState({
@@ -852,7 +1198,8 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState();
   const [dashboard, setDashboard] = useState(false);
-  const [simulator,setSimulator]=useState(false),[readiness,setReadiness]=useState(false);
+  const [simulator, setSimulator] = useState(false),
+    [readiness, setReadiness] = useState(false);
   const load = () => {
     setError("");
     Promise.all([api.listApprovalPolicies(), getOrganizationOptions()])
@@ -898,23 +1245,39 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
   return (
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
       <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-6 py-7 text-white shadow-xl sm:px-8">
-        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/10 blur-2xl" aria-hidden="true" />
+        <div
+          className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/10 blur-2xl"
+          aria-hidden="true"
+        />
         <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div className="max-w-2xl">
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
               <ShieldCheck className="h-4 w-4" /> Governance control center
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Approval Engine 2.0</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              Approval Engine 2.0
+            </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
-              Design, validate, and safely test intelligent approval routes before they reach production.
-              Existing approval routing remains authoritative.
+              Design, validate, and safely test intelligent approval routes
+              before they reach production. Existing approval routing remains
+              authoritative.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20" onClick={load}>
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+              onClick={load}
+            >
               <RefreshCw className="h-4 w-4" /> Refresh
             </button>
-            {canManage && <button className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-400" onClick={() => setCreating(true)}><Plus className="h-4 w-4" /> Create Policy</button>}
+            {canManage && (
+              <button
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-400"
+                onClick={() => setCreating(true)}
+              >
+                <Plus className="h-4 w-4" /> Create Policy
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -927,19 +1290,97 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
       {!items && !error && <p>Loading approval policies…</p>}
       {items && (
         <>
-          <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Approval policy summary">
+          <section
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+            aria-label="Approval policy summary"
+          >
             {[
-              ["Total policies", policyStats.total, FileStack, "bg-blue-50 text-blue-700"],
-              ["Active policies", policyStats.active, CheckCircle2, "bg-emerald-50 text-emerald-700"],
-              ["In shadow mode", policyStats.shadow, Beaker, "bg-violet-50 text-violet-700"],
-              ["Awaiting validation", policyStats.drafts, Activity, "bg-amber-50 text-amber-700"],
-            ].map(([label, value, Icon, tone]) => <article key={label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-center justify-between"><div><p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-2 text-3xl font-bold text-slate-900">{value}</p></div><span className={`rounded-xl p-3 ${tone}`}><Icon className="h-5 w-5" /></span></div></article>)}
+              [
+                "Total policies",
+                policyStats.total,
+                FileStack,
+                "bg-blue-50 text-blue-700",
+              ],
+              [
+                "Active policies",
+                policyStats.active,
+                CheckCircle2,
+                "bg-emerald-50 text-emerald-700",
+              ],
+              [
+                "In shadow mode",
+                policyStats.shadow,
+                Beaker,
+                "bg-violet-50 text-violet-700",
+              ],
+              [
+                "Awaiting validation",
+                policyStats.drafts,
+                Activity,
+                "bg-amber-50 text-amber-700",
+              ],
+            ].map(([label, value, Icon, tone]) => (
+              <article
+                key={label}
+                className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-3xl font-bold text-slate-900">
+                      {value}
+                    </p>
+                  </div>
+                  <span className={`rounded-xl p-3 ${tone}`}>
+                    <Icon className="h-5 w-5" />
+                  </span>
+                </div>
+              </article>
+            ))}
           </section>
 
-          <nav className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Approval engine tools">
-            <button className={`rounded-lg px-4 py-2 text-sm font-semibold ${dashboard ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} onClick={() => setDashboard((x) => !x)}>Shadow validation dashboard</button>
-            <button className={`rounded-lg px-4 py-2 text-sm font-semibold ${simulator ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} onClick={()=>setSimulator(x=>!x)}>Policy simulator</button>
-            <button className={`rounded-lg px-4 py-2 text-sm font-semibold ${readiness ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"}`} onClick={()=>setReadiness(x=>!x)}>Cutover readiness</button>
+          <nav
+            className="flex flex-wrap gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
+            aria-label="Approval engine tools"
+          >
+            <button
+              aria-pressed={dashboard}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${dashboard ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
+              onClick={() => {
+                setDashboard((x) => !x);
+                setSimulator(false);
+                setReadiness(false);
+              }}
+            >
+              <Beaker className="h-4 w-4" />
+              Shadow validation dashboard
+            </button>
+            <button
+              aria-pressed={simulator}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${simulator ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
+              onClick={() => {
+                setSimulator((x) => !x);
+                setDashboard(false);
+                setReadiness(false);
+              }}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Policy simulator
+            </button>
+            <button
+              aria-pressed={readiness}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition ${readiness ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
+              onClick={() => {
+                setReadiness((x) => !x);
+                setDashboard(false);
+                setSimulator(false);
+              }}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              Cutover readiness
+            </button>
           </nav>
           {creating && (
             <form
@@ -960,49 +1401,135 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
                 }
               }}
             >
-              <label className="text-sm font-medium text-slate-700">Policy name<input className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2" aria-label="Name" name="name" required /></label>
-              <label className="text-sm font-medium text-slate-700">Policy code<input className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2" aria-label="Code" name="code" required /></label>
-              <label className="text-sm font-medium text-slate-700 md:col-span-2">Description<textarea className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2" aria-label="Description" name="description" rows="2" /></label>
-              <div className="flex gap-2 md:col-span-2"><button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Create</button>
-              <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700" type="button" onClick={() => setCreating(false)}>
-                Cancel
-              </button></div>
+              <label className="text-sm font-medium text-slate-700">
+                Policy name
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                  aria-label="Name"
+                  name="name"
+                  required
+                />
+              </label>
+              <label className="text-sm font-medium text-slate-700">
+                Policy code
+                <input
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                  aria-label="Code"
+                  name="code"
+                  required
+                />
+              </label>
+              <label className="text-sm font-medium text-slate-700 md:col-span-2">
+                Description
+                <textarea
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
+                  aria-label="Description"
+                  name="description"
+                  rows="2"
+                />
+              </label>
+              <div className="flex gap-2 md:col-span-2">
+                <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white">
+                  Create
+                </button>
+                <button
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                  type="button"
+                  onClick={() => setCreating(false)}
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           )}
           {items.length === 0 ? (
-            <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"><GitBranch className="h-7 w-7" /></span><h2 className="mt-4 text-lg font-semibold text-slate-900">Build your first approval policy</h2><p className="mx-auto mt-2 max-w-md text-sm text-slate-500">No approval policies have been created. Start with a draft, validate every resolver, then safely compare it in shadow mode.</p></section>
+            <section className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <GitBranch className="h-7 w-7" />
+              </span>
+              <h2 className="mt-4 text-lg font-semibold text-slate-900">
+                Build your first approval policy
+              </h2>
+              <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+                Start with a draft, validate every resolver, then safely compare
+                it in shadow mode before cutover.
+              </p>
+              {canManage && (
+                <button
+                  className={`${primaryButtonClass} mt-6`}
+                  onClick={() => setCreating(true)}
+                >
+                  <Plus className="h-4 w-4" /> Create your first policy
+                </button>
+              )}
+            </section>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-200 px-5 py-4"><h2 className="font-semibold text-slate-900">Policy registry</h2><p className="mt-1 text-sm text-slate-500">Versioned routing policies and their current validation state.</p></div><div className="overflow-x-auto"><table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
-                  <th className="px-5 py-3">Name</th><th className="px-5 py-3">Code</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Shadow version</th><th className="px-5 py-3">Last updated</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((p) => (
-                  <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50/70">
-                    <td className="px-5 py-4 font-semibold text-slate-900">{p.name}</td><td className="px-5 py-4 font-mono text-xs text-slate-600">{p.code}</td>
-                    <td className="px-5 py-4"><span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{p.is_active === false ? "INACTIVE" : p.shadow_status || "DRAFT"}</span></td>
-                    <td className="px-5 py-4 text-slate-600">{display(p.shadow_version_number)}</td><td className="px-5 py-4 text-slate-600">{display(p.updated_at)}</td>
-                    <td className="px-5 py-4 text-right">
-                      <button
-                        className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
-                        onClick={async () => {
-                          try {
-                            setSelected(await api.getApprovalPolicy(p.id));
-                          } catch (e) {
-                            setError(message(e));
-                          }
-                        }}
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 px-5 py-4">
+                <h2 className="font-semibold text-slate-900">
+                  Policy registry
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Versioned routing policies and their current validation state.
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                      <th className="px-5 py-3">Name</th>
+                      <th className="px-5 py-3">Code</th>
+                      <th className="px-5 py-3">Status</th>
+                      <th className="px-5 py-3">Shadow version</th>
+                      <th className="px-5 py-3">Last updated</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((p) => (
+                      <tr
+                        key={p.id}
+                        className="border-t border-slate-100 hover:bg-slate-50/70"
                       >
-                        Open Policy <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table></div></div>
+                        <td className="px-5 py-4 font-semibold text-slate-900">
+                          {p.name}
+                        </td>
+                        <td className="px-5 py-4 font-mono text-xs text-slate-600">
+                          {p.code}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                            {p.is_active === false
+                              ? "INACTIVE"
+                              : p.shadow_status || "DRAFT"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-slate-600">
+                          {display(p.shadow_version_number)}
+                        </td>
+                        <td className="px-5 py-4 text-slate-600">
+                          {display(p.updated_at)}
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <button
+                            className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
+                            onClick={async () => {
+                              try {
+                                setSelected(await api.getApprovalPolicy(p.id));
+                              } catch (e) {
+                                setError(message(e));
+                              }
+                            }}
+                          >
+                            Open Policy <ArrowRight className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
           {dashboard && (
             <ShadowDashboard
@@ -1010,8 +1537,13 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
               departments={orgOptions.departments}
             />
           )}
-          {simulator&&<PolicySimulator versions={versions} departments={orgOptions.departments}/>}
-          {readiness&&<CutoverReadiness/>}
+          {simulator && (
+            <PolicySimulator
+              versions={versions}
+              departments={orgOptions.departments}
+            />
+          )}
+          {readiness && <CutoverReadiness />}
         </>
       )}
     </main>
