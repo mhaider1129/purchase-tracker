@@ -18,3 +18,9 @@ if (typeof global.TextDecoder === "undefined") {
   // eslint-disable-next-line no-undef
   global.TextDecoder = TextDecoder;
 }
+
+global.ResizeObserver ??= class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

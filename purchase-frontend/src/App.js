@@ -111,7 +111,11 @@ import {
   useAccessControl,
 } from "./hooks/useAccessControl";
 import { NotificationProvider } from "./components/ui/NotificationProvider";
-import { hasAnyPermission, hasAllPermissions } from "./utils/permissions";
+import {
+  hasAnyPermission,
+  hasAllPermissions,
+  hasPermission,
+} from "./utils/permissions";
 import Navbar from "./components/Navbar";
 import { featureRegistry } from "./config/featureRegistry";
 
@@ -182,6 +186,15 @@ const ProtectedRoute = ({
 const FallbackRedirect = () => {
   const { isAuthenticated } = useAuth();
   return <Navigate to={isAuthenticated ? "/" : "/login"} replace />;
+};
+
+const ApprovalPoliciesRoute = () => {
+  const { user } = useAuth();
+  return (
+    <ApprovalPoliciesPage
+      canManage={hasPermission(user, "approval-policy.manage")}
+    />
+  );
 };
 
 const AppRoutes = () => (
@@ -647,7 +660,15 @@ const AppRoutes = () => (
 
     {/* ✅ Admin / SCM Routes */}
     <Route path="/admin/organization" element={<ProtectedRoute element={<OrganizationHierarchy />} />} />
-    <Route path="/admin/approval-policies" element={<ProtectedRoute element={<ApprovalPoliciesPage />} />} />
+    <Route
+      path="/admin/approval-policies"
+      element={
+        <ProtectedRoute
+          routeKey="approvalPolicies"
+          element={<ApprovalPoliciesRoute />}
+        />
+      }
+    />
     <Route
       path="/admin-tools"
       element={

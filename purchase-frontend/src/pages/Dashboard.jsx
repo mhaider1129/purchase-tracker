@@ -19,6 +19,8 @@ import usePageTranslation from '../utils/usePageTranslation';
 import Card from '../components/Card';
 import { getPublicPriorityQueue } from '../api/procurementPriority';
 import { CurrentProcurementPriorities } from '../components/priority/ProcurementPriorityViews';
+import { LayoutDashboard, RefreshCw } from 'lucide-react';
+import AnalyticsPageHeader from '../components/analytics/AnalyticsPageHeader';
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff4d4f', '#00C49F'];
 const DASHBOARD_REFRESH_EVENT = 'dashboard:refresh';
@@ -335,9 +337,16 @@ const Dashboard = () => {
   return (
     <>
       <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-2xl font-bold text-purple-700 mb-6">
-          {translate('overviewTitle', { defaultValue: '📊 Dashboard Overview' })}
-        </h1>
+        <div className="mb-6">
+          <AnalyticsPageHeader
+            eyebrow={translate('commandCenter', { defaultValue: 'Procurement command center' })}
+            title={translate('overviewTitle', { defaultValue: '📊 Dashboard Overview' })}
+            description={translate('overviewSubtitle', { defaultValue: 'Monitor demand, approvals, spend, and operational exceptions from one decision-ready view.' })}
+            icon={LayoutDashboard}
+            meta={[`${formatAmount(totalRequests)} total requests`, `${completionRate.toFixed(1)}% completion rate`, `Reporting year ${year}`]}
+            actions={<button type="button" onClick={() => window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT))} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4" /> Refresh data</button>}
+          />
+        </div>
         <div className="mb-8"><CurrentProcurementPriorities status={priorityState.status} entries={priorityState.entries} /></div>
 
         {/* Overview Highlights */}

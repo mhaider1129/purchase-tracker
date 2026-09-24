@@ -10,3 +10,16 @@ describe('Supply Chain Performance navigation feature', () => {
     expect(featureByPath['/supply-chain-performance']).toBe(featureRegistry.supplyChainPerformance);
   });
 });
+
+describe('Approval Engine navigation feature', () => {
+  test('exposes the policy administration page only to policy viewers', () => {
+    expect(featureRegistry.approvalPolicies).toMatchObject({
+      path: '/admin/approval-policies',
+      requiredPermissions: ['approval-policy.view'],
+      nav: { group: 'insights', labelKey: 'navbar.approvalEngine' },
+    });
+    expect(featureByPath['/admin/approval-policies']).toBe(
+      featureRegistry.approvalPolicies,
+    );
+  });
+});

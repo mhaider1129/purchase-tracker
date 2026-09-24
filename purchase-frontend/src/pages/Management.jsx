@@ -3,6 +3,7 @@ import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
 import { useAccessControl } from '../hooks/useAccessControl';
 import { hasPermission, hasAnyPermission } from '../utils/permissions';
+import { filterUsersBySearch } from '../utils/filterUsers';
 import useWarehouses from '../hooks/useWarehouses';
 import { defaultContractApprovalRules } from '../config/contractApprovalRules';
 import {
@@ -301,6 +302,7 @@ const Management = () => {
   const [permissionsError, setPermissionsError] = useState('');
   const [permissionsSuccess, setPermissionsSuccess] = useState('');
   const [selectedPermissionUserId, setSelectedPermissionUserId] = useState('');
+  const [permissionUserSearch, setPermissionUserSearch] = useState('');
   const [inlinePermissionsEditorOpen, setInlinePermissionsEditorOpen] = useState(false);
   const [selectedUserPermissions, setSelectedUserPermissions] = useState([]);
   const [savingPermissions, setSavingPermissions] = useState(false);
@@ -880,6 +882,18 @@ const Management = () => {
     () => users.find((entry) => String(entry.id) === String(selectedPermissionUserId)) || null,
     [selectedPermissionUserId, users],
   );
+
+  const matchingPermissionUsers = useMemo(
+    () => filterUsersBySearch(users, permissionUserSearch),
+    [permissionUserSearch, users],
+  );
+
+  const permissionUserOptions = useMemo(() => {
+    if (!selectedPermissionUser || matchingPermissionUsers.includes(selectedPermissionUser)) {
+      return matchingPermissionUsers;
+    }
+    return [selectedPermissionUser, ...matchingPermissionUsers];
+  }, [matchingPermissionUsers, selectedPermissionUser]);
 
   const renderInlineUserPermissionsEditor = () => {
     if (!canManagePermissions || !inlinePermissionsEditorOpen || !selectedPermissionUserId) return null;
@@ -3043,23 +3057,47 @@ const Management = () => {
     return (
       <div className="space-y-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
-          <div className="md:w-64">
+          <div className="space-y-3 md:w-80">
+            <label className="block">
+              <span className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Search users
+              </span>
+              <span className="relative mt-1 block">
+                <Search
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  className="w-full rounded border border-gray-300 py-2 pl-9 pr-3"
+                  value={permissionUserSearch}
+                  onChange={(event) => setPermissionUserSearch(event.target.value)}
+                  placeholder="Search by name or email"
+                />
+              </span>
+            </label>
             <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
               User
             </label>
             <select
               className="mt-1 w-full rounded border border-gray-300 p-2"
               value={selectedPermissionUserId}
-              onChange={(e) => setSelectedPermissionUserId(e.target.value)}
+              onChange={(e) => {
+                setSelectedPermissionUserId(e.target.value);
+                setPermissionUserSearch('');
+              }}
             >
               <option value="">Select user</option>
-              {users.map((permissionUser) => (
+              {permissionUserOptions.map((permissionUser) => (
                 <option key={permissionUser.id} value={permissionUser.id}>
                   {permissionUser.name}
                   {permissionUser.email ? ` (${permissionUser.email})` : ''}
                 </option>
               ))}
             </select>
+            {permissionUserSearch.trim() && matchingPermissionUsers.length === 0 && (
+              <p className="text-xs text-gray-500">No users match your search.</p>
+            )}
           </div>
           <div className="flex-1 text-sm text-gray-600">
             {permissionsSuccess && (

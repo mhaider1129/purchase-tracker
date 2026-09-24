@@ -1,20 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Activity, AlertTriangle, Boxes, CalendarDays, Gauge, RefreshCw, Users } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getPerformanceDashboard } from '../api/procurementPerformance';
+import AnalyticsPageHeader from '../components/analytics/AnalyticsPageHeader';
+import { AnalyticsError, AnalyticsLoading, EmptyChart } from '../components/analytics/AnalyticsStates';
 
 export const SECTIONS = ['Executive Overview','Procurement Demand','Current Pipeline','Complexity Mix','Workload','Commercial Performance','Sourcing Performance','International Procurement','Cycle-Time Analysis','Buyer Workload','Pending Root Causes','Strategic / Hard-to-Source Cases'];
-const Metric = ({ label, metric }) => { const usable = metric?.coverage === 'FULL' || metric?.coverage === 'PARTIAL'; return <div className="rounded border p-3"><dt className="text-sm text-gray-500">{label}</dt><dd className="text-xl font-semibold">{usable && metric?.status !== 'not_available' ? metric?.value : 'Not available'}</dd>{metric?.coverage && <small className="block">Coverage: {metric.coverage}</small>}{(metric?.warning || metric?.reason) && <small>{metric.warning || metric.reason}</small>}</div>; };
+const number = value => Number(value || 0).toLocaleString();
+const pretty = value => String(value || 'Unclassified').replaceAll('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+const coverageTone = { FULL: 'bg-emerald-50 text-emerald-700', PARTIAL: 'bg-amber-50 text-amber-700', MISSING: 'bg-slate-100 text-slate-600', LEGACY_INCOMPLETE: 'bg-orange-50 text-orange-700' };
+
+const Metric = ({ label, value, helper, icon: Icon, coverage }) => (
+  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="flex items-start justify-between gap-3"><span className="rounded-xl bg-blue-50 p-2 text-blue-700"><Icon className="h-5 w-5" /></span>{coverage && <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${coverageTone[coverage] || coverageTone.MISSING}`}>{coverage.replaceAll('_', ' ')}</span>}</div>
+    <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{helper}</p>
+  </div>
+);
 
 export default function SupplyChainPerformancePage() {
-  const [filters,setFilters]=useState({}); const [data,setData]=useState(null); const [error,setError]=useState('');
-  useEffect(()=>{ let active=true; getPerformanceDashboard(filters).then(r=>active&&setData(r.data)).catch(()=>active&&setError('Performance data is unavailable.')); return()=>{active=false}; },[filters]);
-  return <main className="space-y-6 p-6"><header><h1 className="text-2xl font-bold">Supply Chain Performance &amp; Workload</h1><p>PWU describes capacity and portfolio complexity; it is not an employee ranking.</p></header>
-    <label>Date from <input aria-label="Date from" type="date" onChange={e=>setFilters(x=>({...x,date_from:e.target.value}))}/></label>
-    {error && <div role="alert">{error}</div>}
-    {SECTIONS.map(section=><section key={section} aria-label={section}><h2 className="text-xl font-semibold">{section}</h2>
-      {section==='Executive Overview' && <Metric label="Requested items" metric={data?.metrics?.demand?.requested_items}/>}
-      {section==='Complexity Mix' && <div>{data?.metrics?.complexity?.class_mix?.map?.(x=><span key={x.class}>Class {x.class}: {x.count} </span>)}</div>}
-      {section==='Buyer Workload' && <div>{data?.buyers?.map(x=><p key={x.buyer_id}>{x.buyer_name}: {x.workload_units} PWU</p>)}</div>}
-      {section==='Pending Root Causes' && <div>{data?.pending?.map(x=><p key={x.root_cause}>{x.root_cause}: {x.count}</p>)}</div>}
-      {section==='Strategic / Hard-to-Source Cases' && <div>{data?.highlights?.map(x=><p key={x.case_id}>{x.summary}</p>)}</div>}
-    </section>)}</main>;
+  const [filters,setFilters]=useState({ date_from: '' }); const [data,setData]=useState(null); const [error,setError]=useState(''); const [loading,setLoading]=useState(true); const [refreshKey,setRefreshKey]=useState(0);
+  const fetchData = useCallback(() => { let active=true; void refreshKey; setLoading(true); setError(''); const params = Object.fromEntries(Object.entries(filters).filter(([,v])=>v)); getPerformanceDashboard(params).then(r=>active&&setData(r.data)).catch(()=>active&&setError('Performance data is unavailable. Please try again.')).finally(()=>active&&setLoading(false)); return()=>{active=false}; },[filters,refreshKey]);
+  useEffect(()=>fetchData(),[fetchData]);
+  const complexity = useMemo(() => data?.metrics?.complexity?.class_mix || [], [data]); const pending = data?.pending || []; const buyers = data?.buyers || []; const highlights = data?.highlights || [];
+  const requestedMetric = data?.metrics?.demand?.requested_items;
+  const requestedValue = requestedMetric && typeof requestedMetric === 'object' ? (requestedMetric.status === 'not_available' ? 'Not available' : number(requestedMetric.value)) : number(requestedMetric);
+  const totalPwu = useMemo(()=>complexity.reduce((sum,item)=>sum+Number(item.pwu||0),0),[complexity]);
+  return <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+    <AnalyticsPageHeader eyebrow="Procurement intelligence" title="Supply Chain Performance & Workload" description="A governed view of demand, portfolio complexity, sourcing effort, and operational constraints." icon={Gauge} meta={["PWU measures portfolio effort — not employee performance", "Evidence-aware metrics"]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4" /> Refresh</button>} />
+    <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between" aria-label="Performance filters"><label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Date from<div className="relative mt-2"><CalendarDays className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input aria-label="Date from" className="rounded-xl border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:ring-blue-500" type="date" value={filters.date_from} onChange={e=>setFilters(x=>({...x,date_from:e.target.value}))}/></div></label><p className="text-xs text-slate-500">Metrics show cases within your authorised institute scope.</p></section>
+    {error ? <AnalyticsError message={error} onRetry={()=>setRefreshKey(x=>x+1)}/> : loading ? <AnalyticsLoading label="Building performance view…"/> : <>
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Executive Overview">
+        <Metric label="Requested items" value={requestedValue} helper={`${number(data?.metrics?.demand?.prs)} purchase requests`} icon={Boxes} coverage={requestedMetric?.coverage || data?.metrics?.demand?.coverage}/>
+        <Metric label="Departments" value={number(data?.metrics?.demand?.departments)} helper="Contributing demand" icon={Users} coverage={data?.metrics?.demand?.coverage}/>
+        <Metric label="Portfolio workload" value={`${number(totalPwu)} PWU`} helper={`${number(data?.metrics?.complexity?.assessed_cases)} assessed cases`} icon={Activity} coverage={data?.metrics?.complexity?.coverage}/>
+        <Metric label="Open constraints" value={number(pending.reduce((s,x)=>s+Number(x.count||0),0))} helper="Cases with a recorded root cause" icon={AlertTriangle}/>
+      </section>
+      <section className="grid gap-6 lg:grid-cols-5">
+        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-3" aria-label="Complexity Mix"><div className="mb-5"><h2 className="text-lg font-semibold text-slate-900">Complexity mix</h2><p className="text-sm text-slate-500">Case volume and derived workload by complexity class.</p></div><div className="sr-only">{complexity.map(x=>`Class ${x.class}: ${x.count}`).join(', ')}</div>{complexity.length ? <ResponsiveContainer width="100%" height={300}><BarChart data={complexity}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0"/><XAxis dataKey="class" tickLine={false} axisLine={false}/><YAxis tickLine={false} axisLine={false}/><Tooltip/><Bar dataKey="count" name="Cases" fill="#2563eb" radius={[6,6,0,0]}/><Bar dataKey="pwu" name="PWU" fill="#8b5cf6" radius={[6,6,0,0]}/></BarChart></ResponsiveContainer> : <EmptyChart/>}</article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2" aria-label="Pending Root Causes"><h2 className="text-lg font-semibold text-slate-900">Pending root causes</h2><p className="mb-4 text-sm text-slate-500">Where intervention can unblock the pipeline.</p><div className="space-y-3">{pending.length ? pending.map(item=><div key={item.root_cause} className="rounded-xl bg-slate-50 p-3"><span className="sr-only">{item.root_cause}: {item.count}</span><div className="flex justify-between gap-4"><span className="text-sm font-medium text-slate-700">{pretty(item.root_cause)}</span><strong>{number(item.count)}</strong></div><div className="mt-2 h-1.5 rounded-full bg-slate-200"><div className="h-full rounded-full bg-amber-500" style={{width:`${Math.min(100, Number(item.count)*10)}%`}}/></div></div>) : <EmptyChart label="No pending root causes recorded"/>}</div></article>
+      </section>
+      <section className="grid gap-6 lg:grid-cols-2"><article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Buyer Workload"><h2 className="text-lg font-semibold">Buyer workload</h2><p className="mb-4 text-sm text-slate-500">Capacity signal based on assigned portfolio effort.</p>{buyers.length ? <div className="space-y-2">{buyers.map(x=><div className="flex items-center justify-between rounded-xl border border-slate-100 p-3" key={x.buyer_id}><span className="sr-only">{x.buyer_name}: {x.workload_units} PWU</span><span className="font-medium">{x.buyer_name}</span><span className="rounded-full bg-blue-50 px-3 py-1 text-sm font-bold text-blue-700">{x.workload_units} PWU</span></div>)}</div> : <EmptyChart label="Buyer assignments are not available"/>}</article><article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Strategic / Hard-to-Source Cases"><h2 className="text-lg font-semibold">Strategic / hard-to-source cases</h2><p className="mb-4 text-sm text-slate-500">High-impact cases requiring management attention.</p>{highlights.length ? <div className="space-y-2">{highlights.map(x=><p className="rounded-xl border-l-4 border-violet-500 bg-violet-50 p-3 text-sm text-slate-700" key={x.case_id}>{x.summary}</p>)}</div> : <EmptyChart label="No strategic cases highlighted"/>}</article></section>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Metric coverage"><h2 className="text-lg font-semibold">Metric readiness</h2><p className="mb-4 text-sm text-slate-500">Unavailable measures are never presented as zero.</p><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{['activities','commercial','logistics','cycle_time'].map(key=>{const metric=data?.metrics?.[key]||{}; return <div key={key} className="rounded-xl border border-slate-100 p-3"><div className="flex items-center justify-between"><span className="text-sm font-semibold">{pretty(key)}</span><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${coverageTone[metric.coverage]||coverageTone.MISSING}`}>{(metric.coverage||'MISSING').replaceAll('_',' ')}</span></div><p className="mt-2 text-xs text-slate-500">{metric.warning||metric.reason||'Evidence is ready for reporting.'}</p></div>})}</div></section>
+    </>}
+  </main>;
 }

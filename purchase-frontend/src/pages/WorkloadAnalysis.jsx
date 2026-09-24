@@ -12,6 +12,9 @@ import {
   YAxis,
 } from "recharts";
 import usePageTranslation from "../utils/usePageTranslation";
+import { BookmarkPlus, Filter, RefreshCw, Save, Users } from "lucide-react";
+import AnalyticsPageHeader from "../components/analytics/AnalyticsPageHeader";
+import { AnalyticsError, AnalyticsLoading, EmptyChart } from "../components/analytics/AnalyticsStates";
 
 const StatCard = ({ label, value, tone = "slate" }) => {
   const toneMap = {
@@ -52,6 +55,7 @@ const WorkloadAnalysis = () => {
     return { ...DEFAULT_FILTERS, ...globalDefaults };
   });
   const [viewName, setViewName] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,41 +74,27 @@ const WorkloadAnalysis = () => {
       }
     };
     fetchData();
-  }, [translate, filters]);
+  }, [translate, filters, refreshKey]);
 
   const topUsers = useMemo(() => {
     if (!data?.workload_by_user) return [];
     return data.workload_by_user.slice(0, 5);
   }, [data]);
 
-  if (loading) return <p className="p-6">Loading workload analysis...</p>;
-  if (error) return <p className="p-6 text-red-600">{error}</p>;
-  if (!data) return null;
-
   return (
-    <>
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="flex items-center justify-between gap-4 mb-6">
-
-          <div className="flex items-center gap-2 text-xs">
-            <input className="border rounded px-2 py-1" value={filters.pendingStatuses.join(", ")} onChange={(e) => setFilters((f) => ({ ...f, pendingStatuses: e.target.value.split(",").map((v) => v.trim()).filter(Boolean) }))} placeholder="Pending statuses" />
-            <input className="border rounded px-2 py-1" value={filters.approvedStatus} onChange={(e) => setFilters((f) => ({ ...f, approvedStatus: e.target.value }))} placeholder="Approved status" />
-            <input className="border rounded px-2 py-1 w-20" type="number" min="1" max="365" value={filters.completionWindowDays} onChange={(e) => setFilters((f) => ({ ...f, completionWindowDays: Number(e.target.value) || 30 }))} />
-            <button className="border rounded px-2 py-1" onClick={() => localStorage.setItem(GLOBAL_KEY, JSON.stringify(filters))}>Save defaults</button>
-            <input className="border rounded px-2 py-1" value={viewName} onChange={(e)=>setViewName(e.target.value)} placeholder="View name" />
-            <button className="border rounded px-2 py-1" onClick={() => { const key = viewsKeyForUser(userId); const views = JSON.parse(localStorage.getItem(key) || '{}'); views[viewName || `view-${Date.now()}`] = filters; localStorage.setItem(key, JSON.stringify(views)); }}>Save view</button>
-          </div>
-
-          <div>
-            <p className="text-sm text-slate-500">{translate("subtitle", { defaultValue: "Monitor approval queues" })}</p>
-            <h1 className="text-2xl font-bold text-indigo-700">
-              {translate("title", { defaultValue: "Approval Workload" })}
-            </h1>
-          </div>
-          <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-800">
-            {translate("permissionTag", { defaultValue: "Requires dashboard.view" })}
-          </span>
+    <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
+      <AnalyticsPageHeader eyebrow="Team capacity" title={translate("title", { defaultValue: "Approval Workload" })} description={translate("subtitle", { defaultValue: "Monitor queues, aging, urgency, and completion velocity across approval teams." })} icon={Users} meta={[translate("permissionTag", { defaultValue: "Requires dashboard.view" }), `${filters.completionWindowDays}-day completion window`]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4"/> Refresh</button>}/>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Workload filters">
+        <div className="mb-4 flex items-center gap-2"><Filter className="h-4 w-4 text-blue-600"/><h2 className="font-semibold text-slate-900">Analysis filters</h2></div>
+        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+          <label className="text-xs font-semibold text-slate-600 xl:col-span-2">Pending statuses<input aria-label="Pending statuses" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" value={filters.pendingStatuses.join(", ")} onChange={(e) => setFilters((f) => ({ ...f, pendingStatuses: e.target.value.split(",").map((v) => v.trim()).filter(Boolean) }))} /></label>
+          <label className="text-xs font-semibold text-slate-600">Approved status<input aria-label="Approved status" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" value={filters.approvedStatus} onChange={(e) => setFilters((f) => ({ ...f, approvedStatus: e.target.value }))} /></label>
+          <label className="text-xs font-semibold text-slate-600">Window (days)<input aria-label="Completion window" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" type="number" min="1" max="365" value={filters.completionWindowDays} onChange={(e) => setFilters((f) => ({ ...f, completionWindowDays: Number(e.target.value) || 30 }))} /></label>
+          <button type="button" className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={() => localStorage.setItem(GLOBAL_KEY, JSON.stringify(filters))}><Save className="h-4 w-4"/> Save defaults</button>
+          <div className="flex gap-2 xl:col-span-2"><label className="flex-1 text-xs font-semibold text-slate-600">View name<input aria-label="View name" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" value={viewName} onChange={(e)=>setViewName(e.target.value)} placeholder="e.g. Weekly review" /></label><button aria-label="Save view" type="button" className="mt-5 inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-3 text-white hover:bg-blue-700" onClick={() => { const key = viewsKeyForUser(userId); const views = JSON.parse(localStorage.getItem(key) || '{}'); views[viewName || `view-${Date.now()}`] = filters; localStorage.setItem(key, JSON.stringify(views)); }}><BookmarkPlus className="h-4 w-4"/></button></div>
         </div>
+      </section>
+      {error ? <AnalyticsError message={error} onRetry={()=>setRefreshKey(x=>x+1)}/> : loading || !data ? <AnalyticsLoading label="Calculating team workload…"/> : <div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard
@@ -138,7 +128,7 @@ const WorkloadAnalysis = () => {
                 {translate("averageAgeLabel", { defaultValue: "Avg age shown in tooltip" })}
               </span>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
+            {data.workload_by_level?.length ? <ResponsiveContainer width="100%" height={280}>
               <BarChart data={data.workload_by_level}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="approval_level" label={{ value: translate("level", { defaultValue: "Level" }), position: "insideBottom", offset: -5 }} />
@@ -151,7 +141,7 @@ const WorkloadAnalysis = () => {
                 <Bar dataKey="pending_count" fill="#6366F1" name={translate("pending", { defaultValue: "Pending" })} />
                 <Bar dataKey="urgent_count" fill="#F43F5E" name={translate("urgent", { defaultValue: "Urgent" })} />
               </BarChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer> : <EmptyChart label="No approval-level backlog"/>}
           </div>
 
           <div className="rounded-lg border bg-white p-4 shadow-sm">
@@ -179,7 +169,7 @@ const WorkloadAnalysis = () => {
               </BarChart>
             </ResponsiveContainer>
             <div className="mt-3 space-y-2">
-              {data.backlog_by_department.slice(0, 5).map((dept) => (
+              {(data.backlog_by_department || []).slice(0, 5).map((dept) => (
                 <div
                   key={dept.department}
                   className="flex items-center justify-between rounded border border-slate-100 px-3 py-2 text-sm"
@@ -236,7 +226,7 @@ const WorkloadAnalysis = () => {
                 {translate("recentWindow", { defaultValue: "Past 30 days" })}
               </span>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
+            {data.completions_trend?.length ? <ResponsiveContainer width="100%" height={280}>
               <LineChart data={data.completions_trend}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="day" hide />
@@ -251,11 +241,11 @@ const WorkloadAnalysis = () => {
                   name={translate("approvalsCompleted", { defaultValue: "Approvals completed" })}
                 />
               </LineChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer> : <EmptyChart label="No completions in this window"/>}
           </div>
         </div>
-      </div>
-    </>
+      </div>}
+    </main>
   );
 };
 
