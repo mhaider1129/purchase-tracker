@@ -7,6 +7,14 @@ import {
 } from "../api/technicalInspections";
 import { getRequestDetails } from "../api/requests";
 import { useLocation } from "react-router-dom";
+import {
+  CheckCircle2,
+  ClipboardCheck,
+  Clock3,
+  Search,
+  ShieldAlert,
+  XCircle,
+} from "lucide-react";
 
 const CONDITION_OPTIONS = [
   { value: "excellent", label: "Excellent" },
@@ -50,10 +58,51 @@ const CATEGORY_OPTIONS = [
 ];
 
 const ACCEPTANCE_STATUS_OPTIONS = [
-  { value: "pending", label: "Pending acceptance" },
-  { value: "passed", label: "✅ Accepted" },
-  { value: "failed", label: "❌ Rejected" },
+  {
+    value: "pending",
+    label: "Pending",
+    description: "Save for review",
+    icon: Clock3,
+  },
+  {
+    value: "passed",
+    label: "Accepted",
+    description: "Meets requirements",
+    icon: CheckCircle2,
+  },
+  {
+    value: "failed",
+    label: "Rejected",
+    description: "Action is required",
+    icon: XCircle,
+  },
 ];
+
+export const getChecklistProgress = (form) => {
+  const entries = [
+    ...(form?.general_checklist || []),
+    ...(form?.category_checklist || []),
+  ];
+  const completed = entries.filter((entry) => Boolean(entry.condition)).length;
+  return {
+    completed,
+    total: entries.length,
+    percentage: entries.length
+      ? Math.round((completed / entries.length) * 100)
+      : 0,
+  };
+};
+
+export const getInspectionMetrics = (records = []) =>
+  records.reduce(
+    (metrics, record) => {
+      const status = record?.acceptance_status || "pending";
+      metrics.total += 1;
+      metrics[status] = (metrics[status] || 0) + 1;
+      return metrics;
+    },
+    { total: 0, pending: 0, passed: 0, failed: 0 },
+  );
 
 const buildChecklistState = (items) =>
   items.map((item) => ({
@@ -128,6 +177,7 @@ const TechnicalInspectionsPage = () => {
     start_date: "",
     end_date: "",
     category: "",
+    acceptance_status: "",
   });
   const [searchInput, setSearchInput] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -326,7 +376,9 @@ const TechnicalInspectionsPage = () => {
         recommended_actions: inspection.summary?.recommended_actions || "",
         additional_comments: inspection.summary?.additional_comments || "",
       },
-      inspectors: Array.isArray(inspection.inspectors) ? inspection.inspectors : [],
+      inspectors: Array.isArray(inspection.inspectors)
+        ? inspection.inspectors
+        : [],
       approvals:
         inspection.approvals && typeof inspection.approvals === "object"
           ? inspection.approvals
@@ -369,6 +421,52 @@ const TechnicalInspectionsPage = () => {
     return tally;
   }, [inspections]);
 
+  const inspectionMetrics = useMemo(
+    () => getInspectionMetrics(inspections),
+    [inspections],
+  );
+  const checklistProgress = useMemo(
+    () => getChecklistProgress(formState),
+    [formState],
+  );
+
+  const metricCards = [
+    {
+      label: "Inspections",
+      value: inspectionMetrics.total,
+      icon: ClipboardCheck,
+      tone: "indigo",
+    },
+    {
+      label: "Pending",
+      value: inspectionMetrics.pending,
+      icon: Clock3,
+      tone: "amber",
+    },
+    {
+      label: "Accepted",
+      value: inspectionMetrics.passed,
+      icon: CheckCircle2,
+      tone: "emerald",
+    },
+    {
+      label: "Rejected",
+      value: inspectionMetrics.failed,
+      icon: ShieldAlert,
+      tone: "rose",
+    },
+  ];
+
+  const metricTone = {
+    indigo:
+      "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200",
+    amber:
+      "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-200",
+    emerald:
+      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200",
+    rose: "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-200",
+  };
+
   return (
     <div>
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -383,8 +481,9 @@ const TechnicalInspectionsPage = () => {
                   Technical Inspections
                 </h1>
                 <p className="mt-1 max-w-3xl text-sm text-gray-600 dark:text-gray-300">
-                  Capture inspection details digitally, including item condition,
-                  category-specific checks, and required follow-up actions.
+                  Capture inspection details digitally, including item
+                  condition, category-specific checks, and required follow-up
+                  actions.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3 text-sm">
@@ -394,7 +493,10 @@ const TechnicalInspectionsPage = () => {
                       key={condition}
                       className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 font-medium text-indigo-700 shadow-sm dark:bg-indigo-900/40 dark:text-indigo-200"
                     >
-                      <span className="h-2 w-2 rounded-full bg-indigo-500" aria-hidden />
+                      <span
+                        className="h-2 w-2 rounded-full bg-indigo-500"
+                        aria-hidden
+                      />
                       {condition.replace("_", " ") || "Unspecified"}
                       <span className="text-xs text-gray-500 dark:text-gray-300">
                         ({count})
@@ -420,20 +522,50 @@ const TechnicalInspectionsPage = () => {
             )}
           </header>
 
+          <section
+            aria-label="Inspection overview"
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {metricCards.map(({ label, value, icon: Icon, tone }) => (
+              <div
+                key={label}
+                className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white/90 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800/80"
+              >
+                <span className={`rounded-xl p-3 ${metricTone[tone]}`}>
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-2xl font-bold text-gray-950 dark:text-white">
+                    {value}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">
+                    {label}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </section>
+
           <section className="rounded-xl bg-white/80 p-6 shadow-sm backdrop-blur dark:bg-gray-800/70">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
                     Search
                   </label>
-                  <input
-                    type="text"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    placeholder="Item, supplier, or location"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                  />
+                  <div className="relative">
+                    <Search
+                      className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400"
+                      aria-hidden="true"
+                    />
+                    <input
+                      type="search"
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      placeholder="Item, supplier, or location"
+                      className="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                    />
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -443,7 +575,10 @@ const TechnicalInspectionsPage = () => {
                     type="date"
                     value={filters.start_date}
                     onChange={(e) =>
-                      setFilters((prev) => ({ ...prev, start_date: e.target.value }))
+                      setFilters((prev) => ({
+                        ...prev,
+                        start_date: e.target.value,
+                      }))
                     }
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   />
@@ -456,7 +591,10 @@ const TechnicalInspectionsPage = () => {
                     type="date"
                     value={filters.end_date}
                     onChange={(e) =>
-                      setFilters((prev) => ({ ...prev, end_date: e.target.value }))
+                      setFilters((prev) => ({
+                        ...prev,
+                        end_date: e.target.value,
+                      }))
                     }
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   />
@@ -468,7 +606,10 @@ const TechnicalInspectionsPage = () => {
                   <select
                     value={filters.category}
                     onChange={(e) =>
-                      setFilters((prev) => ({ ...prev, category: e.target.value }))
+                      setFilters((prev) => ({
+                        ...prev,
+                        category: e.target.value,
+                      }))
                     }
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   >
@@ -478,6 +619,26 @@ const TechnicalInspectionsPage = () => {
                         {option}
                       </option>
                     ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Decision
+                  </label>
+                  <select
+                    value={filters.acceptance_status}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        acceptance_status: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                  >
+                    <option value="">All decisions</option>
+                    <option value="pending">Pending</option>
+                    <option value="passed">Accepted</option>
+                    <option value="failed">Rejected</option>
                   </select>
                 </div>
               </div>
@@ -496,9 +657,27 @@ const TechnicalInspectionsPage = () => {
               {editingId ? "Edit inspection" : "New inspection"}
             </h2>
             <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
-              Fill in the general information, item details, and checklist items.
-              Conditions use the same scale as the legacy paper form.
+              Fill in the general information, item details, and checklist
+              items. Conditions use the same scale as the legacy paper form.
             </p>
+
+            <div className="mb-6 rounded-lg border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900 dark:bg-indigo-950/30">
+              <div className="flex items-center justify-between gap-4 text-sm">
+                <span className="font-semibold text-gray-800 dark:text-gray-100">
+                  Checklist completion
+                </span>
+                <span className="font-medium text-indigo-700 dark:text-indigo-200">
+                  {checklistProgress.completed} of {checklistProgress.total}{" "}
+                  checks · {checklistProgress.percentage}%
+                </span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-indigo-100 dark:bg-gray-700">
+                <div
+                  className="h-full rounded-full bg-indigo-600 transition-all duration-300"
+                  style={{ width: `${checklistProgress.percentage}%` }}
+                />
+              </div>
+            </div>
 
             <form className="space-y-8" onSubmit={handleSubmit}>
               <div className="grid gap-6 lg:grid-cols-2">
@@ -514,7 +693,9 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="date"
                         value={formState.inspection_date}
-                        onChange={(e) => handleFieldChange("inspection_date", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("inspection_date", e.target.value)
+                        }
                         required
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
@@ -526,7 +707,9 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="text"
                         value={formState.location}
-                        onChange={(e) => handleFieldChange("location", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("location", e.target.value)
+                        }
                         placeholder="Clinic, ward, or warehouse"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
@@ -541,12 +724,15 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="number"
                         value={formState.request_id}
-                        onChange={(e) => handleFieldChange("request_id", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("request_id", e.target.value)
+                        }
                         placeholder="Enter purchase request ID"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
                       <span className="text-xs text-gray-500 dark:text-gray-300">
-                        Required so the request status reflects inspection progress.
+                        Required so the request status reflects inspection
+                        progress.
                       </span>
                     </label>
 
@@ -557,7 +743,9 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="number"
                         value={formState.requested_item_id}
-                        onChange={(e) => handleFieldChange("requested_item_id", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("requested_item_id", e.target.value)
+                        }
                         placeholder="Item row ID"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
@@ -565,7 +753,6 @@ const TechnicalInspectionsPage = () => {
                         Add when the inspection only applies to one item line.
                       </span>
                     </label>
-
                   </div>
 
                   <label className="flex flex-col gap-1 text-sm">
@@ -574,7 +761,9 @@ const TechnicalInspectionsPage = () => {
                     </span>
                     <textarea
                       value={formState.acceptance_notes}
-                      onChange={(e) => handleFieldChange("acceptance_notes", e.target.value)}
+                      onChange={(e) =>
+                        handleFieldChange("acceptance_notes", e.target.value)
+                      }
                       placeholder="Notes visible in the linked purchase log"
                       className="min-h-[70px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                     />
@@ -587,7 +776,9 @@ const TechnicalInspectionsPage = () => {
                           Linked purchase request
                         </p>
                         <p className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-                          {formState.request_id ? `Request #${formState.request_id}` : "No request selected"}
+                          {formState.request_id
+                            ? `Request #${formState.request_id}`
+                            : "No request selected"}
                         </p>
                       </div>
                       <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-indigo-700 shadow-sm dark:bg-indigo-800/70 dark:text-indigo-100">
@@ -603,20 +794,25 @@ const TechnicalInspectionsPage = () => {
 
                     {linkedRequest.status === "error" && (
                       <p className="mt-2 text-sm text-red-700 dark:text-red-200">
-                        {linkedRequest.error || "Could not load request details."}
+                        {linkedRequest.error ||
+                          "Could not load request details."}
                       </p>
                     )}
 
-                    {linkedRequest.status === "idle" && !formState.request_id && (
-                      <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-                        Enter a request ID to preview the requester, items, and status before saving the inspection.
-                      </p>
-                    )}
+                    {linkedRequest.status === "idle" &&
+                      !formState.request_id && (
+                        <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+                          Enter a request ID to preview the requester, items,
+                          and status before saving the inspection.
+                        </p>
+                      )}
 
                     {linkedRequest.data?.request && (
                       <div className="mt-3 grid gap-3 sm:grid-cols-3">
                         <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">Type</p>
+                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
+                            Type
+                          </p>
                           <p className="font-medium text-gray-900 dark:text-gray-50">
                             {linkedRequest.data.request.request_type || ""}
                           </p>
@@ -625,20 +821,29 @@ const TechnicalInspectionsPage = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">Requester</p>
+                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
+                            Requester
+                          </p>
                           <p className="font-medium text-gray-900 dark:text-gray-50">
-                            {linkedRequest.data.request.requester_name || linkedRequest.data.request.temporary_requester_name || ""}
+                            {linkedRequest.data.request.requester_name ||
+                              linkedRequest.data.request
+                                .temporary_requester_name ||
+                              ""}
                           </p>
                           {linkedRequest.data.request.department_id && (
                             <p className="text-xs text-gray-600 dark:text-gray-300">
-                              Dept ID: {linkedRequest.data.request.department_id}
+                              Dept ID:{" "}
+                              {linkedRequest.data.request.department_id}
                             </p>
                           )}
                         </div>
                         <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">Items</p>
+                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
+                            Items
+                          </p>
                           <p className="font-medium text-gray-900 dark:text-gray-50">
-                            {linkedRequest.data.items?.length || 0} line{linkedRequest.data.items?.length === 1 ? "" : "s"}
+                            {linkedRequest.data.items?.length || 0} line
+                            {linkedRequest.data.items?.length === 1 ? "" : "s"}
                           </p>
                           {linkedRequest.data.items?.length > 0 && (
                             <p className="text-xs text-gray-600 dark:text-gray-300">
@@ -653,10 +858,36 @@ const TechnicalInspectionsPage = () => {
                         </div>
                       </div>
                     )}
+                    {linkedRequest.data?.items?.length > 0 && (
+                      <div className="mt-4 border-t border-indigo-200 pt-3 dark:border-indigo-800">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-200">
+                          Select an item to inspect
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {linkedRequest.data.items.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() =>
+                                setFormState((prev) => ({
+                                  ...prev,
+                                  requested_item_id: String(item.id),
+                                  item_name: item.item_name || prev.item_name,
+                                }))
+                              }
+                              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${String(formState.requested_item_id) === String(item.id) ? "border-indigo-600 bg-indigo-600 text-white" : "border-indigo-200 bg-white text-indigo-700 hover:border-indigo-400 dark:border-indigo-700 dark:bg-gray-900 dark:text-indigo-200"}`}
+                            >
+                              {item.item_name || `Item #${item.id}`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-100">
-                    Inspector identities are managed by the inspection assignment workflow and are not editable in this form.
+                    Inspector identities are managed by the inspection
+                    assignment workflow and are not editable in this form.
                   </div>
                 </div>
 
@@ -672,7 +903,9 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="text"
                         value={formState.item_name}
-                        onChange={(e) => handleFieldChange("item_name", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("item_name", e.target.value)
+                        }
                         required
                         placeholder="Item name"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
@@ -684,7 +917,9 @@ const TechnicalInspectionsPage = () => {
                       </span>
                       <select
                         value={formState.item_category}
-                        onChange={(e) => handleFieldChange("item_category", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("item_category", e.target.value)
+                        }
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       >
                         <option value="">Select category</option>
@@ -704,7 +939,9 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="text"
                         value={formState.model_number}
-                        onChange={(e) => handleFieldChange("model_number", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("model_number", e.target.value)
+                        }
                         placeholder="Model or catalogue number"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
@@ -716,7 +953,9 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="text"
                         value={formState.serial_number}
-                        onChange={(e) => handleFieldChange("serial_number", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("serial_number", e.target.value)
+                        }
                         placeholder="Serial or batch number"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
@@ -724,21 +963,29 @@ const TechnicalInspectionsPage = () => {
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">Lot number</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">
+                        Lot number
+                      </span>
                       <input
                         type="text"
                         value={formState.lot_number}
-                        onChange={(e) => handleFieldChange("lot_number", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("lot_number", e.target.value)
+                        }
                         placeholder="Lot number (if applicable)"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
                     </label>
                     <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">Manufacturer</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">
+                        Manufacturer
+                      </span>
                       <input
                         type="text"
                         value={formState.manufacturer}
-                        onChange={(e) => handleFieldChange("manufacturer", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("manufacturer", e.target.value)
+                        }
                         placeholder="Manufacturer"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
@@ -752,7 +999,9 @@ const TechnicalInspectionsPage = () => {
                       <input
                         type="text"
                         value={formState.supplier_name}
-                        onChange={(e) => handleFieldChange("supplier_name", e.target.value)}
+                        onChange={(e) =>
+                          handleFieldChange("supplier_name", e.target.value)
+                        }
                         placeholder="Supplier"
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
@@ -919,7 +1168,12 @@ const TechnicalInspectionsPage = () => {
                       </span>
                       <select
                         value={formState.summary.overall_condition}
-                        onChange={(e) => handleSummaryChange("overall_condition", e.target.value)}
+                        onChange={(e) =>
+                          handleSummaryChange(
+                            "overall_condition",
+                            e.target.value,
+                          )
+                        }
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       >
                         <option value="">Select condition</option>
@@ -936,7 +1190,12 @@ const TechnicalInspectionsPage = () => {
                       </span>
                       <textarea
                         value={formState.summary.immediate_actions}
-                        onChange={(e) => handleSummaryChange("immediate_actions", e.target.value)}
+                        onChange={(e) =>
+                          handleSummaryChange(
+                            "immediate_actions",
+                            e.target.value,
+                          )
+                        }
                         className="min-h-[100px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                         placeholder="List urgent follow-up actions"
                       />
@@ -947,7 +1206,12 @@ const TechnicalInspectionsPage = () => {
                       </span>
                       <textarea
                         value={formState.summary.recommended_actions}
-                        onChange={(e) => handleSummaryChange("recommended_actions", e.target.value)}
+                        onChange={(e) =>
+                          handleSummaryChange(
+                            "recommended_actions",
+                            e.target.value,
+                          )
+                        }
                         className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                         placeholder="Preventive maintenance, calibration, or escalation"
                       />
@@ -958,7 +1222,12 @@ const TechnicalInspectionsPage = () => {
                       </span>
                       <textarea
                         value={formState.summary.additional_comments}
-                        onChange={(e) => handleSummaryChange("additional_comments", e.target.value)}
+                        onChange={(e) =>
+                          handleSummaryChange(
+                            "additional_comments",
+                            e.target.value,
+                          )
+                        }
                         className="min-h-[60px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                         placeholder="Notes, risks, or attachments referenced"
                       />
@@ -973,18 +1242,23 @@ const TechnicalInspectionsPage = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-300">
                     Select one overall decision for this inspected item.
                   </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {ACCEPTANCE_STATUS_OPTIONS.filter((option) => option.value !== "pending").map((option) => {
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {ACCEPTANCE_STATUS_OPTIONS.map((option) => {
                       const isAccepted = option.value === "passed";
-                      const selected = formState.acceptance_status === option.value;
+                      const isPending = option.value === "pending";
+                      const selected =
+                        formState.acceptance_status === option.value;
+                      const Icon = option.icon;
                       return (
                         <label
                           key={option.value}
                           className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 text-sm font-medium shadow-sm transition ${
                             selected
-                              ? isAccepted
-                                ? "border-green-500 bg-green-50 text-green-800 dark:border-green-400 dark:bg-green-900/40 dark:text-green-100"
-                                : "border-red-500 bg-red-50 text-red-800 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100"
+                              ? isPending
+                                ? "border-amber-500 bg-amber-50 text-amber-800 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100"
+                                : isAccepted
+                                  ? "border-green-500 bg-green-50 text-green-800 dark:border-green-400 dark:bg-green-900/40 dark:text-green-100"
+                                  : "border-red-500 bg-red-50 text-red-800 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100"
                               : "border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                           }`}
                         >
@@ -993,9 +1267,23 @@ const TechnicalInspectionsPage = () => {
                             name="final-acceptance"
                             value={option.value}
                             checked={selected}
-                            onChange={(e) => handleFieldChange("acceptance_status", e.target.value)}
+                            onChange={(e) =>
+                              handleFieldChange(
+                                "acceptance_status",
+                                e.target.value,
+                              )
+                            }
                           />
-                          <span>{option.label}</span>
+                          <Icon
+                            className="h-5 w-5 shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span>
+                            <span className="block">{option.label}</span>
+                            <span className="block text-xs font-normal opacity-75">
+                              {option.description}
+                            </span>
+                          </span>
                         </label>
                       );
                     })}
@@ -1005,8 +1293,8 @@ const TechnicalInspectionsPage = () => {
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-gray-600 dark:text-gray-300">
-                  All required fields mirror the paper form. Use the checklists to
-                  capture specific findings and any follow-up.
+                  All required fields mirror the paper form. Use the checklists
+                  to capture specific findings and any follow-up.
                 </div>
                 <div className="flex gap-3">
                   {editingId && (
@@ -1023,7 +1311,11 @@ const TechnicalInspectionsPage = () => {
                     disabled={submitting}
                     className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70"
                   >
-                    {submitting ? "Saving..." : editingId ? "Update inspection" : "Save inspection"}
+                    {submitting
+                      ? "Saving..."
+                      : editingId
+                        ? "Update inspection"
+                        : "Save inspection"}
                   </button>
                 </div>
               </div>
@@ -1076,19 +1368,28 @@ const TechnicalInspectionsPage = () => {
                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
+                      <td
+                        colSpan={9}
+                        className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300"
+                      >
                         Loading inspections...
                       </td>
                     </tr>
                   ) : inspections.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300">
+                      <td
+                        colSpan={9}
+                        className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300"
+                      >
                         No inspections found for the selected filters.
                       </td>
                     </tr>
                   ) : (
                     inspections.map((inspection) => (
-                      <tr key={inspection.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <tr
+                        key={inspection.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
                         <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
                           {inspection.inspection_date || "-"}
                         </td>
@@ -1127,7 +1428,10 @@ const TechnicalInspectionsPage = () => {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
                           {inspection.summary?.overall_condition
-                            ? inspection.summary.overall_condition.replace("_", " ")
+                            ? inspection.summary.overall_condition.replace(
+                                "_",
+                                " ",
+                              )
                             : "-"}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
