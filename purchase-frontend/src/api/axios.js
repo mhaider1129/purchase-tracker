@@ -87,6 +87,27 @@ const getRequestPath = (config = {}) => String(config.url || "");
 // that the API is mounted at another base URL. Retrying these responses against
 // the frontend (or another configured fallback) can turn a harmless "not found"
 // into a 401 and incorrectly clear the user's session.
+const definitiveAuthenticationErrorCodes = new Set([
+  "INVALID_TOKEN",
+  "INVALID_TOKEN_SUBJECT",
+  "USER_NOT_FOUND",
+  "USER_INACTIVE",
+]);
+
+// Only the authentication service can authoritatively end the browser session.
+// Reverse proxies and alternate API mounts sometimes answer protected feature
+// URLs with a generic 401; treating every such response as an expired token
+// makes a simple navigation look like a logout.
+export const isDefinitiveAuthenticationFailure = (error) => {
+  if (error?.response?.status !== 401) return false;
+
+  const code = String(error.response.data?.code || "").toUpperCase();
+  if (definitiveAuthenticationErrorCodes.has(code)) return true;
+
+  const path = getRequestPath(error.config).replace(/^\/?api\//i, "");
+  return /^\/?auth\/me(?:\?|$)/i.test(path);
+};
+
 export const isApplicationNotFound = (error) => {
   if (error?.response?.status !== 404) return false;
 
@@ -207,8 +228,8 @@ api.interceptors.response.use(
     const shouldTryApiFallback =
       [502, 503, 504].includes(status) ||
       (isSafeRequest &&
-        status === 404 &&
-        !isApplicationNotFound(error) &&
+        ((status === 404 && !isApplicationNotFound(error)) ||
+          (status === 401 && !isDefinitiveAuthenticationFailure(error))) &&
         !/^\/?attachments\//.test(config.url || ""));
 
     if (shouldTryApiFallback && typeof config.url === "string") {
@@ -227,7 +248,7 @@ api.interceptors.response.use(
       }
     }
 
-    if (status === 401) {
+    if (isDefinitiveAuthenticationFailure(error)) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
