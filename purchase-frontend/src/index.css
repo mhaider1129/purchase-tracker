@@ -252,6 +252,60 @@
   }
 }
 
+/*
+ * Some of the older workspaces predate the shared theme tokens and still use
+ * light-only Tailwind utility classes. Keep those pages usable in dark mode
+ * while they are migrated to the token components. Explicit `dark:` styles
+ * always win because they are excluded from this compatibility layer.
+ */
+@layer utilities {
+  .dark .app-main :where([class~="bg-white"]):not([class*="dark:bg-"]),
+  .dark .app-main :where([class*="bg-gray-50"]):not([class*="dark:bg-"]),
+  .dark .app-main :where([class*="bg-slate-50"]):not([class*="dark:bg-"]) {
+    background-color: var(--color-bg-surface);
+  }
+
+  .dark .app-main :where([class~="bg-gray-100"]):not([class*="dark:bg-"]),
+  .dark .app-main :where([class~="bg-slate-100"]):not([class*="dark:bg-"]) {
+    background-color: var(--color-bg-subtle);
+  }
+
+  .dark
+    .app-main
+    :where(
+      [class~="text-gray-900"],
+      [class~="text-gray-800"],
+      [class~="text-slate-900"],
+      [class~="text-slate-800"]
+    ):not([class*="dark:text-"]) {
+    color: var(--color-text-primary);
+  }
+
+  .dark
+    .app-main
+    :where(
+      [class~="text-gray-700"],
+      [class~="text-gray-600"],
+      [class~="text-gray-500"],
+      [class~="text-slate-700"],
+      [class~="text-slate-600"],
+      [class~="text-slate-500"]
+    ):not([class*="dark:text-"]) {
+    color: var(--color-text-muted);
+  }
+
+  .dark
+    .app-main
+    :where(
+      [class~="border-gray-200"],
+      [class~="border-gray-300"],
+      [class~="border-slate-200"],
+      [class~="border-slate-300"]
+    ):not([class*="dark:border-"]) {
+    border-color: var(--color-border-default);
+  }
+}
+
 @keyframes page-enter {
   from {
     opacity: 0;
@@ -477,6 +531,44 @@
 .org-table tbody tr:hover {
   background: #f2faf8;
 }
+.dark .org-page {
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+.dark .org-page header p,
+.dark .org-node small,
+.dark .org-workspace dt {
+  color: var(--color-text-muted);
+}
+.dark .org-page button,
+.dark .org-toolbar,
+.dark .org-workspace,
+.dark .org-modal,
+.dark .org-health {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border-default);
+  color: var(--color-text-primary);
+}
+.dark .org-canvas {
+  background-image: radial-gradient(#334155 1px, transparent 1px);
+}
+.dark .org-toolbar label,
+.dark .org-workspace aside,
+.dark .org-table th,
+.dark .org-table td,
+.dark .org-field input,
+.dark .org-field select {
+  border-color: var(--color-border-default);
+}
+.dark .org-toolbar input,
+.dark .org-field input,
+.dark .org-field select {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+}
+.dark .org-table tbody tr:hover {
+  background: var(--color-bg-subtle);
+}
 @media (max-width: 800px) {
   .org-page {
     padding: 1rem;
@@ -489,6 +581,9 @@
     right: 0;
     height: 100%;
     background: white;
+  }
+  .dark .org-workspace aside {
+    background: var(--color-bg-surface);
   }
   .org-node {
     width: 150px !important;
