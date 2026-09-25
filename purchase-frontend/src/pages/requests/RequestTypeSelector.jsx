@@ -1,8 +1,8 @@
 // src/pages/requests/RequestTypeSelector.jsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import GuidedWorkflowPanel from '../../components/GuidedWorkflowPanel';
-import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import GuidedWorkflowPanel from "../../components/GuidedWorkflowPanel";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import {
   Boxes,
   ClipboardCheck,
@@ -25,245 +25,291 @@ import {
   Users,
   Wrench,
   X,
-} from 'lucide-react';
-import { fetchCurrentUser } from '../../api/currentUser';
-import { HelpTooltip } from '../../components/ui/HelpTooltip';
+} from "lucide-react";
+import { fetchCurrentUser } from "../../api/currentUser";
+import { HelpTooltip } from "../../components/ui/HelpTooltip";
 
 const BASE_BUTTON_STYLE =
-  'block w-full rounded-xl px-4 py-3 text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm';
-const FAVORITES_STORAGE_KEY = 'request-type-selector-favorites';
+  "block w-full rounded-xl px-4 py-3 text-white font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-sm";
+const FAVORITES_STORAGE_KEY = "request-type-selector-favorites";
 const hasWarehouseAssignment = (value) => {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0;
 };
 const ACTION_GROUPS = [
   {
-    titleKey: 'requestTypeSelector.groups.warehouse.title',
-    descriptionKey: 'requestTypeSelector.groups.warehouse.description',
+    titleKey: "requestTypeSelector.groups.warehouse.title",
+    descriptionKey: "requestTypeSelector.groups.warehouse.description",
     actions: [
       {
-        labelKey: 'requestTypeSelector.actions.stockRequest.label',
-        ariaLabelKey: 'requestTypeSelector.actions.stockRequest.aria',
-        descriptionKey: 'requestTypeSelector.actions.stockRequest.description',
-        path: '/requests/stock',
+        labelKey: "requestTypeSelector.actions.stockRequest.label",
+        ariaLabelKey: "requestTypeSelector.actions.stockRequest.aria",
+        descriptionKey: "requestTypeSelector.actions.stockRequest.description",
+        path: "/requests/stock",
         predicate: ({ warehouse_id }) => hasWarehouseAssignment(warehouse_id),
-        buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
+        buttonClassName: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-400",
         icon: Package,
         featured: true,
       },
       {
-        labelKey: 'requestTypeSelector.actions.newStockItem.label',
-        ariaLabelKey: 'requestTypeSelector.actions.newStockItem.aria',
-        descriptionKey: 'requestTypeSelector.actions.newStockItem.description',
-        path: '/requests/stock-item',
-        roles: ['warehousemanager', 'warehouse_manager'],
-        buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
+        labelKey: "requestTypeSelector.actions.newStockItem.label",
+        ariaLabelKey: "requestTypeSelector.actions.newStockItem.aria",
+        descriptionKey: "requestTypeSelector.actions.newStockItem.description",
+        path: "/requests/stock-item",
+        roles: ["warehousemanager", "warehouse_manager"],
+        buttonClassName: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-400",
         icon: ClipboardPlus,
       },
       {
-        labelKey: 'requestTypeSelector.actions.warehouseTemplates.label',
-        ariaLabelKey: 'requestTypeSelector.actions.warehouseTemplates.aria',
-        descriptionKey: 'requestTypeSelector.actions.warehouseTemplates.description',
-        path: '/warehouse-supply-templates',
-        roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
-        buttonClassName: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-400',
+        labelKey: "requestTypeSelector.actions.warehouseTemplates.label",
+        ariaLabelKey: "requestTypeSelector.actions.warehouseTemplates.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.warehouseTemplates.description",
+        path: "/warehouse-supply-templates",
+        roles: ["warehousemanager", "warehouse_manager", "warehouse_keeper"],
+        buttonClassName: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-400",
         icon: FileCog,
       },
       {
-        labelKey: 'requestTypeSelector.actions.issueCustody.label',
-        ariaLabelKey: 'requestTypeSelector.actions.issueCustody.aria',
-        descriptionKey: 'requestTypeSelector.actions.issueCustody.description',
-        path: '/custody/issue',
+        labelKey: "requestTypeSelector.actions.issueCustody.label",
+        ariaLabelKey: "requestTypeSelector.actions.issueCustody.aria",
+        descriptionKey: "requestTypeSelector.actions.issueCustody.description",
+        path: "/custody/issue",
         roles: [
-          'warehousemanager',
-          'warehouse_manager',
-          'warehousekeeper',
-          'warehouse_keeper',
-          'scm',
-          'admin',
+          "warehousemanager",
+          "warehouse_manager",
+          "warehousekeeper",
+          "warehouse_keeper",
+          "scm",
+          "admin",
         ],
-        buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
+        buttonClassName:
+          "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400",
         icon: ShieldCheck,
       },
       {
-        labelKey: 'requestTypeSelector.actions.issuedCustodies.label',
-        ariaLabelKey: 'requestTypeSelector.actions.issuedCustodies.aria',
-        descriptionKey: 'requestTypeSelector.actions.issuedCustodies.description',
-        path: '/custody/issued',
+        labelKey: "requestTypeSelector.actions.issuedCustodies.label",
+        ariaLabelKey: "requestTypeSelector.actions.issuedCustodies.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.issuedCustodies.description",
+        path: "/custody/issued",
         roles: [
-          'warehousemanager',
-          'warehouse_manager',
-          'warehousekeeper',
-          'warehouse_keeper',
-          'scm',
-          'admin',
+          "warehousemanager",
+          "warehouse_manager",
+          "warehousekeeper",
+          "warehouse_keeper",
+          "scm",
+          "admin",
         ],
-        buttonClassName: 'bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-300',
+        buttonClassName:
+          "bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-300",
         icon: ClipboardCheck,
       },
       {
-        labelKey: 'requestTypeSelector.actions.submittedSupply.label',
-        ariaLabelKey: 'requestTypeSelector.actions.submittedSupply.aria',
-        descriptionKey: 'requestTypeSelector.actions.submittedSupply.description',
-        path: '/warehouse-supply-requests',
-        roles: ['warehousemanager', 'warehouse_manager', 'warehouse_keeper'],
-        buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
+        labelKey: "requestTypeSelector.actions.submittedSupply.label",
+        ariaLabelKey: "requestTypeSelector.actions.submittedSupply.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.submittedSupply.description",
+        path: "/warehouse-supply-requests",
+        roles: ["warehousemanager", "warehouse_manager", "warehouse_keeper"],
+        buttonClassName: "bg-blue-500 hover:bg-blue-600 focus:ring-blue-300",
         icon: ClipboardList,
       },
       {
-        labelKey: 'requestTypeSelector.actions.itemRecalls.label',
-        ariaLabelKey: 'requestTypeSelector.actions.itemRecalls.aria',
-        descriptionKey: 'requestTypeSelector.actions.itemRecalls.description',
-        path: '/item-recalls',
-        buttonClassName: 'bg-amber-600 hover:bg-amber-700 focus:ring-amber-400',
+        labelKey: "requestTypeSelector.actions.itemRecalls.label",
+        ariaLabelKey: "requestTypeSelector.actions.itemRecalls.aria",
+        descriptionKey: "requestTypeSelector.actions.itemRecalls.description",
+        path: "/item-recalls",
+        buttonClassName: "bg-amber-600 hover:bg-amber-700 focus:ring-amber-400",
         icon: LifeBuoy,
       },
     ],
   },
   {
-    titleKey: 'requestTypeSelector.groups.create.title',
-    descriptionKey: 'requestTypeSelector.groups.create.description',
+    titleKey: "requestTypeSelector.groups.create.title",
+    descriptionKey: "requestTypeSelector.groups.create.description",
     actions: [
       {
-        labelKey: 'requestTypeSelector.actions.warehouseSupply.label',
-        ariaLabelKey: 'requestTypeSelector.actions.warehouseSupply.aria',
-        descriptionKey: 'requestTypeSelector.actions.warehouseSupply.description',
-        path: '/requests/warehouse-supply',
-        buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
+        labelKey: "requestTypeSelector.actions.warehouseSupply.label",
+        ariaLabelKey: "requestTypeSelector.actions.warehouseSupply.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.warehouseSupply.description",
+        path: "/requests/warehouse-supply",
+        buttonClassName: "bg-blue-500 hover:bg-blue-600 focus:ring-blue-300",
         icon: Boxes,
         featured: true,
       },
       {
-        labelKey: 'requestTypeSelector.actions.nonStock.label',
-        ariaLabelKey: 'requestTypeSelector.actions.nonStock.aria',
-        descriptionKey: 'requestTypeSelector.actions.nonStock.description',
-        path: '/requests/non-stock',
-        buttonClassName: 'bg-green-600 hover:bg-green-700 focus:ring-green-400',
+        labelKey: "requestTypeSelector.actions.nonStock.label",
+        ariaLabelKey: "requestTypeSelector.actions.nonStock.aria",
+        descriptionKey: "requestTypeSelector.actions.nonStock.description",
+        path: "/requests/non-stock",
+        buttonClassName: "bg-green-600 hover:bg-green-700 focus:ring-green-400",
         icon: FileBox,
         featured: true,
       },
       {
-        labelKey: 'requestTypeSelector.actions.medicalDevice.label',
-        ariaLabelKey: 'requestTypeSelector.actions.medicalDevice.aria',
-        descriptionKey: 'requestTypeSelector.actions.medicalDevice.description',
-        path: '/requests/medical-device',
-        buttonClassName: 'bg-purple-600 hover:bg-purple-700 focus:ring-purple-400',
+        labelKey: "requestTypeSelector.actions.medicalDevice.label",
+        ariaLabelKey: "requestTypeSelector.actions.medicalDevice.aria",
+        descriptionKey: "requestTypeSelector.actions.medicalDevice.description",
+        path: "/requests/medical-device",
+        buttonClassName:
+          "bg-purple-600 hover:bg-purple-700 focus:ring-purple-400",
         icon: Stethoscope,
       },
       {
-        labelKey: 'requestTypeSelector.actions.medication.label',
-        ariaLabelKey: 'requestTypeSelector.actions.medication.aria',
-        descriptionKey: 'requestTypeSelector.actions.medication.description',
-        path: '/requests/medication',
-        buttonClassName: 'bg-pink-600 hover:bg-pink-700 focus:ring-pink-400',
+        labelKey: "requestTypeSelector.actions.medication.label",
+        ariaLabelKey: "requestTypeSelector.actions.medication.aria",
+        descriptionKey: "requestTypeSelector.actions.medication.description",
+        path: "/requests/medication",
+        buttonClassName: "bg-pink-600 hover:bg-pink-700 focus:ring-pink-400",
         predicate: ({ can_request_medication, role }) =>
-          Boolean(can_request_medication) || role === 'scm',
+          Boolean(can_request_medication) || role === "scm",
         icon: Pill,
       },
       {
-        labelKey: 'requestTypeSelector.actions.procurementLogbook.label',
-        ariaLabelKey: 'requestTypeSelector.actions.procurementLogbook.aria',
-        descriptionKey: 'requestTypeSelector.actions.procurementLogbook.description',
-        path: '/requests/procurement-logbook',
-        buttonClassName: 'bg-cyan-600 hover:bg-cyan-700 focus:ring-cyan-400',
+        labelKey: "requestTypeSelector.actions.procurementLogbook.label",
+        ariaLabelKey: "requestTypeSelector.actions.procurementLogbook.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.procurementLogbook.description",
+        path: "/requests/procurement-logbook",
+        buttonClassName: "bg-cyan-600 hover:bg-cyan-700 focus:ring-cyan-400",
         icon: FileBox,
       },
 
       {
-        labelKey: 'requestTypeSelector.actions.itPrintService.label',
-        ariaLabelKey: 'requestTypeSelector.actions.itPrintService.aria',
-        descriptionKey: 'requestTypeSelector.actions.itPrintService.description',
-        path: '/print-service-requests',
-        buttonClassName: 'bg-sky-600 hover:bg-sky-700 focus:ring-sky-400',
+        labelKey: "requestTypeSelector.actions.itPrintService.label",
+        ariaLabelKey: "requestTypeSelector.actions.itPrintService.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.itPrintService.description",
+        path: "/print-service-requests",
+        buttonClassName: "bg-sky-600 hover:bg-sky-700 focus:ring-sky-400",
         icon: Printer,
       },
       {
-        labelKey: 'requestTypeSelector.actions.itRequest.label',
-        ariaLabelKey: 'requestTypeSelector.actions.itRequest.aria',
-        descriptionKey: 'requestTypeSelector.actions.itRequest.description',
-        path: '/requests/it-items',
-        buttonClassName: 'bg-teal-600 hover:bg-teal-700 focus:ring-teal-400',
+        labelKey: "requestTypeSelector.actions.itRequest.label",
+        ariaLabelKey: "requestTypeSelector.actions.itRequest.aria",
+        descriptionKey: "requestTypeSelector.actions.itRequest.description",
+        path: "/requests/it-items",
+        buttonClassName: "bg-teal-600 hover:bg-teal-700 focus:ring-teal-400",
         icon: Laptop,
       },
     ],
   },
   {
-    titleKey: 'requestTypeSelector.groups.maintenance.title',
-    descriptionKey: 'requestTypeSelector.groups.maintenance.description',
+    titleKey: "requestTypeSelector.groups.maintenance.title",
+    descriptionKey: "requestTypeSelector.groups.maintenance.description",
     actions: [
       {
-        labelKey: 'requestTypeSelector.actions.maintenanceRequest.label',
-        ariaLabelKey: 'requestTypeSelector.actions.maintenanceRequest.aria',
-        descriptionKey: 'requestTypeSelector.actions.maintenanceRequest.description',
-        path: '/requests/maintenance',
-        roles: ['technician'],
-        buttonClassName: 'bg-red-600 hover:bg-red-700 focus:ring-red-400',
+        labelKey: "requestTypeSelector.actions.maintenanceRequest.label",
+        ariaLabelKey: "requestTypeSelector.actions.maintenanceRequest.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.maintenanceRequest.description",
+        path: "/requests/maintenance",
+        roles: ["technician"],
+        buttonClassName: "bg-red-600 hover:bg-red-700 focus:ring-red-400",
         icon: Wrench,
       },
       {
-        labelKey: 'requestTypeSelector.actions.maintenanceSupply.label',
-        ariaLabelKey: 'requestTypeSelector.actions.maintenanceSupply.aria',
-        descriptionKey: 'requestTypeSelector.actions.maintenanceSupply.description',
-        path: '/requests/maintenance-warehouse-supply',
-        roles: ['technician'],
-        buttonClassName: 'bg-blue-500 hover:bg-blue-600 focus:ring-blue-300',
+        labelKey: "requestTypeSelector.actions.maintenanceSupply.label",
+        ariaLabelKey: "requestTypeSelector.actions.maintenanceSupply.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.maintenanceSupply.description",
+        path: "/requests/maintenance-warehouse-supply",
+        roles: ["technician"],
+        buttonClassName: "bg-blue-500 hover:bg-blue-600 focus:ring-blue-300",
         icon: Truck,
       },
       {
-        labelKey: 'requestTypeSelector.actions.maintenanceApprovals.label',
-        ariaLabelKey: 'requestTypeSelector.actions.maintenanceApprovals.aria',
-        descriptionKey: 'requestTypeSelector.actions.maintenanceApprovals.description',
-        path: '/approvals',
-        roles: ['hod', 'requester', 'warehouse_keeper', 'warehousemanager', 'cmo', 'coo', 'scm'],
-        buttonClassName: 'bg-orange-700 hover:bg-orange-800 focus:ring-orange-400',
+        labelKey: "requestTypeSelector.actions.maintenanceApprovals.label",
+        ariaLabelKey: "requestTypeSelector.actions.maintenanceApprovals.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.maintenanceApprovals.description",
+        path: "/approvals",
+        roles: [
+          "hod",
+          "requester",
+          "warehouse_keeper",
+          "warehousemanager",
+          "cmo",
+          "coo",
+          "scm",
+        ],
+        buttonClassName:
+          "bg-orange-700 hover:bg-orange-800 focus:ring-orange-400",
         icon: ShieldCheck,
       },
     ],
   },
   {
-    titleKey: 'requestTypeSelector.groups.approvals.title',
-    descriptionKey: 'requestTypeSelector.groups.approvals.description',
+    titleKey: "requestTypeSelector.groups.approvals.title",
+    descriptionKey: "requestTypeSelector.groups.approvals.description",
     actions: [
       {
-        labelKey: 'requestTypeSelector.actions.approvalsPanel.label',
-        ariaLabelKey: 'requestTypeSelector.actions.approvalsPanel.aria',
-        descriptionKey: 'requestTypeSelector.actions.approvalsPanel.description',
-        path: '/approvals',
-        roles: ['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'warehousemanager', 'warehouse_manager'],
-        buttonClassName: 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400',
+        labelKey: "requestTypeSelector.actions.approvalsPanel.label",
+        ariaLabelKey: "requestTypeSelector.actions.approvalsPanel.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.approvalsPanel.description",
+        path: "/approvals",
+        roles: [
+          "hod",
+          "cmo",
+          "coo",
+          "cfo",
+          "scm",
+          "medicaldevices",
+          "warehousemanager",
+          "warehouse_manager",
+        ],
+        buttonClassName:
+          "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400",
         icon: ClipboardCheck,
         featured: true,
       },
       {
-        labelKey: 'requestTypeSelector.actions.custodyApprovals.label',
-        ariaLabelKey: 'requestTypeSelector.actions.custodyApprovals.aria',
-        descriptionKey: 'requestTypeSelector.actions.custodyApprovals.description',
-        path: '/custody/approvals',
-        buttonClassName: 'bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-300',
+        labelKey: "requestTypeSelector.actions.custodyApprovals.label",
+        ariaLabelKey: "requestTypeSelector.actions.custodyApprovals.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.custodyApprovals.description",
+        path: "/custody/approvals",
+        buttonClassName:
+          "bg-indigo-500 hover:bg-indigo-600 focus:ring-indigo-300",
         icon: ShieldCheck,
       },
       {
-        labelKey: 'requestTypeSelector.actions.approvalHistory.label',
-        ariaLabelKey: 'requestTypeSelector.actions.approvalHistory.aria',
-        descriptionKey: 'requestTypeSelector.actions.approvalHistory.description',
-        path: '/approval-history',
-        roles: ['hod', 'cmo', 'coo', 'cfo', 'scm', 'medicaldevices', 'admin', 'warehousemanager', 'warehouse_manager'],
-        buttonClassName: 'bg-gray-700 hover:bg-gray-800 focus:ring-gray-400',
+        labelKey: "requestTypeSelector.actions.approvalHistory.label",
+        ariaLabelKey: "requestTypeSelector.actions.approvalHistory.aria",
+        descriptionKey:
+          "requestTypeSelector.actions.approvalHistory.description",
+        path: "/approval-history",
+        roles: [
+          "hod",
+          "cmo",
+          "coo",
+          "cfo",
+          "scm",
+          "medicaldevices",
+          "admin",
+          "warehousemanager",
+          "warehouse_manager",
+        ],
+        buttonClassName: "bg-gray-700 hover:bg-gray-800 focus:ring-gray-400",
         icon: History,
       },
     ],
   },
   {
-    titleKey: 'requestTypeSelector.groups.admin.title',
-    descriptionKey: 'requestTypeSelector.groups.admin.description',
+    titleKey: "requestTypeSelector.groups.admin.title",
+    descriptionKey: "requestTypeSelector.groups.admin.description",
     actions: [
       {
-        labelKey: 'requestTypeSelector.actions.registerUser.label',
-        ariaLabelKey: 'requestTypeSelector.actions.registerUser.aria',
-        descriptionKey: 'requestTypeSelector.actions.registerUser.description',
-        path: '/register',
-        roles: ['admin', 'scm'],
-        buttonClassName: 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-300 text-gray-900',
+        labelKey: "requestTypeSelector.actions.registerUser.label",
+        ariaLabelKey: "requestTypeSelector.actions.registerUser.aria",
+        descriptionKey: "requestTypeSelector.actions.registerUser.description",
+        path: "/register",
+        roles: ["admin", "scm"],
+        buttonClassName:
+          "bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-300 text-gray-900",
         icon: Users,
       },
     ],
@@ -274,33 +320,49 @@ const RequestTypeSelector = () => {
   const { t } = useTranslation();
   const tr = useCallback(
     (key, options) => t(`requestTypeSelector.${key}`, options),
-    [t]
+    [t],
   );
   const [onboardingVersion, setOnboardingVersion] = useState(0);
 
   const onboardingSteps = [
-    { id: 'pick_form', title: 'Choose the right request form', tip: 'Start with Non-stock or Warehouse Supply depending on item type.' },
-    { id: 'add_items', title: 'Complete items and justification', tip: 'Clear specs and business purpose speed up approvals.' },
-    { id: 'submit_request', title: 'Submit and track approvals', tip: 'Use Open Requests and Approval History to monitor progress.' },
+    {
+      id: "pick_form",
+      title: "Choose the right request form",
+      tip: "Start with Non-stock or Warehouse Supply depending on item type.",
+    },
+    {
+      id: "add_items",
+      title: "Complete items and justification",
+      tip: "Clear specs and business purpose speed up approvals.",
+    },
+    {
+      id: "submit_request",
+      title: "Submit and track approvals",
+      tip: "Use Open Requests and Approval History to monitor progress.",
+    },
   ];
 
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({
-    role: '',
+    role: "",
     department_id: null,
-    department_name: '',
+    department_name: "",
     section_id: null,
     warehouse_id: null,
     can_request_medication: false,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeGroup, setActiveGroup] = useState('all');
+  const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeGroup, setActiveGroup] = useState("all");
   const [favoritePaths, setFavoritePaths] = useState(() => {
     try {
-      const saved = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || '[]');
-      return Array.isArray(saved) ? saved.filter((path) => typeof path === 'string') : [];
+      const saved = JSON.parse(
+        localStorage.getItem(FAVORITES_STORAGE_KEY) || "[]",
+      );
+      return Array.isArray(saved)
+        ? saved.filter((path) => typeof path === "string")
+        : [];
     } catch {
       return [];
     }
@@ -308,21 +370,21 @@ const RequestTypeSelector = () => {
 
   const fetchUserInfo = useCallback(async () => {
     setIsLoading(true);
-    setError('');
+    setError("");
 
     try {
       const res = await fetchCurrentUser();
       setUserInfo({
-        role: res.data.role?.toLowerCase() || '',
+        role: res.data.role?.toLowerCase() || "",
         department_id: res.data.department_id ?? null,
-        department_name: res.data.department_name?.toLowerCase() || '',
+        department_name: res.data.department_name?.toLowerCase() || "",
         section_id: res.data.section_id ?? null,
         warehouse_id: res.data.warehouse_id ?? null,
         can_request_medication: Boolean(res.data.can_request_medication),
       });
     } catch (err) {
-      console.error('❌ Failed to load user info:', err);
-      setError(tr('errors.loadUser'));
+      console.error("❌ Failed to load user info:", err);
+      setError(tr("errors.loadUser"));
     } finally {
       setIsLoading(false);
     }
@@ -336,7 +398,7 @@ const RequestTypeSelector = () => {
         await fetchUserInfo();
       } catch (err) {
         if (isSubscribed) {
-          console.error('❌ Failed to fetch user info on mount:', err);
+          console.error("❌ Failed to fetch user info on mount:", err);
         }
       }
     };
@@ -352,8 +414,11 @@ const RequestTypeSelector = () => {
     return ACTION_GROUPS.map((group) => ({
       ...group,
       actions: group.actions.filter((action) => {
-        const matchesRole = !action.roles || action.roles.includes(userInfo.role);
-        const passesPredicate = action.predicate ? action.predicate(userInfo) : true;
+        const matchesRole =
+          !action.roles || action.roles.includes(userInfo.role);
+        const passesPredicate = action.predicate
+          ? action.predicate(userInfo)
+          : true;
         return matchesRole && passesPredicate;
       }),
     })).filter((group) => group.actions.length > 0);
@@ -364,14 +429,16 @@ const RequestTypeSelector = () => {
       visibleGroups.reduce((count, group) => {
         return count + group.actions.length;
       }, 0),
-    [visibleGroups]
+    [visibleGroups],
   );
 
   const filteredGroups = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
 
     return visibleGroups
-      .filter((group) => activeGroup === 'all' || group.titleKey === activeGroup)
+      .filter(
+        (group) => activeGroup === "all" || group.titleKey === activeGroup,
+      )
       .map((group) => ({
         ...group,
         actions: group.actions.filter((action) => {
@@ -381,21 +448,24 @@ const RequestTypeSelector = () => {
             t(action.labelKey),
             t(action.descriptionKey),
             t(group.titleKey),
-          ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery));
+          ].some((value) =>
+            value.toLocaleLowerCase().includes(normalizedQuery),
+          );
         }),
       }))
       .filter((group) => group.actions.length > 0);
   }, [activeGroup, searchQuery, t, visibleGroups]);
 
   const filteredActionCount = useMemo(
-    () => filteredGroups.reduce((count, group) => count + group.actions.length, 0),
-    [filteredGroups]
+    () =>
+      filteredGroups.reduce((count, group) => count + group.actions.length, 0),
+    [filteredGroups],
   );
 
-  const hasActiveFilters = Boolean(searchQuery.trim()) || activeGroup !== 'all';
+  const hasActiveFilters = Boolean(searchQuery.trim()) || activeGroup !== "all";
   const clearFilters = () => {
-    setSearchQuery('');
-    setActiveGroup('all');
+    setSearchQuery("");
+    setActiveGroup("all");
   };
 
   const handleNavigate = (path) => {
@@ -407,7 +477,7 @@ const RequestTypeSelector = () => {
       group.actions.map((action) => ({
         ...action,
         groupTitleKey: group.titleKey,
-      }))
+      })),
     );
 
     const featured = flattened.filter((action) => action.featured);
@@ -443,31 +513,31 @@ const RequestTypeSelector = () => {
 
   const completeOnboardingForPath = useCallback((path) => {
     const creationPaths = [
-      '/requests/stock',
-      '/requests/warehouse-supply',
-      '/requests/non-stock',
-      '/requests/medical-device',
-      '/requests/medication',
-      '/requests/procurement-logbook',
-      '/requests/it-items',
-      '/requests/maintenance',
-      '/requests/maintenance-warehouse-supply',
+      "/requests/stock",
+      "/requests/warehouse-supply",
+      "/requests/non-stock",
+      "/requests/medical-device",
+      "/requests/medication",
+      "/requests/procurement-logbook",
+      "/requests/it-items",
+      "/requests/maintenance",
+      "/requests/maintenance-warehouse-supply",
     ];
 
-    const trackingPaths = ['/open-requests', '/approval-history', '/approvals'];
+    const trackingPaths = ["/open-requests", "/approval-history", "/approvals"];
 
     const autoStepIds = [];
     if (creationPaths.includes(path)) {
-      autoStepIds.push('pick_form');
+      autoStepIds.push("pick_form");
     }
     if (trackingPaths.includes(path)) {
-      autoStepIds.push('submit_request');
+      autoStepIds.push("submit_request");
     }
 
     if (autoStepIds.length === 0) return;
 
     try {
-      const storageKey = 'onboarding-request-creation';
+      const storageKey = "onboarding-request-creation";
       const raw = localStorage.getItem(storageKey);
       const parsed = raw ? JSON.parse(raw) : [];
       const existing = Array.isArray(parsed) ? parsed : [];
@@ -483,7 +553,7 @@ const RequestTypeSelector = () => {
 
   const renderActionCard = (action, isFeatured = false) => {
     const Icon = action.icon;
-    const description = action.descriptionKey ? t(action.descriptionKey) : '';
+    const description = action.descriptionKey ? t(action.descriptionKey) : "";
     const isFavorite = favoritePaths.includes(action.path);
 
     return (
@@ -498,28 +568,32 @@ const RequestTypeSelector = () => {
           aria-label={t(action.ariaLabelKey)}
         >
           <div className="flex items-start gap-3 pr-8 rtl:pl-8 rtl:pr-0">
-          {Icon && (
-            <span
-              className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white shadow-inner ${
-                isFeatured ? 'ring-2 ring-white/40' : ''
-              }`}
-            >
-              <Icon className="h-5 w-5" aria-hidden="true" />
-            </span>
-          )}
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold leading-tight">{t(action.labelKey)}</span>
-              {isFeatured && (
-                <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
-                  {tr('recommended.badge')}
+            {Icon && (
+              <span
+                className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white shadow-inner ${
+                  isFeatured ? "ring-2 ring-white/40" : ""
+                }`}
+              >
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+            )}
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold leading-tight">
+                  {t(action.labelKey)}
                 </span>
+                {isFeatured && (
+                  <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                    {tr("recommended.badge")}
+                  </span>
+                )}
+              </div>
+              {description && (
+                <p className="mt-1 text-sm leading-snug text-white/90">
+                  {description}
+                </p>
               )}
             </div>
-            {description && (
-              <p className="mt-1 text-sm leading-snug text-white/90">{description}</p>
-            )}
-          </div>
           </div>
         </button>
         <button
@@ -527,15 +601,18 @@ const RequestTypeSelector = () => {
           onClick={() => toggleFavorite(action.path)}
           className={`absolute right-2 top-2 rounded-full p-2 transition focus:outline-none focus:ring-2 focus:ring-white/80 rtl:left-2 rtl:right-auto ${
             isFavorite
-              ? 'bg-white text-amber-500 shadow-sm'
-              : 'bg-black/10 text-white/80 hover:bg-white/20 hover:text-white'
+              ? "bg-white text-amber-500 shadow-sm"
+              : "bg-black/10 text-white/80 hover:bg-white/20 hover:text-white"
           }`}
-          aria-label={tr(isFavorite ? 'favorites.remove' : 'favorites.add', {
+          aria-label={tr(isFavorite ? "favorites.remove" : "favorites.add", {
             name: t(action.labelKey),
           })}
           aria-pressed={isFavorite}
         >
-          <Star className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} aria-hidden="true" />
+          <Star
+            className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`}
+            aria-hidden="true"
+          />
         </button>
       </article>
     );
@@ -543,10 +620,16 @@ const RequestTypeSelector = () => {
 
   return (
     <>
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-white">
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-white text-slate-900 transition-colors duration-200 dark:from-slate-950 dark:via-slate-950 dark:to-indigo-950/70 dark:text-slate-100">
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-10 top-8 h-32 w-32 rounded-full bg-indigo-200/40 blur-3xl" aria-hidden="true" />
-          <div className="absolute right-10 bottom-20 h-40 w-40 rounded-full bg-blue-200/30 blur-3xl" aria-hidden="true" />
+          <div
+            className="absolute left-10 top-8 h-32 w-32 rounded-full bg-indigo-200/40 blur-3xl dark:bg-indigo-500/15"
+            aria-hidden="true"
+          />
+          <div
+            className="absolute right-10 bottom-20 h-40 w-40 rounded-full bg-blue-200/30 blur-3xl dark:bg-blue-500/10"
+            aria-hidden="true"
+          />
         </div>
 
         <div className="relative mx-auto max-w-6xl space-y-7 px-6 py-10">
@@ -558,151 +641,195 @@ const RequestTypeSelector = () => {
             storageKey="onboarding-request-creation"
             onCompleteStep={() => setOnboardingVersion((v) => v + 1)}
           />
-          <header className="flex flex-col gap-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-white to-blue-50/60 p-6 shadow-md ring-1 ring-indigo-100">
+          <header className="flex flex-col gap-3 rounded-2xl bg-gradient-to-r from-indigo-50 via-white to-blue-50/60 p-6 shadow-md ring-1 ring-indigo-100 dark:from-slate-900 dark:via-slate-900/95 dark:to-indigo-950/80 dark:shadow-black/30 dark:ring-slate-700">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {t('pageTitles.requestTypeSelector')}
-                  <HelpTooltip text={tr('tooltips.stepOne')} />
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-50">
+                  {t("pageTitles.requestTypeSelector")}
+                  <HelpTooltip text={tr("tooltips.stepOne")} />
                 </h1>
-                <p className="mt-1 text-sm text-gray-700">{tr('intro')}</p>
+                <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">
+                  {tr("intro")}
+                </p>
               </div>
-              <div className="flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-700 shadow-sm">
+              <div className="flex items-center gap-2 rounded-full border border-indigo-100 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-700 shadow-sm dark:border-indigo-400/30 dark:bg-indigo-500/10 dark:text-indigo-300">
                 <Sparkles className="h-4 w-4" aria-hidden="true" />
-                {tr('summary.tagline')}
+                {tr("summary.tagline")}
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2 text-sm text-indigo-900">
+            <div className="flex flex-wrap gap-2 text-sm text-indigo-900 dark:text-indigo-200">
               {userInfo.role && (
-                <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100">
-                  <ShieldCheck className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                  {tr('summary.role', { value: userInfo.role })}
+                <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100 dark:bg-slate-800 dark:ring-slate-700">
+                  <ShieldCheck
+                    className="h-4 w-4 text-indigo-500"
+                    aria-hidden="true"
+                  />
+                  {tr("summary.role", { value: userInfo.role })}
                 </span>
               )}
               {userInfo.department_name && (
-                <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100">
-                  <Boxes className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                  {tr('summary.department', { value: userInfo.department_name })}
+                <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100 dark:bg-slate-800 dark:ring-slate-700">
+                  <Boxes
+                    className="h-4 w-4 text-indigo-500"
+                    aria-hidden="true"
+                  />
+                  {tr("summary.department", {
+                    value: userInfo.department_name,
+                  })}
                 </span>
               )}
               {userInfo.section_id && (
-                <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100">
-                  <ClipboardList className="h-4 w-4 text-indigo-500" aria-hidden="true" />
-                  {tr('summary.section', { value: userInfo.section_id })}
+                <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100 dark:bg-slate-800 dark:ring-slate-700">
+                  <ClipboardList
+                    className="h-4 w-4 text-indigo-500"
+                    aria-hidden="true"
+                  />
+                  {tr("summary.section", { value: userInfo.section_id })}
                 </span>
               )}
-              <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100">
+              <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm ring-1 ring-indigo-100 dark:bg-slate-800 dark:ring-slate-700">
                 <Pill className="h-4 w-4 text-indigo-500" aria-hidden="true" />
                 {userInfo.can_request_medication
-                  ? tr('summary.medicationAccessEnabled')
-                  : tr('summary.medicationAccessDisabled')}
+                  ? tr("summary.medicationAccessEnabled")
+                  : tr("summary.medicationAccessDisabled")}
               </span>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-indigo-700">{tr('summary.accessTitle')}</p>
-                <p className="mt-1 text-sm text-gray-700">
-                  {tr('summary.accessDetails', {
+              <div className="rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-indigo-100 backdrop-blur dark:bg-slate-800/90 dark:ring-slate-700">
+                <p className="text-xs uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+                  {tr("summary.accessTitle")}
+                </p>
+                <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">
+                  {tr("summary.accessDetails", {
                     count: totalActionCount,
                     groups: visibleGroups.length,
                   })}
                 </p>
               </div>
-              <div className="rounded-2xl bg-indigo-600 p-4 text-indigo-50 shadow-md ring-1 ring-indigo-200/40">
+              <div className="rounded-2xl bg-indigo-600 p-4 text-indigo-50 shadow-md ring-1 ring-indigo-200/40 dark:bg-indigo-500/20 dark:ring-indigo-400/40">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Sparkles className="h-4 w-4" aria-hidden="true" />
-                  {tr('summary.quickTipTitle')}
+                  {tr("summary.quickTipTitle")}
                 </div>
-                <p className="mt-1 text-sm text-indigo-100">{tr('summary.quickTipCopy')}</p>
+                <p className="mt-1 text-sm text-indigo-100">
+                  {tr("summary.quickTipCopy")}
+                </p>
               </div>
-              <div className="rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-indigo-100 backdrop-blur">
-                <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
+              <div className="rounded-2xl bg-white/90 p-4 shadow-sm ring-1 ring-indigo-100 backdrop-blur dark:bg-slate-800/90 dark:ring-slate-700">
+                <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-300">
                   <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
-                  {tr('summary.recommendationTitle')}
+                  {tr("summary.recommendationTitle")}
                 </div>
-                <p className="mt-1 text-sm text-gray-700">{tr('summary.recommendationCopy')}</p>
+                <p className="mt-1 text-sm text-gray-700 dark:text-slate-300">
+                  {tr("summary.recommendationCopy")}
+                </p>
               </div>
             </div>
           </header>
 
           {isLoading && (
-            <div className="text-center text-gray-500" role="status" aria-live="polite">
-              {tr('loading')}
+            <div
+              className="text-center text-gray-500 dark:text-slate-400"
+              role="status"
+              aria-live="polite"
+            >
+              {tr("loading")}
             </div>
           )}
 
           {!isLoading && error && (
             <div
-              className="mb-6 rounded-2xl border border-red-200/80 bg-red-50/90 p-5 text-sm text-red-700 shadow-sm backdrop-blur"
+              className="mb-6 rounded-2xl border border-red-200/80 bg-red-50/90 p-5 text-sm text-red-700 shadow-sm backdrop-blur dark:border-red-500/30 dark:bg-red-950/50 dark:text-red-200"
               role="alert"
             >
-              <p className="font-semibold">{tr('errors.heading')}</p>
+              <p className="font-semibold">{tr("errors.heading")}</p>
               <p className="mt-1">{error}</p>
               <button
                 type="button"
                 onClick={fetchUserInfo}
                 className="mt-3 inline-flex items-center rounded-full bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2"
               >
-                {tr('actions.retry')}
+                {tr("actions.retry")}
               </button>
             </div>
           )}
 
           {!isLoading && !error && visibleGroups.length === 0 && (
-            <div className="rounded-2xl border border-yellow-200/80 bg-yellow-50/90 p-5 text-sm text-yellow-800 shadow-sm backdrop-blur">
-              {tr('emptyState')}
+            <div className="rounded-2xl border border-yellow-200/80 bg-yellow-50/90 p-5 text-sm text-yellow-800 shadow-sm backdrop-blur dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-200">
+              {tr("emptyState")}
             </div>
           )}
 
-          {!isLoading && !error && !hasActiveFilters && recommendedActions.length > 0 && (
-            <section className="relative overflow-hidden rounded-2xl border border-indigo-100/70 bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 p-5 shadow-xl shadow-indigo-100/50">
-              <div className="pointer-events-none absolute -left-10 top-1/3 h-32 w-32 rounded-full bg-white/10 blur-3xl" aria-hidden="true" />
-              <div className="pointer-events-none absolute -right-16 -bottom-10 h-40 w-40 rounded-full bg-blue-300/20 blur-3xl" aria-hidden="true" />
-              <div className="relative flex items-center gap-2 text-indigo-50">
-                <Sparkles className="h-5 w-5" aria-hidden="true" />
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-indigo-100">
-                    {tr('recommended.subtitle')}
-                  </p>
-                  <h2 className="text-lg font-semibold">{tr('recommended.title')}</h2>
+          {!isLoading &&
+            !error &&
+            !hasActiveFilters &&
+            recommendedActions.length > 0 && (
+              <section className="relative overflow-hidden rounded-2xl border border-indigo-100/70 bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 p-5 shadow-xl shadow-indigo-100/50 dark:border-indigo-400/30 dark:from-indigo-950 dark:via-indigo-900 dark:to-blue-950 dark:shadow-black/30">
+                <div
+                  className="pointer-events-none absolute -left-10 top-1/3 h-32 w-32 rounded-full bg-white/10 blur-3xl"
+                  aria-hidden="true"
+                />
+                <div
+                  className="pointer-events-none absolute -right-16 -bottom-10 h-40 w-40 rounded-full bg-blue-300/20 blur-3xl"
+                  aria-hidden="true"
+                />
+                <div className="relative flex items-center gap-2 text-indigo-50">
+                  <Sparkles className="h-5 w-5" aria-hidden="true" />
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-indigo-100">
+                      {tr("recommended.subtitle")}
+                    </p>
+                    <h2 className="text-lg font-semibold">
+                      {tr("recommended.title")}
+                    </h2>
+                  </div>
                 </div>
-              </div>
-              <div className="relative mt-4 grid gap-3 md:grid-cols-3">
-                {recommendedActions.map((action) => renderActionCard(action, true))}
-              </div>
-            </section>
-          )}
+                <div className="relative mt-4 grid gap-3 md:grid-cols-3">
+                  {recommendedActions.map((action) =>
+                    renderActionCard(action, true),
+                  )}
+                </div>
+              </section>
+            )}
 
-          {!isLoading && !error && !hasActiveFilters && favoriteActions.length > 0 && (
-            <section
-              className="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm"
-              aria-labelledby="favorite-workflows-heading"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
-                  <Star className="h-5 w-5 fill-current" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                    {tr('favorites.eyebrow')}
-                  </p>
-                  <h2 id="favorite-workflows-heading" className="text-lg font-semibold text-gray-900">
-                    {tr('favorites.title')}
-                  </h2>
-                  <p className="text-sm text-gray-600">{tr('favorites.description')}</p>
+          {!isLoading &&
+            !error &&
+            !hasActiveFilters &&
+            favoriteActions.length > 0 && (
+              <section
+                className="rounded-2xl border border-amber-200 bg-amber-50/80 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-950/30"
+                aria-labelledby="favorite-workflows-heading"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-300">
+                    <Star className="h-5 w-5 fill-current" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                      {tr("favorites.eyebrow")}
+                    </p>
+                    <h2
+                      id="favorite-workflows-heading"
+                      className="text-lg font-semibold text-gray-900 dark:text-slate-100"
+                    >
+                      {tr("favorites.title")}
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                      {tr("favorites.description")}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {favoriteActions.map((action) => renderActionCard(action))}
-              </div>
-            </section>
-          )}
+                <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {favoriteActions.map((action) => renderActionCard(action))}
+                </div>
+              </section>
+            )}
 
           {!isLoading && !error && visibleGroups.length > 0 && (
             <section
-              className="rounded-2xl border border-indigo-100 bg-white/95 p-4 shadow-sm backdrop-blur"
+              className="rounded-2xl border border-indigo-100 bg-white/95 p-4 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/90 dark:shadow-black/20"
               aria-labelledby="request-finder-heading"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -710,9 +837,9 @@ const RequestTypeSelector = () => {
                   <label
                     id="request-finder-heading"
                     htmlFor="request-type-search"
-                    className="text-sm font-semibold text-gray-800"
+                    className="text-sm font-semibold text-gray-800 dark:text-slate-200"
                   >
-                    {tr('finder.title')}
+                    {tr("finder.title")}
                   </label>
                   <div className="relative mt-2 max-w-xl">
                     <Search
@@ -724,38 +851,44 @@ const RequestTypeSelector = () => {
                       type="search"
                       value={searchQuery}
                       onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder={tr('finder.placeholder')}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 rtl:pl-10 rtl:pr-10"
+                      placeholder={tr("finder.placeholder")}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-10 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-indigo-400 dark:focus:bg-slate-800 dark:focus:ring-indigo-500/20 rtl:pl-10 rtl:pr-10"
                     />
                     {searchQuery && (
                       <button
                         type="button"
-                        onClick={() => setSearchQuery('')}
+                        onClick={() => setSearchQuery("")}
                         className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 rtl:left-2 rtl:right-auto"
-                        aria-label={tr('finder.clearSearch')}
+                        aria-label={tr("finder.clearSearch")}
                       >
                         <X className="h-4 w-4" aria-hidden="true" />
                       </button>
                     )}
                   </div>
                 </div>
-                <p className="text-sm text-gray-600" aria-live="polite">
-                  {tr('finder.results', { count: filteredActionCount })}
+                <p
+                  className="text-sm text-gray-600 dark:text-slate-400"
+                  aria-live="polite"
+                >
+                  {tr("finder.results", { count: filteredActionCount })}
                 </p>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2" aria-label={tr('finder.categoryLabel')}>
+              <div
+                className="mt-4 flex flex-wrap gap-2"
+                aria-label={tr("finder.categoryLabel")}
+              >
                 <button
                   type="button"
-                  onClick={() => setActiveGroup('all')}
-                  aria-pressed={activeGroup === 'all'}
+                  onClick={() => setActiveGroup("all")}
+                  aria-pressed={activeGroup === "all"}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${
-                    activeGroup === 'all'
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                    activeGroup === "all"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-slate-800 dark:text-indigo-300 dark:hover:bg-slate-700"
                   }`}
                 >
-                  {tr('finder.allCategories')}
+                  {tr("finder.allCategories")}
                 </button>
                 {visibleGroups.map((group) => (
                   <button
@@ -765,8 +898,8 @@ const RequestTypeSelector = () => {
                     aria-pressed={activeGroup === group.titleKey}
                     className={`rounded-full px-3 py-1.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 ${
                       activeGroup === group.titleKey
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-slate-800 dark:text-indigo-300 dark:hover:bg-slate-700"
                     }`}
                   >
                     {t(group.titleKey)}
@@ -777,35 +910,47 @@ const RequestTypeSelector = () => {
           )}
 
           <div className="space-y-6">
-            {!isLoading && !error && hasActiveFilters && filteredGroups.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-indigo-200 bg-white/80 px-6 py-10 text-center shadow-sm">
-                <Search className="mx-auto h-8 w-8 text-indigo-300" aria-hidden="true" />
-                <h2 className="mt-3 text-base font-semibold text-gray-900">{tr('finder.noResultsTitle')}</h2>
-                <p className="mt-1 text-sm text-gray-600">{tr('finder.noResultsDescription')}</p>
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="mt-4 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
-                >
-                  {tr('finder.clearFilters')}
-                </button>
-              </div>
-            )}
+            {!isLoading &&
+              !error &&
+              hasActiveFilters &&
+              filteredGroups.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-indigo-200 bg-white/80 px-6 py-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900/80">
+                  <Search
+                    className="mx-auto h-8 w-8 text-indigo-300"
+                    aria-hidden="true"
+                  />
+                  <h2 className="mt-3 text-base font-semibold text-gray-900 dark:text-slate-100">
+                    {tr("finder.noResultsTitle")}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
+                    {tr("finder.noResultsDescription")}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="mt-4 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
+                  >
+                    {tr("finder.clearFilters")}
+                  </button>
+                </div>
+              )}
             {filteredGroups.map((group) => (
               <section
                 key={group.titleKey}
-                aria-labelledby={`${group.titleKey.replace(/\./g, '-')}-heading`}
-                className="rounded-2xl bg-white/90 p-5 shadow-sm ring-1 ring-indigo-100 backdrop-blur"
+                aria-labelledby={`${group.titleKey.replace(/\./g, "-")}-heading`}
+                className="rounded-2xl bg-white/90 p-5 shadow-sm ring-1 ring-indigo-100 backdrop-blur dark:bg-slate-900/90 dark:shadow-black/20 dark:ring-slate-700"
               >
                 <div className="mb-4 flex items-center justify-between text-left">
                   <div>
                     <h2
-                      id={`${group.titleKey.replace(/\./g, '-')}-heading`}
-                      className="text-lg font-semibold text-gray-800"
+                      id={`${group.titleKey.replace(/\./g, "-")}-heading`}
+                      className="text-lg font-semibold text-gray-800 dark:text-slate-100"
                     >
                       {t(group.titleKey)}
                     </h2>
-                    <p className="text-sm text-gray-600">{t(group.descriptionKey)}</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                      {t(group.descriptionKey)}
+                    </p>
                   </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
