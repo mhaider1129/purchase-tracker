@@ -1320,7 +1320,12 @@ export function CutoverReadiness() {
     </section>
   );
 }
-export default function ApprovalPoliciesPage({ canManage = true }) {
+export default function ApprovalPoliciesPage({
+  canManage = true,
+  policyId,
+  onOpenPolicy,
+  onClosePolicy,
+}) {
   const [items, setItems] = useState(null);
   const [orgOptions, setOrgOptions] = useState({
     departments: [],
@@ -1343,6 +1348,19 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
       .catch((e) => setError(message(e) || "Unable to load approval policies"));
   };
   useEffect(load, []);
+  useEffect(() => {
+    if (!policyId) {
+      setSelected(undefined);
+      return;
+    }
+
+    setError("");
+    setSelected(undefined);
+    api
+      .getApprovalPolicy(policyId)
+      .then(setSelected)
+      .catch((e) => setError(message(e)));
+  }, [policyId]);
   const versions = useMemo(
     () =>
       (items || [])
@@ -1371,8 +1389,17 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
           policy={selected}
           options={orgOptions}
           canManage={canManage}
-          onBack={() => setSelected(null)}
+          onBack={() =>
+            onClosePolicy ? onClosePolicy() : setSelected(undefined)
+          }
         />
+      </main>
+    );
+  if (policyId)
+    return (
+      <main className="mx-auto max-w-7xl p-6">
+        <button onClick={onClosePolicy}>Back to policies</button>
+        {error ? <p role="alert">{error}</p> : <p>Loading policy…</p>}
       </main>
     );
   return (
@@ -1651,6 +1678,10 @@ export default function ApprovalPoliciesPage({ canManage = true }) {
                             <button
                               className="inline-flex items-center gap-1 font-semibold text-blue-700 hover:text-blue-900"
                               onClick={async () => {
+                                if (onOpenPolicy) {
+                                  onOpenPolicy(p.id);
+                                  return;
+                                }
                                 try {
                                   setSelected(
                                     await api.getApprovalPolicy(p.id),

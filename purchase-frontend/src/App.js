@@ -6,6 +6,8 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
+  useParams,
 } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -190,9 +192,14 @@ const FallbackRedirect = () => {
 
 const ApprovalPoliciesRoute = () => {
   const { user } = useAuth();
+  const { policyId } = useParams();
+  const navigate = useNavigate();
   return (
     <ApprovalPoliciesPage
       canManage={hasPermission(user, "approval-policy.manage")}
+      policyId={policyId}
+      onOpenPolicy={(id) => navigate(`/admin/approval-policies/${id}`)}
+      onClosePolicy={() => navigate("/admin/approval-policies")}
     />
   );
 };
@@ -653,6 +660,15 @@ const AppRoutes = () => (
     <Route path="/admin/organization" element={<ProtectedRoute element={<OrganizationHierarchy />} />} />
     <Route
       path="/admin/approval-policies"
+      element={
+        <ProtectedRoute
+          routeKey="approvalPolicies"
+          element={<ApprovalPoliciesRoute />}
+        />
+      }
+    />
+    <Route
+      path="/admin/approval-policies/:policyId"
       element={
         <ProtectedRoute
           routeKey="approvalPolicies"
