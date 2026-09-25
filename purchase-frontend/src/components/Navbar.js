@@ -1081,8 +1081,15 @@ const Navbar = () => {
             <button
               type="button"
               onClick={toggleDarkMode}
-              className="text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-300"
+              className="group inline-flex items-center gap-2 rounded-full px-2 py-1 text-gray-700 transition-colors hover:bg-blue-50 hover:text-blue-700 dark:text-gray-200 dark:hover:bg-blue-950/70 dark:hover:text-blue-200"
               aria-label={
+                theme === themes.light
+                  ? t("navbar.darkMode")
+                  : theme === themes.dark
+                    ? t("navbar.highContrastMode")
+                    : t("navbar.lightMode")
+              }
+              title={
                 theme === themes.light
                   ? t("navbar.darkMode")
                   : theme === themes.dark
@@ -1093,10 +1100,17 @@ const Navbar = () => {
               {theme === themes.highContrast ? (
                 <Contrast size={18} />
               ) : darkMode ? (
-                <Sun size={18} />
-              ) : (
                 <Moon size={18} />
+              ) : (
+                <Sun size={18} />
               )}
+              <span className="hidden text-xs font-semibold xl:inline">
+                {theme === themes.light
+                  ? "Light"
+                  : theme === themes.dark
+                    ? "Dark"
+                    : "Contrast"}
+              </span>
             </button>
           </div>
 

@@ -83,6 +83,22 @@ const getRequestMethod = (config = {}) =>
 
 const getRequestPath = (config = {}) => String(config.url || "");
 
+// A 404 returned by an API handler is a valid application response, not a sign
+// that the API is mounted at another base URL. Retrying these responses against
+// the frontend (or another configured fallback) can turn a harmless "not found"
+// into a 401 and incorrectly clear the user's session.
+export const isApplicationNotFound = (error) => {
+  if (error?.response?.status !== 404) return false;
+
+  const data = error.response.data;
+  if (!data || typeof data !== "object") return false;
+
+  if (data.error) return true;
+
+  const message = String(data.message || "");
+  return Boolean(message) && !/route not found/i.test(message);
+};
+
 const shouldAnnounceApiAction = (config = {}) => {
   const method = getRequestMethod(config);
   const path = getRequestPath(config);
@@ -168,6 +184,13 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    // Once endpoint discovery finds a working API mount, reuse it for later
+    // requests. In particular, opening a policy should use the same authenticated
+    // API origin that successfully returned the policy registry.
+    if (response.config?.__attemptedApiBases?.length) {
+      api.defaults.baseURL = trimTrailingSlashes(response.config.baseURL || API_BASE);
+    }
+
     dispatchApiActionNotification({
       config: response.config,
       response,
@@ -183,7 +206,10 @@ api.interceptors.response.use(
     const isSafeRequest = ["get", "head", "options"].includes(method);
     const shouldTryApiFallback =
       [502, 503, 504].includes(status) ||
-      (isSafeRequest && status === 404 && !/^\/?attachments\//.test(config.url || ""));
+      (isSafeRequest &&
+        status === 404 &&
+        !isApplicationNotFound(error) &&
+        !/^\/?attachments\//.test(config.url || ""));
 
     if (shouldTryApiFallback && typeof config.url === "string") {
       const attemptedBases = config.__attemptedApiBases || [];

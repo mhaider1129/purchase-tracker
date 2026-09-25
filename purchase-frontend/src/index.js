@@ -7,9 +7,19 @@ import i18n from "./i18n";
 import { I18nextProvider } from "react-i18next";
 import { ThemeProvider } from "./theme/ThemeProvider";
 
+const storedTheme = localStorage.getItem("theme");
 const storedDark = localStorage.getItem("darkMode");
-if (storedDark === "true") {
+const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+if (
+  storedTheme === "dark" ||
+  storedTheme === "highContrast" ||
+  (!storedTheme && storedDark === "true") ||
+  (!storedTheme && storedDark === null && prefersDark)
+) {
   document.documentElement.classList.add("dark");
+}
+if (storedTheme === "highContrast") {
+  document.documentElement.classList.add("high-contrast");
 }
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
