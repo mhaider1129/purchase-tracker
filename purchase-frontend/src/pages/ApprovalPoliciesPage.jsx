@@ -3,11 +3,14 @@ import * as api from "../api/approvalPolicies";
 import { getOrganizationOptions } from "../api/organization";
 import {
   Activity,
+  ArrowLeft,
   ArrowRight,
   Beaker,
+  CalendarDays,
   CheckCircle2,
   CircleAlert,
   Clock3,
+  Edit3,
   FileStack,
   GitBranch,
   History,
@@ -599,6 +602,17 @@ export function PolicyDetail({
       name: policy.name,
       description: policy.description || "",
     });
+  const versions = policy.versions || [];
+  const statusClass = (status) => {
+    const styles = {
+      ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+      VALIDATED: "bg-blue-50 text-blue-700 ring-blue-600/20",
+      SHADOW: "bg-violet-50 text-violet-700 ring-violet-600/20",
+      DRAFT: "bg-amber-50 text-amber-700 ring-amber-600/20",
+      RETIRED: "bg-slate-100 text-slate-600 ring-slate-500/20",
+    };
+    return styles[status] || styles.RETIRED;
+  };
   const createVersion = async () => {
     try {
       const v = await api.createApprovalPolicyVersion(policy.id, {});
@@ -608,21 +622,67 @@ export function PolicyDetail({
     }
   };
   return (
-    <section>
-      <button onClick={onBack}>Back to policies</button>
-      <h1>{policy.name}</h1>
-      <p>
-        <strong>{policy.code}</strong> · {display(policy.description)}
-      </p>
-      {error && <p role="alert">{error}</p>}
+    <section className="space-y-6">
+      <button
+        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-700"
+        onClick={onBack}
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to policies
+      </button>
+
+      <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-900 px-6 py-7 text-white shadow-xl sm:px-8">
+        <div
+          className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/10 blur-2xl"
+          aria-hidden="true"
+        />
+        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="max-w-3xl">
+            <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
+              <ShieldCheck className="h-4 w-4" /> Approval policy
+              <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 tracking-wider text-white">
+                {policy.code}
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              {policy.name}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+              {policy.description || "No policy description has been provided."}
+            </p>
+          </div>
+          {canManage && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20"
+                onClick={() => setEditingMetadata(true)}
+              >
+                <Edit3 className="h-4 w-4" /> Edit metadata
+              </button>
+              <button
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-400"
+                onClick={createVersion}
+              >
+                <Plus className="h-4 w-4" /> Create Draft Version
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {error && (
+        <div
+          className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
+          <CircleAlert className="h-5 w-5 shrink-0" /> {error}
+        </div>
+      )}
+
       {canManage && (
         <>
-          <button onClick={() => setEditingMetadata(true)}>
-            Edit policy metadata
-          </button>
-          <button onClick={createVersion}>Create Draft Version</button>
           {editingMetadata && (
             <form
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
               aria-label="Edit policy metadata"
               onSubmit={async (event) => {
                 event.preventDefault();
@@ -634,70 +694,148 @@ export function PolicyDetail({
                 }
               }}
             >
-              <label>
-                Name
-                <input
-                  aria-label="Policy name"
-                  required
-                  value={metadata.name}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, name: e.target.value })
-                  }
-                />
-              </label>
-              <label>
-                Description
-                <textarea
-                  aria-label="Policy description"
-                  value={metadata.description}
-                  onChange={(e) =>
-                    setMetadata({ ...metadata, description: e.target.value })
-                  }
-                />
-              </label>
-              <button>Save metadata</button>
-              <button type="button" onClick={() => setEditingMetadata(false)}>
-                Cancel
-              </button>
+              <div className="mb-5">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Edit policy details
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Update the name and description shown to policy
+                  administrators.
+                </p>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className={labelClass}>
+                  Policy name
+                  <input
+                    className={fieldClass}
+                    aria-label="Policy name"
+                    required
+                    value={metadata.name}
+                    onChange={(e) =>
+                      setMetadata({ ...metadata, name: e.target.value })
+                    }
+                  />
+                </label>
+                <label className={labelClass}>
+                  Description
+                  <textarea
+                    className={`${fieldClass} min-h-24 resize-y`}
+                    aria-label="Policy description"
+                    value={metadata.description}
+                    onChange={(e) =>
+                      setMetadata({ ...metadata, description: e.target.value })
+                    }
+                  />
+                </label>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button className={primaryButtonClass}>Save metadata</button>
+                <button
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  type="button"
+                  onClick={() => setEditingMetadata(false)}
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           )}
         </>
       )}
-      <h2>Versions</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Number</th>
-            <th>Status</th>
-            <th>Effective dates</th>
-            <th>Created</th>
-            <th>Shadow status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {(policy.versions || []).map((v) => (
-            <tr key={v.id}>
-              <td>{v.version_number}</td>
-              <td>{v.status}</td>
-              <td>
-                {display(v.effective_from)} – {display(v.effective_to)}
-              </td>
-              <td>{display(v.created_at)}</td>
-              <td>{v.status === "SHADOW" ? "Shadow analysis enabled" : "—"}</td>
-              <td>
-                <button
-                  onClick={async () =>
-                    setSelected(await api.getApprovalPolicyVersion(v.id))
-                  }
-                >
-                  Open version
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+
+      <section
+        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+        aria-labelledby="policy-versions-heading"
+      >
+        <header className="flex flex-col justify-between gap-3 border-b border-slate-200 bg-slate-50/70 px-6 py-5 sm:flex-row sm:items-center">
+          <div>
+            <h2
+              id="policy-versions-heading"
+              className="text-lg font-semibold text-slate-900"
+            >
+              Policy versions
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Review configuration history and open a version to manage its
+              routing rules.
+            </p>
+          </div>
+          <span className="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+            {versions.length} {versions.length === 1 ? "version" : "versions"}
+          </span>
+        </header>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-white text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <th className="px-6 py-3.5">Version</th>
+                <th className="px-6 py-3.5">Status</th>
+                <th className="px-6 py-3.5">Effective dates</th>
+                <th className="px-6 py-3.5">Created</th>
+                <th className="px-6 py-3.5">Shadow status</th>
+                <th className="px-6 py-3.5">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {versions.map((v) => (
+                <tr className="transition hover:bg-slate-50/80" key={v.id}>
+                  <td className="px-6 py-4 font-semibold text-slate-900">
+                    v{v.version_number}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusClass(v.status)}`}
+                    >
+                      {v.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-slate-600">
+                    {display(v.effective_from)} – {display(v.effective_to)}
+                  </td>
+                  <td className="px-6 py-4 text-slate-600">
+                    {display(v.created_at)}
+                  </td>
+                  <td className="px-6 py-4 text-slate-600">
+                    {v.status === "SHADOW" ? (
+                      <span className="inline-flex items-center gap-1.5 font-medium text-violet-700">
+                        <Beaker className="h-4 w-4" /> Analysis enabled
+                      </span>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50"
+                      onClick={async () =>
+                        setSelected(await api.getApprovalPolicyVersion(v.id))
+                      }
+                    >
+                      Open version <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {versions.length === 0 && (
+            <div className="flex flex-col items-center px-6 py-14 text-center">
+              <span className="rounded-2xl bg-slate-100 p-3 text-slate-500">
+                <CalendarDays className="h-6 w-6" />
+              </span>
+              <h3 className="mt-4 font-semibold text-slate-900">
+                No versions yet
+              </h3>
+              <p className="mt-1 max-w-sm text-sm text-slate-500">
+                Create a draft version to begin defining approval conditions,
+                resolvers, and routing steps.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
       {selected && (
         <VersionDetail
           options={options}
