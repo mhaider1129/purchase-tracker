@@ -116,6 +116,7 @@ import {
   hasPermission,
 } from "./utils/permissions";
 import Navbar from "./components/Navbar";
+import AppExperience from "./components/layout/AppExperience";
 import { featureRegistry } from "./config/featureRegistry";
 
 const ProtectedRoute = ({
@@ -998,10 +999,25 @@ const AppRoutes = () => (
 );
 
 const AppShell = ({ children }) => {
+  const { pathname } = useLocation();
+  const isAuthPage = ["/login", "/register", "/request-account"].includes(
+    pathname,
+  );
+
   return (
     <div className="app-shell">
-      <Navbar />
-      <main className="app-main">{children}</main>
+      <a className="skip-link" href="#main-content">
+        Skip to main content
+      </a>
+      {!isAuthPage ? <Navbar /> : null}
+      <main
+        id="main-content"
+        className={isAuthPage ? "app-main app-main--auth" : "app-main"}
+        tabIndex="-1"
+      >
+        {children}
+      </main>
+      <AppExperience />
     </div>
   );
 };
