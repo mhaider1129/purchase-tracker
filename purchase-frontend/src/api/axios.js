@@ -1,70 +1,16 @@
 import axios from "axios";
 
-const ENV_API_BASE =
+const DEFAULT_API_BASE =
+  process.env.NODE_ENV === "development"
+    ? `${window.location.protocol}//${window.location.hostname}:5000/api`
+    : "/api";
+
+export const API_BASE = (
   process.env.REACT_APP_API_BASE_URL ||
   process.env.REACT_APP_API_BASE ||
   process.env.REACT_APP_API_URL ||
-  "/api";
-
-const FALLBACK_API_BASES = ["/api", "/api/api", "", "/backend/api"];
-
-const trimTrailingSlashes = (value = "") => value.replace(/\/+$/, "");
-
-const isLikelyPrivateHost = (host = "") => {
-  const normalizedHost = host.toLowerCase();
-
-  return (
-    normalizedHost === "localhost" ||
-    normalizedHost === "127.0.0.1" ||
-    normalizedHost === "0.0.0.0" ||
-    normalizedHost.startsWith("10.") ||
-    normalizedHost.startsWith("192.168.") ||
-    /^172\.(1[6-9]|2\d|3[0-1])\./.test(normalizedHost)
-  );
-};
-
-const resolveInitialApiBase = () => {
-  const normalizedBase = trimTrailingSlashes(ENV_API_BASE);
-
-  if (typeof window === "undefined") {
-    return normalizedBase;
-  }
-
-  if (!normalizedBase) {
-    return "/api";
-  }
-
-  try {
-    const parsed = new URL(normalizedBase, window.location.origin);
-    const isAbsoluteEnvValue = /^https?:\/\//i.test(normalizedBase);
-
-    if (isAbsoluteEnvValue && isLikelyPrivateHost(parsed.hostname) && parsed.origin !== window.location.origin) {
-      return "/api";
-    }
-
-    return isAbsoluteEnvValue ? `${parsed.origin}${parsed.pathname}` : normalizedBase;
-  } catch (_error) {
-    return "/api";
-  }
-};
-
-const API_BASE = resolveInitialApiBase();
-
-const resolveApiFallbackBases = (base) => {
-  const normalizedBase = trimTrailingSlashes(base || API_BASE || "");
-  const candidates = new Set([normalizedBase, ...FALLBACK_API_BASES]);
-
-  if (normalizedBase.endsWith("/api")) {
-    candidates.add(normalizedBase.slice(0, -4));
-    candidates.add(`${normalizedBase}/api`);
-  }
-
-  if (normalizedBase.endsWith("/backend/api")) {
-    candidates.add(normalizedBase.slice(0, -12));
-  }
-
-  return Array.from(candidates);
-};
+  DEFAULT_API_BASE
+).replace(/\/+$/, "");
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -83,10 +29,6 @@ const getRequestMethod = (config = {}) =>
 
 const getRequestPath = (config = {}) => String(config.url || "");
 
-// A 404 returned by an API handler is a valid application response, not a sign
-// that the API is mounted at another base URL. Retrying these responses against
-// the frontend (or another configured fallback) can turn a harmless "not found"
-// into a 401 and incorrectly clear the user's session.
 const definitiveAuthenticationErrorCodes = new Set([
   "INVALID_TOKEN",
   "INVALID_TOKEN_SUBJECT",
@@ -94,10 +36,8 @@ const definitiveAuthenticationErrorCodes = new Set([
   "USER_INACTIVE",
 ]);
 
-// Only the authentication service can authoritatively end the browser session.
-// Reverse proxies and alternate API mounts sometimes answer protected feature
-// URLs with a generic 401; treating every such response as an expired token
-// makes a simple navigation look like a logout.
+// A generic 401 can be an endpoint-level authorization decision. Only explicit
+// token/session failures, or the authoritative session check, end the session.
 export const isDefinitiveAuthenticationFailure = (error) => {
   if (error?.response?.status !== 401) return false;
 
@@ -106,18 +46,6 @@ export const isDefinitiveAuthenticationFailure = (error) => {
 
   const path = getRequestPath(error.config).replace(/^\/?api\//i, "");
   return /^\/?auth\/me(?:\?|$)/i.test(path);
-};
-
-export const isApplicationNotFound = (error) => {
-  if (error?.response?.status !== 404) return false;
-
-  const data = error.response.data;
-  if (!data || typeof data !== "object") return false;
-
-  if (data.error) return true;
-
-  const message = String(data.message || "");
-  return Boolean(message) && !/route not found/i.test(message);
 };
 
 const shouldAnnounceApiAction = (config = {}) => {
@@ -134,27 +62,17 @@ const shouldAnnounceApiAction = (config = {}) => {
 const getResponseMessage = (response) => {
   const data = response?.data;
 
-  if (typeof data === "string" && data.trim()) {
-    return data.trim();
-  }
+  if (typeof data === "string" && data.trim()) return data.trim();
 
   if (data && typeof data === "object") {
-    return (
-      data.message ||
-      data.error ||
-      data.data?.message ||
-      data.data?.status ||
-      null
-    );
+    return data.message || data.error || data.data?.message || data.data?.status || null;
   }
 
   return null;
 };
 
 const dispatchApiActionNotification = ({ config, response, error, type }) => {
-  if (typeof window === "undefined" || !shouldAnnounceApiAction(config)) {
-    return;
-  }
+  if (typeof window === "undefined" || !shouldAnnounceApiAction(config)) return;
 
   const method = getRequestMethod(config).toUpperCase();
   const fallbackMessage =
@@ -183,14 +101,10 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
 
     if (config.data instanceof FormData) {
-      // Let the browser/axios generate the multipart boundary. Leaving a default
-      // JSON content type here can cause file submissions to be parsed as JSON
-      // and rejected by the API/proxy as an oversized request body.
+      // The browser must supply the multipart boundary.
       delete config.headers["Content-Type"];
       delete config.headers["content-type"];
       config.headers.set?.("Content-Type", undefined);
@@ -200,74 +114,33 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 api.interceptors.response.use(
   (response) => {
-    // Once endpoint discovery finds a working API mount, reuse it for later
-    // requests. In particular, opening a policy should use the same authenticated
-    // API origin that successfully returned the policy registry.
-    if (response.config?.__attemptedApiBases?.length) {
-      api.defaults.baseURL = trimTrailingSlashes(response.config.baseURL || API_BASE);
-    }
-
-    dispatchApiActionNotification({
-      config: response.config,
-      response,
-      type: "success",
-    });
+    dispatchApiActionNotification({ config: response.config, response, type: "success" });
     return response;
   },
-  async (error) => {
+  (error) => {
     const config = error.config || {};
     const status = error.response?.status;
-
-    const method = (config.method || "get").toLowerCase();
-    const isSafeRequest = ["get", "head", "options"].includes(method);
-    const shouldTryApiFallback =
-      [502, 503, 504].includes(status) ||
-      (isSafeRequest &&
-        ((status === 404 && !isApplicationNotFound(error)) ||
-          (status === 401 && !isDefinitiveAuthenticationFailure(error))) &&
-        !/^\/?attachments\//.test(config.url || ""));
-
-    if (shouldTryApiFallback && typeof config.url === "string") {
-      const attemptedBases = config.__attemptedApiBases || [];
-      const currentBase = trimTrailingSlashes(config.baseURL || API_BASE);
-      const fallbackBases = resolveApiFallbackBases(currentBase);
-
-      const nextBase = fallbackBases.find(
-        (base) => trimTrailingSlashes(base) !== currentBase && !attemptedBases.includes(base)
-      );
-
-      if (nextBase !== undefined) {
-        config.__attemptedApiBases = [...attemptedBases, nextBase];
-        config.baseURL = nextBase;
-        return api.request(config);
-      }
-    }
 
     if (isDefinitiveAuthenticationFailure(error)) {
       localStorage.removeItem("token");
       window.location.href = "/login";
     }
 
-    if (status === 413 && error.response && typeof error.response.data !== "object") {
+    if (status === 413) {
       error.response.data = {
         message:
           "Request is too large. Please reduce attachment sizes or ask an administrator to increase the upload limit.",
       };
     }
 
-    dispatchApiActionNotification({
-      config,
-      error,
-      type: "error",
-    });
-
+    dispatchApiActionNotification({ config, error, type: "error" });
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
