@@ -289,6 +289,58 @@ test("POSITION and FIXED_USER render authenticated organization options while ca
   ).toBeInTheDocument();
   expect(within(capability).queryByText(/permission/i)).not.toBeInTheDocument();
 });
+test("condition values use organization and fixed-list dropdowns when available", async () => {
+  const version = {
+    id: 4,
+    status: "DRAFT",
+    version_number: 1,
+    rules: [
+      {
+        code: "R",
+        name: "Rule",
+        priority: 1,
+        conditions: [{ type: "DEPARTMENT_EQUALS", value: "" }],
+        steps: [],
+      },
+    ],
+  };
+  render(
+    <VersionDetail
+      version={version}
+      options={{
+        departments: [{ id: 8, name: "Nursing" }],
+        sections: [{ id: 12, name: "Ward A", department_name: "Nursing" }],
+      }}
+    />,
+  );
+
+  const value = screen.getByLabelText("Condition 1 value");
+  expect(value.tagName).toBe("SELECT");
+  expect(within(value).getByRole("option", { name: "Nursing" })).toHaveValue(
+    "8",
+  );
+
+  await userEvent.selectOptions(
+    screen.getByLabelText("Condition 1 type"),
+    "SECTION_EQUALS",
+  );
+  expect(screen.getByLabelText("Condition 1 value")).toHaveValue("");
+  expect(
+    within(screen.getByLabelText("Condition 1 value")).getByRole("option", {
+      name: "Nursing — Ward A",
+    }),
+  ).toHaveValue("12");
+
+  await userEvent.selectOptions(
+    screen.getByLabelText("Condition 1 type"),
+    "AMOUNT_GTE",
+  );
+  expect(screen.getByLabelText("Condition 1 value").tagName).toBe("INPUT");
+  expect(screen.getByLabelText("Condition 1 value")).toHaveAttribute(
+    "inputmode",
+    "decimal",
+  );
+});
 test("dashboard uses policy-list shadow fields and institute departments, runs single and opens existing run", async () => {
   api.listApprovalPolicies.mockResolvedValue([
     {

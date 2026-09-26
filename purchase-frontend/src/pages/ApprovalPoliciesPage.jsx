@@ -59,6 +59,25 @@ export const CAPABILITIES = [
   ["approval-authority.warehouse", "Warehouse authority"],
   ["approval-authority.medical-devices", "Medical Devices authority"],
 ];
+const REQUEST_TYPES = [
+  "Stock",
+  "Non-Stock",
+  "Medical Device",
+  "Medication",
+  "IT Item",
+  "Maintenance",
+  "Warehouse Supply",
+  "Printing Logbook",
+];
+const DEPARTMENT_CLASSIFICATIONS = ["medical", "operational"];
+const BOOLEAN_CONDITION_TYPES = new Set([
+  "IS_STOCK_REQUEST",
+  "IS_NON_STOCK_REQUEST",
+  "IS_MAINTENANCE_REQUEST",
+  "IS_MEDICAL_DEVICE_REQUEST",
+  "IS_MEDICAL_REQUEST",
+  "WAREHOUSE_REQUIRED",
+]);
 const display = (v) => (v == null || v === "" ? "—" : v);
 const message = (e) =>
   e?.response?.data?.message ||
@@ -238,6 +257,78 @@ function ResolverReference({ step, onChange, options = {} }) {
       </span>
     );
   return null;
+}
+function ConditionValue({
+  condition,
+  disabled,
+  onChange,
+  options = {},
+  ariaLabel,
+}) {
+  const choices = {
+    REQUEST_TYPE_EQUALS: REQUEST_TYPES.map((value) => ({
+      value,
+      label: value,
+    })),
+    DEPARTMENT_EQUALS: (options.departments || []).map((item) => ({
+      value: String(item.id),
+      label: item.name,
+    })),
+    SECTION_EQUALS: (options.sections || []).map((item) => ({
+      value: String(item.id),
+      label: item.department_name
+        ? `${item.department_name} — ${item.name}`
+        : item.name,
+    })),
+    DEPARTMENT_CLASSIFICATION_EQUALS: DEPARTMENT_CLASSIFICATIONS.map(
+      (value) => ({ value, label: value[0].toUpperCase() + value.slice(1) }),
+    ),
+  }[condition.type];
+
+  if (BOOLEAN_CONDITION_TYPES.has(condition.type))
+    return (
+      <select
+        className={fieldClass}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        value={condition.value || "true"}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="true">Yes</option>
+      </select>
+    );
+
+  if (choices)
+    return (
+      <select
+        className={fieldClass}
+        aria-label={ariaLabel}
+        disabled={disabled}
+        value={condition.value || ""}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <option value="">Select a value</option>
+        {choices.map((choice) => (
+          <option key={choice.value} value={choice.value}>
+            {choice.label}
+          </option>
+        ))}
+      </select>
+    );
+
+  return (
+    <input
+      className={fieldClass}
+      aria-label={ariaLabel}
+      disabled={disabled}
+      inputMode={condition.type.startsWith("AMOUNT_") ? "decimal" : undefined}
+      placeholder={
+        condition.type.startsWith("AMOUNT_") ? "Enter amount" : "Enter value"
+      }
+      value={condition.value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
 }
 export function VersionDetail({ version, onRefresh, options = {} }) {
   const [draft, setDraft] = useState(() => ({ rules: version.rules || [] })),
@@ -452,7 +543,17 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                     onChange={(e) =>
                       updateRule(ri, {
                         conditions: r.conditions.map((v, i) =>
-                          i === ci ? { ...v, type: e.target.value } : v,
+                          i === ci
+                            ? {
+                                ...v,
+                                type: e.target.value,
+                                value: BOOLEAN_CONDITION_TYPES.has(
+                                  e.target.value,
+                                )
+                                  ? "true"
+                                  : "",
+                              }
+                            : v,
                         ),
                       })
                     }
@@ -461,15 +562,15 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                       <option key={x}>{x}</option>
                     ))}
                   </select>
-                  <input
-                    className={fieldClass}
-                    aria-label={`Condition ${ci + 1} value`}
+                  <ConditionValue
+                    ariaLabel={`Condition ${ci + 1} value`}
+                    condition={c}
                     disabled={!editable}
-                    value={c.value}
-                    onChange={(e) =>
+                    options={options}
+                    onChange={(value) =>
                       updateRule(ri, {
                         conditions: r.conditions.map((v, i) =>
-                          i === ci ? { ...v, value: e.target.value } : v,
+                          i === ci ? { ...v, value } : v,
                         ),
                       })
                     }
