@@ -17,6 +17,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  Save,
   ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
@@ -181,6 +182,7 @@ function ResolverReference({ step, onChange, options = {} }) {
   if (type === "POSITION")
     return (
       <select
+        className={fieldClass}
         aria-label="Position"
         value={step.resolverReference || ""}
         onChange={(e) => onChange(e.target.value)}
@@ -196,6 +198,7 @@ function ResolverReference({ step, onChange, options = {} }) {
   if (type === "FIXED_USER")
     return (
       <select
+        className={fieldClass}
         aria-label="Institute user"
         value={step.resolverReference || ""}
         onChange={(e) => onChange(e.target.value)}
@@ -211,6 +214,7 @@ function ResolverReference({ step, onChange, options = {} }) {
   if (type === "CAPABILITY_HOLDER")
     return (
       <select
+        className={fieldClass}
         aria-label="Capability"
         value={step.resolverReference || ""}
         onChange={(e) => onChange(e.target.value)}
@@ -225,7 +229,7 @@ function ResolverReference({ step, onChange, options = {} }) {
     );
   if (type.endsWith("_AUTHORITY"))
     return (
-      <span>
+      <span className="mt-1.5 inline-flex min-h-10 items-center rounded-lg bg-slate-100 px-3 text-sm text-slate-700">
         {CAPABILITIES.find((x) =>
           type.startsWith(
             x[0].split(".")[1]?.replaceAll("-", "_").toUpperCase(),
@@ -290,302 +294,388 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
     }
   };
   return (
-    <section className="space-y-4">
-      <header>
-        <h2>Version {version.version_number}</h2>
-        <p>
-          Status: <strong>{version.status}</strong>
-        </p>
-        <p>
-          Effective: {display(version.effective_from)} –{" "}
-          {display(version.effective_to)} · Created{" "}
-          {display(version.created_at)}
-        </p>
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <header className="flex flex-col justify-between gap-4 border-b border-slate-200 bg-slate-50/70 px-6 py-5 sm:flex-row sm:items-start">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-lg bg-blue-100 p-2 text-blue-700">
+              <FileStack className="h-5 w-5" />
+            </span>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Version {version.version_number}
+            </h2>
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-600/20">
+              {version.status}
+            </span>
+          </div>
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 text-sm text-slate-500">
+            <CalendarDays className="h-4 w-4" /> Effective{" "}
+            {display(version.effective_from)} – {display(version.effective_to)}{" "}
+            <span aria-hidden="true">·</span> Created{" "}
+            {display(version.created_at)}
+          </p>
+        </div>
         {!editable && (
-          <p>
+          <p className="max-w-md rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
             Read-only snapshot. Shadow mode validates policy behavior only; it
             is not live routing.
           </p>
         )}
       </header>
-      {error && <p role="alert">{error}</p>}
-      {validation && (
-        <div role="status">
-          <strong>
-            {validation.valid ? "Validation passed" : "Validation failed"}
-          </strong>
-          {validation.errors?.map((x) => (
-            <p key={x}>{x}</p>
-          ))}
-          {validation.warnings?.map((x) => (
-            <p key={x}>Warning: {x}</p>
-          ))}
-        </div>
-      )}
-      {routingReadiness && (
-        <div role="status" aria-label="Current routing readiness">
-          <strong>Routing readiness: {routingReadiness.status}</strong>
-          <p>
-            Structural validation:{" "}
-            {routingReadiness.structurallyValid ? "PASS" : "FAIL"}
+      <div className="space-y-5 p-6">
+        {error && (
+          <p
+            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            {error}
           </p>
-          <p>
-            Currently routable:{" "}
-            {routingReadiness.currentlyRoutable ? "YES" : "NO"}
-          </p>
-          {[
-            ...(routingReadiness.errors || []),
-            ...(routingReadiness.warnings || []),
-          ].map((item, index) => (
-            <p key={`${item.code}-${item.stepId || item.ruleId || index}`}>
-              {item.code}: {item.message}
+        )}
+        {validation && (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${validation.valid ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}
+            role="status"
+          >
+            <strong>
+              {validation.valid ? "Validation passed" : "Validation failed"}
+            </strong>
+            {validation.errors?.map((x) => (
+              <p key={x}>{x}</p>
+            ))}
+            {validation.warnings?.map((x) => (
+              <p key={x}>Warning: {x}</p>
+            ))}
+          </div>
+        )}
+        {routingReadiness && (
+          <div
+            className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900"
+            role="status"
+            aria-label="Current routing readiness"
+          >
+            <strong>Routing readiness: {routingReadiness.status}</strong>
+            <p>
+              Structural validation:{" "}
+              {routingReadiness.structurallyValid ? "PASS" : "FAIL"}
             </p>
-          ))}
-        </div>
-      )}
-      <div>
-        {draft.rules.map((r, ri) => (
-          <article className="rounded border p-4" key={r.id || ri}>
-            <label>
-              Rule code
-              <input
-                aria-label={`Rule ${ri + 1} code`}
-                disabled={!editable}
-                value={r.code || ""}
-                onChange={(e) => updateRule(ri, { code: e.target.value })}
-              />
-            </label>
-            <label>
-              Rule name
-              <input
-                aria-label={`Rule ${ri + 1} name`}
-                disabled={!editable}
-                value={r.name || ""}
-                onChange={(e) => updateRule(ri, { name: e.target.value })}
-              />
-            </label>
-            <label>
-              Priority
-              <input
-                aria-label={`Rule ${ri + 1} priority`}
-                type="number"
-                min="1"
-                disabled={!editable}
-                value={r.priority}
-                onChange={(e) =>
-                  updateRule(ri, { priority: Number(e.target.value) })
-                }
-              />
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                disabled={!editable}
-                checked={!!r.stopProcessing}
-                onChange={(e) =>
-                  updateRule(ri, { stopProcessing: e.target.checked })
-                }
-              />{" "}
-              Stop processing
-            </label>
-            <h4>Conditions</h4>
-            {(r.conditions || []).map((c, ci) => (
-              <div key={ci}>
-                <select
-                  aria-label={`Condition ${ci + 1} type`}
-                  disabled={!editable}
-                  value={c.type}
-                  onChange={(e) =>
-                    updateRule(ri, {
-                      conditions: r.conditions.map((v, i) =>
-                        i === ci ? { ...v, type: e.target.value } : v,
-                      ),
-                    })
-                  }
-                >
-                  {CONDITION_TYPES.map((x) => (
-                    <option key={x}>{x}</option>
-                  ))}
-                </select>
+            <p>
+              Currently routable:{" "}
+              {routingReadiness.currentlyRoutable ? "YES" : "NO"}
+            </p>
+            {[
+              ...(routingReadiness.errors || []),
+              ...(routingReadiness.warnings || []),
+            ].map((item, index) => (
+              <p key={`${item.code}-${item.stepId || item.ruleId || index}`}>
+                {item.code}: {item.message}
+              </p>
+            ))}
+          </div>
+        )}
+        <div className="space-y-4">
+          {draft.rules.map((r, ri) => (
+            <article
+              className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              key={r.id || ri}
+            >
+              <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-600">
+                    Routing rule {ri + 1}
+                  </p>
+                  <h3 className="mt-1 font-semibold text-slate-900">
+                    {r.name || "Untitled rule"}
+                  </h3>
+                </div>
+                <GitBranch className="h-5 w-5 text-slate-400" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <label className={labelClass}>
+                  Rule code
+                  <input
+                    className={fieldClass}
+                    aria-label={`Rule ${ri + 1} code`}
+                    disabled={!editable}
+                    value={r.code || ""}
+                    onChange={(e) => updateRule(ri, { code: e.target.value })}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Rule name
+                  <input
+                    className={fieldClass}
+                    aria-label={`Rule ${ri + 1} name`}
+                    disabled={!editable}
+                    value={r.name || ""}
+                    onChange={(e) => updateRule(ri, { name: e.target.value })}
+                  />
+                </label>
+                <label className={labelClass}>
+                  Priority
+                  <input
+                    className={fieldClass}
+                    aria-label={`Rule ${ri + 1} priority`}
+                    type="number"
+                    min="1"
+                    disabled={!editable}
+                    value={r.priority}
+                    onChange={(e) =>
+                      updateRule(ri, { priority: Number(e.target.value) })
+                    }
+                  />
+                </label>
+              </div>
+              <label className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-slate-700">
                 <input
-                  aria-label={`Condition ${ci + 1} value`}
+                  type="checkbox"
                   disabled={!editable}
-                  value={c.value}
+                  checked={!!r.stopProcessing}
                   onChange={(e) =>
-                    updateRule(ri, {
-                      conditions: r.conditions.map((v, i) =>
-                        i === ci ? { ...v, value: e.target.value } : v,
-                      ),
-                    })
+                    updateRule(ri, { stopProcessing: e.target.checked })
                   }
-                />
-                {editable && (
-                  <button
-                    onClick={() =>
+                />{" "}
+                Stop processing
+              </label>
+              <h4 className="mt-6 text-sm font-semibold text-slate-900">
+                Conditions
+              </h4>
+              {(r.conditions || []).map((c, ci) => (
+                <div
+                  className="mt-3 grid gap-3 rounded-lg bg-slate-50 p-3 sm:grid-cols-[1fr_1fr_auto]"
+                  key={ci}
+                >
+                  <select
+                    className={fieldClass}
+                    aria-label={`Condition ${ci + 1} type`}
+                    disabled={!editable}
+                    value={c.type}
+                    onChange={(e) =>
                       updateRule(ri, {
-                        conditions: r.conditions.filter((_, i) => i !== ci),
+                        conditions: r.conditions.map((v, i) =>
+                          i === ci ? { ...v, type: e.target.value } : v,
+                        ),
                       })
                     }
                   >
-                    Remove condition
-                  </button>
-                )}
-              </div>
-            ))}
-            {editable && (
-              <button
-                onClick={() =>
-                  updateRule(ri, {
-                    conditions: [...(r.conditions || []), blankCondition()],
-                  })
-                }
-              >
-                Add condition
-              </button>
-            )}
-            <h4>Steps</h4>
-            {(r.steps || []).map((s, si) => (
-              <fieldset key={si}>
-                <legend>Step {si + 1}</legend>
-                {[
-                  ["approvalLevel", "Approval level", "number"],
-                  ["stepOrder", "Step order", "number"],
-                  ["parallelGroup", "Parallel group", "text"],
-                  ["semanticKey", "Semantic key", "text"],
-                  ["displayName", "Display name", "text"],
-                ].map(([key, label, type]) => (
-                  <label key={key}>
-                    {label}
-                    <input
-                      aria-label={`Step ${si + 1} ${label}`}
-                      type={type}
-                      disabled={!editable}
-                      value={s[key] ?? ""}
-                      onChange={(e) =>
+                    {CONDITION_TYPES.map((x) => (
+                      <option key={x}>{x}</option>
+                    ))}
+                  </select>
+                  <input
+                    className={fieldClass}
+                    aria-label={`Condition ${ci + 1} value`}
+                    disabled={!editable}
+                    value={c.value}
+                    onChange={(e) =>
+                      updateRule(ri, {
+                        conditions: r.conditions.map((v, i) =>
+                          i === ci ? { ...v, value: e.target.value } : v,
+                        ),
+                      })
+                    }
+                  />
+                  {editable && (
+                    <button
+                      className="self-end rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+                      onClick={() =>
+                        updateRule(ri, {
+                          conditions: r.conditions.filter((_, i) => i !== ci),
+                        })
+                      }
+                    >
+                      Remove condition
+                    </button>
+                  )}
+                </div>
+              ))}
+              {editable && (
+                <button
+                  className="mt-3 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-50"
+                  onClick={() =>
+                    updateRule(ri, {
+                      conditions: [...(r.conditions || []), blankCondition()],
+                    })
+                  }
+                >
+                  Add condition
+                </button>
+              )}
+              <h4 className="mt-6 text-sm font-semibold text-slate-900">
+                Approval steps
+              </h4>
+              {(r.steps || []).map((s, si) => (
+                <fieldset
+                  className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+                  key={si}
+                >
+                  <legend className="px-2 text-sm font-semibold text-slate-700">
+                    Step {si + 1}
+                  </legend>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      ["approvalLevel", "Approval level", "number"],
+                      ["stepOrder", "Step order", "number"],
+                      ["parallelGroup", "Parallel group", "text"],
+                      ["semanticKey", "Semantic key", "text"],
+                      ["displayName", "Display name", "text"],
+                    ].map(([key, label, type]) => (
+                      <label className={labelClass} key={key}>
+                        {label}
+                        <input
+                          className={fieldClass}
+                          aria-label={`Step ${si + 1} ${label}`}
+                          type={type}
+                          disabled={!editable}
+                          value={s[key] ?? ""}
+                          onChange={(e) =>
+                            updateRule(ri, {
+                              steps: r.steps.map((v, i) =>
+                                i === si
+                                  ? {
+                                      ...v,
+                                      [key]:
+                                        type === "number"
+                                          ? Number(e.target.value)
+                                          : e.target.value,
+                                    }
+                                  : v,
+                              ),
+                            })
+                          }
+                        />
+                      </label>
+                    ))}
+                    <label className={labelClass}>
+                      Resolver
+                      <select
+                        className={fieldClass}
+                        aria-label={`Step ${si + 1} resolver`}
+                        disabled={!editable}
+                        value={s.resolverType}
+                        onChange={(e) =>
+                          updateRule(ri, {
+                            steps: r.steps.map((v, i) =>
+                              i === si
+                                ? {
+                                    ...v,
+                                    resolverType: e.target.value,
+                                    resolverReference: "",
+                                  }
+                                : v,
+                            ),
+                          })
+                        }
+                      >
+                        {RESOLVER_TYPES.map((x) => (
+                          <option key={x}>{x.replaceAll("_", " ")}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <ResolverReference
+                      step={s}
+                      options={options}
+                      onChange={(value) =>
                         updateRule(ri, {
                           steps: r.steps.map((v, i) =>
-                            i === si
-                              ? {
-                                  ...v,
-                                  [key]:
-                                    type === "number"
-                                      ? Number(e.target.value)
-                                      : e.target.value,
-                                }
-                              : v,
+                            i === si ? { ...v, resolverReference: value } : v,
                           ),
                         })
                       }
                     />
+                  </div>
+                  <label className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      disabled={!editable}
+                      checked={s.required !== false}
+                      onChange={(e) =>
+                        updateRule(ri, {
+                          steps: r.steps.map((v, i) =>
+                            i === si ? { ...v, required: e.target.checked } : v,
+                          ),
+                        })
+                      }
+                    />{" "}
+                    Required
                   </label>
-                ))}
-                <label>
-                  Resolver
-                  <select
-                    aria-label={`Step ${si + 1} resolver`}
-                    disabled={!editable}
-                    value={s.resolverType}
-                    onChange={(e) =>
-                      updateRule(ri, {
-                        steps: r.steps.map((v, i) =>
-                          i === si
-                            ? {
-                                ...v,
-                                resolverType: e.target.value,
-                                resolverReference: "",
-                              }
-                            : v,
-                        ),
-                      })
-                    }
-                  >
-                    {RESOLVER_TYPES.map((x) => (
-                      <option key={x}>{x.replaceAll("_", " ")}</option>
-                    ))}
-                  </select>
-                </label>
-                <ResolverReference
-                  step={s}
-                  options={options}
-                  onChange={(value) =>
-                    updateRule(ri, {
-                      steps: r.steps.map((v, i) =>
-                        i === si ? { ...v, resolverReference: value } : v,
-                      ),
-                    })
+                  {editable && (
+                    <button
+                      className="mt-3 text-sm font-semibold text-red-600 hover:text-red-700"
+                      onClick={() =>
+                        updateRule(ri, {
+                          steps: r.steps.filter((_, i) => i !== si),
+                        })
+                      }
+                    >
+                      Remove step
+                    </button>
+                  )}
+                </fieldset>
+              ))}
+              {editable && (
+                <button
+                  className="mt-3 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-50"
+                  onClick={() =>
+                    updateRule(ri, { steps: [...(r.steps || []), blankStep()] })
                   }
-                />
-                <label>
-                  <input
-                    type="checkbox"
-                    disabled={!editable}
-                    checked={s.required !== false}
-                    onChange={(e) =>
-                      updateRule(ri, {
-                        steps: r.steps.map((v, i) =>
-                          i === si ? { ...v, required: e.target.checked } : v,
-                        ),
-                      })
-                    }
-                  />{" "}
-                  Required
-                </label>
-                {editable && (
-                  <button
-                    onClick={() =>
-                      updateRule(ri, {
-                        steps: r.steps.filter((_, i) => i !== si),
-                      })
-                    }
-                  >
-                    Remove step
-                  </button>
-                )}
-              </fieldset>
-            ))}
-            {editable && (
-              <button
-                onClick={() =>
-                  updateRule(ri, { steps: [...(r.steps || []), blankStep()] })
-                }
-              >
-                Add step
-              </button>
-            )}
-            {editable && (
-              <button
-                onClick={() =>
-                  setDraft((x) => ({
-                    ...x,
-                    rules: x.rules.filter((_, i) => i !== ri),
-                  }))
-                }
-              >
-                Remove rule
-              </button>
-            )}
-          </article>
-        ))}
-      </div>
-      {editable && (
-        <div>
-          <button
-            onClick={() =>
-              setDraft((x) => ({ ...x, rules: [...x.rules, blankRule()] }))
-            }
-          >
-            Add rule
-          </button>
-          <button disabled={saving} onClick={save}>
-            {saving ? "Saving…" : "Save draft"}
-          </button>
-          <button onClick={validate}>Validate</button>
+                >
+                  Add step
+                </button>
+              )}
+              {editable && (
+                <button
+                  className="mt-5 text-sm font-semibold text-red-600 hover:text-red-700"
+                  onClick={() =>
+                    setDraft((x) => ({
+                      ...x,
+                      rules: x.rules.filter((_, i) => i !== ri),
+                    }))
+                  }
+                >
+                  Remove rule
+                </button>
+              )}
+            </article>
+          ))}
         </div>
-      )}
-      {version.status === "VALIDATED" && (
-        <button onClick={enter}>Enter Shadow Mode</button>
-      )}
-      <button onClick={checkReadiness}>Check routing readiness</button>
+        {editable && (
+          <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-5">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              onClick={() =>
+                setDraft((x) => ({ ...x, rules: [...x.rules, blankRule()] }))
+              }
+            >
+              <Plus className="h-4 w-4" /> Add rule
+            </button>
+            <button
+              className={primaryButtonClass}
+              disabled={saving}
+              onClick={save}
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving…" : "Save draft"}
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
+              onClick={validate}
+            >
+              <CheckCircle2 className="h-4 w-4" /> Validate
+            </button>
+          </div>
+        )}
+        {version.status === "VALIDATED" && (
+          <button className={primaryButtonClass} onClick={enter}>
+            <Beaker className="h-4 w-4" /> Enter Shadow Mode
+          </button>
+        )}
+        <button
+          className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+          onClick={checkReadiness}
+        >
+          <Activity className="h-4 w-4" /> Check routing readiness
+        </button>
+      </div>
     </section>
   );
 }
@@ -601,8 +691,9 @@ export function PolicyDetail({
     [metadata, setMetadata] = useState({
       name: policy.name,
       description: policy.description || "",
-    });
-  const versions = policy.versions || [];
+    }),
+    [versions, setVersions] = useState(policy.versions || []);
+  useEffect(() => setVersions(policy.versions || []), [policy]);
   const statusClass = (status) => {
     const styles = {
       ACTIVE: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
@@ -616,6 +707,11 @@ export function PolicyDetail({
   const createVersion = async () => {
     try {
       const v = await api.createApprovalPolicyVersion(policy.id, {});
+      setVersions((current) =>
+        current.some((version) => version.id === v.id)
+          ? current
+          : [v, ...current],
+      );
       setSelected(v);
     } catch (e) {
       setError(message(e));
