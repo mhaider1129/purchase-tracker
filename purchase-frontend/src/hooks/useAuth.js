@@ -87,9 +87,15 @@ const useProvideAuth = () => {
           setUser(profile);
         }
       } catch (err) {
-        if (activeProfileRequestRef.current === requestId && localStorage.getItem("token") === activeToken) {
+        if (activeProfileRequestRef.current === requestId) {
           console.error("❌ Failed to fetch user profile:", err);
-          logout();
+          // axios.js is the sole authority for deciding whether an API response
+          // invalidates the browser session. Keep transient and generic failures
+          // from being interpreted as logout events here.
+          if (!localStorage.getItem("token")) {
+            setToken(null);
+            setUser(null);
+          }
         }
       } finally {
         if (activeProfileRequestRef.current === requestId) {
@@ -97,7 +103,7 @@ const useProvideAuth = () => {
         }
       }
     },
-    [logout],
+    [],
   );
 
   const login = useCallback((newToken) => {
