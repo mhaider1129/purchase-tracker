@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import { getDisplayItems } from '../utils/itemUtils';
+import AiAssistantDrawer from '../components/ai/AiAssistantDrawer';
+import RequestAiButton from '../components/ai/RequestAiButton';
 
 const tabs = ['Overview', 'Items', 'Approvals', 'Procurement', 'Timeline', 'Documents', 'Linked Records', 'Communication', 'Audit'];
 const noteTypes = ['internal_note', 'department_follow_up', 'supplier_follow_up', 'clarification', 'finance_note', 'warehouse_note'];
@@ -108,6 +110,7 @@ const ModalShell = ({ title, children, onClose }) => (
 const RequestDetailWorkspace = () => {
   const { requestId } = useParams();
   const navigate = useNavigate();
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [workspace, setWorkspace] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
@@ -402,6 +405,7 @@ const RequestDetailWorkspace = () => {
               </div>
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
+              <RequestAiButton onClick={() => setAiDrawerOpen(true)} />
               {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(procurableItems[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">Register Procurement</button> : null}
               {actions.has('create_po') ? <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} title="Create a governed purchase order from approved supplier awards" className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">Create Purchase Order</Link> : null}
               {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Add Note</button> : null}
@@ -583,6 +587,8 @@ const RequestDetailWorkspace = () => {
           </form>
         </ModalShell>
       )}
+
+      <AiAssistantDrawer open={aiDrawerOpen} onClose={() => setAiDrawerOpen(false)} requestId={requestId} />
 
       {itemStatusModalOpen && (
         <ModalShell title={itemStatusTarget ? `Finalize ${itemStatusTarget.item_name}` : 'Finalize Item'} onClose={() => { setItemStatusModalOpen(false); setItemStatusTarget(null); }}>

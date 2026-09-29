@@ -105,6 +105,7 @@ import SparePartFormPage from "./pages/SparePartFormPage";
 import SparePartDetailPage from "./pages/SparePartDetailPage";
 import EquipmentManagementPage from "./pages/EquipmentManagementPage";
 import FixedAssetsWorkspace from "./pages/FixedAssetsWorkspace";
+import AiAssistantPage from "./pages/AiAssistantPage";
 
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import {
@@ -222,6 +223,10 @@ const AppRoutes = () => (
     <Route path="/register" element={<Register />} />
 
     {/* ✅ General Protected Routes */}
+    <Route
+      path="/ai-assistant"
+      element={<ProtectedRoute element={<AiAssistantPage />} requiredPermissions={["ai-intelligence.use"]} />}
+    />
     <Route
       path="/"
       element={<ProtectedRoute element={<RequestTypeSelector />} />}

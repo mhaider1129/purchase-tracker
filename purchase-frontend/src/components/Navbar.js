@@ -12,6 +12,7 @@ import {
   Search,
   XCircle,
   Blocks,
+  Sparkles,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "./ui/NotificationBell";
@@ -283,6 +284,7 @@ const Navbar = () => {
       "permissions.manage",
       "projects.manage",
     ]);
+    const canUseAi = hasPermission(currentUser, "ai-intelligence.use");
     const canViewDashboard = hasAccess(currentUser, "feature.dashboard", [
       "dashboard.view",
     ]);
@@ -672,6 +674,15 @@ const Navbar = () => {
         id: "insights",
         label: t("navbar.groups.insights"),
         items: [
+          createItem(
+            canUseAi,
+            <span className="inline-flex items-center gap-2">
+              <Sparkles size={16} aria-hidden="true" />
+              AI Assistant
+            </span>,
+            "/ai-assistant",
+            "text-blue-700",
+          ),
           createItem(
             canViewDashboard,
             t("navbar.dashboard"),
