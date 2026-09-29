@@ -84,10 +84,10 @@ const message = (e) =>
   e?.response?.data?.error ||
   e?.message ||
   "The operation failed";
-const blankRule = () => ({
+const blankRule = (priority = 1) => ({
   code: "",
   name: "",
-  priority: 1,
+  priority,
   stopProcessing: false,
   conditions: [],
   steps: [],
@@ -347,7 +347,33 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
     setSaving(true);
     setError("");
     try {
-      await api.saveApprovalPolicyVersion(version.id, draft);
+      // Hydrated rules also contain database projection fields. Send only the
+      // documented draft DTO so a loaded version can be saved unchanged.
+      const payload = {
+        rules: draft.rules.map((rule) => ({
+          code: rule.code,
+          name: rule.name,
+          description: rule.description || "",
+          priority: rule.priority,
+          isActive: rule.isActive !== false,
+          stopProcessing: !!rule.stopProcessing,
+          conditions: (rule.conditions || []).map(({ type, value }) => ({
+            type,
+            value,
+          })),
+          steps: (rule.steps || []).map((step) => ({
+            stepOrder: step.stepOrder,
+            approvalLevel: step.approvalLevel,
+            parallelGroup: step.parallelGroup || "",
+            semanticKey: step.semanticKey,
+            displayName: step.displayName,
+            resolverType: step.resolverType,
+            resolverReference: step.resolverReference || "",
+            required: step.required !== false,
+          })),
+        })),
+      };
+      await api.saveApprovalPolicyVersion(version.id, payload);
       onRefresh?.();
     } catch (e) {
       setError(message(e));
@@ -744,7 +770,18 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
             <button
               className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               onClick={() =>
-                setDraft((x) => ({ ...x, rules: [...x.rules, blankRule()] }))
+                setDraft((x) => ({
+                  ...x,
+                  rules: [
+                    ...x.rules,
+                    blankRule(
+                      Math.max(
+                        0,
+                        ...x.rules.map((rule) => Number(rule.priority) || 0),
+                      ) + 1,
+                    ),
+                  ],
+                }))
               }
             >
               <Plus className="h-4 w-4" /> Add rule

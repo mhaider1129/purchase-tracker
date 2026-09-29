@@ -108,8 +108,6 @@ const PRINT_TRANSLATIONS = {
 };
 
 const CompletedAssignedRequestsPage = () => {
-  const PRINT_TEMPLATE_URL_STORAGE_KEY = "print_template_background_url";
-  const PRINT_TEMPLATE_FILE_STORAGE_KEY = "print_template_background_file";
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
@@ -120,12 +118,6 @@ const CompletedAssignedRequestsPage = () => {
   const [dateFilter, setDateFilter] = useState("all");
   const [printLanguage, setPrintLanguage] = useState("ar");
   const [showPrintSettings, setShowPrintSettings] = useState(false);
-  const [printTemplateUrl, setPrintTemplateUrl] = useState(
-    () => localStorage.getItem(PRINT_TEMPLATE_URL_STORAGE_KEY) || "",
-  );
-  const [printTemplateFileData, setPrintTemplateFileData] = useState(
-    () => localStorage.getItem(PRINT_TEMPLATE_FILE_STORAGE_KEY) || "",
-  );
 
   const {
     attachmentsMap,
@@ -153,18 +145,6 @@ const CompletedAssignedRequestsPage = () => {
     }
   }, [resetAttachments, search]);
 
-  useEffect(() => {
-    localStorage.setItem(
-      PRINT_TEMPLATE_URL_STORAGE_KEY,
-      printTemplateUrl.trim(),
-    );
-  }, [printTemplateUrl]);
-  useEffect(() => {
-    localStorage.setItem(
-      PRINT_TEMPLATE_FILE_STORAGE_KEY,
-      printTemplateFileData,
-    );
-  }, [printTemplateFileData]);
 
   const toggleItems = async (requestId) => {
     if (expandedRequestId === requestId) {
@@ -280,27 +260,6 @@ const CompletedAssignedRequestsPage = () => {
     setSearch("");
     setTypeFilter("all");
     setDateFilter("all");
-  };
-
-  const handleTemplateFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Template file is too large. Please use a file under 10MB.");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      alert(
-        "Word files are not supported directly. Please export your Word template as PNG/JPG first.",
-      );
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () =>
-      setPrintTemplateFileData(
-        typeof reader.result === "string" ? reader.result : "",
-      );
-    reader.readAsDataURL(file);
   };
 
   const handlePrint = async (requestId) => {
@@ -451,22 +410,6 @@ const CompletedAssignedRequestsPage = () => {
             <p>${escapeHtml(request.justification).replace(/\n/g, "<br />")}</p>
           </section>`
         : "";
-      const templateBackground =
-        printTemplateFileData || printTemplateUrl.trim();
-      const templateCss = templateBackground
-        ? `
-              body::before {
-                content: '';
-                position: fixed;
-                inset: 0;
-                background: url('${escapeHtml(templateBackground)}') center / contain no-repeat;
-                opacity: 0.28;
-                pointer-events: none;
-                z-index: 0;
-              }
-              .page { position: relative; z-index: 1; }`
-        : "";
-
       const body = `
         <!DOCTYPE html>
         <html lang="${printLanguage}" dir="${direction}">
@@ -489,7 +432,6 @@ const CompletedAssignedRequestsPage = () => {
                 padding: 32px;
                 background: #f9fafb;
               }
-              ${templateCss}
               .page {
                 background: #ffffff;
                 border-radius: 12px;
@@ -886,41 +828,7 @@ const CompletedAssignedRequestsPage = () => {
             </div>
           </div>
           {showPrintSettings && (
-            <div className="mt-5 grid gap-4 border-t border-gray-100 pt-5 dark:border-gray-800 md:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Template image
-                </label>
-                <div className="mt-1 flex gap-2">
-                  <input
-                    type="file"
-                    accept="image/*,.heic,.heif"
-                    className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white p-2 text-sm dark:border-gray-700 dark:bg-gray-800"
-                    onChange={handleTemplateFileChange}
-                  />
-                  {printTemplateFileData && (
-                    <button
-                      type="button"
-                      className="rounded-lg border px-3 text-sm"
-                      onClick={() => setPrintTemplateFileData("")}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                  Template URL
-                </label>
-                <input
-                  type="url"
-                  className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm dark:border-gray-700 dark:bg-gray-800"
-                  placeholder="https://example.com/template.png"
-                  value={printTemplateUrl}
-                  onChange={(e) => setPrintTemplateUrl(e.target.value)}
-                />
-              </div>
+            <div className="mt-5 max-w-sm border-t border-gray-100 pt-5 dark:border-gray-800">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                   {PRINT_TRANSLATIONS[printLanguage].printLanguage}

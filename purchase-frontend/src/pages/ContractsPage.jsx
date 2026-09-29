@@ -7,6 +7,9 @@ import api from '../api/axios';
 import { listContractDocuments } from '../api/contracts';
 import { searchApprovedProducts, searchGenericItems, searchSupplierCatalog } from '../api/itemMaster';
 import { useAuth } from '../hooks/useAuth';
+import { ArrowUpDown, ChevronDown, FilePlus2, Filter, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
+import { contractMatchesFilters } from '../utils/contractFilters';
+import { evaluationDetailsPath } from '../utils/routes';
 import { ArrowUpDown, FilePlus2, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
 
 const parseJson = (value) => {
@@ -108,7 +111,9 @@ const statusOptions = [
 const renewalOptions = [
   { value: 'all', label: 'All renewals' },
   { value: 'expiring', label: 'Expiring soon' },
+  { value: 'next_90', label: 'Due in 90 days' },
   { value: 'expired', label: 'Expired' },
+  { value: 'unscheduled', label: 'No end date' },
 ];
 
 const sortOptions = [
@@ -312,6 +317,11 @@ const ContractsPage = () => {
   const [sortBy, setSortBy] = useState('attention');
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState('all');
+  const [minValue, setMinValue] = useState('');
+  const [maxValue, setMaxValue] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const [formState, setFormState] = useState(initialFormState);
   const [editingId, setEditingId] = useState(null);
@@ -410,16 +420,8 @@ const ContractsPage = () => {
     setLoading(true);
     setError('');
 
-    const params = {};
-    if (statusFilter !== 'all') {
-      params.status = statusFilter;
-    }
-    if (searchTerm) {
-      params.search = searchTerm;
-    }
-
     try {
-      const { data } = await api.get('/contracts', { params });
+      const { data } = await api.get('/contracts');
       setContracts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load contracts', err);
@@ -427,7 +429,7 @@ const ContractsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, searchTerm]);
+  }, []);
 
   useEffect(() => {
     fetchContracts();
@@ -717,7 +719,7 @@ const ContractsPage = () => {
 
   const handleViewEvaluation = (evaluationId) => {
     if (!evaluationId) return;
-    navigate(`/evaluation-details/${evaluationId}`);
+    navigate(evaluationDetailsPath(evaluationId));
   };
 
   const handleDeleteEvaluation = async (evaluationId) => {
@@ -1491,18 +1493,16 @@ const ContractsPage = () => {
   } = contractStats;
 
   const filteredContracts = useMemo(() => {
-    return contracts.filter((contract) => {
-      if (renewalFilter === 'expiring') {
-        return isExpiringSoon(contract);
-      }
-
-      if (renewalFilter === 'expired') {
-        return Boolean(contract.is_expired);
-      }
-
-      return true;
-    });
-  }, [contracts, isExpiringSoon, renewalFilter]);
+    return contracts.filter((contract) => contractMatchesFilters(contract, {
+      search: searchTerm,
+      status: statusFilter,
+      renewal: renewalFilter,
+      type: typeFilter,
+      owner: ownerFilter,
+      minValue,
+      maxValue,
+    }));
+  }, [contracts, maxValue, minValue, ownerFilter, renewalFilter, searchTerm, statusFilter, typeFilter]);
 
   const sortedContracts = useMemo(() => {
     return [...filteredContracts].sort((a, b) => {
@@ -1541,12 +1541,17 @@ const ContractsPage = () => {
     });
   }, [filteredContracts, isExpiringSoon, sortBy]);
 
-  const hasActiveFilters = statusFilter !== 'all' || renewalFilter !== 'all' || Boolean(searchInput);
+  const ownerOptions = useMemo(() => [...new Set(contracts.map((contract) => contract.contract_owner).filter(Boolean))].sort(), [contracts]);
+  const hasActiveFilters = statusFilter !== 'all' || renewalFilter !== 'all' || typeFilter !== 'all' || ownerFilter !== 'all' || minValue !== '' || maxValue !== '' || Boolean(searchInput);
   const clearFilters = () => {
     setSearchInput('');
     setSearchTerm('');
     setStatusFilter('all');
     setRenewalFilter('all');
+    setTypeFilter('all');
+    setOwnerFilter('all');
+    setMinValue('');
+    setMaxValue('');
   };
 
   const exportContractsToCsv = useCallback(() => {
@@ -1948,6 +1953,20 @@ const ContractsPage = () => {
               </div>
             </div>
           </div>
+          {!isCreatePage && !isEditPage && (
+            <nav className="relative mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-5" aria-label="Contract workspace shortcuts">
+              {[
+                ['Portfolio', '/contracts'],
+                ['Approvals', '/contracts/approvals'],
+                ['Templates', '/contract-templates'],
+                ['Clause library', '/contract-clauses'],
+              ].map(([label, path]) => (
+                <button key={path} type="button" onClick={() => navigate(path)} className={`rounded-full px-4 py-2 text-sm font-semibold transition ${location.pathname === path ? 'bg-white text-blue-950 shadow' : 'bg-white/10 text-blue-50 hover:bg-white/20'}`}>
+                  {label}
+                </button>
+              ))}
+            </nav>
+          )}
         </header>
 
         {!isCreatePage && !isEditPage && (
@@ -2040,7 +2059,7 @@ const ContractsPage = () => {
                     <input
                       id="contracts-search"
                       type="search"
-                      placeholder="Search by title, vendor, or reference"
+                      placeholder="Search title, vendor, owner, category, reference…"
                       value={searchInput}
                       onChange={(event) => setSearchInput(event.target.value)}
                       className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
@@ -2131,6 +2150,46 @@ const ContractsPage = () => {
                   </button>
                 </div>
               </div>
+              <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+                <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Quick views</span>
+                {[
+                  ['All contracts', 'all'],
+                  ['Active', 'active'],
+                  ['In review', 'under_review'],
+                  ['Archived', 'archived'],
+                ].map(([label, value]) => (
+                  <button key={value} type="button" onClick={() => setStatusFilter(value)} aria-pressed={statusFilter === value} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${statusFilter === value ? 'bg-blue-600 text-white shadow-sm' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'}`}>
+                    {label}
+                  </button>
+                ))}
+                <button type="button" onClick={() => { setRenewalFilter('expiring'); setStatusFilter('all'); }} aria-pressed={renewalFilter === 'expiring'} className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${renewalFilter === 'expiring' ? 'bg-amber-500 text-amber-950 shadow-sm' : 'bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+                  Renewal watch
+                </button>
+                <button type="button" onClick={() => setShowAdvancedFilters((current) => !current)} aria-expanded={showAdvancedFilters} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
+                  <Filter className="h-3.5 w-3.5" aria-hidden="true" /> More filters
+                  <ChevronDown className={`h-3.5 w-3.5 transition ${showAdvancedFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
+                </button>
+              </div>
+              {showAdvancedFilters && (
+                <div className="grid gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-blue-900/50 dark:bg-blue-950/20">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Contract type
+                    <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-normal dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                      <option value="all">All types</option><option value="purchasing">Purchasing</option><option value="leasing">Leasing</option><option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Contract owner
+                    <select value={ownerFilter} onChange={(event) => setOwnerFilter(event.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-normal dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                      <option value="all">All owners</option>{ownerOptions.map((owner) => <option key={owner} value={owner}>{owner}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Minimum value
+                    <input type="number" min="0" value={minValue} onChange={(event) => setMinValue(event.target.value)} placeholder="No minimum" className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-normal dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                  </label>
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Maximum value
+                    <input type="number" min="0" value={maxValue} onChange={(event) => setMaxValue(event.target.value)} placeholder="No maximum" className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-normal dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                  </label>
+                </div>
+              )}
               {hasActiveFilters && (
                 <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
                   <span>Showing {sortedContracts.length} of {contracts.length} contracts with active filters</span>

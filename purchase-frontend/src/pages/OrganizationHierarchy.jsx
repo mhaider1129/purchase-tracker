@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Search,
   Plus,
@@ -688,7 +694,6 @@ function PositionsDialog({ unit, options, onClose, onChanged }) {
     positionType: "CUSTOM",
     positionName: "",
     userId: "",
-    isUnitHead: false,
     effectiveFrom: "",
     effectiveTo: "",
     isActive: true,
@@ -710,7 +715,6 @@ function PositionsDialog({ unit, options, onClose, onChanged }) {
       positionType: p.position_type,
       positionName: p.position_name,
       userId: p.user_id || "",
-      isUnitHead: !!p.is_unit_head,
       effectiveFrom: p.effective_from?.slice(0, 10) || "",
       effectiveTo: p.effective_to?.slice(0, 10) || "",
       isActive: p.is_active,
@@ -818,14 +822,10 @@ function PositionsDialog({ unit, options, onClose, onChanged }) {
             ))}
           </select>
         </Field>
-        <label>
-          <input
-            type="checkbox"
-            checked={form.isUnitHead}
-            onChange={(e) => setForm({ ...form, isUnitHead: e.target.checked })}
-          />{" "}
-          Is unit head
-        </label>
+        <p className="org-field-help">
+          Head authority is assigned automatically when the position type
+          matches this unit's canonical head type.
+        </p>
         <Field label="Effective from">
           <input
             aria-label="Effective from"
@@ -860,14 +860,61 @@ function PositionsDialog({ unit, options, onClose, onChanged }) {
     </Dialog>
   );
 }
-function Node({ node, selected, setSelected, collapsed, setCollapsed, query }) {
+function Node({
+  node,
+  selected,
+  setSelected,
+  collapsed,
+  setCollapsed,
+  query,
+  canManage,
+  draggedUnit,
+  dropTarget,
+  setDraggedUnit,
+  setDropTarget,
+  onDropUnit,
+}) {
   if (!subtreeMatches(node, query)) return null;
   const closed = collapsed.has(node.id);
+  const isDragged = String(draggedUnit?.id) === String(node.id);
+  const isDropTarget = String(dropTarget?.id) === String(node.id);
+  const validDrop = draggedUnit && canParent(draggedUnit.unit_type, node);
   return (
     <li>
       <button
-        className={`org-node ${selected?.id === node.id ? "selected" : ""} ${!node.is_active ? "archived" : ""}`}
+        className={`org-node ${selected?.id === node.id ? "selected" : ""} ${!node.is_active ? "archived" : ""} ${isDragged ? "dragging" : ""} ${isDropTarget ? (validDrop ? "drop-target" : "drop-invalid") : ""}`}
         onClick={() => setSelected(node)}
+        draggable={canManage && node.is_active}
+        aria-label={`${node.name}${canManage && node.is_active ? "; drag to move" : ""}`}
+        onDragStart={(event) => {
+          event.stopPropagation();
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("text/plain", String(node.id));
+          setDraggedUnit(node);
+        }}
+        onDragEnd={() => {
+          setDraggedUnit(null);
+          setDropTarget(null);
+        }}
+        onDragEnter={(event) => {
+          if (!draggedUnit || isDragged) return;
+          event.preventDefault();
+          setDropTarget(node);
+        }}
+        onDragOver={(event) => {
+          if (!draggedUnit || isDragged) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = validDrop ? "move" : "none";
+        }}
+        onDragLeave={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget))
+            setDropTarget(null);
+        }}
+        onDrop={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onDropUnit(node);
+        }}
       >
         <span
           onClick={(e) => {
@@ -905,6 +952,12 @@ function Node({ node, selected, setSelected, collapsed, setCollapsed, query }) {
                 collapsed,
                 setCollapsed,
                 query,
+                canManage,
+                draggedUnit,
+                dropTarget,
+                setDraggedUnit,
+                setDropTarget,
+                onDropUnit,
               }}
             />
           ))}
@@ -924,6 +977,9 @@ export default function OrganizationHierarchy() {
     [collapsed, setCollapsed] = useState(new Set()),
     [query, setQuery] = useState(""),
     [zoom, setZoom] = useState(1),
+    [draggedUnit, setDraggedUnit] = useState(null),
+    [dropTarget, setDropTarget] = useState(null),
+    [movingUnitId, setMovingUnitId] = useState(null),
     [view, setView] = useState("tree"),
     [dialog, setDialog] = useState(),
     [options, setOptions] = useState({
@@ -932,6 +988,8 @@ export default function OrganizationHierarchy() {
       users: [],
     }),
     [health, setHealth] = useState({ legacyHodConflicts: [] });
+  const canvasRef = useRef(null);
+  const panRef = useRef(null);
   const flat = useMemo(() => flatten(tree), [tree]);
   const visibleCount = useMemo(
     () => flat.filter((unit) => subtreeMatches(unit, query)).length,
@@ -979,6 +1037,58 @@ export default function OrganizationHierarchy() {
     setDialog(null);
     await load(unit.id);
     refreshHealth();
+  };
+  const moveByDrop = async (parent) => {
+    if (!draggedUnit || movingUnitId) return;
+    const descendants = descendantIds(draggedUnit.id, parentUnits);
+    const invalid =
+      String(draggedUnit.id) === String(parent.id) ||
+      descendants.has(String(parent.id)) ||
+      !parent.is_active ||
+      !canParent(draggedUnit.unit_type, parent);
+    setDropTarget(null);
+    if (invalid) {
+      setError(`${draggedUnit.name} cannot report to ${parent.name}`);
+      return;
+    }
+    if (String(draggedUnit.parent_unit_id) === String(parent.id)) return;
+    setMovingUnitId(draggedUnit.id);
+    setError("");
+    try {
+      await org.moveOrganizationUnit(draggedUnit.id, parent.id);
+      await load(draggedUnit.id);
+      refreshHealth();
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      setMovingUnitId(null);
+      setDraggedUnit(null);
+    }
+  };
+  const startPan = (event) => {
+    if ((event.button ?? 0) !== 0 || event.target.closest("button")) return;
+    const canvas = canvasRef.current;
+    panRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      left: canvas.scrollLeft,
+      top: canvas.scrollTop,
+    };
+    canvas.classList.add("panning");
+    canvas.setPointerCapture?.(event.pointerId);
+  };
+  const pan = (event) => {
+    if (!panRef.current) return;
+    const canvas = canvasRef.current;
+    canvas.scrollLeft =
+      panRef.current.left - (event.clientX - panRef.current.x);
+    canvas.scrollTop = panRef.current.top - (event.clientY - panRef.current.y);
+  };
+  const stopPan = (event) => {
+    panRef.current = null;
+    canvasRef.current?.classList.remove("panning");
+    if (canvasRef.current?.hasPointerCapture?.(event.pointerId))
+      canvasRef.current.releasePointerCapture(event.pointerId);
   };
   const archive = async () => {
     if (!window.confirm(`Archive ${selected.name}? This does not delete it.`))
@@ -1064,6 +1174,11 @@ export default function OrganizationHierarchy() {
           </>
         )}
       </div>
+      {movingUnitId && (
+        <p className="org-move-status" role="status">
+          Moving unit…
+        </p>
+      )}
       {error && state !== "error" && <p role="alert">{error}</p>}
       {state === "loading" && <p>Loading organization hierarchy…</p>}
       {state === "error" && <p role="alert">{error}</p>}
@@ -1078,7 +1193,22 @@ export default function OrganizationHierarchy() {
               <button onClick={() => setQuery("")}>Clear search</button>
             </div>
           ) : view === "tree" ? (
-            <div className="org-canvas">
+            <div
+              className="org-canvas"
+              ref={canvasRef}
+              onPointerDown={startPan}
+              onPointerMove={pan}
+              onPointerUp={stopPan}
+              onPointerCancel={stopPan}
+              aria-label="Organization chart canvas. Drag the background to pan."
+            >
+              <p className="org-canvas-help">
+                Drag the background to pan
+                {canManage
+                  ? "; drag a unit onto its new parent to move it"
+                  : ""}
+                .
+              </p>
               <ul className="org-tree" style={{ transform: `scale(${zoom})` }}>
                 {tree.map((n) => (
                   <Node
@@ -1090,6 +1220,12 @@ export default function OrganizationHierarchy() {
                       collapsed,
                       setCollapsed,
                       query,
+                      canManage,
+                      draggedUnit,
+                      dropTarget,
+                      setDraggedUnit,
+                      setDropTarget,
+                      onDropUnit: moveByDrop,
                     }}
                   />
                 ))}

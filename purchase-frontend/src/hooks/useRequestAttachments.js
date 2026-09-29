@@ -25,15 +25,18 @@ const normalizeDownloadEndpoint = (endpoint = "") => {
     return trimmedEndpoint;
   }
 
-  return trimmedEndpoint.startsWith("/")
+  const prefixedEndpoint = trimmedEndpoint.startsWith("/")
     ? trimmedEndpoint
     : `/${trimmedEndpoint}`;
+
+  // Older API responses included the API base in download_url. Axios already
+  // supplies that base, so keep those persisted/cached responses compatible
+  // without producing `/api/api/attachments/...` requests.
+  return prefixedEndpoint.replace(/^\/api\//i, "/");
 };
 
 const buildDownloadCandidates = (candidates = []) => {
-  const normalized = candidates
-    .map(normalizeDownloadEndpoint)
-    .filter(Boolean);
+  const normalized = candidates.map(normalizeDownloadEndpoint).filter(Boolean);
 
   return Array.from(new Set(normalized));
 };
@@ -102,7 +105,9 @@ const useRequestAttachments = () => {
     const storedPathBasedEndpoint = storedPath
       ? `/attachments/download?path=${encodeURIComponent(storedPath)}`
       : null;
-    const idBasedEndpoint = attachment?.id ? `/attachments/${attachment.id}/download` : null;
+    const idBasedEndpoint = attachment?.id
+      ? `/attachments/${attachment.id}/download`
+      : null;
     const filenameBasedEndpoint = fallbackName
       ? `/attachments/download/${encodeURIComponent(fallbackName)}`
       : null;

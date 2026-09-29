@@ -5,6 +5,7 @@ import { useAccessControl } from '../hooks/useAccessControl';
 import { hasPermission, hasAnyPermission } from '../utils/permissions';
 import { filterUsersBySearch } from '../utils/filterUsers';
 import useWarehouses from '../hooks/useWarehouses';
+import DocumentBrandingSettings from '../components/DocumentBrandingSettings';
 import { defaultContractApprovalRules } from '../config/contractApprovalRules';
 import {
   Building2, ChevronRight, FileSliders, FolderKanban, KeyRound, Network,
@@ -2696,6 +2697,7 @@ const Management = () => {
 
     return (
       <div className="space-y-4">
+        <DocumentBrandingSettings />
         <div className="rounded border border-cyan-100 bg-cyan-50 p-4 text-sm text-cyan-900">
           <h3 className="text-base font-semibold">IT Department Queue access</h3>
           <p>

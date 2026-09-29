@@ -1,6 +1,12 @@
 /* eslint-disable testing-library/no-node-access */
 import React from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import OrganizationHierarchy from "./OrganizationHierarchy";
 import * as api from "../api/organization";
@@ -56,11 +62,12 @@ const detail = {
 const setup = (
   manager = true,
   units = [root, ...root.children, ...root.children[0].children],
+  treeData = [root],
 ) => {
   useAuth.mockReturnValue({
     user: { permissions: manager ? ["organization.manage"] : [] },
   });
-  api.getOrganizationTree.mockResolvedValue([root]);
+  api.getOrganizationTree.mockResolvedValue(treeData);
   api.getOrganizationUnits.mockResolvedValue(units);
   api.getOrganizationOptions.mockResolvedValue({
     departments: [{ id: 11, name: "Legacy Finance" }],
@@ -131,6 +138,60 @@ test("search has a result count, empty state, and one-click reset", async () => 
   expect(screen.getByText("0 units")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Clear search" }));
   expect(screen.getByText("Payroll")).toBeInTheDocument();
+});
+test("managers can drag a unit onto a valid new parent", async () => {
+  const cooUnit = {
+    id: 4,
+    name: "COO",
+    unit_type: "EXECUTIVE_OFFICE",
+    parent_unit_id: 1,
+    is_active: true,
+    children: [],
+  };
+  setup(
+    true,
+    [root, ...root.children, ...root.children[0].children, cooUnit],
+    [{ ...root, children: [...root.children, cooUnit] }],
+  );
+  api.moveOrganizationUnit.mockResolvedValue({});
+  const finance = await screen.findByRole("button", {
+    name: "Finance; drag to move",
+  });
+  const coo = screen.getByRole("button", { name: "COO; drag to move" });
+  const dataTransfer = {
+    effectAllowed: "none",
+    dropEffect: "none",
+    setData: jest.fn(),
+  };
+
+  fireEvent.dragStart(finance, { dataTransfer });
+  fireEvent.dragEnter(coo, { dataTransfer });
+  expect(coo).toHaveClass("drop-target");
+  fireEvent.dragOver(coo, { dataTransfer });
+  fireEvent.drop(coo, { dataTransfer });
+
+  await waitFor(() =>
+    expect(api.moveOrganizationUnit).toHaveBeenCalledWith(2, 4),
+  );
+});
+test("the chart background can be dragged to pan", async () => {
+  setup(false);
+  await screen.findByText("Finance");
+  const canvas = screen.getByLabelText(/Organization chart canvas/);
+  Object.defineProperty(canvas, "scrollLeft", { value: 100, writable: true });
+  Object.defineProperty(canvas, "scrollTop", { value: 80, writable: true });
+
+  fireEvent.pointerDown(canvas, {
+    button: 0,
+    pointerId: 1,
+    clientX: 50,
+    clientY: 50,
+  });
+  expect(canvas).toHaveClass("panning");
+  fireEvent.pointerMove(canvas, { pointerId: 1, clientX: 20, clientY: 10 });
+  fireEvent.pointerUp(canvas, { pointerId: 1, clientX: 20, clientY: 10 });
+
+  expect(canvas).not.toHaveClass("panning");
 });
 test("permissions gate mutations", async () => {
   const { unmount } = setup(false);
@@ -349,6 +410,33 @@ test("positions render statuses, add, edit, archive, and duplicate authority err
   );
   await waitFor(() =>
     expect(api.archiveOrganizationPosition).toHaveBeenCalledWith(1),
+  );
+});
+test("position edits leave canonical head authority to the server", async () => {
+  setup();
+  api.updateOrganizationPosition.mockResolvedValue({});
+  await userEvent.click(await screen.findByText("Finance"));
+  await screen.findByText("Full path");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Manage Positions" }),
+  );
+  const dialog = screen.getByRole("dialog");
+  await userEvent.click(
+    (await within(dialog).findAllByRole("button", { name: "Edit" }))[0],
+  );
+  await userEvent.clear(within(dialog).getByLabelText("Position name"));
+  await userEvent.type(
+    within(dialog).getByLabelText("Position name"),
+    "Senior Director",
+  );
+  await userEvent.click(
+    within(dialog).getByRole("button", { name: "Save position" }),
+  );
+  await waitFor(() =>
+    expect(api.updateOrganizationPosition).toHaveBeenCalledWith(
+      9,
+      expect.not.objectContaining({ isUnitHead: expect.anything() }),
+    ),
   );
 });
 test("detail shows identity, path and actual authorities", async () => {

@@ -149,6 +149,89 @@ test("draft validates and only a validated version can enter shadow", async () =
   await userEvent.click(screen.getByText("Enter Shadow Mode"));
   await waitFor(() => expect(refresh).toHaveBeenCalled());
 });
+test("saving a hydrated draft sends only the supported DTO fields", async () => {
+  api.saveApprovalPolicyVersion.mockResolvedValue({});
+  const version = {
+    id: 4,
+    status: "DRAFT",
+    version_number: 1,
+    rules: [
+      {
+        id: 10,
+        policy_version_id: 4,
+        rule_code: "BASE",
+        code: "BASE",
+        name: "Base",
+        priority: 1,
+        is_active: true,
+        isActive: true,
+        stop_processing: false,
+        stopProcessing: false,
+        conditions: [{ type: "REQUEST_TYPE_EQUALS", value: "Stock" }],
+        steps: [
+          {
+            stepOrder: 1,
+            approvalLevel: 1,
+            semanticKey: "REQUESTER",
+            displayName: "Requester",
+            resolverType: "REQUESTER",
+            required: true,
+          },
+        ],
+      },
+    ],
+  };
+
+  render(<VersionDetail version={version} />);
+  await userEvent.click(screen.getByRole("button", { name: /Save draft/i }));
+
+  await waitFor(() => expect(api.saveApprovalPolicyVersion).toHaveBeenCalled());
+  const savedRule = api.saveApprovalPolicyVersion.mock.calls[0][1].rules[0];
+  expect(savedRule).toEqual({
+    code: "BASE",
+    name: "Base",
+    description: "",
+    priority: 1,
+    isActive: true,
+    stopProcessing: false,
+    conditions: [{ type: "REQUEST_TYPE_EQUALS", value: "Stock" }],
+    steps: [
+      {
+        stepOrder: 1,
+        approvalLevel: 1,
+        parallelGroup: "",
+        semanticKey: "REQUESTER",
+        displayName: "Requester",
+        resolverType: "REQUESTER",
+        resolverReference: "",
+        required: true,
+      },
+    ],
+  });
+});
+test("new rules receive the next available unique priority", async () => {
+  render(
+    <VersionDetail
+      version={{
+        id: 4,
+        status: "DRAFT",
+        version_number: 1,
+        rules: [
+          {
+            code: "BASE",
+            name: "Base",
+            priority: 3,
+            conditions: [],
+            steps: [],
+          },
+        ],
+      }}
+    />,
+  );
+
+  await userEvent.click(screen.getByRole("button", { name: /Add rule/ }));
+  expect(screen.getByLabelText("Rule 2 priority")).toHaveValue(4);
+});
 test("version readiness distinguishes structural validity from current routability", async () => {
   api.getApprovalPolicyVersionReadiness.mockResolvedValue({
     status: "WARNING",

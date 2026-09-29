@@ -119,7 +119,9 @@ import {
 } from "./utils/permissions";
 import Navbar from "./components/Navbar";
 import AppExperience from "./components/layout/AppExperience";
+import DocumentPrintBranding from "./components/DocumentPrintBranding";
 import { featureRegistry } from "./config/featureRegistry";
+import { EVALUATION_DETAILS_ROUTE } from "./utils/routes";
 
 const ProtectedRoute = ({
   element,
@@ -1005,7 +1007,7 @@ const AppRoutes = () => (
       element={<ProtectedRoute element={<MyEvaluationsPage />} />}
     />
     <Route
-      path="/evaluations/:id"
+      path={EVALUATION_DETAILS_ROUTE}
       element={<ProtectedRoute element={<EvaluationDetailsPage />} />}
     />
 
@@ -1044,6 +1046,7 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
           <AccessControlProvider>
+            <DocumentPrintBranding />
             <AppShell>
               <AppRoutes />
             </AppShell>
