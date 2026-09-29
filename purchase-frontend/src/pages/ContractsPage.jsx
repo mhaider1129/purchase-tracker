@@ -10,7 +10,6 @@ import { useAuth } from '../hooks/useAuth';
 import { ArrowUpDown, ChevronDown, FilePlus2, Filter, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
 import { contractMatchesFilters } from '../utils/contractFilters';
 import { evaluationDetailsPath } from '../utils/routes';
-import { ArrowUpDown, FilePlus2, RefreshCw, Search, ShieldAlert, X } from 'lucide-react';
 
 const parseJson = (value) => {
   if (value === null || value === undefined) {
