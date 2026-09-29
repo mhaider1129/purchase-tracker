@@ -940,7 +940,7 @@ const AllRequestsPage = () => {
               }
               @page {
                 size: A4;
-                margin: 20mm;
+                margin: 12mm;
               }
               body {
                 font-family: 'Segoe UI', 'Cairo', Arial, sans-serif;
@@ -1107,14 +1107,37 @@ const AllRequestsPage = () => {
                 header {
                   margin-bottom: 16px;
                 }
+                .section {
+                  margin-bottom: 12px;
+                }
+                .section h2 {
+                  margin-top: 0;
+                  margin-bottom: 6px;
+                  padding-bottom: 3px;
+                }
+                .details-grid {
+                  gap: 8px;
+                  margin-bottom: 12px;
+                }
                 .detail-item {
                   background: transparent;
+                  padding: 6px 10px;
                 }
                 .items-table {
                   border: 1px solid #d1d5db;
                 }
                 .items-table tbody tr:nth-child(even) {
                   background: #ffffff;
+                }
+                .items-table th,
+                .items-table td {
+                  padding: 6px;
+                }
+                .signature-blocks {
+                  margin-top: 20px;
+                }
+                footer {
+                  margin-top: 16px;
                 }
               }
             </style>

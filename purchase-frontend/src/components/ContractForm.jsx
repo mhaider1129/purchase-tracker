@@ -1,4 +1,5 @@
 import React from "react";
+import { Building2, Check, CircleDollarSign, FileText, Landmark, Users } from "lucide-react";
 import AmountInput from "./ui/AmountInput";
 
 const ContractForm = ({
@@ -23,6 +24,40 @@ const ContractForm = ({
   suppliersError,
 }) => {
   const [activeStructuredSection, setActiveStructuredSection] = React.useState("scope_summary");
+  const [activeStep, setActiveStep] = React.useState("overview");
+
+  const steps = [
+    { key: "overview", label: "Overview", description: "Identity and ownership", icon: FileText },
+    { key: "parties", label: "Parties", description: "Supplier and contacts", icon: Users },
+    { key: "terms", label: "Terms", description: "Scope and obligations", icon: Building2 },
+    { key: "governance", label: "Governance", description: "Reviews and approvals", icon: Landmark },
+    { key: "payment", label: "Payment", description: "Commercial controls", icon: CircleDollarSign },
+  ];
+
+  const stepFields = {
+    overview: ["title", "reference_number", "contract_category", "contract_type", "start_date", "end_date", "signing_date", "currency", "contract_value"],
+    parties: ["institute", "vendor", "supplier_id", "first_party", "second_party", "authorized_signatory", "vendor_contact_person", "vendor_contact_email", "vendor_contact_phone", "vendor_tax_id", "vendor_address"],
+    terms: ["scope_summary", "deliverables", "technical_specifications", "exclusions", "sla_requirements", "warranty_terms", "delivery_terms", "financial_payment_control", "penalties_incentives", "termination_exit_terms", "risk_dispute_management", "compliance_legal_terms", "change_management_terms"],
+    governance: ["renewal_type", "renewal_notice_days", "end_user_department_id", "contract_manager_id", "main_technical_department_id"],
+    payment: ["payment_period", "payment_advance_percentage", "payment_retention", "payment_milestone_details", "payment_invoice_requirements"],
+  };
+
+  const fieldHasValue = (field) => {
+    const value = formState[field];
+    return Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && String(value).trim() !== "";
+  };
+
+  const stepProgress = (step) => {
+    const fields = stepFields[step] || [];
+    if (!fields.length) return 0;
+    return Math.round((fields.filter(fieldHasValue).length / fields.length) * 100);
+  };
+
+  const completedFields = [...new Set(Object.values(stepFields).flat())].filter(fieldHasValue).length;
+  const totalFields = [...new Set(Object.values(stepFields).flat())].length;
+  const completion = totalFields ? Math.round((completedFields / totalFields) * 100) : 0;
+
+  const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500";
 
   const structuredSections = [
     { key: "scope_summary", label: "Scope", placeholder: "Define the contract scope and boundaries." },
@@ -40,11 +75,56 @@ const ContractForm = ({
     { key: "change_management_terms", label: "Change Control", placeholder: "Define amendment and change-control governance." },
   ];
 
+  const stepTargets = {
+    overview: "overview-start",
+    parties: "institute",
+    terms: "structured-contract-sections",
+    governance: "renewal_type",
+    payment: "payment-controls",
+  };
+
+  const goToStep = (step) => {
+    setActiveStep(step);
+    document.getElementById(stepTargets[step])?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   return (
-    <form className="mt-4 space-y-4" onSubmit={handleSubmit}>
+    <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50/70 px-5 py-4 dark:border-slate-800 dark:from-slate-900 dark:to-blue-950/30 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-slate-900 dark:text-white">Contract setup</p>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Move through each section to build a complete, review-ready agreement.</p>
+          </div>
+          <div className="flex min-w-[190px] items-center gap-3">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden="true">
+              <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all duration-500" style={{ width: `${completion}%` }} />
+            </div>
+            <span className="text-sm font-bold tabular-nums text-blue-700 dark:text-blue-300">{completion}%</span>
+          </div>
+        </div>
+        <nav className="grid grid-cols-2 gap-px bg-slate-100 sm:grid-cols-5 dark:bg-slate-800" aria-label="Contract form sections">
+          {steps.map((step) => {
+            const Icon = step.icon;
+            const progress = stepProgress(step.key);
+            const active = activeStep === step.key;
+            return (
+              <button key={step.key} type="button" onClick={() => goToStep(step.key)} aria-current={active ? "step" : undefined} className={`group flex min-w-0 items-center gap-3 bg-white px-4 py-3 text-left transition hover:bg-blue-50 dark:bg-slate-900 dark:hover:bg-blue-950/30 ${active ? "shadow-[inset_0_-3px_0_#2563eb]" : ""}`}>
+                <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition ${progress === 100 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" : active ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "bg-slate-100 text-slate-500 dark:bg-slate-800"}`}>
+                  {progress === 100 ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                </span>
+                <span className="min-w-0">
+                  <span className={`block truncate text-xs font-bold ${active ? "text-blue-700 dark:text-blue-300" : "text-slate-700 dark:text-slate-200"}`}>{step.label}</span>
+                  <span className="block truncate text-[11px] text-slate-400">{progress}% complete</span>
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Core Contract Header</h3>
+        <div id="overview-start" className="scroll-mt-24 sm:col-span-2">
+          <h3 className="flex items-center gap-2 border-b border-slate-200 pb-3 text-base font-bold text-slate-900 dark:border-slate-700 dark:text-white"><FileText className="h-4 w-4 text-blue-600" /> Core Contract Header</h3>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="institute">Institute</label>
@@ -70,7 +150,7 @@ const ContractForm = ({
           </select>
         </div>
         <div className="sm:col-span-2">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Parties Information</h3>
+          <h3 className="mt-3 flex items-center gap-2 border-b border-slate-200 pb-3 text-base font-bold text-slate-900 dark:border-slate-700 dark:text-white"><Users className="h-4 w-4 text-blue-600" /> Parties Information</h3>
         </div>
         <div><input name="first_party" value={formState.first_party} onChange={handleInputChange} placeholder="First party" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="second_party" value={formState.second_party} onChange={handleInputChange} placeholder="Second party" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
@@ -80,8 +160,9 @@ const ContractForm = ({
         <div><input name="vendor_contact_phone" value={formState.vendor_contact_phone} onChange={handleInputChange} placeholder="Vendor phone" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="vendor_tax_id" value={formState.vendor_tax_id} onChange={handleInputChange} placeholder="Tax ID / registration" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="vendor_address" value={formState.vendor_address} onChange={handleInputChange} placeholder="Legal address" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
-        <div className="sm:col-span-2">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Structured Contract Sections</h3>
+        <div id="structured-contract-sections" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:col-span-2 dark:border-slate-700 dark:bg-slate-800/40">
+          <h3 className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white"><Building2 className="h-4 w-4 text-blue-600" /> Structured Contract Sections</h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Document the operational clauses reviewers need. Your entries are preserved while switching tabs.</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {structuredSections.map((section) => (
               <button
@@ -90,8 +171,8 @@ const ContractForm = ({
                 onClick={() => setActiveStructuredSection(section.key)}
                 className={`rounded-md px-3 py-1 text-xs font-medium transition ${
                   activeStructuredSection === section.key
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20"
+                    : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                 }`}
               >
                 {section.label}
@@ -110,12 +191,12 @@ const ContractForm = ({
                   value={formState[section.key] || ""}
                   onChange={handleInputChange}
                   placeholder={section.placeholder}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                  className={inputClass}
                 />
               </div>
             ) : null
           )}
-          <textarea name="service_coverage" rows={2} value={formState.service_coverage} onChange={handleInputChange} placeholder="Service coverage" className="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+          <textarea name="service_coverage" rows={2} value={formState.service_coverage} onChange={handleInputChange} placeholder="Service coverage" className={`${inputClass} mt-2`} />
         </div>
         <div className="sm:col-span-2">
           <label
@@ -511,7 +592,7 @@ const ContractForm = ({
             placeholder="Required attachments, amendment history, approval workflow log, alerts, and monitoring notes."
           />
         </div>
-        <div className="sm:col-span-2">
+        <div id="payment-controls" className="scroll-mt-24 sm:col-span-2">
           <div className="grid gap-3 sm:grid-cols-2">
             <select name="payment_methods" multiple value={formState.payment_methods} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"><option>Cash</option><option>Transfer</option><option>LC</option></select>
             <input name="payment_period" value={formState.payment_period} onChange={handleInputChange} placeholder="Payment Period" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
@@ -535,11 +616,15 @@ const ContractForm = ({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl shadow-slate-900/10 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
+        <div className="hidden items-center gap-2 text-xs text-slate-500 sm:flex dark:text-slate-400">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-50 font-bold text-blue-700 dark:bg-blue-950 dark:text-blue-300">{completion}%</span>
+          {completion === 100 ? "Ready for review" : "You can save now and complete the remaining details later."}
+        </div>
         <button
           type="submit"
           disabled={saving}
-          className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
+          className="ml-auto inline-flex items-center justify-center rounded-xl border border-transparent bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
         >
           {saving
             ? "Saving..."
