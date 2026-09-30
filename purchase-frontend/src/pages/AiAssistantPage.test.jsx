@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import AiAssistantPage from "./AiAssistantPage";
 import aiService from "../api/aiService";
@@ -36,5 +37,24 @@ test("renders unavailable health without exposing backend details", async () => 
   expect(
     screen.getByText(/Normal procurement functions are unaffected/),
   ).toBeInTheDocument();
+  expect(screen.getByLabelText("Ask AI Intelligence")).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: /Retry connection/ }),
+  ).toBeEnabled();
   expect(screen.queryByText(/ollama/)).not.toBeInTheDocument();
+});
+
+test("can retry an unavailable AI connection", async () => {
+  const user = userEvent.setup();
+  aiService.health
+    .mockRejectedValueOnce({ response: { status: 503 } })
+    .mockResolvedValueOnce({ data: { status: "available" } });
+  renderPage();
+
+  await user.click(
+    await screen.findByRole("button", { name: /Retry connection/ }),
+  );
+
+  expect(await screen.findByText("AI Available")).toBeInTheDocument();
+  expect(screen.getByLabelText("Ask AI Intelligence")).toBeEnabled();
 });

@@ -124,7 +124,12 @@ const ResponseDetails = ({ response }) => {
   );
 };
 
-const AiConversation = ({ context, starterPrompts, compact = false }) => {
+const AiConversation = ({
+  context,
+  starterPrompts,
+  compact = false,
+  disabled = false,
+}) => {
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [draft, setDraft] = useState("");
@@ -141,7 +146,8 @@ const AiConversation = ({ context, starterPrompts, compact = false }) => {
 
   const send = async (candidate = draft) => {
     const text = candidate.trim();
-    if (!text || sending || text.length > AI_MESSAGE_MAX_LENGTH) return;
+    if (!text || sending || disabled || text.length > AI_MESSAGE_MAX_LENGTH)
+      return;
     setMessages((current) => [...current, { role: "user", text }]);
     setDraft("");
     setError("");
@@ -205,7 +211,8 @@ const AiConversation = ({ context, starterPrompts, compact = false }) => {
                   key={prompt}
                   type="button"
                   onClick={() => send(prompt)}
-                  className="rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-semibold text-slate-700 shadow-sm hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  disabled={disabled}
+                  className="rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-semibold text-slate-700 shadow-sm hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-slate-200 disabled:hover:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
                 >
                   {prompt}
                 </button>
@@ -281,6 +288,7 @@ const AiConversation = ({ context, starterPrompts, compact = false }) => {
             id={`ai-message-${compact ? "panel" : "page"}`}
             value={draft}
             maxLength={AI_MESSAGE_MAX_LENGTH}
+            disabled={disabled}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -289,12 +297,16 @@ const AiConversation = ({ context, starterPrompts, compact = false }) => {
               }
             }}
             rows={compact ? 2 : 3}
-            placeholder="Ask about requests, suppliers, or performance..."
-            className="min-h-[3rem] flex-1 resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-slate-600 dark:bg-slate-800 dark:text-white"
+            placeholder={
+              disabled
+                ? "AI Intelligence is unavailable"
+                : "Ask about requests, suppliers, or performance..."
+            }
+            className="min-h-[3rem] flex-1 resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:disabled:bg-slate-800/60"
           />
           <button
             type="submit"
-            disabled={sending || !draft.trim()}
+            disabled={disabled || sending || !draft.trim()}
             aria-label="Send question"
             className="inline-flex h-12 items-center gap-2 rounded-xl bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >

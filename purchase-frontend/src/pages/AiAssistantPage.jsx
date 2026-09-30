@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Activity, Sparkles } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Activity, RefreshCw, Sparkles } from "lucide-react";
 import aiService from "../api/aiService";
 import AiConversation from "../components/ai/AiConversation";
 
@@ -34,21 +34,39 @@ const statusConfig = {
 
 const AiAssistantPage = () => {
   const [health, setHealth] = useState("checking");
-  useEffect(() => {
-    let active = true;
-    aiService
+  const checkHealth = useCallback(() => {
+    setHealth("checking");
+    return aiService
       .health()
       .then((response) => {
-        if (active)
-          setHealth(
-            String(response.data?.status).toLowerCase() === "available"
-              ? "available"
-              : "unavailable",
-          );
+        setHealth(
+          String(response.data?.status).toLowerCase() === "available"
+            ? "available"
+            : "unavailable",
+        );
       })
-      .catch(() => {
-        if (active) setHealth("unavailable");
-      });
+      .catch(() => setHealth("unavailable"));
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const updateHealth = () => {
+      setHealth("checking");
+      return aiService
+        .health()
+        .then((response) => {
+          if (active)
+            setHealth(
+              String(response.data?.status).toLowerCase() === "available"
+                ? "available"
+                : "unavailable",
+            );
+        })
+        .catch(() => {
+          if (active) setHealth("unavailable");
+        });
+    };
+    updateHealth();
     return () => {
       active = false;
     };
@@ -85,16 +103,29 @@ const AiAssistantPage = () => {
         {health === "unavailable" && (
           <div
             role="alert"
-            className="mx-5 mt-5 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200 sm:mx-7"
+            className="mx-5 mt-5 flex flex-col gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-200 sm:mx-7 sm:flex-row sm:items-center sm:justify-between"
           >
-            <Activity className="mt-0.5 shrink-0" size={18} />
-            <span>
-              <strong>AI Intelligence is currently unavailable.</strong> Normal
-              procurement functions are unaffected.
-            </span>
+            <div className="flex items-start gap-3">
+              <Activity className="mt-0.5 shrink-0" size={18} />
+              <span>
+                <strong>AI Intelligence is currently unavailable.</strong> The
+                configured AI service could not be reached. Normal procurement
+                functions are unaffected.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={checkHealth}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-rose-300 bg-white px-3 py-2 font-semibold text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950 dark:text-rose-100 dark:hover:bg-rose-900"
+            >
+              <RefreshCw size={15} /> Retry connection
+            </button>
           </div>
         )}
-        <AiConversation starterPrompts={starterPrompts} />
+        <AiConversation
+          starterPrompts={starterPrompts}
+          disabled={health !== "available"}
+        />
       </div>
     </div>
   );
