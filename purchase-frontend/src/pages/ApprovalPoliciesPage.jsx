@@ -97,8 +97,8 @@ const blankStep = () => ({
   approvalLevel: 1,
   stepOrder: 1,
   parallelGroup: "",
-  semanticKey: "",
-  displayName: "",
+  semanticKey: "REQUESTER",
+  displayName: "Requester",
   resolverType: "REQUESTER",
   resolverReference: "",
   required: true,
@@ -109,6 +109,31 @@ const labelClass =
   "block text-xs font-semibold uppercase tracking-wide text-slate-600";
 const primaryButtonClass =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none";
+const resolverDefaults = (resolverType) => ({
+  semanticKey: resolverType,
+  displayName: resolverType
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+});
+const findDraftError = (rules) => {
+  for (let ruleIndex = 0; ruleIndex < rules.length; ruleIndex += 1) {
+    const rule = rules[ruleIndex];
+    for (
+      let stepIndex = 0;
+      stepIndex < (rule.steps || []).length;
+      stepIndex += 1
+    ) {
+      const step = rule.steps[stepIndex];
+      const missing = [];
+      if (!String(step.semanticKey || "").trim()) missing.push("semantic key");
+      if (!String(step.displayName || "").trim()) missing.push("display name");
+      if (missing.length)
+        return `Routing rule ${ruleIndex + 1}, step ${stepIndex + 1}: ${missing.join(" and ")} ${missing.length === 1 ? "is" : "are"} required.`;
+    }
+  }
+  return "";
+};
 export function ShadowComparison({ run }) {
   const facts = run.facts_snapshot || run.facts || {},
     differences = run.differences || run.comparison?.differences || [],
@@ -344,8 +369,13 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
       rules: x.rules.map((r, i) => (i === ri ? { ...r, ...patch } : r)),
     }));
   const save = async () => {
-    setSaving(true);
     setError("");
+    const draftError = findDraftError(draft.rules);
+    if (draftError) {
+      setError(draftError);
+      return;
+    }
+    setSaving(true);
     try {
       // Hydrated rules also contain database projection fields. Send only the
       // documented draft DTO so a loaded version can be saved unchanged.
@@ -652,6 +682,9 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                           className={fieldClass}
                           aria-label={`Step ${si + 1} ${label}`}
                           type={type}
+                          required={
+                            key === "semanticKey" || key === "displayName"
+                          }
                           disabled={!editable}
                           value={s[key] ?? ""}
                           onChange={(e) =>
@@ -687,6 +720,10 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                                     ...v,
                                     resolverType: e.target.value,
                                     resolverReference: "",
+                                    ...(!String(v.semanticKey || "").trim() &&
+                                    !String(v.displayName || "").trim()
+                                      ? resolverDefaults(e.target.value)
+                                      : {}),
                                   }
                                 : v,
                             ),

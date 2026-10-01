@@ -209,6 +209,59 @@ test("saving a hydrated draft sends only the supported DTO fields", async () => 
     ],
   });
 });
+test("an incomplete approval step is explained before the draft is submitted", async () => {
+  render(
+    <VersionDetail
+      version={{
+        id: 4,
+        status: "DRAFT",
+        version_number: 1,
+        rules: [
+          {
+            code: "MEDICAL",
+            name: "Medical Stock",
+            priority: 1,
+            conditions: [],
+            steps: [
+              {
+                approvalLevel: 1,
+                stepOrder: 1,
+                semanticKey: "",
+                displayName: "",
+                resolverType: "DEPARTMENT_HEAD",
+              },
+            ],
+          },
+        ],
+      }}
+    />,
+  );
+
+  await userEvent.click(screen.getByRole("button", { name: /Save draft/i }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Routing rule 1, step 1: semantic key and display name are required.",
+  );
+  expect(api.saveApprovalPolicyVersion).not.toHaveBeenCalled();
+});
+
+test("new approval steps start with valid requester metadata", async () => {
+  render(
+    <VersionDetail
+      version={{
+        id: 4,
+        status: "DRAFT",
+        version_number: 1,
+        rules: [{ code: "R", name: "Rule", priority: 1, steps: [] }],
+      }}
+    />,
+  );
+
+  await userEvent.click(screen.getByRole("button", { name: /Add step/i }));
+
+  expect(screen.getByLabelText("Step 1 Semantic key")).toHaveValue("REQUESTER");
+  expect(screen.getByLabelText("Step 1 Display name")).toHaveValue("Requester");
+});
 test("new rules receive the next available unique priority", async () => {
   render(
     <VersionDetail
