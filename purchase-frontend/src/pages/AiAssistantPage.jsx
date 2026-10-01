@@ -32,20 +32,41 @@ const statusConfig = {
   },
 };
 
+const unavailableMessage = (details) => {
+  switch (details?.reason) {
+    case "AI_MODEL_TOOLS_UNSUPPORTED":
+      return `The configured model${details.model ? ` (${details.model})` : ""} does not support the tools required by this assistant.`;
+    case "AI_PROVIDER_CONFIGURATION_ERROR":
+      return "The AI provider configuration is invalid. Ask an administrator to verify the backend AI settings.";
+    case "AI_PROVIDER_TIMEOUT":
+      return "The configured AI service timed out. Retry the connection or ask an administrator to check the service.";
+    case "AI_SERVICE_UNAVAILABLE":
+      return "The configured AI service could not be reached. Ask an administrator to verify that it is running and reachable from the backend.";
+    default:
+      return "The configured AI service could not be reached.";
+  }
+};
+
 const AiAssistantPage = () => {
   const [health, setHealth] = useState("checking");
+  const [healthDetails, setHealthDetails] = useState(null);
   const checkHealth = useCallback(() => {
     setHealth("checking");
+    setHealthDetails(null);
     return aiService
       .health()
       .then((response) => {
+        setHealthDetails(response.data || null);
         setHealth(
           String(response.data?.status).toLowerCase() === "available"
             ? "available"
             : "unavailable",
         );
       })
-      .catch(() => setHealth("unavailable"));
+      .catch((error) => {
+        setHealthDetails(error.response?.data || null);
+        setHealth("unavailable");
+      });
   }, []);
 
   useEffect(() => {
@@ -55,15 +76,20 @@ const AiAssistantPage = () => {
       return aiService
         .health()
         .then((response) => {
-          if (active)
+          if (active) {
+            setHealthDetails(response.data || null);
             setHealth(
               String(response.data?.status).toLowerCase() === "available"
                 ? "available"
                 : "unavailable",
             );
+          }
         })
-        .catch(() => {
-          if (active) setHealth("unavailable");
+        .catch((error) => {
+          if (active) {
+            setHealthDetails(error.response?.data || null);
+            setHealth("unavailable");
+          }
         });
     };
     updateHealth();
@@ -108,9 +134,9 @@ const AiAssistantPage = () => {
             <div className="flex items-start gap-3">
               <Activity className="mt-0.5 shrink-0" size={18} />
               <span>
-                <strong>AI Intelligence is currently unavailable.</strong> The
-                configured AI service could not be reached. Normal procurement
-                functions are unaffected.
+                <strong>AI Intelligence is currently unavailable.</strong>{" "}
+                {unavailableMessage(healthDetails)} Normal procurement functions
+                are unaffected.
               </span>
             </div>
             <button

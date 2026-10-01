@@ -30,7 +30,13 @@ test("renders assistant page and available health", async () => {
 
 test("renders unavailable health without exposing backend details", async () => {
   aiService.health.mockRejectedValue({
-    response: { status: 503, data: { error: "http://ollama:11434" } },
+    response: {
+      status: 503,
+      data: {
+        error: "http://ollama:11434",
+        reason: "AI_SERVICE_UNAVAILABLE",
+      },
+    },
   });
   renderPage();
   expect(await screen.findByText("AI Unavailable")).toBeInTheDocument();
@@ -38,6 +44,9 @@ test("renders unavailable health without exposing backend details", async () => 
     screen.getByText(/Normal procurement functions are unaffected/),
   ).toBeInTheDocument();
   expect(screen.getByLabelText("Ask AI Intelligence")).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "verify that it is running and reachable from the backend",
+  );
   expect(
     screen.getByRole("button", { name: /Retry connection/ }),
   ).toBeEnabled();
