@@ -1,6 +1,10 @@
 import api from "./axios";
 
 export const AI_MESSAGE_MAX_LENGTH = 4000;
+// Analysis can require several provider round trips as the model gathers data
+// with read-only tools. Let the backend's per-provider timeout remain the
+// authority instead of aborting the whole workflow after the first minute.
+export const AI_CHAT_TIMEOUT_MS = 0;
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 const cleanText = (value) =>
@@ -60,7 +64,7 @@ const aiService = {
     if (conversationId) body.conversationId = conversationId;
     if (context) body.context = context;
     const response = await api.post("/ai/chat", body, {
-      timeout: 60000,
+      timeout: AI_CHAT_TIMEOUT_MS,
       __skipActionNotification: true,
     });
     return normalizeAiResponse(response.data);
