@@ -59,6 +59,11 @@ export const CAPABILITIES = [
   ["approval-authority.warehouse", "Warehouse authority"],
   ["approval-authority.medical-devices", "Medical Devices authority"],
 ];
+export const normalizeResolverType = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
 const REQUEST_TYPES = [
   "Stock",
   "Non-Stock",
@@ -126,6 +131,9 @@ const findDraftError = (rules) => {
     ) {
       const step = rule.steps[stepIndex];
       const missing = [];
+      const resolverType = normalizeResolverType(step.resolverType);
+      if (!RESOLVER_TYPES.includes(resolverType))
+        return `Routing rule ${ruleIndex + 1}, step ${stepIndex + 1}: invalid resolver.`;
       if (!String(step.semanticKey || "").trim()) missing.push("semantic key");
       if (!String(step.displayName || "").trim()) missing.push("display name");
       if (missing.length)
@@ -397,7 +405,11 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
             parallelGroup: step.parallelGroup || "",
             semanticKey: step.semanticKey,
             displayName: step.displayName,
-            resolverType: step.resolverType,
+            // Normalize drafts created by the old select implementation, which
+            // used its human-readable label (for example "DEPARTMENT HEAD") as
+            // the option value. REQUESTER appeared to work because its label and
+            // canonical API value happen to be identical.
+            resolverType: normalizeResolverType(step.resolverType),
             resolverReference: step.resolverReference || "",
             required: step.required !== false,
           })),
@@ -711,7 +723,7 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                         className={fieldClass}
                         aria-label={`Step ${si + 1} resolver`}
                         disabled={!editable}
-                        value={s.resolverType}
+                        value={normalizeResolverType(s.resolverType)}
                         onChange={(e) =>
                           updateRule(ri, {
                             steps: r.steps.map((v, i) =>
@@ -731,7 +743,9 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                         }
                       >
                         {RESOLVER_TYPES.map((x) => (
-                          <option key={x}>{x.replaceAll("_", " ")}</option>
+                          <option key={x} value={x}>
+                            {x.replaceAll("_", " ")}
+                          </option>
                         ))}
                       </select>
                     </label>

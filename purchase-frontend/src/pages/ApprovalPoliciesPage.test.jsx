@@ -209,6 +209,72 @@ test("saving a hydrated draft sends only the supported DTO fields", async () => 
     ],
   });
 });
+test("legacy resolver labels are normalized to canonical values when saved", async () => {
+  api.saveApprovalPolicyVersion.mockResolvedValue({});
+  const version = {
+    id: 4,
+    status: "DRAFT",
+    version_number: 1,
+    rules: [
+      {
+        code: "MEDICAL",
+        name: "Medical Stock",
+        priority: 1,
+        conditions: [],
+        steps: [
+          {
+            stepOrder: 1,
+            approvalLevel: 1,
+            semanticKey: "HOD",
+            displayName: "HOD",
+            resolverType: "DEPARTMENT HEAD",
+            required: true,
+          },
+          {
+            stepOrder: 2,
+            approvalLevel: 2,
+            semanticKey: "EXECUTIVE",
+            displayName: "Executive",
+            resolverType: "EXECUTIVE OWNER",
+            required: true,
+          },
+          {
+            stepOrder: 3,
+            approvalLevel: 3,
+            semanticKey: "SCM",
+            displayName: "SCM",
+            resolverType: "SUPPLY CHAIN AUTHORITY",
+            required: true,
+          },
+        ],
+      },
+    ],
+  };
+
+  render(<VersionDetail version={version} />);
+
+  expect(screen.getByLabelText("Step 1 resolver")).toHaveValue(
+    "DEPARTMENT_HEAD",
+  );
+  expect(screen.getByLabelText("Step 2 resolver")).toHaveValue(
+    "EXECUTIVE_OWNER",
+  );
+  expect(screen.getByLabelText("Step 3 resolver")).toHaveValue(
+    "SUPPLY_CHAIN_AUTHORITY",
+  );
+  await userEvent.click(screen.getByRole("button", { name: /Save draft/i }));
+
+  await waitFor(() => expect(api.saveApprovalPolicyVersion).toHaveBeenCalled());
+  expect(
+    api.saveApprovalPolicyVersion.mock.calls[0][1].rules[0].steps.map(
+      ({ resolverType }) => resolverType,
+    ),
+  ).toEqual([
+    "DEPARTMENT_HEAD",
+    "EXECUTIVE_OWNER",
+    "SUPPLY_CHAIN_AUTHORITY",
+  ]);
+});
 test("an incomplete approval step is explained before the draft is submitted", async () => {
   render(
     <VersionDetail
