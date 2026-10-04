@@ -56,8 +56,8 @@ const detail = {
       is_active: true,
     },
   ],
-  unitHead: { user_name: "Ada" },
-  executiveOwner: { userName: "Grace" },
+  unitHead: { status: "RESOLVED", userName: "Ada" },
+  executiveOwner: { status: "RESOLVED", userName: "Grace" },
 };
 const setup = (
   manager = true,
