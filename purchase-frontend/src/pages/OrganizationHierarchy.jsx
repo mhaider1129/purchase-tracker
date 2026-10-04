@@ -417,11 +417,17 @@ function HeadDialog({ unit, options, onClose, onSaved }) {
       <form onSubmit={submit}>
         <dl>
           <dt>Current Head</dt>
-          <dd>{unit.unitHead?.user_name || "Unassigned"}</dd>
+          <dd>
+            {unit.unitHead?.status === "RESOLVED"
+              ? unit.unitHead.userName
+              : unit.unitHead?.status === "AMBIGUOUS"
+                ? "Ambiguous"
+                : "Unassigned"}
+          </dd>
           <dt>Current effective period</dt>
           <dd>
-            {unit.unitHead
-              ? `${unit.unitHead.effective_from || "Open"} — ${unit.unitHead.effective_to || "Open"}`
+            {unit.unitHead?.status === "RESOLVED"
+              ? `${unit.unitHead.effectiveFrom || "Open"} — ${unit.unitHead.effectiveTo || "Open"}`
               : "None"}
           </dd>
           <dt>Incoming Head</dt>
@@ -627,7 +633,12 @@ function HealthPanel({
   canManage,
 }) {
   const missing = (type) =>
-    units.filter((x) => x.is_active && x.unit_type === type && !x.unitHead);
+    units.filter(
+      (x) =>
+        x.is_active &&
+        x.unit_type === type &&
+        x.unitHead?.status !== "RESOLVED",
+    );
   const metrics = [
     ["Active units", units.filter((x) => x.is_active)],
     [
@@ -937,7 +948,14 @@ function Node({
         <strong>{node.name}</strong>
         <small>{node.unit_type.replaceAll("_", " ")}</small>
         {node.classification && <em>{node.classification}</em>}
-        <small>Head: {node.unitHead?.user_name || "Unassigned"}</small>
+        <small>
+          Head:{" "}
+          {node.unitHead?.status === "RESOLVED"
+            ? node.unitHead.userName
+            : node.unitHead?.status === "AMBIGUOUS"
+              ? "Ambiguous"
+              : "Unassigned"}
+        </small>
         {!node.is_active && <small>ARCHIVED</small>}
       </button>
       {!closed && node.children?.length > 0 && (
@@ -1257,7 +1275,13 @@ export default function OrganizationHierarchy() {
                         <td>{x.unit_type}</td>
                         <td>{x.parentName || "—"}</td>
                         <td>{x.classification || "—"}</td>
-                        <td>{x.unitHead?.user_name || "Unassigned"}</td>
+                        <td>
+                          {x.unitHead?.status === "RESOLVED"
+                            ? x.unitHead.userName
+                            : x.unitHead?.status === "AMBIGUOUS"
+                              ? "Ambiguous"
+                              : "Unassigned"}
+                        </td>
                         <td>{x.is_active ? "ACTIVE" : "ARCHIVED"}</td>
                       </tr>
                     ))}
@@ -1298,9 +1322,21 @@ export default function OrganizationHierarchy() {
                   {selected.department_name || selected.section_name || "None"}
                 </dd>
                 <dt>Unit Head</dt>
-                <dd>{selected.unitHead?.user_name || "Unassigned"}</dd>
+                <dd>
+                  {selected.unitHead?.status === "RESOLVED"
+                    ? selected.unitHead.userName
+                    : selected.unitHead?.status === "AMBIGUOUS"
+                      ? "Ambiguous"
+                      : "Unassigned"}
+                </dd>
                 <dt>Executive Owner</dt>
-                <dd>{selected.executiveOwner?.userName || "Unassigned"}</dd>
+                <dd>
+                  {selected.executiveOwner?.status === "RESOLVED"
+                    ? selected.executiveOwner.userName
+                    : selected.executiveOwner?.status === "AMBIGUOUS"
+                      ? "Ambiguous"
+                      : "Unassigned"}
+                </dd>
                 <dt>Status</dt>
                 <dd>{selected.is_active ? "ACTIVE" : "ARCHIVED"}</dd>
                 {selected.unit_type === "DEPARTMENT" && (
