@@ -1,3 +1,4 @@
+import { stableRequestItemId } from '../utils/requestItemIdentity';
 // src/pages/MyMaintenanceRequests.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -219,6 +220,7 @@ const MyMaintenanceRequests = () => {
       section_id: request?.section_id ? String(request.section_id) : '',
       items: Array.isArray(request?.items) && request.items.length > 0
         ? request.items.map((item) => ({
+            ...stableRequestItemId(item),
             item_name: item?.item_name || '',
             brand: item?.brand || '',
             quantity: item?.quantity ?? '',
@@ -275,6 +277,10 @@ const MyMaintenanceRequests = () => {
   };
 
   const removeEditItem = (index) => {
+    if (editForm.items[index]?.id) {
+      setEditError('Existing lines retain their IDs. Use the controlled item cancellation action to remove demand.');
+      return;
+    }
     setEditForm((prev) => ({
       ...prev,
       items: prev.items.filter((_, idx) => idx !== index),
@@ -286,6 +292,7 @@ const MyMaintenanceRequests = () => {
     if (!editingRequest) return;
 
     const sanitizedItems = editForm.items.map((item) => ({
+      ...stableRequestItemId(item),
       item_name: item.item_name?.trim(),
       brand: item.brand?.trim() || undefined,
       quantity: Number(item.quantity),
@@ -314,7 +321,7 @@ const MyMaintenanceRequests = () => {
     setEditError('');
 
     try {
-      await updateRequest(editingRequest.id, {
+      const updated = await updateRequest(editingRequest.id, {
         justification: editForm.justification,
         department_id: Number(editForm.department_id),
         section_id: editForm.section_id ? Number(editForm.section_id) : null,
@@ -331,9 +338,8 @@ const MyMaintenanceRequests = () => {
               section_id: editForm.section_id ? Number(editForm.section_id) : null,
               department_name: departments.find((dept) => String(dept.id) === String(editForm.department_id))?.name || request.department_name,
               section_name: editSections.find((section) => String(section.id) === String(editForm.section_id))?.name || '',
-              items: sanitizedItems.map((item, idx) => ({
+              items: (updated.items || editingRequest.items || []).map((item) => ({
                 ...item,
-                id: editingRequest.items?.[idx]?.id || `${editingRequest.id}-${idx}`,
                 total_cost: item.unit_cost === null ? null : item.unit_cost * item.quantity,
               })),
             }
