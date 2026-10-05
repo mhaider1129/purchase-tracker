@@ -34,3 +34,27 @@ test('uses controlled item type and category lists for a pending item',async()=>
   expect(screen.getByLabelText('Pending item type').tagName).toBe('SELECT');
   expect(screen.getByLabelText('Pending category').tagName).toBe('SELECT');
 });
+test('selection-only mode cannot create pending referrals or load unnecessary categories', async () => {
+  getItemMasterReferences.mockClear();
+  searchGenericItems.mockResolvedValue({data:[]});
+  render(<GenericItemSelector value={{request_mode:'generic_item'}} onChange={jest.fn()} allowPendingCreation={false} />);
+  await screen.findByText(/No active Generic Items found/);
+  expect(screen.queryByRole('button',{name:'Cannot find the item'})).not.toBeInTheDocument();
+  expect(getItemMasterReferences).not.toHaveBeenCalled();
+});
+test('editing a selection clears its identity and disabled results cannot change it', async () => {
+  searchGenericItems.mockResolvedValue({data:[{id:7,item_code:'GEN-7',generic_name:'Sterile Gauze'}]});
+  const onChange=jest.fn();
+  const {rerender}=render(<GenericItemSelector value={{request_mode:'generic_item',generic_item_id:7,item_name:'Sterile Gauze'}} onChange={onChange} allowPendingCreation={false}/>);
+  await userEvent.type(screen.getByLabelText('Search active Generic Items'),' new');
+  expect(onChange).toHaveBeenCalledWith(expect.objectContaining({generic_item_id:null,request_mode:'generic_item'}));
+  rerender(<GenericItemSelector value={{request_mode:'generic_item',generic_item_id:7}} onChange={onChange} allowPendingCreation={false} disabled/>);
+  expect(await screen.findByRole('button',{name:/GEN-7.*Sterile Gauze/})).toBeDisabled();
+});
+test('pending category failures are visible and retry recovers', async () => {
+  getItemMasterReferences.mockRejectedValueOnce(new Error('offline'));
+  render(<GenericItemSelector value={{request_mode:'pending_item_creation',pending_item:{}}} onChange={jest.fn()}/>);
+  expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load categories');
+  await userEvent.click(screen.getByRole('button',{name:'Retry category loading'}));
+  expect(await screen.findByRole('option',{name:'Medical Supplies'})).toBeInTheDocument();
+});
