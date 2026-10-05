@@ -147,84 +147,225 @@ export function ShadowComparison({ run }) {
     differences = run.differences || run.comparison?.differences || [],
     current = run.currentRoute || [],
     shadow = run.steps || [];
-  const Row = ({ s, shadowRoute }) => (
-    <tr>
-      <td>{display(s.approval_level ?? s.approvalLevel)}</td>
-      <td>{display(s.sequence ?? s.stepOrder)}</td>
-      <td>{display(s.semantic_key ?? s.semanticKey)}</td>
-      <td>{display(s.resolver_type ?? s.resolverType)}</td>
-      <td>{display(s.resolved_user_name ?? s.userName ?? s.userId)}</td>
-      <td>{display(s.resolution_status ?? s.status)}</td>
-    </tr>
+  const comparisonResult =
+    run.run_status || run.comparison?.result || "UNKNOWN";
+  const formatLabel = (value) =>
+    String(value)
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replaceAll("_", " ")
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const formatFact = (value) => {
+    if (Array.isArray(value)) return value.join(", ") || "—";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    if (value && typeof value === "object") return JSON.stringify(value);
+    return display(value);
+  };
+  const statusTone = (status) => {
+    const normalized = String(status || "").toUpperCase();
+    if (["APPROVED", "RESOLVED", "MATCH"].includes(normalized))
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    if (["PENDING", "UNRESOLVED", "AMBIGUOUS"].includes(normalized))
+      return "bg-amber-50 text-amber-700 ring-amber-200";
+    return "bg-slate-100 text-slate-600 ring-slate-200";
+  };
+  const Row = ({ s }) => {
+    const status = s.resolution_status ?? s.resolutionStatus ?? s.status;
+    return (
+      <tr className="border-t border-slate-100 transition hover:bg-slate-50/80">
+        <td className="px-4 py-3 font-semibold text-slate-900">
+          {display(s.approval_level ?? s.approvalLevel)}
+        </td>
+        <td className="px-4 py-3">{display(s.sequence ?? s.stepOrder)}</td>
+        <td className="px-4 py-3 font-medium text-slate-800">
+          {display(s.semantic_key ?? s.semanticKey)}
+        </td>
+        <td className="px-4 py-3">
+          {display(s.resolver_type ?? s.resolverType)}
+        </td>
+        <td className="px-4 py-3">
+          {display(s.resolved_user_name ?? s.userName ?? s.userId)}
+        </td>
+        <td className="px-4 py-3">
+          <span
+            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${statusTone(status)}`}
+          >
+            {display(status)}
+          </span>
+        </td>
+      </tr>
+    );
+  };
+  const differenceTone = (type) => {
+    if (type === "MATCH")
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    if (type?.includes("UNRESOLVED") || type?.includes("AMBIGUOUS"))
+      return "bg-amber-50 text-amber-800 ring-amber-200";
+    return "bg-red-50 text-red-700 ring-red-200";
+  };
+  const RouteTable = ({ title, rows, accent }) => (
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className={`h-2.5 w-2.5 rounded-full ${accent}`} />
+          <h3 className="text-sm font-bold tracking-wide text-slate-800">
+            {title}
+          </h3>
+        </div>
+        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-500 ring-1 ring-slate-200">
+          {rows.length} {rows.length === 1 ? "step" : "steps"}
+        </span>
+      </div>
+      {rows.length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left text-sm text-slate-600">
+            <thead className="bg-white text-xs uppercase tracking-wide text-slate-500">
+              <tr>
+                {[
+                  "Level",
+                  "Order",
+                  "Semantic purpose",
+                  "Resolver",
+                  "Resolved user",
+                  "Status",
+                ].map((heading) => (
+                  <th
+                    className="px-4 py-3 font-semibold"
+                    key={heading}
+                    scope="col"
+                  >
+                    {heading}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((step, index) => (
+                <Row key={step.id || index} s={step} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="px-4 py-8 text-center text-sm text-slate-500">
+          No approval steps were returned for this route.
+        </div>
+      )}
+    </section>
   );
   return (
-    <section className="space-y-4" aria-label="Shadow route comparison">
-      <header className="rounded border-2 border-amber-500 bg-amber-50 p-4">
-        <strong className="text-amber-900">
-          SHADOW ONLY — DOES NOT CONTROL THIS REQUEST
-        </strong>
-        <p>Comparison: {run.run_status || run.comparison?.result}</p>
-      </header>
-      <div className="grid gap-6 lg:grid-cols-2">
-        {[
-          ["CURRENT APPROVAL ROUTE", current, false],
-          ["POLICY SHADOW ROUTE", shadow, true],
-        ].map(([title, rows, isShadow]) => (
-          <div key={title}>
-            <h3>{title}</h3>
-            <table>
-              <thead>
-                <tr>
-                  {[
-                    "Level",
-                    "Order",
-                    "Semantic Purpose",
-                    "Resolver",
-                    "Resolved User",
-                    "Status",
-                  ].map((x) => (
-                    <th key={x}>{x}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((s, i) => (
-                  <Row key={s.id || i} s={s} shadowRoute={isShadow} />
-                ))}
-              </tbody>
-            </table>
+    <section
+      className="space-y-5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5"
+      aria-label="Shadow route comparison"
+    >
+      <header className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <CircleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div>
+            <strong className="text-sm text-amber-900">
+              SHADOW ONLY — DOES NOT CONTROL THIS REQUEST
+            </strong>
+            <p className="mt-1 text-sm text-amber-800">
+              This diagnostic comparison has no effect on the live approval
+              workflow.
+            </p>
           </div>
-        ))}
+        </div>
+        <span className="self-start rounded-full bg-white px-3 py-1.5 text-xs font-bold text-amber-800 ring-1 ring-amber-300 sm:self-center">
+          Comparison: {formatLabel(comparisonResult)}
+        </span>
+      </header>
+
+      <div className="space-y-4">
+        <RouteTable
+          title="CURRENT APPROVAL ROUTE"
+          rows={current}
+          accent="bg-slate-500"
+        />
+        <div className="flex items-center gap-3 px-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <span className="h-px flex-1 bg-slate-200" />
+          Compared with
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+        <RouteTable
+          title="POLICY SHADOW ROUTE"
+          rows={shadow}
+          accent="bg-blue-600"
+        />
       </div>
-      <div aria-label="Differences">
-        {differences.map((d, i) => {
-          const type = d.difference_type || d.type;
-          return (
-            <span
-              key={i}
-              className={`mr-2 inline-block rounded px-2 py-1 difference-${type?.toLowerCase()}`}
-            >
-              {type}
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <section
+          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+          aria-label="Differences"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="font-semibold text-slate-900">Differences</h3>
+            <span className="text-xs font-medium text-slate-500">
+              {differences.length} found
             </span>
-          );
-        })}
-      </div>
-      <div>
-        <h3>Matched rules</h3>
-        <p>
-          {(run.matchedRules || run.summary?.matchedRules || [])
-            .map((r) => r.code || r)
-            .join(", ") || "None"}
-        </p>
-        <h3>Relevant request facts</h3>
-        <dl>
-          {Object.entries(facts).map(([k, v]) => (
-            <React.Fragment key={k}>
-              <dt>{k}</dt>
-              <dd>{Array.isArray(v) ? v.join(", ") : display(v)}</dd>
-            </React.Fragment>
-          ))}
-        </dl>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {differences.length ? (
+              differences.map((difference, index) => {
+                const type = difference.difference_type || difference.type;
+                return (
+                  <span
+                    key={`${type}-${index}`}
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset difference-${type?.toLowerCase()} ${differenceTone(type)}`}
+                  >
+                    {type}
+                  </span>
+                );
+              })
+            ) : (
+              <p className="text-sm text-slate-500">
+                No route differences detected.
+              </p>
+            )}
+          </div>
+          <div className="mt-5 border-t border-slate-100 pt-4">
+            <h3 className="text-sm font-semibold text-slate-900">
+              Matched rules
+            </h3>
+            <p className="mt-1 text-sm text-slate-600">
+              {(run.matchedRules || run.summary?.matchedRules || [])
+                .map((rule) => rule.code || rule)
+                .join(", ") || "None"}
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div>
+            <h3 className="font-semibold text-slate-900">
+              Relevant request facts
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Inputs used when evaluating the shadow policy.
+            </p>
+          </div>
+          {Object.keys(facts).length ? (
+            <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {Object.entries(facts).map(([key, value]) => (
+                <div
+                  className="min-w-0 rounded-lg bg-slate-50 px-3 py-2.5"
+                  key={key}
+                >
+                  <dt className="text-xs font-semibold text-slate-500">
+                    {formatLabel(key)}
+                  </dt>
+                  <dd className="mt-1 break-words text-sm font-medium text-slate-800">
+                    {formatFact(value)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="mt-4 text-sm text-slate-500">
+              No request facts were recorded.
+            </p>
+          )}
+        </section>
       </div>
     </section>
   );
