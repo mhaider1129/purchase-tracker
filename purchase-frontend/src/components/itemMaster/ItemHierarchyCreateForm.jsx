@@ -6,8 +6,15 @@ import {
   searchApprovedProducts,
 } from "../../api/itemMaster";
 import GenericItemSelector from "../requests/GenericItemSelector";
+import ReferenceDataEditor from "./ReferenceDataEditor";
 
-export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
+export default function ItemHierarchyCreateForm({
+  level,
+  onSaved,
+  onClose,
+  canMaintainReferences = false,
+  initialValues = {},
+}) {
   const [refs, setRefs] = useState({
     categories: [],
     uom: [],
@@ -18,6 +25,7 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
     package_quantity: "1",
     conversion_factor: "1",
     currency: "USD",
+    ...initialValues,
   });
   const [generic, setGeneric] = useState({ request_mode: "generic_item" });
   const [products, setProducts] = useState([]);
@@ -25,15 +33,20 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [referenceError, setReferenceError] = useState("");
+  const [referenceRevision, setReferenceRevision] = useState(0);
+  const [editingReference, setEditingReference] = useState(null);
   useEffect(() => {
     let active = true;
+    setLoading(true);
+    setReferenceError("");
     getItemMasterReferences()
       .then((data) => {
         if (active) setRefs(data);
       })
       .catch((e) => {
         if (active)
-          setError(
+          setReferenceError(
             e.response?.data?.message ||
               "Unable to load controlled references.",
           );
@@ -41,6 +54,12 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
       .finally(() => {
         if (active) setLoading(false);
       });
+    return () => {
+      active = false;
+    };
+  }, [referenceRevision]);
+  useEffect(() => {
+    let active = true;
     if (level === "catalog")
       api
         .get("/suppliers")
@@ -117,6 +136,7 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
   );
   const save = async (event) => {
     event.preventDefault();
+    if (busy || loading || referenceError || editingReference) return;
     setBusy(true);
     setError("");
     try {
@@ -128,6 +148,10 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
         const uom = refs.uom.find(
           (row) => String(row.id) === String(form.inventory_uom_id),
         );
+        if (!category || !uom)
+          throw new Error(
+            "Select an active category and inventory UOM before creating the draft.",
+          );
         created = await createGenericItem({
           ...form,
           category: category?.name,
@@ -161,6 +185,7 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
       setError(
         e.response?.data?.message ||
           e.response?.data?.error ||
+          e.message ||
           "Unable to create governed item.",
       );
     } finally {
@@ -195,6 +220,8 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
       {level !== "generic" && (
         <GenericItemSelector
           value={generic}
+          allowPendingCreation={false}
+          disabled={busy}
           onChange={(patch) => {
             setGeneric((previous) => ({ ...previous, ...patch }));
             setForm((previous) => ({ ...previous, approved_product_id: "" }));
@@ -296,16 +323,120 @@ export default function ItemHierarchyCreateForm({ level, onSaved, onClose }) {
           {error}
         </p>
       )}
-      {!loading &&
-        (!refs.uom.length ||
-          (level === "generic" && !refs.categories.length)) && (
-          <p className="text-sm text-amber-800">
-            Set up categories and UOMs in the reference data tab first.
+      <div className="space-y-3 rounded-lg border bg-slate-50 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <strong className="text-sm">Controlled reference data</strong>
+          <button
+            type="button"
+            disabled={busy || loading || Boolean(editingReference)}
+            onClick={() => setReferenceRevision((value) => value + 1)}
+            className="text-sm text-blue-700 underline"
+          >
+            Refresh reference lists
+          </button>
+        </div>
+        {loading && (
+          <p role="status" className="text-sm">
+            Loading reference lists…
           </p>
         )}
+        {referenceError && (
+          <p role="alert" className="text-sm text-red-700">
+            {referenceError} Reference lists could not be loaded. Check Item
+            Master view access, then refresh.
+          </p>
+        )}
+        {!loading && !referenceError && (
+          <p className="text-sm text-slate-600">
+            {refs.categories.length} active categories · {refs.uom.length}{" "}
+            active UOMs · {refs.manufacturers.length} active manufacturers
+          </p>
+        )}
+        {!loading &&
+          !referenceError &&
+          (!refs.uom.length ||
+            (level === "generic" && !refs.categories.length) ||
+            (level === "products" && !refs.manufacturers.length)) && (
+            <p className="text-sm text-amber-800">
+              Required reference data is missing. Add it here or ask a reference
+              maintainer to set it up, then refresh. Your item draft stays in
+              this form.
+            </p>
+          )}
+        {canMaintainReferences ? (
+          <div className="flex flex-wrap gap-3">
+            {(level === "generic"
+              ? ["categories", "uom"]
+              : level === "products"
+                ? ["manufacturers", "uom"]
+                : ["uom"]
+            ).map((type) => (
+              <button
+                key={type}
+                type="button"
+                disabled={busy || loading || Boolean(editingReference)}
+                className="text-sm text-blue-700 underline"
+                onClick={() => setEditingReference(type)}
+              >
+                Add{" "}
+                {type === "categories"
+                  ? "category"
+                  : type === "uom"
+                    ? "UOM"
+                    : "manufacturer"}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-600">
+            Adding references requires item-master.references-maintain
+            permission.
+          </p>
+        )}
+        {editingReference && (
+          <ReferenceDataEditor
+            key={editingReference}
+            type={editingReference}
+            onClose={() => setEditingReference(null)}
+            onCreated={(created) => {
+              const key =
+                editingReference === "categories"
+                  ? "category_id"
+                  : editingReference === "manufacturers"
+                    ? "manufacturer_id"
+                    : level === "generic"
+                      ? "inventory_uom_id"
+                      : level === "products"
+                        ? "product_uom_id"
+                        : "purchasing_uom_id";
+              setForm((previous) => ({
+                ...previous,
+                [key]: String(created.id),
+              }));
+              setEditingReference(null);
+              setReferenceRevision((value) => value + 1);
+            }}
+          />
+        )}
+      </div>
       <button
         disabled={
-          busy || loading || (level !== "generic" && !generic.generic_item_id)
+          busy ||
+          loading ||
+          Boolean(referenceError) ||
+          Boolean(editingReference) ||
+          !refs.uom.length ||
+          (level === "generic" &&
+            (!form.category_id ||
+              !form.inventory_uom_id ||
+              !refs.categories.some(
+                (row) => String(row.id) === String(form.category_id),
+              ) ||
+              !refs.uom.some(
+                (row) => String(row.id) === String(form.inventory_uom_id),
+              ))) ||
+          (level === "products" && !refs.manufacturers.length) ||
+          (level !== "generic" && !generic.generic_item_id)
         }
         className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-40"
       >
