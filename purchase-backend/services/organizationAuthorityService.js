@@ -16,6 +16,7 @@ const serializePosition = (position, extra = {}) => ({
   positionName: position.position_name,
   userId: position.user_id,
   userName: position.user_name,
+  userEmail: position.user_email,
   isUnitHead: position.is_unit_head,
   isActive: position.is_active,
   effectiveFrom: position.effective_from,
@@ -26,14 +27,15 @@ const serializePosition = (position, extra = {}) => ({
 function createOrganizationAuthorityService(repo = defaultRepository) {
   const scopedUnit = async (unitId, instituteId, client) => {
     const unit = await repo.get(unitId, client);
-    return unit && String(unit.institute_id) === String(instituteId) ? unit : null;
+    return unit && unit.is_active !== false && String(unit.institute_id) === String(instituteId) ? unit : null;
   };
 
   const resolveMatches = (matches, extra = {}) => {
     if (!matches.length) return unassigned(extra);
     if (matches.length > 1) return ambiguous({ ...extra, positionIds: matches.map(position => position.id) });
     const position = matches[0];
-    if (position.user_id == null || position.user_is_active === false) {
+    const holderActivityKnown = Object.prototype.hasOwnProperty.call(position, 'user_is_active');
+    if (position.user_id == null || (holderActivityKnown && position.user_is_active !== true)) {
       return unassigned({ ...extra, positionId: position.id, positionType: position.position_type });
     }
     return serializePosition(position, extra);
@@ -46,6 +48,16 @@ function createOrganizationAuthorityService(repo = defaultRepository) {
 
   const resolveUnitHead = async (unitId, instituteId, client) =>
     resolveMatches((await currentPositions(unitId, instituteId, client)).filter(position => position.is_unit_head === true), { organizationUnitId: unitId });
+
+  const resolveUnitHeadByCode = async (code, instituteId, client) => {
+    const units = await repo.findByCode(code, instituteId, client);
+    if (!units.length) return unassigned({ organizationUnitCode: code });
+    if (units.length > 1) return ambiguous({
+      organizationUnitCode: code,
+      organizationUnitIds: units.map(unit => unit.id)
+    });
+    return resolveUnitHead(units[0].id, instituteId, client);
+  };
 
   const resolveTypedPosition = async (unitId, positionType, instituteId, client) =>
     resolveMatches((await currentPositions(unitId, instituteId, client)).filter(position => position.position_type === positionType), { organizationUnitId: unitId });
@@ -63,7 +75,7 @@ function createOrganizationAuthorityService(repo = defaultRepository) {
     );
   };
 
-  return { currentPositions, resolveUnitHead, resolveTypedPosition, resolveExecutiveOwner, isCurrentPosition };
+  return { currentPositions, resolveUnitHead, resolveUnitHeadByCode, resolveTypedPosition, resolveExecutiveOwner, isCurrentPosition };
 }
 
 module.exports = { createOrganizationAuthorityService, isCurrentPosition, serializePosition };

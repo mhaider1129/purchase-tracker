@@ -20,9 +20,60 @@ const {
   evaluateBudgetCoverage,
 } = require("../../services/financeCoreService");
 const { validateRequestItemIdentity, auditItemMaster } = require('../../services/procurementItemIdentityService');
+const { createOrganizationAuthorityService } = require('../../services/organizationAuthorityService');
+const organizationRepository = require('../../repositories/organizationRepository');
 
 const URGENT_REQUEST_PERMISSION = 'requests.mark-urgent-on-submit';
 const MAX_UNIT_OF_MEASURE_LENGTH = 80;
+const GENERAL_WAREHOUSE_CODE = 'GENERAL_WAREHOUSE';
+const WAREHOUSE_ORGANIZATION_CODES = Object.freeze({
+  'general warehouse': GENERAL_WAREHOUSE_CODE,
+  'medical supplies warehouse': 'MEDICAL_SUPPLIES_WAREHOUSE',
+  'medication warehouse': 'MEDICATION_WAREHOUSE',
+  'laboratory warehouse': 'LABORATORY_WAREHOUSE',
+});
+
+const resolveWarehouseApprovalAuthority = async (client, requestId, requestType, preferredWarehouseId) => {
+  const request = (await client.query(
+    'SELECT institute_id FROM requests WHERE id = $1',
+    [requestId],
+  )).rows[0];
+  if (!request?.institute_id) {
+    throw createHttpError(409, 'UNASSIGNED: request has no institute for warehouse authority resolution');
+  }
+
+  let warehouseCode = GENERAL_WAREHOUSE_CODE;
+  if (requestType?.trim().toLowerCase() === 'warehouse supply' && hasWarehouseAssignment(preferredWarehouseId)) {
+    const warehouse = (await client.query(
+      `SELECT name
+         FROM warehouses
+        WHERE id = $1
+          AND institute_id = $2`,
+      [Number(preferredWarehouseId), request.institute_id],
+    )).rows[0];
+    if (!warehouse) {
+      throw createHttpError(409, 'UNASSIGNED: warehouse is not in the request institute');
+    }
+    warehouseCode = WAREHOUSE_ORGANIZATION_CODES[warehouse.name.trim().toLowerCase()];
+    if (!warehouseCode) {
+      throw createHttpError(409, `UNASSIGNED: ${warehouse.name} has no canonical warehouse authority`);
+    }
+  }
+
+  const authority = createOrganizationAuthorityService(organizationRepository);
+  const resolution = await authority.resolveUnitHeadByCode(
+    warehouseCode,
+    request.institute_id,
+    client,
+  );
+  if (resolution.status !== 'RESOLVED') {
+    throw createHttpError(
+      409,
+      `${resolution.status}: ${warehouseCode} must have exactly one current unit head`,
+    );
+  }
+  return resolution;
+};
 
 const parseBooleanFlag = (value) => {
   if (value === true) return true;
@@ -132,47 +183,14 @@ const assignApprover = async (
   }
 
   if (normalizedRole === "warehousemanager") {
-    const parsedWarehouseId = Number(preferredWarehouseId);
-    if (Number.isInteger(parsedWarehouseId) && parsedWarehouseId > 0) {
-      const managerByWarehouseRes = await client.query(
-        `SELECT u.department_id
-           FROM users u
-          WHERE u.is_active = TRUE
-            AND LOWER(u.role) = 'warehousemanager'
-            AND u.warehouse_id = $1
-          ORDER BY u.id
-          LIMIT 1`,
-        [parsedWarehouseId],
-      );
-      if (managerByWarehouseRes.rows[0]?.department_id) {
-        targetDepartmentId = managerByWarehouseRes.rows[0].department_id;
-      }
-    }
-
-    const normalizedDomain = requestDomain?.toLowerCase();
-    const normalizedRequestType = requestType?.toLowerCase();
-    const requiresOperationalWarehouseManager =
-      normalizedRequestType === "non-stock" || normalizedRequestType === "maintenance";
-
-    const fallbackDomain = requiresOperationalWarehouseManager ? "operational" : null;
-    const domainForManager = requiresOperationalWarehouseManager
-      ? "operational"
-      : normalizedDomain || fallbackDomain;
-
-    if (domainForManager && !preferredWarehouseId) {
-      const managerRes = await client.query(
-        `SELECT d.id
-           FROM departments d
-           JOIN users u ON u.department_id = d.id
-          WHERE LOWER(d.type) = $1
-            AND LOWER(u.role) = 'warehousemanager'
-            AND u.is_active = TRUE
-          ORDER BY d.id
-          LIMIT 1`,
-        [domainForManager],
-      );
-      targetDepartmentId = managerRes.rows[0]?.id || departmentId;
-    }
+    const authority = await resolveWarehouseApprovalAuthority(
+      client,
+      requestId,
+      requestType,
+      preferredWarehouseId,
+    );
+    const result = { rows: [{ id: authority.userId, email: authority.userEmail }] };
+    return insertResolvedApprover(client, result, requestId, level);
   }
 
   const normalizedRoleUpper = roleToAssign?.toUpperCase() || "";
@@ -183,6 +201,10 @@ const assignApprover = async (
   const values = isGlobalRole ? [roleToAssign] : [roleToAssign, targetDepartmentId];
   const result = await client.query(query, values);
 
+  return insertResolvedApprover(client, result, requestId, level);
+};
+
+const insertResolvedApprover = async (client, result, requestId, level) => {
   const approverId = result.rows[0]?.id || null;
   let shouldAutoApprove = !approverId;
 
