@@ -1,3 +1,4 @@
+import { stableRequestItemId } from '../utils/requestItemIdentity';
 // src/pages/OpenRequestsPage.jsx
 import React, {
   useCallback,
@@ -437,6 +438,7 @@ const OpenRequestsPage = () => {
 
   const prepareEditableItems = useCallback((rawItems = []) => {
     return (rawItems || []).map((item) => ({
+      ...stableRequestItemId(item),
       item_name: item.item_name || '',
       brand: item.brand || '',
       quantity: item.quantity ?? '',
@@ -500,6 +502,10 @@ const OpenRequestsPage = () => {
   };
 
   const handleRemoveEditItem = (index) => {
+    if (editForm.items[index]?.id) {
+      setEditError('Existing lines retain their IDs. Use the controlled item cancellation action to remove demand.');
+      return;
+    }
     setEditForm((prev) => ({
       ...prev,
       items: prev.items.filter((_, idx) => idx !== index),
@@ -511,6 +517,7 @@ const OpenRequestsPage = () => {
     if (!editingRequest) return;
 
     const sanitizedItems = editForm.items.map((item) => ({
+      ...stableRequestItemId(item),
       item_name: item.item_name?.trim(),
       brand: item.brand?.trim() || undefined,
       quantity: Number(item.quantity),
@@ -543,7 +550,7 @@ const OpenRequestsPage = () => {
     setEditSubmitting(true);
 
     try {
-      await updateRequest(editingRequest.id, {
+      const updated = await updateRequest(editingRequest.id, {
         justification: editForm.justification,
         items: sanitizedItems,
       });
@@ -563,7 +570,7 @@ const OpenRequestsPage = () => {
 
       setItemsMap((prev) => ({
         ...prev,
-        [editingRequest.id]: sanitizedItems.map((item) => ({
+        [editingRequest.id]: (updated.items || sanitizedItems).map((item) => ({
           ...item,
           total_cost:
             item.unit_cost === null || item.unit_cost === undefined

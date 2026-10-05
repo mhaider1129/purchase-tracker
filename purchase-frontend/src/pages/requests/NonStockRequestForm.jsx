@@ -10,27 +10,9 @@ import ProjectSelector from '../../components/projects/ProjectSelector';
 import RequestScheduleField from '../../components/requests/RequestScheduleField';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 import AmountInput from '../../components/ui/AmountInput';
+import RequestItemIdentityFields from '../../components/requests/RequestItemIdentityFields';
+import { withRequestItemIdentity } from '../../utils/requestItemIdentity';
 import { HOSPITAL_UNITS_OF_MEASURE } from '../../constants/unitsOfMeasure';
-
-const ITEM_MASTER_FIELDS = [
-  'generic_item_id',
-  'preferred_product_id',
-  'mandatory_product_id',
-  'request_mode',
-  'catalog_status',
-  'stocking_policy',
-  'preferred_product_reason',
-  'restriction_justification',
-  'item_name_snapshot',
-  'canonical_description_snapshot',
-  'pending_item',
-];
-
-const asFreeTextItem = (item) => {
-  const freeTextItem = { ...item };
-  ITEM_MASTER_FIELDS.forEach((field) => delete freeTextItem[field]);
-  return freeTextItem;
-};
 
 const NonStockRequestForm = () => {
   const { t } = useTranslation();
@@ -139,6 +121,7 @@ const NonStockRequestForm = () => {
   function getEmptyItem() {
     return {
       item_name: '',
+      request_mode: 'free_text', catalog_status: 'pending_mapping', stocking_policy: 'non_stock',
       quantity: 1,
       unit_cost: '0',
       unit_of_measure: 'Piece',
@@ -366,7 +349,7 @@ ${templateText}`
         if (parsed.justification) setJustification(parsed.justification);
         if (parsed.projectId) setProjectId(parsed.projectId);
         if (Array.isArray(parsed.items) && parsed.items.length > 0) {
-          setItems(parsed.items.map((it) => ({ ...getEmptyItem(), ...asFreeTextItem(it), attachments: [] })));
+          setItems(parsed.items.map((it) => ({ ...getEmptyItem(), ...withRequestItemIdentity(it), attachments: [] })));
         }
       } catch (e) {
         console.warn('Unable to parse saved non-stock draft.', e);
@@ -389,7 +372,7 @@ ${templateText}`
     const payload = {
       justification,
       projectId,
-      items: items.map(({ attachments: _attachments, ...rest }) => asFreeTextItem(rest)),
+      items: items.map(({ attachments: _attachments, ...rest }) => withRequestItemIdentity(rest)),
       updatedAt: new Date().toISOString(),
     };
     window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
@@ -481,7 +464,7 @@ ${templateText}`
     formData.append('target_department_id', targetDeptId);
     formData.append('target_section_id', targetSectionId || '');
     formData.append('client_submission_key', submissionKeyRef.current);
-    const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => asFreeTextItem(rest));
+    const itemsPayload = items.map(({ attachments: itemAttachments, ...rest }) => withRequestItemIdentity(rest));
     formData.append('items', JSON.stringify(itemsPayload));
     formData.append('is_urgent', isUrgent ? 'true' : 'false');
     if (scheduledFor) formData.append('scheduled_for', new Date(scheduledFor).toISOString());
@@ -600,6 +583,8 @@ ${templateText}`
                   <p className="text-sm font-semibold text-gray-700">{tr('fields.itemLineLabel', { index: index + 1 })}</p>
                   <p className="text-xs text-gray-500">{tr('fields.itemLineHint')}</p>
                 </div>
+                <RequestItemIdentityFields value={item} user={user} disabled={isSubmitting}
+                  onChange={patch => setItems(current => current.map((line,i) => i === index ? { ...line,...patch } : line))} />
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-5">
                     <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.itemNameLabel')}</label>
