@@ -15,3 +15,16 @@ test('searches each hierarchy independently and displays distinguishing data', a
   await waitFor(() => expect(api.searchApprovedProducts).toHaveBeenCalled());
   expect(screen.getByPlaceholderText(/Product, manufacturer/)).toBeInTheDocument();
 });
+test('shows only authorized lifecycle actions and follows each governed activation step',async()=>{
+  const row={id:9,item_code:'GEN-9',generic_name:'Infusion stand',lifecycle_status:'draft'};
+  api.searchGenericItems.mockImplementation(async()=>({total:1,data:[{...row}]}));
+  api.transitionGenericItem.mockImplementation(async(_id,status)=>{row.lifecycle_status=status;return {...row};});
+  render(<ItemHierarchyWorkspace user={{permissions:['item-master.create','item-master.edit','item-master.validate','item-master.approve']}} />);
+  expect(screen.getByRole('button',{name:'Create Generic Item'})).toBeInTheDocument();
+  for(const status of ['review','validation','approval','active']) {
+    await userEvent.click(await screen.findByRole('button',{name:`Move to ${status}`}));
+    await waitFor(()=>expect(api.transitionGenericItem).toHaveBeenCalledWith(9,status));
+  }
+  expect(await screen.findByText('active')).toBeInTheDocument();
+  expect(screen.queryByRole('button',{name:'Move to retired'})).not.toBeInTheDocument();
+});

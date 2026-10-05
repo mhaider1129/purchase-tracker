@@ -1,3 +1,4 @@
+import ProcurementIdentitySettings from '../components/itemMaster/ProcurementIdentitySettings';
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
@@ -61,6 +62,7 @@ const managementTabs = {
   autoAssignments: ['Auto assignments', 'Route work to the right owners', Network, 'Workflow'],
   printServices: ['Print services', 'Department printing preferences', Printer, 'Workflow'],
   contractApprovalRules: ['Contract rules', 'Contract approval stages and gates', FileSliders, 'Workflow'],
+  itemIdentity: ['Item Master policy', 'Control the transition from free-text procurement', ShieldCheck, 'Workflow'],
   permissions: ['Permissions', 'Fine-grained user capabilities', KeyRound, 'Access control'],
   interfaceAccess: ['Interface access', 'Map features to permissions', ShieldCheck, 'Access control'],
 };
@@ -280,6 +282,7 @@ const Management = () => {
       tabs.push('roles');
     }
     if (canManagePermissions) {
+      tabs.push('itemIdentity');
       tabs.push('permissions');
       tabs.push('interfaceAccess');
     }
@@ -3653,6 +3656,7 @@ const Management = () => {
               {tab === 'printServices' && renderPrintServices()}
               {tab === 'projects' && renderProjects()}
               {tab === 'roles' && renderRoles()}
+              {tab === 'itemIdentity' && <ProcurementIdentitySettings />}
               {tab === 'permissions' && renderPermissions()}
               {tab === 'interfaceAccess' && renderInterfaceAccess()}
               {tab === 'contractApprovalRules' && renderContractApprovalRules()}
