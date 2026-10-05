@@ -89,6 +89,8 @@ export default function GenericItemSelector({ value, onChange, disabled = false 
           </button>
         ))}
       </div>
+      {!loading && !error && options.length === 0 && <p className="text-sm text-slate-600">No active Generic Items found. Drafts and legacy items must be governed and activated in Item Master before selection.</p>}
+      {value?.generic_item_id && <p className="text-xs font-semibold text-blue-700">Selected Generic Item #{value.generic_item_id}</p>}
       <button type="button" className="text-sm font-medium text-amber-700 underline" onClick={() => onChange({ generic_item_id: null, item_name: '', request_mode: 'pending_item_creation', catalog_status: 'pending_mapping', pending_item: { proposed_name: '', item_type: '', category: '', justification: '' } })}>Cannot find the item</button>
     </div>
   );

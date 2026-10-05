@@ -5,7 +5,7 @@ import { hasPermission } from "../../utils/permissions";
 import { REQUEST_MODE_STATUS } from "../../utils/requestItemIdentity";
 
 const LABELS = {
-  free_text: "Unresolved physical item",
+  free_text: "Free-text item (resolve when enforcement is on)",
   generic_item: "Catalogued Generic Item",
   generic_item_with_preference: "Generic Item with preferred Product",
   specific_approved_product: "Required approved Product",
@@ -87,7 +87,7 @@ export default function RequestItemIdentityFields({
         Item identity
         <select
           aria-label="Item identity mode"
-          className="ml-2 rounded border p-2"
+          className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5"
           value={mode}
           onChange={(e) => changeMode(e.target.value)}
         >
@@ -141,7 +141,7 @@ export default function RequestItemIdentityFields({
                 [productKey]: e.target.value ? Number(e.target.value) : null,
               })
             }
-            className="ml-2 rounded border p-2"
+            className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5"
           >
             <option value="">
               {loading
@@ -161,6 +161,7 @@ export default function RequestItemIdentityFields({
         <label className="block text-sm">
           Preference reason
           <textarea
+            className="mt-1 block min-h-20 w-full rounded-lg border border-slate-300 p-2.5"
             aria-label="Preference reason"
             value={value.preferred_product_reason || ""}
             onChange={(e) =>
@@ -175,6 +176,7 @@ export default function RequestItemIdentityFields({
         <label className="block text-sm">
           Justification
           <textarea
+            className="mt-1 block min-h-20 w-full rounded-lg border border-slate-300 p-2.5"
             required
             aria-label="Identity justification"
             value={value.restriction_justification || ""}
@@ -186,12 +188,13 @@ export default function RequestItemIdentityFields({
       )}
       {mode === "free_text" && (
         <p className="text-xs text-amber-700">
-          This demand requires identity resolution before procurement.
+          Free-text procurement is available while Management enables temporary compatibility mode. Strict mode requires resolution to an active Generic Item.
         </p>
       )}
       <label className="block text-sm">
         Required date
         <input
+          className="mt-1 block w-full rounded-lg border border-slate-300 p-2.5"
           type="date"
           aria-label="Item required date"
           value={value.required_date || ""}

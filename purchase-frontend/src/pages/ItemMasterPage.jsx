@@ -1,3 +1,4 @@
+import PendingItemWorkspace from '../components/itemMaster/PendingItemWorkspace';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   approveItemMaster,
@@ -198,10 +199,14 @@ export default function ItemMasterPage() {
   return (
     <>
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-4">
-        <ItemHierarchyWorkspace canMaintainReferences={hasPermission(user, 'item-master.references-maintain')} />
-        <div className="flex items-end justify-between gap-4">
+        <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-bold text-slate-900">Item Master</h1><p className="mt-1 text-sm text-slate-600">Create governed identities here. Active Generic Items are searchable in requests; legacy records remain in the historical workspace below.</p></div>{hasPermission(user,'item-master.stock-map') && <a href="/item-master/stock-mappings" className="rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-blue-700">Open Stock Mapping Workspace</a>}</header>
+        <ItemHierarchyWorkspace user={user} canMaintainReferences={hasPermission(user, 'item-master.references-maintain')} />
+        {hasPermission(user, 'item-master.map') && <PendingItemWorkspace user={user} />}
+        <details className="rounded-xl border bg-white p-4">
+          <summary className="cursor-pointer font-semibold text-slate-700">Historical Item Master / compatibility records</summary>
+        <div className="mt-4 flex items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Legacy Item Master / Compatibility</h1>
+            <h2 className="text-2xl font-bold text-slate-900">Legacy Item Master / Compatibility</h2>
             <p className="text-sm text-slate-600">Historical records remain available here. Use Item Hierarchy above as the primary creation workspace.</p>
             <p className="text-xs text-amber-700">Legacy compatibility workspace. Commercial fields below remain temporarily available for historical records; create new governed data in the normalized hierarchy.</p>
           </div>
@@ -333,6 +338,7 @@ export default function ItemMasterPage() {
             )}
           </section>}
         </div>
+        </details>
       </main>
     </>
   );
