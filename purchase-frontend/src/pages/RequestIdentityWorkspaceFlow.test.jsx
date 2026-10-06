@@ -23,3 +23,20 @@ test('approved request exposes the missing resolution workflow from its workspac
   fireEvent.click(within(dialog).getByRole('button',{name:'Save identity resolution'}));
   await waitFor(()=>expect(api.post).toHaveBeenCalledWith('/requests/78/items/12/resolve-identity',{generic_item_id:5,reason:'Steward confirmed'}));
 });
+
+test('server-provided request action context remains visible when switching detail tabs', async () => {
+  api.post.mockClear();
+  const workspace = {
+    request: { request_id: 79, request_status: 'Approved', next_required_action: 'Review quote', assigned_to_name: 'Ahmed', current_bottleneck: 'Supplier response' },
+    items: [], available_actions: [],
+  };
+  api.get.mockImplementation(async () => ({ data: workspace }));
+  render(<MemoryRouter initialEntries={['/requests/79']}><Routes><Route path="/requests/:requestId" element={<RequestDetailWorkspace />} /></Routes></MemoryRouter>);
+  const context = within(await screen.findByRole('region', { name: /Current request context|operationalWorkspace.actionContext/ }));
+  expect(context.getByText('Review quote')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: /^Timeline/ }));
+  expect(context.getByText('Review quote')).toBeInTheDocument();
+  expect(context.getByText('Ahmed')).toBeInTheDocument();
+  expect(context.getByText('Supplier response')).toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});

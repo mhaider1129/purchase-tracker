@@ -1,3 +1,4 @@
+import RequestAgeBadge from '../workspaces/RequestAgeBadge';
 import React from "react";
 import {
   AlertTriangle,
@@ -109,6 +110,7 @@ const ApprovalRequestCard = ({
               </span>
             )}
             {getApprovalStatusChip()}
+            <RequestAgeBadge createdAt={request.created_at || request.request_date} />
           </div>
           <p className={titleClass}>
             {request.justification || "No justification provided."}

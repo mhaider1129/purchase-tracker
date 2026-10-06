@@ -1,3 +1,6 @@
+import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
+import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
+import './OperationalWorkspaces.css';
 import { stableRequestItemId } from '../utils/requestItemIdentity';
 // src/pages/OpenRequestsPage.jsx
 import React, {
@@ -728,7 +731,7 @@ const OpenRequestsPage = () => {
           notAvailable: tr('notAvailable'),
         }}
       />
-      <div className="procurement-workspace mx-auto max-w-7xl space-y-6 px-4 py-6 print:hidden sm:px-6 lg:px-8">
+      <div className="operational-workspace operational-request-list procurement-workspace mx-auto max-w-7xl space-y-6 px-4 py-6 print:hidden sm:px-6 lg:px-8">
         <section className="relative overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-6 py-7 text-white shadow-xl sm:px-8">
           <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl" />
           <div className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-indigo-400/20 blur-3xl" />
@@ -825,7 +828,8 @@ const OpenRequestsPage = () => {
           })}
         </div>
 
-        <section className="workspace-filter-panel rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-5">
+        <WorkspaceSectionNav sections={[{ id: 'open-filters', label: 'filters' }, { id: 'open-results', label: 'requestResults' }]} />
+        <section id="open-filters" tabIndex={-1} className="workspace-filter-panel rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="rounded-lg bg-blue-50 p-2 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
@@ -972,6 +976,7 @@ const OpenRequestsPage = () => {
           </div>
         )}
 
+        <div id="open-results" tabIndex={-1} className="workspace-results-anchor" />
         {loading ? (
           <div className="space-y-3" aria-label={tr('loading')} role="status">
             {[0, 1, 2].map((item) => (
@@ -1005,7 +1010,7 @@ const OpenRequestsPage = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="hidden overflow-x-auto rounded-lg border border-gray-200 shadow-sm dark:border-gray-700 md:block">
+            <WorkspaceTableScroll className="hidden overflow-x-auto rounded-lg border border-gray-200 shadow-sm dark:border-gray-700 md:block">
               <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
@@ -1231,7 +1236,7 @@ const OpenRequestsPage = () => {
                                 )}
                               </div>
                               {itemsMap[req.id]?.length > 0 ? (
-                                <table className="w-full text-sm border">
+                                <WorkspaceTableScroll><table className="w-full text-sm border">
                                   <thead>
                                     <tr className="bg-gray-100">
                                       <th className="border p-1">
@@ -1308,7 +1313,7 @@ const OpenRequestsPage = () => {
                                       );
                                     })}
                                   </tbody>
-                                </table>
+                                </table></WorkspaceTableScroll>
                               ) : (
                                 <p className="text-sm text-gray-500">
                                   {tr('noItemsForRequest')}
@@ -1340,7 +1345,7 @@ const OpenRequestsPage = () => {
                   })}
                 </tbody>
               </table>
-            </div>
+            </WorkspaceTableScroll>
 
             <div className="space-y-3 md:hidden">
               {paginated.map((req) => {
@@ -1536,7 +1541,7 @@ const OpenRequestsPage = () => {
                           )}
                         </div>
                         {itemsMap[req.id]?.length > 0 ? (
-                          <table className="w-full text-sm border">
+                          <WorkspaceTableScroll><table className="w-full text-sm border">
                             <thead>
                               <tr className="bg-gray-100">
                                 <th className="border p-1">{tr('item')}</th>
@@ -1601,7 +1606,7 @@ const OpenRequestsPage = () => {
                                 );
                               })}
                             </tbody>
-                          </table>
+                          </table></WorkspaceTableScroll>
                         ) : (
                           <p className="text-sm text-gray-500">
                             {tr('noItemsForRequest')}

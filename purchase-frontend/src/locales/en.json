@@ -1,4 +1,27 @@
 {
+  "operationalWorkspace": {
+    "requestResults": "Request results",
+    "inSummary": "Requests in summary",
+    "toApprove": "To approve",
+    "toReject": "To reject",
+
+    "jumpTo": "Jump to section",
+    "filters": "Search & filters",
+    "approvalQueue": "Approval queue",
+    "transfers": "Transfers",
+    "allocations": "Allocations",
+    "inventory": "Inventory",
+    "report": "Department report",
+    "actionContext": "Current request context",
+    "nextAction": "Next required action",
+    "assignedTo": "Assigned to",
+    "bottleneck": "Current bottleneck",
+    "notProvided": "Not provided",
+    "tableLabel": "Scrollable data table",
+    "tableHint": "Scroll horizontally to view all columns.",
+    "requestAge_one": "Submitted {{count}} day ago",
+    "requestAge_other": "Submitted {{count}} days ago"
+  },
   "requestFormLayout": {
     "requestDetails": "Request details",
     "logbookDetails": "Logbook specifications",

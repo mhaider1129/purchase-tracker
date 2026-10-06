@@ -1,3 +1,6 @@
+import ApprovalDecisionSummary from '../components/workspaces/ApprovalDecisionSummary';
+import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
+import './OperationalWorkspaces.css';
 //src/pages/ApprovalsPanel.js
 import { useTranslation } from "react-i18next";
 import React, { useMemo, useState } from "react";
@@ -183,7 +186,7 @@ const ApprovalsPanel = () => {
 
   return (
     <>
-      <div className="procurement-workspace mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="operational-workspace operational-approvals procurement-workspace mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <header className="overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-5 py-6 text-white shadow-xl shadow-slate-200 sm:px-7 sm:py-7">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -306,20 +309,24 @@ const ApprovalsPanel = () => {
           />
         </div>
 
-        <ApprovalsFilters
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          typeFilter={typeFilter}
-          onTypeChange={setTypeFilter}
-          urgencyFilter={urgencyFilter}
-          onUrgencyChange={setUrgencyFilter}
-          sortOption={sortOption}
-          onSortChange={setSortOption}
-          availableRequestTypes={availableRequestTypes}
-          hasActiveFilters={hasActiveFilters}
-          onReset={clearFilters}
-          labels={filterLabels}
-        />
+        <WorkspaceSectionNav sections={[{ id: 'approval-filters', label: 'filters' }, { id: 'approval-queue', label: 'approvalQueue' }]} />
+        <div id="approval-filters" tabIndex={-1}>
+          <ApprovalsFilters
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            typeFilter={typeFilter}
+            onTypeChange={setTypeFilter}
+            urgencyFilter={urgencyFilter}
+            onUrgencyChange={setUrgencyFilter}
+            sortOption={sortOption}
+            onSortChange={setSortOption}
+            availableRequestTypes={availableRequestTypes}
+            hasActiveFilters={hasActiveFilters}
+            onReset={clearFilters}
+            labels={filterLabels}
+          />
+
+        </div>
 
         <RequestViewModeToggle
           className="mt-4"
@@ -332,7 +339,7 @@ const ApprovalsPanel = () => {
           ariaLabel={t("approvalsPanel.requestView.aria")}
         />
 
-        <div className="mt-6">
+        <div id="approval-queue" tabIndex={-1} className="mt-6">
           {!loading && !error && requests.length > 0 && (
             <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -643,6 +650,7 @@ const ApprovalsPanel = () => {
                 handle it later in the normal flow.
               </p>
             </div>
+            <ApprovalDecisionSummary requestIds={approvalSummary.requestIds} decisions={approvalSummary.decisions} />
             <div className="max-h-[65vh] space-y-4 overflow-y-auto p-5">
               {approvalSummary.feedback && (
                 <div className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">

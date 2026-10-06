@@ -1,3 +1,5 @@
+import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
+import './OperationalWorkspaces.css';
 // src/pages/AssignedRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -1235,6 +1237,7 @@ const AssignedRequestsPage = () => {
 
   return (
     <PageShell
+      className="operational-workspace operational-request-list"
       title={tr("title", "Assigned Requests")}
       description={tr(
         "description",
@@ -1271,7 +1274,8 @@ const AssignedRequestsPage = () => {
         </div>
       ) : (
         <>
-          <div className="workspace-filter-panel mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <WorkspaceSectionNav sections={[{ id: 'assigned-filters', label: 'filters' }, { id: 'assigned-results', label: 'requestResults' }]} />
+          <div id="assigned-filters" tabIndex={-1} className="workspace-filter-panel mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
               <span
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
@@ -1454,6 +1458,7 @@ const AssignedRequestsPage = () => {
             </div>
           </div>
 
+          <div id="assigned-results" tabIndex={-1} className="workspace-results-anchor" />
           {filteredRequests.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
               <p className="text-sm text-slate-600">

@@ -1,4 +1,31 @@
 {
+  "operationalWorkspace": {
+    "requestResults": "نتائج الطلبات",
+    "inSummary": "الطلبات في الملخص",
+    "toApprove": "للموافقة",
+    "toReject": "للرفض",
+
+    "jumpTo": "انتقل إلى القسم",
+    "filters": "البحث والتصفية",
+    "approvalQueue": "قائمة الموافقات",
+    "transfers": "التحويلات",
+    "allocations": "التوزيعات",
+    "inventory": "المخزون",
+    "report": "تقرير الأقسام",
+    "actionContext": "الوضع الحالي للطلب",
+    "nextAction": "الإجراء التالي المطلوب",
+    "assignedTo": "مسند إلى",
+    "bottleneck": "العائق الحالي",
+    "notProvided": "غير محدد",
+    "tableLabel": "جدول بيانات قابل للتمرير",
+    "tableHint": "مرر أفقيًا لعرض جميع الأعمدة.",
+    "requestAge_zero": "تم تقديم الطلب اليوم",
+    "requestAge_one": "تم تقديم الطلب منذ يوم",
+    "requestAge_two": "تم تقديم الطلب منذ يومين",
+    "requestAge_few": "تم تقديم الطلب منذ {{count}} أيام",
+    "requestAge_many": "تم تقديم الطلب منذ {{count}} يومًا",
+    "requestAge_other": "تم تقديم الطلب منذ {{count}} يوم"
+  },
   "requestFormLayout": {
     "requestDetails": "تفاصيل الطلب",
     "logbookDetails": "مواصفات سجل العمل",

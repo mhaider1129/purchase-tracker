@@ -2,6 +2,7 @@ import React from "react";
 import ProcurementPageHeader from "./ProcurementPageHeader";
 
 const PageShell = ({
+  className = "",
   title,
   description,
   actions,
@@ -12,7 +13,7 @@ const PageShell = ({
   icon,
 }) => {
   return (
-    <div className="procurement-workspace mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <div className={`procurement-workspace mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 ${className}`}>
       <ProcurementPageHeader
         title={title}
         description={description}
