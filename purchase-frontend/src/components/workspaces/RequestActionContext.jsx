@@ -1,9 +1,9 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import useWorkspaceTranslation from "./useWorkspaceTranslation";
 import { ArrowRightCircle, UserRound, CircleAlert } from "lucide-react";
 
 export default function RequestActionContext({ request }) {
-  const { t } = useTranslation();
+  const t = useWorkspaceTranslation();
   const fields = [
     {
       key: "nextAction",

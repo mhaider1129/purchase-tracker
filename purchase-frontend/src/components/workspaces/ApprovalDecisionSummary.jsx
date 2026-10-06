@@ -1,8 +1,8 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import useWorkspaceTranslation from "./useWorkspaceTranslation";
 
 export default function ApprovalDecisionSummary({ requestIds, decisions }) {
-  const { t } = useTranslation();
+  const t = useWorkspaceTranslation();
   const rejected = requestIds.filter(
     (id) => decisions[id] === "Rejected",
   ).length;

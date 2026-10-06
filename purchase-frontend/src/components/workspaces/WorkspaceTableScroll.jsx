@@ -1,5 +1,5 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import useWorkspaceTranslation from "./useWorkspaceTranslation";
 import { MoveHorizontal } from "lucide-react";
 
 export default function WorkspaceTableScroll({
@@ -7,7 +7,7 @@ export default function WorkspaceTableScroll({
   className = "",
   ...props
 }) {
-  const { t } = useTranslation();
+  const t = useWorkspaceTranslation();
   return (
     <div
       {...props}
