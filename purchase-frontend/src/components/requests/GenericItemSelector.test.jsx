@@ -30,6 +30,9 @@ test('uses controlled item type and category lists for a pending item',async()=>
   await userEvent.click(screen.getByRole('button',{name:'Cannot find the item'}));
   rerender(<GenericItemSelector value={{request_mode:'pending_item_creation',pending_item:{}}} onChange={onChange}/>);
   expect(await screen.findByRole('option',{name:'Medical supply'})).toBeInTheDocument();
+  expect(screen.getByRole('option',{name:'Furniture'})).toHaveValue('furniture');
+  await userEvent.selectOptions(screen.getByLabelText('Pending item type'), 'furniture');
+  expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ pending_item: expect.objectContaining({ item_type: 'furniture' }) }));
   expect(await screen.findByRole('option',{name:'Medical Supplies'})).toBeInTheDocument();
   expect(screen.getByLabelText('Pending item type').tagName).toBe('SELECT');
   expect(screen.getByLabelText('Pending category').tagName).toBe('SELECT');

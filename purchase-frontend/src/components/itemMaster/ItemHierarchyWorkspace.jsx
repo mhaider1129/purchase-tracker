@@ -32,13 +32,14 @@ export default function ItemHierarchyWorkspace({ canMaintainReferences = false, 
 
   useEffect(() => {
     const controller = new AbortController();
+    setLoading(true);
     const timer = setTimeout(async () => {
       setLoading(true);
       setError('');
       try {
         if (tab === 'uom') {
-          const data = await searchItemMasterReferences(referenceType, { q: query });
-          if (!controller.signal.aborted) setResult({ data, total: data.length });
+          const data = await searchItemMasterReferences(referenceType, { q: query, page, page_size: 25 });
+          if (!controller.signal.aborted) setResult(Array.isArray(data) ? { data, total: data.length } : data);
         } else {
           const search = tab === 'generic' ? searchGenericItems : tab === 'products' ? searchApprovedProducts : searchSupplierCatalog;
           const data = await search({ q: query, page, page_size: 25 });
@@ -80,7 +81,7 @@ export default function ItemHierarchyWorkspace({ canMaintainReferences = false, 
         {tab !== 'uom' && <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-slate-600">Generic draft → review → validation → approval → active → Product approval → supplier offers</p>{canCreate ? <button type="button" onClick={() => setCreating(value => !value)} className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white">Create {tab === 'generic' ? 'Generic Item' : tab === 'products' ? 'Product' : 'Supplier offer'}</button> : <p className="text-xs text-slate-500">Creation requires {tab === 'generic' ? 'item-master.create' : tab === 'products' ? 'item-master.products' : 'item-master.suppliers'} permission.</p>}</div>}
         {notice && <p role="status" className="mt-3 rounded bg-green-50 p-3 text-sm text-green-800">{notice}</p>}
         {creating && <ItemHierarchyCreateForm canMaintainReferences={canMaintainReferences} level={tab} onClose={() => setCreating(false)} onSaved={async created => { setCreating(false); setQuery(''); setPage(1); setRevision(value=>value+1); setNotice(created.duplicate_candidates?.length ? 'Created draft with duplicate candidates. A steward must resolve those before activation.' : 'Governed record created. Complete the applicable lifecycle or approval before request selection.'); }} />}
-        {tab === 'uom' && <label className="mt-4 block text-sm font-medium">Reference type<select className="ml-3 rounded border p-2" value={referenceType} onChange={event => setReferenceType(event.target.value)}><option value="uom">UOMs</option><option value="categories">Categories</option><option value="manufacturers">Manufacturers</option></select></label>}
+        {tab === 'uom' && <label className="mt-4 block text-sm font-medium">Reference type<select className="ml-3 rounded border p-2" value={referenceType} onChange={event => { setReferenceType(event.target.value); setPage(1); }}><option value="uom">UOMs</option><option value="categories">Categories</option><option value="manufacturers">Manufacturers</option></select></label>}
         <label className="mt-4 block text-sm font-medium text-slate-700" htmlFor="hierarchy-search">Search the selected level</label>
         <input id="hierarchy-search" className="mt-1 w-full rounded-lg border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100" value={query} onChange={event => { setQuery(event.target.value); setPage(1); }} placeholder={tab === 'generic' ? 'Code, generic name or canonical description' : tab === 'products' ? 'Product, manufacturer, MPN or regulatory identifier' : 'Supplier, supplier item code or approved product'} />
         {tab === 'uom' && canMaintainReferences && <form className="mt-3 flex flex-wrap gap-2" onSubmit={async event => { event.preventDefault(); await run(async () => { await createItemMasterReference(referenceType, referenceForm); setReferenceForm({ code: '', name: '' }); }); }}>
@@ -100,7 +101,8 @@ export default function ItemHierarchyWorkspace({ canMaintainReferences = false, 
               {!loading && !result.data.length && <tr><td className="p-6 text-center text-slate-500" colSpan="4">No matching records. Create a governed record or try another search.</td></tr>}
             </tbody>
           </table>
-          {tab !== 'uom' && <div className="flex items-center justify-between border-t p-3 text-sm"><button type="button" disabled={loading || page<=1} onClick={()=>setPage(value=>value-1)}>Previous</button><span>Page {page} · {result.total || 0} matching records</span><button type="button" disabled={loading || page*25 >= result.total} onClick={()=>setPage(value=>value+1)}>Next</button></div>}
+          <div className="flex items-center justify-between border-t p-3 text-sm"><button type="button" className="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40" disabled={loading || busy || Boolean(error) || page<=1} onClick={()=>{ setLoading(true); setPage(value=>value-1); }}>Previous</button><span>Page {page} of {Math.max(1, Math.ceil((result.total || 0)/25))} · {result.total || 0} matching records</span><button type="button" className="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-40" disabled={loading || busy || Boolean(error) || page*25 >= result.total} onClick={()=>{ setLoading(true); setPage(value=>value+1); }}>Next</button></div>
+          {!loading && !error && result.total <= 25 && <p className="px-3 pb-3 text-xs text-slate-500">{result.total === 0 ? 'No records to page through. Create records or set up the reference lists first.' : 'All matching records fit on one page.'}</p>}
           {loading && <div className="border-t p-3 text-center text-sm text-slate-500">Searching…</div>}
           {error && <div className="border-t border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{error}</div>}
         </div>

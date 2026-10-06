@@ -101,6 +101,11 @@ export const getItemMasterReferences = async () => {
   return data;
 };
 
+export const initializeItemMasterReferences = async () => {
+  const { data } = await api.post('/item-master/foundation/references/initialize');
+  return data;
+};
+
 export const searchItemMasterReferences = async (type, params = {}) => {
   const { data } = await api.get(`/item-master/foundation/references/${type}`, { params });
   return data;

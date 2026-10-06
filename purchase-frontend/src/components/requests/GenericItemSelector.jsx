@@ -1,16 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getItemMasterReferences, searchGenericItems } from '../../api/itemMaster';
 
-const ITEM_TYPES = [
-  { value: 'medication', label: 'Medication' },
-  { value: 'medical_supply', label: 'Medical supply' },
-  { value: 'medical_device', label: 'Medical device' },
-  { value: 'laboratory_item', label: 'Laboratory item' },
-  { value: 'maintenance_spare_part', label: 'Maintenance spare part' },
-  { value: 'it_item', label: 'IT item' },
-  { value: 'stationery', label: 'Stationery' },
-  { value: 'general_item', label: 'General item' },
-];
+import { ITEM_TYPES } from '../../constants/itemTypes';
 
 export default function GenericItemSelector({ value, onChange, disabled = false, allowPendingCreation = true }) {
   const [query, setQuery] = useState(value?.item_name || '');

@@ -8,10 +8,14 @@ different messages, with refresh/retry actions for loading failures.
 
 1. Open Item Master → Generic Items → Create Generic Item.
 2. Enter the item code, generic name and canonical description.
-3. Under **Controlled reference data**, use **Add category** and save its name
+3. Under **Controlled reference data**, choose **Set up standard lists** to add
+   15 standard categories (including Furniture) and 12 controlled UOMs. Existing
+   references, including inactive ones, are preserved; repeating setup only adds
+   missing entries. Each new entry is audited. Alternatively, use **Add category** and save its name
    (for example, Furniture). Use **Add UOM** and save its controlled code and
    name (for example, EA / Piece).
-4. Newly created references are selected after refresh. Your item fields stay
+4. References created individually are selected after refresh. Standard setup
+   refreshes the lists; select the appropriate category and UOM. Your item fields stay
    in the form. Choose other references if needed.
 5. Create the governed draft, then complete review → validation → approval →
    active using the authorized lifecycle actions in Generic Items.
@@ -46,7 +50,18 @@ validation/approval submission uses `item-master.validate`, and activation uses
 Product and Supplier Catalog creation select existing active Generic Items;
 they cannot create another pending referral.
 
-This frontend change needs no database migration. Deploy the frontend after
+The shared Item type list includes Furniture, Equipment, General consumables,
+Cleaning supply, Linen, Food and beverages, and Service in both Generic Item
+creation and missing-item referrals. These types describe identity, not quantity
+conversions or approval rules.
+
+Generic Items, Products, Supplier Catalog and Reference data show 25 records per
+page. Previous is disabled on the first page; Next is disabled on the last page.
+Both are disabled while loading or when there are no records. The page count and
+empty-list message explain these boundaries. Changing filters or reference type
+returns to page 1.
+
+No database migration is required. Deploy both the backend and frontend after
 merging, then verify with an authorized development user against the
 already-migrated backend. Automated UI checks mock API responses and do not
 verify the contents of a connected database.
