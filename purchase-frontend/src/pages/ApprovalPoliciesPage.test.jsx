@@ -4,11 +4,35 @@ import userEvent from "@testing-library/user-event";
 import ApprovalPoliciesPage, {
   VersionDetail,
   ShadowComparison,
+  PolicySimulator,
 } from "./ApprovalPoliciesPage";
 import * as api from "../api/approvalPolicies";
 import { getOrganizationOptions } from "../api/organization";
 jest.mock("../api/approvalPolicies");
 jest.mock("../api/organization");
+test('simulator uses the canonical Non-Stock default, keeps zero amount and displays diagnostics', async () => {
+  api.simulateApprovalPolicy.mockResolvedValue({ policy: { name: 'Non-Stock', versionNumber: 1, versionId: 12, status: 'SHADOW', activeRuleCount: 0, ruleCount: 0 }, matchedRules: [], steps: [], ruleDiagnostics: [] });
+  render(<PolicySimulator versions={[{ id: 12, version_number: 1, policyName: 'Non-Stock' }]} />);
+  expect(screen.getByLabelText('Simulation request type')).toHaveValue('Non-Stock');
+  await userEvent.selectOptions(screen.getByLabelText('Simulation policy version'), '12');
+  await userEvent.type(screen.getByLabelText('Estimated amount'), '0');
+  await userEvent.click(screen.getByRole('button', { name: /Simulate route/ }));
+  await screen.findByText(/no active rules/);
+  expect(api.simulateApprovalPolicy).toHaveBeenCalledWith('12', expect.objectContaining({ requestType: 'Non-Stock', estimatedAmount: '0', isStockRequest: false }));
+});
+test('policy editor preserves stored lowercase classifications while offering canonical choices', () => {
+  render(<VersionDetail onRefresh={jest.fn()} version={{ id: 12, status: 'SHADOW', rules: [{ code: 'MED', priority: 1, conditions: [{ type: 'DEPARTMENT_CLASSIFICATION_EQUALS', value: 'medical' }], steps: [] }] }} />);
+  expect(screen.getByLabelText('Condition 1 value')).toHaveValue('medical');
+  expect(screen.getByRole('option', { name: 'medical (stored value)' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Medical' })).toHaveValue('Medical');
+});
+test('shadow comparison shows recorded rule diagnostics and a neutral legacy-purpose label', () => {
+  render(<ShadowComparison run={{ currentRoute: [{ approvalLevel: 1, userId: 3, semanticKey: 'LEGACY_SEMANTIC_UNKNOWN' }], steps: [], summary: { policy: { name: 'Non-Stock', versionNumber: 1, versionId: 12, status: 'SHADOW', activeRuleCount: 1, ruleCount: 1 }, ruleDiagnostics: [{ code: 'NONSTOCK_MED_HIGH', priority: 1, result: 'NO MATCH', selected: false, conditions: [{ type: 'REQUEST_TYPE_EQUALS', configuredValue: 'NON-STOCK', expected: 'NON-STOCK', actual: 'Non-Stock', result: 'FAIL' }] }] } }} />);
+  expect(screen.queryByText('LEGACY_SEMANTIC_UNKNOWN')).not.toBeInTheDocument();
+  expect(screen.getByText('Legacy approval — purpose unavailable')).toBeInTheDocument();
+  expect(screen.getByText('NONSTOCK_MED_HIGH · NO MATCH')).toBeInTheDocument();
+  expect(screen.getByText('FAIL')).toBeInTheDocument();
+});
 beforeEach(() => {
   jest.clearAllMocks();
   getOrganizationOptions.mockResolvedValue({
