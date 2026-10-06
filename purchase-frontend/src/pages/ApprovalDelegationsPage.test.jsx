@@ -159,3 +159,58 @@ test("load failures are visible and can be retried", async () => {
   await waitFor(() => expect(api.get).toHaveBeenCalledTimes(4));
   await screen.findByRole("alert");
 });
+
+test("search and status filters distinguish scheduled, expired and revoked delegations", async () => {
+  const future = {
+    ...row,
+    id: 802,
+    delegate_user_name: "Future approver",
+    effective_from: "2999-01-01T00:00:00Z",
+    effective_to: "2999-02-01T00:00:00Z",
+  };
+  const expired = {
+    ...row,
+    id: 803,
+    delegate_user_name: "Past approver",
+    effective_from: "2000-01-01T00:00:00Z",
+    effective_to: "2000-02-01T00:00:00Z",
+  };
+  const revoked = {
+    ...future,
+    id: 804,
+    status: "REVOKED",
+    delegate_user_name: "Revoked approver",
+  };
+  api.get.mockResolvedValue({ data: [future, expired, revoked] });
+  useAuth.mockReturnValue({
+    user: { permissions: ["approval-delegation.view"] },
+  });
+  render(<ApprovalDelegationsPage />);
+  await screen.findByText("Delegated to: Future approver");
+  fireEvent.change(screen.getByLabelText("Filter by status"), {
+    target: { value: "SCHEDULED" },
+  });
+  expect(
+    screen.queryByText("Delegated to: Past approver"),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByText("Delegated to: Revoked approver"),
+  ).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Search delegations"), {
+    target: { value: "unknown authority" },
+  });
+  expect(screen.getByText("No matching delegations")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Search delegations"), {
+    target: { value: "" },
+  });
+  fireEvent.change(screen.getByLabelText("Filter by status"), {
+    target: { value: "EXPIRED" },
+  });
+  expect(screen.getByText("Delegated to: Past approver")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Filter by status"), {
+    target: { value: "REVOKED" },
+  });
+  expect(
+    screen.getByText("Delegated to: Revoked approver"),
+  ).toBeInTheDocument();
+});
