@@ -825,6 +825,16 @@
     "reject": "Reject"
   },
   "nonStockRequestPage": {
+    "layout": {
+      "eyebrow": "PURCHASE REQUEST",
+      "subtitle": "Describe what you need, why you need it, and when it is required.",
+      "lineCount": "{{count}} / {{max}} item lines",
+      "requestDetails": "Request details",
+      "requestDetailsHint": "Your department, justification and optional project.",
+      "supportingDetails": "Attachments & submission",
+      "supportingDetailsHint": "Add supporting documents and choose when to submit.",
+      "reviewHint": "Review your item details and attachments before submitting."
+    },
     "loadingUser": "Loading user information...",
     "loadUserError": "❌ Unable to load user info. Please log in again or contact admin.",
     "confirmRemoveItem": "Remove this item?",
