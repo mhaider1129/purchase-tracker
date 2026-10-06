@@ -44,6 +44,7 @@ test("creation writes a normalized Generic draft with controlled references", as
     ),
   );
   expect(api.createItemMaster).not.toHaveBeenCalled();
+  expect(screen.queryByRole('button', { name: 'Set up standard lists' })).not.toBeInTheDocument();
   expect(saved).toHaveBeenCalledWith({ id: 8, lifecycle_status: "draft" });
 });
 
@@ -51,6 +52,24 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 const emptyRefs = { categories: [], uom: [], manufacturers: [] };
+test('sets up standard categories and UOMs without discarding the item draft', async () => {
+  let refs = emptyRefs;
+  api.getItemMasterReferences.mockImplementation(async () => refs);
+  api.initializeItemMasterReferences.mockImplementation(async () => {
+    refs = { categories: [{ id: 3, name: 'Furniture' }], uom: [{ id: 4, code: 'EA', name: 'Each' }], manufacturers: [] };
+    return { created: 27 };
+  });
+  render(<ItemHierarchyCreateForm level="generic" canMaintainReferences onSaved={jest.fn()} onClose={jest.fn()} />);
+  await screen.findByText(/0 active categories/);
+  fireEvent.change(screen.getByLabelText('Generic name'), { target: { value: 'Chair' } });
+  fireEvent.change(screen.getByLabelText('Item type'), { target: { value: 'furniture' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Set up standard lists' }));
+  await screen.findByRole('option', { name: 'EA · Each' });
+  expect(screen.getByLabelText('Generic name')).toHaveValue('Chair');
+  expect(screen.getByLabelText('Item type')).toHaveValue('furniture');
+  expect(screen.getByLabelText('Category')).toHaveTextContent('Furniture');
+  expect(api.initializeItemMasterReferences).toHaveBeenCalledTimes(1);
+});
 test("creates missing category and UOM inline, preserving and saving the draft", async () => {
   let refs = { ...emptyRefs };
   api.getItemMasterReferences.mockImplementation(async () => refs);

@@ -2,11 +2,13 @@ import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 import {
   createGenericItem,
+  initializeItemMasterReferences,
   getItemMasterReferences,
   searchApprovedProducts,
 } from "../../api/itemMaster";
 import GenericItemSelector from "../requests/GenericItemSelector";
 import ReferenceDataEditor from "./ReferenceDataEditor";
+import { ITEM_TYPES } from '../../constants/itemTypes';
 
 export default function ItemHierarchyCreateForm({
   level,
@@ -36,6 +38,16 @@ export default function ItemHierarchyCreateForm({
   const [referenceError, setReferenceError] = useState("");
   const [referenceRevision, setReferenceRevision] = useState(0);
   const [editingReference, setEditingReference] = useState(null);
+  const [referenceNotice, setReferenceNotice] = useState('');
+  const initialize = async () => {
+    setBusy(true); setReferenceNotice(''); setError('');
+    try {
+      const {created}=await initializeItemMasterReferences();
+      setReferenceNotice(`${created} standard references added. Existing and inactive references were preserved.`);
+      setReferenceRevision(value=>value+1);
+    } catch(e) { setError(e.response?.data?.message || 'Unable to set up standard lists.'); }
+    finally { setBusy(false); }
+  };
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -247,18 +259,9 @@ export default function ItemHierarchyCreateForm({
                   }))
                 }
               >
-                {[
-                  "general_item",
-                  "medication",
-                  "medical_supply",
-                  "medical_device",
-                  "laboratory_item",
-                  "maintenance_spare_part",
-                  "it_item",
-                  "stationery",
-                ].map((type) => (
-                  <option key={type} value={type}>
-                    {type.replaceAll("_", " ")}
+                {ITEM_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
                   </option>
                 ))}
               </select>
@@ -335,6 +338,8 @@ export default function ItemHierarchyCreateForm({
             Refresh reference lists
           </button>
         </div>
+        {canMaintainReferences && <button type="button" onClick={initialize} disabled={busy || loading || Boolean(editingReference)} className="rounded bg-blue-700 px-3 py-2 text-sm text-white disabled:opacity-40">Set up standard lists</button>}
+        {referenceNotice && <p role="status" className="text-sm text-green-800">{referenceNotice}</p>}
         {loading && (
           <p role="status" className="text-sm">
             Loading reference lists…
