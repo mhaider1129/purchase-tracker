@@ -41,6 +41,7 @@ import AllRequestsPage from "./pages/AllRequestsPage";
 import AssignedRequestsPage from "./pages/AssignedRequestsPage";
 import AdminTools from "./pages/AdminTools";
 import OrganizationHierarchy from "./pages/OrganizationHierarchy";
+import ApprovalDelegationsPage from "./pages/ApprovalDelegationsPage";
 import ApprovalPoliciesPage from "./pages/ApprovalPoliciesPage";
 import Management from "./pages/Management";
 import ChangePassword from "./pages/ChangePassword";
@@ -664,6 +665,7 @@ const AppRoutes = () => (
     />
 
     {/* ✅ Admin / SCM Routes */}
+    <Route path="/admin/approval-delegations" element={<ProtectedRoute element={<ApprovalDelegationsPage />} requiredPermissions={["approval-delegation.view"]} />} />
     <Route path="/admin/organization" element={<ProtectedRoute element={<OrganizationHierarchy />} />} />
     <Route
       path="/admin/approval-policies"

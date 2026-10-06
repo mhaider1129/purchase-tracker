@@ -751,6 +751,7 @@ const Navbar = () => {
             "text-emerald-600",
           ),
           resolveFeatureNavItem("approvalPolicies"),
+          resolveFeatureNavItem("approvalDelegations"),
           createItem(
             canAccessManagement,
             t("navbar.management"),
