@@ -1,3 +1,6 @@
+import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
+import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
+import './OperationalWorkspaces.css';
 // src/pages/AllRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -1349,7 +1352,7 @@ const AllRequestsPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50/70 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="procurement-workspace mx-auto max-w-7xl">
+      <div className="operational-workspace operational-request-list procurement-workspace mx-auto max-w-7xl">
         <section className="relative mb-6 overflow-hidden rounded-2xl procurement-workspace-header bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-6 py-7 text-white shadow-xl shadow-blue-950/10 sm:px-8">
           <div
             className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl"
@@ -1414,6 +1417,8 @@ const AllRequestsPage = () => {
           })}
         </section>
 
+        <WorkspaceSectionNav sections={[{ id: 'all-filters', label: 'filters' }, { id: 'all-results', label: 'requestResults' }]} />
+        <div id="all-filters" tabIndex={-1}>
         <Card className="workspace-filter-panel mb-5 overflow-hidden !p-0">
           <div className="border-b border-slate-200 bg-white px-5 py-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -1720,6 +1725,8 @@ const AllRequestsPage = () => {
           </form>
         </Card>
 
+        </div>
+
         <RequestViewModeToggle
           className="mb-4"
           value={requestViewMode}
@@ -1727,6 +1734,7 @@ const AllRequestsPage = () => {
           description="Use summary view to scan IT, stock, non-stock, maintenance, and other request types without opening every detailed card."
         />
 
+        <div id="all-results" tabIndex={-1} className="workspace-results-anchor" />
         {loading ? (
           <p className="text-gray-600">Loading requests...</p>
         ) : requests.length === 0 ? (
@@ -2170,7 +2178,7 @@ const AllRequestsPage = () => {
                       {loadingItemsId === request.id ? (
                         <p className="text-gray-500">Loading items...</p>
                       ) : itemsMap[request.id]?.length > 0 ? (
-                        <table className="w-full text-sm border">
+                        <WorkspaceTableScroll><table className="w-full text-sm border">
                           <thead>
                             <tr className="bg-gray-100">
                               <th className="border p-1">Item</th>
@@ -2225,7 +2233,7 @@ const AllRequestsPage = () => {
                               </tr>
                             ))}
                           </tbody>
-                        </table>
+                        </table></WorkspaceTableScroll>
                       ) : (
                         <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
                           No items found.

@@ -1,3 +1,6 @@
+import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
+import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
+import './OperationalWorkspaces.css';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
@@ -828,7 +831,7 @@ const WarehouseInventoryPage = () => {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="operational-workspace operational-inventory max-w-6xl mx-auto p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -850,7 +853,9 @@ const WarehouseInventoryPage = () => {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <WorkspaceSectionNav sections={[{ id: 'warehouse-transfers', label: 'transfers' }, { id: 'warehouse-allocations', label: 'allocations' }, { id: 'warehouse-inventory', label: 'inventory' }, { id: 'warehouse-report', label: 'report' }]} />
+
+        <div id="warehouse-transfers" tabIndex={-1} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {tr('transfer.title', 'Inter-warehouse transfers')}
@@ -1010,7 +1015,7 @@ const WarehouseInventoryPage = () => {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div id="warehouse-allocations" tabIndex={-1} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('unassigned.title')}</h2>
@@ -1198,7 +1203,7 @@ const WarehouseInventoryPage = () => {
           )}
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div id="warehouse-inventory" tabIndex={-1} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('inventory.title')}</h2>
@@ -1535,7 +1540,7 @@ const WarehouseInventoryPage = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <WorkspaceTableScroll className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 overflow-hidden rounded-lg text-sm shadow-sm ring-1 ring-gray-200 dark:divide-gray-700 dark:ring-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-900">
                         <tr>
@@ -1576,7 +1581,7 @@ const WarehouseInventoryPage = () => {
                         })}
                       </tbody>
                     </table>
-                  </div>
+                  </WorkspaceTableScroll>
                 )}
 
                 <PaginationControls
@@ -1949,7 +1954,7 @@ const WarehouseInventoryPage = () => {
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+        <div id="warehouse-report" tabIndex={-1} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('report.title')}</h2>
@@ -1986,7 +1991,7 @@ const WarehouseInventoryPage = () => {
                         {tr('report.last7days')}
                       </div>
                     </div>
-                    <div className="mt-3 overflow-x-auto">
+                    <WorkspaceTableScroll className="mt-3 overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
                         <thead className="bg-white dark:bg-gray-800">
                           <tr>
@@ -2009,7 +2014,7 @@ const WarehouseInventoryPage = () => {
                           ))}
                         </tbody>
                       </table>
-                    </div>
+                    </WorkspaceTableScroll>
                   </div>
                 ))}
               </div>
