@@ -1,0 +1,380 @@
+.medical-device-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 36px 24px 64px;
+  color: var(--color-text-primary);
+}
+.mdr-header {
+  margin-bottom: 28px;
+}
+.mdr-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.mdr-header h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  margin: 8px 0;
+}
+.mdr-header p {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.mdr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.mdr-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px;
+  border-radius: 14px;
+  border: 1px solid rgb(37 99 235 / 0.2);
+  background: rgb(37 99 235 / 0.06);
+}
+.medical-device-page h2 {
+  color: var(--color-text-primary);
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+}
+.mdr-overview p,
+.mdr-panel-heading p,
+.mdr-devices-heading p {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+.mdr-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0;
+  min-width: 350px;
+}
+.mdr-metrics > div {
+  border-inline-start: 1px solid var(--color-border-default);
+  padding-inline-start: 20px;
+}
+.mdr-metrics dt {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.mdr-metrics dd {
+  font-size: 25px;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 4px 0 0;
+  white-space: nowrap;
+}
+.mdr-panel,
+.mdr-device {
+  border: 1px solid var(--color-border-default);
+  border-radius: 14px;
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-soft);
+}
+.mdr-panel-heading,
+.mdr-devices-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 24px 28px;
+}
+.mdr-panel-heading {
+  border-bottom: 1px solid var(--color-border-default);
+}
+.mdr-devices-heading {
+  padding: 0 0 20px;
+}
+.mdr-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  width: 42px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: rgb(37 99 235 / 0.1);
+  color: var(--color-accent);
+}
+.mdr-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 28px;
+}
+.mdr-context-grid,
+.mdr-device-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.mdr-device-grid.primary {
+  grid-template-columns: 2fr 1fr 1fr;
+}
+.medical-device-page label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+.medical-device-page
+  :is(input, select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.medical-device-page input[readonly] {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+}
+.medical-device-page :is(input, textarea)::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+.medical-device-page textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+.medical-device-page :is(input, select, textarea, button):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.medical-device-page :is(input, select, textarea, button):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.medical-device-page :is(input, select)[aria-invalid="true"] {
+  border-color: #ef4444;
+}
+.mdr-device {
+  padding: 24px 28px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.mdr-device-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--color-border-default);
+}
+.mdr-device-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.mdr-device-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-accent);
+  font-size: 13px;
+}
+.mdr-device-grid textarea {
+  min-height: 125px;
+}
+.mdr-spec-guidance {
+  margin-top: 12px;
+  border: 1px solid rgb(37 99 235 / 0.2);
+  border-inline-start: 3px solid var(--color-accent);
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: rgb(37 99 235 / 0.06);
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.mdr-spec-guidance p {
+  color: var(--color-text-primary);
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+.mdr-spec-guidance ul {
+  padding-inline-start: 18px;
+  list-style: disc;
+  line-height: 1.6;
+}
+.medical-device-page input[type="file"] {
+  background: var(--color-bg-subtle);
+  border-style: dashed;
+}
+.medical-device-page input::file-selector-button {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-inline-end: 12px;
+  font: inherit;
+  cursor: pointer;
+}
+.mdr-add-device {
+  width: 100%;
+  padding: 14px;
+  border: 1px dashed var(--color-border-default);
+  border-radius: 10px;
+  background: var(--color-bg-subtle);
+  color: var(--color-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mdr-add-device:hover {
+  background: var(--color-bg-surface);
+}
+.mdr-device-heading > button {
+  padding: 8px 12px;
+  border: 1px solid rgb(239 68 68 / 0.25);
+  border-radius: 8px;
+  background: rgb(239 68 68 / 0.06);
+}
+.mdr-panel-body > div:last-child > div > button {
+  flex-shrink: 0;
+  background: #2563eb;
+  color: white;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.mdr-submit-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+  border-top: 1px solid var(--color-border-default);
+}
+.mdr-submit-footer p {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin: 0;
+}
+.mdr-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 22px;
+  background: #2563eb;
+  color: white;
+  border: 1px solid #2563eb;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgb(37 99 235 / 0.2);
+  white-space: nowrap;
+}
+.mdr-submit:hover {
+  background: #1d4ed8;
+}
+.mdr-muted {
+  color: var(--color-text-muted);
+}
+.mdr-support .bg-amber-50 {
+  padding: 18px;
+  background: rgb(245 158 11 / 0.08);
+  border: 1px solid rgb(245 158 11 / 0.25);
+  border-radius: 10px;
+  color: var(--color-text-primary);
+}
+.mdr-support .text-amber-800 {
+  color: var(--color-text-muted);
+}
+.mdr-support label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 0;
+}
+.mdr-support input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+@media (max-width: 850px) {
+  .mdr-overview {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mdr-metrics {
+    min-width: 0;
+    border-top: 1px solid var(--color-border-default);
+    padding-top: 20px;
+  }
+  .mdr-metrics > div:first-child {
+    border: 0;
+    padding-inline-start: 0;
+  }
+}
+@media (max-width: 600px) {
+  .medical-device-page {
+    padding: 24px 16px 40px;
+  }
+  .mdr-header h1 {
+    font-size: 25px;
+  }
+  .mdr-overview,
+  .mdr-panel-heading,
+  .mdr-panel-body,
+  .mdr-device {
+    padding: 20px;
+  }
+  .mdr-context-grid,
+  .mdr-device-grid,
+  .mdr-device-grid.primary {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .mdr-metrics {
+    gap: 12px;
+  }
+  .mdr-metrics > div {
+    padding-inline-start: 12px;
+  }
+  .mdr-metrics dd {
+    font-size: 21px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .mdr-device-heading {
+    align-items: flex-start;
+  }
+  .mdr-submit-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mdr-submit {
+    width: 100%;
+  }
+}

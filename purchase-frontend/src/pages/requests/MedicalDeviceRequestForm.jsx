@@ -1,6 +1,8 @@
 // src/pages/requests/MedicalDeviceRequestForm.jsx
 import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Activity, FileText, HeartPulse, Paperclip, Send } from 'lucide-react';
+import './MedicalDeviceRequestForm.css';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import useCurrentUser from '../../hooks/useCurrentUser';
@@ -337,36 +339,40 @@ const MedicalDeviceRequestForm = () => {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto p-6">
+      <main className="medical-device-page">
+        <header className="mdr-header"><span className="mdr-eyebrow"><HeartPulse size={16} />{t('medicalDeviceRequestForm.layout.eyebrow')}</span>
         <h1 className="text-2xl font-bold mb-4">
           {t('medicalDeviceRequestForm.title')}
           <HelpTooltip text={t('medicalDeviceRequestForm.help')} />
-        </h1>
+        </h1><p>{t('medicalDeviceRequestForm.layout.subtitle')}</p></header>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <form onSubmit={handleSubmit} className="mdr-form" aria-label={t('medicalDeviceRequestForm.title')}>
+          <div className="mdr-overview" role="region" aria-label={t('medicalDeviceRequestForm.overview')}>
             <div>
-              <h2 className="text-lg font-semibold text-blue-900">{t('medicalDeviceRequestForm.overview')}</h2>
-              <p className="text-sm text-blue-800">
+              <h2 className="text-lg font-semibold mdr-muted">{t('medicalDeviceRequestForm.overview')}</h2>
+              <p className="text-sm mdr-muted">
                 {t('medicalDeviceRequestForm.overviewHelp')}
               </p>
             </div>
-            <dl className="flex flex-wrap gap-6 text-blue-900">
+            <dl className="mdr-metrics">
               <div>
-                <dt className="text-xs uppercase tracking-wide text-blue-700">{t('medicalDeviceRequestForm.lineItems')}</dt>
+                <dt className="text-xs uppercase tracking-wide mdr-muted">{t('medicalDeviceRequestForm.lineItems')}</dt>
                 <dd className="text-xl font-bold">{items.length}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-blue-700">{t('medicalDeviceRequestForm.totalDevices')}</dt>
+                <dt className="text-xs uppercase tracking-wide mdr-muted">{t('medicalDeviceRequestForm.totalDevices')}</dt>
                 <dd className="text-xl font-bold">{totalDeviceCount}</dd>
               </div>
               <div>
-                <dt className="text-xs uppercase tracking-wide text-blue-700">{t('medicalDeviceRequestForm.estimatedTotal')}</dt>
+                <dt className="text-xs uppercase tracking-wide mdr-muted">{t('medicalDeviceRequestForm.estimatedTotal')}</dt>
                 <dd className="text-xl font-bold">≈ {formattedTotalCost}</dd>
               </div>
             </dl>
           </div>
 
+          <section className="mdr-panel">
+          <header className="mdr-panel-heading"><span className="mdr-icon"><FileText size={20} /></span><div><h2>{t('medicalDeviceRequestForm.layout.requestDetails')}</h2><p>{t('medicalDeviceRequestForm.layout.requestDetailsHint')}</p></div></header>
+          <div className="mdr-panel-body"><div className="mdr-context-grid">
           {/* Auto-Filled Department */}
           <div>
             <label className="block font-semibold mb-1">{t('medicalDeviceRequestForm.fields.department')}</label>
@@ -389,10 +395,12 @@ const MedicalDeviceRequestForm = () => {
             />
           </div>
 
+          </div>
           {/* Justification */}
           <div>
-            <label className="block font-semibold mb-1">{t('medicalDeviceRequestForm.fields.justification')}</label>
+            <label htmlFor="mdr-justification">{t('medicalDeviceRequestForm.fields.justification')}</label>
             <textarea
+              id="mdr-justification"
               className="w-full p-2 border rounded"
               rows={4}
               value={justification}
@@ -410,14 +418,17 @@ const MedicalDeviceRequestForm = () => {
             user={user}
           />
 
+          </div></section>
+          <section className="mdr-devices">
+          <div className="mdr-devices-heading"><span className="mdr-icon"><Activity size={20} /></span><div><h2>{t('medicalDeviceRequestForm.layout.deviceDetails')}</h2><p>{t('medicalDeviceRequestForm.layout.deviceDetailsHint')}</p></div></div>
           {/* Items */}
           {items.map((item, index) => {
             const errors = itemErrors[index] || {};
             return (
-              <div key={index} className="border p-4 rounded bg-gray-50 space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Device {index + 1}
+              <section key={index} className="mdr-device" aria-label={t('medicalDeviceRequestForm.layout.device', { index: index + 1 })}>
+                <div className="mdr-device-heading">
+                  <h2 className="text-lg font-semibold mdr-muted">
+                    <span className="mdr-device-number">{index + 1}</span>{t('medicalDeviceRequestForm.layout.device', { index: index + 1 })}
                   </h2>
                   {items.length > 1 && (
                     <button
@@ -431,12 +442,12 @@ const MedicalDeviceRequestForm = () => {
                   )}
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="mdr-device-grid primary">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Device name<span className="text-red-600">*</span>
+                    <label className="block text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-name`}>
+                      {t('medicalDeviceRequestForm.layout.deviceName')}<span className="text-red-600">*</span>
                     </label>
-                    <input
+                    <input id={`mdr-${index}-name`} aria-invalid={Boolean(errors.item_name)} aria-describedby={errors.item_name ? `mdr-${index}-name-error` : undefined}
                       type="text"
                       placeholder={t('medicalDeviceRequestForm.fields.itemPlaceholder')}
                       value={item.item_name}
@@ -448,15 +459,15 @@ const MedicalDeviceRequestForm = () => {
                       disabled={isSubmitting}
                     />
                     {errors.item_name && (
-                      <p className="mt-1 text-sm text-red-600">{errors.item_name}</p>
+                      <p id={`mdr-${index}-name-error`} role="alert" className="mt-1 text-sm text-red-600">{errors.item_name}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Quantity<span className="text-red-600">*</span>
+                    <label className="block text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-quantity`}>
+                      {t('medicalDeviceRequestForm.layout.quantity')}<span className="text-red-600">*</span>
                     </label>
-                    <input
+                    <input id={`mdr-${index}-quantity`} aria-invalid={Boolean(errors.quantity)} aria-describedby={errors.quantity ? `mdr-${index}-quantity-error` : undefined}
                       type="number"
                       min={1}
                       value={item.quantity}
@@ -468,15 +479,15 @@ const MedicalDeviceRequestForm = () => {
                       disabled={isSubmitting}
                     />
                     {errors.quantity && (
-                      <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
+                      <p id={`mdr-${index}-quantity-error`} role="alert" className="mt-1 text-sm text-red-600">{errors.quantity}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Unit cost<span className="text-red-600">*</span>
+                    <label className="block text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-cost`}>
+                      {t('medicalDeviceRequestForm.layout.unitCost')}<span className="text-red-600">*</span>
                     </label>
-                    <AmountInput
+                    <AmountInput id={`mdr-${index}-cost`} aria-invalid={Boolean(errors.unit_cost)} aria-describedby={errors.unit_cost ? `mdr-${index}-cost-error` : undefined}
                       min={0}
                       step="0.01"
                       value={item.unit_cost}
@@ -488,17 +499,17 @@ const MedicalDeviceRequestForm = () => {
                       disabled={isSubmitting}
                     />
                     {errors.unit_cost && (
-                      <p className="mt-1 text-sm text-red-600">{errors.unit_cost}</p>
+                      <p id={`mdr-${index}-cost-error`} role="alert" className="mt-1 text-sm text-red-600">{errors.unit_cost}</p>
                     )}
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="mdr-device-grid">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Intended use
+                    <label className="block text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-intended-use`}>
+                      {t('medicalDeviceRequestForm.layout.intendedUse')}
                     </label>
-                    <textarea
+                    <textarea id={`mdr-${index}-intended-use`}
                       rows={3}
                       placeholder={t('medicalDeviceRequestForm.fields.intendedUsePlaceholder')}
                       value={item.intended_use}
@@ -509,11 +520,11 @@ const MedicalDeviceRequestForm = () => {
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                      Technical specifications
+                    <label className="flex items-center gap-2 text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-specs`}>
+                      {t('medicalDeviceRequestForm.layout.specifications')}
                       <HelpTooltip text={t('medicalDeviceRequestForm.specHelp')} />
                     </label>
-                    <textarea
+                    <textarea id={`mdr-${index}-specs`}
                       rows={3}
                       placeholder={t('medicalDeviceRequestForm.fields.specsPlaceholder')}
                       value={item.specs}
@@ -522,11 +533,11 @@ const MedicalDeviceRequestForm = () => {
                       disabled={isSubmitting}
                     />
                     {index === 0 && specGuidance.length > 0 && (
-                      <div className="mt-2 rounded border border-blue-100 bg-blue-50 p-2 text-xs text-blue-900">
+                      <div className="mdr-spec-guidance">
                         <p className="font-semibold">{t('medicalDeviceRequestForm.fields.specTips')}</p>
                         <ul className="list-disc pl-4 space-y-1">
-                          {specGuidance.map((tip) => (
-                            <li key={tip}>{tip}</li>
+                          {specGuidance.map((tip, tipIndex) => (
+                            <li key={tip}>{t(`medicalDeviceRequestForm.layout.specTip${tipIndex + 1}`, { defaultValue: tip })}</li>
                           ))}
                         </ul>
                       </div>
@@ -534,12 +545,12 @@ const MedicalDeviceRequestForm = () => {
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="mdr-device-grid">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Recommended brand / device info
+                    <label className="block text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-device-info`}>
+                      {t('medicalDeviceRequestForm.layout.deviceInfo')}
                     </label>
-                    <input
+                    <input id={`mdr-${index}-device-info`}
                       type="text"
                       placeholder={t('medicalDeviceRequestForm.fields.deviceInfoPlaceholder')}
                       value={item.device_info}
@@ -550,10 +561,10 @@ const MedicalDeviceRequestForm = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Purchase type<span className="text-red-600">*</span>
+                    <label className="block text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-purchase-type`}>
+                      {t('medicalDeviceRequestForm.layout.purchaseType')}<span className="text-red-600">*</span>
                     </label>
-                    <select
+                    <select id={`mdr-${index}-purchase-type`} aria-invalid={Boolean(errors.purchase_type)} aria-describedby={errors.purchase_type ? `mdr-${index}-purchase-type-error` : undefined}
                       value={item.purchase_type}
                       onChange={(e) => handleItemChange(index, 'purchase_type', e.target.value)}
                       className={`mt-1 w-full rounded border p-2 ${
@@ -569,16 +580,16 @@ const MedicalDeviceRequestForm = () => {
                       ))}
                     </select>
                     {errors.purchase_type && (
-                      <p className="mt-1 text-sm text-red-600">{errors.purchase_type}</p>
+                      <p id={`mdr-${index}-purchase-type-error`} role="alert" className="mt-1 text-sm text-red-600">{errors.purchase_type}</p>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Supporting documents
+                  <label className="block text-sm font-medium mdr-muted" htmlFor={`mdr-${index}-documents`}>
+                    {t('medicalDeviceRequestForm.layout.supportingDocuments')}
                   </label>
-                  <input
+                  <input id={`mdr-${index}-documents`}
                     type="file"
                     multiple
                     onChange={(e) => {
@@ -588,7 +599,7 @@ const MedicalDeviceRequestForm = () => {
                     className="mt-1 w-full rounded border border-gray-300 p-2"
                     disabled={isSubmitting}
                   />
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs mdr-muted">
                     {t('medicalDeviceRequestForm.allowed', { types: allowedExtensionsDisplay, size: MAX_ATTACHMENT_SIZE_MB })}
                   </p>
                   {errors.attachments && (
@@ -602,8 +613,8 @@ const MedicalDeviceRequestForm = () => {
                           className="flex flex-col gap-1 rounded border border-gray-200 bg-white p-2 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                            <span className="font-medium text-gray-800">{file.name}</span>
-                            <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
+                            <span className="font-medium mdr-muted">{file.name}</span>
+                            <span className="text-xs mdr-muted">{formatFileSize(file.size)}</span>
                           </div>
                           <button
                             type="button"
@@ -618,13 +629,25 @@ const MedicalDeviceRequestForm = () => {
                     </ul>
                   )}
                 </div>
-              </div>
+              </section>
             );
           })}
 
-          <div>
-            <label className="block font-semibold mb-1">{t('medicalDeviceRequestForm.fields.attachments')}</label>
+            <button
+              type="button"
+              onClick={addItem}
+              className="mdr-add-device"
+              disabled={isSubmitting}
+            >
+              {t('medicalDeviceRequestForm.addDevice')}
+            </button>
+          </section>
+          <section className="mdr-panel mdr-support">
+          <header className="mdr-panel-heading"><span className="mdr-icon"><Paperclip size={20} /></span><div><h2>{t('medicalDeviceRequestForm.layout.supportingDetails')}</h2><p>{t('medicalDeviceRequestForm.layout.supportingDetailsHint')}</p></div></header>
+          <div className="mdr-panel-body"><div>
+            <label htmlFor="mdr-request-attachments">{t('medicalDeviceRequestForm.fields.attachments')}</label>
             <input
+              id="mdr-request-attachments"
               type="file"
               multiple
               onChange={(e) => {
@@ -634,7 +657,7 @@ const MedicalDeviceRequestForm = () => {
               className="w-full rounded border border-gray-300 p-2"
               disabled={isSubmitting}
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs mdr-muted">
               {t('medicalDeviceRequestForm.attachmentsHelp', { types: allowedExtensionsDisplay, size: MAX_ATTACHMENT_SIZE_MB })}
             </p>
             {requestAttachmentsError && (
@@ -648,8 +671,8 @@ const MedicalDeviceRequestForm = () => {
                     className="flex flex-col gap-1 rounded border border-gray-200 bg-white p-2 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                      <span className="font-medium text-gray-800">{file.name}</span>
-                      <span className="text-xs text-gray-500">{formatFileSize(file.size)}</span>
+                      <span className="font-medium mdr-muted">{file.name}</span>
+                      <span className="text-xs mdr-muted">{formatFileSize(file.size)}</span>
                     </div>
                     <button
                       type="button"
@@ -672,29 +695,23 @@ const MedicalDeviceRequestForm = () => {
             disabled={isSubmitting}
           />
 
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <button
-              type="button"
-              onClick={addItem}
-              className="text-blue-600 font-semibold disabled:opacity-50"
-              disabled={isSubmitting}
-            >
-              {t('medicalDeviceRequestForm.addDevice')}
-            </button>
+          </div></section>
+          <div className="mdr-submit-footer"><p>{t('medicalDeviceRequestForm.layout.reviewHint')}</p>
+
 
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition ${
+              className={`mdr-submit ${
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isSubmitting ? t('medicalDeviceRequestForm.fields.submitting') : t('medicalDeviceRequestForm.fields.submit')}
+              <Send size={17} />{isSubmitting ? t('medicalDeviceRequestForm.fields.submitting') : t('medicalDeviceRequestForm.fields.submit')}
               <HelpTooltip text={t('medicalDeviceRequestForm.submitHelp')} />
             </button>
           </div>
         </form>
-      </div>
+      </main>
     </>
   );
 };
