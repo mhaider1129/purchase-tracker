@@ -1,3 +1,4 @@
+import './RequestForms.css';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import AmountInput from '../../components/ui/AmountInput';
 import { useTranslation } from 'react-i18next';
@@ -282,11 +283,12 @@ const ITRequestForm = () => {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="request-form-page request-form-it">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold">{t('pageTitles.itRequest')}</h1>
           <HelpTooltip text={tr('tooltips.formIntro')} />
         </div>
+        <p className="request-form-intro">{t('requestFormLayout.itIntro')}</p>
 
         <section className="bg-blue-50 border border-blue-100 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2 text-blue-800">{tr('overview.heading')}</h2>
@@ -326,8 +328,8 @@ const ITRequestForm = () => {
           </dl>
         </section>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <section className="space-y-4">
+        <form onSubmit={handleSubmit} className="request-form-content">
+          <section className="request-form-panel space-y-4">
             <h2 className="text-xl font-semibold text-gray-800">{tr('requester.heading')}</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -375,7 +377,7 @@ const ITRequestForm = () => {
             </div>
           </section>
 
-          <section className="space-y-4">
+          <section className="request-form-panel space-y-4">
             <h2 className="text-xl font-semibold text-gray-800">{tr('justification.heading')}</h2>
             <div>
               <label className="block font-semibold mb-1 text-gray-700" htmlFor="justification">
@@ -423,7 +425,7 @@ const ITRequestForm = () => {
             user={user}
           />
 
-          <section className="space-y-3">
+          <section className="request-form-panel space-y-3">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold text-gray-800">{tr('items.heading')}</h2>
               <span className="text-sm text-gray-500">{tr('items.subtitle')}</span>
@@ -435,7 +437,7 @@ const ITRequestForm = () => {
               {items.map((item, index) => (
                 <div
                   key={item.id || index}
-                  className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"
+                  className="request-item-card"
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-gray-600">
@@ -534,7 +536,7 @@ const ITRequestForm = () => {
               <button
                 type="button"
                 onClick={addItem}
-                className="text-blue-600 font-semibold hover:underline disabled:text-blue-300"
+                className="request-add-item"
                 disabled={isSubmitting}
               >
                 {tr('items.addAnother')}
@@ -542,7 +544,7 @@ const ITRequestForm = () => {
             </div>
           </section>
 
-          <section className="space-y-3">
+          <section className="request-form-panel space-y-3">
             <h2 className="text-xl font-semibold text-gray-800">{tr('attachments.heading')}</h2>
             <p className="text-sm text-gray-500">
               {tr('attachments.description', {

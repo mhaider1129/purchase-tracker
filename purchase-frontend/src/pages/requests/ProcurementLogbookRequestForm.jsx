@@ -1,3 +1,4 @@
+import './RequestForms.css';
 import { useTranslation } from 'react-i18next';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -99,12 +100,14 @@ const ProcurementLogbookRequestForm = () => {
   if (error || !user) return <div className="p-6 text-center text-red-600">{t('procurementLogbookRequestForm.loadUserFailed')}</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
+    <div className="request-form-page request-form-logbook">
       <h1 className="text-2xl font-bold mb-4">{t('procurementLogbookRequestForm.title')}</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+        <p className="request-form-intro">{t('requestFormLayout.logbookIntro')}</p>
+      <form onSubmit={handleSubmit} className="request-form-content">
+        <section className="request-form-panel request-details"><h2>{t('requestFormLayout.logbookDetails')}</h2>
         <div>
-          <label className="block font-semibold mb-1">{t('procurementLogbookRequestForm.fields.approvedForm')}</label>
-          <input
+          <label htmlFor="ProcurementLogbookRequestForm-approvedForm" className="block font-semibold mb-1">{t('procurementLogbookRequestForm.fields.approvedForm')}</label>
+          <input id="ProcurementLogbookRequestForm-approvedForm"
             type="file"
             accept=".pdf,.doc,.docx,image/*,.heic,.heif"
             onChange={handleFileChange}
@@ -116,8 +119,8 @@ const ProcurementLogbookRequestForm = () => {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">{t('procurementLogbookRequestForm.fields.logbookName')}</label>
-          <input
+          <label htmlFor="ProcurementLogbookRequestForm-logbookName" className="block font-semibold mb-1">{t('procurementLogbookRequestForm.fields.logbookName')}</label>
+          <input id="ProcurementLogbookRequestForm-logbookName"
             type="text"
             className="w-full border rounded p-2"
             value={form.logbookName}
@@ -177,11 +180,12 @@ const ProcurementLogbookRequestForm = () => {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">{t('procurementLogbookRequestForm.fields.details')}</label>
-          <textarea className="w-full border rounded p-2" rows={4} value={form.otherDetails} onChange={(e) => onChange('otherDetails', e.target.value)} placeholder={t('procurementLogbookRequestForm.fields.detailsPlaceholder')} />
+          <label htmlFor="ProcurementLogbookRequestForm-details" className="block font-semibold mb-1">{t('procurementLogbookRequestForm.fields.details')}</label>
+          <textarea id="ProcurementLogbookRequestForm-details" className="w-full border rounded p-2" rows={4} value={form.otherDetails} onChange={(e) => onChange('otherDetails', e.target.value)} placeholder={t('procurementLogbookRequestForm.fields.detailsPlaceholder')} />
         </div>
 
-          <UrgentRequestToggle
+          </section>
+        <UrgentRequestToggle
             user={user}
             checked={isUrgent}
             onChange={setIsUrgent}

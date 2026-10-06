@@ -1,3 +1,4 @@
+import './RequestForms.css';
 import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -280,11 +281,12 @@ const MedicationRequestForm = () => {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto p-6">
+      <div className="request-form-page request-form-medication">
         <h1 className="text-2xl font-bold mb-4">
           {t('medicationRequestForm.title')}
           <HelpTooltip text={t('medicationRequestForm.help')} />
         </h1>
+        <p className="request-form-intro">{t('requestFormLayout.medicationIntro')}</p>
 
         <p className="mb-4 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800" role="status">
           {isDraftSaving
@@ -294,7 +296,8 @@ const MedicationRequestForm = () => {
               : t('medicationRequestForm.draftActive')}
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="request-form-content">
+          <section className="request-form-panel request-details"><h2>{t('requestFormLayout.requestDetails')}</h2>
           <div>
             <label className="block font-semibold mb-1">{t('medicationRequestForm.fields.department')}</label>
             <p className="p-2 border rounded bg-gray-100">{user.department_name}</p>
@@ -304,8 +307,8 @@ const MedicationRequestForm = () => {
             <p className="p-2 border rounded bg-gray-100">{user.section_name || 'N/A'}</p>
           </div>
           <div>
-            <label className="block font-semibold mb-1">{t('medicationRequestForm.fields.justification')}</label>
-            <textarea
+            <label htmlFor="MedicationRequestForm-justification" className="block font-semibold mb-1">{t('medicationRequestForm.fields.justification')}</label>
+            <textarea id="MedicationRequestForm-justification"
               className="w-full p-2 border rounded"
               rows={3}
               value={justification}
@@ -322,7 +325,8 @@ const MedicationRequestForm = () => {
             disabled={isSubmitting}
             user={user}
           />
-          <div>
+          </section>
+          <div className="request-form-panel request-items">
             <div className="flex items-center justify-between gap-2 mb-2">
               <label className="block font-semibold">{t('medicationRequestForm.fields.medications')}</label>
               <span className="text-sm text-gray-500">
@@ -351,7 +355,7 @@ const MedicationRequestForm = () => {
               {items.map((item, index) => (
                 <div
                   key={index}
-                  className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3"
+                  className="request-item-card space-y-3"
                 >
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-semibold text-gray-700">
@@ -448,13 +452,13 @@ const MedicationRequestForm = () => {
             <button
               type="button"
               onClick={addItem}
-              className="text-blue-600 mt-3 font-semibold hover:underline disabled:text-gray-400"
+              className="request-add-item"
               disabled={isSubmitting}
             >
               + Add Another Medication
             </button>
           </div>
-          <div>
+          <div className="request-form-panel">
             <label className="block font-semibold mb-1">
               Attachments
               <HelpTooltip text={t('medicationRequestForm.uploadHelp')} />
