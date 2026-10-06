@@ -765,6 +765,16 @@
     "reject": "رفض"
   },
   "nonStockRequestPage": {
+    "layout": {
+      "eyebrow": "طلب شراء",
+      "subtitle": "وضّح ما تحتاجه وسبب الحاجة والموعد المطلوب.",
+      "lineCount": "{{count}} / {{max}} بنود",
+      "requestDetails": "تفاصيل الطلب",
+      "requestDetailsHint": "القسم والمبررات والمشروع الاختياري.",
+      "supportingDetails": "المرفقات والإرسال",
+      "supportingDetailsHint": "أضف المستندات الداعمة وحدد موعد الإرسال.",
+      "reviewHint": "راجع تفاصيل البنود والمرفقات قبل إرسال الطلب."
+    },
     "loadingUser": "جاري تحميل معلومات المستخدم...",
     "loadUserError": "❌ تعذر تحميل معلومات المستخدم. يرجى تسجيل الدخول مرة أخرى أو التواصل مع المسؤول.",
     "confirmRemoveItem": "هل تريد إزالة هذا الصنف؟",

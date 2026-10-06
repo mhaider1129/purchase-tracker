@@ -1,5 +1,7 @@
 // src/pages/requests/NonStockRequestForm.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ClipboardList, FileText, Layers, Paperclip, Send } from 'lucide-react';
+import './NonStockRequestForm.css';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
@@ -502,7 +504,7 @@ ${templateText}`
   if (loading) {
     return (
       <>
-          <div className="p-6 text-gray-600 text-center">{tr('loadingUser')}</div>
+          <div className="p-6 ns-muted text-center">{tr('loadingUser')}</div>
       </>
     );
   }
@@ -517,13 +519,17 @@ ${templateText}`
 
   return (
     <>
-      <div className="max-w-3xl mx-auto p-6">
+      <main className="nonstock-page">
+        <header className="ns-header"><div><span className="ns-eyebrow"><ClipboardList size={16} />{tr('layout.eyebrow')}</span>
         <h1 className="text-2xl font-bold mb-4">
           {t('pageTitles.nonStockRequestForm')}
           <HelpTooltip text={tr('tooltips.stepTwo')} />
-        </h1>
+        </h1><p>{tr('layout.subtitle')}</p></div><span className="ns-count"><Layers size={18} />{tr('layout.lineCount', { count: items.length, max: MAX_ITEMS_PER_REQUEST })}</span></header>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="ns-form" aria-label={t('pageTitles.nonStockRequestForm')}>
+          <section className="ns-panel ns-context">
+          <header className="ns-panel-header"><span className="ns-section-icon"><FileText size={20} /></span><div><h2>{tr('layout.requestDetails')}</h2><p>{tr('layout.requestDetailsHint')}</p></div></header>
+          <div className="ns-panel-body"><div className="ns-context-grid">
           <div>
             <label className="block font-semibold mb-1">{tr('fields.departmentLabel')}</label>
             <p className="p-2 border rounded bg-gray-100">{user.department_name}</p>
@@ -534,9 +540,10 @@ ${templateText}`
             <p className="p-2 border rounded bg-gray-100">{user.section_name || tr('fields.sectionFallback')}</p>
           </div>
 
-          <div>
-            <label className="block font-semibold mb-1">{tr('fields.justificationLabel')}</label>
+          </div><div className="ns-justification">
+            <label htmlFor="ns-justification">{tr('fields.justificationLabel')}</label>
             <textarea
+              id="ns-justification"
               ref={(node) => { fieldRefs.current.justification = node; }}
               className="w-full p-2 border rounded"
               rows={3}
@@ -554,17 +561,18 @@ ${templateText}`
             disabled={isSubmitting}
             user={user}
           />
+          </div></section>
 
-          <div>
-            <label className="block font-semibold mb-2">{tr('fields.itemsLabel')}</label>
-            <p className="text-sm text-gray-500 mb-2">
+          <section className="ns-items">
+            <div className="ns-items-heading"><span className="ns-section-icon"><Layers size={20} /></span><div><h2>{tr('fields.itemsLabel')}</h2>
+            <p className="text-sm ns-muted mb-2">
               {t('nonStockRequestPage.fields.itemsHint', { max: MAX_ITEMS_PER_REQUEST })}
-            </p>
+            </p></div></div>
             {departmentLimitError && (
               <p className="text-sm text-red-600 mb-2">{departmentLimitError}</p>
             )}
             {specGuidanceItems.length > 0 && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 mb-4">
+              <div className="ns-guidance">
                 <p className="font-semibold mb-2">{tr('fields.specsHelpTitle')}</p>
                 <ul className="list-disc pl-5 space-y-1">
                   {specGuidanceItems.map((helpText, idx) => (
@@ -577,17 +585,17 @@ ${templateText}`
             {items.map((item, index) => (
               <div
                 key={index}
-                className="w-full border border-gray-200 rounded-xl p-5 mb-4 bg-white shadow-sm"
+                className="ns-item"
              >
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-gray-700">{tr('fields.itemLineLabel', { index: index + 1 })}</p>
-                  <p className="text-xs text-gray-500">{tr('fields.itemLineHint')}</p>
+                <div className="ns-item-heading">
+                  <p className="text-sm font-semibold ns-muted">{tr('fields.itemLineLabel', { index: index + 1 })}</p>
+                  <p className="text-xs ns-muted">{tr('fields.itemLineHint')}</p>
                 </div>
                 <RequestItemIdentityFields value={item} user={user} disabled={isSubmitting}
                   onChange={patch => setItems(current => current.map((line,i) => i === index ? { ...line,...patch } : line))} />
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                <div className="ns-item-grid">
                   <div className="md:col-span-5">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.itemNameLabel')}</label>
+                    <label className="block text-xs font-medium ns-muted mb-1">{tr('fields.itemNameLabel')}</label>
                     <input
                       type="text"
                       placeholder={tr('fields.itemNamePlaceholder')}
@@ -604,7 +612,7 @@ ${templateText}`
                     )}
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.expectedCostLabel')}</label>
+                    <label className="block text-xs font-medium ns-muted mb-1">{tr('fields.expectedCostLabel')}</label>
                     <AmountInput
                       min={0}
                       step="0.01"
@@ -619,7 +627,7 @@ ${templateText}`
                     />
                   </div>
                   <div className="md:col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Unit of measure</label>
+                    <label className="block text-xs font-medium ns-muted mb-1">Unit of measure</label>
                     <select
                       value={item.unit_of_measure}
                       onChange={(e) => handleItemChange(index, 'unit_of_measure', e.target.value)}
@@ -635,8 +643,8 @@ ${templateText}`
                     </select>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      {tr('fields.brandLabel')} <span className="text-gray-400">({tr('fields.optionalLabel')})</span>
+                    <label className="block text-xs font-medium ns-muted mb-1">
+                      {tr('fields.brandLabel')} <span className="ns-muted">({tr('fields.optionalLabel')})</span>
                     </label>
                     <input
                       type="text"
@@ -649,8 +657,8 @@ ${templateText}`
                     />
                   </div>
                   <div className="md:col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      {tr('fields.availableQuantityLabel')} <span className="text-gray-400">({tr('fields.optionalLabel')})</span>
+                    <label className="block text-xs font-medium ns-muted mb-1">
+                      {tr('fields.availableQuantityLabel')} <span className="ns-muted">({tr('fields.optionalLabel')})</span>
                     </label>
                     <input
                       type="number"
@@ -666,7 +674,7 @@ ${templateText}`
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.quantityLabel')}</label>
+                    <label className="block text-xs font-medium ns-muted mb-1">{tr('fields.quantityLabel')}</label>
                     <input
                       type="number"
                       min={1}
@@ -683,7 +691,7 @@ ${templateText}`
                     )}
                   </div>
                   <div className="md:col-span-7">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.intendedUseLabel')}</label>
+                    <label className="block text-xs font-medium ns-muted mb-1">{tr('fields.intendedUseLabel')}</label>
                     <input
                       type="text"
                       placeholder={tr('fields.intendedUsePlaceholder')}
@@ -699,10 +707,10 @@ ${templateText}`
                     )}
                   </div>
                   <div className="md:col-span-12">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">{tr('fields.specificationsLabel')}</label>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <input
-                        type="text"
+                    <label className="block text-xs font-medium ns-muted mb-1">{tr('fields.specificationsLabel')}</label>
+                    <div className="ns-specs-controls">
+                      <textarea
+                        rows={4}
                         placeholder={tr('fields.specsPlaceholder')}
                         aria-label={t('nonStockRequestPage.fields.specsAria', { index: index + 1 })}
                         value={item.specs}
@@ -736,12 +744,13 @@ ${templateText}`
                     {itemErrors[index]?.specs && (
                       <p className="text-sm text-red-600 mt-1">{itemErrors[index].specs}</p>
                     )}
-                    <p className="text-xs text-gray-500 mt-1">{tr('fields.specTemplateHelp')}</p>
+                    <p className="text-xs ns-muted mt-1">{tr('fields.specTemplateHelp')}</p>
                   </div>
                 </div>
                 <div className="mt-4">
                   <input
                     type="file"
+                    aria-label={`${tr('fields.selectedItemAttachments')} ${index + 1}`}
                     multiple
                     onChange={(e) => {
                       handleItemFiles(index, e.target.files);
@@ -750,7 +759,7 @@ ${templateText}`
                     className="p-1 border rounded"
                     disabled={isSubmitting}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs ns-muted mt-1">
                     {t('nonStockRequestPage.fields.itemAttachmentsHint', {
                       allowed: allowedExtensions.join(', '),
                       max: MAX_ATTACHMENT_SIZE_MB,
@@ -761,7 +770,7 @@ ${templateText}`
                   )}
                   {item.attachments?.length > 0 && (
                     <div className="mt-2 bg-gray-50 border rounded p-2 text-sm">
-                      <p className="font-semibold text-gray-700">
+                      <p className="font-semibold ns-muted">
                         {tr('fields.selectedItemAttachments')}
                       </p>
                       <ul className="mt-1 space-y-1">
@@ -771,7 +780,7 @@ ${templateText}`
                             className="flex items-center gap-2"
                           >
                             <span className="flex-1 truncate">{file.name}</span>
-                            <span className="text-gray-500 text-xs whitespace-nowrap">
+                            <span className="ns-muted text-xs whitespace-nowrap">
                               {formatFileSize(file.size)}
                             </span>
                             <button
@@ -788,7 +797,7 @@ ${templateText}`
                     </div>
                   )}
                 </div>
-                <div className="flex justify-end gap-2 mt-4">
+                <div className="ns-item-actions">
                   <button
                     type="button"
                     onClick={() => duplicateItem(index)}
@@ -813,17 +822,20 @@ ${templateText}`
             <button
               type="button"
               onClick={addItem}
-              className="text-blue-600 mt-2 font-semibold"
+              className="ns-add-item"
               disabled={isSubmitting}
             >
               {tr('buttons.addItem')}
             </button>
-          </div>
+          </section>
 
-          <div>
+          <section className="ns-panel ns-submission">
+          <header className="ns-panel-header"><span className="ns-section-icon"><Paperclip size={20} /></span><div><h2>{tr('layout.supportingDetails')}</h2><p>{tr('layout.supportingDetailsHint')}</p></div></header>
+          <div className="ns-panel-body"><div>
             <label className="block font-semibold mb-1">{tr('fields.additionalAttachmentsLabel')}</label>
             <input
               type="file"
+              aria-label={tr('fields.additionalAttachmentsLabel')}
               multiple
               onChange={(e) => {
                 handleAdditionalAttachments(e.target.files);
@@ -832,7 +844,7 @@ ${templateText}`
               className="p-2 border rounded w-full"
               disabled={isSubmitting}
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs ns-muted">
               {t('nonStockRequestPage.fields.additionalAttachmentsHint', {
                 allowed: allowedExtensions.join(', '),
                 max: MAX_ATTACHMENT_SIZE_MB,
@@ -843,14 +855,14 @@ ${templateText}`
             )}
             {attachments.length > 0 && (
               <div className="mt-2 bg-gray-50 border rounded p-2 text-sm">
-                <p className="font-semibold text-gray-700">
+                <p className="font-semibold ns-muted">
                   {tr('fields.selectedRequestAttachments')}
                 </p>
                 <ul className="mt-1 space-y-1">
                   {attachments.map((file, idx) => (
                     <li key={`${file.name}-${idx}`} className="flex items-center gap-2">
                       <span className="flex-1 truncate">{file.name}</span>
-                      <span className="text-gray-500 text-xs whitespace-nowrap">
+                      <span className="ns-muted text-xs whitespace-nowrap">
                         {formatFileSize(file.size)}
                       </span>
                       <button
@@ -877,20 +889,21 @@ ${templateText}`
 
           <RequestScheduleField value={scheduledFor} onChange={setScheduledFor} disabled={isSubmitting} />
 
-          <div className="flex justify-end">
+          </div></section>
+          <div className="ns-submit-footer"><p>{tr('layout.reviewHint')}</p>
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition ${
+              className={`ns-submit ${
                 isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {isSubmitting ? tr('buttons.submitting') : tr('buttons.submit')}
+              <Send size={17} />{isSubmitting ? tr('buttons.submitting') : tr('buttons.submit')}
               <HelpTooltip text={tr('tooltips.stepThree')} />
             </button>
           </div>
         </form>
-      </div>
+      </main>
     </>
   );
 };
