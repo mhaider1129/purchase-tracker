@@ -2122,6 +2122,14 @@
     }
   },
   "requestSubmitted": {
+    "confirmation": "تأكيد تقديم الطلب",
+    "duplicateHeading": "طلب مكرر محتمل",
+    "lineItems_zero": "لا توجد بنود",
+    "lineItems_one": "بند واحد",
+    "lineItems_two": "بندان",
+    "lineItems_few": "{{count}} بنود",
+    "lineItems_many": "{{count}} بندًا",
+    "lineItems_other": "{{count}} بند",
     "title": "تم تقديم طلب {{type}} بنجاح!",
     "pending": "تم تقديم طلبك وهو قيد المراجعة الآن.",
     "viewOpen": "عرض طلباتي المفتوحة",
