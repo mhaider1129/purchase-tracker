@@ -1,3 +1,4 @@
+import './RequestForms.css';
 // src/pages/requests/StockRequestForm.js
 
 import { useTranslation } from 'react-i18next';
@@ -735,11 +736,12 @@ const StockRequestForm = () => {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="request-form-page request-form-stock">
         <h1 className="text-2xl font-bold mb-4">
           {t('stockRequestForm.title')}
           <HelpTooltip text={t('stockPurchaseRequestForm.help')} />
         </h1>
+        <p className="request-form-intro">{t('requestFormLayout.stockIntro')}</p>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 mb-6">
           <p className="font-semibold mb-1">
@@ -799,10 +801,11 @@ const StockRequestForm = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="request-form-content">
+          <section className="request-form-panel request-details"><h2>{t('requestFormLayout.requestDetails')}</h2>
           <div>
-            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.justification')}</label>
-            <textarea
+            <label htmlFor="StockRequestForm-justification" className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.justification')}</label>
+            <textarea id="StockRequestForm-justification"
               className="w-full p-2 border rounded"
               rows={3}
               value={justification}
@@ -820,9 +823,11 @@ const StockRequestForm = () => {
             user={currentUser}
           />
 
+          </section>
+          <section className="request-form-panel stock-catalog-panel">
           <div>
-            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.category')}</label>
-            <select
+            <label htmlFor="StockRequestForm-category" className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.category')}</label>
+            <select id="StockRequestForm-category"
               value={category}
               onChange={(e) => handleCategoryChange(e.target.value)}
               className="p-2 border rounded"
@@ -838,8 +843,8 @@ const StockRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.subCategory')}</label>
-            <select
+            <label htmlFor="StockRequestForm-subCategory" className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.subCategory')}</label>
+            <select id="StockRequestForm-subCategory"
               value={subCategory}
               onChange={(e) => handleSubCategoryChange(e.target.value)}
               className="p-2 border rounded"
@@ -968,7 +973,8 @@ const StockRequestForm = () => {
             )}
           </div>
 
-          <div>
+          </section>
+          <div className="request-form-panel request-items">
             <label className="block font-semibold mb-2">{t('stockPurchaseRequestForm.fields.selectItems')}</label>
             {selectedItems.map((item, index) => {
               const searchTerm = itemSearchTerms[index] || '';
@@ -989,7 +995,7 @@ const StockRequestForm = () => {
               return (
                 <div
                   key={index}
-                  className="border border-gray-200 rounded-lg p-4 mb-4 bg-white shadow-sm"
+                  className="request-item-card"
                 >
                   <div className="flex justify-between items-center mb-3">
                     <p className="font-semibold">Item #{index + 1}</p>
@@ -1216,7 +1222,7 @@ const StockRequestForm = () => {
             <button
               type="button"
               onClick={addItem}
-              className="text-blue-600 font-semibold mt-2"
+              className="request-add-item"
               disabled={isSubmitting}
             >
               + Add Another Item
@@ -1224,9 +1230,9 @@ const StockRequestForm = () => {
           </div>
 
           {/* Attachments */}
-          <div>
-            <label className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.attachments')}</label>
-            <input
+          <div className="request-form-panel">
+            <label htmlFor="StockRequestForm-attachments" className="block font-semibold mb-1">{t('stockPurchaseRequestForm.fields.attachments')}</label>
+            <input id="StockRequestForm-attachments"
               type="file"
               multiple
               onChange={(e) => setAttachments(Array.from(e.target.files))}

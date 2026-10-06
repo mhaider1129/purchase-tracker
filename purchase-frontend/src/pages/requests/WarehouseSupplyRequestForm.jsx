@@ -1,3 +1,4 @@
+import './RequestForms.css';
 import { useTranslation } from 'react-i18next';
 import React, { useMemo, useState, useEffect } from 'react';
 import api from '../../api/axios';
@@ -223,16 +224,18 @@ const WarehouseSupplyRequestForm = () => {
 
   return (
     <>
-      <div className="max-w-3xl mx-auto p-6">
+      <div className="request-form-page request-form-warehouse">
         <h1 className="text-2xl font-bold mb-4">
           {t('warehouseSupplyRequestForm.title')}
           <HelpTooltip text={t('warehouseSupplyRequestForm.title')} />
         </h1>
+        <p className="request-form-intro">{t('requestFormLayout.warehouseIntro')}</p>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="request-form-content">
+          <section className="request-form-panel request-details"><h2>{t('requestFormLayout.requestDetails')}</h2>
           <div>
-            <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.justification')}</label>
-            <textarea
+            <label htmlFor="WarehouseSupplyRequestForm-justification" className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.justification')}</label>
+            <textarea id="WarehouseSupplyRequestForm-justification"
               className="w-full p-2 border rounded"
               rows={3}
               value={justification}
@@ -243,8 +246,8 @@ const WarehouseSupplyRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.fulfillmentWarehouse')}</label>
-            <select
+            <label htmlFor="WarehouseSupplyRequestForm-fulfillmentWarehouse" className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.fulfillmentWarehouse')}</label>
+            <select id="WarehouseSupplyRequestForm-fulfillmentWarehouse"
               value={supplyWarehouseId}
               onChange={(e) => handleWarehouseChange(e.target.value)}
               className="p-2 border rounded"
@@ -264,8 +267,8 @@ const WarehouseSupplyRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.template')}</label>
-            <select
+            <label htmlFor="WarehouseSupplyRequestForm-template" className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.template')}</label>
+            <select id="WarehouseSupplyRequestForm-template"
               value={selectedTemplateId}
               onChange={(e) => applyTemplate(e.target.value)}
               className="p-2 border rounded"
@@ -287,12 +290,13 @@ const WarehouseSupplyRequestForm = () => {
             user={user}
           />
 
-          <div>
+          </section>
+          <div className="request-form-panel request-items">
             <label className="block font-semibold mb-2">{t('warehouseSupplyRequestForm.fields.items')}</label>
             <div className="grid gap-4 md:grid-cols-2 mb-4">
               <div>
-                <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.category')}</label>
-                <select
+                <label htmlFor="WarehouseSupplyRequestForm-category" className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.category')}</label>
+                <select id="WarehouseSupplyRequestForm-category"
                   value={category}
                   onChange={(e) => {
                     setCategory(e.target.value);
@@ -308,8 +312,8 @@ const WarehouseSupplyRequestForm = () => {
                 </select>
               </div>
               <div>
-                <label className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.subCategory')}</label>
-                <select
+                <label htmlFor="WarehouseSupplyRequestForm-subCategory" className="block font-semibold mb-1">{t('warehouseSupplyRequestForm.fields.subCategory')}</label>
+                <select id="WarehouseSupplyRequestForm-subCategory"
                   value={subCategory}
                   onChange={(e) => setSubCategory(e.target.value)}
                   className="w-full p-2 border rounded"
@@ -339,7 +343,7 @@ const WarehouseSupplyRequestForm = () => {
               </p>
             )}
             {items.map((it, idx) => (
-              <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
+              <div key={idx} className="request-item-card warehouse-item-row">
                 <input
                   type="search"
                   value={itemSearchTerms[idx] || ''}
@@ -392,11 +396,11 @@ const WarehouseSupplyRequestForm = () => {
                   disabled={submitting}
                 />
                 {items.length > 1 && (
-                  <button type="button" onClick={() => removeItem(idx)} className="text-red-600 text-lg" disabled={submitting}>✕</button>
+                  <button type="button" onClick={() => removeItem(idx)} aria-label={t('requestFormLayout.removeItem', { index: idx + 1 })} className="text-red-600 text-lg" disabled={submitting}>✕</button>
                 )}
               </div>
             ))}
-            <button type="button" onClick={addItem} className="text-blue-600 mt-2" disabled={submitting}>{t('warehouseSupplyRequestForm.fields.addItem')}</button>
+            <button type="button" onClick={addItem} className="request-add-item" disabled={submitting}>{t('warehouseSupplyRequestForm.fields.addItem')}</button>
           </div>
 
           <UrgentRequestToggle

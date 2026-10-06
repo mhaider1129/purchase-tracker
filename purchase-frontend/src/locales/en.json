@@ -1,4 +1,14 @@
 {
+  "requestFormLayout": {
+    "requestDetails": "Request details",
+    "logbookDetails": "Logbook specifications",
+    "removeItem": "Remove item {{index}}",
+    "itIntro": "Describe your IT needs, deployment requirements and supporting specifications.",
+    "stockIntro": "Build your stock request from the catalog or import items from a spreadsheet.",
+    "medicationIntro": "Specify medications, dosage requirements and quantities for your department.",
+    "logbookIntro": "Provide your approved form and configure the logbook printing requirements.",
+    "warehouseIntro": "Choose a fulfillment warehouse and request the supplies your team needs."
+  },
   "login": {
     "title": "Warith Procurement Login",
     "welcome": "Welcome back",
