@@ -1,5 +1,5 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import useWorkspaceTranslation from "./useWorkspaceTranslation";
 import { Clock3 } from "lucide-react";
 
 export function getRequestAgeDays(value, now = Date.now()) {
@@ -10,7 +10,7 @@ export function getRequestAgeDays(value, now = Date.now()) {
 }
 
 export default function RequestAgeBadge({ createdAt }) {
-  const { t } = useTranslation();
+  const t = useWorkspaceTranslation();
   const days = getRequestAgeDays(createdAt);
   if (days === null) return null;
   return (

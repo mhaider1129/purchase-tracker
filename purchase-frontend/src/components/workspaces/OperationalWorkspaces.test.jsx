@@ -6,25 +6,15 @@ import RequestActionContext from "./RequestActionContext";
 import ApprovalDecisionSummary from "./ApprovalDecisionSummary";
 import RequestAgeBadge, { getRequestAgeDays } from "./RequestAgeBadge";
 
-jest.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key, options = {}) => {
-      const en = require("../../locales/en.json");
-      const suffix =
-        options.count !== undefined
-          ? options.count === 1
-            ? "_one"
-            : "_other"
-          : "";
-      const lookup = (path) =>
-        path.split(".").reduce((value, part) => value?.[part], en);
-      return String(lookup(key + suffix) || lookup(key) || key).replace(
-        /{{(\w+)}}/g,
-        (_, name) => options[name],
-      );
-    },
-  }),
-}));
+import i18n from "../../i18n";
+import { createInstance } from "i18next";
+import { I18nextProvider } from "react-i18next";
+import en from "../../locales/en.json";
+import ar from "../../locales/ar.json";
+
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
+});
 
 test("section shortcuts have descriptive names and link to the supplied targets", () => {
   render(
@@ -131,3 +121,79 @@ test("age badges omit unknown dates and use a translated elapsed-day label", () 
   expect(screen.queryByText(/Submitted/)).not.toBeInTheDocument();
   jest.restoreAllMocks();
 });
+
+test.each(["en", "ar"])(
+  "real app resources resolve every workspace label in %s",
+  async (language) => {
+    await i18n.changeLanguage(language);
+    const labels =
+      language === "ar" ? ar.operationalWorkspace : en.operationalWorkspace;
+    Object.entries(labels)
+      .filter(([key]) => !key.startsWith("requestAge_"))
+      .forEach(([key, value]) => {
+        expect(i18n.t(`operationalWorkspace.${key}`)).toBe(value);
+      });
+    for (const count of [0, 1, 2, 3, 11, 100]) {
+      expect(
+        i18n.t("operationalWorkspace.requestAge", { count }),
+      ).not.toContain("operationalWorkspace.");
+    }
+  },
+);
+
+test.each(["en", "ar"])(
+  "incomplete provider resources still show readable workspace controls in %s",
+  async (language) => {
+    const incomplete = createInstance();
+    await incomplete.init({
+      lng: language,
+      fallbackLng: false,
+      resources: { [language]: { translation: {} } },
+      interpolation: { escapeValue: false },
+    });
+    const labels =
+      language === "ar" ? ar.operationalWorkspace : en.operationalWorkspace;
+    jest.spyOn(Date, "now").mockReturnValue(Date.parse("2026-10-06T12:00:00Z"));
+    const { container } = render(
+      <I18nextProvider i18n={incomplete}>
+        <WorkspaceSectionNav
+          sections={[
+            { id: "filters", label: "filters" },
+            { id: "results", label: "requestResults" },
+            { id: "queue", label: "approvalQueue" },
+            { id: "transfers", label: "transfers" },
+            { id: "allocations", label: "allocations" },
+            { id: "inventory", label: "inventory" },
+            { id: "report", label: "report" },
+          ]}
+        />
+        <RequestActionContext request={{}} />
+        <WorkspaceTableScroll>
+          <table>
+            <tbody>
+              <tr>
+                <td>Item</td>
+              </tr>
+            </tbody>
+          </table>
+        </WorkspaceTableScroll>
+        <ApprovalDecisionSummary requestIds={[1]} decisions={{}} />
+        <RequestAgeBadge createdAt="2026-10-04T12:00:00Z" />
+      </I18nextProvider>,
+    );
+    expect(
+      screen.getByRole("navigation", { name: labels.jumpTo }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: labels.filters })).toHaveAttribute(
+      "href",
+      "#filters",
+    );
+    expect(screen.getAllByText(labels.notProvided)).toHaveLength(3);
+    expect(
+      screen.getByRole("region", { name: labels.tableLabel }),
+    ).toBeInTheDocument();
+    expect(container.textContent).not.toContain("operationalWorkspace.");
+    expect(container.innerHTML).not.toContain("operationalWorkspace.");
+    jest.restoreAllMocks();
+  },
+);

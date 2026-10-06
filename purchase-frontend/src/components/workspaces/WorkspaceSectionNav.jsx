@@ -1,9 +1,9 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import useWorkspaceTranslation from "./useWorkspaceTranslation";
 import { ArrowDownRight } from "lucide-react";
 
 export default function WorkspaceSectionNav({ sections }) {
-  const { t } = useTranslation();
+  const t = useWorkspaceTranslation();
   return (
     <nav
       className="workspace-section-nav print:hidden"
