@@ -2178,6 +2178,10 @@
     }
   },
   "requestSubmitted": {
+    "confirmation": "Submission confirmation",
+    "duplicateHeading": "Possible duplicate request",
+    "lineItems_one": "{{count}} line item",
+    "lineItems_other": "{{count}} line items",
     "title": "{{type}} Request Submitted Successfully!",
     "pending": "Your request has been submitted and is now pending approval.",
     "viewOpen": "View My Open Requests",
