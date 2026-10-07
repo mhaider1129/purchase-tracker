@@ -1467,11 +1467,13 @@
   "myMaintenanceRequestsPage": {
     "eyebrow": "Maintenance operations",
     "errors": {
-      "loadFailed": "We could not load your maintenance requests. Please try again later."
+      "loadFailed": "We could not load your maintenance requests. Please try again later.",
+      "exportFailed": "Unable to export. Please try again."
     },
     "intro": "Track the status of your submitted maintenance requests and export them for reporting.",
     "actions": {
-      "exportExcel": "Export Excel"
+      "exportExcel": "Export Excel",
+      "exporting": "Exporting…"
     },
     "loading": "Loading maintenance requests...",
     "empty": {
@@ -1486,7 +1488,12 @@
       "pending": "Pending",
       "rejected": "Rejected",
       "submitted": "Submitted",
-      "completed": "Completed"
+      "completed": "Completed",
+      "assigned": "Assigned",
+      "partially procured": "Partially Procured",
+      "received": "Received",
+      "available in stock": "Available in Stock",
+      "cancelled": "Cancelled"
     },
     "items": {
       "heading": "Requested items",
@@ -1549,6 +1556,8 @@
       "currentStepCompleted": "All approvals completed",
       "currentStepRejected": "Approval flow ended (rejected)",
       "currentStepPending": "Awaiting next approval",
+      "currentStepPendingAtLevel": "Level {{level}} – Awaiting approval (approver not recorded)",
+      "currentStepRequestStatus": "Request status: {{status}}",
       "currentStepUnknown": "Approval status unavailable",
       "currentStepFinalized": "Final approval completed by {{approver}} on {{date}}",
       "finalApprovalPending": "Pending final approval",
