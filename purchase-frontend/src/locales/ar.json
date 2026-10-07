@@ -1411,11 +1411,13 @@
   "myMaintenanceRequestsPage": {
     "eyebrow": "عمليات الصيانة",
     "errors": {
-      "loadFailed": "تعذر تحميل طلبات الصيانة الخاصة بك. يرجى المحاولة لاحقًا."
+      "loadFailed": "تعذر تحميل طلبات الصيانة الخاصة بك. يرجى المحاولة لاحقًا.",
+      "exportFailed": "تعذر التصدير. يرجى المحاولة مرة أخرى."
     },
     "intro": "تابع حالة طلبات الصيانة المقدمة وقم بتصديرها لأغراض التقارير.",
     "actions": {
-      "exportExcel": "تصدير Excel"
+      "exportExcel": "تصدير Excel",
+      "exporting": "جارٍ التصدير…"
     },
     "loading": "جاري تحميل طلبات الصيانة...",
     "empty": {
@@ -1430,7 +1432,12 @@
       "pending": "قيد الانتظار",
       "rejected": "مرفوض",
       "submitted": "مُقدَّم",
-      "completed": "مكتمل"
+      "completed": "مكتمل",
+      "assigned": "تم الإسناد",
+      "partially procured": "تم الشراء جزئياً",
+      "received": "تم الاستلام",
+      "available in stock": "متوفر في المخزون",
+      "cancelled": "ملغى"
     },
     "items": {
       "heading": "العناصر المطلوبة",
@@ -1493,6 +1500,8 @@
       "currentStepCompleted": "اكتملت جميع الموافقات",
       "currentStepRejected": "انتهى مسار الموافقة (مرفوض)",
       "currentStepPending": "بانتظار الموافقة التالية",
+      "currentStepPendingAtLevel": "المستوى {{level}} – بانتظار الموافقة (لم يُسجل اسم المعتمد)",
+      "currentStepRequestStatus": "حالة الطلب: {{status}}",
       "currentStepUnknown": "حالة الموافقة غير متاحة",
       "currentStepFinalized": "أُنجزت الموافقة النهائية بواسطة {{approver}} بتاريخ {{date}}",
       "finalApprovalPending": "بلا موافقة نهائية بعد",

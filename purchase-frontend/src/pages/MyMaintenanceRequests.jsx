@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import { saveAs } from 'file-saver';
-import { buildExcelHtmlBlob } from '../utils/excelHtmlExport';
+import { buildExcelWorkbookBlob } from '../utils/excelWorkbookExport';
+import { getMaintenanceApprovalStepLabel } from '../utils/maintenanceApprovalStatus';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -451,18 +452,6 @@ const MyMaintenanceRequests = () => {
     [loadAttachmentsForRequest],
   );
 
-  const buildApproverDisplayName = (name, role) => {
-    if (!name) {
-      return '';
-    }
-
-    if (role) {
-      return `${name} (${role})`;
-    }
-
-    return name;
-  };
-
   const getFinalApprovalDetails = (request) => {
     if (!request || !request.final_approval_date || !request.final_approver_name) {
       return null;
@@ -479,49 +468,7 @@ const MyMaintenanceRequests = () => {
     };
   };
 
-  const getCurrentApprovalStepLabel = (request) => {
-    const pendingApproverDisplay = buildApproverDisplayName(
-      request.current_pending_approver_name,
-      request.current_pending_approver_role,
-    );
-
-    if (pendingApproverDisplay) {
-      if (request.current_approval_step !== null && request.current_approval_step !== undefined) {
-        return tr('export.currentStepPendingWithApproverAndLevel', {
-          level: request.current_approval_step,
-          approver: pendingApproverDisplay,
-        });
-      }
-
-      return tr('export.currentStepPendingWithApprover', {
-        approver: pendingApproverDisplay,
-      });
-    }
-
-    const normalizedStatus = request.status?.toLowerCase();
-    const finalDetails = getFinalApprovalDetails(request);
-
-    if (normalizedStatus === 'approved' || normalizedStatus === 'completed') {
-      if (finalDetails) {
-        return tr('export.currentStepFinalized', {
-          approver: finalDetails.approver,
-          date: finalDetails.formattedDate,
-        });
-      }
-
-      return tr('export.currentStepCompleted');
-    }
-
-    if (normalizedStatus === 'rejected') {
-      return tr('export.currentStepRejected');
-    }
-
-    if (normalizedStatus === 'pending' || normalizedStatus === 'submitted') {
-      return tr('export.currentStepPending');
-    }
-
-    return tr('export.currentStepUnknown');
-  };
+  const getCurrentApprovalStepLabel = (request) => getMaintenanceApprovalStepLabel(request, tr);
 
   const formatExportDate = (value) => {
     if (!value) {
@@ -546,49 +493,57 @@ const MyMaintenanceRequests = () => {
     return tr('export.finalApprovalPending');
   };
 
-  const exportToExcel = () => {
-    const headers = tr('export.headers', { returnObjects: true });
-    const csvRows = [
-      headers,
-      ...filteredRequests.map((r) => {
-        const normalizedStatus = r.status?.toLowerCase();
-        const statusLabel = statusLabels[normalizedStatus] || r.status || '';
+  const [exporting, setExporting] = useState(false);
 
-        return [
-          r.id,
-          r.department_name || tr('table.notAvailable'),
-          r.requester_name || tr('table.notAvailable'),
-          r.justification || '',
-          r.project_name || '',
-          r.maintenance_ref_number || '-',
-          formatItemsForExport(r.items),
-          statusLabel,
-          r.submission_timeline || '',
-          formatExportDate(r.approval_started_at),
-          formatExportDate(r.first_approval_at),
-          formatExportDate(r.final_approval_at),
-          r.approval_duration_days ?? '',
-          r.approval_timeline || '',
-          getCurrentApprovalStepLabel(r),
-          getFinalApprovalDateLabel(r),
-        ];
-      }),
-    ];
+  const exportToExcel = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const headers = tr('export.headers', { returnObjects: true });
+      const csvRows = [
+        headers,
+        ...filteredRequests.map((r) => {
+          const normalizedStatus = r.status?.trim().toLowerCase();
+          const statusLabel = statusLabels[normalizedStatus] || r.status || '';
 
-    const blob = buildExcelHtmlBlob(csvRows, {
-      sheetName: tr('export.sheetName'),
-      rtl: document?.documentElement?.dir === 'rtl',
-    });
-    saveAs(blob, `${tr('export.filePrefix')}_${new Date().toISOString().split('T')[0]}.xls`);
+          return [
+            r.id,
+            r.department_name || tr('table.notAvailable'),
+            r.requester_name || tr('table.notAvailable'),
+            r.justification || '',
+            r.project_name || '',
+            r.maintenance_ref_number || '-',
+            formatItemsForExport(r.items),
+            statusLabel,
+            r.submission_timeline || '',
+            formatExportDate(r.approval_started_at),
+            formatExportDate(r.first_approval_at),
+            formatExportDate(r.final_approval_at),
+            r.approval_duration_days ?? '',
+            r.approval_timeline || '',
+            getCurrentApprovalStepLabel(r),
+            getFinalApprovalDateLabel(r),
+          ];
+        }),
+      ];
+
+      const blob = await buildExcelWorkbookBlob(csvRows, {
+        sheetName: tr('export.sheetName'),
+        rtl: document?.documentElement?.dir === 'rtl',
+      });
+      saveAs(blob, `${tr('export.filePrefix')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } catch (err) {
+      console.error('Failed to export maintenance requests:', err);
+      window.alert(tr('errors.exportFailed', { defaultValue: 'Unable to export. Please try again.' }));
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const filteredRequests = useMemo(() => {
+  const matchingRequests = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     const filteredList = requests
-      .filter((request) => {
-        return requestMatchesStatusFilter(request.status, statusFilter);
-      })
       .filter((request) => {
         if (!normalizedSearch) return true;
         const itemsText = Array.isArray(request.items)
@@ -634,9 +589,9 @@ const MyMaintenanceRequests = () => {
         if (!startDate && !endDate) return true;
         const createdAt = new Date(request.created_at);
         if (Number.isNaN(createdAt.getTime())) return false;
-        if (startDate && createdAt < new Date(startDate)) return false;
+        if (startDate && createdAt < new Date(`${startDate}T00:00:00`)) return false;
         if (endDate) {
-          const inclusiveEnd = new Date(endDate);
+          const inclusiveEnd = new Date(`${endDate}T00:00:00`);
           inclusiveEnd.setHours(23, 59, 59, 999);
           if (createdAt > inclusiveEnd) return false;
         }
@@ -655,7 +610,6 @@ const MyMaintenanceRequests = () => {
     return sorted;
   }, [
     requests,
-    statusFilter,
     searchTerm,
     referenceSearch,
     requesterSearch,
@@ -664,6 +618,12 @@ const MyMaintenanceRequests = () => {
     sortDirection,
     itemStatusLabels,
   ]);
+
+  // Status cards are facets: count the search/date subset before the selected status.
+  const filteredRequests = useMemo(
+    () => matchingRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter)),
+    [matchingRequests, statusFilter],
+  );
 
   useEffect(() => {
     if (!expandedApprovalsId) {
@@ -713,7 +673,7 @@ const MyMaintenanceRequests = () => {
     currentPage * itemsPerPage,
   );
 
-  const statusSummary = useMemo(() => summarizeRequestStatuses(requests), [requests]);
+  const statusSummary = useMemo(() => summarizeRequestStatuses(matchingRequests), [matchingRequests]);
 
   const hasActiveFilters = Boolean(
     statusFilter !== 'all'
@@ -783,10 +743,11 @@ const MyMaintenanceRequests = () => {
           </div>
           <button
             onClick={exportToExcel}
+            disabled={exporting}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-300"
           >
             <Download className="h-4 w-4" aria-hidden="true" />
-            {tr('actions.exportExcel')}
+            {exporting ? tr('actions.exporting') : tr('actions.exportExcel')}
           </button>
           </div>
         </div>
