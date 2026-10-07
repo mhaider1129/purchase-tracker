@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import * as api from "../api/approvalPolicies";
 import { getOrganizationOptions } from "../api/organization";
+import PolicyDiagnostics, { SemanticPurpose } from '../components/approvals/PolicyDiagnostics';
 import {
   Activity,
   ArrowLeft,
@@ -74,7 +75,7 @@ const REQUEST_TYPES = [
   "Warehouse Supply",
   "Printing Logbook",
 ];
-const DEPARTMENT_CLASSIFICATIONS = ["medical", "operational"];
+const DEPARTMENT_CLASSIFICATIONS = ["Medical", "Operational"];
 const BOOLEAN_CONDITION_TYPES = new Set([
   "IS_STOCK_REQUEST",
   "IS_NON_STOCK_REQUEST",
@@ -177,7 +178,7 @@ export function ShadowComparison({ run }) {
         </td>
         <td className="px-4 py-3">{display(s.sequence ?? s.stepOrder)}</td>
         <td className="px-4 py-3 font-medium text-slate-800">
-          {display(s.semantic_key ?? s.semanticKey)}
+          <SemanticPurpose value={s.semantic_key ?? s.semanticKey} />
         </td>
         <td className="px-4 py-3">
           {display(s.resolver_type ?? s.resolverType)}
@@ -332,6 +333,7 @@ export function ShadowComparison({ run }) {
                 .map((rule) => rule.code || rule)
                 .join(", ") || "None"}
             </p>
+            <PolicyDiagnostics diagnostics={run.ruleDiagnostics || run.summary?.ruleDiagnostics} policy={run.policy || run.summary?.policy} />
           </div>
         </section>
 
@@ -482,6 +484,7 @@ function ConditionValue({
         onChange={(event) => onChange(event.target.value)}
       >
         <option value="">Select a value</option>
+        {condition.value && !choices.some(choice => choice.value === condition.value) && <option value={condition.value}>{condition.value} (stored value)</option>}
         {choices.map((choice) => (
           <option key={choice.value} value={choice.value}>
             {choice.label}
@@ -1577,7 +1580,7 @@ export function PolicySimulator({ versions = [], departments = [] }) {
   const [form, setForm] = useState({
     versionId: "",
     departmentId: "",
-    requestType: "NON_STOCK",
+    requestType: "Non-Stock",
     estimatedAmount: "",
     isStockRequest: false,
     isMaintenanceRequest: false,
@@ -1758,7 +1761,7 @@ export function PolicySimulator({ versions = [], departments = [] }) {
                   <strong>
                     Level {s.approvalLevel}: {s.displayName}
                   </strong>
-                  <p>Purpose: {s.semanticKey}</p>
+                  <p>Purpose: <SemanticPurpose value={s.semanticKey} /></p>
                   <p>
                     Required authority: {s.requestedAuthority || s.resolverType}
                   </p>
@@ -1774,6 +1777,7 @@ export function PolicySimulator({ versions = [], departments = [] }) {
                 </article>
               ))}
             </div>
+            <PolicyDiagnostics diagnostics={result.ruleDiagnostics} policy={result.policy} />
           </section>
         )}
       </div>
