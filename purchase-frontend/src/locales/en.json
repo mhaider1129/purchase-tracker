@@ -1499,6 +1499,16 @@
       "noRequests": "No maintenance requests found.",
       "prompt": "Submit a new maintenance request to see it listed here."
     },
+    "approvalSteps": {
+      "heading": "Pending approval steps",
+      "helper": "Requests awaiting active approvals in the filtered period. Select a card to filter the queue. A request with parallel approvals can appear under more than one step.",
+      "stepLabel": "Level {{level}} · {{role}}",
+      "unknownLevel": "unavailable",
+      "unknownApprover": "Approver unavailable",
+      "all": "All pending approvals",
+      "clear": "Clear approval filter",
+      "empty": "No requests await active approval with these filters."
+    },
     "summary": {
       "total": "Total"
     },

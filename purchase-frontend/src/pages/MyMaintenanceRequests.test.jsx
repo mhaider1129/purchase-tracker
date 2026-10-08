@@ -74,3 +74,32 @@ test('an empty date range clears cards and export failures allow retry', async (
   alert.mockRestore();
   log.mockRestore();
 });
+
+test('pending step cards follow dates, filter queue/export, retain zero counts and reset', async () => {
+  axios.get.mockImplementation((url) => Promise.resolve({ data: url === '/requests/my-maintenance' ? [
+    { ...requests[0], status: 'Submitted', current_pending_approvals: [{ approval_level: 1, approver_role: 'HOD' }] },
+    { ...requests[1], current_pending_approvals: [{ approval_level: 5, approver_role: 'CMO' }, { approval_level: 5, approver_role: 'CMO' }, { approval_level: 8, approver_role: 'COO' }] },
+    { ...requests[2], status: 'Submitted', current_pending_approvals: [{ approval_level: 6, approver_role: 'SCM' }] },
+    { ...requests[3], current_pending_approvals: [] },
+  ] : [] }));
+  render(<MyMaintenanceRequests />);
+  await screen.findByText('Start boundary');
+  expect(screen.getByRole('button', { name: 'All pending approvals: 3' })).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-10-01' } });
+  fireEvent.change(screen.getByLabelText('To'), { target: { value: '2026-10-07' } });
+  expect(screen.getByRole('button', { name: 'All pending approvals: 2' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Level 1 · HOD: 0' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Level 5 · CMO: 1' }));
+  expect(screen.getByRole('button', { name: 'Total 1' })).toBeInTheDocument();
+  expect(screen.queryByText('End boundary')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }));
+  await waitFor(() => expect(saveAs).toHaveBeenCalled());
+  expect(buildExcelWorkbookBlob.mock.calls[0][0].slice(1).map((row) => row[0])).toEqual([2]);
+  fireEvent.click(screen.getByRole('button', { name: 'Clear approval filter' }));
+  expect(screen.getByText('End boundary')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'All pending approvals: 2' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Reset filters' }));
+  expect(screen.getByRole('button', { name: 'Total 4' })).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'rejected' } });
+  expect(screen.getByRole('button', { name: 'All pending approvals: 0' })).toBeInTheDocument();
+});
