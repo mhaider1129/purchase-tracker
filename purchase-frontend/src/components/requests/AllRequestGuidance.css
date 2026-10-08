@@ -1,0 +1,54 @@
+.all-request-guidance {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px 20px;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+  text-align: start;
+}
+.all-request-guidance-step,
+.all-request-guidance-assignment {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.all-request-guidance svg {
+  flex-shrink: 0;
+  color: var(--color-accent);
+  margin-top: 3px;
+}
+.all-request-guidance strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.all-request-guidance-step div > span:last-child {
+  font-size: 12px;
+}
+.all-request-guidance-label {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 3px;
+}
+.all-request-guidance-action {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-default);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .all-request-guidance {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .all-request-guidance .request-age-badge {
+    justify-self: start;
+  }
+}
