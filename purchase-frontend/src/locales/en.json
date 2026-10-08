@@ -1614,6 +1614,23 @@
     }
   },
   "warehouseInventory": {
+    "enhancements": {
+      "attention": "Stock attention",
+      "attentionHelp": "Filter stock rows by quantity or expiry date. Counts include all rows in this warehouse.",
+      "threshold": "Low-stock cutoff (units)",
+      "outOfStock": "Out of stock",
+      "lowStock": "Low stock",
+      "expiryDue": "Expired / due within 30 days",
+      "resetFilters": "Reset inventory filters",
+      "searchPlaceholder": "Name, stock ID, lot, serial number or category",
+      "reviewDetails": "Loaded transfer details",
+      "transfer": "Transfer",
+      "origin": "Origin",
+      "destination": "Destination",
+      "quantity": "Quantity",
+      "noTransferItems": "No transfer items provided.",
+      "loadFirst": "Load the selected pending transfer before making a decision."
+    },
     "loading": "Loading warehouse inventory tools...",
     "subtitle": "Record inbound warehouse stock and monitor weekly transfers to departments.",
     "unassigned": {

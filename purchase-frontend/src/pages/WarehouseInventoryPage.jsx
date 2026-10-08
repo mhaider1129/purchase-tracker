@@ -1,7 +1,11 @@
+import InventoryAttention from '../components/warehouse/InventoryAttention';
+import TransferReviewDetails from '../components/warehouse/TransferReviewDetails';
+import { isLowStock, isExpiryDue, isTransferReviewable } from '../utils/warehouseInventoryFilters';
+import './WarehouseInventoryEnhancements.css';
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
 import './OperationalWorkspaces.css';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
@@ -79,6 +83,7 @@ const WarehouseInventoryPage = () => {
   const [transferActionForm, setTransferActionForm] = useState({ transfer_id: '', reason: '' });
   const [transferActionStatus, setTransferActionStatus] = useState({ state: 'idle', message: '' });
   const [transferDetails, setTransferDetails] = useState(null);
+  const transferLoadSequence = useRef(0);
 
   const [departments, setDepartments] = useState([]);
   const [departmentsStatus, setDepartmentsStatus] = useState({ state: 'idle', message: '' });
@@ -89,6 +94,7 @@ const WarehouseInventoryPage = () => {
   const [hideZeroInventory, setHideZeroInventory] = useState(false);
   const [inventorySort, setInventorySort] = useState('name-asc');
   const [inventoryStockFilter, setInventoryStockFilter] = useState('all');
+  const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [inventoryView, setInventoryView] = useState('grid');
   const [inventoryPage, setInventoryPage] = useState(1);
   const [inventoryPageSize, setInventoryPageSize] = useState(12);
@@ -262,7 +268,7 @@ const WarehouseInventoryPage = () => {
 
   useEffect(() => {
     setInventoryPage(1);
-  }, [inventoryWarehouseId, inventorySearch, hideZeroInventory, inventorySort, inventoryStockFilter, inventoryPageSize]);
+  }, [inventoryWarehouseId, inventorySearch, hideZeroInventory, inventorySort, inventoryStockFilter, inventoryPageSize, lowStockThreshold]);
 
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase();
@@ -297,7 +303,7 @@ const WarehouseInventoryPage = () => {
 
     if (inventorySearch.trim()) {
       items = items.filter((item) =>
-        matchesSearchTokens(inventorySearch, [item.item_name])
+        matchesSearchTokens(inventorySearch, [item.item_name, item.stock_item_id, item.lot_number, item.serial_number, item.category, item.sub_category])
       );
     }
 
@@ -310,6 +316,9 @@ const WarehouseInventoryPage = () => {
     } else if (inventoryStockFilter === 'outOfStock') {
       items = items.filter((item) => Number(item.quantity) <= 0);
     }
+
+    if (inventoryStockFilter === 'lowStock') items = items.filter(item => isLowStock(item, lowStockThreshold));
+    if (inventoryStockFilter === 'expiryDue') items = items.filter(item => isExpiryDue(item));
 
     const sortedItems = [...items].sort((a, b) => {
       const nameA = a.item_name?.toLowerCase?.() || '';
@@ -331,7 +340,7 @@ const WarehouseInventoryPage = () => {
     });
 
     return sortedItems;
-  }, [hideZeroInventory, inventoryItems, inventorySearch, inventorySort, inventoryStockFilter]);
+  }, [hideZeroInventory, inventoryItems, inventorySearch, inventorySort, inventoryStockFilter, lowStockThreshold]);
 
   const totalInventoryPages = useMemo(
     () => Math.max(1, Math.ceil(visibleInventoryItems.length / inventoryPageSize) || 1),
@@ -719,8 +728,10 @@ const WarehouseInventoryPage = () => {
 
   const loadTransferRequest = async (transferId) => {
     if (!transferId) return;
+    const sequence = ++transferLoadSequence.current;
+    setTransferDetails(null);
     const res = await api.get(`/warehouse-transfers/${transferId}`);
-    setTransferDetails(res.data || null);
+    if (sequence === transferLoadSequence.current) setTransferDetails(res.data || null);
   };
 
   const handleTransferSubmit = async (event) => {
@@ -766,6 +777,7 @@ const WarehouseInventoryPage = () => {
       setTransferItems([{ stock_item_id: '', quantity: '', notes: '' }]);
 
       if (createdId) {
+        setTransferActionForm({ transfer_id: String(createdId), reason: '' });
         await loadTransferRequest(createdId);
       }
     } catch (err) {
@@ -777,11 +789,16 @@ const WarehouseInventoryPage = () => {
 
   const handleTransferAction = async (action) => {
     const transferId = Number(transferActionForm.transfer_id);
-    if (!Number.isInteger(transferId)) {
+    if (!Number.isInteger(transferId) || transferId <= 0) {
       setTransferActionStatus({ state: 'error', message: tr('transfer.alerts.transferId', 'Enter a valid transfer request ID.') });
       return;
     }
 
+    if (transferActionStatus.state === 'loading') return;
+    if (action !== 'load' && !isTransferReviewable(transferDetails, transferId)) {
+      setTransferActionStatus({ state: 'error', message: tr('enhancements.loadFirst', 'Load the selected pending transfer before making a decision.') });
+      return;
+    }
     setTransferActionStatus({ state: 'loading', message: '' });
     try {
       if (action === 'load') {
@@ -979,11 +996,13 @@ const WarehouseInventoryPage = () => {
                   type="number"
                   min="1"
                   value={transferActionForm.transfer_id}
-                  onChange={(event) => setTransferActionForm((prev) => ({ ...prev, transfer_id: event.target.value }))}
+                  onChange={(event) => { transferLoadSequence.current += 1; setTransferDetails(null); setTransferActionForm((prev) => ({ ...prev, transfer_id: event.target.value })); }}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   placeholder={tr('transfer.transferIdPlaceholder', 'Enter transfer request ID')}
                 />
+                <label htmlFor="transfer-reason" className="text-sm font-medium text-gray-700 dark:text-gray-200">{tr('transfer.rejectionReason', 'Rejection reason (optional)')}</label>
                 <textarea
+                  id="transfer-reason"
                   rows="2"
                   value={transferActionForm.reason}
                   onChange={(event) => setTransferActionForm((prev) => ({ ...prev, reason: event.target.value }))}
@@ -992,10 +1011,11 @@ const WarehouseInventoryPage = () => {
                 />
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => handleTransferAction('load')} className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold dark:border-gray-700">{tr('transfer.load', 'Load')}</button>
-                <button type="button" onClick={() => handleTransferAction('approve')} className="rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white">{tr('transfer.approve', 'Approve')}</button>
-                <button type="button" onClick={() => handleTransferAction('reject')} className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white">{tr('transfer.reject', 'Reject')}</button>
+              <p className="text-xs text-gray-600 dark:text-gray-300">{tr('enhancements.loadFirst', 'Load the selected pending transfer before making a decision.')}</p>
+              <div className="warehouse-review-actions flex flex-wrap gap-2">
+                <button type="button" disabled={transferActionStatus.state === 'loading'} onClick={() => handleTransferAction('load')} className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold dark:border-gray-700">{tr('transfer.load', 'Load')}</button>
+                <button type="button" disabled={transferActionStatus.state === 'loading' || !isTransferReviewable(transferDetails, transferActionForm.transfer_id)} onClick={() => handleTransferAction('approve')} className="rounded-md bg-green-600 px-3 py-2 text-xs font-semibold text-white">{tr('transfer.approve', 'Approve')}</button>
+                <button type="button" disabled={transferActionStatus.state === 'loading' || !isTransferReviewable(transferDetails, transferActionForm.transfer_id)} onClick={() => handleTransferAction('reject')} className="rounded-md bg-red-600 px-3 py-2 text-xs font-semibold text-white">{tr('transfer.reject', 'Reject')}</button>
               </div>
 
               {transferActionStatus.message && (
@@ -1004,13 +1024,7 @@ const WarehouseInventoryPage = () => {
                 </div>
               )}
 
-              {transferDetails?.transfer && (
-                <div className="rounded-md bg-gray-50 p-3 text-sm dark:bg-gray-900">
-                  <p><span className="font-semibold">{tr('transfer.status', 'Status')}:</span> {transferDetails.transfer.status}</p>
-                  <p><span className="font-semibold">{tr('transfer.route', 'Route')}:</span> {transferDetails.transfer.origin_warehouse_id} → {transferDetails.transfer.destination_warehouse_id}</p>
-                  <p><span className="font-semibold">{tr('transfer.itemsCount', 'Items')}:</span> {transferDetails.items?.length || 0}</p>
-                </div>
-              )}
+              <TransferReviewDetails details={transferDetails} warehouses={warehouses} />
             </div>
           </div>
         </div>
@@ -1349,6 +1363,8 @@ const WarehouseInventoryPage = () => {
             </div>
           </div>
 
+          <InventoryAttention items={inventoryItems} threshold={lowStockThreshold} onThresholdChange={setLowStockThreshold} activeFilter={inventoryStockFilter} onFilterChange={(filter) => { setInventoryStockFilter(filter); setHideZeroInventory(false); }} disabled={inventoryLoading || !inventoryWarehouseId || Boolean(inventoryError)} />
+          <button type="button" className="mt-3 text-sm font-semibold text-blue-600" onClick={() => { setInventorySearch(''); setInventoryStockFilter('all'); setHideZeroInventory(false); setInventorySort('name-asc'); }}>{tr('enhancements.resetFilters', 'Reset inventory filters')}</button>
           <div className="mt-4 grid gap-3 lg:grid-cols-4 lg:items-end">
             <div className="space-y-1 lg:col-span-2">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="inventory-search">
@@ -1361,7 +1377,7 @@ const WarehouseInventoryPage = () => {
                   type="search"
                   value={inventorySearch}
                   onChange={(event) => setInventorySearch(event.target.value)}
-                  placeholder={tr('inventory.fields.searchPlaceholder')}
+                  placeholder={tr('enhancements.searchPlaceholder', 'Name, stock ID, lot, serial number or category')}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 pl-9 text-sm shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 />
               </div>
@@ -1391,6 +1407,8 @@ const WarehouseInventoryPage = () => {
                   <option value="all">{tr('inventory.filters.stock.all')}</option>
                   <option value="inStock">{tr('inventory.filters.stock.inStock')}</option>
                   <option value="outOfStock">{tr('inventory.filters.stock.outOfStock')}</option>
+                  <option value="lowStock">{tr('enhancements.lowStock', 'Low stock')}</option>
+                  <option value="expiryDue">{tr('enhancements.expiryDue', 'Expired / due within 30 days')}</option>
                 </select>
               </div>
               <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
