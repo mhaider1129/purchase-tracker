@@ -1,0 +1,132 @@
+.inventory-attention,
+.warehouse-transfer-review {
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 18px;
+  color: var(--color-text-primary);
+}
+.inventory-attention-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+.inventory-attention h3,
+.warehouse-transfer-review h4 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+.inventory-attention-heading p,
+.warehouse-transfer-review dt {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  margin-top: 5px;
+}
+.inventory-attention-heading > div {
+  flex: 1;
+  min-width: 200px;
+}
+.inventory-attention-heading label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+.inventory-attention-heading input {
+  width: 150px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+.inventory-attention-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.inventory-attention-options button {
+  text-align: start;
+  padding: 14px 16px;
+  display: grid;
+  gap: 5px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  font-size: 12px;
+}
+.inventory-attention-options strong {
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+.inventory-attention-options button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+.inventory-attention-options button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.warehouse-transfer-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.warehouse-transfer-heading > span {
+  font-size: 12px;
+  font-weight: 600;
+}
+.warehouse-transfer-route {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+.warehouse-transfer-review dd {
+  margin-top: 4px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.warehouse-transfer-items {
+  padding: 0;
+  list-style: none;
+}
+.warehouse-transfer-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border-default);
+  font-size: 13px;
+}
+.warehouse-transfer-items li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.warehouse-transfer-items li > span {
+  flex-shrink: 0;
+}
+.warehouse-transfer-items p,
+.warehouse-transfer-notes {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.operational-inventory .warehouse-review-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (max-width: 640px) {
+  .inventory-attention-options {
+    grid-template-columns: 1fr;
+  }
+  .inventory-attention-options button {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+}
