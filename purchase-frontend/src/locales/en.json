@@ -1,4 +1,9 @@
 {
+  "openRequestTracking": {
+    "tracking": "Request tracking summary",
+    "editable": "Editing available before approval activity starts.",
+    "locked": "Editing locked. Follow approvals and procurement in the workspace."
+  },
   "assignedWorkEnhancements": {
     "all": "All assigned",
     "ready": "Ready to complete",
