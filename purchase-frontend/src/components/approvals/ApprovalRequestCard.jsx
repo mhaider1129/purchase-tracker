@@ -1,5 +1,7 @@
 import RequestAgeBadge from '../workspaces/RequestAgeBadge';
 import React from "react";
+import { useTranslation } from "react-i18next";
+import "./ApprovalQueueControls.css";
 import {
   AlertTriangle,
   CalendarDays,
@@ -24,6 +26,11 @@ const ApprovalRequestCard = ({
   compactView = false,
   summaryStats = {},
 }) => {
+  const { t } = useTranslation();
+  const isOnHold = String(approvalStatus || '').trim().toLowerCase() === 'on hold';
+  const nextAction = isOnHold
+    ? t('approvalQueueEnhancements.resumeHint', 'Resume approval when ready to continue.')
+    : request.next_required_action || t('approvalQueueEnhancements.reviewHint', 'Expand to review items and make a decision.');
   const {
     requestIdLabel = "Request #",
     departmentLabel = "Department",
@@ -104,7 +111,7 @@ const ApprovalRequestCard = ({
                 {urgentLabel}
               </span>
             )}
-            {request?.budget_exceeded && (
+          {request?.budget_exceeded && (
               <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
                 Over budget
               </span>
@@ -177,6 +184,7 @@ const ApprovalRequestCard = ({
               </span>
             ) : null}
           </div>
+          <p className="approval-card-next-action"><strong>{t('approvalQueueEnhancements.nextAction', 'Next action')}:</strong><span>{nextAction}</span></p>
           {request?.budget_exceeded && (
             <div className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
               Red flag: this request exceeds the allocated budget. Available:{" "}

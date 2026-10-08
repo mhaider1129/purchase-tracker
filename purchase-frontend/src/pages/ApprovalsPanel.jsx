@@ -1,3 +1,4 @@
+import ApprovalQueueControls from '../components/approvals/ApprovalQueueControls';
 import ApprovalDecisionSummary from '../components/workspaces/ApprovalDecisionSummary';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
 import './OperationalWorkspaces.css';
@@ -40,6 +41,8 @@ const ApprovalsPanel = () => {
   const { user } = useCurrentUser();
   const {
     availableRequestTypes,
+    approvalStatusFilter,
+    setApprovalStatusFilter,
     approvalSummary,
     attachmentErrorMap,
     attachmentLoadingMap,
@@ -206,7 +209,7 @@ const ApprovalsPanel = () => {
                   onClick={() => approvalSummary.open(filteredRequests)}
                   disabled={
                     loading ||
-                    filteredRequests.length === 0 ||
+                    !filteredRequests.some(request => String(request.approval_status || 'Pending').trim().toLowerCase() === 'pending') ||
                     approvalSummary.loadingItems
                   }
                   isLoading={approvalSummary.loadingItems}
@@ -239,7 +242,7 @@ const ApprovalsPanel = () => {
               />
               <p className="text-2xl font-semibold">{summary.total}</p>
               <p className="text-sm text-slate-300">
-                {t("approvalsPanel.stats.totalPending")}
+                {t("approvalQueueEnhancements.totalQueue", "Requests in queue")}
               </p>
             </div>
             <button
@@ -311,6 +314,7 @@ const ApprovalsPanel = () => {
 
         <WorkspaceSectionNav sections={[{ id: 'approval-filters', label: 'filters' }, { id: 'approval-queue', label: 'approvalQueue' }]} />
         <div id="approval-filters" tabIndex={-1}>
+          {!loading && !error && <ApprovalQueueControls requests={requests} value={approvalStatusFilter} onChange={setApprovalStatusFilter} urgency={urgencyFilter} onUrgencyChange={setUrgencyFilter} sort={sortOption} onSortChange={setSortOption} />}
           <ApprovalsFilters
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -403,7 +407,7 @@ const ApprovalsPanel = () => {
                 const isExpanded = expandedId === req.request_id;
                 const requesterDisplay = getRequesterDisplay(req);
                 const approvalStatus = req.approval_status || "Pending";
-                const isOnHold = approvalStatus.toLowerCase() === "on hold";
+                const isOnHold = approvalStatus.trim().toLowerCase() === "on hold";
                 const holdLoading = Boolean(holdLoadingMap[req.approval_id]);
 
                 return (

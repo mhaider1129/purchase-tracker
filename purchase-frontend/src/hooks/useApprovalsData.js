@@ -1,3 +1,4 @@
+import { getApprovalQueueStatus, compareApprovalDates } from '../utils/approvalQueue';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import axios from '../api/axios';
 import { extractItems } from '../utils/itemUtils';
@@ -60,6 +61,7 @@ const useApprovalsData = (user) => {
   const [warehouseConversionItems, setWarehouseConversionItems] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [approvalStatusFilter, setApprovalStatusFilter] = useState('all');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
   const [sortOption, setSortOption] = useState('newest');
   const [attachmentsMap, setAttachmentsMap] = useState({});
@@ -659,7 +661,7 @@ const useApprovalsData = (user) => {
 
   const openApprovalSummary = async (sourceRequests = filteredRequests) => {
     const eligibleRequests = (Array.isArray(sourceRequests) ? sourceRequests : [])
-      .filter((req) => String(req?.approval_status || 'Pending').toLowerCase() !== 'on hold');
+      .filter((req) => getApprovalQueueStatus(req) !== 'on hold');
 
     if (eligibleRequests.length === 0) {
       setSummaryFeedback({ type: 'warning', message: 'No active pending requests are available for summary approval.' });
@@ -1097,14 +1099,6 @@ const useApprovalsData = (user) => {
     return Array.from(typeSet).sort();
   }, [requests]);
 
-  const getDateSortableValue = (request) => {
-    const sourceDate =
-      request?.updated_at || request?.submitted_at || request?.created_at || request?.requested_at || request?.request_date;
-    if (!sourceDate) return 0;
-    const parsed = new Date(sourceDate).getTime();
-    return Number.isNaN(parsed) ? 0 : parsed;
-  };
-
   const filteredRequests = useMemo(() => {
     let result = Array.isArray(requests) ? [...requests] : [];
 
@@ -1128,6 +1122,11 @@ const useApprovalsData = (user) => {
       });
     }
 
+    if (approvalStatusFilter !== 'all') {
+      const desiredStatus = approvalStatusFilter === 'hold' ? 'on hold' : 'pending';
+      result = result.filter(request => getApprovalQueueStatus(request) === desiredStatus);
+    }
+
     if (typeFilter !== 'all') {
       result = result.filter((req) => req?.request_type === typeFilter);
     }
@@ -1139,8 +1138,8 @@ const useApprovalsData = (user) => {
     }
 
     const sorter = {
-      newest: (a, b) => getDateSortableValue(b) - getDateSortableValue(a),
-      oldest: (a, b) => getDateSortableValue(a) - getDateSortableValue(b),
+      newest: (a, b) => compareApprovalDates(a, b, 'newest'),
+      oldest: (a, b) => compareApprovalDates(a, b, 'oldest'),
       costHigh: (a, b) => (Number(b?.estimated_cost) || 0) - (Number(a?.estimated_cost) || 0),
       costLow: (a, b) => (Number(a?.estimated_cost) || 0) - (Number(b?.estimated_cost) || 0),
     };
@@ -1160,15 +1159,16 @@ const useApprovalsData = (user) => {
     });
 
     return [...urgentRequests, ...nonUrgentRequests];
-  }, [requests, searchTerm, typeFilter, urgencyFilter, sortOption]);
+  }, [requests, searchTerm, typeFilter, urgencyFilter, sortOption, approvalStatusFilter]);
 
   const hasActiveFilters = useMemo(() => {
-    return Boolean(searchTerm.trim()) || typeFilter !== 'all' || urgencyFilter !== 'all' || sortOption !== 'newest';
-  }, [searchTerm, typeFilter, urgencyFilter, sortOption]);
+    return Boolean(searchTerm.trim()) || typeFilter !== 'all' || urgencyFilter !== 'all' || sortOption !== 'newest' || approvalStatusFilter !== 'all';
+  }, [searchTerm, typeFilter, urgencyFilter, sortOption, approvalStatusFilter]);
 
   const clearFilters = () => {
     setSearchTerm('');
     setTypeFilter('all');
+    setApprovalStatusFilter('all');
     setUrgencyFilter('all');
     setSortOption('newest');
   };
@@ -1176,6 +1176,8 @@ const useApprovalsData = (user) => {
   const getRowHighlight = (status) => STATUS_HIGHLIGHTS[status] || '';
 
   return {
+    approvalStatusFilter,
+    setApprovalStatusFilter,
     availableRequestTypes,
     approvalSummary: {
       canUse: canUseApprovalSummary,
