@@ -1,4 +1,17 @@
 {
+  "approvalQueueEnhancements": {
+    "totalQueue": "Requests in queue",
+    "queueViews": "Approval queue views",
+    "all": "All requests",
+    "pending": "Awaiting decision",
+    "hold": "On hold",
+    "urgent": "Urgent only",
+    "oldest": "Longest waiting first",
+    "priorityHelp": "Urgent requests appear first. Dates order requests within each priority; missing dates appear last.",
+    "nextAction": "Next action",
+    "resumeHint": "Resume approval when ready to continue.",
+    "reviewHint": "Expand to review items and make a decision."
+  },
   "requestTimeline": {
     "title": "Request timeline",
     "subtitle": "Follow the recorded approvals, procurement updates and request activity.",
