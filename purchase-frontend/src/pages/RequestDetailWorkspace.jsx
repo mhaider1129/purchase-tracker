@@ -1,3 +1,4 @@
+import RequestTimeline from '../components/requests/RequestTimeline';
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import RequestActionContext from '../components/workspaces/RequestActionContext';
 import './OperationalWorkspaces.css';
@@ -43,23 +44,6 @@ const statusClasses = {
   rejected: 'bg-rose-100 text-rose-800',
   partially_procured: 'bg-purple-100 text-purple-800',
   'partially procured': 'bg-purple-100 text-purple-800',
-};
-
-const timelineStyles = {
-  request: 'bg-blue-500',
-  approval: 'bg-emerald-500',
-  assignment: 'bg-indigo-500',
-  procurement: 'bg-purple-500',
-  rfq: 'bg-cyan-500',
-  quotation: 'bg-sky-500',
-  po: 'bg-orange-500',
-  grn: 'bg-lime-500',
-  inspection: 'bg-teal-500',
-  invoice: 'bg-pink-500',
-  payment: 'bg-green-500',
-  attachment: 'bg-slate-500',
-  audit: 'bg-red-500',
-  communication: 'bg-yellow-500',
 };
 
 const formatDateTime = (value) => {
@@ -543,14 +527,7 @@ const RequestDetailWorkspace = () => {
           </section>
         )}
 
-        {activeTab === 'Timeline' && (
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="request-workspace-timeline relative border-slate-200">
-              {timeline.map((event) => <div key={event.id} className="relative mb-6 last:mb-0"><span className={`request-workspace-timeline-dot absolute top-1 h-4 w-4 rounded-full ring-4 ring-white ${timelineStyles[event.event_type] || 'bg-slate-400'}`} /><div className="flex flex-wrap items-start justify-between gap-2"><div><h3 className="font-bold text-slate-900">{event.title}</h3><p className="text-sm text-slate-600">{event.description}</p><p className="mt-1 text-xs text-slate-500">{event.actor_name || 'System'} • {formatDateTime(event.event_time)}</p></div><StatusBadge>{event.status || event.event_type}</StatusBadge></div></div>)}
-            </div>
-            {timeline.length === 0 ? <EmptyState>No timeline events found.</EmptyState> : null}
-          </section>
-        )}
+        {activeTab === 'Timeline' && <RequestTimeline events={timeline} />}
 
         {activeTab === 'Documents' && (
           <section className="space-y-4">

@@ -1,4 +1,23 @@
 {
+  "requestTimeline": {
+    "title": "Request timeline",
+    "subtitle": "Follow the recorded approvals, procurement updates and request activity.",
+    "search": "Search history",
+    "searchPlaceholder": "Event, person, status or keyword",
+    "type": "Event type",
+    "allTypes": "All event types",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "sort": "Order",
+    "newest": "Newest first",
+    "oldest": "Oldest first",
+    "count": "Showing {{visible}} of {{total}} events",
+    "reset": "Clear filters",
+    "unknownTime": "Date not provided",
+    "system": "System",
+    "noMatches": "No events match these filters. Clear them to see the complete history.",
+    "empty": "No timeline events found."
+  },
   "operationalWorkspace": {
     "requestResults": "Request results",
     "inSummary": "Requests in summary",
