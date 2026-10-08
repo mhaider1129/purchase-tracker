@@ -1,3 +1,9 @@
+import RequestTrackingBrief from '../components/requests/RequestTrackingBrief';
+import {
+  matchesSubmissionDates,
+  sortTrackedRequests,
+} from '../utils/openRequestTracking';
+import { matchesSearchTokens } from '../utils/search';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import './OperationalWorkspaces.css';
@@ -281,41 +287,25 @@ const OpenRequestsPage = () => {
           : status === normalizedStatus;
       const matchesType = !normalizedType || type === normalizedType;
 
-      const matchesSearch =
-        !term ||
-        [
-          req.request_type,
-          req.justification,
-          req.status,
-          req.assigned_user_name,
-          req.project_name,
-          req.id,
-        ]
-          .filter((value) => value !== undefined && value !== null)
-          .some((value) => String(value).toLowerCase().includes(term));
+      const matchesSearch = matchesSearchTokens(term, [
+        req.request_type,
+        req.justification,
+        req.status,
+        req.assigned_user_name,
+        req.project_name,
+        req.id,
+        req.current_approver_role,
+      ]);
+      const matchesDates = matchesSubmissionDates(req, fromDate, toDate);
 
-      const createdAt = new Date(req.created_at);
-      const matchesFromDate = !fromDate || createdAt >= new Date(fromDate);
-      const matchesToDate = !toDate || createdAt <= new Date(toDate);
-
-      return (
-        matchesStatus &&
-        matchesType &&
-        matchesSearch &&
-        matchesFromDate &&
-        matchesToDate
-      );
+      return matchesStatus && matchesType && matchesSearch && matchesDates;
     });
   }, [requests, search, statusFilter, requestType, fromDate, toDate]);
 
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      const first = new Date(a.updated_at || a.created_at || 0).getTime();
-      const second = new Date(b.updated_at || b.created_at || 0).getTime();
-
-      return sortOrder === 'newest' ? second - first : first - second;
-    });
-  }, [filtered, sortOrder]);
+  const sorted = useMemo(
+    () => sortTrackedRequests(filtered, sortOrder),
+    [filtered, sortOrder],
+  );
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE));
   const activeFilterCount = [
@@ -860,7 +850,10 @@ const OpenRequestsPage = () => {
           </div>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-7 lg:items-end">
             <div className="md:col-span-2 lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="open-requests-search"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 {tr('searchLabel')}
               </label>
               <div className="relative mt-1">
@@ -872,39 +865,52 @@ const OpenRequestsPage = () => {
                   type="search"
                   className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
                   placeholder={tr('searchPlaceholder')}
+                  id="open-requests-search"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="open-requests-fromDate"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 {tr('filters.fromDate')}
               </label>
               <input
                 type="date"
                 className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                id="open-requests-fromDate"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="open-requests-toDate"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 {tr('filters.toDate')}
               </label>
               <input
                 type="date"
                 className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                id="open-requests-toDate"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="open-requests-requestType"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 {tr('filters.type')}
               </label>
               <select
                 className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                id="open-requests-requestType"
                 value={requestType}
                 onChange={(e) => setRequestType(e.target.value)}
               >
@@ -917,11 +923,15 @@ const OpenRequestsPage = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="open-requests-statusFilter"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 {tr('filters.status')}
               </label>
               <select
                 className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                id="open-requests-statusFilter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -936,11 +946,15 @@ const OpenRequestsPage = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="open-requests-sortOrder"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
                 {tr('filters.sort')}
               </label>
               <select
                 className="mt-1 w-full rounded-md border border-gray-300 bg-white p-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+                id="open-requests-sortOrder"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
               >
@@ -1121,7 +1135,12 @@ const OpenRequestsPage = () => {
                             {formatDate(req.updated_at, normalizedLocale)}
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
-                            {getCurrentStage(req)}
+                            <RequestTrackingBrief
+                              request={req}
+                              stage={getCurrentStage(req)}
+                              canEdit={canEdit}
+                              compact
+                            />
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             <div className="flex flex-wrap gap-2">
@@ -1439,11 +1458,13 @@ const OpenRequestsPage = () => {
                           {formatDate(req.updated_at, normalizedLocale)}
                         </dd>
                       </div>
-                      <div className="flex justify-between gap-3">
-                        <dt className="font-medium">{tr('table.stage')}</dt>
-                        <dd className="text-right">{getCurrentStage(req)}</dd>
-                      </div>
                     </dl>
+
+                    <RequestTrackingBrief
+                      request={req}
+                      stage={getCurrentStage(req)}
+                      canEdit={canEdit}
+                    />
 
                     {req.justification && (
                       <div className="mt-4 rounded-md bg-gray-50 p-3 text-sm text-gray-700 dark:bg-gray-800 dark:text-gray-200">
@@ -1456,7 +1477,7 @@ const OpenRequestsPage = () => {
                       </div>
                     )}
 
-                    <div className="mt-4 flex justify-end">
+                    <div className="mt-4 flex flex-wrap justify-end gap-2">
                       <button
                         type="button"
                         onClick={() => openEditRequest(req)}
@@ -1470,7 +1491,7 @@ const OpenRequestsPage = () => {
                         type="button"
                         onClick={() => toggleExpand(req.id)}
                         disabled={loadingId === req.id}
-                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         {expandedId === req.id
                           ? tr('hideItems')
@@ -1480,7 +1501,7 @@ const OpenRequestsPage = () => {
                         type="button"
                         onClick={() => toggleAttachments(req.id)}
                         disabled={attachmentsLoading}
-                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         {attachmentsButtonLabel}
                       </button>
@@ -1488,7 +1509,7 @@ const OpenRequestsPage = () => {
                         type="button"
                         onClick={() => toggleApprovals(req.id)}
                         disabled={loadingApprovalsId === req.id}
-                        className="ml-2 inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+                        className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
                       >
                         {renderApprovalButtonText(req.id)}
                       </button>
