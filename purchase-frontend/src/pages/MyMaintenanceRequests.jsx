@@ -6,6 +6,7 @@ import axios from '../api/axios';
 import { saveAs } from 'file-saver';
 import { buildExcelWorkbookBlob } from '../utils/excelWorkbookExport';
 import { getMaintenanceApprovalStepLabel } from '../utils/maintenanceApprovalStatus';
+import { matchesPendingApprovalStep, pendingApprovalSteps, summarizePendingApprovalSteps } from '../utils/pendingApprovalSteps';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -47,6 +48,7 @@ const MyMaintenanceRequests = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [approvalStepFilter, setApprovalStepFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [referenceSearch, setReferenceSearch] = useState('');
   const [requesterSearch, setRequesterSearch] = useState('');
@@ -137,6 +139,7 @@ const MyMaintenanceRequests = () => {
   }, [
     itemsPerPage,
     statusFilter,
+    approvalStepFilter,
     searchTerm,
     referenceSearch,
     requesterSearch,
@@ -620,10 +623,26 @@ const MyMaintenanceRequests = () => {
   ]);
 
   // Status cards are facets: count the search/date subset before the selected status.
-  const filteredRequests = useMemo(
-    () => matchingRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter)),
-    [matchingRequests, statusFilter],
+  const approvalFilteredRequests = useMemo(
+    () => matchingRequests.filter((request) => matchesPendingApprovalStep(request, approvalStepFilter)),
+    [matchingRequests, approvalStepFilter],
   );
+  const filteredRequests = useMemo(
+    () => approvalFilteredRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter)),
+    [approvalFilteredRequests, statusFilter],
+  );
+  const pendingApprovalSummary = useMemo(() => {
+    const subset = matchingRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter));
+    const counts = new Map(summarizePendingApprovalSteps(subset).map((step) => [step.key, step.count]));
+    return {
+      total: subset.filter((request) => pendingApprovalSteps(request).length > 0).length,
+      steps: summarizePendingApprovalSteps(requests).map((step) => ({ ...step, count: counts.get(step.key) || 0 })),
+    };
+  }, [matchingRequests, requests, statusFilter]);
+  const approvalStepLabel = (step) => tr('approvalSteps.stepLabel', {
+    level: step.level ?? tr('approvalSteps.unknownLevel'),
+    role: step.role || tr('approvalSteps.unknownApprover'),
+  });
 
   useEffect(() => {
     if (!expandedApprovalsId) {
@@ -673,10 +692,11 @@ const MyMaintenanceRequests = () => {
     currentPage * itemsPerPage,
   );
 
-  const statusSummary = useMemo(() => summarizeRequestStatuses(matchingRequests), [matchingRequests]);
+  const statusSummary = useMemo(() => summarizeRequestStatuses(approvalFilteredRequests), [approvalFilteredRequests]);
 
   const hasActiveFilters = Boolean(
     statusFilter !== 'all'
+      || approvalStepFilter
       || searchTerm
       || referenceSearch
       || requesterSearch
@@ -705,6 +725,7 @@ const MyMaintenanceRequests = () => {
 
   const resetFilters = () => {
     setStatusFilter('all');
+    setApprovalStepFilter('');
     setSearchTerm('');
     setReferenceSearch('');
     setRequesterSearch('');
@@ -809,6 +830,32 @@ const MyMaintenanceRequests = () => {
                 );
               })}
             </div>
+
+            <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5" aria-label={tr('approvalSteps.heading')}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="font-semibold text-slate-900">{tr('approvalSteps.heading')}</h2>
+                  <p className="text-sm text-slate-500">{tr('approvalSteps.helper')}</p>
+                </div>
+                {approvalStepFilter && <button type="button" onClick={() => setApprovalStepFilter('')} className="text-sm text-blue-600 underline">{tr('approvalSteps.clear')}</button>}
+              </div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+                {[{ key: 'any', count: pendingApprovalSummary.total, label: tr('approvalSteps.all') }, ...pendingApprovalSummary.steps.map((step) => ({ ...step, label: approvalStepLabel(step) }))].map((step) => (
+                  <button
+                    key={step.key}
+                    type="button"
+                    aria-pressed={approvalStepFilter === step.key}
+                    aria-label={`${step.label}: ${step.count}`}
+                    onClick={() => setApprovalStepFilter((current) => current === step.key ? '' : step.key)}
+                    className={`rounded-xl border border-blue-200 bg-blue-50/50 p-4 text-left hover:bg-blue-100 ${approvalStepFilter === step.key ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
+                  >
+                    <span className="text-sm font-semibold text-blue-800">{step.label}</span>
+                    <p className="mt-2 text-2xl font-bold text-slate-900">{step.count}</p>
+                  </button>
+                ))}
+              </div>
+              {pendingApprovalSummary.total === 0 && <p className="mt-3 text-sm text-slate-500">{tr('approvalSteps.empty')}</p>}
+            </section>
 
             <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
