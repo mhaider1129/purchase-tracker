@@ -7,6 +7,7 @@ import { saveAs } from 'file-saver';
 import { buildExcelWorkbookBlob } from '../utils/excelWorkbookExport';
 import { getMaintenanceApprovalStepLabel } from '../utils/maintenanceApprovalStatus';
 import { matchesPendingApprovalStep, pendingApprovalSteps, summarizePendingApprovalSteps } from '../utils/pendingApprovalSteps';
+import { approvalTargetDays, requestApprovalAging, matchesApprovalAgeFilter, compareApprovalAge } from '../utils/approvalAging';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -49,6 +50,9 @@ const MyMaintenanceRequests = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [statusFilter, setStatusFilter] = useState('all');
   const [approvalStepFilter, setApprovalStepFilter] = useState('');
+  const [approvalAgeFilter, setApprovalAgeFilter] = useState('all');
+  const [targetDays, setTargetDays] = useState('');
+  const [approvalNow, setApprovalNow] = useState(Date.now);
   const [searchTerm, setSearchTerm] = useState('');
   const [referenceSearch, setReferenceSearch] = useState('');
   const [requesterSearch, setRequesterSearch] = useState('');
@@ -140,6 +144,8 @@ const MyMaintenanceRequests = () => {
     itemsPerPage,
     statusFilter,
     approvalStepFilter,
+    approvalAgeFilter,
+    targetDays,
     searchTerm,
     referenceSearch,
     requesterSearch,
@@ -149,6 +155,15 @@ const MyMaintenanceRequests = () => {
   ]);
 
   const statusLabels = tr('statuses', { returnObjects: true });
+  useEffect(() => {
+    const timer = setInterval(() => setApprovalNow(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+  const agingOptions = useMemo(() => ({ now: approvalNow, targetDays: approvalTargetDays(targetDays), stepKey: approvalStepFilter }), [approvalNow, targetDays, approvalStepFilter]);
+  const waitingLabel = (age) => age.oldestHours == null
+    ? tr('approvalAging.unknown')
+    : tr('approvalAging.hours', { hours: Math.floor(age.oldestHours) });
+  const ownerLabel = (row) => [row.approver_name, row.approver_role].filter(Boolean).join(' · ') || tr('approvalSteps.unknownApprover');
 
   const itemStatusLabels = useMemo(
     () => ({
@@ -508,6 +523,7 @@ const MyMaintenanceRequests = () => {
         ...filteredRequests.map((r) => {
           const normalizedStatus = r.status?.trim().toLowerCase();
           const statusLabel = statusLabels[normalizedStatus] || r.status || '';
+          const age = requestApprovalAging(r, agingOptions);
 
           return [
             r.id,
@@ -526,6 +542,10 @@ const MyMaintenanceRequests = () => {
             r.approval_timeline || '',
             getCurrentApprovalStepLabel(r),
             getFinalApprovalDateLabel(r),
+            age.rows.map(ownerLabel).join(' | '),
+            age.pending ? tr('approvalAging.approve') : tr('approvalAging.noTask'),
+            age.pending ? waitingLabel(age) : '',
+            age.overdue ? tr('approvalAging.overdue') : '',
           ];
         }),
       ];
@@ -624,21 +644,27 @@ const MyMaintenanceRequests = () => {
 
   // Status cards are facets: count the search/date subset before the selected status.
   const approvalFilteredRequests = useMemo(
-    () => matchingRequests.filter((request) => matchesPendingApprovalStep(request, approvalStepFilter)),
-    [matchingRequests, approvalStepFilter],
+    () => matchingRequests.filter((request) => matchesPendingApprovalStep(request, approvalStepFilter) && matchesApprovalAgeFilter(request, approvalAgeFilter, agingOptions)),
+    [matchingRequests, approvalStepFilter, approvalAgeFilter, agingOptions],
   );
   const filteredRequests = useMemo(
-    () => approvalFilteredRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter)),
-    [approvalFilteredRequests, statusFilter],
+    () => approvalFilteredRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter)).sort((a, b) => sortDirection === 'approval-oldest' ? compareApprovalAge(a, b, agingOptions) : 0),
+    [approvalFilteredRequests, statusFilter, sortDirection, agingOptions],
   );
   const pendingApprovalSummary = useMemo(() => {
     const subset = matchingRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter));
     const counts = new Map(summarizePendingApprovalSteps(subset).map((step) => [step.key, step.count]));
+    const metrics = (stepKey) => {
+      const ages = subset.map((request) => requestApprovalAging(request, { ...agingOptions, stepKey })).filter((age) => age.pending);
+      const known = ages.map((age) => age.oldestHours).filter((hours) => hours != null);
+      return { overdue: ages.filter((age) => age.overdue).length, unknown: ages.filter((age) => age.unknownCount > 0).length, oldestHours: known.length ? Math.max(...known) : null };
+    };
     return {
       total: subset.filter((request) => pendingApprovalSteps(request).length > 0).length,
-      steps: summarizePendingApprovalSteps(requests).map((step) => ({ ...step, count: counts.get(step.key) || 0 })),
+      ...metrics('any'),
+      steps: summarizePendingApprovalSteps(requests).map((step) => ({ ...step, count: counts.get(step.key) || 0, ...metrics(step.key) })),
     };
-  }, [matchingRequests, requests, statusFilter]);
+  }, [matchingRequests, requests, statusFilter, agingOptions]);
   const approvalStepLabel = (step) => tr('approvalSteps.stepLabel', {
     level: step.level ?? tr('approvalSteps.unknownLevel'),
     role: step.role || tr('approvalSteps.unknownApprover'),
@@ -697,6 +723,7 @@ const MyMaintenanceRequests = () => {
   const hasActiveFilters = Boolean(
     statusFilter !== 'all'
       || approvalStepFilter
+      || approvalAgeFilter !== 'all'
       || searchTerm
       || referenceSearch
       || requesterSearch
@@ -726,6 +753,7 @@ const MyMaintenanceRequests = () => {
   const resetFilters = () => {
     setStatusFilter('all');
     setApprovalStepFilter('');
+    setApprovalAgeFilter('all');
     setSearchTerm('');
     setReferenceSearch('');
     setRequesterSearch('');
@@ -840,7 +868,7 @@ const MyMaintenanceRequests = () => {
                 {approvalStepFilter && <button type="button" onClick={() => setApprovalStepFilter('')} className="text-sm text-blue-600 underline">{tr('approvalSteps.clear')}</button>}
               </div>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                {[{ key: 'any', count: pendingApprovalSummary.total, label: tr('approvalSteps.all') }, ...pendingApprovalSummary.steps.map((step) => ({ ...step, label: approvalStepLabel(step) }))].map((step) => (
+                {[{ ...pendingApprovalSummary, key: 'any', count: pendingApprovalSummary.total, label: tr('approvalSteps.all') }, ...pendingApprovalSummary.steps.map((step) => ({ ...step, label: approvalStepLabel(step) }))].map((step) => (
                   <button
                     key={step.key}
                     type="button"
@@ -851,10 +879,22 @@ const MyMaintenanceRequests = () => {
                   >
                     <span className="text-sm font-semibold text-blue-800">{step.label}</span>
                     <p className="mt-2 text-2xl font-bold text-slate-900">{step.count}</p>
+                    <p className="mt-2 text-xs text-slate-600">{tr('approvalAging.oldest')}: {waitingLabel(step)}</p>
+                    <p className="text-xs text-slate-600">{tr('approvalAging.overdue')}: {approvalTargetDays(targetDays) == null ? tr('approvalAging.targetUnset') : step.overdue}</p>
+                    {step.unknown > 0 && <p className="text-xs text-slate-500">{tr('approvalAging.unknownCount', { count: step.unknown })}</p>}
                   </button>
                 ))}
               </div>
               {pendingApprovalSummary.total === 0 && <p className="mt-3 text-sm text-slate-500">{tr('approvalSteps.empty')}</p>}
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="text-sm">{tr('approvalAging.target')}<input type="number" min="1" max="365" step="1" value={targetDays} onChange={(event) => { setTargetDays(event.target.value); setApprovalAgeFilter('all'); }} className="ml-2 rounded border px-3 py-2" /></label>
+                <label className="text-sm">{tr('approvalAging.filter')}<select value={approvalAgeFilter} onChange={(event) => setApprovalAgeFilter(event.target.value)} className="ml-2 rounded border px-3 py-2">
+                  <option value="all">{tr('approvalAging.all')}</option>
+                  <option value="overdue" disabled={approvalTargetDays(targetDays) == null}>{tr('approvalAging.overdue')}</option>
+                  <option value="unknown">{tr('approvalAging.unknown')}</option>
+                </select></label>
+              </div>
+              <p className="mt-2 text-xs text-slate-500">{tr('approvalAging.targetHelp')}</p>
             </section>
 
             <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -975,6 +1015,7 @@ const MyMaintenanceRequests = () => {
                   onChange={(event) => setSortDirection(event.target.value)}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring"
                 >
+                  <option value="approval-oldest">{tr('approvalAging.sortOldest')}</option>
                   <option value="desc">{tr('filters.sortOptions.desc')}</option>
                   <option value="asc">{tr('filters.sortOptions.asc')}</option>
                 </select>
@@ -1000,6 +1041,7 @@ const MyMaintenanceRequests = () => {
                   <th className="border px-3 py-2 text-left">{tr('table.project')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.reference')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.status')}</th>
+                  <th className="border px-3 py-2 text-left">{tr('approvalAging.ownerAction')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.submitted')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.attachments')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.items')}</th>
@@ -1009,6 +1051,7 @@ const MyMaintenanceRequests = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {paginated.map((r) => {
+                  const age = requestApprovalAging(r, agingOptions);
                   const isApprovalsExpanded =
                     String(expandedApprovalsId) === String(r.id);
                   const isItemsExpanded = String(expandedItemsId) === String(r.id);
@@ -1045,6 +1088,12 @@ const MyMaintenanceRequests = () => {
                         <td className="border px-3 py-2">{r.maintenance_ref_number || '-'}</td>
                         <td className="border px-3 py-2">
                           <span className={getStatusBadge(r.status)}>{statusLabels[r.status?.toLowerCase()] || r.status}</span>
+                        </td>
+                        <td className="border px-3 py-2 text-sm">
+                          {age.rows.map((row, index) => <div key={row.approval_id ?? index}>{ownerLabel(row)}</div>)}
+                          <p>{age.pending ? tr('approvalAging.approve') : tr('approvalAging.noTask')}</p>
+                          {age.pending && <p className="text-xs text-slate-500">{waitingLabel(age)}{age.unknownCount > 0 && age.oldestHours != null ? ` · ${tr('approvalAging.unknown')}` : ''}</p>}
+                          {age.overdue && <span className="text-xs font-semibold text-amber-800">{tr('approvalAging.overdue')}</span>}
                         </td>
                         <td className="border px-3 py-2">
                           {new Date(r.created_at).toLocaleString()}
@@ -1100,7 +1149,7 @@ const MyMaintenanceRequests = () => {
                       </tr>
                       {isAttachmentsExpanded && (
                         <tr>
-                          <td colSpan={11} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={12} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <RequestAttachmentsSection
                               attachments={attachments}
                               isLoading={attachmentsLoading}
@@ -1119,7 +1168,7 @@ const MyMaintenanceRequests = () => {
                       )}
                       {isItemsExpanded && (
                         <tr>
-                          <td colSpan={11} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={12} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <div className="space-y-3">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <h3 className="font-semibold text-gray-700">{itemCopy.heading}</h3>
@@ -1185,7 +1234,7 @@ const MyMaintenanceRequests = () => {
                       )}
                       {isApprovalsExpanded && (
                         <tr>
-                          <td colSpan={11} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                          <td colSpan={12} className="border-t border-gray-200 bg-gray-50 px-4 py-4">
                             <ApprovalTimeline
                               approvals={approvalsMap[r.id]}
                               isLoading={loadingApprovalsId === r.id}

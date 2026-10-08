@@ -1,17 +1,26 @@
 // Count requests per active approval level/role, rather than approval rows.
-export const pendingApprovalSteps = (request) => {
+export const activePendingApprovals = (request) => {
   // An explicit empty list is authoritative. Scalar fallback supports rollout
   // against the older API, which exposes one active pending approver only.
-  const rows = Array.isArray(request.current_pending_approvals)
+  return Array.isArray(request.current_pending_approvals)
     ? request.current_pending_approvals
     : request.current_pending_approver_name || request.current_pending_approver_role
-      ? [{ approval_level: request.current_approval_step, approver_role: request.current_pending_approver_role }]
+      ? [{ approval_level: request.current_approval_step, approver_role: request.current_pending_approver_role, approver_name: request.current_pending_approver_name }]
       : [];
+};
+
+export const approvalStepKey = (row) => JSON.stringify([
+  row.approval_level == null ? null : String(row.approval_level),
+  String(row.approver_role || '').trim().toLowerCase(),
+]);
+
+export const pendingApprovalSteps = (request) => {
+  const rows = activePendingApprovals(request);
   const steps = new Map();
   rows.forEach((row) => {
     const role = String(row.approver_role || '').trim();
     const level = row.approval_level == null ? null : String(row.approval_level);
-    const key = JSON.stringify([level, role.toLowerCase()]);
+    const key = approvalStepKey(row);
     steps.set(key, { key, level, role });
   });
   return [...steps.values()];

@@ -29,6 +29,37 @@ beforeEach(() => {
   buildExcelWorkbookBlob.mockResolvedValue(new Blob(['workbook']));
 });
 
+test('waiting-time controls filter unknown/overdue requests and export current owners with matching headers', async () => {
+  const clock = jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-08T12:00:00Z'));
+  axios.get.mockImplementation((url) => Promise.resolve({ data: url === '/requests/my-maintenance' ? [
+    { ...requests[0], current_pending_approvals: [{ approval_level: 5, approver_role: 'CMO', approver_name: 'Doctor', activated_at: '2026-10-01T12:00:00Z' }] },
+    { ...requests[1], current_pending_approvals: [{ approval_level: 8, approver_role: 'COO', activated_at: null }] },
+    { ...requests[2], current_pending_approvals: [{ approval_level: 6, approver_role: 'SCM', activated_at: '2026-10-08T11:00:00Z' }] },
+  ] : [] }));
+  try {
+    render(<MyMaintenanceRequests />);
+    await screen.findByText('Start boundary');
+    fireEvent.change(screen.getByLabelText('Sort'), { target: { value: 'approval-oldest' } });
+    const queueRows = screen.getAllByRole('row').slice(1);
+    expect(queueRows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Older'), expect.stringContaining('End boundary'), expect.stringContaining('Start boundary'),
+    ]);
+    fireEvent.change(screen.getByLabelText('Overdue target (days)'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Waiting time filter'), { target: { value: 'overdue' } });
+    expect(screen.getByRole('button', { name: 'Total 1' })).toBeInTheDocument();
+    expect(screen.getByText('Doctor · CMO')).toBeInTheDocument();
+    expect(screen.queryByText('Start boundary')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }));
+    await waitFor(() => expect(saveAs).toHaveBeenCalled());
+    const exported = buildExcelWorkbookBlob.mock.calls[0][0];
+    expect(exported[1]).toHaveLength(exported[0].length);
+    expect(exported[1].slice(-4)).toEqual(['Doctor · CMO', 'Approval required', '168 hours', 'Overdue']);
+    fireEvent.change(screen.getByLabelText('Waiting time filter'), { target: { value: 'unknown' } });
+    expect(screen.getByText('Start boundary')).toBeInTheDocument();
+    expect(screen.queryByText('Older')).not.toBeInTheDocument();
+  } finally { clock.mockRestore(); }
+});
+
 test('date filters update scorecards, include both boundaries, retain facets and reset counts', async () => {
   render(<MyMaintenanceRequests />);
   await screen.findByText('Start boundary');

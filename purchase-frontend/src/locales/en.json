@@ -1548,6 +1548,22 @@
       "noRequests": "No maintenance requests found.",
       "prompt": "Submit a new maintenance request to see it listed here."
     },
+    "approvalAging": {
+      "unknown": "Waiting time unavailable",
+      "hours": "{{hours}} hours",
+      "oldest": "Oldest wait",
+      "overdue": "Overdue",
+      "targetUnset": "Target not set",
+      "unknownCount": "{{count}} requests with unknown waiting time",
+      "target": "Overdue target (days)",
+      "filter": "Waiting time filter",
+      "all": "All waiting times",
+      "targetHelp": "Set a reporting target from 1 to 365 days for this view. It does not change approval rules. Historical waiting times are unavailable until a new activation is recorded.",
+      "sortOldest": "Oldest pending approval first",
+      "ownerAction": "Current owner / next action",
+      "approve": "Approval required",
+      "noTask": "No active approval task"
+    },
     "approvalSteps": {
       "heading": "Pending approval steps",
       "helper": "Requests awaiting active approvals in the filtered period. Select a card to filter the queue. A request with parallel approvals can appear under more than one step.",
@@ -1625,7 +1641,11 @@
         "Approval Duration (Days)",
         "Approval Timeline",
         "Current Step of Approval",
-        "Date of Final Approval"
+        "Date of Final Approval",
+        "Current owner",
+        "Next action",
+        "Waiting time",
+        "Overdue"
       ],
       "filePrefix": "My_Maintenance_Requests",
       "noItems": "No items recorded",
