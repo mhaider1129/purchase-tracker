@@ -1,8 +1,10 @@
+import AllRequestGuidance from "../components/requests/AllRequestGuidance";
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
 import './OperationalWorkspaces.css';
 // src/pages/AllRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import axios from "../api/axios";
 import AssignRequestPanel from "../components/AssignRequestPanel";
@@ -179,16 +181,19 @@ const CURRENT_STEP_FILTER_OPTIONS = [
 ];
 
 export const getCurrentStep = (req) => {
-  if (req.status === "Rejected") return "Rejected";
-  if (req.status?.toLowerCase() === "available in stock")
+  const status = normalizeStatus(req.status);
+  if (status === "rejected") return "Rejected";
+  if (["cancelled", "canceled"].includes(status)) return "Cancelled";
+  if (["on hold", "on_hold"].includes(status)) return "On Hold";
+  if (status === "available in stock")
     return "Available in Stock";
-  if (req.status?.toLowerCase() === "completed") return "Completed";
-  if (req.status?.toLowerCase() === "technical_inspection_pending")
+  if (status === "completed") return "Completed";
+  if (status === "technical_inspection_pending")
     return "Technical Inspection Pending";
-  if (req.status?.toLowerCase() === "received") return "Received";
-  if (req.status?.toLowerCase() === "partially procured")
+  if (status === "received") return "Received";
+  if (status === "partially procured")
     return "Partially Procured";
-  if (req.status === "Approved" && !req.current_approver_role)
+  if (status === "approved" && !req.current_approver_role)
     return "Approved";
   if (req.current_approver_role) {
     return (
@@ -202,8 +207,10 @@ export const getCurrentStep = (req) => {
 // Map the current step to a colorful badge
 export const getStepColor = (step) => {
   switch (step) {
+    case "Cancelled":
     case "Rejected":
       return "bg-red-100 text-red-800";
+    case "On Hold":
     case "Technical Inspection Pending":
       return "bg-amber-100 text-amber-800";
     case "Completed":
@@ -270,6 +277,7 @@ const isPostApprovalStatus = (status) => {
 };
 
 const AllRequestsPage = () => {
+  const { t } = useTranslation();
   const { user } = useCurrentUser();
   const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
     "all-requests-request-view-mode",
@@ -1743,6 +1751,13 @@ const AllRequestsPage = () => {
               No requests found for the selected filters. Try adjusting or
               clearing filters.
             </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-3 rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              {t("allRequestGuidance.reset")}
+            </button>
           </Card>
         ) : (
           <div className="space-y-4">
@@ -1776,7 +1791,7 @@ const AllRequestsPage = () => {
               );
               const estimatedCostValue = Number(request.estimated_cost || 0);
               const assignedDisplay = request.assigned_user_name
-                ? `${request.assigned_user_name} (${request.assigned_user_role})`
+                ? `${request.assigned_user_name}${request.assigned_user_role ? ` (${request.assigned_user_role})` : ""}`
                 : request.split_assignees?.length > 0
                   ? `Split among ${request.split_assignees.map((user) => user.name).join(", ")}`
                   : "Not Assigned";
@@ -1921,18 +1936,6 @@ const AllRequestsPage = () => {
                           </p>
                           <p>
                             <strong>Assigned To:</strong> {assignedDisplay}
-                          </p>
-                          <p>
-                            <strong>Current Step:</strong>{" "}
-                            <span
-                              className={`px-2 py-1 rounded ${getStepColor(step)}`}
-                            >
-                              {step}
-                            </span>
-                            {request.current_approver_role &&
-                              request.current_approval_level && (
-                                <> (Level {request.current_approval_level})</>
-                              )}
                           </p>
                         </>
                       )}
@@ -2122,6 +2125,14 @@ const AllRequestsPage = () => {
                       )}
                     </div>
                   </div>
+
+                  <AllRequestGuidance
+                    request={request}
+                    step={step}
+                    assignedDisplay={
+                      assignedDisplay === "Not Assigned" ? undefined : assignedDisplay
+                    }
+                  />
 
                   {expandedAssignId === request.id && (
                     <AssignRequestPanel

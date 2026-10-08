@@ -29,3 +29,11 @@ describe('request reclassification access', () => {
     expect(hasPermission({ permissions: ['requests.reclassify'] }, 'requests.reclassify')).toBe(true);
   });
 });
+describe('All Requests terminal and held stages', () => {
+  it.each([[' rejected ', 'Rejected'], ['cancelled', 'Cancelled'], ['canceled', 'Cancelled'], ['On Hold', 'On Hold'], ['on_hold', 'On Hold']])('keeps %s ahead of stale approver data', (status, expected) => {
+    expect(getCurrentStep({ status, current_approver_role: 'SCM' })).toBe(expected);
+  });
+  it('recognizes lowercase approved without an approver', () => {
+    expect(getCurrentStep({ status: 'approved' })).toBe('Approved');
+  });
+});

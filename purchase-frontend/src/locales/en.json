@@ -1,4 +1,20 @@
 {
+  "allRequestGuidance": {
+    "assignedUnknown": "Assignee name unavailable",
+    "title": "Request progress and next action",
+    "step": "Current step",
+    "level": "Approval level",
+    "assigned": "Assigned to",
+    "notAssigned": "Not assigned",
+    "completed": "Fulfillment recorded. Open the workspace to review the final records.",
+    "closed": "Request closed. Open the workspace to review the decision and history.",
+    "held": "Request on hold. Review the hold reason and approval history in the workspace.",
+    "approval": "Approval is pending. Review the approval chain in the workspace.",
+    "procurement": "Follow procurement progress and remaining work in the workspace.",
+    "unassigned": "No procurement assignee recorded. Review assignment in the workspace.",
+    "review": "Open the workspace to review the request and its next required action.",
+    "reset": "Clear filters"
+  },
   "openRequestTracking": {
     "tracking": "Request tracking summary",
     "editable": "Editing available before approval activity starts.",
