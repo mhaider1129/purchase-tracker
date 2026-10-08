@@ -1,4 +1,19 @@
 {
+  "assignedWorkEnhancements": {
+    "all": "All assigned",
+    "ready": "Ready to complete",
+    "attention": "Needs attention",
+    "views": "Assigned work views",
+    "urgent": "Urgent only",
+    "countsHelp": "Counts cover all assigned requests. Search and other filters can narrow each view.",
+    "nextSteps": "Completion checklist",
+    "readyHeading": "Ready for completion",
+    "nextHeading": "Before completing this request",
+    "readyHelp": "Item checks and recorded cost are complete. Use Mark Request as Completed to finish.",
+    "missingCost": "Record and save the request total cost.",
+    "incompleteItems": "Review item statuses and recorded quantities; finalize any outstanding items.",
+    "finalized": "{{finalized}} of {{total}} items finalized"
+  },
   "approvalQueueEnhancements": {
     "totalQueue": "Requests in queue",
     "queueViews": "Approval queue views",

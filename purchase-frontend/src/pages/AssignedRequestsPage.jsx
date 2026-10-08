@@ -1,3 +1,4 @@
+import AssignedWorkGuidance, { AssignedWorkViews } from '../components/requests/AssignedWorkGuidance';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
 import './OperationalWorkspaces.css';
 // src/pages/AssignedRequestsPage.jsx
@@ -1275,6 +1276,7 @@ const AssignedRequestsPage = () => {
       ) : (
         <>
           <WorkspaceSectionNav sections={[{ id: 'assigned-filters', label: 'filters' }, { id: 'assigned-results', label: 'requestResults' }]} />
+          <AssignedWorkViews requests={requests} completionStates={completionStates} value={completionFilter} onChange={setCompletionFilter} urgency={urgencyFilter} onUrgencyChange={setUrgencyFilter} />
           <div id="assigned-filters" tabIndex={-1} className="workspace-filter-panel mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
               <span
@@ -1467,6 +1469,7 @@ const AssignedRequestsPage = () => {
                   "No assigned requests match your search or filters.",
                 )}
               </p>
+              <button type="button" onClick={resetFilters} className="mt-3 text-sm font-semibold text-blue-600">{tr("filters.reset", "Reset filters")}</button>
             </div>
           ) : (
             visibleRequests.map((request) => {
@@ -1639,6 +1642,7 @@ const AssignedRequestsPage = () => {
                       </div>
                     </div>
 
+                    <AssignedWorkGuidance request={request} completionState={completionState} />
                     <div
                       className="mt-5"
                       aria-label={tr(
@@ -1655,7 +1659,7 @@ const AssignedRequestsPage = () => {
                         </span>
                         <span>{progress}%</span>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div role="progressbar" aria-label={tr("requestCard.progressLabel", "Procurement progress")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="h-2 overflow-hidden rounded-full bg-slate-100">
                         <div
                           className={`h-full rounded-full transition-all ${progress === 100 ? "bg-emerald-500" : "bg-blue-600"}`}
                           style={{ width: `${progress}%` }}
