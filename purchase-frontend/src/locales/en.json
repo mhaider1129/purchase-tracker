@@ -1,4 +1,19 @@
 {
+  "requestOverviewReview": {
+    "title": "Review this request",
+    "hint": "Open a section to review the records behind this overview.",
+    "items": "Review items",
+    "itemsCount_one": "{{count}} item awaiting final status",
+    "itemsCount_other": "{{count}} items awaiting final status",
+    "approvals": "Review approvals",
+    "approvalsCount_one": "{{count}} pending approval",
+    "approvalsCount_other": "{{count}} pending approvals",
+    "documents": "View documents",
+    "documentsCount_one": "{{count}} attachment",
+    "documentsCount_other": "{{count}} attachments",
+    "updated": "Last updated",
+    "unknown": "Not recorded"
+  },
   "allRequestGuidance": {
     "assignedUnknown": "Assignee name unavailable",
     "title": "Request progress and next action",

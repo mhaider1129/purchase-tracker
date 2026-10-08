@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import {fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import {MemoryRouter,Route,Routes} from 'react-router-dom';
 import RequestDetailWorkspace from './RequestDetailWorkspace';
@@ -39,4 +40,15 @@ test('server-provided request action context remains visible when switching deta
   expect(context.getByText('Ahmed')).toBeInTheDocument();
   expect(context.getByText('Supplier response')).toBeInTheDocument();
   expect(api.post).not.toHaveBeenCalled();
+});
+
+test('overview shortcuts switch tabs without requiring mutation permissions', async () => {
+ await i18n.changeLanguage('en');
+ api.post.mockClear();
+ api.get.mockImplementation(async () => ({data:{request:{request_id:80,request_status:'Pending'},items:[],approvals:[],attachments:[],available_actions:[]}}));
+ render(<MemoryRouter initialEntries={['/requests/80']}><Routes><Route path="/requests/:requestId" element={<RequestDetailWorkspace />} /></Routes></MemoryRouter>);
+ fireEvent.click(await screen.findByRole('button',{name:/Review approvals/}));
+ expect(screen.getByRole('tab',{name:/^Approvals/})).toHaveAttribute('aria-selected','true');
+ expect(screen.queryByRole('button',{name:'Mark Request as Completed'})).not.toBeInTheDocument();
+ expect(api.post).not.toHaveBeenCalled();
 });
