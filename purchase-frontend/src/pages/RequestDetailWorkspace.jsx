@@ -1,3 +1,4 @@
+import RequestApprovalsReview from "../components/requests/RequestApprovalsReview";
 import RequestItemsFocus from "../components/requests/RequestItemsFocus";
 import { matchesSearchTokens } from "../utils/search";
 import RequestOverviewReview from "../components/requests/RequestOverviewReview";
@@ -531,12 +532,7 @@ const RequestDetailWorkspace = () => {
           </section>
         )}
 
-        {activeTab === 'Approvals' && (
-          <section className="space-y-4">
-            {approvals.map((approval) => <div key={approval.approval_id} className="rounded-2xl bg-white p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-sm font-semibold text-slate-500">Level {approval.approval_level}</p><h3 className="text-lg font-bold text-slate-900">{approval.approver_name || 'Unassigned approver'} <span className="text-sm font-normal text-slate-500">{approval.approver_role}</span></h3></div><StatusBadge>{approval.status}</StatusBadge></div><p className="mt-3 text-sm text-slate-600">{approval.comments || 'No comments.'}</p><p className="mt-2 text-xs text-slate-500">{approval.is_active ? 'Active step • ' : ''}Approved at: {formatDateTime(approval.approved_at)} • Waiting hours: {approval.waiting_time_hours || 0}</p></div>)}
-            {approvals.length === 0 ? <EmptyState>No approvals found.</EmptyState> : null}
-          </section>
-        )}
+        {activeTab === 'Approvals' && <RequestApprovalsReview approvals={approvals} />}
 
         {activeTab === 'Procurement' && (
           <section className="space-y-4">

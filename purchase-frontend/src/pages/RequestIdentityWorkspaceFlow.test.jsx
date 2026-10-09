@@ -70,3 +70,14 @@ test('item focus and clear filters work without enabling procurement mutations',
  expect(screen.queryByRole('button',{name:'Register'})).not.toBeInTheDocument();
  expect(api.post).not.toHaveBeenCalled();
 });
+
+test('approval filters stay read-only in the request workspace', async () => {
+ await i18n.changeLanguage('en'); api.post.mockClear();
+ api.get.mockImplementation(async () => ({data:{request:{request_id:82},items:[],available_actions:[],approvals:[{approval_id:1,status:'Pending',is_active:true,approver_name:'Ahmed'},{approval_id:2,status:'Approved',approver_name:'Sara'}]}}));
+ render(<MemoryRouter initialEntries={['/requests/82']}><Routes><Route path="/requests/:requestId" element={<RequestDetailWorkspace />} /></Routes></MemoryRouter>);
+ fireEvent.click(await screen.findByRole('tab',{name:/^Approvals/}));
+ fireEvent.click(screen.getByRole('button',{name:'Decisions 1'}));
+ expect(screen.queryByText('Ahmed')).not.toBeInTheDocument();
+ expect(screen.getByText('Sara')).toBeInTheDocument();
+ expect(api.post).not.toHaveBeenCalled();
+});
