@@ -1,4 +1,12 @@
 {
+  "requestItemsFocus": {
+    "views": "Item views",
+    "all": "All items",
+    "remaining": "Remaining quantity",
+    "identity": "Needs identity",
+    "showing": "Showing {{visible}} of {{total}} items",
+    "reset": "Clear item filters"
+  },
   "requestOverviewReview": {
     "title": "Review this request",
     "hint": "Open a section to review the records behind this overview.",

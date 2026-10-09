@@ -52,3 +52,21 @@ test('overview shortcuts switch tabs without requiring mutation permissions', as
  expect(screen.queryByRole('button',{name:'Mark Request as Completed'})).not.toBeInTheDocument();
  expect(api.post).not.toHaveBeenCalled();
 });
+
+test('item focus and clear filters work without enabling procurement mutations', async () => {
+ await i18n.changeLanguage('en');
+ api.post.mockClear();
+ const items=[{item_id:1,item_name:'Pump',requested_quantity:3,purchased_quantity:1,remaining_quantity:2,generic_item_id:11,procurement_status:'pending'}, {item_id:2,item_name:'Rejected stand',requested_quantity:2,purchased_quantity:0,remaining_quantity:2,approval_status:'Rejected'}];
+ api.get.mockImplementation(async () => ({data:{request:{request_id:81,request_status:'Pending'},items,available_actions:[]}}));
+ render(<MemoryRouter initialEntries={['/requests/81']}><Routes><Route path="/requests/:requestId" element={<RequestDetailWorkspace />} /></Routes></MemoryRouter>);
+ fireEvent.click(await screen.findByRole('tab',{name:/^Items/}));
+ fireEvent.click(screen.getByRole('button',{name:'Remaining quantity 1'}));
+ expect(screen.getByText('Pump')).toBeInTheDocument();
+ expect(screen.queryByText('Rejected stand')).not.toBeInTheDocument();
+ fireEvent.change(screen.getByRole('searchbox'),{target:{value:'missing'}});
+ expect(screen.getByText('No items match the current filters.')).toBeInTheDocument();
+ fireEvent.click(screen.getByRole('button',{name:'Clear item filters'}));
+ expect(screen.getByText('Rejected stand')).toBeInTheDocument();
+ expect(screen.queryByRole('button',{name:'Register'})).not.toBeInTheDocument();
+ expect(api.post).not.toHaveBeenCalled();
+});
