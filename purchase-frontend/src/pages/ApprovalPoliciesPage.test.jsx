@@ -405,10 +405,33 @@ test("version readiness distinguishes structural validity from current routabili
 test("shadow version is read-only and comparison renders all categories", () => {
   const { rerender } = render(
     <VersionDetail
-      version={{ id: 4, status: "SHADOW", version_number: 1, rules: [] }}
+      version={{
+        id: 4,
+        status: "SHADOW",
+        version_number: 1,
+        rules: [
+          {
+            code: "R",
+            name: "Rule",
+            priority: 1,
+            conditions: [],
+            steps: [
+              {
+                approvalLevel: 1,
+                stepOrder: 1,
+                semanticKey: "CAPABILITY",
+                displayName: "Capability holder",
+                resolverType: "CAPABILITY_HOLDER",
+                resolverReference: "approval-authority.supply-chain",
+              },
+            ],
+          },
+        ],
+      }}
     />,
   );
   expect(screen.getByText(/Read-only snapshot/)).toBeInTheDocument();
+  expect(screen.getByRole("combobox", { name: "Capability" })).toBeDisabled();
   rerender(
     <ShadowComparison
       run={{
