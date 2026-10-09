@@ -1,4 +1,19 @@
 {
+  "requestOverviewReview": {
+    "title": "مراجعة هذا الطلب",
+    "hint": "افتح القسم لمراجعة السجلات التي يستند إليها هذا الملخص.",
+    "items": "مراجعة الأصناف",
+    "itemsCount_one": "{{count}} صنف بانتظار الحالة النهائية",
+    "itemsCount_other": "{{count}} أصناف بانتظار الحالة النهائية",
+    "approvals": "مراجعة الموافقات",
+    "approvalsCount_one": "{{count}} موافقة قيد الانتظار",
+    "approvalsCount_other": "{{count}} موافقات قيد الانتظار",
+    "documents": "عرض المستندات",
+    "documentsCount_one": "{{count}} مرفق",
+    "documentsCount_other": "{{count}} مرفقات",
+    "updated": "آخر تحديث",
+    "unknown": "غير مسجل"
+  },
   "allRequestGuidance": {
     "assignedUnknown": "اسم المسؤول غير متاح",
     "title": "تقدم الطلب والخطوة التالية",

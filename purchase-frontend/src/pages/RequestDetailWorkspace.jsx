@@ -1,3 +1,4 @@
+import RequestOverviewReview from "../components/requests/RequestOverviewReview";
 import RequestTimeline from '../components/requests/RequestTimeline';
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import RequestActionContext from '../components/workspaces/RequestActionContext';
@@ -32,6 +33,15 @@ export const filterWorkspaceItems = (items, query = '', status = 'all') => {
     ].some((value) => String(value || '').toLowerCase().includes(normalizedQuery));
     return matchesStatus && matchesQuery;
   });
+};
+
+export const summarizeWorkspaceItems = (items = [], approvals = [], attachments = []) => {
+  const eligible = items.filter((item) => !isRejectedItem(item));
+  const fullyProcured = eligible.filter((item) => Number(item.requested_quantity) > 0 && Number(item.purchased_quantity || 0) >= Number(item.requested_quantity)).length;
+  const partiallyProcured = eligible.filter((item) => Number(item.purchased_quantity) > 0 && Number(item.purchased_quantity) < Number(item.requested_quantity)).length;
+  const remainingQuantity = eligible.reduce((sum, item) => sum + Math.max(0, Number(item.remaining_quantity) || 0), 0);
+  const pendingApprovals = approvals.filter((approval) => String(approval.status || '').trim().toLowerCase() === 'pending').length;
+  return { totalItems: items.length, fullyProcured, partiallyProcured, remainingQuantity, pendingApprovals, attachmentsCount: attachments.length };
 };
 
 const statusClasses = {
@@ -161,14 +171,10 @@ const RequestDetailWorkspace = () => {
     [items, itemQuery, itemStatusFilter, sortItemsAlphabetically],
   );
 
-  const summary = useMemo(() => {
-    const totalItems = items.length;
-    const fullyProcured = items.filter((item) => Number(item.remaining_quantity || 0) <= 0 && Number(item.requested_quantity || 0) > 0).length;
-    const partiallyProcured = items.filter((item) => Number(item.purchased_quantity || 0) > 0 && Number(item.remaining_quantity || 0) > 0).length;
-    const remainingQuantity = items.reduce((sum, item) => sum + Number(item.remaining_quantity || 0), 0);
-    const pendingApprovals = approvals.filter((approval) => String(approval.status || '').toLowerCase() === 'pending').length;
-    return { totalItems, fullyProcured, partiallyProcured, remainingQuantity, pendingApprovals, attachmentsCount: attachments.length };
-  }, [items, approvals, attachments]);
+  const summary = useMemo(
+    () => summarizeWorkspaceItems(items, approvals, attachments),
+    [items, approvals, attachments],
+  );
 
   const procurementProgress = useMemo(() => {
     const requested = procurableItems.reduce((sum, item) => sum + Number(item.requested_quantity || 0), 0);
@@ -453,14 +459,12 @@ const RequestDetailWorkspace = () => {
                   <div><dt className="text-xs uppercase text-slate-500">Required delivery</dt><dd className="mt-1 text-slate-800">{formatDate(request.required_delivery_date)}</dd></div>
                 </dl>
               </section>
-              <section className="rounded-2xl bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-bold text-slate-900">Current work state</h2>
-                <div className="mt-4 space-y-3 text-sm">
-                  <p><span className="font-semibold text-slate-600">Bottleneck:</span> {request.current_bottleneck || '—'}</p>
-                  <p><span className="font-semibold text-slate-600">Next action:</span> {request.next_required_action || '—'}</p>
-                  <p><span className="font-semibold text-slate-600">Updated:</span> {formatDateTime(request.updated_at)}</p>
-                </div>
-              </section>
+              <RequestOverviewReview
+                request={request}
+                summary={summary}
+                unfinishedCount={completionReadiness.incompleteItems.length}
+                onNavigate={setActiveTab}
+              />
             </div>
             {priority ? <section aria-labelledby="request-priority-heading" className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
               <h2 id="request-priority-heading" className="text-lg font-bold text-blue-950">Procurement Priority</h2>
