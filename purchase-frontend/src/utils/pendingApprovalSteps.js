@@ -14,6 +14,10 @@ export const approvalStepKey = (row) => JSON.stringify([
   String(row.approver_role || '').trim().toLowerCase(),
 ]);
 
+export const approvalOwnerKey = (row) => row.approver_id != null
+  ? `user:${row.approver_id}`
+  : row.approver_name ? JSON.stringify([row.approver_name.trim().toLowerCase(), String(row.approver_role || '').trim().toLowerCase()]) : 'unassigned';
+
 export const pendingApprovalSteps = (request) => {
   const rows = activePendingApprovals(request);
   const steps = new Map();

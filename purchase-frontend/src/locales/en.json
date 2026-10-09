@@ -1581,7 +1581,43 @@
       "rejected": "Rejected"
     }
   },
+  "maintenanceApprovalReporting": {
+    "heading": "Maintenance approval reporting",
+    "help": "Save the organization reporting target across sessions. Leave blank to disable overdue reporting. This does not change approval rules or send reminders.",
+    "loadError": "Unable to load reporting policy.",
+    "saveError": "Unable to save reporting policy.",
+    "saved": "Reporting target saved. Reload the maintenance dashboard to use it.",
+    "loading": "Loading reporting policy…",
+    "migration": "Apply 046_maintenance_approval_reporting_policy.sql before saving.",
+    "target": "Organization overdue target (days)",
+    "reason": "Reason for change",
+    "save": "Save reporting target",
+    "saving": "Saving…",
+    "lastReason": "Last reason"
+  },
   "myMaintenanceRequestsPage": {
+    "bottlenecks": {
+      "heading": "Approval bottlenecks by approver",
+      "help": "Distinct requests per current approver within date, search, status and approval-step filters. Select an approver to filter the queue and export. Bands use the oldest known wait per request; unknown includes any missing start, so it can overlap a known band. This table retains all approvers before its own owner and waiting-time filters.",
+      "ownerFilter": "Pending with",
+      "allOwners": "All approvers",
+      "filteredOwner": "Selected approver (no matches)",
+      "bandFilter": "Waiting-time band",
+      "all": "All bands",
+      "under2": "Under 2 days",
+      "days2to7": "2 to under 7 days",
+      "days7plus": "7 days or more",
+      "unknown": "Unknown waiting time",
+      "owner": "Approver",
+      "pending": "Pending requests",
+      "overdue": "Overdue requests",
+      "oldestRequest": "Oldest known pending request",
+      "unassigned": "Approver unavailable",
+      "empty": "No active approvals in this view.",
+      "savedTarget": "Saved organization target (days)",
+      "overrideHelp": "Editing the target here changes this view only. Administrators can save the organization target in Management → Approval reporting.",
+      "policyError": "Saved target could not be loaded. You can set a temporary target for this view."
+    },
     "eyebrow": "Maintenance operations",
     "errors": {
       "loadFailed": "We could not load your maintenance requests. Please try again later.",
