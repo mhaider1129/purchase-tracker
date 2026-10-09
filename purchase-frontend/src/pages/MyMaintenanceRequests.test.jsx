@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import MyMaintenanceRequests from './MyMaintenanceRequests';
 import axios from '../api/axios';
 import { saveAs } from 'file-saver';
@@ -29,6 +29,43 @@ beforeEach(() => {
   buildExcelWorkbookBlob.mockResolvedValue(new Blob(['workbook']));
 });
 
+test('saved target loads, approver and band filters count and export only matching approvals, reset restores queue', async () => {
+  const clock = jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-09T12:00:00Z'));
+  axios.get.mockImplementation((url) => Promise.resolve({ data: url === '/maintenance-approval-reporting-policy' ? { configured: true, overdue_target_days: 3 } : url === '/requests/my-maintenance' ? [
+    { ...requests[0], status: 'Submitted', current_pending_approvals: [{ approver_id: 1, approver_name: 'Clinical owner', approver_role: 'CMO', approval_level: 5, activated_at: '2026-10-01T12:00:00Z' }, { approver_id: 2, approver_name: 'Operations owner', approver_role: 'COO', approval_level: 8, activated_at: '2026-10-09T11:00:00Z' }] },
+    { ...requests[1], current_pending_approvals: [{ approver_id: 1, approver_name: 'Clinical owner', approver_role: 'CMO', approval_level: 5, activated_at: null }] },
+    { ...requests[2], current_pending_approvals: [] },
+  ] : [] }));
+  try {
+    render(<MyMaintenanceRequests />); await screen.findByText('Start boundary');
+    expect(screen.getByLabelText('Overdue target (days)')).toHaveValue(3);
+    fireEvent.change(screen.getByLabelText('Pending with'), { target: { value: 'user:2' } });
+    fireEvent.change(screen.getByLabelText('Waiting-time band'), { target: { value: 'under2' } });
+    expect(screen.getByRole('button', { name: 'Total 1' })).toBeInTheDocument();
+    expect(screen.queryByText('Start boundary')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }));
+    await waitFor(() => expect(saveAs).toHaveBeenCalled());
+    expect(buildExcelWorkbookBlob.mock.calls[0][0][1].slice(-4)).toEqual(['Operations owner · COO', 'Approval required', '1 hours', '']);
+    fireEvent.change(screen.getByLabelText('Waiting time filter'), { target: { value: 'overdue' } });
+    expect(screen.getByRole('button', { name: 'Total 0' })).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Reset filters' })[0]);
+    expect(screen.getByRole('button', { name: 'Total 3' })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-10-01' } });
+    const table = screen.getAllByRole('table')[0];
+    expect(within(table).queryByRole('link', { name: /#1/ })).not.toBeInTheDocument();
+  } finally { clock.mockRestore(); }
+});
+
+test('a late saved target response does not overwrite a temporary target already entered', async () => {
+  let finishPolicy;
+  axios.get.mockImplementation((url) => url === '/maintenance-approval-reporting-policy' ? new Promise((resolve) => { finishPolicy = resolve; }) : Promise.resolve({ data: url === '/requests/my-maintenance' ? requests : [] }));
+  render(<MyMaintenanceRequests />); await screen.findByText('Start boundary');
+  fireEvent.change(screen.getByLabelText('Overdue target (days)'), { target: { value: '2' } });
+  finishPolicy({ data: { configured: true, overdue_target_days: 7 } });
+  await screen.findByText(/Saved organization target \(days\): 7/);
+  expect(screen.getByLabelText('Overdue target (days)')).toHaveValue(2);
+});
+
 test('waiting-time controls filter unknown/overdue requests and export current owners with matching headers', async () => {
   const clock = jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-08T12:00:00Z'));
   axios.get.mockImplementation((url) => Promise.resolve({ data: url === '/requests/my-maintenance' ? [
@@ -40,14 +77,14 @@ test('waiting-time controls filter unknown/overdue requests and export current o
     render(<MyMaintenanceRequests />);
     await screen.findByText('Start boundary');
     fireEvent.change(screen.getByLabelText('Sort'), { target: { value: 'approval-oldest' } });
-    const queueRows = screen.getAllByRole('row').slice(1);
+    const queueRows = within(screen.getAllByRole('table').at(-1)).getAllByRole('row').slice(1);
     expect(queueRows.map((r) => r.textContent)).toEqual([
       expect.stringContaining('Older'), expect.stringContaining('End boundary'), expect.stringContaining('Start boundary'),
     ]);
     fireEvent.change(screen.getByLabelText('Overdue target (days)'), { target: { value: '2' } });
     fireEvent.change(screen.getByLabelText('Waiting time filter'), { target: { value: 'overdue' } });
     expect(screen.getByRole('button', { name: 'Total 1' })).toBeInTheDocument();
-    expect(screen.getByText('Doctor · CMO')).toBeInTheDocument();
+    expect(within(screen.getAllByRole('table').at(-1)).getByText('Doctor · CMO')).toBeInTheDocument();
     expect(screen.queryByText('Start boundary')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Export Excel' }));
     await waitFor(() => expect(saveAs).toHaveBeenCalled());

@@ -1,6 +1,6 @@
 import { stableRequestItemId } from '../utils/requestItemIdentity';
 // src/pages/MyMaintenanceRequests.jsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
 import { saveAs } from 'file-saver';
@@ -8,6 +8,7 @@ import { buildExcelWorkbookBlob } from '../utils/excelWorkbookExport';
 import { getMaintenanceApprovalStepLabel } from '../utils/maintenanceApprovalStatus';
 import { matchesPendingApprovalStep, pendingApprovalSteps, summarizePendingApprovalSteps } from '../utils/pendingApprovalSteps';
 import { approvalTargetDays, requestApprovalAging, matchesApprovalAgeFilter, compareApprovalAge } from '../utils/approvalAging';
+import { matchesWaitingBand, summarizeApprovalBottlenecks } from '../utils/approvalBottlenecks';
 import ApprovalTimeline from '../components/ApprovalTimeline';
 import RequestAttachmentsSection from '../components/RequestAttachmentsSection';
 import useApprovalTimeline from '../hooks/useApprovalTimeline';
@@ -52,6 +53,11 @@ const MyMaintenanceRequests = () => {
   const [approvalStepFilter, setApprovalStepFilter] = useState('');
   const [approvalAgeFilter, setApprovalAgeFilter] = useState('all');
   const [targetDays, setTargetDays] = useState('');
+  const [ownerFilter, setOwnerFilter] = useState('');
+  const [bandFilter, setBandFilter] = useState('all');
+  const [reportingPolicy, setReportingPolicy] = useState(null);
+  const [policyError, setPolicyError] = useState(false);
+  const targetEdited = useRef(false);
   const [approvalNow, setApprovalNow] = useState(Date.now);
   const [searchTerm, setSearchTerm] = useState('');
   const [referenceSearch, setReferenceSearch] = useState('');
@@ -145,6 +151,8 @@ const MyMaintenanceRequests = () => {
     statusFilter,
     approvalStepFilter,
     approvalAgeFilter,
+    ownerFilter,
+    bandFilter,
     targetDays,
     searchTerm,
     referenceSearch,
@@ -156,10 +164,19 @@ const MyMaintenanceRequests = () => {
 
   const statusLabels = tr('statuses', { returnObjects: true });
   useEffect(() => {
+    let active = true;
+    axios.get('/maintenance-approval-reporting-policy').then(({ data }) => {
+      if (!active) return;
+      setReportingPolicy(data);
+      if (!targetEdited.current) setTargetDays(data.overdue_target_days ?? '');
+    }).catch(() => { if (active) setPolicyError(true); });
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
     const timer = setInterval(() => setApprovalNow(Date.now()), 60000);
     return () => clearInterval(timer);
   }, []);
-  const agingOptions = useMemo(() => ({ now: approvalNow, targetDays: approvalTargetDays(targetDays), stepKey: approvalStepFilter }), [approvalNow, targetDays, approvalStepFilter]);
+  const agingOptions = useMemo(() => ({ now: approvalNow, targetDays: approvalTargetDays(targetDays), stepKey: approvalStepFilter, ownerKey: ownerFilter }), [approvalNow, targetDays, approvalStepFilter, ownerFilter]);
   const waitingLabel = (age) => age.oldestHours == null
     ? tr('approvalAging.unknown')
     : tr('approvalAging.hours', { hours: Math.floor(age.oldestHours) });
@@ -644,8 +661,8 @@ const MyMaintenanceRequests = () => {
 
   // Status cards are facets: count the search/date subset before the selected status.
   const approvalFilteredRequests = useMemo(
-    () => matchingRequests.filter((request) => matchesPendingApprovalStep(request, approvalStepFilter) && matchesApprovalAgeFilter(request, approvalAgeFilter, agingOptions)),
-    [matchingRequests, approvalStepFilter, approvalAgeFilter, agingOptions],
+    () => matchingRequests.filter((request) => matchesPendingApprovalStep(request, approvalStepFilter) && (!ownerFilter || requestApprovalAging(request, agingOptions).pending) && matchesApprovalAgeFilter(request, approvalAgeFilter, agingOptions) && matchesWaitingBand(request, bandFilter, agingOptions)),
+    [matchingRequests, approvalStepFilter, approvalAgeFilter, agingOptions, ownerFilter, bandFilter],
   );
   const filteredRequests = useMemo(
     () => approvalFilteredRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter)).sort((a, b) => sortDirection === 'approval-oldest' ? compareApprovalAge(a, b, agingOptions) : 0),
@@ -655,7 +672,7 @@ const MyMaintenanceRequests = () => {
     const subset = matchingRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter));
     const counts = new Map(summarizePendingApprovalSteps(subset).map((step) => [step.key, step.count]));
     const metrics = (stepKey) => {
-      const ages = subset.map((request) => requestApprovalAging(request, { ...agingOptions, stepKey })).filter((age) => age.pending);
+      const ages = subset.map((request) => requestApprovalAging(request, { ...agingOptions, stepKey, ownerKey: '' })).filter((age) => age.pending);
       const known = ages.map((age) => age.oldestHours).filter((hours) => hours != null);
       return { overdue: ages.filter((age) => age.overdue).length, unknown: ages.filter((age) => age.unknownCount > 0).length, oldestHours: known.length ? Math.max(...known) : null };
     };
@@ -669,6 +686,10 @@ const MyMaintenanceRequests = () => {
     level: step.level ?? tr('approvalSteps.unknownLevel'),
     role: step.role || tr('approvalSteps.unknownApprover'),
   });
+  const bottlenecks = useMemo(() => summarizeApprovalBottlenecks(
+    matchingRequests.filter((request) => requestMatchesStatusFilter(request.status, statusFilter)),
+    agingOptions,
+  ), [matchingRequests, statusFilter, agingOptions]);
 
   useEffect(() => {
     if (!expandedApprovalsId) {
@@ -724,6 +745,8 @@ const MyMaintenanceRequests = () => {
     statusFilter !== 'all'
       || approvalStepFilter
       || approvalAgeFilter !== 'all'
+      || ownerFilter
+      || bandFilter !== 'all'
       || searchTerm
       || referenceSearch
       || requesterSearch
@@ -754,6 +777,8 @@ const MyMaintenanceRequests = () => {
     setStatusFilter('all');
     setApprovalStepFilter('');
     setApprovalAgeFilter('all');
+    setOwnerFilter('');
+    setBandFilter('all');
     setSearchTerm('');
     setReferenceSearch('');
     setRequesterSearch('');
@@ -887,7 +912,7 @@ const MyMaintenanceRequests = () => {
               </div>
               {pendingApprovalSummary.total === 0 && <p className="mt-3 text-sm text-slate-500">{tr('approvalSteps.empty')}</p>}
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="text-sm">{tr('approvalAging.target')}<input type="number" min="1" max="365" step="1" value={targetDays} onChange={(event) => { setTargetDays(event.target.value); setApprovalAgeFilter('all'); }} className="ml-2 rounded border px-3 py-2" /></label>
+                <label className="text-sm">{tr('approvalAging.target')}<input type="number" min="1" max="365" step="1" value={targetDays} onChange={(event) => { targetEdited.current = true; setTargetDays(event.target.value); setApprovalAgeFilter('all'); }} className="ml-2 rounded border px-3 py-2" /></label>
                 <label className="text-sm">{tr('approvalAging.filter')}<select value={approvalAgeFilter} onChange={(event) => setApprovalAgeFilter(event.target.value)} className="ml-2 rounded border px-3 py-2">
                   <option value="all">{tr('approvalAging.all')}</option>
                   <option value="overdue" disabled={approvalTargetDays(targetDays) == null}>{tr('approvalAging.overdue')}</option>
@@ -895,6 +920,33 @@ const MyMaintenanceRequests = () => {
                 </select></label>
               </div>
               <p className="mt-2 text-xs text-slate-500">{tr('approvalAging.targetHelp')}</p>
+              <p className="mt-2 text-xs text-slate-500">{tr('bottlenecks.savedTarget')}: {approvalTargetDays(reportingPolicy?.overdue_target_days) ?? tr('approvalAging.targetUnset')}. {tr('bottlenecks.overrideHelp')}</p>
+              {policyError && <p role="alert">{tr('bottlenecks.policyError')}</p>}
+            </section>
+
+            <section className="mb-6 rounded-xl border bg-white p-5">
+              <h2 className="text-lg font-bold">{tr('bottlenecks.heading')}</h2>
+              <p className="mt-2 text-sm text-slate-600">{tr('bottlenecks.help')}</p>
+              <div className="my-4 flex flex-wrap gap-4">
+                <label>{tr('bottlenecks.ownerFilter')}<select value={ownerFilter} onChange={(e) => setOwnerFilter(e.target.value)} className="ml-2 rounded border p-2">
+                  <option value="">{tr('bottlenecks.allOwners')}</option>
+                  {bottlenecks.map((owner) => <option key={owner.key} value={owner.key}>{owner.name || tr('bottlenecks.unassigned')} {owner.role && `· ${owner.role}`}</option>)}
+                  {ownerFilter && !bottlenecks.some((owner) => owner.key === ownerFilter) && <option value={ownerFilter}>{tr('bottlenecks.filteredOwner')}</option>}
+                </select></label>
+                <label>{tr('bottlenecks.bandFilter')}<select value={bandFilter} onChange={(e) => setBandFilter(e.target.value)} className="ml-2 rounded border p-2">
+                  {['all', 'under2', 'days2to7', 'days7plus', 'unknown'].map((band) => <option key={band} value={band}>{tr(`bottlenecks.${band}`)}</option>)}
+                </select></label>
+              </div>
+              <div className="overflow-x-auto"><table className="w-full text-left text-sm">
+                <thead><tr>{['owner', 'pending', 'under2', 'days2to7', 'days7plus', 'unknown', 'overdue', 'oldestRequest'].map((key) => <th key={key} className="border-b p-2">{tr(`bottlenecks.${key}`)}</th>)}</tr></thead>
+                <tbody>{bottlenecks.map((owner) => <tr key={owner.key} className={ownerFilter === owner.key ? 'bg-blue-50' : ''}>
+                  <td className="p-2"><button aria-pressed={ownerFilter === owner.key} onClick={() => setOwnerFilter(ownerFilter === owner.key ? '' : owner.key)} className="text-blue-700 underline">{owner.name || tr('bottlenecks.unassigned')} {owner.role && `· ${owner.role}`}</button></td>
+                  <td className="p-2">{owner.count}</td><td className="p-2">{owner.under2}</td><td className="p-2">{owner.days2to7}</td><td className="p-2">{owner.days7plus}</td><td className="p-2">{owner.unknown}</td>
+                  <td className="p-2">{approvalTargetDays(targetDays) == null ? '—' : owner.overdue}</td>
+                  <td className="p-2">{owner.oldestRequest == null ? tr('approvalAging.unknown') : <a href={`/requests/${owner.oldestRequest}`} className="text-blue-700 underline">#{owner.oldestRequest} · {waitingLabel(owner)}</a>}</td>
+                </tr>)}</tbody>
+              </table></div>
+              {bottlenecks.length === 0 && <p className="mt-3">{tr('bottlenecks.empty')}</p>}
             </section>
 
             <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">

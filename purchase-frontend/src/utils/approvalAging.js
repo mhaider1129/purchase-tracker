@@ -1,12 +1,12 @@
-import { activePendingApprovals, approvalStepKey } from './pendingApprovalSteps';
+import { activePendingApprovals, approvalStepKey, approvalOwnerKey } from './pendingApprovalSteps';
 
 export const approvalTargetDays = (value) => {
   const number = Number(value);
   return Number.isInteger(number) && number > 0 && number <= 365 ? number : null;
 };
 
-export const requestApprovalAging = (request, { stepKey = '', now = Date.now(), targetDays = null } = {}) => {
-  const rows = activePendingApprovals(request).filter((row) => !stepKey || stepKey === 'any' || approvalStepKey(row) === stepKey);
+export const requestApprovalAging = (request, { stepKey = '', ownerKey = '', now = Date.now(), targetDays = null } = {}) => {
+  const rows = activePendingApprovals(request).filter((row) => (!stepKey || stepKey === 'any' || approvalStepKey(row) === stepKey) && (!ownerKey || approvalOwnerKey(row) === ownerKey));
   const hours = rows.map((row) => {
     const start = row.activated_at ? Date.parse(row.activated_at) : NaN;
     return Number.isFinite(start) && start <= now ? (now - start) / 3600000 : null;
