@@ -9,6 +9,20 @@ jest.mock('react-i18next', () => {
   const t = i18n.t.bind(i18n); return { useTranslation: () => ({ t }) };
 });
 beforeEach(() => { jest.clearAllMocks(); api.get.mockResolvedValue({ data: { configured: true, overdue_target_days: 3 } }); });
+
+test('saves configurable reminder cooldown with reason and validates its range', async () => {
+  api.get.mockResolvedValue({ data: { configured: true, overdue_target_days: 3, reminder_cooldown_hours: 24 } });
+  api.put.mockResolvedValue({ data: { configured: true, overdue_target_days: 3, reminder_cooldown_hours: 48 } });
+  render(<Settings />);
+  const input = await screen.findByLabelText('Reminder cooldown (hours)');
+  fireEvent.change(screen.getByLabelText('Reason for change'), { target: { value: 'Reduce repeated emails' } });
+  fireEvent.change(input, { target: { value: '0' } });
+  expect(screen.getByRole('button', { name: 'Save reporting target' })).toBeDisabled();
+  fireEvent.change(input, { target: { value: '48' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save reporting target' }));
+  await screen.findByRole('status');
+  expect(api.put).toHaveBeenCalledWith('/maintenance-approval-reporting-policy', { overdue_target_days: 3, reminder_cooldown_hours: 48, reason: 'Reduce repeated emails' });
+});
 test('saves target and required reason, clears target explicitly, and displays server failures', async () => {
   api.put.mockResolvedValue({ data: { configured: true, overdue_target_days: 2 } });
   render(<Settings />);

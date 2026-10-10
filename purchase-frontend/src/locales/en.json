@@ -1581,7 +1581,26 @@
       "rejected": "Rejected"
     }
   },
+  "approvalReminders": {
+    "recipient": "Remind approver",
+    "send": "Remind approver",
+    "history": "Reminder history",
+    "confirm": "Send an email reminder to this current pending approver?",
+    "accepted": "Email accepted for delivery. Use reminder history to check the recorded result.",
+    "failed": "Not accepted",
+    "busy": "Please wait…",
+    "unavailable": "Approver unavailable",
+    "automatic": "Automatic service",
+    "close": "Hide reminder history",
+    "empty": "No reminder attempts recorded.",
+    "sending": "Delivery pending; needs review if it remains pending",
+    "sent": "Accepted for delivery",
+    "unknown": "Delivery uncertain; requires review before retry",
+    "cancelled": "Cancelled: approval changed"
+  },
   "maintenanceApprovalReporting": {
+    "cooldown": "Reminder cooldown (hours)",
+    "cooldownHelp": "1–168 hours between attempts, shared by manual and existing scheduled reminders. Apply SQL 047 to enable this setting. Unknown delivery outcomes require review before resending.",
     "heading": "Maintenance approval reporting",
     "help": "Save the organization reporting target across sessions. Leave blank to disable overdue reporting. This does not change approval rules or send reminders.",
     "loadError": "Unable to load reporting policy.",

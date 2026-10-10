@@ -132,6 +132,22 @@ describe('emailService', () => {
     expect(payload.text).toContain('Plain text');
   });
 
+  it('can suppress SMTP retries for durable reminders while preserving normal email retries', async () => {
+    process.env.EMAIL_HOST = 'smtp.example.com';
+    process.env.EMAIL_RETRY_DELAY_MS = '0';
+    const { sendEmail } = loadService();
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    sendMailMock.mockRejectedValue(new Error('Uncertain SMTP outcome'));
+    try {
+      await expect(sendEmail('user@example.com', 'Reminder', 'Body', { throwOnError: true, retry: false })).rejects.toThrow('Uncertain SMTP outcome');
+      expect(sendMailMock).toHaveBeenCalledTimes(1);
+      sendMailMock.mockClear();
+      await expect(sendEmail('user@example.com', 'Other email', 'Body', { throwOnError: true })).rejects.toThrow();
+      expect(sendMailMock).toHaveBeenCalledTimes(2);
+    } finally { errorSpy.mockRestore(); warnSpy.mockRestore(); }
+  });
+
   it('adds documentation attachments in addition to regular attachments', async () => {
     process.env.EMAIL_HOST = 'smtp.example.com';
     process.env.EMAIL_USER = 'mailer@example.com';

@@ -1,4 +1,5 @@
 import AllRequestGuidance from "../components/requests/AllRequestGuidance";
+import ApprovalReminderPanel from '../components/ApprovalReminderPanel';
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
 import './OperationalWorkspaces.css';
@@ -323,9 +324,6 @@ const AllRequestsPage = () => {
     completed: 0,
   });
   const [loadingExport, setLoadingExport] = useState(false);
-  const [remindingApproverIds, setRemindingApproverIds] = useState(
-    () => new Set(),
-  );
   const [filtersChanged, setFiltersChanged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -477,10 +475,7 @@ const AllRequestsPage = () => {
     user || {},
     "requests.reclassify",
   );
-  const canRemindCurrentApprover =
-    String(user?.role || "")
-      .trim()
-      .toUpperCase() === "SCM";
+  const canRemindCurrentApprover = hasPermission(user || {}, 'approvals.remind');
   const isSummaryRequestView = requestViewMode === REQUEST_VIEW_MODES.summary;
 
   useEffect(() => {
@@ -1223,34 +1218,6 @@ const AllRequestsPage = () => {
     }
   };
 
-  const handleRemindCurrentApprover = async (requestId) => {
-    const confirmed = window.confirm(
-      `Send an email reminder to the current approver for request ${requestId}?`,
-    );
-    if (!confirmed) return;
-
-    setRemindingApproverIds((prev) => new Set(prev).add(requestId));
-    try {
-      const res = await axios.post(
-        `/approvals/request/${requestId}/remind-current`,
-      );
-      alert(res?.data?.message || "✅ Approval reminder email sent.");
-    } catch (err) {
-      console.error(
-        `❌ Failed to remind current approver for request ${requestId}:`,
-        err,
-      );
-      alert(
-        err?.response?.data?.message || "❌ Failed to send approval reminder.",
-      );
-    } finally {
-      setRemindingApproverIds((prev) => {
-        const next = new Set(prev);
-        next.delete(requestId);
-        return next;
-      });
-    }
-  };
 
   const handleHardDelete = async (requestId) => {
     const confirmed = window.confirm(
@@ -1968,28 +1935,7 @@ const AllRequestsPage = () => {
                       >
                         Print
                       </button>
-                      {canRemindCurrentApprover && (
-                        <button
-                          type="button"
-                          className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          onClick={() =>
-                            handleRemindCurrentApprover(request.id)
-                          }
-                          disabled={
-                            remindingApproverIds.has(request.id) ||
-                            !request.current_approver_role
-                          }
-                          title={
-                            request.current_approver_role
-                              ? "Email a reminder to the current approver"
-                              : "No current approver to remind"
-                          }
-                        >
-                          {remindingApproverIds.has(request.id)
-                            ? "Sending reminder..."
-                            : "Remind Approver"}
-                        </button>
-                      )}
+                      <ApprovalReminderPanel requestId={request.id} allowed={canRemindCurrentApprover} pending={Boolean(request.current_approver_role)} />
                       {isPostApprovalStatus(request.status) && (
                         <Link
                           to={`/requests/${request.id}/procure-to-pay/purchase-orders`}
