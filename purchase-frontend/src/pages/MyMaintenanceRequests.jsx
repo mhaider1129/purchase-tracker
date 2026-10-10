@@ -18,6 +18,7 @@ import PaginationControls from '../components/ui/PaginationControls';
 import { getDisplayItems } from '../utils/itemUtils';
 import { updateRequest } from '../api/requests';
 import { useAuth } from '../hooks/useAuth';
+import ApprovalReminderPanel from '../components/ApprovalReminderPanel';
 import { hasPermission } from '../utils/permissions';
 import {
   Activity,
@@ -1146,6 +1147,7 @@ const MyMaintenanceRequests = () => {
                           <p>{age.pending ? tr('approvalAging.approve') : tr('approvalAging.noTask')}</p>
                           {age.pending && <p className="text-xs text-slate-500">{waitingLabel(age)}{age.unknownCount > 0 && age.oldestHours != null ? ` · ${tr('approvalAging.unknown')}` : ''}</p>}
                           {age.overdue && <span className="text-xs font-semibold text-amber-800">{tr('approvalAging.overdue')}</span>}
+                          <ApprovalReminderPanel requestId={r.id} approvals={age.rows} allowed={hasPermission(user, 'approvals.remind')} pending={age.pending} />
                         </td>
                         <td className="border px-3 py-2">
                           {new Date(r.created_at).toLocaleString()}

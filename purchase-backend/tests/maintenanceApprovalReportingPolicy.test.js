@@ -31,6 +31,13 @@ test('missing migration returns actionable error and rolls back', async () => {
   expect(client.query).toHaveBeenCalledWith('ROLLBACK');
 });
 
+test.each([0,169,1.5,'24'])('rejects invalid cooldown %s without writing policy', async (hours) => {
+  const client = { query: jest.fn(async (sql) => ({ rows: sql.includes('to_regclass') ? [{ available: true }] : [{ overdue_target_days: 3, reminder_cooldown_hours: 24 }] })), release: jest.fn() };
+  pool.connect.mockResolvedValue(client);
+  await request(app(['permissions.manage'])).put('/policy').send({ overdue_target_days: 3, reminder_cooldown_hours: hours, reason: 'Test' }).expect(400);
+  expect(client.query.mock.calls.some(([sql]) => sql.startsWith('UPDATE'))).toBe(false);
+});
+
 test.each(['', ' ', 'a'.repeat(2001), { text: 'invalid' }])('invalid reason is rejected before reading or writing policy', async (reason) => {
   const client = { query: jest.fn(), release: jest.fn() }; pool.connect.mockResolvedValue(client);
   await request(app(['permissions.manage'])).put('/policy').send({ overdue_target_days: 2, reason }).expect(400);

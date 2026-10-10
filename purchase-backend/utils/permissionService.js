@@ -26,6 +26,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
   scm: [
     'organization.manage',
     'approvals.reassign',
+    'approvals.remind',
     'contracts.manage',
     'departments.manage',
     'evaluations.manage',
@@ -123,6 +124,7 @@ const DEFAULT_ROLE_PERMISSIONS = {
 };
 
 const CORE_PERMISSION_DEFINITIONS = [
+  { code: 'approvals.remind', name: 'Send approval reminders', description: 'Send manual approval reminders and view reminder history.' },
 
   { code: 'ai-intelligence.use', name: 'Use AI Intelligence', description: 'Use the read-only, audited AI Intelligence assistant within existing data scopes.' },
 

@@ -11,7 +11,7 @@ dotenv.config();
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const reassignPendingApprovals = require('./controllers/utils/reassignPendingApprovals');
-const remindPendingApprovals = require('./controllers/utils/remindPendingApprovals');
+const remindPendingApprovals = require('./controllers/utils/runControlledApprovalReminders');
 const remindPendingReceipts = require('./controllers/utils/remindPendingReceipts');
 const { syncPermissionCatalog } = require('./utils/permissionService');
 const { syncUiAccessResources } = require('./utils/uiAccessService');

@@ -8,6 +8,7 @@ export default function MaintenanceApprovalReportingSettings() {
   const tr = (key) => t(`maintenanceApprovalReporting.${key}`);
   const [policy, setPolicy] = useState(null);
   const [days, setDays] = useState('');
+  const [cooldown, setCooldown] = useState(24);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -15,17 +16,17 @@ export default function MaintenanceApprovalReportingSettings() {
   useEffect(() => {
     let active = true;
     api.get('/maintenance-approval-reporting-policy').then(({ data }) => {
-      if (active) { setPolicy(data); setDays(data.overdue_target_days ?? ''); }
+      if (active) { setPolicy(data); setDays(data.overdue_target_days ?? ''); setCooldown(data.reminder_cooldown_hours ?? 24); }
     }).catch(() => { if (active) setError(t('maintenanceApprovalReporting.loadError')); });
     return () => { active = false; };
   }, [t]);
-  const valid = days === '' || approvalTargetDays(days) != null;
+  const valid = (days === '' || approvalTargetDays(days) != null) && (policy?.reminder_cooldown_hours == null || (Number.isInteger(Number(cooldown)) && Number(cooldown) >= 1 && Number(cooldown) <= 168));
   const save = async (event) => {
     event.preventDefault();
     if (!valid || busy || !reason.trim()) return;
     setBusy(true); setError(''); setSuccess(false);
     try {
-      const { data } = await api.put('/maintenance-approval-reporting-policy', { overdue_target_days: days === '' ? null : Number(days), reason: reason.trim() });
+      const { data } = await api.put('/maintenance-approval-reporting-policy', { overdue_target_days: days === '' ? null : Number(days), reason: reason.trim(), ...(policy.reminder_cooldown_hours != null ? { reminder_cooldown_hours: Number(cooldown) } : {}) });
       setPolicy(data); setDays(data.overdue_target_days ?? ''); setReason(''); setSuccess(true);
     } catch (e) { setError(e.response?.data?.message || tr('saveError')); }
     finally { setBusy(false); }
@@ -39,6 +40,8 @@ export default function MaintenanceApprovalReportingSettings() {
     {policy && <form onSubmit={save} className="space-y-4">
       {!policy.configured && <p role="alert">{tr('migration')}</p>}
       <label className="block">{tr('target')}<input type="number" min="1" max="365" step="1" value={days} disabled={!policy.configured || busy} onChange={(e) => setDays(e.target.value)} className="ml-3 rounded border p-2" /></label>
+      <label className="block">{tr('cooldown')}<input type="number" min="1" max="168" step="1" value={cooldown} disabled={policy.reminder_cooldown_hours == null || busy} onChange={(e) => setCooldown(e.target.value)} className="ml-3 rounded border p-2" /></label>
+      <p className="text-sm">{tr('cooldownHelp')}</p>
       <label className="block">{tr('reason')}<textarea required maxLength={2000} value={reason} disabled={!policy.configured || busy} onChange={(e) => setReason(e.target.value)} className="mt-2 block w-full rounded border p-3" /></label>
       <button disabled={!policy.configured || busy || !valid || !reason.trim()} className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-40">{tr(busy ? 'saving' : 'save')}</button>
       <p className="text-sm text-slate-500">{tr('lastReason')}: {policy.reason || '—'}</p>

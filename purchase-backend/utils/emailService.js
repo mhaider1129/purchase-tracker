@@ -279,14 +279,14 @@ const buildEmailPayload = (to, subject, message, options = {}) => {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const sendWithRetry = async payload => {
+const sendWithRetry = async (payload, attempts = EMAIL_RETRY_ATTEMPTS) => {
   let lastError;
-  for (let attempt = 1; attempt <= EMAIL_RETRY_ATTEMPTS; attempt += 1) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
       return await transporter.sendMail(payload);
     } catch (err) {
       lastError = err;
-      if (attempt < EMAIL_RETRY_ATTEMPTS) {
+      if (attempt < attempts) {
         console.warn(`⚠️ Email send attempt ${attempt} failed; retrying`, err?.message || err);
         await sleep(EMAIL_RETRY_DELAY_MS * attempt);
       }
@@ -353,7 +353,7 @@ const sendEmail = async (to, subject, message, options = {}) => {
   }
 
   try {
-    const info = await sendWithRetry(payload);
+    const info = await sendWithRetry(payload, options.retry === false ? 1 : EMAIL_RETRY_ATTEMPTS);
     const accepted = Array.isArray(info?.accepted) && info.accepted.length > 0 ? info.accepted : payload.to;
     console.log(`📧 Email sent to ${accepted.join(', ')}`);
     return info;
