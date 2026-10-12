@@ -12,6 +12,7 @@ import {
   updatePriorityGroup,
 } from "../api/procurementPriority";
 import PriorityTierBadge from "../components/priority/PriorityTierBadge";
+import usePriorityQueueRefresh from '../hooks/usePriorityQueueRefresh';
 import {
   PriorityFactorBreakdown,
   PriorityHistory,
@@ -455,6 +456,7 @@ export default function ProcurementPriorityManagementPage() {
       );
   }, []);
   useEffect(load, [load]);
+  usePriorityQueueRefresh(load, selected != null || order.map(row => row.procurement_case_id).join(',') !== rows.map(row => row.procurement_case_id).join(','));
   const open = async (row) => {
     const [p, h] = await Promise.all([
       getPriorityProfile(row.procurement_case_id),

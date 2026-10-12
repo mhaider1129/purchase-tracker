@@ -36,8 +36,15 @@ const Dashboard = () => {
 
   useEffect(() => {
     let active = true;
-    getPublicPriorityQueue({ limit: 5 }).then(result => active && setPriorityState({ status: 'ready', entries: (result.data || []).slice(0, 5) })).catch(err => active && setPriorityState({ status: err.response?.status === 404 || err.response?.status === 503 ? 'unavailable' : 'error', entries: [] }));
-    return () => { active = false; };
+    const refresh = () => {
+      if (document.visibilityState === 'hidden') return;
+      getPublicPriorityQueue({ limit: 5 }).then(result => active && setPriorityState({ status: 'ready', entries: (result.data || []).slice(0, 5) })).catch(err => active && setPriorityState({ status: err.response?.status === 404 || err.response?.status === 503 ? 'unavailable' : 'error', entries: [] }));
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh); };
   }, []);
 
   const formatAmount = (value) =>
