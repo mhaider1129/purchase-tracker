@@ -1581,6 +1581,16 @@
       "rejected": "Rejected"
     }
   },
+  "scmIntervention": {
+    "open": "SCM intervention",
+    "title": "Reject and stop request",
+    "explanation": "Reject this submission before final approval. Remaining approval steps will stop. Earlier decisions stay in history. The requester and current approvers will be notified.",
+    "reason": "Rejection reason",
+    "confirm": "Reject and stop request",
+    "cancel": "Cancel",
+    "saving": "Stopping request…",
+    "failed": "Unable to reject this request. Refresh and try again."
+  },
   "maintenanceApprovalReporting": {
     "heading": "Maintenance approval reporting",
     "help": "Save the organization reporting target across sessions. Leave blank to disable overdue reporting. This does not change approval rules or send reminders.",

@@ -3,6 +3,7 @@ import RequestItemsFocus from "../components/requests/RequestItemsFocus";
 import { matchesSearchTokens } from "../utils/search";
 import RequestOverviewReview from "../components/requests/RequestOverviewReview";
 import RequestTimeline from '../components/requests/RequestTimeline';
+import ScmRequestIntervention from '../components/ScmRequestIntervention';
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import RequestActionContext from '../components/workspaces/RequestActionContext';
 import './OperationalWorkspaces.css';
@@ -411,6 +412,7 @@ const RequestDetailWorkspace = () => {
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
               <RequestAiButton onClick={() => setAiDrawerOpen(true)} />
+              <ScmRequestIntervention requestId={requestId} allowed={actions.has('scm_reject_request')} onRejected={() => fetchWorkspace(true)} />
               {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(procurableItems[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">Register Procurement</button> : null}
               {actions.has('create_po') ? <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} title="Create a governed purchase order from approved supplier awards" className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">Create Purchase Order</Link> : null}
               {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Add Note</button> : null}
