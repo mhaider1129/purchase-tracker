@@ -4,17 +4,17 @@ import Page from './DepartmentPrioritiesPage';
 import { getDepartmentPriorityQueue,reorderDepartmentPriority } from '../api/procurementPriority';
 jest.mock('../api/procurementPriority', () => ({ getDepartmentPriorityQueue:jest.fn(),reorderDepartmentPriority:jest.fn() }));
 const rows = [
-  { procurement_case_id:11,request_id:208,request_reference:'R208',public_title:'Hook',row_version:3,department_rank:1 },
-  { procurement_case_id:12,request_id:209,request_reference:'R209',public_title:'Chair',row_version:8,department_rank:2 },
+  { procurement_case_id:11,request_id:208,request_reference:'R208',public_title:'Hook',snapshot:{rank_version:'0',cases:{11:'3',13:'4'}},item_count:2,department_rank:1 },
+  { procurement_case_id:12,request_id:209,request_reference:'R209',public_title:'Chair',snapshot:{rank_version:'0',cases:{12:'8'}},item_count:1,department_rank:2 },
 ];
 beforeEach(() => { jest.clearAllMocks(); getDepartmentPriorityQueue.mockResolvedValue({ data:rows }); });
-test('saves each original case version and shows success after moving the requirement', async () => {
+test('moves one whole request and saves its complete member snapshot', async () => {
   reorderDepartmentPriority.mockResolvedValue({ data:[{ ...rows[1],department_rank:1,row_version:9 },{ ...rows[0],department_rank:2,row_version:4 }] });
   render(<Page />);
   fireEvent.click(await screen.findByRole('button',{ name:'Move Chair up' }));
   fireEvent.click(screen.getByRole('button',{ name:'Save Changes' }));
   expect(await screen.findByRole('status')).toHaveTextContent('Department priority order saved');
-  expect(reorderDepartmentPriority).toHaveBeenCalledWith([12,11],{ 11:3,12:8 });
+  expect(reorderDepartmentPriority).toHaveBeenCalledWith([209,208],{208:rows[0].snapshot,209:rows[1].snapshot});
   expect(screen.getByRole('link',{ name:'R208' })).toHaveAttribute('href','/requests/208');
 });
 test('a single unranked requirement can be saved without a pointless move', async () => {
@@ -25,7 +25,7 @@ test('a single unranked requirement can be saved without a pointless move', asyn
   expect(screen.getByRole('button',{ name:'Save Changes' })).toBeEnabled();
   fireEvent.click(screen.getByRole('button',{ name:'Save Changes' }));
   await screen.findByRole('status');
-  expect(reorderDepartmentPriority).toHaveBeenCalledWith([11],{ 11:3 });
+  expect(reorderDepartmentPriority).toHaveBeenCalledWith([208],{208:rows[0].snapshot});
 });
 test('a stale queue shows reload guidance and keeps unsaved order', async () => {
   reorderDepartmentPriority.mockRejectedValue({ response:{ status:409 } });
@@ -48,5 +48,5 @@ test('a background response cannot discard an order edited while it was loading'
   reorderDepartmentPriority.mockResolvedValue({ data:rows });
   fireEvent.click(screen.getByRole('button',{ name:'Save Changes' }));
   await screen.findByRole('status');
-  expect(reorderDepartmentPriority).toHaveBeenCalledWith([12,11],{ 11:3,12:8 });
+  expect(reorderDepartmentPriority).toHaveBeenCalledWith([209,208],{208:rows[0].snapshot,209:rows[1].snapshot});
 });

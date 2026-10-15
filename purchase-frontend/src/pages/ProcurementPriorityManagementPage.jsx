@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   archivePriorityGroup,
   createPriorityGroup,
@@ -436,40 +436,49 @@ export default function ProcurementPriorityManagementPage() {
   const [state, setState] = useState("loading");
   const [selected, setSelected] = useState(null);
   const [history, setHistory] = useState([]);
+  const [detailRequest,setDetailRequest] = useState(null);
+  const editing=useRef(false);
   const [order, setOrder] = useState([]);
   const [reason, setReason] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
   const [orderSaved, setOrderSaved] = useState(false);
-  const load = useCallback(() => {
-    setState("loading");
+  const load = useCallback((quiet=false) => {
+    if (!quiet) setState("loading");
     getPriorityManagementQueue()
       .then((x) => {
+        if (quiet && editing.current) return;
         const data = x.data || [];
         setRows(data);
         setOrder(data);
         setState("ready");
         setOrderError('');
       })
-      .catch((e) =>
+      .catch((e) => {
+        if (quiet && editing.current) return;
         setState(
           e.response?.status === 404 || e.response?.status === 503
             ? "unavailable"
             : "error",
-        ),
-      );
+        );
+      });
   }, []);
-  useEffect(load, [load]);
-  const orderDirty = order.map(row => row.procurement_case_id).join(',') !== rows.map(row => row.procurement_case_id).join(',');
+  useEffect(() => { load(); }, [load]);
+  const orderDirty = order.map(row => row.request_id).join(',') !== rows.map(row => row.request_id).join(',');
   const orderNeedsSave = orderDirty || order.some((row,index) => Number(row.institutional_rank) !== index + 1);
-  usePriorityQueueRefresh(load, selected != null || orderDirty || savingOrder);
+  editing.current=selected != null || orderDirty || savingOrder;
+  usePriorityQueueRefresh(() => load(true), editing.current);
   const open = async (row) => {
-    const [p, h] = await Promise.all([
-      getPriorityProfile(row.procurement_case_id),
-      getPriorityHistory(row.procurement_case_id),
+    const member=row.members ? row.members[0] : row;
+    if (row.members) setDetailRequest(row);
+    setOrderError('');
+    try { const [p, h] = await Promise.all([
+      getPriorityProfile(member.procurement_case_id),
+      getPriorityHistory(member.procurement_case_id),
     ]);
     setSelected(p.data);
     setHistory(h.data || []);
+    } catch { setOrderError("Unable to load item assessment. Try opening the request again."); }
   };
   const shown = useMemo(
     () =>
@@ -483,7 +492,7 @@ export default function ProcurementPriorityManagementPage() {
           (!filters.department || row.department_name === filters.department) &&
           (!filters.status || row.case_status === filters.status) &&
           (!filters.group ||
-            String(row.priority_group_name || "") === filters.group),
+            (row.priority_group_names || []).includes(filters.group)),
       ),
     [order, filters],
   );
@@ -503,11 +512,8 @@ export default function ProcurementPriorityManagementPage() {
     if (savingOrder || !orderNeedsSave || (differs && !reason.trim())) return;
     setSavingOrder(true); setOrderError(''); setOrderSaved(false);
     try { await reorderInstitutionalPriorities(
-      order.map((row, index) => ({
-        procurement_case_id: row.procurement_case_id,
-        institutional_rank: index + 1,
-        row_version: row.row_version,
-      })),
+      order.map(row => row.request_id),
+      Object.fromEntries(rows.map(row => [row.request_id,row.snapshot])),
       reason.trim(),
     );
     setReason("");
@@ -532,6 +538,7 @@ export default function ProcurementPriorityManagementPage() {
   return (
     <main className="space-y-6 p-4 md:p-6">
       <h1 className="text-2xl font-bold">Priority Management</h1>
+      <p>{rows.length} active requests. Each whole request occupies one position. Suggested priority uses its most urgent active item; open a request to review each item assessment.</p>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         <input
           aria-label="Search priorities"
@@ -559,14 +566,14 @@ export default function ProcurementPriorityManagementPage() {
               {[
                 ...new Set(
                   rows
-                    .map((r) =>
+                    .flatMap((r) =>
                       key === "tier"
                         ? r.system_tier
                         : key === "department"
                           ? r.department_name
                           : key === "status"
                             ? r.case_status
-                            : r.priority_group_name,
+                            : r.priority_group_names || [],
                     )
                     .filter(Boolean),
                 ),
@@ -586,7 +593,7 @@ export default function ProcurementPriorityManagementPage() {
                 "System Suggested Rank",
                 "Tier",
                 "Score",
-                "Request / Case",
+                "Request / Items",
                 "Department",
                 "Department Rank",
                 "Age",
@@ -606,7 +613,7 @@ export default function ProcurementPriorityManagementPage() {
           <tbody>
             {shown.map((row, index) => (
               <tr
-                key={row.procurement_case_id}
+                key={row.request_id}
                 onClick={() => open(row)}
                 className="cursor-pointer border-t hover:bg-blue-50"
               >
@@ -617,7 +624,7 @@ export default function ProcurementPriorityManagementPage() {
                 </td>
                 <td>{row.system_score}</td>
                 <td>
-                  {row.request_id ? <a className="text-blue-700 underline" href={`/requests/${row.request_id}`} onClick={event => event.stopPropagation()}>{caseLabel(row)}</a> : caseLabel(row)} · {row.public_title}
+                  {row.request_id ? <a className="text-blue-700 underline" href={`/requests/${row.request_id}`} onClick={event => event.stopPropagation()}>{caseLabel(row)}</a> : caseLabel(row)} · {row.item_count} active items · {row.public_title}
                 </td>
                 <td>{row.department_name}</td>
                 <td>{row.department_rank ?? "—"}</td>
@@ -626,7 +633,7 @@ export default function ProcurementPriorityManagementPage() {
                 <td>{row.service_risk_level || "—"}</td>
                 <td>{row.deadline_at || "—"}</td>
                 <td>{row.case_status}</td>
-                <td>{row.priority_group_name || "—"}</td>
+                <td>{row.priority_group_names?.join(", ") || "—"}</td>
                 <td>
                   {canOverride && (
                     <>
@@ -684,9 +691,9 @@ export default function ProcurementPriorityManagementPage() {
           {savingOrder ? 'Saving…' : 'Save institutional order'}
         </button>
       )}
-      {orderError && <p role="alert" className="mt-3 text-red-700">{orderError}<button disabled={savingOrder} onClick={load} className="ml-3 underline">Reload latest queue</button></p>}
+      {orderError && <p role="alert" className="mt-3 text-red-700">{orderError}<button disabled={savingOrder} onClick={() => load()} className="ml-3 underline">Reload latest queue</button></p>}
       {orderSaved && <p role="status">Organizational priority order saved.</p>}
-      {canManageGroups && <GroupManager cases={rows} />}
+      {canManageGroups && <GroupManager cases={rows.flatMap(row => row.members || [])} />}
       {selected && (
         <aside
           role="dialog"
@@ -696,18 +703,22 @@ export default function ProcurementPriorityManagementPage() {
           <button onClick={() => setSelected(null)} className="float-right">
             Close
           </button>
-          <h2 className="text-xl font-bold">
-            {selected.public_title || "Priority details"}
-          </h2>
+          <h2 className="text-xl font-bold">Request {detailRequest?.request_reference || detailRequest?.request_id}</h2>
+          <p>One request position · {detailRequest?.item_count} active items. Assessments below apply to the selected item.</p>
+          <label>Item assessment
+            <select aria-label="Item assessment" value={selected.procurement_case_id} onChange={event => open(detailRequest.members.find(row => String(row.procurement_case_id)===event.target.value))}>
+              {(detailRequest?.members || []).map(member => <option key={member.procurement_case_id} value={member.procurement_case_id}>{member.public_title}</option>)}
+            </select>
+          </label>
           <div className="my-4 grid grid-cols-2 gap-2 rounded bg-slate-50 p-3 text-sm">
             <b>System Score</b>
             <span>{selected.system_score}</span>
             <b>System Suggested Rank</b>
-            <span>{selected.system_suggested_rank}</span>
+            <span>{detailRequest?.system_suggested_rank ?? "—"}</span>
             <b>Institutional Rank</b>
-            <span>{selected.institutional_rank}</span>
+            <span>{detailRequest?.institutional_rank ?? "—"}</span>
             <b>Department Rank</b>
-            <span>{selected.department_rank ?? "—"}</span>
+            <span>{detailRequest?.department_rank ?? "—"}</span>
           </div>
           <PriorityFactorBreakdown
             breakdown={selected.factor_breakdown || selected.breakdown}
@@ -716,10 +727,12 @@ export default function ProcurementPriorityManagementPage() {
           />
           <hr className="my-6" />
           <AssessmentForm
+            key={selected.procurement_case_id}
             profile={selected}
             onSaved={async () => {
               const p = await getPriorityProfile(selected.procurement_case_id);
               setSelected(p.data);
+              load();
             }}
           />
           <hr className="my-6" />

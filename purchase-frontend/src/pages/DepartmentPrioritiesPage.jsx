@@ -3,10 +3,10 @@ import { getDepartmentPriorityQueue, reorderDepartmentPriority } from '../api/pr
 import usePriorityQueueRefresh from '../hooks/usePriorityQueueRefresh';
 import { DepartmentPriorityQueue } from '../components/priority/ProcurementPriorityViews';
 
-const normalize = row => ({ id: row.procurement_case_id, requestId: row.request_id,
+const normalize = row => ({ id: row.request_id, requestId: row.request_id,
   requestNumber: row.request_reference || row.request_number || 'Procurement requirement',
   safeTitle: row.public_title || 'Procurement requirement', stage: row.case_status || '—',
-  tier: row.system_tier, age: row.age, rowVersion: row.row_version, rank: row.department_rank });
+  tier: row.system_tier, age: row.age, snapshot: row.snapshot, rank: row.department_rank });
 
 export default function DepartmentPrioritiesPage() {
   const [rows, setRows] = useState([]);
@@ -49,7 +49,7 @@ export default function DepartmentPrioritiesPage() {
     if (!needsSave || saving) return;
     setSaving(true); setError(''); setSaved(false);
     try {
-      const result = await reorderDepartmentPriority(rows.map(row => row.id), Object.fromEntries(original.map(row => [row.id, row.rowVersion])));
+      const result = await reorderDepartmentPriority(rows.map(row => row.id), Object.fromEntries(original.map(row => [row.id, row.snapshot])));
       const next = (result.data || []).map(normalize);
       setRows(next); setOriginal(next); setSaved(true);
     } catch (error) {
@@ -59,7 +59,7 @@ export default function DepartmentPrioritiesPage() {
   return <main className="p-4 md:p-6">
     {error && <div role="alert" className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-800">{error}<button disabled={saving} className="ml-3 underline" onClick={() => load()}>Reload latest queue</button></div>}
     {state === 'loading' ? <p>Loading department priorities…</p> : state === 'ready' && <>
-      <p className="mb-3 text-sm text-slate-600">{rows.length} active requirements. Completed and rejected requests are excluded. Move the most important requirement to the top, then save.</p>
+      <p className="mb-3 text-sm text-slate-600">{rows.length} active requests. Completed and rejected requests are excluded. Move the most important request to the top, then save.</p>
       <DepartmentPriorityQueue entries={rows} canRank={!saving} onMove={move} onDragMove={move} />
       {!rows.length && <p className="mt-4">No active departmental priorities.</p>}
       <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-3 border-t bg-white py-3">
