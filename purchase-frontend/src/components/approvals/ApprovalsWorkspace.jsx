@@ -669,7 +669,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
     try {
       await axios.post(`/approvals/${rankingGate.approvalId}/department-ranking`, {
         ordered_case_ids: rankingGate.queue.map(row => row.procurement_case_id),
-        version: rankingGate.queue[0]?.row_version,
+        versions: Object.fromEntries(rankingGate.queue.map(row => [row.procurement_case_id,row.row_version])),
       });
       setRankingGate(null);
       setFeedback({ type: 'success', message: 'Department ranking saved. Approval has continued.' });

@@ -438,6 +438,9 @@ export default function ProcurementPriorityManagementPage() {
   const [history, setHistory] = useState([]);
   const [order, setOrder] = useState([]);
   const [reason, setReason] = useState("");
+  const [savingOrder, setSavingOrder] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [orderSaved, setOrderSaved] = useState(false);
   const load = useCallback(() => {
     setState("loading");
     getPriorityManagementQueue()
@@ -446,6 +449,7 @@ export default function ProcurementPriorityManagementPage() {
         setRows(data);
         setOrder(data);
         setState("ready");
+        setOrderError('');
       })
       .catch((e) =>
         setState(
@@ -456,7 +460,9 @@ export default function ProcurementPriorityManagementPage() {
       );
   }, []);
   useEffect(load, [load]);
-  usePriorityQueueRefresh(load, selected != null || order.map(row => row.procurement_case_id).join(',') !== rows.map(row => row.procurement_case_id).join(','));
+  const orderDirty = order.map(row => row.procurement_case_id).join(',') !== rows.map(row => row.procurement_case_id).join(',');
+  const orderNeedsSave = orderDirty || order.some((row,index) => Number(row.institutional_rank) !== index + 1);
+  usePriorityQueueRefresh(load, selected != null || orderDirty || savingOrder);
   const open = async (row) => {
     const [p, h] = await Promise.all([
       getPriorityProfile(row.procurement_case_id),
@@ -481,27 +487,34 @@ export default function ProcurementPriorityManagementPage() {
       ),
     [order, filters],
   );
-  const move = (index, delta) =>
+  const move = (index, delta) => {
+    setOrderSaved(false); setOrderError('');
     setOrder((old) => {
       const next = [...old];
       next.splice(index + delta, 0, next.splice(index, 1)[0]);
       return next;
     });
+  };
   const filtersActive = Object.values(filters).some(Boolean);
   const differs = order.some(
     (row, index) => Number(row.system_suggested_rank) !== index + 1,
   );
   const saveOrder = async () => {
-    if (differs && !reason.trim()) return;
-    await reorderInstitutionalPriorities(
+    if (savingOrder || !orderNeedsSave || (differs && !reason.trim())) return;
+    setSavingOrder(true); setOrderError(''); setOrderSaved(false);
+    try { await reorderInstitutionalPriorities(
       order.map((row, index) => ({
         procurement_case_id: row.procurement_case_id,
         institutional_rank: index + 1,
+        row_version: row.row_version,
       })),
       reason.trim(),
     );
     setReason("");
     load();
+    setOrderSaved(true);
+    } catch (error) { setOrderError(error.response?.status === 409 ? 'The organizational queue changed. Reload the latest queue and review your order.' : error.response?.data?.message || 'Unable to save organizational priority order.'); }
+    finally { setSavingOrder(false); }
   };
   if (state !== "ready")
     return (
@@ -597,14 +610,14 @@ export default function ProcurementPriorityManagementPage() {
                 onClick={() => open(row)}
                 className="cursor-pointer border-t hover:bg-blue-50"
               >
-                <td className="p-2">{row.institutional_rank ?? "—"}</td>
+                <td className="p-2">{filtersActive ? row.institutional_rank ?? '—' : index + 1}</td>
                 <td>{row.system_suggested_rank}</td>
                 <td>
                   <PriorityTierBadge tier={row.system_tier} />
                 </td>
                 <td>{row.system_score}</td>
                 <td>
-                  {caseLabel(row)} · {row.public_title}
+                  {row.request_id ? <a className="text-blue-700 underline" href={`/requests/${row.request_id}`} onClick={event => event.stopPropagation()}>{caseLabel(row)}</a> : caseLabel(row)} · {row.public_title}
                 </td>
                 <td>{row.department_name}</td>
                 <td>{row.department_rank ?? "—"}</td>
@@ -619,7 +632,7 @@ export default function ProcurementPriorityManagementPage() {
                     <>
                       <button
                         aria-label={`Move ${row.public_title} up`}
-                        disabled={filtersActive || !index}
+                        disabled={savingOrder || filtersActive || !index}
                         onClick={(e) => {
                           e.stopPropagation();
                           move(index, -1);
@@ -629,7 +642,7 @@ export default function ProcurementPriorityManagementPage() {
                       </button>{" "}
                       <button
                         aria-label={`Move ${row.public_title} down`}
-                        disabled={filtersActive || index === shown.length - 1}
+                        disabled={savingOrder || filtersActive || index === shown.length - 1}
                         onClick={(e) => {
                           e.stopPropagation();
                           move(index, 1);
@@ -648,12 +661,14 @@ export default function ProcurementPriorityManagementPage() {
       {canOverride && filtersActive && (
         <p role="status">Clear filters to change institutional order.</p>
       )}
+      {orderDirty && <p role="status" className="text-amber-700">Unsaved organizational order</p>}
       {canOverride && differs && (
         <label className="block">
           Override reason
           <input
             aria-label="Institutional order override reason"
             required
+            disabled={savingOrder}
             className="ml-2 rounded border p-2"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
@@ -662,13 +677,15 @@ export default function ProcurementPriorityManagementPage() {
       )}
       {canOverride && (
         <button
-          disabled={filtersActive || (differs && !reason.trim())}
+          disabled={!orderNeedsSave || savingOrder || filtersActive || (differs && !reason.trim())}
           onClick={saveOrder}
           className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
         >
-          Save institutional order
+          {savingOrder ? 'Saving…' : 'Save institutional order'}
         </button>
       )}
+      {orderError && <p role="alert" className="mt-3 text-red-700">{orderError}<button disabled={savingOrder} onClick={load} className="ml-3 underline">Reload latest queue</button></p>}
+      {orderSaved && <p role="status">Organizational priority order saved.</p>}
       {canManageGroups && <GroupManager cases={rows} />}
       {selected && (
         <aside

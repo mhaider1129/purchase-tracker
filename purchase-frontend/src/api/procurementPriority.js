@@ -8,7 +8,7 @@ export const reorderDepartmentPriority = (ordered_case_ids, version) =>
   data(
     axios.put("/procurement-priority/department/reorder", {
       ordered_case_ids,
-      version,
+      ...(version && typeof version === 'object' ? { versions: version } : { version }),
     }),
   );
 export const getPriorityProfile = (id) =>
