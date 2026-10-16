@@ -1,7 +1,74 @@
-import React,{useCallback,useEffect,useMemo,useState} from 'react';
-import {getDepartmentPriorityQueue,reorderDepartmentPriority} from '../api/procurementPriority';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { getDepartmentPriorityQueue, reorderDepartmentPriority } from '../api/procurementPriority';
 import usePriorityQueueRefresh from '../hooks/usePriorityQueueRefresh';
-import {DepartmentPriorityQueue} from '../components/priority/ProcurementPriorityViews';
+import { DepartmentPriorityQueue } from '../components/priority/ProcurementPriorityViews';
 
-const normalize=x=>({id:x.procurement_case_id,requestNumber:x.request_reference||x.request_number||'Procurement requirement',safeTitle:x.public_title||'Procurement requirement',stage:x.case_status||'—',tier:x.system_tier,age:x.age,rowVersion:x.row_version});
-export default function DepartmentPrioritiesPage(){const [rows,setRows]=useState([]);const [original,setOriginal]=useState([]);const [state,setState]=useState('loading');const [error,setError]=useState('');const dirty=useMemo(()=>rows.map(x=>x.id).join(',')!==original.map(x=>x.id).join(','),[rows,original]);const load=useCallback(()=>{setState('loading');getDepartmentPriorityQueue().then(x=>{const next=(x.data||[]).map(normalize);setRows(next);setOriginal(next);setState('ready');setError('')}).catch(()=>{setState('error');setError('Unable to load procurement priorities.')})},[]);useEffect(load,[load]);usePriorityQueueRefresh(load,dirty);useEffect(()=>{const warn=e=>{if(dirty){e.preventDefault();e.returnValue='';}};window.addEventListener('beforeunload',warn);return()=>window.removeEventListener('beforeunload',warn)},[dirty]);const move=(id,to)=>setRows(old=>{const next=[...old],from=next.findIndex(x=>String(x.id)===String(id));if(from<0||to<0||to>=next.length)return old;next.splice(to,0,next.splice(from,1)[0]);return next});const save=async()=>{try{const x=await reorderDepartmentPriority(rows.map(x=>x.id),original[0]?.rowVersion);const next=(x.data||[]).map(normalize);setRows(next);setOriginal(next);setError('')}catch(e){setError(e.response?.status===409?'The department priority queue changed since you opened it. Reload the latest queue before saving.':'Unable to save priority order.')}};return <main className="p-4 md:p-6">{error&&<div role="alert" className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-800">{error}{error.startsWith('The department')&&<button className="ml-3 underline" onClick={load}>Reload latest queue</button>}</div>}{state==='loading'?<p>Loading department priorities…</p>:<><DepartmentPriorityQueue entries={rows} canRank onMove={move} onDragMove={move}/><div className="sticky bottom-0 mt-4 flex items-center gap-3 border-t bg-white py-3"><button disabled={!dirty} onClick={save} className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-40">Save Changes</button><button disabled={!dirty} onClick={()=>setRows(original)} className="rounded border px-4 py-2 disabled:opacity-40">Cancel</button>{dirty&&<span className="text-sm text-amber-700">Unsaved changes</span>}</div></>}</main>}
+const normalize = row => ({ id: row.request_id, requestId: row.request_id,
+  requestNumber: row.request_reference || row.request_number || 'Procurement requirement',
+  safeTitle: row.public_title || 'Procurement requirement', stage: row.case_status || '—',
+  tier: row.system_tier, age: row.age, snapshot: row.snapshot, rank: row.department_rank });
+
+export default function DepartmentPrioritiesPage() {
+  const [rows, setRows] = useState([]);
+  const [original, setOriginal] = useState([]);
+  const [state, setState] = useState('loading');
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const editing = useRef(false);
+  const dirty = useMemo(() => rows.map(row => row.id).join(',') !== original.map(row => row.id).join(','), [rows, original]);
+  const needsSave = dirty || original.some(row => row.rank == null);
+  editing.current = dirty || saving;
+  const load = useCallback((quiet = false) => {
+    if (!quiet) setState('loading');
+    getDepartmentPriorityQueue().then(result => {
+      if (quiet && editing.current) return;
+      const next = (result.data || []).map(normalize);
+      setRows(next); setOriginal(next); setState('ready'); setError('');
+    }).catch(error => { if (quiet && editing.current) return; setState('error'); setError(error.response?.data?.message || 'Unable to load department priorities.'); });
+  }, []);
+  useEffect(() => { load(); }, [load]);
+  usePriorityQueueRefresh(() => load(true), dirty || saving);
+  useEffect(() => {
+    const warn = event => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+  const move = (id, to) => {
+    if (saving) return;
+    setSaved(false);
+    setRows(old => {
+      const next = [...old];
+      const from = next.findIndex(row => String(row.id) === String(id));
+      if (from < 0 || to < 0 || to >= next.length) return old;
+      next.splice(to, 0, next.splice(from, 1)[0]);
+      return next;
+    });
+  };
+  const save = async () => {
+    if (!needsSave || saving) return;
+    setSaving(true); setError(''); setSaved(false);
+    try {
+      const result = await reorderDepartmentPriority(rows.map(row => row.id), Object.fromEntries(original.map(row => [row.id, row.snapshot])));
+      const next = (result.data || []).map(normalize);
+      setRows(next); setOriginal(next); setSaved(true);
+    } catch (error) {
+      setError(error.response?.status === 409 ? 'The department queue changed. Reload the latest queue and review your order before saving.' : error.response?.data?.message || 'Unable to save priority order.');
+    } finally { setSaving(false); }
+  };
+  return <main className="p-4 md:p-6">
+    {error && <div role="alert" className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-red-800">{error}<button disabled={saving} className="ml-3 underline" onClick={() => load()}>Reload latest queue</button></div>}
+    {state === 'loading' ? <p>Loading department priorities…</p> : state === 'ready' && <>
+      <p className="mb-3 text-sm text-slate-600">{rows.length} active requests. Completed and rejected requests are excluded. Move the most important request to the top, then save.</p>
+      <DepartmentPriorityQueue entries={rows} canRank={!saving} onMove={move} onDragMove={move} />
+      {!rows.length && <p className="mt-4">No active departmental priorities.</p>}
+      <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-3 border-t bg-white py-3">
+        <button disabled={!needsSave || saving} onClick={save} className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-40">{saving ? 'Saving…' : 'Save Changes'}</button>
+        <button disabled={!dirty || saving} onClick={() => { setRows(original); setSaved(false); }} className="rounded border px-4 py-2 disabled:opacity-40">Cancel</button>
+        <button disabled={dirty || saving} onClick={() => load()} className="rounded border px-4 py-2 disabled:opacity-40">Refresh</button>
+        {dirty && <span className="text-sm text-amber-700">Unsaved changes</span>}
+        {saved && <p role="status" className="text-emerald-700">Department priority order saved.</p>}
+      </div>
+    </>}
+  </main>;
+}

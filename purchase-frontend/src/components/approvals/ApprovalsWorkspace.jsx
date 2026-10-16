@@ -668,8 +668,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
     setRankingSaving(true);
     try {
       await axios.post(`/approvals/${rankingGate.approvalId}/department-ranking`, {
-        ordered_case_ids: rankingGate.queue.map(row => row.procurement_case_id),
-        version: rankingGate.queue[0]?.row_version,
+        ordered_request_ids: rankingGate.queue.map(row => row.request_id),
+        snapshots: Object.fromEntries(rankingGate.queue.map(row => [row.request_id,row.snapshot])),
       });
       setRankingGate(null);
       setFeedback({ type: 'success', message: 'Department ranking saved. Approval has continued.' });
@@ -814,12 +814,12 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
             <p className="mt-2 text-sm text-slate-600">{rankingGate.instruction}</p>
             <ol className="mt-5 divide-y rounded-lg border">
               {rankingGate.queue.map((row, index) => (
-                <li key={row.procurement_case_id} className="flex items-center gap-3 p-3">
+                <li key={row.request_id} className="flex items-center gap-3 p-3">
                   <span className="w-7 font-semibold text-slate-500">{index + 1}</span>
-                  <span className="flex-1 text-sm font-medium">{row.public_title || `Requirement ${row.procurement_case_id}`}</span>
-                  {rankingGate.requiredCaseIds.map(String).includes(String(row.procurement_case_id)) && <span className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">This request</span>}
-                  <button type="button" aria-label="Move requirement up" disabled={index === 0} onClick={() => moveRankingCase(index, -1)}><ChevronUp className="h-5 w-5" /></button>
-                  <button type="button" aria-label="Move requirement down" disabled={index === rankingGate.queue.length - 1} onClick={() => moveRankingCase(index, 1)}><ChevronDown className="h-5 w-5" /></button>
+                  <span className="flex-1 text-sm font-medium">{row.request_reference} · {row.public_title} ({row.item_count} active items)</span>
+                  {rankingGate.requiredRequestIds.map(String).includes(String(row.request_id)) && <span className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">This request</span>}
+                  <button type="button" aria-label="Move request up" disabled={index === 0} onClick={() => moveRankingCase(index, -1)}><ChevronUp className="h-5 w-5" /></button>
+                  <button type="button" aria-label="Move request down" disabled={index === rankingGate.queue.length - 1} onClick={() => moveRankingCase(index, 1)}><ChevronDown className="h-5 w-5" /></button>
                 </li>
               ))}
             </ol>
