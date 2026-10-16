@@ -1,4 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import "./ProcurementPriorityManagementPage.css";
+import { matchesSearchTokens } from "../utils/search";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   archivePriorityGroup,
   createPriorityGroup,
@@ -12,7 +20,7 @@ import {
   updatePriorityGroup,
 } from "../api/procurementPriority";
 import PriorityTierBadge from "../components/priority/PriorityTierBadge";
-import usePriorityQueueRefresh from '../hooks/usePriorityQueueRefresh';
+import usePriorityQueueRefresh from "../hooks/usePriorityQueueRefresh";
 import {
   PriorityFactorBreakdown,
   PriorityHistory,
@@ -240,7 +248,7 @@ function AssessmentForm({ profile, onSaved }) {
         input("P0 justification", "p0_justification", { required: true })}
       <button
         disabled={saving}
-        className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
+        className="priority-primary rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
       >
         {saving ? "Saving…" : "Save assessment"}
       </button>
@@ -253,6 +261,9 @@ function GroupManager({ cases }) {
   const [groupState, setGroupState] = useState("loading");
   const [groupError, setGroupError] = useState("");
   const [editing, setEditing] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [mutationError, setMutationError] = useState("");
+  const [caseSearch, setCaseSearch] = useState("");
   const [form, setForm] = useState({
     public_title: "",
     public_description: "",
@@ -280,23 +291,51 @@ function GroupManager({ cases }) {
       });
   };
   useEffect(load, []);
+  const visibleCases = cases.filter((item) =>
+    matchesSearchTokens(caseSearch, [
+      caseLabel(item),
+      item.public_title,
+      item.department_name,
+    ]),
+  );
   const save = async (e) => {
     e.preventDefault();
-    editing
-      ? await updatePriorityGroup(editing.id, form)
-      : await createPriorityGroup(form);
-    setEditing(null);
-    setForm({
-      public_title: "",
-      public_description: "",
-      is_public: false,
-      member_case_ids: [],
-    });
-    load();
+    if (saving) return;
+    setSaving(true);
+    setMutationError("");
+    try {
+      editing
+        ? await updatePriorityGroup(editing.id, form)
+        : await createPriorityGroup(form);
+      setEditing(null);
+      setForm({
+        public_title: "",
+        public_description: "",
+        is_public: false,
+        member_case_ids: [],
+      });
+      load();
+    } catch (error) {
+      setMutationError(
+        error.response?.data?.message ||
+          "Unable to save priority group. Your entries have been kept.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
   return (
-    <section className="rounded-xl border bg-white p-4">
+    <section className="priority-groups-panel rounded-xl border bg-white p-4">
       <h2 className="text-xl font-semibold">Priority Groups</h2>
+      <p className="priority-help">
+        Bring related procurement cases together. Public visibility controls
+        whether the group is shown publicly.
+      </p>
+      {mutationError && (
+        <p role="alert" className="priority-error">
+          {mutationError}
+        </p>
+      )}
       {groupState === "loading" && <p>Loading priority groups…</p>}
       {groupState === "denied" && (
         <p role="alert">
@@ -307,7 +346,10 @@ function GroupManager({ cases }) {
         <p role="alert">Procurement Priority schema is unavailable.</p>
       )}
       {groupState === "error" && <p role="alert">{groupError}</p>}
-      <form onSubmit={save} className="mt-3 grid gap-3 md:grid-cols-2">
+      <form
+        onSubmit={save}
+        className="priority-group-form mt-3 grid gap-3 md:grid-cols-2"
+      >
         <label>
           Public title
           <input
@@ -337,9 +379,20 @@ function GroupManager({ cases }) {
           Public visibility
         </label>
         <fieldset className="md:col-span-2">
-          <legend className="font-medium">Procurement cases</legend>
+          <legend className="font-medium">
+            Procurement cases · {form.member_case_ids.length} selected
+          </legend>
+          <label>
+            Find procurement cases
+            <input
+              type="search"
+              value={caseSearch}
+              onChange={(event) => setCaseSearch(event.target.value)}
+              placeholder="Reference, title, or department"
+            />
+          </label>
           <div className="max-h-48 overflow-y-auto rounded border p-2">
-            {cases.map((item) => (
+            {visibleCases.map((item) => (
               <label key={item.procurement_case_id} className="block py-1">
                 <input
                   type="checkbox"
@@ -358,17 +411,48 @@ function GroupManager({ cases }) {
                   }
                 />{" "}
                 {caseLabel(item)} · {item.public_title} ·{" "}
-                {item.department_name || "Department"} · {item.system_tier} ·{" "}
-                {item.system_score} · {item.case_status}
+                {item.department_name || "Department"} ·{" "}
+                {item.system_tier || "Not assessed"} ·{" "}
+                {item.system_score ?? "—"} · {item.case_status}
               </label>
             ))}
+            {visibleCases.length === 0 && (
+              <p className="priority-empty">
+                No procurement cases match this search.
+              </p>
+            )}
           </div>
         </fieldset>
-        <button className="rounded bg-blue-700 px-3 py-2 text-white">
-          {editing ? "Save group" : "Create Group"}
-        </button>
+        <div className="priority-group-submit">
+          <button
+            disabled={saving}
+            className="priority-primary rounded bg-blue-700 px-3 py-2 text-white"
+          >
+            {saving ? "Saving group…" : editing ? "Save group" : "Create Group"}
+          </button>
+          {editing && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                setEditing(null);
+                setForm({
+                  public_title: "",
+                  public_description: "",
+                  is_public: false,
+                  member_case_ids: [],
+                });
+              }}
+            >
+              Cancel editing
+            </button>
+          )}
+        </div>
       </form>
-      <div className="mt-4 overflow-x-auto">
+      {groupState === "ready" && groups.length === 0 && (
+        <p className="priority-empty">No priority groups yet.</p>
+      )}
+      <div className="priority-table-scroll mt-4 overflow-x-auto">
         <table className="min-w-full">
           <thead>
             <tr>
@@ -386,7 +470,13 @@ function GroupManager({ cases }) {
               <tr key={group.id} className="border-t">
                 <td>{group.public_title}</td>
                 <td>
-                  <PriorityTierBadge tier={group.tier || group.tier_override} />
+                  {group.tier || group.tier_override ? (
+                    <PriorityTierBadge
+                      tier={group.tier || group.tier_override}
+                    />
+                  ) : (
+                    <span className="priority-muted">Not assessed</span>
+                  )}
                 </td>
                 <td>{group.derived_score ?? "—"}</td>
                 <td>{group.institutional_rank ?? "—"}</td>
@@ -408,8 +498,15 @@ function GroupManager({ cases }) {
                   </button>{" "}
                   <button
                     onClick={async () => {
-                      await archivePriorityGroup(group.id);
-                      load();
+                      try {
+                        await archivePriorityGroup(group.id);
+                        load();
+                      } catch (error) {
+                        setMutationError(
+                          error.response?.data?.message ||
+                            "Unable to archive priority group.",
+                        );
+                      }
                     }}
                   >
                     Archive
@@ -436,14 +533,14 @@ export default function ProcurementPriorityManagementPage() {
   const [state, setState] = useState("loading");
   const [selected, setSelected] = useState(null);
   const [history, setHistory] = useState([]);
-  const [detailRequest,setDetailRequest] = useState(null);
-  const editing=useRef(false);
+  const [detailRequest, setDetailRequest] = useState(null);
+  const editing = useRef(false);
   const [order, setOrder] = useState([]);
   const [reason, setReason] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
-  const [orderError, setOrderError] = useState('');
+  const [orderError, setOrderError] = useState("");
   const [orderSaved, setOrderSaved] = useState(false);
-  const load = useCallback((quiet=false) => {
+  const load = useCallback((quiet = false) => {
     if (!quiet) setState("loading");
     getPriorityManagementQueue()
       .then((x) => {
@@ -452,7 +549,7 @@ export default function ProcurementPriorityManagementPage() {
         setRows(data);
         setOrder(data);
         setState("ready");
-        setOrderError('');
+        setOrderError("");
       })
       .catch((e) => {
         if (quiet && editing.current) return;
@@ -463,31 +560,44 @@ export default function ProcurementPriorityManagementPage() {
         );
       });
   }, []);
-  useEffect(() => { load(); }, [load]);
-  const orderDirty = order.map(row => row.request_id).join(',') !== rows.map(row => row.request_id).join(',');
-  const orderNeedsSave = orderDirty || order.some((row,index) => Number(row.institutional_rank) !== index + 1);
-  editing.current=selected != null || orderDirty || savingOrder;
+  useEffect(() => {
+    load();
+  }, [load]);
+  const orderDirty =
+    order.map((row) => row.request_id).join(",") !==
+    rows.map((row) => row.request_id).join(",");
+  const orderNeedsSave =
+    orderDirty ||
+    order.some((row, index) => Number(row.institutional_rank) !== index + 1);
+  editing.current = selected != null || orderDirty || savingOrder;
   usePriorityQueueRefresh(() => load(true), editing.current);
   const open = async (row) => {
-    const member=row.members ? row.members[0] : row;
+    const member = row.members ? row.members[0] : row;
     if (row.members) setDetailRequest(row);
-    setOrderError('');
-    try { const [p, h] = await Promise.all([
-      getPriorityProfile(member.procurement_case_id),
-      getPriorityHistory(member.procurement_case_id),
-    ]);
-    setSelected(p.data);
-    setHistory(h.data || []);
-    } catch { setOrderError("Unable to load item assessment. Try opening the request again."); }
+    setOrderError("");
+    try {
+      const [p, h] = await Promise.all([
+        getPriorityProfile(member.procurement_case_id),
+        getPriorityHistory(member.procurement_case_id),
+      ]);
+      setSelected(p.data);
+      setHistory(h.data || []);
+    } catch {
+      setOrderError(
+        "Unable to load item assessment. Try opening the request again.",
+      );
+    }
   };
   const shown = useMemo(
     () =>
       order.filter(
         (row) =>
-          (!filters.search ||
-            `${caseLabel(row)} ${row.public_title} ${row.department_name}`
-              .toLowerCase()
-              .includes(filters.search.toLowerCase())) &&
+          matchesSearchTokens(filters.search, [
+            caseLabel(row),
+            row.public_title,
+            row.department_name,
+            row.request_id,
+          ]) &&
           (!filters.tier || row.system_tier === filters.tier) &&
           (!filters.department || row.department_name === filters.department) &&
           (!filters.status || row.case_status === filters.status) &&
@@ -497,7 +607,8 @@ export default function ProcurementPriorityManagementPage() {
     [order, filters],
   );
   const move = (index, delta) => {
-    setOrderSaved(false); setOrderError('');
+    setOrderSaved(false);
+    setOrderError("");
     setOrder((old) => {
       const next = [...old];
       next.splice(index + delta, 0, next.splice(index, 1)[0]);
@@ -510,17 +621,28 @@ export default function ProcurementPriorityManagementPage() {
   );
   const saveOrder = async () => {
     if (savingOrder || !orderNeedsSave || (differs && !reason.trim())) return;
-    setSavingOrder(true); setOrderError(''); setOrderSaved(false);
-    try { await reorderInstitutionalPriorities(
-      order.map(row => row.request_id),
-      Object.fromEntries(rows.map(row => [row.request_id,row.snapshot])),
-      reason.trim(),
-    );
-    setReason("");
-    load();
-    setOrderSaved(true);
-    } catch (error) { setOrderError(error.response?.status === 409 ? 'The organizational queue changed. Reload the latest queue and review your order.' : error.response?.data?.message || 'Unable to save organizational priority order.'); }
-    finally { setSavingOrder(false); }
+    setSavingOrder(true);
+    setOrderError("");
+    setOrderSaved(false);
+    try {
+      await reorderInstitutionalPriorities(
+        order.map((row) => row.request_id),
+        Object.fromEntries(rows.map((row) => [row.request_id, row.snapshot])),
+        reason.trim(),
+      );
+      setReason("");
+      load();
+      setOrderSaved(true);
+    } catch (error) {
+      setOrderError(
+        error.response?.status === 409
+          ? "The organizational queue changed. Reload the latest queue and review your order."
+          : error.response?.data?.message ||
+              "Unable to save organizational priority order.",
+      );
+    } finally {
+      setSavingOrder(false);
+    }
   };
   if (state !== "ready")
     return (
@@ -536,164 +658,336 @@ export default function ProcurementPriorityManagementPage() {
       </main>
     );
   return (
-    <main className="space-y-6 p-4 md:p-6">
-      <h1 className="text-2xl font-bold">Priority Management</h1>
-      <p>{rows.length} active requests. Each whole request occupies one position. Suggested priority uses its most urgent active item; open a request to review each item assessment.</p>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        <input
-          aria-label="Search priorities"
-          placeholder="Search request or title"
-          className="rounded border p-2"
-          value={filters.search}
-          onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-        />
-        {[
-          ["tier", "Tier"],
-          ["department", "Department"],
-          ["status", "Status"],
-          ["group", "Priority Group"],
-        ].map(([key, label]) => (
-          <label key={key} className="text-xs">
-            {label}
-            <select
-              className="block w-full rounded border p-2"
-              value={filters[key]}
+    <main className="priority-management space-y-6 p-4 md:p-6">
+      <header className="priority-hero">
+        <div>
+          <span>Procurement planning</span>
+          <h1>Priority Management</h1>
+          <p>
+            Set the institutional order, review item assessments, and organize
+            related requests.
+          </p>
+        </div>
+        <a href="#priority-queue">Review priority queue ↓</a>
+      </header>
+      <div className="priority-metrics" aria-label="Queue summary">
+        <div>
+          <span>Active requests</span>
+          <strong>{rows.length}</strong>
+        </div>
+        <div>
+          <span>Active items</span>
+          <strong>
+            {rows.reduce((sum, row) => sum + (Number(row.item_count) || 0), 0)}
+          </strong>
+        </div>
+        <div>
+          <span>P0 / P1 requests</span>
+          <strong>
+            {
+              rows.filter((row) => ["P0", "P1"].includes(row.system_tier))
+                .length
+            }
+          </strong>
+        </div>
+        <div>
+          <span>Without a tier</span>
+          <strong>{rows.filter((row) => !row.system_tier).length}</strong>
+        </div>
+      </div>
+      <section
+        className="priority-filter-panel"
+        aria-labelledby="priority-filter-title"
+      >
+        <div className="priority-section-heading">
+          <div>
+            <h2 id="priority-filter-title">Find requests</h2>
+            <p className="priority-help">
+              Each request occupies one position. Suggested priority reflects
+              its most urgent active item.
+            </p>
+          </div>
+          {filtersActive && (
+            <button type="button" onClick={() => setFilters(emptyFilters)}>
+              Clear filters
+            </button>
+          )}
+        </div>
+        <div className="priority-filters grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <label>
+            Search
+            <input
+              aria-label="Search priorities"
+              placeholder="Search request or title"
+              className="rounded border p-2"
+              value={filters.search}
               onChange={(e) =>
-                setFilters({ ...filters, [key]: e.target.value })
+                setFilters({ ...filters, search: e.target.value })
               }
-            >
-              <option value="">All</option>
-              {[
-                ...new Set(
-                  rows
-                    .flatMap((r) =>
-                      key === "tier"
-                        ? r.system_tier
-                        : key === "department"
-                          ? r.department_name
-                          : key === "status"
-                            ? r.case_status
-                            : r.priority_group_names || [],
-                    )
-                    .filter(Boolean),
-                ),
-              ].map((v) => (
-                <option key={v}>{v}</option>
-              ))}
-            </select>
+            />
           </label>
-        ))}
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-[1450px] text-sm">
-          <thead>
-            <tr>
-              {[
-                "Institutional Rank",
-                "System Suggested Rank",
-                "Tier",
-                "Score",
-                "Request / Items",
-                "Department",
-                "Department Rank",
-                "Age",
-                "Impact",
-                "Service Risk",
-                "Deadline",
-                "Status",
-                "Priority Group",
-                "Order",
-              ].map((h) => (
-                <th className="p-2 text-left" key={h}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((row, index) => (
-              <tr
-                key={row.request_id}
-                onClick={() => open(row)}
-                className="cursor-pointer border-t hover:bg-blue-50"
+          {[
+            ["tier", "Tier"],
+            ["department", "Department"],
+            ["status", "Status"],
+            ["group", "Priority Group"],
+          ].map(([key, label]) => (
+            <label key={key} className="text-xs">
+              {label}
+              <select
+                className="block w-full rounded border p-2"
+                value={filters[key]}
+                onChange={(e) =>
+                  setFilters({ ...filters, [key]: e.target.value })
+                }
               >
-                <td className="p-2">{filtersActive ? row.institutional_rank ?? '—' : index + 1}</td>
-                <td>{row.system_suggested_rank}</td>
-                <td>
-                  <PriorityTierBadge tier={row.system_tier} />
-                </td>
-                <td>{row.system_score}</td>
-                <td>
-                  {row.request_id ? <a className="text-blue-700 underline" href={`/requests/${row.request_id}`} onClick={event => event.stopPropagation()}>{caseLabel(row)}</a> : caseLabel(row)} · {row.item_count} active items · {row.public_title}
-                </td>
-                <td>{row.department_name}</td>
-                <td>{row.department_rank ?? "—"}</td>
-                <td>{row.age} days</td>
-                <td>{row.impact_level || "—"}</td>
-                <td>{row.service_risk_level || "—"}</td>
-                <td>{row.deadline_at || "—"}</td>
-                <td>{row.case_status}</td>
-                <td>{row.priority_group_names?.join(", ") || "—"}</td>
-                <td>
-                  {canOverride && (
-                    <>
-                      <button
-                        aria-label={`Move ${row.public_title} up`}
-                        disabled={savingOrder || filtersActive || !index}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          move(index, -1);
-                        }}
-                      >
-                        Up
-                      </button>{" "}
-                      <button
-                        aria-label={`Move ${row.public_title} down`}
-                        disabled={savingOrder || filtersActive || index === shown.length - 1}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          move(index, 1);
-                        }}
-                      >
-                        Down
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {canOverride && filtersActive && (
-        <p role="status">Clear filters to change institutional order.</p>
-      )}
-      {orderDirty && <p role="status" className="text-amber-700">Unsaved organizational order</p>}
-      {canOverride && differs && (
-        <label className="block">
-          Override reason
-          <input
-            aria-label="Institutional order override reason"
-            required
-            disabled={savingOrder}
-            className="ml-2 rounded border p-2"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-        </label>
-      )}
-      {canOverride && (
-        <button
-          disabled={!orderNeedsSave || savingOrder || filtersActive || (differs && !reason.trim())}
-          onClick={saveOrder}
-          className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
+                <option value="">All</option>
+                {[
+                  ...new Set(
+                    rows
+                      .flatMap((r) =>
+                        key === "tier"
+                          ? r.system_tier
+                          : key === "department"
+                            ? r.department_name
+                            : key === "status"
+                              ? r.case_status
+                              : r.priority_group_names || [],
+                      )
+                      .filter(Boolean),
+                  ),
+                ].map((v) => (
+                  <option key={v}>{v}</option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+        <p role="status" className="priority-help">
+          Showing {shown.length} of {rows.length} requests
+        </p>
+      </section>
+      <section
+        id="priority-queue"
+        className="priority-queue-panel"
+        aria-labelledby="priority-queue-title"
+      >
+        <div className="priority-section-heading">
+          <div>
+            <h2 id="priority-queue-title">Institutional priority queue</h2>
+            <p className="priority-help">
+              Open an assessment to review items. Move whole requests to prepare
+              a new order.
+            </p>
+          </div>
+          {orderDirty && <span className="priority-draft">Unsaved order</span>}
+        </div>
+        <p id="priority-scroll-hint" className="priority-scroll-hint">
+          Scroll across the table to review scores and ordering controls.
+        </p>
+        <div
+          className="priority-table-scroll"
+          role="region"
+          aria-label="Institutional priority queue table"
+          aria-describedby="priority-scroll-hint"
+          tabIndex={0}
         >
-          {savingOrder ? 'Saving…' : 'Save institutional order'}
-        </button>
+          <table className="min-w-[1450px] text-sm">
+            <thead>
+              <tr>
+                {[
+                  "Institutional Rank",
+                  "Request / Items",
+                  "System Suggested Rank",
+                  "Tier",
+                  "Score",
+                  "Department",
+                  "Department Rank",
+                  "Age",
+                  "Impact",
+                  "Service Risk",
+                  "Deadline",
+                  "Status",
+                  "Priority Group",
+                  "Order",
+                ].map((h) => (
+                  <th className="p-2 text-left" key={h}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {shown.map((row, index) => (
+                <tr
+                  key={row.request_id}
+                  onClick={() => open(row)}
+                  className="cursor-pointer border-t hover:bg-blue-50"
+                >
+                  <td className="p-2">
+                    {filtersActive
+                      ? (row.institutional_rank ?? "—")
+                      : index + 1}
+                  </td>
+                  <td>
+                    {row.request_id ? (
+                      <a
+                        className="text-blue-700 underline"
+                        href={`/requests/${row.request_id}`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        {caseLabel(row)}
+                      </a>
+                    ) : (
+                      caseLabel(row)
+                    )}{" "}
+                    · {row.item_count} active items ·{" "}
+                    <button
+                      className="priority-assess-link"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        open(row);
+                      }}
+                    >
+                      {row.public_title || "Open assessment"}
+                    </button>
+                  </td>
+                  <td>{row.system_suggested_rank ?? "—"}</td>
+                  <td>
+                    {row.system_tier ? (
+                      <PriorityTierBadge tier={row.system_tier} />
+                    ) : (
+                      <span className="priority-muted">Not assessed</span>
+                    )}
+                  </td>
+                  <td>{row.system_score ?? "—"}</td>
+                  <td>{row.department_name}</td>
+                  <td>{row.department_rank ?? "—"}</td>
+                  <td>{row.age == null ? "—" : `${row.age} days`}</td>
+                  <td>{row.impact_level || "—"}</td>
+                  <td>{row.service_risk_level || "—"}</td>
+                  <td>{row.deadline_at || "—"}</td>
+                  <td>{row.case_status}</td>
+                  <td>{row.priority_group_names?.join(", ") || "—"}</td>
+                  <td>
+                    {canOverride && (
+                      <>
+                        <button
+                          aria-label={`Move ${row.public_title} up`}
+                          disabled={savingOrder || filtersActive || !index}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            move(index, -1);
+                          }}
+                        >
+                          Up
+                        </button>{" "}
+                        <button
+                          aria-label={`Move ${row.public_title} down`}
+                          disabled={
+                            savingOrder ||
+                            filtersActive ||
+                            index === shown.length - 1
+                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            move(index, 1);
+                          }}
+                        >
+                          Down
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {shown.length === 0 && (
+          <p className="priority-empty">
+            {rows.length
+              ? "No requests match the selected filters."
+              : "No active requests in the priority queue."}
+          </p>
+        )}
+        <div className="priority-order-panel">
+          {canOverride && filtersActive && (
+            <p role="status">Clear filters to change institutional order.</p>
+          )}
+          {orderDirty && (
+            <p role="status" className="text-amber-700">
+              Unsaved organizational order
+            </p>
+          )}
+          {canOverride && differs && (
+            <label className="block">
+              Override reason
+              <input
+                aria-label="Institutional order override reason"
+                required
+                disabled={savingOrder}
+                className="ml-2 rounded border p-2"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </label>
+          )}
+          {canOverride && (
+            <button
+              disabled={
+                !orderNeedsSave ||
+                savingOrder ||
+                filtersActive ||
+                (differs && !reason.trim())
+              }
+              onClick={saveOrder}
+              className="priority-primary rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
+            >
+              {savingOrder ? "Saving…" : "Save institutional order"}
+            </button>
+          )}
+          {orderError && (
+            <p role="alert" className="mt-3 text-red-700">
+              {orderError}
+              <button
+                disabled={savingOrder}
+                onClick={() => load()}
+                className="ml-3 underline"
+              >
+                Reload latest queue
+              </button>
+            </p>
+          )}
+          {canOverride && orderDirty && (
+            <button
+              type="button"
+              disabled={savingOrder}
+              onClick={() => {
+                setOrder(rows);
+                setReason("");
+                setOrderError("");
+                setOrderSaved(false);
+              }}
+            >
+              Reset changes
+            </button>
+          )}
+          {canOverride && differs && (
+            <p className="priority-help">
+              A reason is required when the order differs from the system
+              suggestion.
+            </p>
+          )}
+          {orderSaved && (
+            <p role="status">Organizational priority order saved.</p>
+          )}
+        </div>
+      </section>
+      {canManageGroups && (
+        <GroupManager cases={rows.flatMap((row) => row.members || [])} />
       )}
-      {orderError && <p role="alert" className="mt-3 text-red-700">{orderError}<button disabled={savingOrder} onClick={() => load()} className="ml-3 underline">Reload latest queue</button></p>}
-      {orderSaved && <p role="status">Organizational priority order saved.</p>}
-      {canManageGroups && <GroupManager cases={rows.flatMap(row => row.members || [])} />}
       {selected && (
         <aside
           role="dialog"
@@ -703,11 +997,36 @@ export default function ProcurementPriorityManagementPage() {
           <button onClick={() => setSelected(null)} className="float-right">
             Close
           </button>
-          <h2 className="text-xl font-bold">Request {detailRequest?.request_reference || detailRequest?.request_id}</h2>
-          <p>One request position · {detailRequest?.item_count} active items. Assessments below apply to the selected item.</p>
-          <label>Item assessment
-            <select aria-label="Item assessment" value={selected.procurement_case_id} onChange={event => open(detailRequest.members.find(row => String(row.procurement_case_id)===event.target.value))}>
-              {(detailRequest?.members || []).map(member => <option key={member.procurement_case_id} value={member.procurement_case_id}>{member.public_title}</option>)}
+          <h2 className="text-xl font-bold">
+            Request{" "}
+            {detailRequest?.request_reference || detailRequest?.request_id}
+          </h2>
+          <p>
+            One request position · {detailRequest?.item_count} active items.
+            Assessments below apply to the selected item.
+          </p>
+          <label>
+            Item assessment
+            <select
+              aria-label="Item assessment"
+              value={selected.procurement_case_id}
+              onChange={(event) =>
+                open(
+                  detailRequest.members.find(
+                    (row) =>
+                      String(row.procurement_case_id) === event.target.value,
+                  ),
+                )
+              }
+            >
+              {(detailRequest?.members || []).map((member) => (
+                <option
+                  key={member.procurement_case_id}
+                  value={member.procurement_case_id}
+                >
+                  {member.public_title}
+                </option>
+              ))}
             </select>
           </label>
           <div className="my-4 grid grid-cols-2 gap-2 rounded bg-slate-50 p-3 text-sm">
