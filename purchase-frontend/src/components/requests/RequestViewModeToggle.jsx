@@ -1,46 +1,44 @@
-import React from 'react';
-import { REQUEST_VIEW_MODES } from '../../hooks/usePersistedRequestViewMode';
+import "./RequestViewModeToggle.css";
+import { List, LayoutGrid } from "lucide-react";
+import React from "react";
+import { REQUEST_VIEW_MODES } from "../../hooks/usePersistedRequestViewMode";
 
 const RequestViewModeToggle = ({
   value,
   onChange,
-  title = 'Request view',
-  description = 'Use summary view to scan compact request cards, or detailed view to show request metadata up front.',
-  detailedLabel = 'Detailed',
-  summaryLabel = 'Summary',
-  ariaLabel = 'Request view mode',
-  className = '',
+  title = "Request view",
+  description = "Use summary view to scan compact request cards, or detailed view to show request metadata up front.",
+  detailedLabel = "Detailed",
+  summaryLabel = "Summary",
+  ariaLabel = "Request view mode",
+  className = "",
 }) => {
   const renderOption = (mode, label) => {
+    const Icon = mode === REQUEST_VIEW_MODES.detailed ? LayoutGrid : List;
     const isActive = value === mode;
 
     return (
       <button
         type="button"
-        className={`rounded px-3 py-1.5 text-sm font-medium ${
-          isActive
-            ? 'bg-white text-blue-700 shadow-sm'
-            : 'text-slate-600 hover:text-slate-900'
-        }`}
+        className="request-view-option"
         onClick={() => onChange(mode)}
         aria-pressed={isActive}
       >
-        {label}
+        <Icon size={16} aria-hidden="true" />
+        <span>{label}</span>
       </button>
     );
   };
 
   return (
-    <div className={`flex flex-col gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between ${className}`}>
+    <div className={`request-view-toolbar ${className}`}>
       <div>
-        <p className="text-sm font-semibold text-slate-800">{title}</p>
-        {description && <p className="text-xs text-slate-500">{description}</p>}
+        <p className="request-view-title">{title}</p>
+        {description && (
+          <p className="request-view-description">{description}</p>
+        )}
       </div>
-      <div
-        className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1"
-        role="group"
-        aria-label={ariaLabel}
-      >
+      <div className="request-view-options" role="group" aria-label={ariaLabel}>
         {renderOption(REQUEST_VIEW_MODES.detailed, detailedLabel)}
         {renderOption(REQUEST_VIEW_MODES.summary, summaryLabel)}
       </div>

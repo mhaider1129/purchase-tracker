@@ -950,6 +950,7 @@
     }
   },
   "common": {
+    "urgent": "Urgent",
     "language": "Language",
     "loading": "Loading...",
     "prev": "Prev",

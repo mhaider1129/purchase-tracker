@@ -1,3 +1,4 @@
+import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 import RequestTrackingBrief from '../components/requests/RequestTrackingBrief';
 import {
   matchesSubmissionDates,
@@ -965,6 +966,22 @@ const OpenRequestsPage = () => {
           </div>
         </section>
 
+        {!error && sorted.length > 0 && (
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            disabled={loading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            summary={translate("common.pageOf", {
+              current: currentPage,
+              total: totalPages,
+            })}
+            previousLabel={translate("common.prev")}
+            nextLabel={translate("common.next")}
+          />
+        )}
+
         {!loading && !error && (
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
             <p className="font-medium text-gray-700 dark:text-gray-200">
@@ -1100,7 +1117,7 @@ const OpenRequestsPage = () => {
                     return (
                       <React.Fragment key={req.id}>
                         <tr
-                          className={`${
+                          className={`${req.is_urgent ? "request-card--urgent" : ""} ${
                             isFocused
                               ? 'bg-blue-50/70 transition-colors dark:bg-blue-950/30'
                               : 'bg-white transition-colors dark:bg-gray-900'
@@ -1108,7 +1125,7 @@ const OpenRequestsPage = () => {
                           data-request-id={req.id}
                         >
                           <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
-                            #{req.id}
+                            #{req.id}<UrgentRequestBadge urgent={req.is_urgent} />
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             {req.request_type || tr('notAvailable')}
@@ -1401,7 +1418,7 @@ const OpenRequestsPage = () => {
                   <article
                     key={`card-${req.id}`}
                     data-request-id={req.id}
-                    className={`rounded-lg border p-4 shadow-sm transition-colors ${
+                    className={`rounded-lg border p-4 shadow-sm transition-colors ${req.is_urgent ? "request-card--urgent" : ""} ${
                       isFocused
                         ? 'border-blue-400 bg-blue-50/70 dark:border-blue-500 dark:bg-blue-950/30'
                         : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900'
@@ -1416,7 +1433,7 @@ const OpenRequestsPage = () => {
                           Open Workspace
                         </Link>
                         <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                          {tr('table.id')} #{req.id}
+                          {tr('table.id')} #{req.id}<UrgentRequestBadge urgent={req.is_urgent} />
                         </p>
                         <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {req.request_type || tr('notAvailable')}
@@ -1654,16 +1671,17 @@ const OpenRequestsPage = () => {
             </div>
 
             <PaginationControls
+              disabled={loading}
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               className="border-t border-gray-200 pt-4 dark:border-gray-700 md:justify-between"
-              summary={translate('common.pageOf', {
+              summary={translate("common.pageOf", {
                 current: currentPage,
                 total: totalPages,
               })}
-              previousLabel={translate('common.prev')}
-              nextLabel={translate('common.next')}
+              previousLabel={translate("common.prev")}
+              nextLabel={translate("common.next")}
             />
           </div>
         )}

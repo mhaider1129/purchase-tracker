@@ -1,3 +1,4 @@
+import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import { Link } from 'react-router-dom';
@@ -346,6 +347,17 @@ const IncompleteRequestsPage = () => {
           </button>
         </div>
 
+        {!error && filtered.length > 0 && (
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            disabled={loading}
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            summary={`Page ${page} of ${totalPages}`}
+          />
+        )}
+
         {loading ? (
           <p className="text-gray-600">Loading requests...</p>
         ) : error ? (
@@ -370,8 +382,8 @@ const IncompleteRequestsPage = () => {
                 </thead>
                 <tbody>
                   {paginatedData.map((req) => (
-                    <tr key={req.id} className="hover:bg-blue-50 transition">
-                      <td className="p-2 border font-medium">{req.id}</td>
+                    <tr key={req.id} className={`hover:bg-blue-50 transition ${req.is_urgent ? "request-card--urgent" : ""}`}>
+                      <td className="p-2 border font-medium">{req.id}<UrgentRequestBadge urgent={req.is_urgent} /></td>
                       <td className="p-2 border">{req.request_type}</td>
                       <td className="p-2 border">{req.department_name}</td>
                       <td className="p-2 border">{req.section_name || '—'}</td>
@@ -394,6 +406,7 @@ const IncompleteRequestsPage = () => {
             </div>
 
             <PaginationControls
+              disabled={loading}
               currentPage={page}
               totalPages={totalPages}
               onPageChange={setPage}

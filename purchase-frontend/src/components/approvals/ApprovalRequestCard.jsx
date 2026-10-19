@@ -1,3 +1,4 @@
+import "../../styles/RequestLists.css";
 import RequestAgeBadge from '../workspaces/RequestAgeBadge';
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -81,13 +82,13 @@ const ApprovalRequestCard = ({
 
   return (
     <article
-      className={`group overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${isUrgentRequest ? "border-amber-200" : "border-slate-200"}`}
+      className={`group overflow-hidden rounded-2xl border bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${isUrgentRequest ? "request-card--urgent" : "border-slate-200"}`}
     >
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isExpanded}
-        className={`relative flex w-full items-start justify-between gap-4 ${headerPaddingClass} text-left transition-colors hover:bg-slate-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500`}
+        className={`request-approval-header relative flex w-full items-start justify-between gap-4 ${headerPaddingClass} text-left transition-colors hover:bg-slate-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500`}
       >
         <div className="flex flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-slate-500">
