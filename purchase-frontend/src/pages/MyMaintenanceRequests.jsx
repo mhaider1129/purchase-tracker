@@ -1,3 +1,4 @@
+import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 import { stableRequestItemId } from '../utils/requestItemIdentity';
 // src/pages/MyMaintenanceRequests.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1083,6 +1084,19 @@ const MyMaintenanceRequests = () => {
               {hasActiveFilters && <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{tr('results.filtered', { defaultValue: 'Filters applied' })}</span>}
             </div>
 
+        {filteredRequests.length > 0 && (
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            disabled={loading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            summary={tr("pagination.pageOf", { current: currentPage, total: totalPages })}
+            previousLabel={tr("pagination.prev")}
+            nextLabel={tr("pagination.next")}
+          />
+        )}
+
             <div className="mb-4 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="min-w-[1250px] w-full text-sm">
               <thead className="bg-gray-100">
@@ -1129,8 +1143,8 @@ const MyMaintenanceRequests = () => {
 
                   return (
                     <React.Fragment key={r.id}>
-                      <tr className="bg-white transition hover:bg-blue-50/40">
-                        <td className="border px-3 py-2">{r.id}</td>
+                      <tr className={`bg-white transition hover:bg-blue-50/40 ${r.is_urgent ? "request-card--urgent" : ""}`}>
+                        <td className="border px-3 py-2">{r.id}<UrgentRequestBadge urgent={r.is_urgent} /></td>
                         <td className="border px-3 py-2">{r.justification}</td>
                         <td className="border px-3 py-2">
                           <div>{r.department_name || tr('table.notAvailable')}</div>
@@ -1327,12 +1341,13 @@ const MyMaintenanceRequests = () => {
               </div>
 
               <PaginationControls
+                disabled={loading}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
-                summary={tr('pagination.pageOf', { current: currentPage, total: totalPages })}
-                previousLabel={tr('pagination.prev')}
-                nextLabel={tr('pagination.next')}
+                summary={tr("pagination.pageOf", { current: currentPage, total: totalPages })}
+                previousLabel={tr("pagination.prev")}
+                nextLabel={tr("pagination.next")}
               />
             </div>
 

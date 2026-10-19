@@ -1,3 +1,4 @@
+import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 // src/pages/ClosedRequestsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
@@ -715,6 +716,22 @@ const ClosedRequestsPage = () => {
         </div>
         </section>
 
+        {!error && sorted.length > 0 && (
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            disabled={loading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            summary={translate("common.pageOf", {
+              current: currentPage,
+              total: totalPages,
+            })}
+            previousLabel={translate("common.prev")}
+            nextLabel={translate("common.next")}
+          />
+        )}
+
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-400 dark:bg-red-900/30 dark:text-red-200">
             {error}
@@ -820,9 +837,9 @@ const ClosedRequestsPage = () => {
 
                     return (
                       <React.Fragment key={req.id}>
-                        <tr className="bg-white dark:bg-gray-900">
+                        <tr className={`bg-white dark:bg-gray-900 ${req.is_urgent ? "request-card--urgent" : ""}`}>
                           <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
-                            #{req.id}
+                            #{req.id}<UrgentRequestBadge urgent={req.is_urgent} />
                           </td>
                           <td className="px-4 py-3 text-gray-700 dark:text-gray-200">
                             {req.request_type || tr('notAvailable')}
@@ -1125,12 +1142,12 @@ const ClosedRequestsPage = () => {
                 return (
                   <article
                     key={`card-${req.id}`}
-                    className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                    className={`rounded-lg border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900 ${req.is_urgent ? "request-card--urgent" : ""}`}
                   >
                     <header className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                          {tr('table.id')} #{req.id}
+                          {tr('table.id')} #{req.id}<UrgentRequestBadge urgent={req.is_urgent} />
                         </p>
                         <h2 className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
                           {req.request_type || tr('notAvailable')}
@@ -1393,13 +1410,17 @@ const ClosedRequestsPage = () => {
             </div>
 
             <PaginationControls
+              disabled={loading}
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               className="border-t border-gray-200 pt-4 dark:border-gray-700 md:justify-between"
-              summary={translate('common.pageOf', { current: currentPage, total: totalPages })}
-              previousLabel={translate('common.prev')}
-              nextLabel={translate('common.next')}
+              summary={translate("common.pageOf", {
+                current: currentPage,
+                total: totalPages,
+              })}
+              previousLabel={translate("common.prev")}
+              nextLabel={translate("common.next")}
             />
           </div>
         )}

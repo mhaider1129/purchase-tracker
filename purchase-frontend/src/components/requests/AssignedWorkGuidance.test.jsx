@@ -143,3 +143,20 @@ test("Arabic guidance uses application translations", async () => {
     screen.getByText("سجّل واحفظ التكلفة الإجمالية للطلب."),
   ).toBeInTheDocument();
 });
+
+test('assigned request pagination synchronizes both controls and resets after filtering', async () => {
+  const many = Array.from({length:21}, (_,index) => ({...requests[0],id:index+100,justification:`Assigned case ${index}`,is_urgent:index===0}));
+  api.get.mockResolvedValue({data:{data:many}});
+  renderPage();
+  const top=within(await screen.findByRole('navigation',{name:'Pagination (top)'}));
+  const bottom=within(screen.getByRole('navigation',{name:'Pagination'}));
+  expect(screen.getAllByText(/Assigned case \d+/)).toHaveLength(10);
+  fireEvent.click(top.getByRole('button',{name:'2'}));
+  expect(bottom.getByRole('button',{name:'2'})).toHaveAttribute('aria-current','page');
+  fireEvent.change(bottom.getByRole('combobox'),{target:{value:'3'}});
+  expect(screen.getAllByText(/Assigned case \d+/)).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button',{name:'Urgent only'}));
+  expect(screen.getByText('Assigned case 0')).toBeInTheDocument();
+  expect(screen.queryByRole('navigation',{name:'Pagination (top)'})).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});

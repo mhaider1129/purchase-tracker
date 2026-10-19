@@ -1,0 +1,92 @@
+.pagination-controls {
+  margin-block: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 12px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+.pagination-summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.pagination-navigation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pagination-controls button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  min-width: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.pagination-controls.pagination-controls button[aria-current="page"] {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+  box-shadow: 0 2px 6px #2563eb30;
+}
+.pagination-controls button:not(:disabled):hover {
+  border-color: var(--color-accent);
+}
+.pagination-controls button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pagination-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.pagination-controls select {
+  min-height: 38px;
+  padding: 6px 10px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+}
+.pagination-controls :is(button, select):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .pagination-controls {
+    justify-content: center;
+    padding: 12px;
+    gap: 10px;
+  }
+  .pagination-summary {
+    flex-basis: 100%;
+    text-align: center;
+  }
+  .pagination-controls button {
+    padding: 7px 9px;
+    min-width: 34px;
+  }
+}
+@media print {
+  .pagination-controls {
+    display: none;
+  }
+}

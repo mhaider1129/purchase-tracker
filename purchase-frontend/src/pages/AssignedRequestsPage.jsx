@@ -1,3 +1,6 @@
+import PaginationControls from "../components/ui/PaginationControls";
+import useRequestListPagination from "../hooks/useRequestListPagination";
+import "../styles/RequestLists.css";
 import AssignedWorkGuidance, { AssignedWorkViews } from '../components/requests/AssignedWorkGuidance';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
 import './OperationalWorkspaces.css';
@@ -1166,6 +1169,11 @@ const AssignedRequestsPage = () => {
     [filteredRequests, sortBy],
   );
 
+  const { currentPage, totalPages, setPage, paginatedItems } = useRequestListPagination(
+    visibleRequests,
+    JSON.stringify([searchTerm, typeFilter, departmentFilter, completionFilter, urgencyFilter, sortBy]),
+  );
+
   const resetFilters = () => {
     setSearchTerm("");
     setTypeFilter("all");
@@ -1445,7 +1453,7 @@ const AssignedRequestsPage = () => {
                   "filters.resultCount",
                   "Showing {{shown}} of {{total}} assigned requests",
                   {
-                    shown: filteredRequests.length,
+                    shown: paginatedItems.length,
                     total: requests.length,
                   },
                 )}
@@ -1460,6 +1468,16 @@ const AssignedRequestsPage = () => {
             </div>
           </div>
 
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            disabled={loading}
+            summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+            previousLabel={t("common.prev")}
+            nextLabel={t("common.next")}
+          />
           <div id="assigned-results" tabIndex={-1} className="workspace-results-anchor" />
           {filteredRequests.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
@@ -1472,7 +1490,7 @@ const AssignedRequestsPage = () => {
               <button type="button" onClick={resetFilters} className="mt-3 text-sm font-semibold text-blue-600">{tr("filters.reset", "Reset filters")}</button>
             </div>
           ) : (
-            visibleRequests.map((request) => {
+            paginatedItems.map((request) => {
               const summary = request.status_summary || {};
               const autoTotal =
                 autoTotals[request.id] ?? summary.items_total_cost ?? null;
@@ -1491,7 +1509,7 @@ const AssignedRequestsPage = () => {
               const containerClasses = [
                 "mb-6 overflow-hidden rounded-2xl border bg-white shadow-sm transition duration-200 hover:shadow-md",
                 isUrgent
-                  ? "border-rose-300 ring-1 ring-rose-100"
+                  ? "request-card--urgent"
                   : "border-slate-200",
               ]
                 .filter(Boolean)
@@ -2027,6 +2045,18 @@ const AssignedRequestsPage = () => {
             })
           )}
         </>
+      )}
+
+      {!loading && visibleRequests.length > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          disabled={loading}
+          summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+          previousLabel={t("common.prev")}
+          nextLabel={t("common.next")}
+        />
       )}
 
       {manualStatusItem && (

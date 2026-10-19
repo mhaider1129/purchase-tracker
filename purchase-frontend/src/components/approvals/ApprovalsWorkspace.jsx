@@ -1,3 +1,4 @@
+import "../../styles/RequestLists.css";
 // src/components/approvals/ApprovalsWorkspace.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -1053,6 +1054,19 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
           </div>
         )}
 
+        {!error && filteredRequests.length > 0 && (
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            disabled={loading}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+            previousLabel={t("common.prev")}
+            nextLabel={t("common.next")}
+          />
+        )}
+
         <div className="mt-6">
           {loading ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6">
@@ -1096,7 +1110,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                 const decisionsForRequest = itemDecisions[request.request_id] || {};
 
                 return (
-                  <div key={request.request_id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                  <div key={request.request_id} className={`overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm ${request.is_urgent ? "request-card--urgent" : ""}`}>
                     <button
                       type="button"
                       onClick={() => toggleRequest(request)}
@@ -1528,13 +1542,14 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
               ))}
 
               <PaginationControls
+                disabled={loading}
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={setCurrentPage}
                 className="rounded-md border border-slate-200 bg-white px-4 py-3 text-slate-600 md:justify-between"
-                summary={t('common.pageOf', { current: currentPage, total: totalPages })}
-                previousLabel={t('common.prev')}
-                nextLabel={t('common.next')}
+                summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+                previousLabel={t("common.prev")}
+                nextLabel={t("common.next")}
               />
             </div>
           )}

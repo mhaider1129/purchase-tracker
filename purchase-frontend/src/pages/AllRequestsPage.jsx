@@ -1,3 +1,4 @@
+import "../styles/RequestLists.css";
 import AllRequestGuidance from "../components/requests/AllRequestGuidance";
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
@@ -1735,6 +1736,17 @@ const AllRequestsPage = () => {
 
         </div>
 
+        {requests.length > 0 && (
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            disabled={loading}
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            summary={`Page ${page} of ${totalPages}`}
+          />
+        )}
+
         <RequestViewModeToggle
           className="mb-4"
           value={requestViewMode}
@@ -1765,7 +1777,7 @@ const AllRequestsPage = () => {
               const step = getCurrentStep(request);
               const isUrgent = Boolean(request?.is_urgent);
               const cardClasses = isUrgent
-                ? "border-red-300 ring-1 ring-red-200/70 bg-red-50/70"
+                ? "request-card--urgent"
                 : "";
               const requesterDisplay = getRequesterDisplay(request);
               const showCommunication =
@@ -1811,13 +1823,13 @@ const AllRequestsPage = () => {
               };
 
               return (
-                <Card key={request.id} className={`transition ${cardClasses}`}>
-                  <div className="flex justify-between items-start gap-4 flex-wrap">
+                <Card key={request.id} className={`request-list-card ${isSummaryRequestView ? "request-list-card--summary" : "request-list-card--detailed"} transition ${cardClasses}`}>
+                  <div className="request-card-layout">
                     <div
                       className={
                         isSummaryRequestView
-                          ? "min-w-0 flex-1 space-y-2"
-                          : "space-y-1"
+                          ? "request-card-metadata request-card-metadata--summary"
+                          : "request-card-metadata request-card-metadata--detailed"
                       }
                     >
                       <div className="flex items-center gap-3 flex-wrap">
@@ -1931,17 +1943,17 @@ const AllRequestsPage = () => {
                             <strong>Requester:</strong> {requesterDisplay}
                           </p>
                           <p>
+                            <strong>Assigned To:</strong> {assignedDisplay}
+                          </p>
+                          <p className="request-card-justification">
                             <strong>Justification:</strong>{" "}
                             {request.justification}
-                          </p>
-                          <p>
-                            <strong>Assigned To:</strong> {assignedDisplay}
                           </p>
                         </>
                       )}
                     </div>
 
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="request-card-actions">
                       {canUpdateCentralSupplyStatus && (
                         <button
                           type="button"
@@ -2008,7 +2020,7 @@ const AllRequestsPage = () => {
                         </button>
                       )}
                       {canReclassifyRequests && (
-                        <div className="w-56 rounded-md border border-blue-200 bg-blue-50 p-3 text-left">
+                        <details className="request-type-correction"><summary>Correct request type</summary><div className="request-type-correction-fields">
                           <label
                             className="mb-1 block text-xs font-semibold text-blue-900"
                             htmlFor={`request-type-${request.id}`}
@@ -2050,7 +2062,7 @@ const AllRequestsPage = () => {
                               ? "Rewiring approvals…"
                               : "Change & rewire"}
                           </button>
-                        </div>
+                        </div></details>
                       )}
                       <button
                         className="text-blue-600 underline"
@@ -2473,6 +2485,7 @@ const AllRequestsPage = () => {
         )}
 
         <PaginationControls
+          disabled={loading}
           currentPage={page}
           totalPages={totalPages}
           onPageChange={setPage}

@@ -1,3 +1,5 @@
+import PaginationControls from "../components/ui/PaginationControls";
+import useRequestListPagination from "../hooks/useRequestListPagination";
 import ApprovalQueueControls from '../components/approvals/ApprovalQueueControls';
 import ApprovalDecisionSummary from '../components/workspaces/ApprovalDecisionSummary';
 import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
@@ -116,6 +118,11 @@ const ApprovalsPanel = () => {
     urgencyFilter,
   } = useApprovalsData(user);
 
+  const { currentPage, totalPages, setPage, paginatedItems } = useRequestListPagination(
+    filteredRequests,
+    JSON.stringify([searchTerm, typeFilter, urgencyFilter, sortOption, approvalStatusFilter]),
+  );
+
   const {
     approvalsMap,
     expandedApprovalsId,
@@ -179,13 +186,13 @@ const ApprovalsPanel = () => {
     const oldestTimestamp = timestamps.length ? Math.min(...timestamps) : null;
 
     return {
-      visible: filteredRequests.length,
+      visible: paginatedItems.length,
       oldestDays:
         oldestTimestamp == null
           ? null
           : Math.max(0, Math.floor((Date.now() - oldestTimestamp) / 86400000)),
     };
-  }, [filteredRequests.length, requests]);
+  }, [paginatedItems.length, requests]);
 
   return (
     <>
@@ -332,6 +339,18 @@ const ApprovalsPanel = () => {
 
         </div>
 
+        {!error && filteredRequests.length > 0 && (
+          <PaginationControls
+            ariaLabel="Pagination (top)"
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            disabled={loading}
+            summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+            previousLabel={t("common.prev")}
+            nextLabel={t("common.next")}
+          />
+        )}
         <RequestViewModeToggle
           className="mt-4"
           value={requestViewMode}
@@ -397,7 +416,7 @@ const ApprovalsPanel = () => {
             </div>
           ) : (
             <div className="space-y-5">
-              {filteredRequests.map((req) => {
+              {paginatedItems.map((req) => {
                 const estimatedCostValue = Number(req.estimated_cost) || 0;
                 const costTag = getCostLabel(estimatedCostValue);
                 const canEditItems = true;
@@ -630,6 +649,15 @@ const ApprovalsPanel = () => {
                   </ApprovalRequestCard>
                 );
               })}
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                disabled={loading}
+                summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+                previousLabel={t("common.prev")}
+                nextLabel={t("common.next")}
+              />
             </div>
           )}
         </div>
