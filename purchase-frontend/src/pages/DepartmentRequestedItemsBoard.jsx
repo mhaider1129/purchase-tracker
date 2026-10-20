@@ -70,7 +70,7 @@ const excelColumns = [
   ["approval_started_at", "Approval Started At"],
   ["first_approval_at", "First Approval At"],
   ["final_approval_at", "Final Approval At"],
-  ["approval_duration_days", "Approval Duration (Days)"],
+  ["approval_duration_days", "Approval Duration (Active Days)"],
   ["approval_timeline", "Approval Timeline"],
   ["department_name", "Department"],
   ["section_name", "Section"],

@@ -84,6 +84,7 @@ const WorkloadAnalysis = () => {
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
       <AnalyticsPageHeader eyebrow="Team capacity" title={translate("title", { defaultValue: "Approval Workload" })} description={translate("subtitle", { defaultValue: "Monitor queues, aging, urgency, and completion velocity across approval teams." })} icon={Users} meta={[translate("permissionTag", { defaultValue: "Requires dashboard.view" }), `${filters.completionWindowDays}-day completion window`]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4"/> Refresh</button>}/>
+      <p className="text-sm text-slate-600">{translate('timingNote', { defaultValue: 'Waiting ages exclude recorded approval hold periods.' })}</p>
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Workload filters">
         <div className="mb-4 flex items-center gap-2"><Filter className="h-4 w-4 text-blue-600"/><h2 className="font-semibold text-slate-900">Analysis filters</h2></div>
         <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
