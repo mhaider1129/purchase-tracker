@@ -354,6 +354,7 @@ const Dashboard = () => {
             actions={<button type="button" onClick={() => window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT))} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4" /> Refresh data</button>}
           />
         </div>
+        <p className="mb-4 text-sm text-slate-600">{translate('timingNote', { defaultValue: 'Timing metrics exclude recorded approval hold periods.' })}</p>
         <div className="mb-8"><CurrentProcurementPriorities status={priorityState.status} entries={priorityState.entries} /></div>
 
         {/* Overview Highlights */}

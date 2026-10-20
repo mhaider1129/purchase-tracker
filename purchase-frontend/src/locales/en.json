@@ -2128,6 +2128,7 @@
     }
   },
   "dashboard": {
+    "timingNote": "Timing metrics exclude recorded approval hold periods.",
     "failedToLoad": "Failed to load dashboard",
     "loadingDashboard": "Loading dashboard...",
     "overviewTitle": "📊 Dashboard Overview",
@@ -3116,6 +3117,7 @@
     "linkedRequest": "Linked to request #{{id}}"
   },
   "workload": {
+    "timingNote": "Timing metrics exclude recorded approval hold periods.",
     "title": "Approval Workload",
     "subtitle": "Monitor bottlenecks across approvers and levels",
     "permissionTag": "Requires dashboard.view",

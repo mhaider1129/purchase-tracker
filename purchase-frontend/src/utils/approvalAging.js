@@ -8,6 +8,10 @@ export const approvalTargetDays = (value) => {
 export const requestApprovalAging = (request, { stepKey = '', ownerKey = '', now = Date.now(), targetDays = null } = {}) => {
   const rows = activePendingApprovals(request).filter((row) => (!stepKey || stepKey === 'any' || approvalStepKey(row) === stepKey) && (!ownerKey || approvalOwnerKey(row) === ownerKey));
   const hours = rows.map((row) => {
+    if (Object.hasOwn(row, 'active_waiting_seconds')) {
+      const seconds = row.active_waiting_seconds == null ? NaN : Number(row.active_waiting_seconds);
+      return Number.isFinite(seconds) && seconds >= 0 ? seconds / 3600 : null;
+    }
     const start = row.activated_at ? Date.parse(row.activated_at) : NaN;
     return Number.isFinite(start) && start <= now ? (now - start) / 3600000 : null;
   });
