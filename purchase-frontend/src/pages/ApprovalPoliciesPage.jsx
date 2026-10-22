@@ -372,13 +372,14 @@ export function ShadowComparison({ run }) {
     </section>
   );
 }
-function ResolverReference({ step, onChange, options = {} }) {
+function ResolverReference({ step, onChange, options = {}, disabled = false }) {
   const type = step.resolverType;
   if (type === "POSITION")
     return (
       <select
         className={fieldClass}
         aria-label="Position"
+        disabled={disabled}
         value={step.resolverReference || ""}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -395,6 +396,7 @@ function ResolverReference({ step, onChange, options = {} }) {
       <select
         className={fieldClass}
         aria-label="Institute user"
+        disabled={disabled}
         value={step.resolverReference || ""}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -411,6 +413,7 @@ function ResolverReference({ step, onChange, options = {} }) {
       <select
         className={fieldClass}
         aria-label="Capability"
+        disabled={disabled}
         value={step.resolverReference || ""}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -896,6 +899,7 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                     <ResolverReference
                       step={s}
                       options={options}
+                      disabled={!editable}
                       onChange={(value) =>
                         updateRule(ri, {
                           steps: r.steps.map((v, i) =>
