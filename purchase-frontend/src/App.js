@@ -70,6 +70,7 @@ import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
 import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
+import DeviceDemosPage from "./pages/DeviceDemosPage";
 import PreprocurementTechnicalReviewsPage from "./pages/PreprocurementTechnicalReviewsPage";
 import ScmTechnicalInspectionsReviewPage from "./pages/ScmTechnicalInspectionsReviewPage";
 import SuppliersPage from "./pages/SuppliersPage";
@@ -557,6 +558,10 @@ const AppRoutes = () => (
           resourceKey="feature.technicalInspections"
         />
       }
+    />
+    <Route
+      path="/device-demos"
+      element={<ProtectedRoute element={<DeviceDemosPage />} />}
     />
     <Route
       path="/technical-inspections/pre-procurement"

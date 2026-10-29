@@ -1,0 +1,1207 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import * as api from "../api/deviceDemos";
+import useRequestAttachments from "../hooks/useRequestAttachments";
+const css = "rounded border border-slate-300 bg-white p-2 text-sm";
+const key = () =>
+  window.crypto?.randomUUID?.() ||
+  `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const readable = (value) => String(value || "").replaceAll("_", " ");
+const emptyCandidate = () => ({
+  supplier_id: "",
+  supplier_catalog_item_id: "",
+  manufacturer: "",
+  model: "",
+  serial_number: "",
+  planned_start: "",
+  planned_end: "",
+  location: "",
+  description: "",
+});
+export default function DeviceDemosPage() {
+  const [params, setParams] = useSearchParams(),
+    opened = useRef(null);
+  const [schema, setSchema] = useState(null),
+    [rows, setRows] = useState([]),
+    [detail, setDetail] = useState(null),
+    [eligible, setEligible] = useState([]),
+    [directory, setDirectory] = useState([]),
+    [options, setOptions] = useState({ suppliers: [], catalog: [] });
+  const [search, setSearch] = useState(params.get("request") || ""),
+    [loading, setLoading] = useState(true),
+    [busy, setBusy] = useState(false),
+    [error, setError] = useState(""),
+    [success, setSuccess] = useState("");
+  const [itemId, setItemId] = useState(""),
+    [title, setTitle] = useState(""),
+    [objectives, setObjectives] = useState(""),
+    [reviewers, setReviewers] = useState([]),
+    [criteria, setCriteria] = useState([]),
+    [submission, setSubmission] = useState(key);
+  const [candidate, setCandidate] = useState(emptyCandidate),
+    [notes, setNotes] = useState(""),
+    [demoId, setDemoId] = useState(""),
+    [selectedId, setSelectedId] = useState(""),
+    [attachments, setAttachments] = useState([]),
+    [attachmentIds, setAttachmentIds] = useState([]);
+  const [documentIds, setDocumentIds] = useState([]),
+    [documentNote, setDocumentNote] = useState("");
+  const [report, setReport] = useState({
+    scores: [],
+    recommendation: "",
+    findings: "",
+    safety_findings: "",
+  });
+  const { handleDownloadAttachment } = useRequestAttachments();
+  const adopt = useCallback(async (w) => {
+    opened.current = String(w.id);
+    setDetail(w);
+    setNotes("");
+    setDemoId("");
+    setSelectedId("");
+    setAttachmentIds([]);
+    setDocumentIds([]);
+    setDocumentNote("");
+    setCandidate(emptyCandidate());
+    setReport({
+      scores: w.criteria.map((c) => ({ key: c.key, score: "", comment: "" })),
+      recommendation: "",
+      findings: "",
+      safety_findings: "",
+    });
+    if (w.can_coordinate) {
+      setOptions(await api.demoOptions(w.id));
+    }
+    if (
+      w.can_coordinate ||
+      w.reviewers.some(
+        (r) => String(r.reviewer_id) === String(w.current_user_id),
+      )
+    )
+      setAttachments(await api.demoEvidence(w.request_id));
+  }, []);
+  useEffect(() => {
+    if (params.get("workspace") === opened.current && opened.current) return;
+    let active = true;
+    (async () => {
+      try {
+        const meta = await api.demoSchema();
+        if (!active) return;
+        setSchema(meta);
+        setCriteria(meta.criteria);
+        setRows(await api.listDemos(params.get("request") || ""));
+        if (meta.can_initiate) {
+          const [items, users] = await Promise.all([
+            api.eligibleDemoItems(params.get("request") || ""),
+            api.demoReviewers(),
+          ]);
+          if (!active) return;
+          setEligible(items);
+          setDirectory(users);
+        }
+        if (params.get("workspace")) {
+          const w = await api.getDemoWorkspace(params.get("workspace"));
+          if (active) await adopt(w);
+        }
+      } catch (e) {
+        if (active)
+          setError(
+            e.response?.data?.message || "Unable to load demo workspaces",
+          );
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [params, adopt]);
+  const perform = async (work) => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setSuccess("");
+    try {
+      await work();
+    } catch (e) {
+      setError(e.response?.data?.message || "Unable to save the demo action.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const act = (operation, payload = {}) =>
+    perform(async () => {
+      const w = await api.demoAction(detail.id, operation, {
+        row_version: detail.row_version,
+        notes,
+        attachment_ids: attachmentIds,
+        ...payload,
+      });
+      await adopt(w);
+      setRows(await api.listDemos(search));
+      setSuccess("Demo workspace updated.");
+    });
+  const attachDocuments = async (ids, description) => {
+    const updated = await api.demoAction(detail.id, "document", {
+      row_version: detail.row_version,
+      notes: description || "Supporting specification / data sheets",
+      attachment_ids: ids,
+    });
+    // Linking evidence updates the workspace version without discarding trial/report drafts.
+    setDetail(updated);
+    setDocumentIds([]);
+    setDocumentNote("");
+    setRows(await api.listDemos(search));
+    setSuccess("Files attached to the demo workspace.");
+  };
+  const refresh = () =>
+    perform(async () => {
+      await adopt(await api.getDemoWorkspace(detail.id));
+      setRows(await api.listDemos(search));
+    });
+  const editable =
+      detail && ["OPEN", "REVISION_REQUIRED"].includes(detail.status),
+    assigned = detail?.reviewers.some(
+      (r) => String(r.reviewer_id) === String(detail.current_user_id),
+    );
+  const selectedDemo = detail?.demos.find((d) => String(d.id) === demoId),
+    canReport =
+      editable &&
+      assigned &&
+      selectedDemo?.status === "COMPLETED" &&
+      !detail.reports.some(
+        (r) =>
+          String(r.demo_id) === demoId &&
+          String(r.reviewer_id) === String(detail.current_user_id),
+      );
+  const comparison =
+    detail?.demos
+      .filter((d) => d.status === "COMPLETED")
+      .map((d) => {
+        const reports = detail.reports.filter(
+          (r) => String(r.demo_id) === String(d.id),
+        );
+        return {
+          ...d,
+          count: reports.length,
+          score: reports.length
+            ? (
+                reports.reduce((n, r) => n + Number(r.weighted_score), 0) /
+                reports.length
+              ).toFixed(1)
+            : "—",
+          suitable:
+            reports.length === detail.reviewers.length &&
+            reports.every((r) => r.recommendation === "SUITABLE"),
+        };
+      }) || [];
+  const ready =
+    editable &&
+    comparison.length > 0 &&
+    comparison.every((d) => d.count === detail.reviewers.length) &&
+    detail.demos.every((d) => ["COMPLETED", "WITHDRAWN"].includes(d.status));
+  if (loading) return <main className="p-6">Loading device demos…</main>;
+  return (
+    <main className="mx-auto max-w-7xl space-y-6 p-6">
+      <header className="rounded-xl bg-slate-900 p-6 text-white">
+        <p className="text-sm text-cyan-200">DEVICE DEMONSTRATIONS</p>
+        <h1 className="text-3xl font-bold">Device demo workspace</h1>
+        <p className="mt-2">
+          Compare company demos, document trials and departmental evaluations,
+          then obtain COO approval for the selected device.
+        </p>
+      </header>
+      {error && (
+        <div
+          role="alert"
+          className="rounded border border-red-200 bg-red-50 p-3 text-red-800"
+        >
+          {error}
+          {detail && (
+            <button
+              className="ml-3 underline"
+              disabled={busy}
+              onClick={refresh}
+            >
+              Reload latest workspace
+            </button>
+          )}
+        </div>
+      )}
+      {success && (
+        <p role="status" className="text-green-700">
+          {success}
+        </p>
+      )}
+      <form
+        className="flex gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          perform(async () => {
+            setRows(await api.listDemos(search));
+            if (schema.can_initiate)
+              setEligible(await api.eligibleDemoItems(search));
+          });
+        }}
+      >
+        <input
+          aria-label="Search demos"
+          className={css}
+          placeholder="Request number or device name"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button disabled={busy} className="rounded border px-3">
+          Search
+        </button>
+      </form>
+      {schema?.can_initiate && (
+        <details className="rounded-xl border bg-white p-4">
+          <summary className="cursor-pointer font-semibold">
+            Open a device demo workspace
+          </summary>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              perform(async () => {
+                const w = await api.openDemoWorkspace({
+                  request_item_id: itemId,
+                  title,
+                  objectives,
+                  reviewer_ids: reviewers,
+                  criteria,
+                  submission_key: submission,
+                });
+                await adopt(w);
+                setParams({ workspace: w.id });
+                setSubmission(key());
+                setRows(await api.listDemos(search));
+                setEligible(await api.eligibleDemoItems(search));
+                setSuccess("Demo workspace opened and evaluators notified.");
+              });
+            }}
+          >
+            <label className="block">
+              Requested device
+              <select
+                required
+                className={`${css} block w-full`}
+                value={itemId}
+                onChange={(e) => {
+                  setItemId(e.target.value);
+                  setTitle(
+                    eligible.find((i) => String(i.id) === e.target.value)
+                      ?.item_name || "",
+                  );
+                }}
+              >
+                <option value="">Select outstanding device</option>
+                {eligible.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    #{item.maintenance_ref_number || item.request_id} ·{" "}
+                    {item.item_name} · {item.department_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="text-sm text-slate-600">
+              Medical-devices and SCM approvers can open at their active
+              approval step. SCM can also open for approved requests before
+              procurement starts.
+            </p>
+            <label className="block">
+              Workspace title
+              <input
+                required
+                className={`${css} block w-full`}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </label>
+            <label className="block">
+              Demo objectives and intended use
+              <textarea
+                required
+                className={`${css} block w-full`}
+                value={objectives}
+                onChange={(e) => setObjectives(e.target.value)}
+              />
+            </label>
+            <fieldset className="rounded border p-3">
+              <legend>Required evaluators</legend>
+              <p className="text-sm text-slate-600">
+                Include the requesting department. Each evaluator reports on
+                every completed demo. COO selection approval must be
+                independent.
+              </p>
+              {directory.map((user) => (
+                <label key={user.id} className="mr-4 block">
+                  <input
+                    type="checkbox"
+                    checked={reviewers.includes(String(user.id))}
+                    onChange={(e) =>
+                      setReviewers((old) =>
+                        e.target.checked
+                          ? [...old, String(user.id)]
+                          : old.filter((id) => id !== String(user.id)),
+                      )
+                    }
+                  />{" "}
+                  {user.name} · {user.role} · {user.department_name}
+                </label>
+              ))}
+            </fieldset>
+            <fieldset className="rounded border p-3">
+              <legend>Evaluation criteria — weights total 100%</legend>
+              <p className="text-sm text-slate-600">
+                Agree the criteria before trials begin. Each criterion is scored
+                0–5 with evidence.
+              </p>
+              {criteria.map((criterion, index) => (
+                <div key={criterion.key} className="my-2 flex gap-2">
+                  <input
+                    aria-label={`Criterion ${index + 1}`}
+                    required
+                    className={`${css} flex-1`}
+                    value={criterion.name}
+                    onChange={(e) =>
+                      setCriteria((old) =>
+                        old.map((row, i) =>
+                          i === index ? { ...row, name: e.target.value } : row,
+                        ),
+                      )
+                    }
+                  />
+                  <input
+                    aria-label={`Weight ${index + 1}`}
+                    type="number"
+                    min="1"
+                    max="100"
+                    required
+                    className={`${css} w-24`}
+                    value={criterion.weight}
+                    onChange={(e) =>
+                      setCriteria((old) =>
+                        old.map((row, i) =>
+                          i === index
+                            ? { ...row, weight: e.target.value }
+                            : row,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+              ))}
+            </fieldset>
+            <button
+              className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
+              disabled={busy || !itemId || !reviewers.length}
+            >
+              Open demo workspace
+            </button>
+          </form>
+        </details>
+      )}
+      <section className="rounded-xl border bg-white p-4">
+        <h2 className="text-lg font-semibold">Demo workspaces</h2>
+        {!rows.length && <p>No demo workspaces found.</p>}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr>
+                <th>Device / request</th>
+                <th>Status</th>
+                <th>Company demos</th>
+                <th>Workspace</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((w) => (
+                <tr key={w.id} className="border-t">
+                  <td className="py-3">
+                    {w.title} · #{w.maintenance_ref_number || w.request_id}
+                  </td>
+                  <td>{readable(w.status)}</td>
+                  <td>{w.demo_count}</td>
+                  <td>
+                    <button
+                      disabled={busy}
+                      className="text-blue-700 underline"
+                      onClick={() =>
+                        perform(async () => {
+                          await adopt(await api.getDemoWorkspace(w.id));
+                          setParams({ workspace: w.id });
+                        })
+                      }
+                    >
+                      Open DEMO-{w.id}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {detail && (
+        <section className="space-y-5 rounded-xl border bg-white p-5">
+          <header>
+            <h2 className="text-2xl font-bold">
+              DEMO-{detail.id}: {detail.title}
+            </h2>
+            <p>
+              {readable(detail.status)} · {detail.department_name} ·{" "}
+              <Link
+                className="text-blue-700 underline"
+                to={`/requests/${detail.request_id}`}
+              >
+                Request #{detail.maintenance_ref_number || detail.request_id}
+              </Link>
+            </p>
+            <p>{detail.objectives}</p>
+            <p className="mt-2 text-sm">
+              Requested: {detail.item_snapshot.item_name} ·{" "}
+              {detail.item_snapshot.quantity}{" "}
+              {detail.item_snapshot.unit_of_measure} ·{" "}
+              {detail.item_snapshot.specs}
+            </p>
+            <p className="text-sm text-slate-600">
+              Demo receipt and return are trial custody records. They do not
+              mark the purchase request received or completed.
+            </p>
+          </header>
+          <section className="space-y-3 rounded border border-indigo-200 bg-indigo-50 p-4">
+            <h3 className="text-lg font-semibold">Workspace documents</h3>
+            <p className="text-sm">
+              Attach specification sheets, data sheets, brochures and supporting
+              files at any point in the demo process. Each file is recorded in
+              the workspace journal.
+            </p>
+            {!detail.attachments.length && (
+              <p className="text-sm text-slate-600">
+                No supporting files attached yet.
+              </p>
+            )}
+            {detail.attachments.map((file) => {
+              const entry = detail.events.find((event) =>
+                event.attachment_ids.map(String).includes(String(file.id)),
+              );
+              return (
+                <article key={file.id} className="rounded border bg-white p-3">
+                  <button
+                    className="font-medium text-blue-700 underline"
+                    onClick={() => handleDownloadAttachment(file)}
+                  >
+                    {file.file_name}
+                  </button>
+                  {entry && (
+                    <p className="text-sm text-slate-600">
+                      Attached by {entry.actor_snapshot.name} ·{" "}
+                      {new Date(entry.created_at).toLocaleString()} ·{" "}
+                      {entry.notes}
+                    </p>
+                  )}
+                </article>
+              );
+            })}
+            {(detail.can_coordinate || assigned) &&
+              detail.status !== "CANCELLED" && (
+                <div className="space-y-3">
+                  <label className="block">
+                    Document description (optional)
+                    <input
+                      aria-label="Workspace document description"
+                      className={`${css} block w-full`}
+                      value={documentNote}
+                      onChange={(e) => setDocumentNote(e.target.value)}
+                    />
+                  </label>
+                  <label className="block">
+                    Upload a specification / data sheet
+                    <input
+                      aria-label="Upload workspace document"
+                      type="file"
+                      disabled={busy}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file)
+                          perform(async () => {
+                            const uploaded = await api.uploadDemoEvidence(
+                              detail.request_id,
+                              file,
+                            );
+                            setAttachments(
+                              await api.demoEvidence(detail.request_id),
+                            );
+                            if (!uploaded.attachmentId)
+                              throw new Error("Missing uploaded attachment ID");
+                            setDocumentIds([uploaded.attachmentId]);
+                            await attachDocuments(
+                              [uploaded.attachmentId],
+                              documentNote.trim() ||
+                                `Supporting document: ${file.name}`,
+                            );
+                          });
+                      }}
+                    />
+                  </label>
+                  <details>
+                    <summary className="cursor-pointer text-sm font-medium">
+                      Attach existing request files
+                    </summary>
+                    <div className="my-2">
+                      {attachments.map((file) => (
+                        <label key={file.id} className="mr-4 block">
+                          <input
+                            type="checkbox"
+                            aria-label={`Workspace file ${file.file_name}`}
+                            checked={documentIds
+                              .map(String)
+                              .includes(String(file.id))}
+                            onChange={(e) =>
+                              setDocumentIds((old) =>
+                                e.target.checked
+                                  ? [...old, file.id]
+                                  : old.filter(
+                                      (id) => String(id) !== String(file.id),
+                                    ),
+                              )
+                            }
+                          />{" "}
+                          {file.file_name}
+                        </label>
+                      ))}
+                    </div>
+                    <button
+                      disabled={busy || !documentIds.length}
+                      className="rounded border bg-white px-3 py-2 disabled:opacity-40"
+                      onClick={() =>
+                        perform(() =>
+                          attachDocuments(documentIds, documentNote.trim()),
+                        )
+                      }
+                    >
+                      Attach selected files to workspace
+                    </button>
+                  </details>
+                </div>
+              )}
+          </section>
+          <section>
+            <h3 className="font-semibold">Evaluation team</h3>
+            {detail.reviewers.map((r) => (
+              <p key={r.reviewer_id}>
+                {r.name} · {r.role} · {r.department_name}
+              </p>
+            ))}
+          </section>
+          {editable && detail.can_coordinate && (
+            <details className="rounded border p-4">
+              <summary className="cursor-pointer font-semibold">
+                Add a company demo
+              </summary>
+              <form
+                className="mt-3 space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  act("candidate", candidate);
+                }}
+              >
+                <label className="block">
+                  Company
+                  <select
+                    required
+                    className={`${css} block w-full`}
+                    value={candidate.supplier_id}
+                    onChange={(e) =>
+                      setCandidate({
+                        ...candidate,
+                        supplier_id: e.target.value,
+                        supplier_catalog_item_id: "",
+                      })
+                    }
+                  >
+                    <option value="">Select company</option>
+                    {options.suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {detail.item_snapshot.generic_item_id && (
+                  <label className="block">
+                    Approved device product
+                    <select
+                      required
+                      className={`${css} block w-full`}
+                      value={candidate.supplier_catalog_item_id}
+                      onChange={(e) =>
+                        setCandidate({
+                          ...candidate,
+                          supplier_catalog_item_id: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="">
+                        Select the company's approved catalog device
+                      </option>
+                      {options.catalog
+                        .filter(
+                          (c) =>
+                            String(c.supplier_id) === candidate.supplier_id,
+                        )
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.product_name} · {c.manufacturer} · {c.model}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                )}
+                <div className="grid gap-3 md:grid-cols-2">
+                  {[
+                    "manufacturer",
+                    "model",
+                    "serial_number",
+                    "location",
+                    "planned_start",
+                    "planned_end",
+                  ].map((field) => (
+                    <label key={field}>
+                      {readable(field)}
+                      <input
+                        required={
+                          field !== "serial_number" &&
+                          (!detail.item_snapshot.generic_item_id ||
+                            !["manufacturer", "model"].includes(field))
+                        }
+                        type={field.startsWith("planned_") ? "date" : "text"}
+                        className={`${css} block w-full`}
+                        value={candidate[field]}
+                        onChange={(e) =>
+                          setCandidate({
+                            ...candidate,
+                            [field]: e.target.value,
+                          })
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                <label className="block">
+                  Demo configuration / description
+                  <textarea
+                    required
+                    className={`${css} block w-full`}
+                    value={candidate.description}
+                    onChange={(e) =>
+                      setCandidate({
+                        ...candidate,
+                        description: e.target.value,
+                      })
+                    }
+                  />
+                </label>
+                <p className="text-sm">
+                  Record the registration notes below before saving. Governed
+                  devices must link to their company's approved catalog
+                  identity.
+                </p>
+                <label className="block">
+                  Company demo registration notes
+                  <textarea
+                    required
+                    className={`${css} block w-full`}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </label>
+                <button
+                  disabled={busy || !notes.trim()}
+                  className="rounded border px-3 py-2 disabled:opacity-40"
+                >
+                  Save company demo
+                </button>
+              </form>
+            </details>
+          )}
+          <section>
+            <h3 className="text-lg font-semibold">
+              Company demos and evaluation period
+            </h3>
+            {!detail.demos.length && (
+              <p className="text-slate-600">
+                Register one or more company demos to begin.
+              </p>
+            )}
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {detail.demos.map((d) => (
+                <article className="space-y-2 rounded border p-4" key={d.id}>
+                  <h4 className="font-semibold">
+                    {d.supplier_name} · {d.manufacturer} {d.model}
+                  </h4>
+                  <p>
+                    {readable(d.status)} · Serial:{" "}
+                    {d.serial_number || "Not recorded"}
+                  </p>
+                  <p>
+                    {String(d.planned_start).slice(0, 10)} →{" "}
+                    {String(d.planned_end).slice(0, 10)} · {d.location}
+                  </p>
+                  <p>{d.description}</p>
+                  {[
+                    "received_at",
+                    "started_at",
+                    "completed_at",
+                    "returned_at",
+                  ].map(
+                    (field) =>
+                      d[field] && (
+                        <p key={field} className="text-sm">
+                          {readable(field)}:{" "}
+                          {new Date(d[field]).toLocaleString()}
+                        </p>
+                      ),
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+          <section className="space-y-3 rounded border bg-slate-50 p-4">
+            <h3 className="font-semibold">Document the demo</h3>
+            <label className="block">
+              Company demo
+              <select
+                aria-label="Company demo"
+                className={`${css} ml-3`}
+                value={demoId}
+                onChange={(e) => {
+                  setDemoId(e.target.value);
+                  setReport({
+                    scores: detail.criteria.map((c) => ({
+                      key: c.key,
+                      score: "",
+                      comment: "",
+                    })),
+                    recommendation: "",
+                    findings: "",
+                    safety_findings: "",
+                  });
+                }}
+              >
+                <option value="">Select demo</option>
+                {detail.demos.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.supplier_name} · {d.model} · {readable(d.status)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              Action notes / selection rationale
+              <textarea
+                aria-label="Demo action notes"
+                className={`${css} block w-full`}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </label>
+            {(detail.can_coordinate || assigned) && editable && (
+              <div>
+                <label>
+                  Upload supporting evidence
+                  <input
+                    aria-label="Upload demo evidence"
+                    type="file"
+                    disabled={busy}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file)
+                        perform(async () => {
+                          await api.uploadDemoEvidence(detail.request_id, file);
+                          setAttachments(
+                            await api.demoEvidence(detail.request_id),
+                          );
+                          setSuccess(
+                            "Evidence uploaded. Select it to attach to the action.",
+                          );
+                        });
+                    }}
+                  />
+                </label>
+                <div>
+                  {attachments.map((file) => (
+                    <label key={file.id} className="mr-3 inline-block">
+                      <input
+                        type="checkbox"
+                        checked={attachmentIds
+                          .map(String)
+                          .includes(String(file.id))}
+                        onChange={(e) =>
+                          setAttachmentIds((old) =>
+                            e.target.checked
+                              ? [...old, file.id]
+                              : old.filter(
+                                  (id) => String(id) !== String(file.id),
+                                ),
+                          )
+                        }
+                      />{" "}
+                      {file.file_name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              {editable &&
+                detail.can_coordinate &&
+                selectedDemo &&
+                (
+                  {
+                    PLANNED: ["RECEIVED", "WITHDRAWN"],
+                    RECEIVED: ["EVALUATING", "WITHDRAWN"],
+                    EVALUATING: ["COMPLETED", "WITHDRAWN"],
+                  }[selectedDemo.status] || []
+                ).map((status) => (
+                  <button
+                    key={status}
+                    disabled={busy || !notes.trim()}
+                    className="rounded border px-3 py-2 disabled:opacity-40"
+                    onClick={() =>
+                      act("transition", { demo_id: demoId, status })
+                    }
+                  >
+                    {
+                      {
+                        RECEIVED: "Record demo receipt",
+                        EVALUATING: "Start evaluation",
+                        COMPLETED: "Complete evaluation",
+                        WITHDRAWN: "Withdraw demo",
+                      }[status]
+                    }
+                  </button>
+                ))}
+              {editable &&
+                (detail.can_coordinate || assigned) &&
+                selectedDemo &&
+                ["RECEIVED", "EVALUATING", "COMPLETED"].includes(
+                  selectedDemo.status,
+                ) && (
+                  <button
+                    disabled={busy || !notes.trim()}
+                    className="rounded border px-3 py-2 disabled:opacity-40"
+                    onClick={() => act("observation", { demo_id: demoId })}
+                  >
+                    Record observation
+                  </button>
+                )}
+              {detail.can_coordinate &&
+                selectedDemo?.received_at &&
+                !selectedDemo.returned_at &&
+                ["COMPLETED", "WITHDRAWN"].includes(selectedDemo.status) && (
+                  <button
+                    disabled={busy || !notes.trim()}
+                    className="rounded border px-3 py-2 disabled:opacity-40"
+                    onClick={() => act("return", { demo_id: demoId })}
+                  >
+                    Record device return
+                  </button>
+                )}
+            </div>
+          </section>
+          {canReport && (
+            <form
+              className="space-y-3 rounded border p-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                act("opinion", {
+                  ...report,
+                  demo_id: demoId,
+                  notes: report.findings,
+                });
+              }}
+            >
+              <h3 className="text-lg font-semibold">My evaluation report</h3>
+              <p>
+                Score each criterion from 0 to 5. The weighted result is
+                calculated by the server.
+              </p>
+              {report.scores.map((row, index) => (
+                <div key={row.key} className="grid gap-2 md:grid-cols-3">
+                  <label>
+                    {detail.criteria[index].name} (
+                    {detail.criteria[index].weight}%)
+                    <select
+                      aria-label={`Score ${row.key}`}
+                      required
+                      className={`${css} ml-2`}
+                      value={row.score}
+                      onChange={(e) =>
+                        setReport({
+                          ...report,
+                          scores: report.scores.map((r, i) =>
+                            i === index ? { ...r, score: e.target.value } : r,
+                          ),
+                        })
+                      }
+                    >
+                      <option value="">Select</option>
+                      {[0, 1, 2, 3, 4, 5].map((n) => (
+                        <option key={n}>{n}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="md:col-span-2">
+                    Evidence for {detail.criteria[index].name}
+                    <textarea
+                      required
+                      aria-label={`Evidence ${row.key}`}
+                      className={`${css} block w-full`}
+                      value={row.comment}
+                      onChange={(e) =>
+                        setReport({
+                          ...report,
+                          scores: report.scores.map((r, i) =>
+                            i === index ? { ...r, comment: e.target.value } : r,
+                          ),
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+              ))}
+              {["findings", "safety_findings"].map((field) => (
+                <label key={field} className="block">
+                  {readable(field)}
+                  <textarea
+                    required
+                    aria-label={
+                      field === "findings"
+                        ? "Evaluation findings"
+                        : "Safety findings"
+                    }
+                    className={`${css} block w-full`}
+                    value={report[field]}
+                    onChange={(e) =>
+                      setReport({ ...report, [field]: e.target.value })
+                    }
+                  />
+                </label>
+              ))}
+              <label>
+                Suitability
+                <select
+                  aria-label="Demo suitability"
+                  required
+                  className={`${css} ml-3`}
+                  value={report.recommendation}
+                  onChange={(e) =>
+                    setReport({ ...report, recommendation: e.target.value })
+                  }
+                >
+                  <option value="">Select</option>
+                  <option value="SUITABLE">Suitable</option>
+                  <option value="NOT_SUITABLE">Not suitable</option>
+                </select>
+              </label>
+              <button
+                disabled={busy}
+                className="ml-3 rounded bg-indigo-700 px-4 py-2 text-white"
+              >
+                Submit evaluation and attest
+              </button>
+            </form>
+          )}
+          <section>
+            <h3 className="text-lg font-semibold">
+              Comparison and recommendation
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="mt-2 w-full text-left">
+                <thead>
+                  <tr>
+                    <th>Company / device</th>
+                    <th>Reports</th>
+                    <th>Score / 100</th>
+                    <th>Suitability</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.map((d) => (
+                    <tr key={d.id} className="border-t">
+                      <td className="py-2">
+                        {d.supplier_name} · {d.model}
+                      </td>
+                      <td>
+                        {d.count}/{detail.reviewers.length}
+                      </td>
+                      <td>{d.score}</td>
+                      <td>
+                        {d.count < detail.reviewers.length
+                          ? "Awaiting reports"
+                          : d.suitable
+                            ? "Suitable"
+                            : "Not suitable"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {editable && detail.can_coordinate && (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm text-slate-600">
+                  Complete or withdraw every company demo and collect every
+                  required report. Explain the best fit in the selection
+                  rationale; the highest score does not automatically select a
+                  company.
+                </p>
+                <label>
+                  Recommended demo
+                  <select
+                    aria-label="Recommended demo"
+                    className={`${css} ml-2`}
+                    value={selectedId}
+                    onChange={(e) => setSelectedId(e.target.value)}
+                  >
+                    <option value="">Select suitable device</option>
+                    {comparison
+                      .filter((d) => d.suitable)
+                      .map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.supplier_name} · {d.model}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <button
+                  disabled={busy || !ready || !selectedId || !notes.trim()}
+                  className="ml-3 rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
+                  onClick={() => act("recommend", { demo_id: selectedId })}
+                >
+                  Send selection to COO
+                </button>
+              </div>
+            )}
+          </section>
+          {detail.selections.map((s) => (
+            <article
+              key={s.id}
+              className="rounded border border-indigo-200 bg-indigo-50 p-4"
+            >
+              <h3 className="font-semibold">
+                Selection {s.id} · {s.status}
+              </h3>
+              <p>
+                {
+                  detail.demos.find((d) => String(d.id) === String(s.demo_id))
+                    ?.supplier_name
+                }{" "}
+                ·{" "}
+                {
+                  detail.demos.find((d) => String(d.id) === String(s.demo_id))
+                    ?.model
+                }
+              </p>
+              <p>{s.rationale}</p>
+              <p>Submitted: {new Date(s.submitted_at).toLocaleString()}</p>
+              {s.signature && (
+                <p>
+                  Decision by {s.signature.name} ({s.signature.role}) ·{" "}
+                  {new Date(s.decided_at).toLocaleString()} · {s.decision_notes}
+                </p>
+              )}
+            </article>
+          ))}
+          {detail.can_decide && detail.status === "COO_REVIEW" && (
+            <section className="space-y-2 rounded border border-indigo-300 p-4">
+              <h3 className="font-semibold">COO selection decision</h3>
+              <p>
+                Review the comparison, evaluator reports and recommendation.
+                Your decision approves the selection; normal purchase-request
+                approvals still apply.
+              </p>
+              {["APPROVED", "REJECTED"].map((decision) => (
+                <button
+                  key={decision}
+                  disabled={busy || !notes.trim()}
+                  className="mr-3 rounded border px-3 py-2 disabled:opacity-40"
+                  onClick={() => act("decision", { decision })}
+                >
+                  {decision === "APPROVED"
+                    ? "Approve selected device"
+                    : "Return selection for revision"}
+                </button>
+              ))}
+            </section>
+          )}
+          <section className="space-y-2">
+            <h3 className="text-lg font-semibold">Signed evaluator reports</h3>
+            {detail.reports.map((r) => (
+              <details key={r.id} className="rounded border p-3">
+                <summary>
+                  {
+                    detail.demos.find((d) => String(d.id) === String(r.demo_id))
+                      ?.supplier_name
+                  }{" "}
+                  · {r.signature.name} · {r.weighted_score}/100 ·{" "}
+                  {readable(r.recommendation)}
+                </summary>
+                <p>{r.findings}</p>
+                <p>Safety: {r.safety_findings}</p>
+                {r.scores.map((s) => (
+                  <p key={s.key}>
+                    {detail.criteria.find((c) => c.key === s.key)?.name}:{" "}
+                    {s.score}/5 · {s.comment}
+                  </p>
+                ))}
+                <p className="text-sm">
+                  Attested by {r.signature.name} ({r.signature.role}) ·{" "}
+                  {new Date(r.submitted_at).toLocaleString()}
+                </p>
+              </details>
+            ))}
+          </section>
+          <section>
+            <h3 className="text-lg font-semibold">Demo journal and evidence</h3>
+            {detail.events.map((event) => (
+              <article key={event.id} className="mt-2 rounded border p-3">
+                <p className="font-medium">
+                  {readable(event.action.replace("DEVICE_DEMO_", ""))} ·{" "}
+                  {event.actor_snapshot.name} ·{" "}
+                  {new Date(event.created_at).toLocaleString()}
+                </p>
+                <p>{event.notes}</p>
+                {detail.attachments
+                  .filter((a) =>
+                    event.attachment_ids.map(String).includes(String(a.id)),
+                  )
+                  .map((file) => (
+                    <button
+                      key={file.id}
+                      className="mr-3 text-blue-700 underline"
+                      onClick={() => handleDownloadAttachment(file)}
+                    >
+                      {file.file_name}
+                    </button>
+                  ))}
+              </article>
+            ))}
+          </section>
+          {detail.can_coordinate && detail.status !== "CANCELLED" && (
+            <button
+              disabled={busy || !notes.trim()}
+              className="rounded border border-red-200 px-3 py-2 text-red-700 disabled:opacity-40"
+              onClick={() => act("cancel")}
+            >
+              Cancel workspace with reason
+            </button>
+          )}
+        </section>
+      )}
+    </main>
+  );
+}
