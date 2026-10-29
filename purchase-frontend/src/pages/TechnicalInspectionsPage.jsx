@@ -6,7 +6,7 @@ import {
   updateTechnicalInspection,
 } from "../api/technicalInspections";
 import { getRequestDetails } from "../api/requests";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   CheckCircle2,
   ClipboardCheck,
@@ -480,6 +480,12 @@ const TechnicalInspectionsPage = () => {
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
                   Technical Inspections
                 </h1>
+                <Link
+                  to="/technical-inspections/pre-procurement"
+                  className="mt-2 inline-block rounded bg-indigo-700 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Pre-procurement departmental reviews
+                </Link>
                 <p className="mt-1 max-w-3xl text-sm text-gray-600 dark:text-gray-300">
                   Capture inspection details digitally, including item
                   condition, category-specific checks, and required follow-up
