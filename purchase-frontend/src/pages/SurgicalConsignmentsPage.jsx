@@ -223,7 +223,7 @@ export default function SurgicalConsignmentsPage() {
     <main className="mx-auto max-w-7xl space-y-6 p-6">
       <style>{`@media print {body *{visibility:hidden} #surgical-forms,#surgical-forms *{visibility:visible} #surgical-forms{position:absolute;top:0;left:0;width:100%} #surgical-forms button,#surgical-forms .no-print{display:none} #surgical-forms article{break-inside:avoid}}`}</style>
       <header className="rounded-xl bg-slate-900 p-6 text-white">
-        <p className="text-sm text-cyan-200">F18 · F19 · F20</p>
+        <p className="text-sm text-cyan-200">Procedure-specific vendor stock</p>
         <h1 className="text-3xl font-bold">Surgical consignment requests</h1>
         <p className="mt-2">
           Authorize procedure-specific vendor stock, trace every lot, confirm
@@ -231,6 +231,24 @@ export default function SurgicalConsignmentsPage() {
           stock or invoice.
         </p>
       </header>
+      <section
+        className="rounded-xl border border-slate-200 bg-white p-4"
+        aria-label="Consignment workflow"
+      >
+        <h2 className="font-semibold">
+          One case from surgical need to used-only billing
+        </h2>
+        <p className="mt-2 text-sm text-slate-700">
+          Request item families and size ranges → authorize the arrangement →
+          record vendor delivery → confirm actual usage → return and reconcile
+          unused items → bill confirmed usage.
+        </p>
+        <p className="mt-2 text-sm text-slate-500">
+          Exact implant sizes are recorded at delivery and usage. Supporting
+          forms document the case; delivery does not mean purchase, and custody
+          closure does not mean payment.
+        </p>
+      </section>
       {error && (
         <div
           role="alert"
@@ -278,7 +296,7 @@ export default function SurgicalConsignmentsPage() {
       {meta?.can_create && (
         <details className="rounded-xl border bg-white p-4">
           <summary className="cursor-pointer font-semibold">
-            New F18 surgical consignment request
+            New surgical consignment request
           </summary>
           <form
             className="mt-4 space-y-4"
@@ -291,7 +309,7 @@ export default function SurgicalConsignmentsPage() {
                 setForm(initial());
                 setRows(await api.list(search));
                 setSuccess(
-                  "F18 submitted for department manager authorization.",
+                  "Consignment submitted for department manager authorization.",
                 );
               });
             }}
@@ -494,7 +512,7 @@ export default function SurgicalConsignmentsPage() {
               disabled={busy}
               className="rounded bg-indigo-700 px-4 py-2 text-white"
             >
-              Submit F18 for authorization
+              Submit request for authorization
             </button>
           </form>
         </details>
@@ -561,9 +579,7 @@ export default function SurgicalConsignmentsPage() {
           {detail.clinical_access && (
             <>
               <section className="space-y-3 rounded border bg-slate-50 p-4">
-                <h3 className="font-semibold">
-                  Restricted supporting forms and evidence
-                </h3>
+                <h3 className="font-semibold">Private supporting documents</h3>
                 <p className="text-sm text-slate-600">
                   Upload the vendor agreement, signed temporary receipt, return
                   acknowledgment and any waiver. These clinical files require
@@ -632,7 +648,7 @@ export default function SurgicalConsignmentsPage() {
                   String(detail.current_user_id) && (
                   <section className="space-y-3 rounded border border-indigo-200 p-4">
                     <h3 className="font-semibold">
-                      F18 · {label(currentApproval.role)} authorization
+                      {label(currentApproval.role)} authorization
                     </h3>
                     {currentApproval.role === "SCM" && (
                       <>
@@ -689,7 +705,7 @@ export default function SurgicalConsignmentsPage() {
                 ["AUTHORIZED", "RECEIVED"].includes(detail.status) && (
                   <details className="rounded border p-4">
                     <summary className="cursor-pointer font-semibold">
-                      Record F19 temporary vendor delivery
+                      Record temporary vendor delivery
                     </summary>
                     <form
                       className="mt-3 space-y-3"
@@ -738,7 +754,7 @@ export default function SurgicalConsignmentsPage() {
                           onChange={(e) => setEvidence(e.target.value)}
                         >
                           <option value="">
-                            Choose F19 / signed delivery document
+                            Choose signed delivery document
                           </option>
                           {fileChoices("RECEIPT")}
                         </select>
@@ -885,7 +901,7 @@ export default function SurgicalConsignmentsPage() {
                         disabled={busy || !notes.trim()}
                         className="rounded border px-3 py-2 disabled:opacity-40"
                       >
-                        Save temporary F19 receipt
+                        Save temporary receipt
                       </button>
                     </form>
                   </details>
@@ -907,7 +923,7 @@ export default function SurgicalConsignmentsPage() {
                           action("confirm_receipt", { receipt_id: r.id })
                         }
                       >
-                        SCM confirm temporary receipt F19-{r.id}
+                        SCM confirm temporary receipt #{r.id}
                       </button>
                     </section>
                   ))}
@@ -1210,7 +1226,7 @@ export default function SurgicalConsignmentsPage() {
                     .includes(String(detail.current_user_id)))) && (
                 <section className="space-y-3 rounded border border-indigo-200 p-4">
                   <h3 className="font-semibold">
-                    F20 · Attest final usage and returns
+                    Confirm final usage and returns
                   </h3>
                   <p>
                     {ready
@@ -1235,7 +1251,7 @@ export default function SurgicalConsignmentsPage() {
                       {
                         {
                           confirm_quantities:
-                            "I confirm the used, returned and discrepancy quantities shown in F20.",
+                            "I confirm the used, returned and discrepancy quantities shown in the usage record.",
                           vendor_informed:
                             "The vendor has been informed of usage and return status.",
                           acknowledge_used_billing:
@@ -1254,7 +1270,7 @@ export default function SurgicalConsignmentsPage() {
                     className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
                     onClick={() => action("attest", attest)}
                   >
-                    Sign final F20 usage record
+                    Sign final usage record
                   </button>
                 </section>
               )}

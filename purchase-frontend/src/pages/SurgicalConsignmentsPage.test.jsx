@@ -156,7 +156,7 @@ async function notes(value = "Verified quantities") {
 async function checks() {
   fireEvent.click(
     screen.getByLabelText(
-      "I confirm the used, returned and discrepancy quantities shown in F20.",
+      "I confirm the used, returned and discrepancy quantities shown in the usage record.",
     ),
   );
   fireEvent.click(
@@ -182,7 +182,7 @@ test("nurse signs a reconciled F20 snapshot with explicit quantity/vendor/billin
   mount();
   await notes();
   await checks();
-  fireEvent.click(screen.getByText("Sign final F20 usage record"));
+  fireEvent.click(screen.getByText("Sign final usage record"));
   await waitFor(() =>
     expect(api.action).toHaveBeenCalledWith(7, "attest", {
       row_version: 1,
@@ -202,7 +202,7 @@ test("outstanding intact returns prevent final F20 attestation", async () => {
   mount();
   await notes();
   await checks();
-  expect(screen.getByText("Sign final F20 usage record")).toBeDisabled();
+  expect(screen.getByText("Sign final usage record")).toBeDisabled();
   expect(api.action).not.toHaveBeenCalled();
 });
 test("finance-only case data renders a usage billing packet without clinical identifiers or files", async () => {
@@ -277,7 +277,7 @@ test("stale row conflicts retain user notes until deliberate reload", async () =
   mount();
   await notes("Keep my review");
   await checks();
-  fireEvent.click(screen.getByText("Sign final F20 usage record"));
+  fireEvent.click(screen.getByText("Sign final usage record"));
   await screen.findByRole("alert");
   expect(screen.getByLabelText("Consignment action notes")).toHaveValue(
     "Keep my review",
@@ -292,8 +292,8 @@ test("F18 requests authorize the range and independent roles without a purchase 
   });
   api.create.mockResolvedValue({ ...record, status: "AWAITING_AUTHORIZATION" });
   mount("/");
-  await screen.findByText("New F18 surgical consignment request");
-  fireEvent.click(screen.getByText("New F18 surgical consignment request"));
+  await screen.findByText("New surgical consignment request");
+  fireEvent.click(screen.getByText("New surgical consignment request"));
   for (const [field, value] of [
     ["Surgical department", "1"],
     ["Expected surgery date", "2026-10-29"],
@@ -321,7 +321,7 @@ test("F18 requests authorize the range and independent roles without a purchase 
     fireEvent.change(screen.getByLabelText(`Requested ${field} 1`), {
       target: { value },
     });
-  fireEvent.click(screen.getByText("Submit F18 for authorization"));
+  fireEvent.click(screen.getByText("Submit request for authorization"));
   await waitFor(() =>
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({
