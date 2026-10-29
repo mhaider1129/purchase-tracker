@@ -1,5 +1,6 @@
 const STATUS_KEYS = {
   PURCHASED: "purchased",
+  AVAILABLE_IN_STOCK: "availableInStock",
   PARTIALLY_PURCHASED: "partiallyPurchased",
   NOT_PURCHASED: "notPurchased",
 };
@@ -107,6 +108,9 @@ export const deriveItemPurchaseState = (item) => {
 
   const purchasedQuantity = purchasedQuantityRaw;
   const statusText = pickStatusText(item);
+  if (item.is_available_in_stock === true || [item.status,item.procurement_status,item.approval_status].some(value => ['available in stock','available_in_stock','in stock','in_stock'].includes(String(value || '').trim().toLowerCase()))) {
+    return { statusKey: STATUS_KEYS.AVAILABLE_IN_STOCK, quantity, purchasedQuantity };
+  }
 
   if (
     ["purchased", "completed", "received", "fulfilled"].includes(statusText)

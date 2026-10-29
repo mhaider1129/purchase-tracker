@@ -90,6 +90,7 @@ const RequestSubmittedPage = () => {
 
   const itemStatusLabels = useMemo(
     () => ({
+      availableInStock: t("requestSubmitted.itemStatus.availableInStock", "Available in Stock"),
       purchased: t("requestSubmitted.itemStatus.purchased", "Purchased"),
       partiallyPurchased: t(
         "requestSubmitted.itemStatus.partiallyPurchased",

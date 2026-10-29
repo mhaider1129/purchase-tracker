@@ -28,3 +28,8 @@ test('missing approver/level data stays explicit, and the same role at different
   expect(summary.map((step) => step.level)).toEqual(['2', '6', null]);
   expect(summary[2].role).toBe('');
 });
+
+test('stock-completed requests do not retain stale pending approval scorecards',()=>{
+ const request={status:'Available in Stock',current_pending_approvals:[{approval_level:5,approver_role:'CMO'}]};
+ expect(summarizePendingApprovalSteps([request])).toEqual([]);
+});

@@ -569,6 +569,7 @@
       "availableQuantity": "Available: {{count}}"
     },
     "itemStatus": {
+      "availableInStock": "Available in Stock",
       "pending": "Pending",
       "approved": "Approved",
       "rejected": "Rejected"
@@ -1702,6 +1703,7 @@
         "status": "Status"
       },
       "statusLabels": {
+        "availableInStock": "Available in Stock",
         "purchased": "Purchased",
         "partiallyPurchased": "Partially purchased",
         "notPurchased": "Not purchased"
@@ -2104,6 +2106,7 @@
     "emptyState": "No custody records have been issued yet.",
     "emptyStateFiltered": "No custody records match your filters.",
     "statusLabels": {
+      "availableInStock": "Available in Stock",
       "pending": "Pending",
       "approved": "Approved",
       "rejected": "Rejected",
@@ -2293,6 +2296,7 @@
     "total": "Total",
     "itemStatus": "Item Status",
     "itemStatusLabels": {
+      "availableInStock": "Available in Stock",
       "purchased": "Purchased",
       "partiallyPurchased": "Partially Purchased",
       "notPurchased": "Not Purchased"
@@ -2431,6 +2435,7 @@
     "noItems": "No items were included with this request.",
     "unnamedItem": "Unnamed item",
     "itemStatus": {
+      "availableInStock": "Available in Stock",
       "purchased": "Purchased",
       "partiallyPurchased": "Partially purchased",
       "notPurchased": "Not purchased"
