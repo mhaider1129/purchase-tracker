@@ -49,6 +49,12 @@ const useApprovalsData = (user) => {
   const [selectedApprovalId, setSelectedApprovalId] = useState(null);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [selectedDecision, setSelectedDecision] = useState('');
+  const [priorityPlacements, setPriorityPlacements] = useState([]);
+  const queuePriorityPlacement = (request, decision) => {
+    if (request?.approval_id != null && user?.department_id != null && String(user?.role || '').trim().toUpperCase()==='HOD' && decision==='Approved' && String(request.department_id)===String(user.department_id)) {
+      setPriorityPlacements(current=>current.some(id=>String(id)===String(request.approval_id)) ? current : [...current,request.approval_id]);
+    }
+  };
   const [decisionSubmitting, setDecisionSubmitting] = useState(false);
   const decisionSubmissionLock = useRef(false);
   const [comments, setComments] = useState('');
@@ -755,6 +761,7 @@ const useApprovalsData = (user) => {
           }
         }
         await axios.put(`/requests/approval/${req.approval_id}`, payload);
+        queuePriorityPlacement(req,payload.status);
       }
 
       setRequests((prev) => prev.filter((req) => !summaryRequestIds.includes(req.request_id)));
@@ -817,6 +824,7 @@ const useApprovalsData = (user) => {
         ...payload,
       });
 
+      queuePriorityPlacement(requests.find(request=>String(request.approval_id)===String(selectedApprovalId)), selectedDecision);
       setRequests((prev) => prev.filter((r) => r.approval_id !== selectedApprovalId));
       if (selectedRequestId != null) {
         setEstimatedCostDrafts((prev) => {
@@ -1176,6 +1184,8 @@ const useApprovalsData = (user) => {
   const getRowHighlight = (status) => STATUS_HIGHLIGHTS[status] || '';
 
   return {
+    priorityPlacementApprovalId: !summarySubmitting && !decisionSubmitting ? priorityPlacements[0] || null : null,
+    completePriorityPlacement: () => setPriorityPlacements(current=>current.slice(1)),
     approvalStatusFilter,
     setApprovalStatusFilter,
     availableRequestTypes,
