@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import axios from '../../api/axios';
 import ApprovalTimeline from '../ApprovalTimeline';
+import DepartmentPriorityPlacementDialog from '../priority/DepartmentPriorityPlacementDialog';
 import { Button } from '../ui/Button';
 import PaginationControls from '../ui/PaginationControls';
 import AmountInput from '../ui/AmountInput';
@@ -60,7 +61,6 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
   const [decisionDrafts, setDecisionDrafts] = useState({});
   const [feedback, setFeedback] = useState(null);
   const [rankingGate, setRankingGate] = useState(null);
-  const [rankingSaving, setRankingSaving] = useState(false);
   const [attachmentsMap, setAttachmentsMap] = useState({});
   const [attachmentLoadingMap, setAttachmentLoadingMap] = useState({});
   const [attachmentErrorMap, setAttachmentErrorMap] = useState({});
@@ -595,7 +595,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
         }
 
         const decisionResponse = await axios.patch(`/approvals/${request.approval_id}/decision`, payload);
-        if (decisionResponse.data?.workflowState === 'HOD_RANKING_REQUIRED') {
+        if (['HOD_RANKING_REQUIRED','HOD_PRIORITY_PLACEMENT'].includes(decisionResponse.data?.workflowState)) {
           setRankingGate({ ...decisionResponse.data.rankingGate, approvalId: request.approval_id });
           setFeedback(null);
           return;
@@ -655,29 +655,6 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
       ...prev,
       [requestId]: '',
     }));
-  };
-
-  const moveRankingCase = (index, offset) => setRankingGate((current) => {
-    const target = index + offset;
-    if (!current || target < 0 || target >= current.queue.length) return current;
-    const queue = [...current.queue];
-    [queue[index], queue[target]] = [queue[target], queue[index]];
-    return { ...current, queue };
-  });
-
-  const completeRanking = async () => {
-    setRankingSaving(true);
-    try {
-      await axios.post(`/approvals/${rankingGate.approvalId}/department-ranking`, {
-        ordered_request_ids: rankingGate.queue.map(row => row.request_id),
-        snapshots: Object.fromEntries(rankingGate.queue.map(row => [row.request_id,row.snapshot])),
-      });
-      setRankingGate(null);
-      setFeedback({ type: 'success', message: 'Department ranking saved. Approval has continued.' });
-      await fetchRequests();
-    } catch (err) {
-      setFeedback({ type: 'error', message: err?.response?.data?.message || 'Ranking was not saved; approval remains blocked.' });
-    } finally { setRankingSaving(false); }
   };
 
   const loadAttachments = useCallback(
@@ -808,26 +785,11 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
 
   return (
     <>
-      {rankingGate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" role="dialog" aria-modal="true" aria-labelledby="hod-ranking-title">
-          <div className="w-full max-w-2xl rounded-xl bg-white p-6 shadow-2xl">
-            <h2 id="hod-ranking-title" className="text-xl font-semibold text-slate-900">Department priority ranking required</h2>
-            <p className="mt-2 text-sm text-slate-600">{rankingGate.instruction}</p>
-            <ol className="mt-5 divide-y rounded-lg border">
-              {rankingGate.queue.map((row, index) => (
-                <li key={row.request_id} className="flex items-center gap-3 p-3">
-                  <span className="w-7 font-semibold text-slate-500">{index + 1}</span>
-                  <span className="flex-1 text-sm font-medium">{row.request_reference} · {row.public_title} ({row.item_count} active items)</span>
-                  {rankingGate.requiredRequestIds.map(String).includes(String(row.request_id)) && <span className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">This request</span>}
-                  <button type="button" aria-label="Move request up" disabled={index === 0} onClick={() => moveRankingCase(index, -1)}><ChevronUp className="h-5 w-5" /></button>
-                  <button type="button" aria-label="Move request down" disabled={index === rankingGate.queue.length - 1} onClick={() => moveRankingCase(index, 1)}><ChevronDown className="h-5 w-5" /></button>
-                </li>
-              ))}
-            </ol>
-            <div className="mt-5 flex justify-end"><Button onClick={completeRanking} disabled={rankingSaving}>{rankingSaving ? 'Saving ranking…' : 'Save ranking and continue approval'}</Button></div>
-          </div>
-        </div>
-      )}
+      {rankingGate && <DepartmentPriorityPlacementDialog approvalId={rankingGate.approvalId} onComplete={async () => {
+        setRankingGate(null);
+        setFeedback({ type:'success',message:'Department priority saved. Your approval is recorded.' });
+        await fetchRequests();
+      }} />}
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 p-6 text-white shadow-lg sm:p-8">
           <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl" />

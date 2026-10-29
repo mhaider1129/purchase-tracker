@@ -20,6 +20,7 @@ import {
 import { Button } from "../components/ui/Button";
 import useCurrentUser from "../hooks/useCurrentUser";
 import useApprovalsData from "../hooks/useApprovalsData";
+import DepartmentPriorityPlacementDialog from "../components/priority/DepartmentPriorityPlacementDialog";
 import ApprovalsFilters from "../components/approvals/ApprovalsFilters";
 import ApprovalRequestCard from "../components/approvals/ApprovalRequestCard";
 import AttachmentsPanel from "../components/approvals/AttachmentsPanel";
@@ -42,6 +43,8 @@ const ApprovalsPanel = () => {
   );
   const { user } = useCurrentUser();
   const {
+    priorityPlacementApprovalId,
+    completePriorityPlacement,
     availableRequestTypes,
     approvalStatusFilter,
     setApprovalStatusFilter,
@@ -875,6 +878,7 @@ const ApprovalsPanel = () => {
         </div>
       )}
 
+      {priorityPlacementApprovalId && <DepartmentPriorityPlacementDialog key={priorityPlacementApprovalId} approvalId={priorityPlacementApprovalId} onComplete={completePriorityPlacement} />}
       {showHodModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
