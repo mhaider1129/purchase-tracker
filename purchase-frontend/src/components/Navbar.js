@@ -863,6 +863,12 @@ const Navbar = () => {
           createItem(true, t("navbar.myTasks"), "/tasks", "text-blue-600"),
           createItem(
             true,
+            t("navbar.myTechnicalReviews", { defaultValue: "My technical reviews" }),
+            "/technical-inspections/pre-procurement",
+            "text-indigo-700",
+          ),
+          createItem(
+            true,
             t("navbar.myEvaluations"),
             "/my-evaluations",
             "text-blue-600",

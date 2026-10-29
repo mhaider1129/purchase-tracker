@@ -327,6 +327,7 @@
     "reviewNote": "Requests are reviewed by the Supply Chain Manager before access is granted."
   },
   "navbar": {
+    "myTechnicalReviews": "My technical reviews",
     "approvals": "Approvals",
     "approvalHistory": "Approval History",
     "openRequests": "My Open Requests",

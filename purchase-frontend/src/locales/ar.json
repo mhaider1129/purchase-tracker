@@ -331,6 +331,7 @@
     "reviewNote": "يراجع مسؤول سلسلة الإمداد الطلبات قبل منح صلاحية الوصول."
   },
   "navbar": {
+    "myTechnicalReviews": "مراجعاتي الفنية",
     "approvals": "الموافقات",
     "approvalHistory": "سجل الموافقات",
     "openRequests": "طلبات الشراء المفتوحة",
