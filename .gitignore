@@ -1,3 +1,6 @@
 node_modules/
 purchase-backend/node_modules/
 purchase-frontend/node_modules/
+
+# Restricted clinical consignment documents; never publish in Git.
+/purchase-backend/private-uploads/

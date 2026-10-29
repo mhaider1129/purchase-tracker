@@ -70,6 +70,7 @@ import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
 import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
+import SurgicalConsignmentsPage from "./pages/SurgicalConsignmentsPage";
 import DeviceDemosPage from "./pages/DeviceDemosPage";
 import PreprocurementTechnicalReviewsPage from "./pages/PreprocurementTechnicalReviewsPage";
 import ScmTechnicalInspectionsReviewPage from "./pages/ScmTechnicalInspectionsReviewPage";
@@ -559,6 +560,7 @@ const AppRoutes = () => (
         />
       }
     />
+    <Route path="/surgical-consignments" element={<ProtectedRoute element={<SurgicalConsignmentsPage />} />} />
     <Route
       path="/device-demos"
       element={<ProtectedRoute element={<DeviceDemosPage />} />}

@@ -327,6 +327,7 @@
     "reviewNote": "Requests are reviewed by the Supply Chain Manager before access is granted."
   },
   "navbar": {
+    "surgicalConsignments": "Surgical consignment request",
     "deviceDemos": "Device demo workspace",
     "myTechnicalReviews": "My technical reviews",
     "approvals": "Approvals",
@@ -1258,6 +1259,7 @@
       "results_many": "{{count}} workflows available"
     },
     "actions": {
+      "surgicalConsignment": {"label": "Surgical consignment request", "aria": "Open surgical consignment requests", "description": "Request procedure-specific vendor stock and bill only confirmed usage."},
       "retry": "Retry",
       "stockRequest": {
         "label": "Stock Purchase Request",

@@ -140,6 +140,12 @@ const ACTION_GROUPS = [
         featured: true,
       },
       {
+        labelKey: "requestTypeSelector.actions.surgicalConsignment.label",
+        ariaLabelKey: "requestTypeSelector.actions.surgicalConsignment.aria",
+        descriptionKey: "requestTypeSelector.actions.surgicalConsignment.description",
+        path: "/surgical-consignments",buttonClassName:"bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-400",icon:Stethoscope,featured:true,
+      },
+      {
         labelKey: "requestTypeSelector.actions.nonStock.label",
         ariaLabelKey: "requestTypeSelector.actions.nonStock.aria",
         descriptionKey: "requestTypeSelector.actions.nonStock.description",
