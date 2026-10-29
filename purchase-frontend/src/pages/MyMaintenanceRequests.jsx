@@ -185,6 +185,7 @@ const MyMaintenanceRequests = () => {
 
   const itemStatusLabels = useMemo(
     () => ({
+      availableInStock: tr('items.statusLabels.availableInStock', { defaultValue: 'Available in Stock' }),
       purchased: tr('items.statusLabels.purchased', {
         defaultValue: 'Purchased',
       }),

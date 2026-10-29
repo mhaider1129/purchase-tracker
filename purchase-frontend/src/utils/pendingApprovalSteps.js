@@ -1,5 +1,7 @@
+import {isCompletedRequestStatus} from './requestStatus';
 // Count requests per active approval level/role, rather than approval rows.
 export const activePendingApprovals = (request) => {
+  if (isCompletedRequestStatus(request.status)) return [];
   // An explicit empty list is authoritative. Scalar fallback supports rollout
   // against the older API, which exposes one active pending approver only.
   return Array.isArray(request.current_pending_approvals)
