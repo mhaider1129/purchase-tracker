@@ -420,6 +420,7 @@ const Navbar = () => {
             "/audit-registry",
             "text-blue-600",
           ),
+          createItem(true,t("navbar.surgicalConsignments",{defaultValue:"Surgical consignment requests"}),"/surgical-consignments","text-indigo-700"),
           resolveFeatureNavItem("allRequests", canViewAllRequests),
           resolveFeatureNavItem("historicalRequests", canImportHistorical),
           resolveFeatureNavItem("procurementPlans", canManageProcurement),
