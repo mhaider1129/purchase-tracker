@@ -574,6 +574,7 @@
       "availableQuantity": "المتوفر: {{count}}"
     },
     "itemStatus": {
+      "availableInStock": "متوفر في المخزون",
       "pending": "قيد المراجعة",
       "approved": "مقبول",
       "rejected": "مرفوض"
@@ -1647,6 +1648,7 @@
         "status": "الحالة"
       },
       "statusLabels": {
+        "availableInStock": "متوفر في المخزون",
         "purchased": "تم الشراء",
         "partiallyPurchased": "تم الشراء جزئياً",
         "notPurchased": "غير مشتراة"
@@ -2049,6 +2051,7 @@
     "emptyState": "لا توجد سجلات عهدة صادرة حتى الآن.",
     "emptyStateFiltered": "لا توجد سجلات عهدة مطابقة لمرشحاتك.",
     "statusLabels": {
+      "availableInStock": "متوفر في المخزون",
       "pending": "قيد الانتظار",
       "approved": "موافق",
       "rejected": "مرفوض",
@@ -2238,6 +2241,7 @@
     "total": "الإجمالي",
     "itemStatus": "حالة العنصر",
     "itemStatusLabels": {
+      "availableInStock": "متوفر في المخزون",
       "purchased": "تم الشراء",
       "partiallyPurchased": "تم الشراء جزئياً",
       "notPurchased": "لم يتم الشراء"
@@ -2380,6 +2384,7 @@
     "noItems": "لم يتم تضمين أي أصناف في هذا الطلب.",
     "unnamedItem": "صنف بلا اسم",
     "itemStatus": {
+      "availableInStock": "متوفر في المخزون",
       "purchased": "تم الشراء",
       "partiallyPurchased": "تم الشراء جزئياً",
       "notPurchased": "لم يتم الشراء"
