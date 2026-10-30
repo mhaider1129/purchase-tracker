@@ -1,0 +1,546 @@
+.technical-reviews {
+  display: grid;
+  gap: 24px;
+  padding: 32px 24px !important;
+  color: var(--color-text-primary);
+}
+.technical-reviews > * {
+  margin-top: 0 !important;
+  min-width: 0;
+}
+.technical-reviews [id] {
+  scroll-margin-top: 130px;
+}
+.technical-review-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #0b1428, #20345f);
+  color: #fff;
+  box-shadow: 0 10px 24px #0f172a15;
+}
+.technical-review-hero > div:first-child {
+  flex: 1 1 650px;
+}
+.technical-review-hero h1 {
+  font-size: clamp(25px, 3vw, 32px);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  margin-top: 8px;
+}
+.technical-review-hero > div > p:first-child {
+  font-size: 11px;
+  color: #a5e6ee;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.technical-review-hero > div > p:last-child {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #d0dced;
+  max-width: 850px;
+}
+.technical-review-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.technical-review-hero-actions a {
+  color: #fff;
+  padding: 10px 14px;
+  border: 1px solid #ffffff35;
+  border-radius: 8px;
+  margin: 0;
+  font-size: 13px;
+}
+.technical-reviews
+  :is(
+    .technical-review-workflow,
+    .technical-review-send,
+    .technical-review-register,
+    .technical-review-policy
+  ) {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: 14px;
+  padding: 22px;
+}
+.technical-reviews h2 {
+  font-size: 17px;
+  font-weight: 700;
+}
+.technical-review-workflow ol {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  list-style: none;
+  margin: 16px 0 0;
+}
+.technical-review-workflow li {
+  padding: 14px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  background: var(--color-bg-subtle);
+}
+.technical-review-workflow li > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--color-accent);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  margin-bottom: 9px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.technical-review-workflow strong {
+  display: block;
+  font-size: 13px;
+}
+.technical-review-workflow p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  margin-top: 5px;
+}
+.technical-reviews label {
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.technical-reviews
+  :is(
+    input:where(:not([type="checkbox"]):not([type="file"])),
+    select,
+    textarea
+  ) {
+  display: block;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  margin: 6px 0 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 400;
+}
+.technical-reviews textarea {
+  min-height: 96px;
+}
+.technical-reviews input[type="checkbox"] {
+  accent-color: var(--color-accent);
+  margin-inline-end: 7px;
+}
+.technical-reviews input[type="file"] {
+  max-width: 100%;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.technical-reviews
+  :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 3px;
+}
+.technical-reviews button {
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 9px 13px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.technical-reviews button:not([class*="bg-"]) {
+  color: var(--color-text-primary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+}
+.technical-reviews button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.technical-reviews button:not(:disabled):hover {
+  filter: brightness(0.97);
+}
+.technical-reviews button[class*="bg-indigo-700"] {
+  color: #fff;
+  background: #4f46e5;
+}
+.technical-reviews .text-blue-700 {
+  color: var(--color-accent);
+}
+.technical-reviews .technical-review-hero-actions a {
+  color: #fff;
+}
+.technical-reviews .technical-review-help {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  margin: 6px 0 14px;
+}
+.technical-review-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  border-radius: 14px;
+  padding: 20px;
+}
+.technical-review-search label {
+  flex: 1 1 300px;
+}
+.technical-reviews
+  :is(.technical-review-send, .technical-review-policy)
+  > summary {
+  font-size: 16px;
+  font-weight: 700;
+  padding: 2px;
+  cursor: pointer;
+}
+.technical-reviews
+  :is(.technical-review-send, .technical-review-policy)[open]
+  > summary {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--color-border-default);
+}
+.technical-review-setup-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 24px;
+  align-items: start;
+}
+.technical-review-setup-fields {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.technical-reviews .technical-review-form-section {
+  min-width: 0;
+  padding: 18px;
+  margin: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: 12px;
+}
+.technical-review-form-section > legend {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 0 6px;
+}
+.technical-review-form-section > legend > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-inline-end: 7px;
+  border-radius: 50%;
+  color: var(--color-accent);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
+  font-size: 11px;
+}
+.technical-review-form-section > p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  margin-top: 6px;
+}
+.technical-review-form-section > label {
+  margin-top: 14px;
+}
+.technical-review-upload {
+  margin-top: 16px;
+  border-color: var(--color-border-default);
+  background: var(--color-bg-subtle);
+  border-radius: 10px;
+  padding: 14px;
+}
+.technical-review-upload > p:first-child {
+  font-size: 13px;
+  font-weight: 600;
+}
+.technical-reviews .technical-review-item {
+  min-width: 0;
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+}
+.technical-review-item legend {
+  padding: 0 6px;
+}
+.technical-review-item legend label {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+.technical-review-item-number {
+  margin-inline-end: 10px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+.technical-review-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.technical-review-basis-help {
+  border-inline-start: 3px solid var(--color-accent);
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.technical-review-item-documents {
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--color-bg-subtle);
+}
+.technical-review-item-documents > p:first-child {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.technical-review-item-documents label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.technical-review-inspector-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin-top: 16px;
+}
+.technical-review-inspector-toolbar label {
+  flex: 1 1 250px;
+}
+.technical-review-inspector-toolbar p {
+  padding-bottom: 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.technical-review-inspector-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 12px 3px;
+}
+.technical-review-inspector-list > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+  font-weight: 400;
+  border-radius: 8px;
+  line-height: 1.6;
+  cursor: pointer;
+}
+.technical-review-inspector-list > label:has(input:checked) {
+  border-color: var(--color-accent);
+}
+.technical-review-inspector-list input {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.technical-review-inspector-list span {
+  overflow-wrap: anywhere;
+}
+.technical-review-draft {
+  position: sticky;
+  top: 140px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--color-bg-subtle);
+}
+.technical-review-draft h3 {
+  font-size: 14px;
+  font-weight: 700;
+}
+.technical-review-draft dl {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+.technical-review-draft dt {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.technical-review-draft dd {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.technical-review-draft p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  margin-top: 10px;
+}
+.technical-review-submit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border-default);
+  margin-top: 20px;
+}
+.technical-review-submit p {
+  max-width: 550px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.technical-review-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.technical-review-register table {
+  min-width: 700px;
+  border-collapse: collapse;
+}
+.technical-review-register th {
+  padding: 12px;
+  text-align: start;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-subtle);
+}
+.technical-review-register td {
+  padding: 14px 12px;
+  border-top: 1px solid var(--color-border-default);
+}
+.technical-review-status {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 20px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  font-size: 11px;
+  font-weight: 600;
+}
+.technical-review-empty {
+  grid-column: 1/-1;
+  color: var(--color-text-muted);
+  padding: 18px;
+  font-size: 13px;
+  text-align: center;
+}
+.technical-review-policy-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+  gap: 24px;
+  margin-top: 18px;
+}
+.technical-reviews .technical-review-policy-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.technical-review-policy-reason {
+  display: block;
+}
+.technical-review-policy-preview {
+  border: 1px solid var(--color-border-default);
+  border-inline-start: 4px solid #d97706;
+  border-radius: 10px;
+  padding: 18px;
+  background: var(--color-bg-subtle);
+}
+.technical-review-policy-preview h3 {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+.technical-review-policy-preview strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 15px;
+}
+.technical-review-policy-preview p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+  margin-top: 12px;
+}
+@media (max-width: 1000px) {
+  .technical-review-setup-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .technical-review-draft {
+    position: static;
+  }
+  .technical-review-draft dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .technical-reviews {
+    padding: 20px 14px !important;
+    gap: 16px;
+  }
+  .technical-reviews
+    :is(
+      .technical-review-hero,
+      .technical-review-workflow,
+      .technical-review-send,
+      .technical-review-register,
+      .technical-review-policy
+    ) {
+    padding: 18px;
+  }
+  .technical-review-workflow ol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .technical-review-field-grid,
+  .technical-review-inspector-list,
+  .technical-review-policy-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .technical-reviews .technical-review-form-section {
+    padding: 14px;
+  }
+  .technical-review-submit button {
+    width: 100%;
+  }
+}
