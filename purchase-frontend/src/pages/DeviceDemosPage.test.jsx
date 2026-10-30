@@ -486,3 +486,99 @@ test("reloading clears a supplier which is no longer eligible without losing oth
   expect(screen.getByLabelText("model")).toHaveValue("Keep model");
   expect(screen.getByText("Save supplier demo")).toBeDisabled();
 });
+
+test("evaluator search preserves hidden selections and the setup summary", async () => {
+  api.demoReviewers.mockResolvedValue([
+    { id: 2, name: "Evaluator", role: "HOD", department_name: "Imaging" },
+    {
+      id: 3,
+      name: "Other reviewer",
+      role: "Requester",
+      department_name: "ICU",
+    },
+  ]);
+  mount("/");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "New demo workspace" }),
+  );
+  expect(
+    screen.getByRole("form", { name: "Open device demo workspace" }),
+  ).toBeVisible();
+  fireEvent.click(screen.getByLabelText("Evaluator · HOD · Imaging"));
+  fireEvent.change(screen.getByRole("searchbox", { name: "Find evaluators" }), {
+    target: { value: "Other ICU" },
+  });
+  expect(
+    screen.queryByLabelText("Evaluator · HOD · Imaging"),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText("1 selected · 1 of 2 shown")).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clear evaluator search" }),
+  );
+  expect(screen.getByLabelText("Evaluator · HOD · Imaging")).toBeChecked();
+  expect(
+    screen.getByRole("complementary", { name: "Demo setup summary" }),
+  ).toBeInTheDocument();
+  expect(api.openDemoWorkspace).not.toHaveBeenCalled();
+  expect(api.demoAction).not.toHaveBeenCalled();
+});
+
+test("weight feedback and submit guard enforce the existing 100 percent rule", async () => {
+  mount("/");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "New demo workspace" }),
+  );
+  fireEvent.change(screen.getByLabelText("Requested device"), {
+    target: { value: "30" },
+  });
+  fireEvent.change(screen.getByLabelText("Demo objectives and intended use"), {
+    target: { value: "Clinical performance" },
+  });
+  fireEvent.click(screen.getByLabelText("Evaluator · HOD · Imaging"));
+  fireEvent.change(screen.getByLabelText("Weight 1"), {
+    target: { value: "70" },
+  });
+  expect(screen.getByText("Weight total: 70%")).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Open demo workspace", exact: true }),
+  ).toBeDisabled();
+  fireEvent.submit(
+    screen.getByRole("form", { name: "Open device demo workspace" }),
+  );
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "positive whole numbers totaling 100%",
+  );
+  expect(api.openDemoWorkspace).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Weight 1"), {
+    target: { value: "100" },
+  });
+  expect(screen.getByText("Weight total: 100%")).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Open demo workspace", exact: true }),
+  ).toBeEnabled();
+});
+
+test("read-only search reset cannot expose workspace setup or eligible item lookup", async () => {
+  api.demoSchema.mockResolvedValue({
+    can_initiate: false,
+    can_coo: false,
+    criteria,
+  });
+  mount("/");
+  await screen.findByRole("button", { name: "Open DEMO-1" });
+  expect(
+    screen.queryByRole("button", { name: "New demo workspace" }),
+  ).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole("textbox", { name: "Search demos" }), {
+    target: { value: "Device" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Search", exact: true }));
+  await waitFor(() => expect(api.listDemos).toHaveBeenCalledWith("Device"));
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Clear search" })).toBeEnabled(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+  await waitFor(() => expect(api.listDemos).toHaveBeenLastCalledWith(""));
+  expect(api.eligibleDemoItems).not.toHaveBeenCalled();
+  expect(api.openDemoWorkspace).not.toHaveBeenCalled();
+});

@@ -1,3 +1,5 @@
+import "./DeviceDemosPage.css";
+import { matchesSearchTokens } from "../utils/search";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import * as api from "../api/deviceDemos";
@@ -19,6 +21,8 @@ const emptyCandidate = () => ({
   description: "",
 });
 export default function DeviceDemosPage() {
+  const setupRef = useRef(null);
+  const [evaluatorSearch, setEvaluatorSearch] = useState("");
   const [params, setParams] = useSearchParams(),
     opened = useRef(null);
   const [schema, setSchema] = useState(null),
@@ -206,6 +210,25 @@ export default function DeviceDemosPage() {
       await adopt(await api.getDemoWorkspace(detail.id));
       setRows(await api.listDemos(search));
     });
+  const visibleEvaluators = directory.filter((user) =>
+    matchesSearchTokens(evaluatorSearch, [
+      user.name,
+      user.role,
+      user.department_name,
+    ]),
+  );
+  const weightTotal = criteria.reduce(
+    (sum, row) =>
+      sum + (Number.isFinite(Number(row.weight)) ? Number(row.weight) : 0),
+    0,
+  );
+  const weightsValid =
+    criteria.length > 0 &&
+    criteria.every(
+      (row) => Number.isInteger(Number(row.weight)) && Number(row.weight) > 0,
+    ) &&
+    weightTotal === 100;
+  const requestedDevice = eligible.find((item) => String(item.id) === itemId);
   const editable =
       detail && ["OPEN", "REVISION_REQUIRED"].includes(detail.status),
     assigned = detail?.reviewers.some(
@@ -249,15 +272,62 @@ export default function DeviceDemosPage() {
     detail.demos.every((d) => ["COMPLETED", "WITHDRAWN"].includes(d.status));
   if (loading) return <main className="p-6">Loading device demos…</main>;
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-6">
-      <header className="rounded-xl bg-slate-900 p-6 text-white">
-        <p className="text-sm text-cyan-200">DEVICE DEMONSTRATIONS</p>
-        <h1 className="text-3xl font-bold">Device demo workspace</h1>
-        <p className="mt-2">
-          Compare supplier demos, document trials and departmental evaluations,
-          then obtain COO approval for the selected device.
-        </p>
+    <main className="device-demos mx-auto max-w-7xl space-y-6 p-6">
+      <header className="demo-hero rounded-xl bg-slate-900 p-6 text-white">
+        <div>
+          <p className="text-sm text-cyan-200">DEVICE DEMONSTRATIONS</p>
+          <h1 className="text-3xl font-bold">Device demo workspace</h1>
+          <p className="mt-2">
+            Compare supplier demos, document trials and departmental
+            evaluations, then obtain COO approval for the selected device.
+          </p>
+        </div>
+        <div className="demo-hero-actions">
+          {schema?.can_initiate && (
+            <button
+              type="button"
+              onClick={() => {
+                if (setupRef.current) {
+                  setupRef.current.open = true;
+                  setupRef.current.scrollIntoView?.({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                  setupRef.current
+                    .querySelector("select")
+                    ?.focus({ preventScroll: true });
+                }
+              }}
+            >
+              New demo workspace
+            </button>
+          )}
+          <a href="#demo-workspaces">View workspaces ↓</a>
+        </div>
       </header>
+      <section
+        className="demo-workflow"
+        aria-label="Device demonstration workflow"
+      >
+        <h2>From demo setup to an approved selection</h2>
+        <ol>
+          {[
+            ["Set up", "Choose the requested device and evaluation team"],
+            ["Trial", "Document supplier demos and supporting evidence"],
+            ["Evaluate", "Each evaluator reports on completed demos"],
+            [
+              "COO decision",
+              "Submit the selected device for independent approval",
+            ],
+          ].map(([title, description], index) => (
+            <li key={title}>
+              <span>{index + 1}</span>
+              <strong>{title}</strong>
+              <p>{description}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
       {error && (
         <div
           role="alert"
@@ -281,7 +351,8 @@ export default function DeviceDemosPage() {
         </p>
       )}
       <form
-        className="flex gap-3"
+        className="demo-search"
+        aria-label="Find demo workspaces"
         onSubmit={(e) => {
           e.preventDefault();
           perform(async () => {
@@ -291,26 +362,56 @@ export default function DeviceDemosPage() {
           });
         }}
       >
-        <input
-          aria-label="Search demos"
-          className={css}
-          placeholder="Request number or device name"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <label>
+          Search workspaces
+          <input
+            aria-label="Search demos"
+            className={css}
+            placeholder="Request number or device name"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
         <button disabled={busy} className="rounded border px-3">
           Search
         </button>
+        {search && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setSearch("");
+              perform(async () => {
+                setRows(await api.listDemos(""));
+                if (schema.can_initiate)
+                  setEligible(await api.eligibleDemoItems(""));
+              });
+            }}
+          >
+            Clear search
+          </button>
+        )}
       </form>
       {schema?.can_initiate && (
-        <details className="rounded-xl border bg-white p-4">
+        <details
+          ref={setupRef}
+          id="demo-setup"
+          className="demo-setup rounded-xl border bg-white p-4"
+        >
           <summary className="cursor-pointer font-semibold">
             Open a device demo workspace
           </summary>
           <form
-            className="mt-4 space-y-3"
+            className="demo-setup-form mt-4 space-y-3"
+            aria-label="Open device demo workspace"
             onSubmit={(e) => {
               e.preventDefault();
+              if (!weightsValid) {
+                setError(
+                  "Evaluation weights must be positive whole numbers totaling 100%.",
+                );
+                return;
+              }
               perform(async () => {
                 const w = await api.openDemoWorkspace({
                   request_item_id: itemId,
@@ -329,131 +430,258 @@ export default function DeviceDemosPage() {
               });
             }}
           >
-            <label className="block">
-              Requested device
-              <select
-                required
-                className={`${css} block w-full`}
-                value={itemId}
-                onChange={(e) => {
-                  setItemId(e.target.value);
-                  setTitle(
-                    eligible.find((i) => String(i.id) === e.target.value)
-                      ?.item_name || "",
-                  );
-                }}
+            <div className="demo-setup-layout">
+              <div className="demo-setup-fields">
+                <fieldset className="demo-form-section">
+                  <legend>
+                    <span>1</span>Device and objectives
+                  </legend>
+                  <label className="block">
+                    Requested device
+                    <select
+                      required
+                      className={`${css} block w-full`}
+                      value={itemId}
+                      onChange={(e) => {
+                        setItemId(e.target.value);
+                        setTitle(
+                          eligible.find((i) => String(i.id) === e.target.value)
+                            ?.item_name || "",
+                        );
+                      }}
+                    >
+                      <option value="">Select outstanding device</option>
+                      {eligible.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          #{item.maintenance_ref_number || item.request_id} ·{" "}
+                          {item.item_name} · {item.department_name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p className="text-sm text-slate-600">
+                    Medical-devices and SCM approvers can open at their active
+                    approval step. SCM can also open for approved requests
+                    before procurement starts.
+                  </p>
+                  <label className="block">
+                    Workspace title
+                    <input
+                      required
+                      className={`${css} block w-full`}
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                    />
+                  </label>
+                  <label className="block">
+                    Demo objectives and intended use
+                    <textarea
+                      required
+                      className={`${css} block w-full`}
+                      value={objectives}
+                      onChange={(e) => setObjectives(e.target.value)}
+                    />
+                  </label>
+                </fieldset>
+                <fieldset className="demo-form-section rounded border p-3">
+                  <legend>
+                    <span>2</span>Required evaluators
+                  </legend>
+                  <p className="text-sm text-slate-600">
+                    Include the requesting department. Each evaluator reports on
+                    every completed demo. COO selection approval must be
+                    independent.
+                  </p>
+                  <div className="demo-evaluator-toolbar">
+                    <label>
+                      Find evaluators
+                      <input
+                        type="search"
+                        value={evaluatorSearch}
+                        onChange={(event) =>
+                          setEvaluatorSearch(event.target.value)
+                        }
+                        placeholder="Name, role, or department"
+                      />
+                    </label>
+                    <p role="status">
+                      {reviewers.length} selected · {visibleEvaluators.length}{" "}
+                      of {directory.length} shown
+                    </p>
+                    {evaluatorSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setEvaluatorSearch("")}
+                      >
+                        Clear evaluator search
+                      </button>
+                    )}
+                  </div>
+                  <div className="demo-evaluator-list">
+                    {visibleEvaluators.map((user) => (
+                      <label
+                        key={user.id}
+                        className="demo-evaluator-option mr-4 block"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={reviewers.includes(String(user.id))}
+                          onChange={(e) =>
+                            setReviewers((old) =>
+                              e.target.checked
+                                ? [...old, String(user.id)]
+                                : old.filter((id) => id !== String(user.id)),
+                            )
+                          }
+                        />{" "}
+                        <span>
+                          {user.name} · {user.role} · {user.department_name}
+                        </span>
+                      </label>
+                    ))}
+                    {visibleEvaluators.length === 0 && (
+                      <p className="demo-empty">
+                        No evaluators match this search.
+                      </p>
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset className="demo-form-section rounded border p-3">
+                  <legend>
+                    <span>3</span>Evaluation criteria — weights total 100%
+                  </legend>
+                  <p className="text-sm text-slate-600">
+                    Agree the criteria before trials begin. Each criterion is
+                    scored 0–5 with evidence.
+                  </p>
+                  <div
+                    className={`demo-weight-total ${weightsValid ? "demo-weight-total--valid" : "demo-weight-total--invalid"}`}
+                    role="status"
+                  >
+                    <strong>Weight total: {weightTotal}%</strong>
+                    <span>
+                      {weightsValid
+                        ? "Ready — weights total 100%."
+                        : "Use positive whole-number weights totaling 100%."}
+                    </span>
+                  </div>
+                  <div className="demo-criteria-heading" aria-hidden="true">
+                    <span>Criterion</span>
+                    <span>Weight (%)</span>
+                  </div>
+                  {criteria.map((criterion, index) => (
+                    <div
+                      key={criterion.key}
+                      className="demo-criterion-row my-2 flex gap-2"
+                    >
+                      <input
+                        aria-label={`Criterion ${index + 1}`}
+                        required
+                        className={`${css} flex-1`}
+                        value={criterion.name}
+                        onChange={(e) =>
+                          setCriteria((old) =>
+                            old.map((row, i) =>
+                              i === index
+                                ? { ...row, name: e.target.value }
+                                : row,
+                            ),
+                          )
+                        }
+                      />
+                      <input
+                        aria-label={`Weight ${index + 1}`}
+                        type="number"
+                        min="1"
+                        max="100"
+                        required
+                        className={`${css} w-24`}
+                        value={criterion.weight}
+                        onChange={(e) =>
+                          setCriteria((old) =>
+                            old.map((row, i) =>
+                              i === index
+                                ? { ...row, weight: e.target.value }
+                                : row,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                  ))}
+                </fieldset>
+              </div>
+              <aside
+                className="demo-setup-summary"
+                aria-label="Demo setup summary"
               >
-                <option value="">Select outstanding device</option>
-                {eligible.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    #{item.maintenance_ref_number || item.request_id} ·{" "}
-                    {item.item_name} · {item.department_name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="text-sm text-slate-600">
-              Medical-devices and SCM approvers can open at their active
-              approval step. SCM can also open for approved requests before
-              procurement starts.
-            </p>
-            <label className="block">
-              Workspace title
-              <input
-                required
-                className={`${css} block w-full`}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </label>
-            <label className="block">
-              Demo objectives and intended use
-              <textarea
-                required
-                className={`${css} block w-full`}
-                value={objectives}
-                onChange={(e) => setObjectives(e.target.value)}
-              />
-            </label>
-            <fieldset className="rounded border p-3">
-              <legend>Required evaluators</legend>
-              <p className="text-sm text-slate-600">
-                Include the requesting department. Each evaluator reports on
-                every completed demo. COO selection approval must be
-                independent.
+                <h3>Workspace at a glance</h3>
+                <dl>
+                  <div>
+                    <dt>Requested device</dt>
+                    <dd>{requestedDevice?.item_name || "Not selected"}</dd>
+                  </div>
+                  <div>
+                    <dt>Request / reference</dt>
+                    <dd>
+                      {requestedDevice
+                        ? `#${requestedDevice.maintenance_ref_number || requestedDevice.request_id}`
+                        : "Not selected"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Department</dt>
+                    <dd>
+                      {requestedDevice?.department_name || "Not selected"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Evaluators selected</dt>
+                    <dd>{reviewers.length}</dd>
+                  </div>
+                  <div>
+                    <dt>Criteria</dt>
+                    <dd>{criteria.length}</dd>
+                  </div>
+                </dl>
+                <p>Every required evaluator reports on each completed demo.</p>
+                <p>
+                  Workspace creation does not select a supplier. Complete trials
+                  and reports before requesting COO review.
+                </p>
+              </aside>
+            </div>
+            <div className="demo-setup-submit">
+              <p>
+                Choose the requested device, agree the evaluation team and
+                confirm weights before opening.
               </p>
-              {directory.map((user) => (
-                <label key={user.id} className="mr-4 block">
-                  <input
-                    type="checkbox"
-                    checked={reviewers.includes(String(user.id))}
-                    onChange={(e) =>
-                      setReviewers((old) =>
-                        e.target.checked
-                          ? [...old, String(user.id)]
-                          : old.filter((id) => id !== String(user.id)),
-                      )
-                    }
-                  />{" "}
-                  {user.name} · {user.role} · {user.department_name}
-                </label>
-              ))}
-            </fieldset>
-            <fieldset className="rounded border p-3">
-              <legend>Evaluation criteria — weights total 100%</legend>
-              <p className="text-sm text-slate-600">
-                Agree the criteria before trials begin. Each criterion is scored
-                0–5 with evidence.
-              </p>
-              {criteria.map((criterion, index) => (
-                <div key={criterion.key} className="my-2 flex gap-2">
-                  <input
-                    aria-label={`Criterion ${index + 1}`}
-                    required
-                    className={`${css} flex-1`}
-                    value={criterion.name}
-                    onChange={(e) =>
-                      setCriteria((old) =>
-                        old.map((row, i) =>
-                          i === index ? { ...row, name: e.target.value } : row,
-                        ),
-                      )
-                    }
-                  />
-                  <input
-                    aria-label={`Weight ${index + 1}`}
-                    type="number"
-                    min="1"
-                    max="100"
-                    required
-                    className={`${css} w-24`}
-                    value={criterion.weight}
-                    onChange={(e) =>
-                      setCriteria((old) =>
-                        old.map((row, i) =>
-                          i === index
-                            ? { ...row, weight: e.target.value }
-                            : row,
-                        ),
-                      )
-                    }
-                  />
-                </div>
-              ))}
-            </fieldset>
-            <button
-              className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
-              disabled={busy || !itemId || !reviewers.length}
-            >
-              Open demo workspace
-            </button>
+              <button
+                className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
+                disabled={busy || !itemId || !reviewers.length || !weightsValid}
+              >
+                {busy ? "Please wait…" : "Open demo workspace"}
+              </button>
+            </div>
           </form>
         </details>
       )}
-      <section className="rounded-xl border bg-white p-4">
+      <section
+        id="demo-workspaces"
+        className="demo-queue rounded-xl border bg-white p-4"
+      >
         <h2 className="text-lg font-semibold">Demo workspaces</h2>
+        <p className="demo-help">
+          {rows.length} workspaces shown. Open a workspace to review supplier
+          trials, reports and selection decisions.
+        </p>
         {!rows.length && <p>No demo workspaces found.</p>}
-        <div className="overflow-x-auto">
+        <div
+          className="demo-table-scroll overflow-x-auto"
+          role="region"
+          aria-label="Demo workspace table"
+          tabIndex={0}
+        >
           <table className="w-full text-left">
             <thead>
               <tr>
@@ -469,7 +697,11 @@ export default function DeviceDemosPage() {
                   <td className="py-3">
                     {w.title} · #{w.maintenance_ref_number || w.request_id}
                   </td>
-                  <td>{readable(w.status)}</td>
+                  <td>
+                    <span className="demo-status-badge">
+                      {readable(w.status)}
+                    </span>
+                  </td>
                   <td>{w.demo_count}</td>
                   <td>
                     <button
