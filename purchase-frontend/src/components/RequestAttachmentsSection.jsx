@@ -1,3 +1,4 @@
+import { openProtectedFile } from '../api/attachments';
 import React from "react";
 import {
   Download,
@@ -112,16 +113,15 @@ const RequestAttachmentsSection = ({
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   {viewUrl && (
-                    <a
-                      href={viewUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openProtectedFile(viewUrl, filename, true).catch(() => alert('Unable to open attachment'))}
                       className="rounded-md p-2 text-slate-500 hover:bg-white hover:text-blue-700"
                       aria-label={`View ${filename}`}
                       title="View attachment"
                     >
                       <ExternalLink className="h-4 w-4" />
-                    </a>
+                    </button>
                   )}
                   {onDownload && (
                     <button

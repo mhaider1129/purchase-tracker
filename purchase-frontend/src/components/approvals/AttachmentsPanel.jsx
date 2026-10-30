@@ -77,7 +77,7 @@ const AttachmentsPanel = ({
                   <button
                     type="button"
                     className="inline-flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
-                    onClick={() => onView?.(att.file_url)}
+                    onClick={() => onView?.(att.file_url, filename)}
                   >
                     <ExternalLink className="h-3.5 w-3.5" aria-hidden /> View
                   </button>

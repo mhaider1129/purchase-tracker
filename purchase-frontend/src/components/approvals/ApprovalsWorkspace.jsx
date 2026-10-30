@@ -1,3 +1,4 @@
+import { openProtectedFile } from '../../api/attachments';
 import "../../styles/RequestLists.css";
 // src/components/approvals/ApprovalsWorkspace.jsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -1354,15 +1355,14 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                       <li key={attachment.id} className="flex items-center justify-between gap-2">
                                         <span className="truncate text-slate-700">{attachment.file_name}</span>
                                         {attachment.download_url && (
-                                          <a
-                                            href={attachment.download_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                          <button
+                                            type="button"
+                                            onClick={() => openProtectedFile(attachment.download_url, attachment.file_name).catch(() => alert('Unable to download attachment'))}
                                             className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700"
                                           >
                                             <Download className="h-4 w-4" aria-hidden />
                                             {t('maintenanceHODApprovals.attachments.download')}
-                                          </a>
+                                          </button>
                                         )}
                                       </li>
                                     ))}

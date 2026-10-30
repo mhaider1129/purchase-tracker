@@ -1,3 +1,4 @@
+import { openProtectedFile } from '../api/attachments';
 import PaginationControls from "../components/ui/PaginationControls";
 import useRequestListPagination from "../hooks/useRequestListPagination";
 import ApprovalQueueControls from '../components/approvals/ApprovalQueueControls';
@@ -483,8 +484,8 @@ const ApprovalsPanel = () => {
                           error={attachmentsError}
                           downloadingId={downloadingAttachmentId}
                           onDownload={handleDownloadAttachment}
-                          onView={(url) =>
-                            window.open(url, "_blank", "noopener,noreferrer")
+                          onView={(url, filename) =>
+                            openProtectedFile(url, filename || 'attachment', true).catch(() => alert('Unable to open attachment'))
                           }
                         />
 
