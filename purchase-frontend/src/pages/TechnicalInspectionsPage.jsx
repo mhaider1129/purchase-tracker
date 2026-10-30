@@ -157,7 +157,7 @@ export default function TechnicalInspectionsPage() {
           </select>
         </label>
         <label>
-          Status
+          Technical review status
           <select
             className={field}
             value={filters.status}
@@ -280,7 +280,7 @@ export default function TechnicalInspectionsPage() {
                   "Item",
                   "Review type",
                   "Assigned department",
-                  "Status",
+                  "Technical review status",
                   "Action",
                 ].map((h) => (
                   <th key={h} className="px-4 py-3">
