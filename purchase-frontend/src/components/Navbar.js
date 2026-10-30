@@ -604,7 +604,7 @@ const Navbar = () => {
           ),
           createItem(
             canManageTechnicalInspections,
-            t("navbar.technicalInspections"),
+            t("navbar.technicalReviewsInspections", { defaultValue: "Technical Reviews & Inspections" }),
             "/technical-inspections",
             "text-emerald-600",
           ),
@@ -871,7 +871,7 @@ const Navbar = () => {
           createItem(
             true,
             t("navbar.myTechnicalReviews", { defaultValue: "My technical reviews" }),
-            "/technical-inspections/pre-procurement",
+            "/technical-inspections",
             "text-indigo-700",
           ),
           createItem(

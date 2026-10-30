@@ -2,6 +2,10 @@
 import api from "./axios";
 
 const RESOURCE = "/technical-inspections";
+export const getTechnicalWorklist = async (params = {}, options = {}) => {
+  const { data } = await api.get(`${RESOURCE}/worklist`, { params, ...options });
+  return data;
+};
 
 export const listTechnicalInspections = async (params = {}, options = {}) => {
   const { data } = await api.get(RESOURCE, { params, ...options });
