@@ -1,3 +1,4 @@
+import "./SurgicalConsignmentsPage.css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { saveAs } from "file-saver";
@@ -55,6 +56,8 @@ const initial = () => ({
 });
 const money = (v) => String(v ?? "0.00");
 export default function SurgicalConsignmentsPage() {
+  const createRef = useRef(null);
+  const [queueStatus, setQueueStatus] = useState("");
   const [params, setParams] = useSearchParams(),
     opened = useRef(null);
   const [meta, setMeta] = useState(null),
@@ -197,6 +200,37 @@ export default function SurgicalConsignmentsPage() {
     });
   const change = (field, value) =>
     setForm((old) => ({ ...old, [field]: value }));
+  const requestField = (field) => (
+    <label key={field}>
+      {
+        {
+          surgery_date: "Expected surgery date",
+          patient_mrn: "Patient MRN",
+          procedure_type: "Procedure type",
+          vendor_contact: "Vendor contact",
+          agreement_reference: "Vendor agreement / price-list reference",
+          currency: "Currency",
+        }[field]
+      }
+      <input
+        required
+        type={field === "surgery_date" ? "date" : "text"}
+        autoComplete="off"
+        className={`${css} block w-full`}
+        value={form[field]}
+        onChange={(event) => change(field, event.target.value)}
+      />
+    </label>
+  );
+  const visibleRows = rows.filter(
+    (row) => !queueStatus || row.status === queueStatus,
+  );
+  const draftDepartment = directory.departments.find(
+    (item) => String(item.id) === form.department_id,
+  );
+  const draftVendor = directory.suppliers.find(
+    (item) => String(item.id) === form.supplier_id,
+  );
   const fileChoices = (purpose) =>
     (detail?.files || [])
       .filter((f) => f.purpose === purpose)
@@ -220,29 +254,66 @@ export default function SurgicalConsignmentsPage() {
   if (loading)
     return <main className="p-6">Loading surgical consignments…</main>;
   return (
-    <main className="mx-auto max-w-7xl space-y-6 p-6">
+    <main className="surgical-consignments mx-auto max-w-7xl space-y-6 p-6">
       <style>{`@media print {body *{visibility:hidden} #surgical-forms,#surgical-forms *{visibility:visible} #surgical-forms{position:absolute;top:0;left:0;width:100%} #surgical-forms button,#surgical-forms .no-print{display:none} #surgical-forms article{break-inside:avoid}}`}</style>
-      <header className="rounded-xl bg-slate-900 p-6 text-white">
-        <p className="text-sm text-cyan-200">Procedure-specific vendor stock</p>
-        <h1 className="text-3xl font-bold">Surgical consignment requests</h1>
-        <p className="mt-2">
-          Authorize procedure-specific vendor stock, trace every lot, confirm
-          what was used and return the rest. Temporary delivery creates no owned
-          stock or invoice.
-        </p>
+      <header className="surgical-hero rounded-xl bg-slate-900 p-6 text-white">
+        <div>
+          <p className="text-sm text-cyan-200">
+            Procedure-specific vendor stock
+          </p>
+          <h1 className="text-3xl font-bold">Surgical consignment requests</h1>
+          <p className="mt-2">
+            Authorize procedure-specific vendor stock, trace every lot, confirm
+            what was used and return the rest. Temporary delivery creates no
+            owned stock or invoice.
+          </p>
+        </div>
+        <div className="surgical-hero-actions">
+          {meta?.can_create && (
+            <button
+              type="button"
+              onClick={() => {
+                if (createRef.current) {
+                  createRef.current.open = true;
+                  createRef.current.scrollIntoView?.({
+                    behavior: "smooth",
+                    block: "start",
+                  });
+                  createRef.current
+                    .querySelector("select")
+                    ?.focus({ preventScroll: true });
+                }
+              }}
+            >
+              New request
+            </button>
+          )}
+          <a href="#consignment-queue">View queue ↓</a>
+        </div>
       </header>
       <section
-        className="rounded-xl border border-slate-200 bg-white p-4"
+        className="surgical-workflow rounded-xl border border-slate-200 bg-white p-4"
         aria-label="Consignment workflow"
       >
         <h2 className="font-semibold">
           One case from surgical need to used-only billing
         </h2>
-        <p className="mt-2 text-sm text-slate-700">
-          Request item families and size ranges → authorize the arrangement →
-          record vendor delivery → confirm actual usage → return and reconcile
-          unused items → bill confirmed usage.
-        </p>
+        <ol className="surgical-workflow-steps">
+          {[
+            ["Request", "Define item families and size ranges"],
+            ["Authorize", "Complete the approval chain"],
+            ["Receive", "Record temporary vendor delivery"],
+            ["Confirm usage", "Record what was actually used"],
+            ["Reconcile", "Return and reconcile unused items"],
+            ["Bill usage", "Bill confirmed usage only"],
+          ].map(([title, description], index) => (
+            <li key={title}>
+              <span>{index + 1}</span>
+              <strong>{title}</strong>
+              <p>{description}</p>
+            </li>
+          ))}
+        </ol>
         <p className="mt-2 text-sm text-slate-500">
           Exact implant sizes are recorded at delivery and usage. Supporting
           forms document the case; delivery does not mean purchase, and custody
@@ -276,30 +347,68 @@ export default function SurgicalConsignmentsPage() {
         </p>
       )}
       <form
-        className="flex gap-3"
+        className="surgical-search"
+        aria-label="Find surgical consignments"
         onSubmit={(e) => {
           e.preventDefault();
           perform(async () => setRows(await api.list(search)));
         }}
       >
-        <input
-          aria-label="Search surgical consignments"
-          className={css}
-          placeholder="Case, authorization, vendor or catalogue / lot"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <label>
+          Search consignments
+          <input
+            aria-label="Search surgical consignments"
+            className={css}
+            placeholder="Case, authorization, vendor or catalogue / lot"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <label>
+          Queue status
+          <select
+            value={queueStatus}
+            onChange={(event) => setQueueStatus(event.target.value)}
+          >
+            <option value="">All statuses</option>
+            {[...new Set([queueStatus, ...rows.map((row) => row.status)])]
+              .filter(Boolean)
+              .map((status) => (
+                <option key={status} value={status}>
+                  {label(status)}
+                </option>
+              ))}
+          </select>
+        </label>
         <button disabled={busy} className="rounded border px-3">
           Search
         </button>
+        {(search || queueStatus) && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setSearch("");
+              setQueueStatus("");
+              perform(async () => setRows(await api.list("")));
+            }}
+          >
+            Clear search and filters
+          </button>
+        )}
       </form>
       {meta?.can_create && (
-        <details className="rounded-xl border bg-white p-4">
+        <details
+          ref={createRef}
+          id="consignment-create"
+          className="surgical-create rounded-xl border bg-white p-4"
+        >
           <summary className="cursor-pointer font-semibold">
             New surgical consignment request
           </summary>
           <form
-            className="mt-4 space-y-4"
+            className="surgical-request-form mt-4 space-y-4"
+            aria-label="Surgical consignment request"
             onSubmit={(e) => {
               e.preventDefault();
               perform(async () => {
@@ -314,214 +423,312 @@ export default function SurgicalConsignmentsPage() {
               });
             }}
           >
-            <div className="grid gap-3 md:grid-cols-2">
-              <label>
-                Surgical department
-                <select
-                  required
-                  className={`${css} block w-full`}
-                  value={form.department_id}
-                  onChange={(e) => change("department_id", e.target.value)}
-                >
-                  <option value="">Choose department</option>
-                  {directory.departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {[
-                "surgery_date",
-                "patient_mrn",
-                "procedure_type",
-                "vendor_contact",
-                "agreement_reference",
-                "currency",
-              ].map((field) => (
-                <label key={field}>
-                  {
-                    {
-                      surgery_date: "Expected surgery date",
-                      patient_mrn: "Patient MRN",
-                      procedure_type: "Procedure type",
-                      vendor_contact: "Vendor contact",
-                      agreement_reference:
-                        "Vendor agreement / price-list reference",
-                      currency: "Currency",
-                    }[field]
-                  }
-                  <input
-                    required
-                    type={field === "surgery_date" ? "date" : "text"}
-                    autoComplete="off"
-                    className={`${css} block w-full`}
-                    value={form[field]}
-                    onChange={(e) => change(field, e.target.value)}
-                  />
-                </label>
-              ))}
-              <label>
-                Vendor
-                <select
-                  required
-                  className={`${css} block w-full`}
-                  value={form.supplier_id}
-                  onChange={(e) => change("supplier_id", e.target.value)}
-                >
-                  <option value="">Choose company</option>
-                  {directory.suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {[
-                "surgeon_id",
-                "nurse_id",
-                "receiver_id",
-                "manager_id",
-                "cmo_id",
-                "scm_id",
-              ].map((field) => (
-                <label key={field}>
-                  {
-                    {
-                      surgeon_id: "Assigned surgeon",
-                      nurse_id: "Assigned nurse",
-                      receiver_id: "Assigned hospital receiver",
-                      manager_id: "Surgical department manager",
-                      cmo_id: "CMO authorizer",
-                      scm_id: "SCM authorizer",
-                    }[field]
-                  }
-                  <select
-                    required
-                    className={`${css} block w-full`}
-                    value={form[field]}
-                    onChange={(e) => change(field, e.target.value)}
-                  >
-                    <option value="">Choose staff account</option>
-                    {directory.users
-                      .filter((u) => {
-                        if (
-                          ["manager_id", "cmo_id", "scm_id"].includes(field) &&
-                          String(u.id) === role
-                        )
-                          return false;
-                        if (field === "manager_id")
-                          return (
-                            u.is_department_manager &&
-                            String(u.department_id) === form.department_id
-                          );
-                        if (field === "cmo_id")
-                          return String(u.role).toLowerCase() === "cmo";
-                        if (field === "scm_id")
-                          return String(u.role).toLowerCase() === "scm";
-                        return true;
-                      })
-                      .map((u) => (
-                        <option key={u.id} value={u.id}>
-                          {u.name} · {u.role}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-              ))}
-            </div>
-            <fieldset className="rounded border p-3">
-              <legend>Request justification</legend>
-              {directory.reasons.map((reason) => (
-                <label key={reason} className="mr-4 inline-block">
-                  <input
-                    type="checkbox"
-                    checked={form.justification.includes(reason)}
-                    onChange={(e) =>
-                      change(
-                        "justification",
-                        e.target.checked
-                          ? [...form.justification, reason]
-                          : form.justification.filter((r) => r !== reason),
-                      )
-                    }
-                  />{" "}
-                  {label(reason)}
-                </label>
-              ))}
-              {form.justification.includes("OTHER") && (
-                <input
-                  aria-label="Other justification"
-                  required
-                  className={`${css} mt-2 block w-full`}
-                  value={form.other_justification}
-                  onChange={(e) =>
-                    change("other_justification", e.target.value)
-                  }
-                />
-              )}
-            </fieldset>
-            <fieldset className="space-y-3 rounded border p-3">
-              <legend>Requested item families / size ranges</legend>
-              <p className="text-sm text-slate-600">
-                Request the required range or set now. Exact sizes, quantities
-                and lots are recorded when the company delivers; only confirmed
-                use is billed.
-              </p>
-              {form.requested_items.map((line, index) => (
-                <div key={index} className="grid gap-2 md:grid-cols-4">
-                  {Object.keys(line).map((field) => (
-                    <label key={field}>
-                      {label(field)}
-                      <input
-                        aria-label={`Requested ${field} ${index + 1}`}
+            <div className="surgical-create-layout">
+              <div className="surgical-create-fields">
+                <fieldset className="surgical-form-section">
+                  <legend>
+                    <span>1</span>Case details
+                  </legend>
+                  <p className="surgical-help">
+                    Identify the surgical need and planned procedure.
+                  </p>
+                  <div className="surgical-field-grid">
+                    <label>
+                      Surgical department
+                      <select
                         required
-                        type={field === "quantity" ? "number" : "text"}
-                        min={field === "quantity" ? 1 : undefined}
                         className={`${css} block w-full`}
-                        value={line[field]}
+                        value={form.department_id}
+                        onChange={(e) =>
+                          change("department_id", e.target.value)
+                        }
+                      >
+                        <option value="">Choose department</option>
+                        {directory.departments.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {["surgery_date", "patient_mrn", "procedure_type"].map(
+                      requestField,
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset className="surgical-form-section">
+                  <legend>
+                    <span>2</span>Vendor agreement
+                  </legend>
+                  <p className="surgical-help">
+                    Use the agreed vendor contact and price-list reference.
+                  </p>
+                  <div className="surgical-field-grid">
+                    <label>
+                      Vendor
+                      <select
+                        required
+                        className={`${css} block w-full`}
+                        value={form.supplier_id}
+                        onChange={(e) => change("supplier_id", e.target.value)}
+                      >
+                        <option value="">Choose company</option>
+                        {directory.suppliers.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {["vendor_contact", "agreement_reference", "currency"].map(
+                      requestField,
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset className="surgical-form-section">
+                  <legend>
+                    <span>3</span>Team and authorization
+                  </legend>
+                  <p className="surgical-help">
+                    Assign the clinical staff and independent authorizers.
+                  </p>
+                  <div className="surgical-field-grid">
+                    {[
+                      "surgeon_id",
+                      "nurse_id",
+                      "receiver_id",
+                      "manager_id",
+                      "cmo_id",
+                      "scm_id",
+                    ].map((field) => (
+                      <label key={field}>
+                        {
+                          {
+                            surgeon_id: "Assigned surgeon",
+                            nurse_id: "Assigned nurse",
+                            receiver_id: "Assigned hospital receiver",
+                            manager_id: "Surgical department manager",
+                            cmo_id: "CMO authorizer",
+                            scm_id: "SCM authorizer",
+                          }[field]
+                        }
+                        <select
+                          required
+                          className={`${css} block w-full`}
+                          value={form[field]}
+                          onChange={(e) => change(field, e.target.value)}
+                        >
+                          <option value="">Choose staff account</option>
+                          {directory.users
+                            .filter((u) => {
+                              if (
+                                ["manager_id", "cmo_id", "scm_id"].includes(
+                                  field,
+                                ) &&
+                                String(u.id) === role
+                              )
+                                return false;
+                              if (field === "manager_id")
+                                return (
+                                  u.is_department_manager &&
+                                  String(u.department_id) === form.department_id
+                                );
+                              if (field === "cmo_id")
+                                return String(u.role).toLowerCase() === "cmo";
+                              if (field === "scm_id")
+                                return String(u.role).toLowerCase() === "scm";
+                              return true;
+                            })
+                            .map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.name} · {u.role}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset className="surgical-form-section surgical-justification rounded border p-3">
+                  <legend>
+                    <span>4</span>Request justification
+                  </legend>
+                  {directory.reasons.map((reason) => (
+                    <label key={reason} className="mr-4 inline-block">
+                      <input
+                        type="checkbox"
+                        checked={form.justification.includes(reason)}
                         onChange={(e) =>
                           change(
-                            "requested_items",
-                            form.requested_items.map((r, i) =>
-                              i === index
-                                ? { ...r, [field]: e.target.value }
-                                : r,
-                            ),
+                            "justification",
+                            e.target.checked
+                              ? [...form.justification, reason]
+                              : form.justification.filter((r) => r !== reason),
                           )
                         }
-                      />
+                      />{" "}
+                      {label(reason)}
                     </label>
                   ))}
-                </div>
-              ))}
-              <button
-                type="button"
-                className="text-blue-700 underline"
-                onClick={() =>
-                  change("requested_items", [
-                    ...form.requested_items,
-                    requestedLine(),
-                  ])
-                }
+                  {form.justification.includes("OTHER") && (
+                    <input
+                      aria-label="Other justification"
+                      required
+                      className={`${css} mt-2 block w-full`}
+                      value={form.other_justification}
+                      onChange={(e) =>
+                        change("other_justification", e.target.value)
+                      }
+                    />
+                  )}
+                </fieldset>
+                <fieldset className="surgical-form-section space-y-3 rounded border p-3">
+                  <legend>
+                    <span>5</span>Requested item families / size ranges
+                  </legend>
+                  <p className="text-sm text-slate-600">
+                    Request the required range or set now. Exact sizes,
+                    quantities and lots are recorded when the company delivers;
+                    only confirmed use is billed.
+                  </p>
+                  {form.requested_items.map((line, index) => (
+                    <div key={index} className="surgical-requested-range">
+                      <div className="surgical-range-heading">
+                        <strong>Requested range {index + 1}</strong>
+                        {form.requested_items.length > 1 && (
+                          <button
+                            type="button"
+                            aria-label={`Remove requested range ${index + 1}`}
+                            onClick={() =>
+                              change(
+                                "requested_items",
+                                form.requested_items.filter(
+                                  (_, i) => i !== index,
+                                ),
+                              )
+                            }
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <div className="surgical-range-grid">
+                        {Object.keys(line).map((field) => (
+                          <label key={field}>
+                            {label(field)}
+                            <input
+                              aria-label={`Requested ${field} ${index + 1}`}
+                              required
+                              type={field === "quantity" ? "number" : "text"}
+                              min={field === "quantity" ? 1 : undefined}
+                              className={`${css} block w-full`}
+                              value={line[field]}
+                              onChange={(e) =>
+                                change(
+                                  "requested_items",
+                                  form.requested_items.map((r, i) =>
+                                    i === index
+                                      ? { ...r, [field]: e.target.value }
+                                      : r,
+                                  ),
+                                )
+                              }
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    className="text-blue-700 underline"
+                    onClick={() =>
+                      change("requested_items", [
+                        ...form.requested_items,
+                        requestedLine(),
+                      ])
+                    }
+                  >
+                    Add requested range
+                  </button>
+                </fieldset>
+              </div>
+              <aside
+                className="surgical-draft-summary"
+                aria-label="Draft request summary"
               >
-                Add requested range
+                <h3>Request at a glance</h3>
+                <dl>
+                  <div>
+                    <dt>Surgical department</dt>
+                    <dd>{draftDepartment?.name || "Not selected"}</dd>
+                  </div>
+                  <div>
+                    <dt>Vendor</dt>
+                    <dd>{draftVendor?.name || "Not selected"}</dd>
+                  </div>
+                  <div>
+                    <dt>Requested ranges</dt>
+                    <dd aria-live="polite">{form.requested_items.length}</dd>
+                  </div>
+                  <div>
+                    <dt>Staff selected</dt>
+                    <dd>
+                      {
+                        [
+                          "surgeon_id",
+                          "nurse_id",
+                          "receiver_id",
+                          "manager_id",
+                          "cmo_id",
+                          "scm_id",
+                        ].filter((field) => form[field]).length
+                      }{" "}
+                      / 6
+                    </dd>
+                  </div>
+                </dl>
+                <p>
+                  This is a request for authorization. Exact implant sizes and
+                  lots are recorded at delivery and usage.
+                </p>
+                <p>
+                  No owned stock or invoice is created by temporary delivery.
+                </p>
+              </aside>
+            </div>
+            <div className="surgical-submit">
+              <p>
+                Submit the requested ranges for department manager, CMO and SCM
+                authorization.
+              </p>
+              <button
+                disabled={busy}
+                className="rounded bg-indigo-700 px-4 py-2 text-white"
+              >
+                {busy ? "Please wait…" : "Submit request for authorization"}
               </button>
-            </fieldset>
-            <button
-              disabled={busy}
-              className="rounded bg-indigo-700 px-4 py-2 text-white"
-            >
-              Submit request for authorization
-            </button>
+            </div>
           </form>
         </details>
       )}
-      <section className="rounded-xl border bg-white p-4">
+      <section
+        id="consignment-queue"
+        className="surgical-queue rounded-xl border bg-white p-4"
+      >
         <h2 className="font-semibold">
-          Consignment queue · {rows.length} shown
+          Consignment queue · {visibleRows.length} shown
         </h2>
-        <div className="overflow-x-auto">
+        <p className="surgical-help">
+          Open a case to review its authorization, delivery, usage and
+          reconciliation records.
+        </p>
+        <div
+          className="surgical-table-scroll overflow-x-auto"
+          role="region"
+          aria-label="Consignment queue table"
+          tabIndex={0}
+        >
           <table className="mt-3 w-full text-left">
             <thead>
               <tr>
@@ -533,12 +740,16 @@ export default function SurgicalConsignmentsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((c) => (
+              {visibleRows.map((c) => (
                 <tr key={c.id} className="border-t">
                   <td className="py-3">SC-{c.id}</td>
                   <td>{c.department_name}</td>
                   <td>{c.supplier_name}</td>
-                  <td>{label(c.status)}</td>
+                  <td>
+                    <span className="surgical-status-badge">
+                      {label(c.status)}
+                    </span>
+                  </td>
                   <td>
                     <button
                       disabled={busy}
@@ -558,6 +769,11 @@ export default function SurgicalConsignmentsPage() {
             </tbody>
           </table>
         </div>
+        {visibleRows.length === 0 && (
+          <p className="surgical-empty">
+            No consignments match the current search and status filters.
+          </p>
+        )}
       </section>
       {detail && (
         <section className="space-y-5 rounded-xl border bg-white p-5">
