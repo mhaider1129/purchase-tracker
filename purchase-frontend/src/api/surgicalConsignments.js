@@ -20,3 +20,11 @@ export const download = (id, fileId) =>
   data(
     api.get(`${base}/${id}/files/${fileId}/download`, { responseType: "blob" }),
   );
+export const routing = (department_id, section_id) =>
+  data(
+    api.get(`${base}/routing`, {
+      params: { department_id, section_id: section_id || undefined },
+    }),
+  );
+export const settings = () => data(api.get(`${base}/settings`));
+export const saveSettings = (input) => data(api.put(`${base}/settings`, input));

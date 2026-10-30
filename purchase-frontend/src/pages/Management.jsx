@@ -1,5 +1,7 @@
 import ProcurementIdentitySettings from '../components/itemMaster/ProcurementIdentitySettings';
 import MaintenanceApprovalReportingSettings from '../components/MaintenanceApprovalReportingSettings';
+import TechnicalReviewSettings from '../components/TechnicalReviewSettings';
+import SurgicalConsignmentSettings from '../components/SurgicalConsignmentSettings';
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../hooks/useAuth';
@@ -64,6 +66,8 @@ const managementTabs = {
   printServices: ['Print services', 'Department printing preferences', Printer, 'Workflow'],
   contractApprovalRules: ['Contract rules', 'Contract approval stages and gates', FileSliders, 'Workflow'],
   itemIdentity: ['Item Master policy', 'Control the transition from free-text procurement', ShieldCheck, 'Workflow'],
+  technicalReview: ['Technical reviews', 'Technical responsibilities and receiving inspection requirements', ShieldCheck, 'Workflow'],
+  surgicalConsignment: ['Surgical consignments', 'Eligible departments and automatic clinical routing', ShieldCheck, 'Workflow'],
   approvalReporting: ['Approval reporting', 'Saved maintenance overdue target', ShieldCheck, 'Workflow'],
   permissions: ['Permissions', 'Fine-grained user capabilities', KeyRound, 'Access control'],
   interfaceAccess: ['Interface access', 'Map features to permissions', ShieldCheck, 'Access control'],
@@ -276,6 +280,8 @@ const Management = () => {
     if (canManageAccountRequests) tabs.push('accountRequests');
     if (canManageDepartments) tabs.push('departments');
     if (canManageDepartments) tabs.push('warehouses');
+    if ((user?.permissions || []).includes('technical-inspections.manage') && ['scm','admin','procurementsupervisor','procurement supervisor'].includes(String(user?.role || '').toLowerCase())) tabs.push('technicalReview');
+    if (canManageDepartments || canManagePermissions) tabs.push('surgicalConsignment');
     if (canManageRoutes) tabs.push('routes');
     if (canManageAutoAssignments) tabs.push('autoAssignments');
     if (canManagePrintServiceSettings) tabs.push('printServices');
@@ -302,6 +308,7 @@ const Management = () => {
     canManagePrintServiceSettings,
     canManagePermissions,
     canManageContractApprovalRules,
+    user,
   ]);
 
   const [availablePermissions, setAvailablePermissions] = useState([]);
@@ -3661,6 +3668,8 @@ const Management = () => {
               {tab === 'roles' && renderRoles()}
               {tab === 'itemIdentity' && <ProcurementIdentitySettings />}
               {tab === 'approvalReporting' && <MaintenanceApprovalReportingSettings />}
+              {tab === 'technicalReview' && <TechnicalReviewSettings />}
+              {tab === 'surgicalConsignment' && <SurgicalConsignmentSettings />}
               {tab === 'permissions' && renderPermissions()}
               {tab === 'interfaceAccess' && renderInterfaceAccess()}
               {tab === 'contractApprovalRules' && renderContractApprovalRules()}

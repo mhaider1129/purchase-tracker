@@ -39,18 +39,10 @@ const initial = () => ({
   surgery_date: "",
   patient_mrn: "",
   procedure_type: "",
-  surgeon_id: "",
-  nurse_id: "",
-  receiver_id: "",
-  supplier_id: "",
-  vendor_contact: "",
-  agreement_reference: "",
-  currency: "IQD",
-  manager_id: "",
-  cmo_id: "",
-  scm_id: "",
+  surgery_section_id: "",
+  recommended_vendor: "",
   requested_items: [requestedLine()],
-  justification: [],
+  justification: ["SURGEON_REQUEST"],
   other_justification: "",
   submission_key: key(),
 });
@@ -58,6 +50,16 @@ const money = (v) => String(v ?? "0.00");
 export default function SurgicalConsignmentsPage() {
   const createRef = useRef(null);
   const [queueStatus, setQueueStatus] = useState("");
+  const [team, setTeam] = useState(null),
+    [teamError, setTeamError] = useState(""),
+    [teamLoading, setTeamLoading] = useState(false);
+  const [routingRefresh, setRoutingRefresh] = useState(0);
+  const [commercial, setCommercial] = useState({
+    supplier_id: "",
+    vendor_contact: "",
+    agreement_reference: "",
+    currency: "IQD",
+  });
   const [params, setParams] = useSearchParams(),
     opened = useRef(null);
   const [meta, setMeta] = useState(null),
@@ -112,6 +114,12 @@ export default function SurgicalConsignmentsPage() {
   const adopt = useCallback((c) => {
     opened.current = String(c.id);
     setDetail(c);
+    setCommercial({
+      supplier_id: String(c.supplier_id || ""),
+      vendor_contact: c.vendor_contact || "",
+      agreement_reference: c.agreement_reference || "",
+      currency: c.currency || "IQD",
+    });
     setNotes("");
     setEvidence("");
     setOwnership(false);
@@ -151,7 +159,18 @@ export default function SurgicalConsignmentsPage() {
         setRows(await api.list(""));
         if (m.can_create) {
           const options = await api.options();
-          if (active) setDirectory(options);
+          if (active) {
+            setDirectory(options);
+            if (options.departments.length === 1)
+              setForm((current) =>
+                current.department_id
+                  ? current
+                  : {
+                      ...current,
+                      department_id: String(options.departments[0].id),
+                    },
+              );
+          }
         }
         if (params.get("case")) {
           const c = await api.get(params.get("case"));
@@ -171,6 +190,39 @@ export default function SurgicalConsignmentsPage() {
       active = false;
     };
   }, [adopt, params]);
+  useEffect(() => {
+    let active = true;
+    setTeam(null);
+    setTeamError("");
+    if (!form.department_id || !directory.configured) {
+      setTeamLoading(false);
+      return;
+    }
+    setTeamLoading(true);
+    api
+      .routing(form.department_id, form.surgery_section_id)
+      .then((result) => {
+        if (active) setTeam(result);
+      })
+      .catch((e) => {
+        if (active)
+          setTeamError(
+            e.response?.data?.message ||
+              "Automatic team assignment could not be resolved. Ask Management to check surgical department setup.",
+          );
+      })
+      .finally(() => {
+        if (active) setTeamLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    form.department_id,
+    form.surgery_section_id,
+    directory.configured,
+    routingRefresh,
+  ]);
   const perform = async (work) => {
     if (busy) return;
     setBusy(true);
@@ -199,7 +251,11 @@ export default function SurgicalConsignmentsPage() {
       setSuccess("Consignment record updated.");
     });
   const change = (field, value) =>
-    setForm((old) => ({ ...old, [field]: value }));
+    setForm((old) => ({
+      ...old,
+      [field]: value,
+      ...(field === "department_id" ? { surgery_section_id: "" } : {}),
+    }));
   const requestField = (field) => (
     <label key={field}>
       {
@@ -228,9 +284,6 @@ export default function SurgicalConsignmentsPage() {
   const draftDepartment = directory.departments.find(
     (item) => String(item.id) === form.department_id,
   );
-  const draftVendor = directory.suppliers.find(
-    (item) => String(item.id) === form.supplier_id,
-  );
   const fileChoices = (purpose) =>
     (detail?.files || [])
       .filter((f) => f.purpose === purpose)
@@ -239,7 +292,6 @@ export default function SurgicalConsignmentsPage() {
           {f.file_name}
         </option>
       ));
-  const role = String(meta?.current_user_id || detail?.current_user_id || "");
   const currentApproval = detail?.approvals?.find(
     (a) => a.status === "PENDING",
   );
@@ -291,10 +343,13 @@ export default function SurgicalConsignmentsPage() {
           <a href="#consignment-queue">View queue ↓</a>
         </div>
       </header>
-      <section
+      <details
         className="surgical-workflow rounded-xl border border-slate-200 bg-white p-4"
         aria-label="Consignment workflow"
       >
+        <summary className="cursor-pointer font-semibold">
+          How surgical consignment works
+        </summary>
         <h2 className="font-semibold">
           One case from surgical need to used-only billing
         </h2>
@@ -319,7 +374,7 @@ export default function SurgicalConsignmentsPage() {
           forms document the case; delivery does not mean purchase, and custody
           closure does not mean payment.
         </p>
-      </section>
+      </details>
       {error && (
         <div
           role="alert"
@@ -412,6 +467,7 @@ export default function SurgicalConsignmentsPage() {
             onSubmit={(e) => {
               e.preventDefault();
               perform(async () => {
+                if (!team || teamLoading || teamError) return;
                 const c = await api.create(form);
                 adopt(c);
                 setParams({ case: c.id });
@@ -430,8 +486,21 @@ export default function SurgicalConsignmentsPage() {
                     <span>1</span>Case details
                   </legend>
                   <p className="surgical-help">
-                    Identify the surgical need and planned procedure.
+                    Identify the surgical need and planned procedure. Your team
+                    is assigned automatically.
                   </p>
+                  {!directory.configured && (
+                    <p role="alert">
+                      Surgical departments need setup in Management. Ask SCM to
+                      enable the eligible departments and responsible team.
+                    </p>
+                  )}
+                  {directory.configured && !directory.departments.length && (
+                    <p role="alert">
+                      No surgical departments are enabled. Ask SCM to configure
+                      Surgical consignments in Management.
+                    </p>
+                  )}
                   <div className="surgical-field-grid">
                     <label>
                       Surgical department
@@ -439,6 +508,7 @@ export default function SurgicalConsignmentsPage() {
                         required
                         className={`${css} block w-full`}
                         value={form.department_id}
+                        disabled={!directory.configured || busy}
                         onChange={(e) =>
                           change("department_id", e.target.value)
                         }
@@ -451,108 +521,58 @@ export default function SurgicalConsignmentsPage() {
                         ))}
                       </select>
                     </label>
-                    {["surgery_date", "patient_mrn", "procedure_type"].map(
-                      requestField,
-                    )}
-                  </div>
-                </fieldset>
-                <fieldset className="surgical-form-section">
-                  <legend>
-                    <span>2</span>Vendor agreement
-                  </legend>
-                  <p className="surgical-help">
-                    Use the agreed vendor contact and price-list reference.
-                  </p>
-                  <div className="surgical-field-grid">
-                    <label>
-                      Vendor
-                      <select
-                        required
-                        className={`${css} block w-full`}
-                        value={form.supplier_id}
-                        onChange={(e) => change("supplier_id", e.target.value)}
-                      >
-                        <option value="">Choose company</option>
-                        {directory.suppliers.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    {["vendor_contact", "agreement_reference", "currency"].map(
-                      requestField,
-                    )}
-                  </div>
-                </fieldset>
-                <fieldset className="surgical-form-section">
-                  <legend>
-                    <span>3</span>Team and authorization
-                  </legend>
-                  <p className="surgical-help">
-                    Assign the clinical staff and independent authorizers.
-                  </p>
-                  <div className="surgical-field-grid">
-                    {[
-                      "surgeon_id",
-                      "nurse_id",
-                      "receiver_id",
-                      "manager_id",
-                      "cmo_id",
-                      "scm_id",
-                    ].map((field) => (
-                      <label key={field}>
-                        {
-                          {
-                            surgeon_id: "Assigned surgeon",
-                            nurse_id: "Assigned nurse",
-                            receiver_id: "Assigned hospital receiver",
-                            manager_id: "Surgical department manager",
-                            cmo_id: "CMO authorizer",
-                            scm_id: "SCM authorizer",
-                          }[field]
-                        }
+                    {(directory.sections || []).some(
+                      (section) =>
+                        String(section.department_id) === form.department_id,
+                    ) && (
+                      <label>
+                        Surgery section (optional)
                         <select
-                          required
                           className={`${css} block w-full`}
-                          value={form[field]}
-                          onChange={(e) => change(field, e.target.value)}
+                          value={form.surgery_section_id}
+                          onChange={(e) =>
+                            change("surgery_section_id", e.target.value)
+                          }
                         >
-                          <option value="">Choose staff account</option>
-                          {directory.users
-                            .filter((u) => {
-                              if (
-                                ["manager_id", "cmo_id", "scm_id"].includes(
-                                  field,
-                                ) &&
-                                String(u.id) === role
-                              )
-                                return false;
-                              if (field === "manager_id")
-                                return (
-                                  u.is_department_manager &&
-                                  String(u.department_id) === form.department_id
-                                );
-                              if (field === "cmo_id")
-                                return String(u.role).toLowerCase() === "cmo";
-                              if (field === "scm_id")
-                                return String(u.role).toLowerCase() === "scm";
-                              return true;
-                            })
-                            .map((u) => (
-                              <option key={u.id} value={u.id}>
-                                {u.name} · {u.role}
+                          <option value="">Use department nurse</option>
+                          {directory.sections
+                            .filter(
+                              (section) =>
+                                String(section.department_id) ===
+                                form.department_id,
+                            )
+                            .map((section) => (
+                              <option key={section.id} value={section.id}>
+                                {section.name}
                               </option>
                             ))}
                         </select>
                       </label>
-                    ))}
+                    )}
+                    {["surgery_date", "patient_mrn", "procedure_type"].map(
+                      requestField,
+                    )}
+                    <label>
+                      Vendor recommendation (optional)
+                      <input
+                        maxLength={250}
+                        aria-label="Vendor recommendation (optional)"
+                        className={`${css} block w-full`}
+                        value={form.recommended_vendor}
+                        onChange={(e) =>
+                          change("recommended_vendor", e.target.value)
+                        }
+                        placeholder="Supplier or company suggested by the surgeon"
+                      />
+                      <span className="text-sm text-slate-500">
+                        A recommendation only. SCM confirms the supplier and
+                        commercial terms.
+                      </span>
+                    </label>
                   </div>
                 </fieldset>
-                <fieldset className="surgical-form-section surgical-justification rounded border p-3">
-                  <legend>
-                    <span>4</span>Request justification
-                  </legend>
+                <details className="surgical-form-section surgical-justification rounded border p-3">
+                  <summary>Additional justification (optional)</summary>
                   {directory.reasons.map((reason) => (
                     <label key={reason} className="mr-4 inline-block">
                       <input
@@ -581,10 +601,10 @@ export default function SurgicalConsignmentsPage() {
                       }
                     />
                   )}
-                </fieldset>
+                </details>
                 <fieldset className="surgical-form-section space-y-3 rounded border p-3">
                   <legend>
-                    <span>5</span>Requested item families / size ranges
+                    <span>2</span>Requested item families / size ranges
                   </legend>
                   <p className="text-sm text-slate-600">
                     Request the required range or set now. Exact sizes,
@@ -615,10 +635,14 @@ export default function SurgicalConsignmentsPage() {
                       <div className="surgical-range-grid">
                         {Object.keys(line).map((field) => (
                           <label key={field}>
-                            {label(field)}
+                            {field === "functional_specs"
+                              ? "Required sizes / description"
+                              : field === "catalogue_code"
+                                ? "Catalogue / family code (optional)"
+                                : label(field)}
                             <input
                               aria-label={`Requested ${field} ${index + 1}`}
-                              required
+                              required={field !== "catalogue_code"}
                               type={field === "quantity" ? "number" : "text"}
                               min={field === "quantity" ? 1 : undefined}
                               className={`${css} block w-full`}
@@ -664,30 +688,62 @@ export default function SurgicalConsignmentsPage() {
                     <dd>{draftDepartment?.name || "Not selected"}</dd>
                   </div>
                   <div>
-                    <dt>Vendor</dt>
-                    <dd>{draftVendor?.name || "Not selected"}</dd>
+                    <dt>Vendor recommendation</dt>
+                    <dd>
+                      {form.recommended_vendor || "SCM will confirm supplier"}
+                    </dd>
                   </div>
                   <div>
                     <dt>Requested ranges</dt>
                     <dd aria-live="polite">{form.requested_items.length}</dd>
                   </div>
                   <div>
-                    <dt>Staff selected</dt>
+                    <dt>Assigned automatically</dt>
                     <dd>
-                      {
-                        [
-                          "surgeon_id",
-                          "nurse_id",
-                          "receiver_id",
-                          "manager_id",
-                          "cmo_id",
-                          "scm_id",
-                        ].filter((field) => form[field]).length
-                      }{" "}
-                      / 6
+                      You are the assigned surgeon. Nursing, receiving and
+                      authorization follow Management setup.
                     </dd>
                   </div>
                 </dl>
+                {teamLoading && (
+                  <p role="status">Resolving the responsible team…</p>
+                )}
+                {teamError && (
+                  <div>
+                    <p role="alert" className="text-red-700">
+                      {teamError}
+                    </p>
+                    <button
+                      type="button"
+                      className="text-blue-700 underline"
+                      disabled={teamLoading}
+                      onClick={() => setRoutingRefresh((value) => value + 1)}
+                    >
+                      Retry team assignment
+                    </button>
+                  </div>
+                )}
+                {team && (
+                  <details>
+                    <summary>View automatically assigned team</summary>
+                    <dl>
+                      {[
+                        ["surgeon", "Surgeon"],
+                        ["nurse", "Responsible nurse"],
+                        ["receiver", "Warehouse receiver"],
+                        ["manager", "Department HOD"],
+                        ["cmo", "CMO"],
+                        ["scm", "SCM"],
+                        ["warehouse", "Receiving warehouse"],
+                      ].map(([field, title]) => (
+                        <div key={field}>
+                          <dt>{title}</dt>
+                          <dd>{team[field]?.name}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </details>
+                )}
                 <p>
                   This is a request for authorization. Exact implant sizes and
                   lots are recorded at delivery and usage.
@@ -703,7 +759,7 @@ export default function SurgicalConsignmentsPage() {
                 authorization.
               </p>
               <button
-                disabled={busy}
+                disabled={busy || !team || teamLoading || Boolean(teamError)}
                 className="rounded bg-indigo-700 px-4 py-2 text-white"
               >
                 {busy ? "Please wait…" : "Submit request for authorization"}
@@ -779,7 +835,10 @@ export default function SurgicalConsignmentsPage() {
         <section className="space-y-5 rounded-xl border bg-white p-5">
           <header>
             <h2 className="text-2xl font-bold">
-              SC-{detail.id} · {detail.supplier_name}
+              SC-{detail.id} ·{" "}
+              {detail.supplier_name ||
+                detail.recommended_vendor ||
+                "Supplier pending SCM"}
             </h2>
             <p>
               {label(detail.status)} · Authorization{" "}
@@ -868,6 +927,64 @@ export default function SurgicalConsignmentsPage() {
                     </h3>
                     {currentApproval.role === "SCM" && (
                       <>
+                        <p className="text-sm">
+                          Surgeon recommendation:{" "}
+                          {detail.recommended_vendor || "None"}. Confirm the
+                          actual supplier and agreed terms before authorizing
+                          delivery.
+                        </p>
+                        <label className="block">
+                          Confirmed supplier
+                          <select
+                            aria-label="Confirmed supplier"
+                            className={`${css} block w-full`}
+                            value={commercial.supplier_id}
+                            onChange={(e) =>
+                              setCommercial({
+                                ...commercial,
+                                supplier_id: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="">Choose supplier</option>
+                            {directory.suppliers.map((supplier) => (
+                              <option key={supplier.id} value={supplier.id}>
+                                {supplier.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        {[
+                          "vendor_contact",
+                          "agreement_reference",
+                          "currency",
+                        ].map((field) => (
+                          <label className="block" key={field}>
+                            {
+                              {
+                                vendor_contact: "Supplier contact",
+                                agreement_reference:
+                                  "Vendor agreement / price-list reference",
+                                currency: "Commercial currency",
+                              }[field]
+                            }
+                            <input
+                              className={`${css} block w-full`}
+                              value={commercial[field]}
+                              onChange={(e) =>
+                                setCommercial({
+                                  ...commercial,
+                                  [field]: e.target.value,
+                                })
+                              }
+                            />
+                          </label>
+                        ))}
+                        <p className="text-xs text-slate-500">
+                          The reference identifies the contract, quotation or
+                          agreed price list supporting the rates that will be
+                          recorded on delivery.
+                        </p>
                         <label>
                           <input
                             type="checkbox"
@@ -899,7 +1016,12 @@ export default function SurgicalConsignmentsPage() {
                           !notes.trim() ||
                           (decision === "APPROVED" &&
                             currentApproval.role === "SCM" &&
-                            (!ownership || !evidence))
+                            (!ownership ||
+                              !evidence ||
+                              !commercial.supplier_id ||
+                              !commercial.vendor_contact.trim() ||
+                              !commercial.agreement_reference.trim() ||
+                              !commercial.currency.trim()))
                         }
                         className="mr-3 rounded border px-3 py-2 disabled:opacity-40"
                         onClick={() =>
@@ -907,6 +1029,9 @@ export default function SurgicalConsignmentsPage() {
                             decision,
                             acknowledge_vendor_ownership: ownership,
                             agreement_file_id: evidence,
+                            ...(currentApproval.role === "SCM"
+                              ? commercial
+                              : {}),
                           })
                         }
                       >
@@ -1524,8 +1649,11 @@ export default function SurgicalConsignmentsPage() {
                     · Receiver: {detail.receiver_name}
                   </p>
                   <p>
-                    Vendor: {detail.supplier_name} · {detail.vendor_contact} ·
-                    Agreement: {detail.agreement_reference}
+                    Vendor recommendation: {detail.recommended_vendor || "None"}{" "}
+                    · Confirmed supplier:{" "}
+                    {detail.supplier_name || "Pending SCM"} ·{" "}
+                    {detail.vendor_contact} · Agreement:{" "}
+                    {detail.agreement_reference}
                   </p>
                   {detail.requested_items.map((l, i) => (
                     <p key={i}>

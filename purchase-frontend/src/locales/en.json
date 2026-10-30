@@ -335,6 +335,7 @@
     "openRequests": "My Open Requests",
     "myMaintenance": "My Maintenance Requests",
     "engineerMaintenanceStatus": "Maintenance Status",
+    "technicalReviewsInspections": "Technical Reviews & Inspections",
     "technicalInspections": "Technical Inspections",
     "warehouseInventory": "Warehouse Inventory",
     "itemMaster": "Item Master Data",

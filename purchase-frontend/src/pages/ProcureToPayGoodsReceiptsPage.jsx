@@ -1,3 +1,4 @@
+import { receiptInspectionOptions } from '../api/technicalWorkflow';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -85,7 +86,7 @@ const formatDateTimeLocal = (value) => {
 const createLineFromPoItem = (item) => {
   const orderedQuantity = Number(item.quantity) || 0;
   const receivedToDate = Number(item.received_quantity) || 0;
-  const remainingQuantity = Math.max(orderedQuantity - receivedToDate, 0);
+  const remainingQuantity = Math.max(orderedQuantity - Number(item.receipt_capacity_reserved ?? receivedToDate), 0);
 
   return {
     purchase_order_item_id: item.id,
@@ -108,6 +109,9 @@ const createLineFromPoItem = (item) => {
 const ProcureToPayGoodsReceiptsPage = () => {
   const { requestId: requestIdParam } = useParams();
   const [rows, setRows] = useState([]);
+  const [inspectionProfiles, setInspectionProfiles] = useState([]);
+  const [inspectionProfile, setInspectionProfile] = useState('');
+  useEffect(() => { receiptInspectionOptions().then(setInspectionProfiles).catch(() => setInspectionProfiles([])); }, []);
   const [openPos, setOpenPos] = useState([]);
   const [filters, setFilters] = useState({
     supplier: '',
@@ -322,6 +326,8 @@ const ProcureToPayGoodsReceiptsPage = () => {
         batch_number: item.batch_or_serial || null,
         expiry_date: item.expiry_date || null,
         warehouse_id: Number(receiptForm.warehouse_id || selectedPo.warehouse_id || selectedPo.supply_warehouse_id) || null,
+        technical_review_requested: Boolean(inspectionProfile) || item.condition === 'Needs technical review' || receiptForm.inspection_types.includes('Technical inspection'),
+        technical_profile_key: inspectionProfile || undefined,
         stock_status: item.condition === 'Quarantined' ? 'QUARANTINE' : 'AVAILABLE',
         line_notes: [
           `Batch/Serial: ${item.batch_or_serial || 'N/A'}`,
@@ -563,6 +569,9 @@ const ProcureToPayGoodsReceiptsPage = () => {
         </section>
 
         <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4" onSubmit={handleSubmit}>
+          <p className="rounded bg-amber-50 p-3 text-sm text-amber-900">Configured inspection requirements are applied automatically. Required quantities remain held at receiving until an authorized technical disposition is applied.</p>
+          {inspectionProfiles.length > 0 && <label className="block">Additional inspection profile (when requested)<select className="ml-3 rounded border p-2" value={inspectionProfile} onChange={e => setInspectionProfile(e.target.value)}><option value="">Use the item's configured responsibility</option>{inspectionProfiles.map(p => <option key={p.profile_key} value={p.profile_key}>{p.profile_key.replaceAll('_',' ')}</option>)}</select></label>}
+
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="font-semibold">Inspection and receipt posting</h2>
