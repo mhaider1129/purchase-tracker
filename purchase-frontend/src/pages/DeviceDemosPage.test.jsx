@@ -218,7 +218,7 @@ test("COO approves a frozen selection separately from request approval", async (
       }),
     ),
   );
-  expect(screen.queryByText("Add a company demo")).not.toBeInTheDocument();
+  expect(screen.queryByText("Add a supplier demo")).not.toBeInTheDocument();
 });
 test("assigned evaluator submits evidence without a client signature or computed score", async () => {
   api.demoSchema.mockResolvedValue({
@@ -236,7 +236,7 @@ test("assigned evaluator submits evidence without a client signature or computed
   api.demoAction.mockResolvedValue({ ...own, reports: [report(3, 80)] });
   mount();
   await screen.findByText("DEMO-1: Imaging device trials");
-  fireEvent.change(screen.getByLabelText("Company demo"), {
+  fireEvent.change(screen.getByLabelText("Supplier demo"), {
     target: { value: "3" },
   });
   fireEvent.change(screen.getByLabelText("Score technical"), {
@@ -361,7 +361,7 @@ test("attaching a data sheet preserves an unsaved evaluator report", async () =>
   });
   mount();
   await screen.findByText("DEMO-1: Imaging device trials");
-  fireEvent.change(screen.getByLabelText("Company demo"), {
+  fireEvent.change(screen.getByLabelText("Supplier demo"), {
     target: { value: "3" },
   });
   fireEvent.change(screen.getByLabelText("Evaluation findings"), {
@@ -382,4 +382,107 @@ test("attaching a data sheet preserves an unsaved evaluator report", async () =>
     "Keep this trial assessment",
   );
   expect(screen.getByLabelText("Score technical")).toHaveValue("4");
+});
+
+test("registers a demo against an existing supplier ID without separate company setup", async () => {
+  api.demoAction.mockResolvedValue(workspace);
+  mount();
+  const select = await screen.findByLabelText("Supplier");
+  await waitFor(() => expect(select).not.toBeDisabled());
+  expect(
+    screen.getByRole("option", { name: "Select supplier" }),
+  ).toBeInTheDocument();
+  fireEvent.change(select, { target: { value: "13" } });
+  fireEvent.change(screen.getByLabelText("manufacturer"), {
+    target: { value: "Device maker" },
+  });
+  fireEvent.change(screen.getByLabelText("model"), {
+    target: { value: "Device 100" },
+  });
+  fireEvent.change(screen.getByLabelText("location"), {
+    target: { value: "Imaging" },
+  });
+  fireEvent.change(screen.getByLabelText("planned start"), {
+    target: { value: "2026-10-30" },
+  });
+  fireEvent.change(screen.getByLabelText("planned end"), {
+    target: { value: "2026-11-10" },
+  });
+  fireEvent.change(screen.getByLabelText("Demo configuration / description"), {
+    target: { value: "Trial settings" },
+  });
+  fireEvent.change(screen.getByLabelText("Supplier demo registration notes"), {
+    target: { value: "Supplier confirmed loan" },
+  });
+  fireEvent.click(screen.getByText("Save supplier demo"));
+  await waitFor(() =>
+    expect(api.demoAction).toHaveBeenCalledWith(
+      1,
+      "candidate",
+      expect.objectContaining({
+        supplier_id: "13",
+        manufacturer: "Device maker",
+        model: "Device 100",
+        notes: "Supplier confirmed loan",
+      }),
+    ),
+  );
+});
+test("supplier load failure is visible beside the selector and retry preserves registration drafts", async () => {
+  api.demoOptions.mockRejectedValueOnce({
+    response: {
+      data: { message: "Missing public.suppliers.institute_id; apply SQL 052" },
+    },
+  });
+  mount();
+  await screen.findByText(
+    "Missing public.suppliers.institute_id; apply SQL 052",
+  );
+  expect(screen.getByLabelText("Supplier")).toBeDisabled();
+  expect(screen.getByText("Save supplier demo")).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("model"), {
+    target: { value: "Keep device model" },
+  });
+  fireEvent.change(screen.getByLabelText("Supplier demo registration notes"), {
+    target: { value: "Keep notes" },
+  });
+  fireEvent.click(screen.getByText("Reload suppliers"));
+  await waitFor(() =>
+    expect(screen.getByLabelText("Supplier")).not.toBeDisabled(),
+  );
+  expect(screen.getByLabelText("model")).toHaveValue("Keep device model");
+  expect(screen.getByLabelText("Supplier demo registration notes")).toHaveValue(
+    "Keep notes",
+  );
+  expect(api.getDemoWorkspace).toHaveBeenCalledTimes(1);
+  expect(api.demoAction).not.toHaveBeenCalled();
+});
+test("an empty eligible supplier directory explains setup and cannot submit a demo", async () => {
+  api.demoOptions.mockResolvedValue({ suppliers: [], catalog: [] });
+  mount();
+  await screen.findByText(/No eligible suppliers are available/);
+  expect(screen.getByLabelText("Supplier")).toBeDisabled();
+  expect(screen.getByText("Save supplier demo")).toBeDisabled();
+});
+test("reloading clears a supplier which is no longer eligible without losing other configuration", async () => {
+  mount();
+  await waitFor(() =>
+    expect(screen.getByLabelText("Supplier")).not.toBeDisabled(),
+  );
+  fireEvent.change(screen.getByLabelText("Supplier"), {
+    target: { value: "13" },
+  });
+  fireEvent.change(screen.getByLabelText("model"), {
+    target: { value: "Keep model" },
+  });
+  api.demoOptions.mockResolvedValueOnce({
+    suppliers: [{ id: 14, name: "Company B" }],
+    catalog: [],
+  });
+  fireEvent.click(screen.getByText("Reload suppliers"));
+  await waitFor(() =>
+    expect(screen.getByLabelText("Supplier")).toHaveValue(""),
+  );
+  expect(screen.getByLabelText("model")).toHaveValue("Keep model");
+  expect(screen.getByText("Save supplier demo")).toBeDisabled();
 });
