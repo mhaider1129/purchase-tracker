@@ -113,6 +113,58 @@ async function fillOpinion() {
     target: { value: "APPROVED" },
   });
 }
+test("routine suitability review needs three assessments and does not require the physical sample checklist", async () => {
+  api.reviewSchema.mockResolvedValue({
+    ...schema,
+    assessment: {
+      specifications: ["compliant", "non_compliant"],
+      compatibility: ["compatible", "not_applicable"],
+      suitability: ["suitable", "unsuitable"],
+    },
+  });
+  api.submitTechnicalOpinion.mockResolvedValue({
+    ...review,
+    row_version: 4,
+    assignments: [{ ...review.assignments[0], status: "APPROVED" }],
+  });
+  mount();
+  await screen.findByText("My departmental inspection report");
+  expect(
+    screen.queryByLabelText("Packaging condition 30"),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Overall condition")).not.toBeInTheDocument();
+  for (const [key, value] of [
+    ["Compliance with specifications", "compliant"],
+    ["Compatibility", "compatible"],
+    ["Suitability", "suitable"],
+  ])
+    fireEvent.change(screen.getByLabelText(`${key} assessment 30`), {
+      target: { value },
+    });
+  fireEvent.change(screen.getByLabelText("Technical recommendation 30"), {
+    target: { value: "APPROVED" },
+  });
+  fireEvent.click(screen.getByText("Submit departmental opinion and attest"));
+  await waitFor(() =>
+    expect(api.submitTechnicalOpinion).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({
+        row_version: 3,
+        reports: [
+          expect.objectContaining({
+            assessment_version: 2,
+            decision: "APPROVED",
+            assessment: {
+              specifications: "compliant",
+              compatibility: "compatible",
+              suitability: "suitable",
+            },
+          }),
+        ],
+      }),
+    ),
+  );
+});
 test("assigned reviewer submits structured opinion with current version and no client signature", async () => {
   api.submitTechnicalOpinion.mockResolvedValue({
     ...review,

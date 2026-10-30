@@ -1,1492 +1,377 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  createTechnicalInspection,
-  deleteTechnicalInspection,
-  listTechnicalInspections,
-  updateTechnicalInspection,
-} from "../api/technicalInspections";
-import { getRequestDetails } from "../api/requests";
-import { Link, useLocation } from "react-router-dom";
-import {
-  CheckCircle2,
-  ClipboardCheck,
-  Clock3,
-  Search,
-  ShieldAlert,
-  XCircle,
-} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
+import HistoricalInspectionDetail from "../components/HistoricalInspectionDetail";
+import { getTechnicalWorklist } from "../api/technicalInspections";
+export {
+  getChecklistProgress,
+  getInspectionMetrics,
+} from "./LegacyTechnicalInspectionsPage";
 
-const CONDITION_OPTIONS = [
-  { value: "excellent", label: "Excellent" },
-  { value: "good", label: "Good" },
-  { value: "fair", label: "Fair" },
-  { value: "poor", label: "Poor" },
-  { value: "not_sure", label: "Not sure" },
-  { value: "not_applicable", label: "Not applicable" },
-];
-
-const GENERAL_CHECKLIST_ITEMS = [
-  "General condition",
-  "Packaging",
-  "Labelling/Markings",
-];
-
-const CATEGORY_CHECKLIST_ITEMS = [
-  "Compliance with specifications",
-  "Quality",
-  "Functionality",
-  "Expiry date",
-  "Storage requirements",
-  "Calibrated",
-  "Safety features",
-  "Structural integrity",
-  "Compatibility with existing system",
-  "SDS available",
-];
-
-const CATEGORY_OPTIONS = [
-  "Medical Consumable",
-  "Medical Supply",
-  "Device",
-  "Medical Equipment",
-  "Stationary",
-  "Operational Item",
-  "Maintenance Item",
-  "Furniture",
-  "IT Equipment",
-  "Housekeeping",
-];
-
-const ACCEPTANCE_STATUS_OPTIONS = [
-  {
-    value: "pending",
-    label: "Pending",
-    description: "Save for review",
-    icon: Clock3,
-  },
-  {
-    value: "passed",
-    label: "Accepted",
-    description: "Meets requirements",
-    icon: CheckCircle2,
-  },
-  {
-    value: "failed",
-    label: "Rejected",
-    description: "Action is required",
-    icon: XCircle,
-  },
-];
-
-export const getChecklistProgress = (form) => {
-  const entries = [
-    ...(form?.general_checklist || []),
-    ...(form?.category_checklist || []),
-  ];
-  const completed = entries.filter((entry) => Boolean(entry.condition)).length;
-  return {
-    completed,
-    total: entries.length,
-    percentage: entries.length
-      ? Math.round((completed / entries.length) * 100)
-      : 0,
-  };
+const initial = {
+  search: "",
+  type: "",
+  department: "",
+  status: "",
+  from: "",
+  to: "",
+  tab: "pending",
+  page: 1,
 };
-
-export const getInspectionMetrics = (records = []) =>
-  records.reduce(
-    (metrics, record) => {
-      const status = record?.acceptance_status || "pending";
-      metrics.total += 1;
-      metrics[status] = (metrics[status] || 0) + 1;
-      return metrics;
-    },
-    { total: 0, pending: 0, passed: 0, failed: 0 },
-  );
-
-const buildChecklistState = (items) =>
-  items.map((item) => ({
-    item,
-    condition: "",
-    comment: "",
-    action_required: "",
-  }));
-
-const createInitialFormState = () => ({
-  inspection_date: new Date().toISOString().slice(0, 10),
-  location: "",
-  request_id: "",
-  requested_item_id: "",
-  item_name: "",
-  item_category: "",
-  model_number: "",
-  serial_number: "",
-  lot_number: "",
-  manufacturer: "",
-  supplier_name: "",
-  general_checklist: buildChecklistState(GENERAL_CHECKLIST_ITEMS),
-  category_checklist: buildChecklistState(CATEGORY_CHECKLIST_ITEMS),
-  summary: {
-    overall_condition: "",
-    immediate_actions: "",
-    recommended_actions: "",
-    additional_comments: "",
-  },
-  inspectors: [],
-  approvals: {},
-  acceptance_status: "pending",
-  acceptance_notes: "",
-});
-
-const normalizeChecklistForForm = (entries, template) => {
-  if (!Array.isArray(entries) || entries.length === 0) {
-    return buildChecklistState(template);
-  }
-
-  const byItem = new Map();
-  entries.forEach((entry) => {
-    const key = (entry?.item || "").toString().toLowerCase();
-    if (key) {
-      byItem.set(key, entry);
-    }
-  });
-
-  return template.map((item, index) => {
-    const match = byItem.get(item.toLowerCase()) ?? entries[index];
-    return {
-      item,
-      condition: match?.condition || "",
-      comment: match?.comment || "",
-      action_required: match?.action_required || "",
-    };
-  });
+const names = {
+  PENDING: "Pending",
+  IN_PROGRESS: "In progress",
+  ON_HOLD: "On hold",
+  COMPLETED: "Completed",
 };
-
-const TechnicalInspectionsPage = () => {
+const field =
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900";
+export default function TechnicalInspectionsPage() {
   const location = useLocation();
-  const prefillInspection = location.state?.prefillInspection;
-  const [inspections, setInspections] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [params] = useSearchParams();
+  const [filters, setFilters] = useState(initial);
+  const [data, setData] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [formState, setFormState] = useState(createInitialFormState);
-  const [editingId, setEditingId] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [filters, setFilters] = useState({
-    search: "",
-    start_date: "",
-    end_date: "",
-    category: "",
-    acceptance_status: "",
-  });
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [linkedRequest, setLinkedRequest] = useState({
-    status: "idle",
-    data: null,
-    error: "",
-  });
-
-  useEffect(() => {
-    if (!prefillInspection) return;
-
-    setEditingId(null);
-    setSuccess("");
-    setError("");
-    setFormState((prev) => ({
-      ...prev,
-      request_id: prefillInspection.requestId
-        ? String(prefillInspection.requestId)
-        : prev.request_id,
-      requested_item_id: prefillInspection.itemId
-        ? String(prefillInspection.itemId)
-        : prev.requested_item_id,
-      item_name: prefillInspection.itemName || prev.item_name,
+  const [reload, setReload] = useState(0);
+  const change = (name, value) =>
+    setFilters((old) => ({
+      ...old,
+      [name]: value,
+      page: name === "page" ? value : 1,
     }));
-  }, [prefillInspection]);
-
   useEffect(() => {
-    const handler = setTimeout(
-      () => setDebouncedSearch(searchInput.trim()),
-      300,
+    let active = true;
+    setLoading(true);
+    setError("");
+    const timer = setTimeout(
+      async () => {
+        try {
+          const next = await getTechnicalWorklist(filters);
+          if (active) {
+            setData(next);
+            setDepartments(next.departments || []);
+          }
+        } catch (e) {
+          if (active) {
+            setData(null);
+            setError(
+              e.response?.data?.message || "Unable to load technical tasks.",
+            );
+          }
+        } finally {
+          if (active) setLoading(false);
+        }
+      },
+      filters.search ? 250 : 0,
     );
-    return () => clearTimeout(handler);
-  }, [searchInput]);
-
-  useEffect(() => {
-    const trimmedId = String(formState.request_id || "").trim();
-
-    if (!trimmedId) {
-      setLinkedRequest({ status: "idle", data: null, error: "" });
-      return undefined;
-    }
-
-    let isCancelled = false;
-    setLinkedRequest((prev) => ({ ...prev, status: "loading", error: "" }));
-
-    const loadRequest = async () => {
-      try {
-        const data = await getRequestDetails(trimmedId);
-        if (!isCancelled) {
-          setLinkedRequest({
-            status: "loaded",
-            data: {
-              request: data?.request || null,
-              items: data?.items || [],
-            },
-            error: "",
-          });
-        }
-      } catch (err) {
-        if (!isCancelled) {
-          setLinkedRequest({
-            status: "error",
-            data: null,
-            error:
-              err?.response?.data?.message ||
-              err?.message ||
-              "Unable to fetch request details",
-          });
-        }
-      }
-    };
-
-    loadRequest();
-
     return () => {
-      isCancelled = true;
+      active = false;
+      clearTimeout(timer);
     };
-  }, [formState.request_id]);
-
-  const activeFilters = useMemo(
-    () => ({
-      ...filters,
-      search: debouncedSearch,
-    }),
-    [filters, debouncedSearch],
-  );
-
-  const fetchInspections = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const data = await listTechnicalInspections(activeFilters);
-      setInspections(data);
-    } catch (err) {
-      console.error("Failed to load inspections", err);
-      setError("Unable to load inspections. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  }, [activeFilters]);
-
-  useEffect(() => {
-    fetchInspections();
-  }, [fetchInspections]);
-
-  const resetForm = () => {
-    setEditingId(null);
-    setFormState(createInitialFormState());
-  };
-
-  const handleChecklistChange = (listKey, index, field, value) => {
-    setFormState((prev) => {
-      const updated = [...prev[listKey]];
-      updated[index] = {
-        ...updated[index],
-        [field]: value,
-      };
-      return { ...prev, [listKey]: updated };
-    });
-  };
-
-  const handleSummaryChange = (field, value) => {
-    setFormState((prev) => ({
-      ...prev,
-      summary: {
-        ...prev.summary,
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleFieldChange = (field, value) => {
-    setFormState((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setSubmitting(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      if (editingId) {
-        await updateTechnicalInspection(editingId, formState);
-        setSuccess("Inspection updated successfully.");
-      } else {
-        await createTechnicalInspection(formState);
-        setSuccess("Inspection saved successfully.");
-      }
-
-      await fetchInspections();
-      resetForm();
-    } catch (err) {
-      console.error("Failed to save inspection", err);
-      setError(
-        err?.response?.data?.message ||
-          "Unable to save the inspection. Please check required fields.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEdit = (inspection) => {
-    setEditingId(inspection.id);
-    setSuccess("");
-    setError("");
-
-    setFormState({
-      inspection_date: inspection.inspection_date || "",
-      location: inspection.location || "",
-      request_id: inspection.request_id || "",
-      requested_item_id: inspection.requested_item_id || "",
-      item_name: inspection.item_name || "",
-      item_category: inspection.item_category || "",
-      model_number: inspection.model_number || "",
-      serial_number: inspection.serial_number || "",
-      lot_number: inspection.lot_number || "",
-      manufacturer: inspection.manufacturer || "",
-      supplier_name: inspection.supplier_name || "",
-      general_checklist: normalizeChecklistForForm(
-        inspection.general_checklist,
-        GENERAL_CHECKLIST_ITEMS,
-      ),
-      category_checklist: normalizeChecklistForForm(
-        inspection.category_checklist,
-        CATEGORY_CHECKLIST_ITEMS,
-      ),
-      summary: {
-        overall_condition: inspection.summary?.overall_condition || "",
-        immediate_actions: inspection.summary?.immediate_actions || "",
-        recommended_actions: inspection.summary?.recommended_actions || "",
-        additional_comments: inspection.summary?.additional_comments || "",
-      },
-      inspectors: Array.isArray(inspection.inspectors)
-        ? inspection.inspectors
-        : [],
-      approvals:
-        inspection.approvals && typeof inspection.approvals === "object"
-          ? inspection.approvals
-          : {},
-      acceptance_status: inspection.acceptance_status || "pending",
-      acceptance_notes: inspection.acceptance_notes || "",
-    });
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this inspection record?",
+  }, [filters, reload]);
+  // Retain entry from the historical completed-request inspection action.
+  if (location.state?.prefillInspection)
+    return (
+      <Navigate
+        to="/technical-inspections/legacy"
+        state={location.state}
+        replace
+      />
     );
-    if (!confirmed) return;
-
-    try {
-      setSubmitting(true);
-      await deleteTechnicalInspection(id);
-      setSuccess("Inspection removed.");
-      await fetchInspections();
-      if (editingId === id) {
-        resetForm();
-      }
-    } catch (err) {
-      console.error("Failed to delete inspection", err);
-      setError("Could not delete the inspection entry.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const inspectionCountByCondition = useMemo(() => {
-    const tally = {};
-    inspections.forEach((inspection) => {
-      const condition = inspection?.summary?.overall_condition || "unknown";
-      tally[condition] = (tally[condition] || 0) + 1;
-    });
-    return tally;
-  }, [inspections]);
-
-  const inspectionMetrics = useMemo(
-    () => getInspectionMetrics(inspections),
-    [inspections],
-  );
-  const checklistProgress = useMemo(
-    () => getChecklistProgress(formState),
-    [formState],
-  );
-
-  const metricCards = [
-    {
-      label: "Inspections",
-      value: inspectionMetrics.total,
-      icon: ClipboardCheck,
-      tone: "indigo",
-    },
-    {
-      label: "Pending",
-      value: inspectionMetrics.pending,
-      icon: Clock3,
-      tone: "amber",
-    },
-    {
-      label: "Accepted",
-      value: inspectionMetrics.passed,
-      icon: CheckCircle2,
-      tone: "emerald",
-    },
-    {
-      label: "Rejected",
-      value: inspectionMetrics.failed,
-      icon: ShieldAlert,
-      tone: "rose",
-    },
-  ];
-
-  const metricTone = {
-    indigo:
-      "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-200",
-    amber:
-      "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-200",
-    emerald:
-      "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200",
-    rose: "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-200",
-  };
-
+  if (params.get("inspection"))
+    return <HistoricalInspectionDetail id={params.get("inspection")} />;
   return (
-    <div>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-6">
-          <header className="rounded-xl bg-white/70 p-6 shadow-sm backdrop-blur dark:bg-gray-800/70">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                  Supply Chain Quality
-                </p>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">
-                  Technical Inspections
-                </h1>
-                <Link
-                  to="/technical-inspections/pre-procurement"
-                  className="mt-2 inline-block rounded bg-indigo-700 px-4 py-2 text-sm font-semibold text-white"
-                >
-                  Pre-procurement departmental reviews
-                </Link>
-                <p className="mt-1 max-w-3xl text-sm text-gray-600 dark:text-gray-300">
-                  Capture inspection details digitally, including item
-                  condition, category-specific checks, and required follow-up
-                  actions.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3 text-sm">
-                {Object.entries(inspectionCountByCondition).map(
-                  ([condition, count]) => (
-                    <span
-                      key={condition}
-                      className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 font-medium text-indigo-700 shadow-sm dark:bg-indigo-900/40 dark:text-indigo-200"
-                    >
-                      <span
-                        className="h-2 w-2 rounded-full bg-indigo-500"
-                        aria-hidden
-                      />
-                      {condition.replace("_", " ") || "Unspecified"}
-                      <span className="text-xs text-gray-500 dark:text-gray-300">
-                        ({count})
-                      </span>
-                    </span>
-                  ),
-                )}
-              </div>
-            </div>
-            {(error || success) && (
-              <div className="mt-4 space-y-2 text-sm">
-                {error && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-red-700 dark:border-red-700/50 dark:bg-red-900/30 dark:text-red-200">
-                    {error}
-                  </div>
-                )}
-                {success && (
-                  <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-700 dark:border-green-700/50 dark:bg-green-900/30 dark:text-green-200">
-                    {success}
-                  </div>
-                )}
-              </div>
-            )}
-          </header>
-
-          <section
-            aria-label="Inspection overview"
-            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+    <main className="mx-auto max-w-7xl space-y-6 px-4 py-8 text-slate-900 dark:text-slate-100">
+      <header className="rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-900 p-7 text-white">
+        <p className="text-sm text-cyan-200">Supply Chain Quality</p>
+        <h1 className="mt-1 text-3xl font-bold">
+          Technical Reviews &amp; Inspections
+        </h1>
+        <p className="mt-2 text-slate-200">
+          Review assigned products before procurement and follow inspection
+          records through acceptance.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-4">
+          {data?.can_manage && (
+            <Link
+              className="rounded bg-white px-4 py-2 font-semibold text-indigo-900"
+              to="/technical-inspections/pre-procurement?new=1"
+            >
+              Request technical review
+            </Link>
+          )}
+          <button
+            className="rounded border border-white/40 px-4 py-2"
+            onClick={() => setReload((v) => v + 1)}
+            disabled={loading}
           >
-            {metricCards.map(({ label, value, icon: Icon, tone }) => (
-              <div
-                key={label}
-                className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white/90 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800/80"
-              >
-                <span className={`rounded-xl p-3 ${metricTone[tone]}`}>
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </span>
-                <div>
-                  <p className="text-2xl font-bold text-gray-950 dark:text-white">
-                    {value}
-                  </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-300">
-                    {label}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </section>
-
-          <section className="rounded-xl bg-white/80 p-6 shadow-sm backdrop-blur dark:bg-gray-800/70">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Search
-                  </label>
-                  <div className="relative">
-                    <Search
-                      className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400"
-                      aria-hidden="true"
-                    />
-                    <input
-                      type="search"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      placeholder="Item, supplier, or location"
-                      className="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Start date
-                  </label>
-                  <input
-                    type="date"
-                    value={filters.start_date}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        start_date: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    End date
-                  </label>
-                  <input
-                    type="date"
-                    value={filters.end_date}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        end_date: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Item category
-                  </label>
-                  <select
-                    value={filters.category}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        category: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                  >
-                    <option value="">All categories</option>
-                    {CATEGORY_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Decision
-                  </label>
-                  <select
-                    value={filters.acceptance_status}
-                    onChange={(e) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        acceptance_status: e.target.value,
-                      }))
-                    }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                  >
-                    <option value="">All decisions</option>
-                    <option value="pending">Pending</option>
-                    <option value="passed">Accepted</option>
-                    <option value="failed">Rejected</option>
-                  </select>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={resetForm}
-                className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-              >
-                Reset form
-              </button>
-            </div>
-          </section>
-
-          <section className="rounded-xl bg-white/90 p-6 shadow-sm backdrop-blur dark:bg-gray-800/70">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {editingId ? "Edit inspection" : "New inspection"}
-            </h2>
-            <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
-              Fill in the general information, item details, and checklist
-              items. Conditions use the same scale as the legacy paper form.
-            </p>
-
-            <div className="mb-6 rounded-lg border border-indigo-100 bg-indigo-50/70 p-4 dark:border-indigo-900 dark:bg-indigo-950/30">
-              <div className="flex items-center justify-between gap-4 text-sm">
-                <span className="font-semibold text-gray-800 dark:text-gray-100">
-                  Checklist completion
-                </span>
-                <span className="font-medium text-indigo-700 dark:text-indigo-200">
-                  {checklistProgress.completed} of {checklistProgress.total}{" "}
-                  checks · {checklistProgress.percentage}%
-                </span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-indigo-100 dark:bg-gray-700">
-                <div
-                  className="h-full rounded-full bg-indigo-600 transition-all duration-300"
-                  style={{ width: `${checklistProgress.percentage}%` }}
-                />
-              </div>
-            </div>
-
-            <form className="space-y-8" onSubmit={handleSubmit}>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-white/60 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                    General Information
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Inspection date
-                      </span>
-                      <input
-                        type="date"
-                        value={formState.inspection_date}
-                        onChange={(e) =>
-                          handleFieldChange("inspection_date", e.target.value)
-                        }
-                        required
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Location
-                      </span>
-                      <input
-                        type="text"
-                        value={formState.location}
-                        onChange={(e) =>
-                          handleFieldChange("location", e.target.value)
-                        }
-                        placeholder="Clinic, ward, or warehouse"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Linked request ID
-                      </span>
-                      <input
-                        type="number"
-                        value={formState.request_id}
-                        onChange={(e) =>
-                          handleFieldChange("request_id", e.target.value)
-                        }
-                        placeholder="Enter purchase request ID"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <span className="text-xs text-gray-500 dark:text-gray-300">
-                        Required so the request status reflects inspection
-                        progress.
-                      </span>
-                    </label>
-
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Requested item ID (optional)
-                      </span>
-                      <input
-                        type="number"
-                        value={formState.requested_item_id}
-                        onChange={(e) =>
-                          handleFieldChange("requested_item_id", e.target.value)
-                        }
-                        placeholder="Item row ID"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                      <span className="text-xs text-gray-500 dark:text-gray-300">
-                        Add when the inspection only applies to one item line.
-                      </span>
-                    </label>
-                  </div>
-
-                  <label className="flex flex-col gap-1 text-sm">
-                    <span className="font-medium text-gray-700 dark:text-gray-200">
-                      Acceptance notes
-                    </span>
-                    <textarea
-                      value={formState.acceptance_notes}
-                      onChange={(e) =>
-                        handleFieldChange("acceptance_notes", e.target.value)
-                      }
-                      placeholder="Notes visible in the linked purchase log"
-                      className="min-h-[70px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                    />
-                  </label>
-
-                  <div className="rounded-lg border border-indigo-100 bg-indigo-50/80 p-4 text-sm shadow-sm dark:border-indigo-800/40 dark:bg-indigo-900/40">
-                    <div className="flex items-center justify-between gap-2">
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-indigo-700 dark:text-indigo-200">
-                          Linked purchase request
-                        </p>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-                          {formState.request_id
-                            ? `Request #${formState.request_id}`
-                            : "No request selected"}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-indigo-700 shadow-sm dark:bg-indigo-800/70 dark:text-indigo-100">
-                        {linkedRequest.status === "loading"
-                          ? "Loading..."
-                          : linkedRequest.status === "error"
-                            ? "Not found"
-                            : linkedRequest.data
-                              ? linkedRequest.data.request?.status || ""
-                              : "Awaiting ID"}
-                      </span>
-                    </div>
-
-                    {linkedRequest.status === "error" && (
-                      <p className="mt-2 text-sm text-red-700 dark:text-red-200">
-                        {linkedRequest.error ||
-                          "Could not load request details."}
-                      </p>
-                    )}
-
-                    {linkedRequest.status === "idle" &&
-                      !formState.request_id && (
-                        <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
-                          Enter a request ID to preview the requester, items,
-                          and status before saving the inspection.
-                        </p>
-                      )}
-
-                    {linkedRequest.data?.request && (
-                      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                        <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
-                            Type
-                          </p>
-                          <p className="font-medium text-gray-900 dark:text-gray-50">
-                            {linkedRequest.data.request.request_type || ""}
-                          </p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300">
-                            Status: {linkedRequest.data.request.status || ""}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
-                            Requester
-                          </p>
-                          <p className="font-medium text-gray-900 dark:text-gray-50">
-                            {linkedRequest.data.request.requester_name ||
-                              linkedRequest.data.request
-                                .temporary_requester_name ||
-                              ""}
-                          </p>
-                          {linkedRequest.data.request.department_id && (
-                            <p className="text-xs text-gray-600 dark:text-gray-300">
-                              Dept ID:{" "}
-                              {linkedRequest.data.request.department_id}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
-                            Items
-                          </p>
-                          <p className="font-medium text-gray-900 dark:text-gray-50">
-                            {linkedRequest.data.items?.length || 0} line
-                            {linkedRequest.data.items?.length === 1 ? "" : "s"}
-                          </p>
-                          {linkedRequest.data.items?.length > 0 && (
-                            <p className="text-xs text-gray-600 dark:text-gray-300">
-                              {(linkedRequest.data.items || [])
-                                .slice(0, 2)
-                                .map((item) => item.item_name)
-                                .filter(Boolean)
-                                .join(" · ")}
-                              {linkedRequest.data.items.length > 2 && " …"}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {linkedRequest.data?.items?.length > 0 && (
-                      <div className="mt-4 border-t border-indigo-200 pt-3 dark:border-indigo-800">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-200">
-                          Select an item to inspect
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {linkedRequest.data.items.map((item) => (
-                            <button
-                              key={item.id}
-                              type="button"
-                              onClick={() =>
-                                setFormState((prev) => ({
-                                  ...prev,
-                                  requested_item_id: String(item.id),
-                                  item_name: item.item_name || prev.item_name,
-                                }))
-                              }
-                              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${String(formState.requested_item_id) === String(item.id) ? "border-indigo-600 bg-indigo-600 text-white" : "border-indigo-200 bg-white text-indigo-700 hover:border-indigo-400 dark:border-indigo-700 dark:bg-gray-900 dark:text-indigo-200"}`}
-                            >
-                              {item.item_name || `Item #${item.id}`}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/40 dark:bg-amber-900/30 dark:text-amber-100">
-                    Inspector identities are managed by the inspection
-                    assignment workflow and are not editable in this form.
-                  </div>
-                </div>
-
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-white/60 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                    Item Information
-                  </h3>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Item name
-                      </span>
-                      <input
-                        type="text"
-                        value={formState.item_name}
-                        onChange={(e) =>
-                          handleFieldChange("item_name", e.target.value)
-                        }
-                        required
-                        placeholder="Item name"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Item category
-                      </span>
-                      <select
-                        value={formState.item_category}
-                        onChange={(e) =>
-                          handleFieldChange("item_category", e.target.value)
-                        }
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      >
-                        <option value="">Select category</option>
-                        {CATEGORY_OPTIONS.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Model / Code
-                      </span>
-                      <input
-                        type="text"
-                        value={formState.model_number}
-                        onChange={(e) =>
-                          handleFieldChange("model_number", e.target.value)
-                        }
-                        placeholder="Model or catalogue number"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Serial / Batch number
-                      </span>
-                      <input
-                        type="text"
-                        value={formState.serial_number}
-                        onChange={(e) =>
-                          handleFieldChange("serial_number", e.target.value)
-                        }
-                        placeholder="Serial or batch number"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Lot number
-                      </span>
-                      <input
-                        type="text"
-                        value={formState.lot_number}
-                        onChange={(e) =>
-                          handleFieldChange("lot_number", e.target.value)
-                        }
-                        placeholder="Lot number (if applicable)"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Manufacturer
-                      </span>
-                      <input
-                        type="text"
-                        value={formState.manufacturer}
-                        onChange={(e) =>
-                          handleFieldChange("manufacturer", e.target.value)
-                        }
-                        placeholder="Manufacturer"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Supplier
-                      </span>
-                      <input
-                        type="text"
-                        value={formState.supplier_name}
-                        onChange={(e) =>
-                          handleFieldChange("supplier_name", e.target.value)
-                        }
-                        placeholder="Supplier"
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      />
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-white/60 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                    A. General Condition
-                  </h3>
-                  <div className="space-y-3">
-                    {formState.general_checklist.map((entry, index) => (
-                      <div
-                        key={entry.item}
-                        className="rounded-md border border-gray-200 p-3 shadow-sm dark:border-gray-700"
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="text-sm font-medium text-gray-800 dark:text-gray-100">
-                            {entry.item}
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-xs">
-                            {CONDITION_OPTIONS.map((option) => (
-                              <label
-                                key={option.value}
-                                className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 font-medium text-gray-700 shadow-sm dark:bg-gray-800 dark:text-gray-200"
-                              >
-                                <input
-                                  type="radio"
-                                  name={`general-${index}`}
-                                  value={option.value}
-                                  checked={entry.condition === option.value}
-                                  onChange={(e) =>
-                                    handleChecklistChange(
-                                      "general_checklist",
-                                      index,
-                                      "condition",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                                {option.label}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                          <textarea
-                            value={entry.comment}
-                            onChange={(e) =>
-                              handleChecklistChange(
-                                "general_checklist",
-                                index,
-                                "comment",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Comments"
-                            className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                          />
-                          <textarea
-                            value={entry.action_required}
-                            onChange={(e) =>
-                              handleChecklistChange(
-                                "general_checklist",
-                                index,
-                                "action_required",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Action required"
-                            className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-white/60 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                    B. Specific to Item Category
-                  </h3>
-                  <div className="space-y-3">
-                    {formState.category_checklist.map((entry, index) => (
-                      <div
-                        key={entry.item}
-                        className="rounded-md border border-gray-200 p-3 shadow-sm dark:border-gray-700"
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="text-sm font-medium text-gray-800 dark:text-gray-100">
-                            {entry.item}
-                          </div>
-                          <div className="flex flex-wrap gap-2 text-xs">
-                            {CONDITION_OPTIONS.map((option) => (
-                              <label
-                                key={option.value}
-                                className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 font-medium text-gray-700 shadow-sm dark:bg-gray-800 dark:text-gray-200"
-                              >
-                                <input
-                                  type="radio"
-                                  name={`category-${index}`}
-                                  value={option.value}
-                                  checked={entry.condition === option.value}
-                                  onChange={(e) =>
-                                    handleChecklistChange(
-                                      "category_checklist",
-                                      index,
-                                      "condition",
-                                      e.target.value,
-                                    )
-                                  }
-                                />
-                                {option.label}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                          <textarea
-                            value={entry.comment}
-                            onChange={(e) =>
-                              handleChecklistChange(
-                                "category_checklist",
-                                index,
-                                "comment",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Comments"
-                            className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                          />
-                          <textarea
-                            value={entry.action_required}
-                            onChange={(e) =>
-                              handleChecklistChange(
-                                "category_checklist",
-                                index,
-                                "action_required",
-                                e.target.value,
-                              )
-                            }
-                            placeholder="Action required"
-                            className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-white/60 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                    Summary of Findings
-                  </h3>
-                  <div className="grid gap-4">
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Overall condition
-                      </span>
-                      <select
-                        value={formState.summary.overall_condition}
-                        onChange={(e) =>
-                          handleSummaryChange(
-                            "overall_condition",
-                            e.target.value,
-                          )
-                        }
-                        className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                      >
-                        <option value="">Select condition</option>
-                        {CONDITION_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Immediate actions required
-                      </span>
-                      <textarea
-                        value={formState.summary.immediate_actions}
-                        onChange={(e) =>
-                          handleSummaryChange(
-                            "immediate_actions",
-                            e.target.value,
-                          )
-                        }
-                        className="min-h-[100px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                        placeholder="List urgent follow-up actions"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Recommended maintenance/actions
-                      </span>
-                      <textarea
-                        value={formState.summary.recommended_actions}
-                        onChange={(e) =>
-                          handleSummaryChange(
-                            "recommended_actions",
-                            e.target.value,
-                          )
-                        }
-                        className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                        placeholder="Preventive maintenance, calibration, or escalation"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Additional comments
-                      </span>
-                      <textarea
-                        value={formState.summary.additional_comments}
-                        onChange={(e) =>
-                          handleSummaryChange(
-                            "additional_comments",
-                            e.target.value,
-                          )
-                        }
-                        className="min-h-[60px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-                        placeholder="Notes, risks, or attachments referenced"
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="space-y-4 rounded-lg border border-gray-200 bg-white/60 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/50">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
-                    Final Inspector Decision
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Select one overall decision for this inspected item.
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {ACCEPTANCE_STATUS_OPTIONS.map((option) => {
-                      const isAccepted = option.value === "passed";
-                      const isPending = option.value === "pending";
-                      const selected =
-                        formState.acceptance_status === option.value;
-                      const Icon = option.icon;
-                      return (
-                        <label
-                          key={option.value}
-                          className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 text-sm font-medium shadow-sm transition ${
-                            selected
-                              ? isPending
-                                ? "border-amber-500 bg-amber-50 text-amber-800 dark:border-amber-400 dark:bg-amber-900/40 dark:text-amber-100"
-                                : isAccepted
-                                  ? "border-green-500 bg-green-50 text-green-800 dark:border-green-400 dark:bg-green-900/40 dark:text-green-100"
-                                  : "border-red-500 bg-red-50 text-red-800 dark:border-red-400 dark:bg-red-900/40 dark:text-red-100"
-                              : "border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="final-acceptance"
-                            value={option.value}
-                            checked={selected}
-                            onChange={(e) =>
-                              handleFieldChange(
-                                "acceptance_status",
-                                e.target.value,
-                              )
-                            }
-                          />
-                          <Icon
-                            className="h-5 w-5 shrink-0"
-                            aria-hidden="true"
-                          />
-                          <span>
-                            <span className="block">{option.label}</span>
-                            <span className="block text-xs font-normal opacity-75">
-                              {option.description}
-                            </span>
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  All required fields mirror the paper form. Use the checklists
-                  to capture specific findings and any follow-up.
-                </div>
-                <div className="flex gap-3">
-                  {editingId && (
-                    <button
-                      type="button"
-                      onClick={resetForm}
-                      className="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-                    >
-                      Cancel edit
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70"
-                  >
-                    {submitting
-                      ? "Saving..."
-                      : editingId
-                        ? "Update inspection"
-                        : "Save inspection"}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </section>
-
-          <section className="rounded-xl bg-white/80 p-6 shadow-sm backdrop-blur dark:bg-gray-800/70">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                Inspection log
-              </h2>
-              <span className="text-sm text-gray-500 dark:text-gray-300">
-                {inspections.length} record{inspections.length === 1 ? "" : "s"}
-              </span>
-            </div>
-
-            <div className="mt-4 overflow-x-auto rounded-lg border border-gray-200 shadow-sm dark:border-gray-700">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-900">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Date
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Item
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Category
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Request link
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Supplier
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Location
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Overall condition
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Acceptance
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                  {loading ? (
-                    <tr>
-                      <td
-                        colSpan={9}
-                        className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300"
-                      >
-                        Loading inspections...
-                      </td>
-                    </tr>
-                  ) : inspections.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={9}
-                        className="px-4 py-6 text-center text-sm text-gray-600 dark:text-gray-300"
-                      >
-                        No inspections found for the selected filters.
-                      </td>
-                    </tr>
-                  ) : (
-                    inspections.map((inspection) => (
-                      <tr
-                        key={inspection.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        <td className="px-4 py-3 text-sm text-gray-800 dark:text-gray-100">
-                          {inspection.inspection_date || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-gray-50">
-                          {inspection.item_name}
-                          {inspection.model_number && (
-                            <span className="block text-xs font-normal text-gray-500 dark:text-gray-300">
-                              Model: {inspection.model_number}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                          {inspection.item_category || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                          {inspection.request_id ? (
-                            <div className="space-y-1">
-                              <p className="font-semibold text-gray-900 dark:text-gray-50">
-                                #{inspection.request_id}
-                              </p>
-                              {inspection.requested_item_id && (
-                                <p className="text-xs text-gray-600 dark:text-gray-300">
-                                  Item ID: {inspection.requested_item_id}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-500">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                          {inspection.supplier_name || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                          {inspection.location || "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                          {inspection.summary?.overall_condition
-                            ? inspection.summary.overall_condition.replace(
-                                "_",
-                                " ",
-                              )
-                            : "-"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                          <span
-                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                              inspection.acceptance_status === "passed"
-                                ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-100"
-                                : inspection.acceptance_status === "failed"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-100"
-                                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-100"
-                            }`}
-                          >
-                            {inspection.acceptance_status || "pending"}
-                          </span>
-                          {inspection.acceptance_notes && (
-                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">
-                              {inspection.acceptance_notes}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm text-gray-700 dark:text-gray-200">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleEdit(inspection)}
-                              className="rounded-md border border-indigo-200 px-3 py-1 text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-700/60 dark:text-indigo-200 dark:hover:bg-indigo-900/40"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(inspection.id)}
-                              className="rounded-md border border-red-200 px-3 py-1 text-red-700 transition hover:bg-red-50 dark:border-red-700/60 dark:text-red-200 dark:hover:bg-red-900/40"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
+            Refresh tasks
+          </button>
         </div>
-      </main>
-    </div>
+      </header>
+      <section
+        aria-label="Filter technical tasks"
+        className="grid gap-3 rounded-xl border bg-white p-4 dark:border-slate-700 dark:bg-slate-800 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <label>
+          Search
+          <input
+            className={field}
+            type="search"
+            placeholder="Reference, item or assigned department"
+            value={filters.search}
+            onChange={(e) => change("search", e.target.value)}
+          />
+        </label>
+        <label>
+          Review type
+          <select
+            className={field}
+            value={filters.type}
+            onChange={(e) => change("type", e.target.value)}
+          >
+            <option value="">All types</option>
+            <option value="PRE_PROCUREMENT">Pre-procurement review</option>
+            <option value="LEGACY_INSPECTION">Historical inspection</option>
+          </select>
+        </label>
+        <label>
+          Assigned department
+          <select
+            className={field}
+            value={filters.department}
+            onChange={(e) => change("department", e.target.value)}
+          >
+            <option value="">All departments</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Status
+          <select
+            className={field}
+            value={filters.status}
+            onChange={(e) => change("status", e.target.value)}
+          >
+            <option value="">All statuses</option>
+            {Object.entries(names).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          From
+          <input
+            className={field}
+            type="date"
+            value={filters.from}
+            onChange={(e) => change("from", e.target.value)}
+          />
+        </label>
+        <label>
+          To
+          <input
+            className={field}
+            type="date"
+            value={filters.to}
+            onChange={(e) => change("to", e.target.value)}
+          />
+        </label>
+        <button
+          className="text-left text-indigo-700 underline dark:text-indigo-300"
+          onClick={() => setFilters(initial)}
+        >
+          Reset filters
+        </button>
+      </section>
+      <section
+        aria-label="Technical task summary"
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        aria-busy={loading}
+      >
+        {[
+          ["awaiting_my_review", "Awaiting My Review"],
+          ["in_progress", "In Progress"],
+          ["on_hold", "On Hold"],
+          ["completed", "Completed"],
+        ].map(([key, title]) => (
+          <article
+            key={key}
+            className="rounded-xl border bg-white p-5 dark:border-slate-700 dark:bg-slate-800"
+          >
+            <p className="text-sm text-slate-500 dark:text-slate-300">
+              {title}
+            </p>
+            <p
+              className="mt-2 text-3xl font-bold"
+              aria-label={`${title} count`}
+            >
+              {loading ? "…" : (data?.summary?.[key] ?? "—")}
+            </p>
+          </article>
+        ))}
+      </section>
+      <p className="text-sm text-slate-500 dark:text-slate-300">
+        Counts reflect the selected filters and tab across every matching page.
+        Dates use Baghdad local time. Historical forms have no authenticated
+        task assignment.
+      </p>
+      {error && (
+        <div
+          role="alert"
+          className="rounded border border-red-300 bg-red-50 p-4 text-red-800"
+        >
+          {error}{" "}
+          <button className="underline" onClick={() => setReload((v) => v + 1)}>
+            Retry
+          </button>
+        </div>
+      )}
+      {(data?.warnings || []).map((warning) => (
+        <p
+          key={warning}
+          role="status"
+          className="rounded bg-amber-50 p-3 text-amber-900"
+        >
+          {warning}
+        </p>
+      ))}
+      <section className="rounded-xl border bg-white dark:border-slate-700 dark:bg-slate-800">
+        <div
+          role="tablist"
+          aria-label="Technical task stage"
+          className="flex flex-wrap gap-2 border-b p-3 dark:border-slate-700"
+        >
+          {[
+            ["pending", "Pending"],
+            ["in_progress", "In Progress"],
+            ["history", "History"],
+            ["", "All tasks"],
+          ].map(([value, title]) => (
+            <button
+              key={value}
+              role="tab"
+              aria-selected={filters.tab === value}
+              className={`rounded px-4 py-2 ${filters.tab === value ? "bg-indigo-700 text-white" : "bg-slate-100 text-slate-700"}`}
+              onClick={() => change("tab", value)}
+            >
+              {title}
+            </button>
+          ))}
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-900">
+              <tr>
+                {[
+                  "Reference",
+                  "Item",
+                  "Review type",
+                  "Assigned department",
+                  "Status",
+                  "Action",
+                ].map((h) => (
+                  <th key={h} className="px-4 py-3">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center" role="status">
+                    Loading technical tasks…
+                  </td>
+                </tr>
+              ) : !data?.rows?.length ? (
+                <tr>
+                  <td colSpan={6} className="p-6 text-center">
+                    {error
+                      ? "Tasks could not be loaded."
+                      : "No technical tasks match these filters."}
+                  </td>
+                </tr>
+              ) : (
+                data.rows.map((row) => (
+                  <tr
+                    key={`${row.type}-${row.id}`}
+                    className="border-t dark:border-slate-700"
+                  >
+                    <td className="px-4 py-4">
+                      {row.reference}
+                      <span className="block text-xs text-slate-500">
+                        {row.type === "PRE_PROCUREMENT" ? "TR" : "TI"}-{row.id}
+                      </span>
+                    </td>
+                    <td className="max-w-sm px-4 py-4">{row.item_name}</td>
+                    <td className="px-4 py-4">
+                      {row.type === "PRE_PROCUREMENT"
+                        ? "Pre-procurement review"
+                        : "Historical inspection"}
+                    </td>
+                    <td className="px-4 py-4">
+                      {row.assigned_department || "Not assigned"}
+                    </td>
+                    <td className="px-4 py-4">
+                      {names[row.status]}
+                      <span className="block text-xs text-slate-500">
+                        {row.decision}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4">
+                      <Link
+                        className="font-semibold text-indigo-700 underline dark:text-indigo-300"
+                        to={
+                          row.type === "PRE_PROCUREMENT"
+                            ? `/technical-inspections/pre-procurement?review=${row.id}`
+                            : `/technical-inspections?inspection=${row.id}`
+                        }
+                      >
+                        {row.status === "COMPLETED"
+                          ? "View"
+                          : row.awaiting_me
+                            ? "Review"
+                            : "Open"}
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t p-4 dark:border-slate-700">
+          <span>
+            {loading
+              ? "Updating…"
+              : `${data?.total ?? 0} matching tasks · Page ${filters.page}`}
+          </span>
+          <div className="flex gap-4">
+            <button
+              disabled={loading || filters.page === 1}
+              onClick={() => change("page", filters.page - 1)}
+            >
+              Previous
+            </button>
+            <button
+              disabled={
+                loading || !data || filters.page * data.page_size >= data.total
+              }
+              onClick={() => change("page", filters.page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </footer>
+      </section>
+    </main>
   );
-};
-
-export default TechnicalInspectionsPage;
+}

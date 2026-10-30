@@ -70,6 +70,7 @@ import EvaluationDetailsPage from "./pages/EvaluationDetailsPage";
 import StockItemApprovals from "./pages/StockItemApprovals";
 import WarehouseInventoryPage from "./pages/WarehouseInventoryPage";
 import TechnicalInspectionsPage from "./pages/TechnicalInspectionsPage";
+import LegacyTechnicalInspectionsPage from "./pages/LegacyTechnicalInspectionsPage";
 import SurgicalConsignmentsPage from "./pages/SurgicalConsignmentsPage";
 import DeviceDemosPage from "./pages/DeviceDemosPage";
 import PreprocurementTechnicalReviewsPage from "./pages/PreprocurementTechnicalReviewsPage";
@@ -556,10 +557,10 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<TechnicalInspectionsPage />}
-          resourceKey="feature.technicalInspections"
         />
       }
     />
+    <Route path="/technical-inspections/legacy" element={<ProtectedRoute element={<LegacyTechnicalInspectionsPage />} resourceKey="feature.technicalInspections" />} />
     <Route path="/surgical-consignments" element={<ProtectedRoute element={<SurgicalConsignmentsPage />} />} />
     <Route
       path="/device-demos"

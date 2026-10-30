@@ -19,23 +19,34 @@ const freshKey = () =>
   `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 const inputClass = "rounded border border-slate-300 bg-white p-2 text-sm";
 const today = () => new Date().toISOString().slice(0, 10);
-const newReport = (packet, schema) => ({
-  item_id: packet.item_id,
-  decision: "",
-  inspection_date: today(),
-  inspection_time: new Date().toTimeString().slice(0, 5),
-  findings: "",
-  overall_condition: "",
-  immediate_actions: "",
-  recommended_actions: "",
-  additional_comments: "",
-  checklist: Object.fromEntries(
-    Object.keys(schema.checklist).map((key) => [
-      key,
-      { condition: "", comment: "", action_required: "" },
-    ]),
-  ),
-});
+const newReport = (packet, schema) =>
+  schema.assessment
+    ? {
+        item_id: packet.item_id,
+        assessment_version: 2,
+        decision: "",
+        findings: "",
+        assessment: Object.fromEntries(
+          Object.keys(schema.assessment).map((key) => [key, ""]),
+        ),
+      }
+    : {
+        item_id: packet.item_id,
+        decision: "",
+        inspection_date: today(),
+        inspection_time: new Date().toTimeString().slice(0, 5),
+        findings: "",
+        overall_condition: "",
+        immediate_actions: "",
+        recommended_actions: "",
+        additional_comments: "",
+        checklist: Object.fromEntries(
+          Object.keys(schema.checklist).map((key) => [
+            key,
+            { condition: "", comment: "", action_required: "" },
+          ]),
+        ),
+      };
 
 export default function PreprocurementTechnicalReviewsPage() {
   const [params, setParams] = useSearchParams();
@@ -189,7 +200,7 @@ export default function PreprocurementTechnicalReviewsPage() {
         <p className="text-sm text-indigo-700">
           {schema?.form_reference || "DPP.SC.001.F07"} · Before procurement
         </p>
-        <h1 className="text-2xl font-bold">Departmental technical review</h1>
+        <h1 className="text-2xl font-bold">Pre-procurement technical review</h1>
         <p className="mt-2 text-slate-600">
           SCM sends an approved request for independent technical opinions from
           the requesting department and other relevant departments. All required
@@ -199,7 +210,7 @@ export default function PreprocurementTechnicalReviewsPage() {
           className="mt-2 inline-block text-blue-700 underline"
           to="/technical-inspections"
         >
-          Acceptance inspections
+          Back to technical worklist
         </Link>
       </header>
       {error && (
@@ -222,30 +233,35 @@ export default function PreprocurementTechnicalReviewsPage() {
           {success}
         </p>
       )}
-      <form
-        className="flex flex-wrap gap-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          action(async () => {
-            setRecords(await api.listPreprocurementReviews(search));
-            if (schema.can_manage)
-              setRequests(await api.eligibleReviewRequests(search));
-          });
-        }}
-      >
-        <input
-          aria-label="Search request reviews"
-          className={inputClass}
-          placeholder="Request number or description"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <button disabled={busy} className="rounded border px-3 py-2">
-          Search
-        </button>
-      </form>
-      {schema?.can_manage && (
-        <details className="rounded-xl border bg-white p-4">
+      {!detail && (
+        <form
+          className="flex flex-wrap gap-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            action(async () => {
+              setRecords(await api.listPreprocurementReviews(search));
+              if (schema.can_manage)
+                setRequests(await api.eligibleReviewRequests(search));
+            });
+          }}
+        >
+          <input
+            aria-label="Search request reviews"
+            className={inputClass}
+            placeholder="Request number or description"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <button disabled={busy} className="rounded border px-3 py-2">
+            Search
+          </button>
+        </form>
+      )}
+      {schema?.can_manage && !detail && (
+        <details
+          open={params.get("new") === "1"}
+          className="rounded-xl border bg-white p-4"
+        >
           <summary className="cursor-pointer font-semibold">
             Send a request for technical review
           </summary>
@@ -523,58 +539,60 @@ export default function PreprocurementTechnicalReviewsPage() {
           </form>
         </details>
       )}
-      <section className="rounded-xl border bg-white p-4">
-        <h2 className="font-semibold">
-          {schema?.can_manage
-            ? "Technical review register"
-            : "My assigned technical reviews"}
-        </h2>
-        {!records.length && (
-          <p className="mt-3 text-slate-600">No reviews found.</p>
-        )}
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr>
-                <th>Reference</th>
-                <th>Request</th>
-                <th>State</th>
-                <th>Pending opinions</th>
-                <th>Rejected opinions</th>
-                <th>Open</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((row) => (
-                <tr key={row.id} className="border-t">
-                  <td className="py-3">TI-{row.id}</td>
-                  <td>#{row.maintenance_ref_number || row.request_id}</td>
-                  <td>{row.status}</td>
-                  <td>{row.pending_count}</td>
-                  <td>{row.rejected_count}</td>
-                  <td>
-                    <button
-                      disabled={busy}
-                      className="text-blue-700 underline"
-                      onClick={() =>
-                        action(async () => {
-                          adopt(
-                            await api.getPreprocurementReview(row.id),
-                            schema,
-                          );
-                          setParams({ review: row.id });
-                        })
-                      }
-                    >
-                      Review TI-{row.id}
-                    </button>
-                  </td>
+      {!detail && (
+        <section className="rounded-xl border bg-white p-4">
+          <h2 className="font-semibold">
+            {schema?.can_manage
+              ? "Technical review register"
+              : "My assigned technical reviews"}
+          </h2>
+          {!records.length && (
+            <p className="mt-3 text-slate-600">No reviews found.</p>
+          )}
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Request</th>
+                  <th>State</th>
+                  <th>Pending opinions</th>
+                  <th>Rejected opinions</th>
+                  <th>Open</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody>
+                {records.map((row) => (
+                  <tr key={row.id} className="border-t">
+                    <td className="py-3">TI-{row.id}</td>
+                    <td>#{row.maintenance_ref_number || row.request_id}</td>
+                    <td>{row.status}</td>
+                    <td>{row.pending_count}</td>
+                    <td>{row.rejected_count}</td>
+                    <td>
+                      <button
+                        disabled={busy}
+                        className="text-blue-700 underline"
+                        onClick={() =>
+                          action(async () => {
+                            adopt(
+                              await api.getPreprocurementReview(row.id),
+                              schema,
+                            );
+                            setParams({ review: row.id });
+                          })
+                        }
+                      >
+                        Review TI-{row.id}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       {detail && (
         <section
           id="technical-review-record"
@@ -583,7 +601,7 @@ export default function PreprocurementTechnicalReviewsPage() {
           <div className="flex flex-wrap justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold">
-                Technical Inspection · TI-{detail.id}
+                Technical Review · TR-{detail.id}
               </h2>
               <p>
                 Request #{detail.maintenance_ref_number || detail.request_id} ·{" "}
@@ -667,36 +685,57 @@ export default function PreprocurementTechnicalReviewsPage() {
                     }
                     : {report.decision}
                   </summary>
-                  <p>
-                    Inspection: {report.inspection_date}{" "}
-                    {report.inspection_time} · Overall:{" "}
-                    {report.overall_condition}
-                  </p>
-                  <table className="my-2 w-full text-left text-sm">
-                    <thead>
-                      <tr>
-                        <th>Check</th>
-                        <th>Condition</th>
-                        <th>Comments</th>
-                        <th>Action required</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(report.checklist).map(([key, value]) => (
-                        <tr key={key}>
-                          <td>{label(key)}</td>
-                          <td>{label(value.condition)}</td>
-                          <td>{value.comment}</td>
-                          <td>{value.action_required}</td>
-                        </tr>
+                  {report.assessment && (
+                    <dl className="my-3 grid gap-2 sm:grid-cols-3">
+                      {Object.entries(report.assessment).map(([key, value]) => (
+                        <div key={key}>
+                          <dt className="font-medium">{label(key)}</dt>
+                          <dd>{label(value)}</dd>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                  <p>{report.findings}</p>
-                  <p>Immediate actions: {report.immediate_actions || "—"}</p>
+                    </dl>
+                  )}
                   <p>
-                    Recommended actions: {report.recommended_actions || "—"}
+                    Inspection:{" "}
+                    {report.assessed_at
+                      ? new Date(report.assessed_at).toLocaleString()
+                      : report.inspection_date}{" "}
+                    {report.inspection_time}
+                    {report.overall_condition
+                      ? ` · Overall: ${report.overall_condition}`
+                      : ""}
                   </p>
+                  {report.assessment_version !== 2 && (
+                    <table className="my-2 w-full text-left text-sm">
+                      <thead>
+                        <tr>
+                          <th>Check</th>
+                          <th>Condition</th>
+                          <th>Comments</th>
+                          <th>Action required</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(report.checklist).map(
+                          ([key, value]) => (
+                            <tr key={key}>
+                              <td>{label(key)}</td>
+                              <td>{label(value.condition)}</td>
+                              <td>{value.comment}</td>
+                              <td>{value.action_required}</td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                  <p>{report.findings}</p>
+                  {report.immediate_actions && (
+                    <p>Immediate actions: {report.immediate_actions}</p>
+                  )}
+                  {report.recommended_actions && (
+                    <p>Recommended actions: {report.recommended_actions}</p>
+                  )}
                   <p>{report.additional_comments}</p>
                 </details>
               ))}
@@ -726,9 +765,10 @@ export default function PreprocurementTechnicalReviewsPage() {
                 My departmental inspection report
               </h3>
               <p className="text-sm text-slate-600">
-                Use Not assessed for checks the evidence cannot support and Not
-                applicable only when the check does not apply. Your account and
-                submission time identify the inspector.
+                Review the information above, assess technical suitability and
+                record your decision. Your authenticated account and submission
+                time identify the reviewer. Technical approval does not
+                authorize spending.
               </p>
               {reports.map((report, index) => (
                 <fieldset
@@ -738,141 +778,199 @@ export default function PreprocurementTechnicalReviewsPage() {
                   <legend>
                     {detail.item_packets[index].snapshot.item_name}
                   </legend>
-                  <div className="flex flex-wrap gap-3">
-                    <label>
-                      Inspection date
-                      <input
-                        required
-                        type="date"
-                        className={`${inputClass} block`}
-                        value={report.inspection_date}
-                        onChange={(event) =>
-                          changeReport(
-                            index,
-                            "inspection_date",
-                            event.target.value,
-                          )
-                        }
-                      />
-                    </label>
-                    <label>
-                      Inspection time
-                      <input
-                        required
-                        type="time"
-                        className={`${inputClass} block`}
-                        value={report.inspection_time}
-                        onChange={(event) =>
-                          changeReport(
-                            index,
-                            "inspection_time",
-                            event.target.value,
-                          )
-                        }
-                      />
-                    </label>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr>
-                          <th>Inspection item</th>
-                          <th>Condition</th>
-                          <th>Comments / details</th>
-                          <th>Action required</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(schema.checklist).map(
+                  {schema.assessment ? (
+                    <>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        {Object.entries(schema.assessment).map(
                           ([key, choices]) => (
-                            <tr key={key}>
-                              <th className="py-2 font-normal">{label(key)}</th>
-                              <td>
-                                <select
-                                  required
-                                  aria-label={`${label(key)} condition ${report.item_id}`}
-                                  className={inputClass}
-                                  value={report.checklist[key].condition}
-                                  onChange={(event) =>
-                                    changeCheck(
-                                      index,
-                                      key,
-                                      "condition",
-                                      event.target.value,
-                                    )
-                                  }
-                                >
-                                  <option value="">Select</option>
-                                  {choices.map((choice) => (
-                                    <option key={choice} value={choice}>
-                                      {label(choice)}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              {["comment", "action_required"].map((field) => (
-                                <td key={field}>
-                                  <input
-                                    aria-label={`${label(key)} ${field} ${report.item_id}`}
-                                    className={inputClass}
-                                    value={report.checklist[key][field]}
-                                    onChange={(event) =>
-                                      changeCheck(
-                                        index,
-                                        key,
-                                        field,
-                                        event.target.value,
-                                      )
-                                    }
-                                  />
-                                </td>
-                              ))}
-                            </tr>
+                            <label key={key}>
+                              {{
+                                specifications:
+                                  "Compliance with required specifications",
+                                compatibility:
+                                  "Compatibility with existing systems",
+                                suitability: "Suitability for intended use",
+                              }[key] || label(key)}
+                              <select
+                                required
+                                aria-label={`${label(key)} assessment ${report.item_id}`}
+                                className={`${inputClass} block w-full`}
+                                value={report.assessment[key]}
+                                onChange={(event) =>
+                                  changeReport(index, "assessment", {
+                                    ...report.assessment,
+                                    [key]: event.target.value,
+                                  })
+                                }
+                              >
+                                <option value="">Select assessment</option>
+                                {choices.map((value) => (
+                                  <option key={value} value={value}>
+                                    {label(value)}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
                           ),
                         )}
-                      </tbody>
-                    </table>
-                  </div>
-                  <label className="block">
-                    Overall condition
-                    <select
-                      required
-                      className={`${inputClass} ml-3`}
-                      value={report.overall_condition}
-                      onChange={(event) =>
-                        changeReport(
-                          index,
-                          "overall_condition",
-                          event.target.value,
-                        )
-                      }
-                    >
-                      <option value="">Select</option>
-                      {["excellent", "good", "fair", "poor"].map((value) => (
-                        <option key={value} value={value}>
-                          {label(value)}
-                        </option>
+                      </div>
+                      <label className="block">
+                        Comments / corrective action
+                        <textarea
+                          required={report.decision !== "APPROVED"}
+                          className={`${inputClass} block w-full`}
+                          value={report.findings}
+                          onChange={(event) =>
+                            changeReport(index, "findings", event.target.value)
+                          }
+                        />
+                      </label>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-3">
+                        <label>
+                          Inspection date
+                          <input
+                            required
+                            type="date"
+                            className={`${inputClass} block`}
+                            value={report.inspection_date}
+                            onChange={(event) =>
+                              changeReport(
+                                index,
+                                "inspection_date",
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </label>
+                        <label>
+                          Inspection time
+                          <input
+                            required
+                            type="time"
+                            className={`${inputClass} block`}
+                            value={report.inspection_time}
+                            onChange={(event) =>
+                              changeReport(
+                                index,
+                                "inspection_time",
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead>
+                            <tr>
+                              <th>Inspection item</th>
+                              <th>Condition</th>
+                              <th>Comments / details</th>
+                              <th>Action required</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Object.entries(schema.checklist).map(
+                              ([key, choices]) => (
+                                <tr key={key}>
+                                  <th className="py-2 font-normal">
+                                    {label(key)}
+                                  </th>
+                                  <td>
+                                    <select
+                                      required
+                                      aria-label={`${label(key)} condition ${report.item_id}`}
+                                      className={inputClass}
+                                      value={report.checklist[key].condition}
+                                      onChange={(event) =>
+                                        changeCheck(
+                                          index,
+                                          key,
+                                          "condition",
+                                          event.target.value,
+                                        )
+                                      }
+                                    >
+                                      <option value="">Select</option>
+                                      {choices.map((choice) => (
+                                        <option key={choice} value={choice}>
+                                          {label(choice)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </td>
+                                  {["comment", "action_required"].map(
+                                    (field) => (
+                                      <td key={field}>
+                                        <input
+                                          aria-label={`${label(key)} ${field} ${report.item_id}`}
+                                          className={inputClass}
+                                          value={report.checklist[key][field]}
+                                          onChange={(event) =>
+                                            changeCheck(
+                                              index,
+                                              key,
+                                              field,
+                                              event.target.value,
+                                            )
+                                          }
+                                        />
+                                      </td>
+                                    ),
+                                  )}
+                                </tr>
+                              ),
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      <label className="block">
+                        Overall condition
+                        <select
+                          required
+                          className={`${inputClass} ml-3`}
+                          value={report.overall_condition}
+                          onChange={(event) =>
+                            changeReport(
+                              index,
+                              "overall_condition",
+                              event.target.value,
+                            )
+                          }
+                        >
+                          <option value="">Select</option>
+                          {["excellent", "good", "fair", "poor"].map(
+                            (value) => (
+                              <option key={value} value={value}>
+                                {label(value)}
+                              </option>
+                            ),
+                          )}
+                        </select>
+                      </label>
+                      {[
+                        "findings",
+                        "immediate_actions",
+                        "recommended_actions",
+                        "additional_comments",
+                      ].map((key) => (
+                        <label key={key} className="block">
+                          {label(key)}
+                          <textarea
+                            required={key === "findings"}
+                            className={`${inputClass} block w-full`}
+                            value={report[key]}
+                            onChange={(event) =>
+                              changeReport(index, key, event.target.value)
+                            }
+                          />
+                        </label>
                       ))}
-                    </select>
-                  </label>
-                  {[
-                    "findings",
-                    "immediate_actions",
-                    "recommended_actions",
-                    "additional_comments",
-                  ].map((key) => (
-                    <label key={key} className="block">
-                      {label(key)}
-                      <textarea
-                        required={key === "findings"}
-                        className={`${inputClass} block w-full`}
-                        value={report[key]}
-                        onChange={(event) =>
-                          changeReport(index, key, event.target.value)
-                        }
-                      />
-                    </label>
-                  ))}
+                    </>
+                  )}
                   <label>
                     Technical recommendation
                     <select
