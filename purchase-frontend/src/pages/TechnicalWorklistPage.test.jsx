@@ -41,6 +41,7 @@ beforeEach(() => {
 test("the landing page is a scoped worklist, not an empty inspection form", async () => {
   mount();
   await screen.findByText("Patient monitor");
+  expect(screen.getByLabelText("Technical review status")).toBeInTheDocument();
   expect(screen.queryByLabelText("Request ID")).not.toBeInTheDocument();
   expect(screen.queryByText("New inspection")).not.toBeInTheDocument();
   expect(screen.getByLabelText("Awaiting My Review count")).toHaveTextContent(

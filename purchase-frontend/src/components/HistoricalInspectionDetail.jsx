@@ -103,7 +103,10 @@ export default function HistoricalInspectionDetail({ id }) {
             )}
           </section>
           <section className="rounded-xl border bg-white p-5 dark:bg-slate-800">
-            <h2 className="text-lg font-semibold">Recorded decision</h2>
+            <h2 className="text-lg font-semibold">Technical inspection status</h2>
+            <p className="text-sm text-slate-500">
+              Inspection evidence only. Request completion and procurement status are managed separately.
+            </p>
             <p>
               {{ passed: "Accepted", failed: "Rejected", pending: "Pending" }[
                 record.acceptance_status

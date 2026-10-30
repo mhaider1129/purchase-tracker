@@ -385,6 +385,7 @@ const TechnicalInspectionsPage = () => {
         inspection.approvals && typeof inspection.approvals === "object"
           ? inspection.approvals
           : {},
+      expected_updated_at: inspection.updated_at,
       acceptance_status: inspection.acceptance_status || "pending",
       acceptance_notes: inspection.acceptance_notes || "",
     });
@@ -747,8 +748,8 @@ const TechnicalInspectionsPage = () => {
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
                       <span className="text-xs text-gray-500 dark:text-gray-300">
-                        Required so the request status reflects inspection
-                        progress.
+                        Links inspection evidence only. Saving an inspection does not
+                        complete or reopen the request, release stock, or close procurement.
                       </span>
                     </label>
 
@@ -833,7 +834,7 @@ const TechnicalInspectionsPage = () => {
                             {linkedRequest.data.request.request_type || ""}
                           </p>
                           <p className="text-xs text-gray-600 dark:text-gray-300">
-                            Status: {linkedRequest.data.request.status || ""}
+                            Request completion status: {linkedRequest.data.request.status || ""}
                           </p>
                         </div>
                         <div>
@@ -1374,7 +1375,7 @@ const TechnicalInspectionsPage = () => {
                       Overall condition
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Acceptance
+                      Technical inspection status
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                       Actions
