@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
+import DeliveryInspectionDetail from "../components/DeliveryInspectionDetail";
 import HistoricalInspectionDetail from "../components/HistoricalInspectionDetail";
 import { getTechnicalWorklist } from "../api/technicalInspections";
 export {
@@ -79,6 +80,8 @@ export default function TechnicalInspectionsPage() {
         replace
       />
     );
+  if (params.get("delivery"))
+    return <DeliveryInspectionDetail id={params.get("delivery")} />;
   if (params.get("inspection"))
     return <HistoricalInspectionDetail id={params.get("inspection")} />;
   return (
@@ -93,6 +96,7 @@ export default function TechnicalInspectionsPage() {
           records through acceptance.
         </p>
         <div className="mt-5 flex flex-wrap gap-4">
+          {data?.can_manage && <Link className="rounded border border-white/40 px-4 py-2" to="/technical-inspections/settings">Technical responsibilities</Link>}
           {data?.can_manage && (
             <Link
               className="rounded bg-white px-4 py-2 font-semibold text-indigo-900"
@@ -133,6 +137,7 @@ export default function TechnicalInspectionsPage() {
           >
             <option value="">All types</option>
             <option value="PRE_PROCUREMENT">Pre-procurement review</option>
+            <option value="DELIVERY_INSPECTION">Delivery inspection</option>
             <option value="LEGACY_INSPECTION">Historical inspection</option>
           </select>
         </label>
@@ -308,14 +313,21 @@ export default function TechnicalInspectionsPage() {
                     <td className="px-4 py-4">
                       {row.reference}
                       <span className="block text-xs text-slate-500">
-                        {row.type === "PRE_PROCUREMENT" ? "TR" : "TI"}-{row.id}
+                        {row.type === "PRE_PROCUREMENT"
+                          ? "TR"
+                          : row.type === "DELIVERY_INSPECTION"
+                            ? "DI"
+                            : "TI"}
+                        -{row.id}
                       </span>
                     </td>
                     <td className="max-w-sm px-4 py-4">{row.item_name}</td>
                     <td className="px-4 py-4">
                       {row.type === "PRE_PROCUREMENT"
                         ? "Pre-procurement review"
-                        : "Historical inspection"}
+                        : row.type === "DELIVERY_INSPECTION"
+                          ? "Delivery inspection"
+                          : "Historical inspection"}
                     </td>
                     <td className="px-4 py-4">
                       {row.assigned_department || "Not assigned"}
@@ -332,7 +344,9 @@ export default function TechnicalInspectionsPage() {
                         to={
                           row.type === "PRE_PROCUREMENT"
                             ? `/technical-inspections/pre-procurement?review=${row.id}`
-                            : `/technical-inspections?inspection=${row.id}`
+                            : row.type === "DELIVERY_INSPECTION"
+                              ? `/technical-inspections?delivery=${row.id}`
+                              : `/technical-inspections?inspection=${row.id}`
                         }
                       >
                         {row.status === "COMPLETED"

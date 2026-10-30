@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import * as api from "../api/preprocurementTechnicalReviews";
+import { generateRequiredReview } from "../api/technicalWorkflow";
 import useRequestAttachments from "../hooks/useRequestAttachments";
 
 const label = (key) =>
@@ -24,6 +25,7 @@ const newReport = (packet, schema) =>
     ? {
         item_id: packet.item_id,
         assessment_version: 2,
+        extra_assessment: {},
         decision: "",
         findings: "",
         assessment: Object.fromEntries(
@@ -50,6 +52,14 @@ const newReport = (packet, schema) =>
 
 export default function PreprocurementTechnicalReviewsPage() {
   const [params, setParams] = useSearchParams();
+  const [proposals, setProposals] = useState({
+    suppliers: [],
+    products: [],
+    quotations: [],
+  });
+  const [revisionPackets, setRevisionPackets] = useState([]),
+    [revisionNotes, setRevisionNotes] = useState(""),
+    [revisionFiles, setRevisionFiles] = useState([]);
   const [schema, setSchema] = useState(null),
     [records, setRecords] = useState([]),
     [detail, setDetail] = useState(null);
@@ -75,6 +85,17 @@ export default function PreprocurementTechnicalReviewsPage() {
   const adopt = useCallback((review, meta) => {
     openedReview.current = String(review.id);
     setDetail(review);
+    setRevisionPackets(
+      review.item_packets.map((p) => ({
+        item_id: p.item_id,
+        evidence: {
+          ...p.evidence,
+          ...(p.awaiting_proposal ? { no_sample_reason: "" } : {}),
+        },
+      })),
+    );
+    setRevisionFiles(review.attachments || []);
+    setRevisionNotes("");
     setReports(review.item_packets.map((packet) => newReport(packet, meta)));
     setNotes("");
   }, []);
@@ -100,6 +121,10 @@ export default function PreprocurementTechnicalReviewsPage() {
           setRequests(eligible);
           setDirectory(users);
           setPolicy(setting);
+          if (meta.workflow_available) {
+            const options = await api.proposalDirectory();
+            if (active) setProposals(options);
+          }
         }
         const id = params.get("review");
         if (id) {
@@ -147,7 +172,7 @@ export default function PreprocurementTechnicalReviewsPage() {
         selected: true,
         evidence: {
           basis: "sample",
-          category: "Other",
+          category: item.technical_category || "Other",
           supplier_name: "",
           manufacturer: "",
           model_number: "",
@@ -191,7 +216,9 @@ export default function PreprocurementTechnicalReviewsPage() {
     (row) => String(row.reviewer_id) === String(detail.current_user_id),
   );
   const canSubmit =
-    detail?.status === "IN_REVIEW" && assignment?.status === "PENDING";
+    detail?.status === "IN_REVIEW" &&
+    ["PENDING", "IN_PROGRESS"].includes(assignment?.status) &&
+    !detail.item_packets.some((p) => p.awaiting_proposal);
   if (loading) return <main className="p-6">Loading technical reviews…</main>;
   return (
     <main className="mx-auto max-w-7xl space-y-6 p-6">
@@ -289,6 +316,27 @@ export default function PreprocurementTechnicalReviewsPage() {
               });
             }}
           >
+            {schema.workflow_available && (
+              <button
+                type="button"
+                disabled={busy || !requestId}
+                className="text-indigo-700 underline"
+                onClick={() =>
+                  action(async () => {
+                    const review = await generateRequiredReview(requestId);
+                    if (review) {
+                      adopt(review, schema);
+                      setParams({ review: review.id });
+                    } else
+                      setSuccess(
+                        "No new required review was generated. Check the configured profiles or open the existing review.",
+                      );
+                  })
+                }
+              >
+                Generate configured review for the selected request
+              </button>
+            )}
             <label className="block">
               Approved request
               <select
@@ -460,6 +508,76 @@ export default function PreprocurementTechnicalReviewsPage() {
                           }
                         />
                       </label>
+                    )}
+                    {schema.workflow_available && (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label>
+                          Quotation under review (optional)
+                          <select
+                            className={inputClass}
+                            value={packet.evidence.quotation_item_id || ""}
+                            onChange={(e) =>
+                              evidence(
+                                index,
+                                "quotation_item_id",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">No quotation selected</option>
+                            {(proposals.quotations || [])
+                              .filter(
+                                (q) =>
+                                  String(q.requested_item_id) ===
+                                  String(packet.item_id),
+                              )
+                              .map((q) => (
+                                <option key={q.id} value={q.id}>
+                                  {q.supplier_name} · {q.item_name} · quotation
+                                  line {q.id}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <label>
+                          Proposed supplier
+                          <select
+                            className={inputClass}
+                            value={packet.evidence.supplier_id || ""}
+                            onChange={(e) =>
+                              evidence(index, "supplier_id", e.target.value)
+                            }
+                          >
+                            <option value="">Requirements-only review</option>
+                            {proposals.suppliers.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label>
+                          Proposed approved product (optional)
+                          <select
+                            className={inputClass}
+                            value={packet.evidence.approved_product_id || ""}
+                            onChange={(e) =>
+                              evidence(
+                                index,
+                                "approved_product_id",
+                                e.target.value,
+                              )
+                            }
+                          >
+                            <option value="">No catalogued product</option>
+                            {proposals.products.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.product_name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
                     )}
                     <div>
                       <p>Documents for this item</p>
@@ -741,6 +859,33 @@ export default function PreprocurementTechnicalReviewsPage() {
               ))}
             </article>
           ))}
+          {detail.item_packets.some((p) => p.awaiting_proposal) && (
+            <p role="status" className="rounded bg-amber-50 p-3 text-amber-900">
+              This required task was generated from the approved request.
+              Procurement must prepare the proposed product and evidence before
+              technical assessment.
+            </p>
+          )}
+          {schema.workflow_available &&
+            canSubmit &&
+            assignment.status === "PENDING" && (
+              <button
+                disabled={busy}
+                className="rounded border p-2"
+                onClick={() =>
+                  action(async () =>
+                    adopt(
+                      await api.startTechnicalReview(detail.id, {
+                        row_version: detail.row_version,
+                      }),
+                      schema,
+                    ),
+                  )
+                }
+              >
+                Start technical review
+              </button>
+            )}
           {canSubmit && (
             <form
               className="space-y-4"
@@ -814,6 +959,34 @@ export default function PreprocurementTechnicalReviewsPage() {
                           ),
                         )}
                       </div>
+                      {(
+                        detail.item_packets[index].assessment_policy
+                          ?.pre_checks || []
+                      ).map((key) => (
+                        <label key={key} className="block">
+                          {label(key)}
+                          <select
+                            required
+                            className={inputClass}
+                            value={report.extra_assessment?.[key] || ""}
+                            onChange={(e) =>
+                              changeReport(index, "extra_assessment", {
+                                ...report.extra_assessment,
+                                [key]: e.target.value,
+                              })
+                            }
+                          >
+                            <option value="">Select assessment</option>
+                            {(schema.extra_assessment_choices?.[key] || []).map(
+                              (v) => (
+                                <option key={v} value={v}>
+                                  {label(v)}
+                                </option>
+                              ),
+                            )}
+                          </select>
+                        </label>
+                      ))}
                       <label className="block">
                         Comments / corrective action
                         <textarea
@@ -984,6 +1157,17 @@ export default function PreprocurementTechnicalReviewsPage() {
                     >
                       <option value="">Select</option>
                       <option value="APPROVED">Approve for procurement</option>
+                      {schema.workflow_available && (
+                        <>
+                          <option value="CONDITIONAL">
+                            Approve with conditions — blocks purchase until
+                            resolved
+                          </option>
+                          <option value="CLARIFICATION">
+                            Request clarification — blocks purchase
+                          </option>
+                        </>
+                      )}
                       <option value="REJECTED">
                         Reject / revise proposed item
                       </option>
@@ -998,6 +1182,325 @@ export default function PreprocurementTechnicalReviewsPage() {
                 Submit departmental opinion and attest
               </button>
             </form>
+          )}
+          {schema.workflow_available &&
+            detail.can_manage &&
+            detail.status === "IN_REVIEW" && (
+              <details className="rounded border p-4">
+                <summary>
+                  Revise proposal / resolve conditions or clarification
+                </summary>
+                <p className="my-3 text-sm">
+                  A revision starts a new opinion round for every reviewer.
+                  Previous opinions and product evidence stay in immutable
+                  history; this action does not grant clearance.
+                </p>
+                <label>
+                  Revision reason
+                  <textarea
+                    className={`${inputClass} block w-full`}
+                    value={revisionNotes}
+                    onChange={(e) => setRevisionNotes(e.target.value)}
+                  />
+                </label>
+                {revisionPackets.map((packet, index) => (
+                  <fieldset
+                    className="my-3 space-y-3 rounded border p-3"
+                    key={packet.item_id}
+                  >
+                    <legend>
+                      {detail.item_packets[index].snapshot.item_name}
+                    </legend>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label>
+                        Review basis
+                        <select
+                          className={inputClass}
+                          value={packet.evidence.basis}
+                          onChange={(e) =>
+                            setRevisionPackets((old) =>
+                              old.map((v, n) =>
+                                n === index
+                                  ? {
+                                      ...v,
+                                      evidence: {
+                                        ...v.evidence,
+                                        basis: e.target.value,
+                                        ...(e.target.value === "sample"
+                                          ? { no_sample_reason: "" }
+                                          : {}),
+                                      },
+                                    }
+                                  : v,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="sample">Physical sample</option>
+                          <option value="data_sheet">Data sheet</option>
+                          <option value="description">Description</option>
+                        </select>
+                      </label>
+                      <label>
+                        Review category
+                        <select
+                          className={inputClass}
+                          value={packet.evidence.category}
+                          onChange={(e) =>
+                            setRevisionPackets((old) =>
+                              old.map((v, n) =>
+                                n === index
+                                  ? {
+                                      ...v,
+                                      evidence: {
+                                        ...v.evidence,
+                                        category: e.target.value,
+                                      },
+                                    }
+                                  : v,
+                              ),
+                            )
+                          }
+                        >
+                          {schema.categories.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    {packet.evidence.basis === "sample" && (
+                      <label className="block">
+                        Sample received date
+                        <input
+                          type="date"
+                          className={inputClass}
+                          value={packet.evidence.sample_received_date || ""}
+                          onChange={(e) =>
+                            setRevisionPackets((old) =>
+                              old.map((v, n) =>
+                                n === index
+                                  ? {
+                                      ...v,
+                                      evidence: {
+                                        ...v.evidence,
+                                        sample_received_date: e.target.value,
+                                      },
+                                    }
+                                  : v,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    )}
+                    <label className="block">
+                      Quotation under review (optional)
+                      <select
+                        className={inputClass}
+                        value={packet.evidence.quotation_item_id || ""}
+                        onChange={(e) =>
+                          setRevisionPackets((old) =>
+                            old.map((v, n) =>
+                              n === index
+                                ? {
+                                    ...v,
+                                    evidence: {
+                                      ...v.evidence,
+                                      quotation_item_id: e.target.value || null,
+                                    },
+                                  }
+                                : v,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="">No quotation selected</option>
+                        {(proposals.quotations || [])
+                          .filter(
+                            (q) =>
+                              String(q.requested_item_id) ===
+                              String(packet.item_id),
+                          )
+                          .map((q) => (
+                            <option key={q.id} value={q.id}>
+                              {q.supplier_name} · {q.item_name} · quotation line{" "}
+                              {q.id}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                    {["supplier_id", "approved_product_id"].map((k) => (
+                      <label key={k} className="block">
+                        {k === "supplier_id"
+                          ? "Proposed supplier"
+                          : "Proposed approved product (optional)"}
+                        <select
+                          className={inputClass}
+                          value={packet.evidence[k] || ""}
+                          onChange={(e) =>
+                            setRevisionPackets((old) =>
+                              old.map((v, n) =>
+                                n === index
+                                  ? {
+                                      ...v,
+                                      evidence: {
+                                        ...v.evidence,
+                                        [k]: e.target.value || null,
+                                      },
+                                    }
+                                  : v,
+                              ),
+                            )
+                          }
+                        >
+                          <option value="">
+                            {k === "supplier_id"
+                              ? "Requirements-only review"
+                              : "No catalogued product"}
+                          </option>
+                          {(k === "supplier_id"
+                            ? proposals.suppliers
+                            : proposals.products
+                          ).map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.name || v.product_name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                    {[
+                      "manufacturer",
+                      "model_number",
+                      "evidence_description",
+                      "no_sample_reason",
+                    ].map((k) => (
+                      <label key={k} className="block">
+                        {label(k)}
+                        <textarea
+                          className={`${inputClass} block w-full`}
+                          value={packet.evidence[k] || ""}
+                          onChange={(e) =>
+                            setRevisionPackets((old) =>
+                              old.map((v, n) =>
+                                n === index
+                                  ? {
+                                      ...v,
+                                      evidence: {
+                                        ...v.evidence,
+                                        [k]: e.target.value,
+                                      },
+                                    }
+                                  : v,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    ))}
+                    <p>Supporting documents</p>
+                    {revisionFiles.map((f) => (
+                      <label key={f.id} className="mr-3 inline-block">
+                        <input
+                          type="checkbox"
+                          checked={(packet.evidence.attachment_ids || [])
+                            .map(String)
+                            .includes(String(f.id))}
+                          onChange={(e) =>
+                            setRevisionPackets((old) =>
+                              old.map((v, n) =>
+                                n === index
+                                  ? {
+                                      ...v,
+                                      evidence: {
+                                        ...v.evidence,
+                                        attachment_ids: e.target.checked
+                                          ? [
+                                              ...(v.evidence.attachment_ids ||
+                                                []),
+                                              f.id,
+                                            ]
+                                          : (
+                                              v.evidence.attachment_ids || []
+                                            ).filter(
+                                              (id) =>
+                                                String(id) !== String(f.id),
+                                            ),
+                                      },
+                                    }
+                                  : v,
+                              ),
+                            )
+                          }
+                        />{" "}
+                        {f.file_name}
+                      </label>
+                    ))}
+                  </fieldset>
+                ))}
+                <label className="block">
+                  Upload revised evidence
+                  <input
+                    type="file"
+                    disabled={busy}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file)
+                        action(async () => {
+                          await api.uploadReviewEvidence(
+                            detail.request_id,
+                            file,
+                          );
+                          setRevisionFiles(
+                            await api.requestEvidence(detail.request_id),
+                          );
+                        });
+                    }}
+                  />
+                </label>
+                <button
+                  disabled={busy || !revisionNotes.trim()}
+                  className="mt-3 rounded border p-2"
+                  onClick={() =>
+                    action(async () => {
+                      adopt(
+                        await api.reviseTechnicalReview(detail.id, {
+                          row_version: detail.row_version,
+                          notes: revisionNotes,
+                          items: revisionPackets,
+                        }),
+                        schema,
+                      );
+                      setSuccess(
+                        "New review round started. Previous attestations remain in history.",
+                      );
+                    })
+                  }
+                >
+                  Save revised proposal and request new opinions
+                </button>
+              </details>
+            )}
+          {detail.history?.length > 0 && (
+            <details className="rounded border p-4">
+              <summary>Decision and proposal history</summary>
+              {detail.history.map((h) => (
+                <article key={h.id} className="my-3 border-b p-2">
+                  <p>
+                    {label(h.action)} ·{" "}
+                    {new Date(h.created_at).toLocaleString()}
+                  </p>
+                  <p>{h.payload.notes}</p>
+                  {h.payload.assignment?.reports?.map((r) => (
+                    <p key={r.item_id}>
+                      {r.decision}: {r.findings}
+                    </p>
+                  ))}
+                </article>
+              ))}
+            </details>
           )}
           {detail.can_manage && detail.status === "IN_REVIEW" && (
             <div className="scm-actions space-y-3 rounded border border-indigo-200 p-4">

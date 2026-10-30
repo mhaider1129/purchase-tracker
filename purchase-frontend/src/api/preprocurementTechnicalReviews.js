@@ -24,3 +24,6 @@ export const uploadReviewEvidence = (id, file) => {
   body.append("file", file);
   return data(api.post(`/attachments/${id}`, body));
 };
+export const reviseTechnicalReview=(id,input)=>data(api.post(`${base}/${id}/revise`,input));
+export const startTechnicalReview=(id,input)=>data(api.post(`${base}/${id}/start`,input));
+export const proposalDirectory=()=>data(api.get(`${base}/proposals`));
