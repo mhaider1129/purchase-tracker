@@ -377,3 +377,107 @@ test("a cancelled procedure can prepare a zero-use return reconciliation without
     ),
   );
 });
+
+test("new request shortcut opens the grouped form and range removal preserves the remaining draft", async () => {
+  api.schema.mockResolvedValue({
+    ...meta,
+    can_create: true,
+    current_user_id: 1,
+  });
+  mount("/");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "New request", exact: true }),
+  );
+  expect(
+    screen.getByRole("form", { name: "Surgical consignment request" }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("group", { name: /Case details/ }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("group", { name: /Vendor agreement/ }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("group", { name: /Team and authorization/ }),
+  ).toBeInTheDocument();
+  fireEvent.change(
+    screen.getByLabelText("Surgical department", { exact: true }),
+    { target: { value: "1" } },
+  );
+  fireEvent.change(screen.getByLabelText("Vendor", { exact: true }), {
+    target: { value: "9" },
+  });
+  fireEvent.change(screen.getByLabelText("Requested item_name 1"), {
+    target: { value: "Retained range" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Add requested range" }));
+  expect(screen.getByLabelText("Requested item_name 2")).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Remove requested range 2" }),
+  );
+  expect(
+    screen.queryByLabelText("Requested item_name 2"),
+  ).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Requested item_name 1")).toHaveValue(
+    "Retained range",
+  );
+  expect(
+    screen.queryByRole("button", { name: "Remove requested range 1" }),
+  ).not.toBeInTheDocument();
+  expect(api.create).not.toHaveBeenCalled();
+  expect(api.action).not.toHaveBeenCalled();
+});
+
+test("queue status and search can be cleared without workflow mutations", async () => {
+  api.list.mockResolvedValue([
+    { ...record },
+    { ...record, id: 8, status: "AUTHORIZED" },
+  ]);
+  mount("/");
+  await screen.findByRole("button", { name: "Open SC-7" });
+  fireEvent.change(screen.getByLabelText("Queue status"), {
+    target: { value: "AUTHORIZED" },
+  });
+  expect(
+    screen.queryByRole("button", { name: "Open SC-7" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Open SC-8" })).toBeInTheDocument();
+  api.list.mockResolvedValueOnce([{ ...record }]);
+  fireEvent.change(
+    screen.getByRole("textbox", { name: "Search surgical consignments" }),
+    { target: { value: "Company" } },
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Search", exact: true }));
+  await waitFor(() => expect(api.list).toHaveBeenCalledWith("Company"));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Search", exact: true }),
+    ).toBeEnabled(),
+  );
+  expect(screen.getByLabelText("Queue status")).toHaveValue("AUTHORIZED");
+  expect(
+    screen.getByText(
+      "No consignments match the current search and status filters.",
+    ),
+  ).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clear search and filters" }),
+  );
+  await screen.findByRole("button", { name: "Open SC-7" });
+  expect(screen.getByLabelText("Queue status")).toHaveValue("");
+  expect(api.list).toHaveBeenLastCalledWith("");
+  expect(api.create).not.toHaveBeenCalled();
+  expect(api.action).not.toHaveBeenCalled();
+});
+
+test("read-only queue does not expose the creation form or patient identifiers", async () => {
+  mount("/");
+  await screen.findByRole("button", { name: "Open SC-7" });
+  expect(
+    screen.queryByRole("button", { name: "New request", exact: true }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("form", { name: "Surgical consignment request" }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByText(record.patient_mrn)).not.toBeInTheDocument();
+});
