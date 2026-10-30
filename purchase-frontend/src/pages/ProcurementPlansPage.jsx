@@ -1,3 +1,4 @@
+import { openProtectedFile } from '../api/attachments';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
@@ -254,14 +255,13 @@ const ProcurementPlansPage = () => {
                 <td className="px-4 py-3 text-sm text-gray-600">{uploadedOn}</td>
                 <td className="px-4 py-3 text-sm">
                   {canDownload ? (
-                    <a
-                      href={downloadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openProtectedFile(downloadUrl, plan.file_name || 'plan', true).catch(() => setError('Unable to download plan'))}
                       className="text-blue-600 hover:text-blue-700 font-semibold"
                     >
                       View
-                    </a>
+                    </button>
                   ) : (
                     <span className="text-gray-400">Unavailable</span>
                   )}
