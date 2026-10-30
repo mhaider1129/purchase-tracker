@@ -27,6 +27,50 @@ export default function DeviceDemosPage() {
     [eligible, setEligible] = useState([]),
     [directory, setDirectory] = useState([]),
     [options, setOptions] = useState({ suppliers: [], catalog: [] });
+  const [supplierLoading, setSupplierLoading] = useState(false),
+    [supplierError, setSupplierError] = useState("");
+  const supplierLoad = useRef(0);
+  const loadSupplierOptions = useCallback(async (workspaceId) => {
+    const load = ++supplierLoad.current;
+    setSupplierLoading(true);
+    setSupplierError("");
+    setOptions({ suppliers: [], catalog: [] });
+    try {
+      const result = await api.demoOptions(workspaceId);
+      if (!Array.isArray(result?.suppliers) || !Array.isArray(result?.catalog))
+        throw new Error(
+          "The supplier directory returned an invalid response. Reload suppliers.",
+        );
+      if (load !== supplierLoad.current) return;
+      setOptions(result);
+      setCandidate((current) => {
+        if (
+          current.supplier_id &&
+          !result.suppliers.some(
+            (supplier) => String(supplier.id) === String(current.supplier_id),
+          )
+        )
+          return { ...current, supplier_id: "", supplier_catalog_item_id: "" };
+        if (
+          current.supplier_catalog_item_id &&
+          !result.catalog.some(
+            (item) =>
+              String(item.id) === String(current.supplier_catalog_item_id) &&
+              String(item.supplier_id) === String(current.supplier_id),
+          )
+        )
+          return { ...current, supplier_catalog_item_id: "" };
+        return current;
+      });
+    } catch (e) {
+      if (load === supplierLoad.current)
+        setSupplierError(
+          e.response?.data?.message || e.message || "Unable to load suppliers.",
+        );
+    } finally {
+      if (load === supplierLoad.current) setSupplierLoading(false);
+    }
+  }, []);
   const [search, setSearch] = useState(params.get("request") || ""),
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
@@ -53,33 +97,36 @@ export default function DeviceDemosPage() {
     safety_findings: "",
   });
   const { handleDownloadAttachment } = useRequestAttachments();
-  const adopt = useCallback(async (w) => {
-    opened.current = String(w.id);
-    setDetail(w);
-    setNotes("");
-    setDemoId("");
-    setSelectedId("");
-    setAttachmentIds([]);
-    setDocumentIds([]);
-    setDocumentNote("");
-    setCandidate(emptyCandidate());
-    setReport({
-      scores: w.criteria.map((c) => ({ key: c.key, score: "", comment: "" })),
-      recommendation: "",
-      findings: "",
-      safety_findings: "",
-    });
-    if (w.can_coordinate) {
-      setOptions(await api.demoOptions(w.id));
-    }
-    if (
-      w.can_coordinate ||
-      w.reviewers.some(
-        (r) => String(r.reviewer_id) === String(w.current_user_id),
+  const adopt = useCallback(
+    async (w) => {
+      opened.current = String(w.id);
+      setDetail(w);
+      setNotes("");
+      setDemoId("");
+      setSelectedId("");
+      setAttachmentIds([]);
+      setDocumentIds([]);
+      setDocumentNote("");
+      setCandidate(emptyCandidate());
+      setReport({
+        scores: w.criteria.map((c) => ({ key: c.key, score: "", comment: "" })),
+        recommendation: "",
+        findings: "",
+        safety_findings: "",
+      });
+      if (w.can_coordinate) {
+        await loadSupplierOptions(w.id);
+      }
+      if (
+        w.can_coordinate ||
+        w.reviewers.some(
+          (r) => String(r.reviewer_id) === String(w.current_user_id),
+        )
       )
-    )
-      setAttachments(await api.demoEvidence(w.request_id));
-  }, []);
+        setAttachments(await api.demoEvidence(w.request_id));
+    },
+    [loadSupplierOptions],
+  );
   useEffect(() => {
     if (params.get("workspace") === opened.current && opened.current) return;
     let active = true;
@@ -207,7 +254,7 @@ export default function DeviceDemosPage() {
         <p className="text-sm text-cyan-200">DEVICE DEMONSTRATIONS</p>
         <h1 className="text-3xl font-bold">Device demo workspace</h1>
         <p className="mt-2">
-          Compare company demos, document trials and departmental evaluations,
+          Compare supplier demos, document trials and departmental evaluations,
           then obtain COO approval for the selected device.
         </p>
       </header>
@@ -412,7 +459,7 @@ export default function DeviceDemosPage() {
               <tr>
                 <th>Device / request</th>
                 <th>Status</th>
-                <th>Company demos</th>
+                <th>Supplier demos</th>
                 <th>Workspace</th>
               </tr>
             </thead>
@@ -599,21 +646,66 @@ export default function DeviceDemosPage() {
           {editable && detail.can_coordinate && (
             <details className="rounded border p-4">
               <summary className="cursor-pointer font-semibold">
-                Add a company demo
+                Add a supplier demo
               </summary>
               <form
                 className="mt-3 space-y-3"
                 onSubmit={(e) => {
                   e.preventDefault();
+                  if (
+                    supplierLoading ||
+                    supplierError ||
+                    !candidate.supplier_id
+                  )
+                    return;
                   act("candidate", candidate);
                 }}
               >
+                <div className="rounded border bg-slate-50 p-3">
+                  <p className="text-sm text-slate-600">
+                    Choose an existing supplier from the Suppliers directory. No
+                    separate company setup is needed.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={busy || supplierLoading}
+                    className="mt-2 rounded border px-3 py-2 text-sm disabled:opacity-40"
+                    onClick={() => loadSupplierOptions(detail.id)}
+                  >
+                    Reload suppliers
+                  </button>
+                  {supplierLoading && (
+                    <p role="status" className="mt-2 text-sm">
+                      Loading suppliers…
+                    </p>
+                  )}
+                  {supplierError && (
+                    <p role="alert" className="mt-2 text-sm text-red-700">
+                      {supplierError}
+                    </p>
+                  )}
+                  {!supplierLoading &&
+                    !supplierError &&
+                    !options.suppliers.length && (
+                      <p role="status" className="mt-2 text-sm text-amber-800">
+                        No eligible suppliers are available. Add or activate the
+                        supplier in the Suppliers directory, then reload.
+                        Suppliers assigned to another institute are excluded.
+                      </p>
+                    )}
+                </div>
                 <label className="block">
-                  Company
+                  Supplier
                   <select
                     required
                     className={`${css} block w-full`}
                     value={candidate.supplier_id}
+                    disabled={
+                      busy ||
+                      supplierLoading ||
+                      Boolean(supplierError) ||
+                      !options.suppliers.length
+                    }
                     onChange={(e) =>
                       setCandidate({
                         ...candidate,
@@ -622,7 +714,11 @@ export default function DeviceDemosPage() {
                       })
                     }
                   >
-                    <option value="">Select company</option>
+                    <option value="">
+                      {supplierLoading
+                        ? "Loading suppliers…"
+                        : "Select supplier"}
+                    </option>
                     {options.suppliers.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -645,7 +741,7 @@ export default function DeviceDemosPage() {
                       }
                     >
                       <option value="">
-                        Select the company's approved catalog device
+                        Select the supplier's approved catalog device
                       </option>
                       {options.catalog
                         .filter(
@@ -706,11 +802,11 @@ export default function DeviceDemosPage() {
                 </label>
                 <p className="text-sm">
                   Record the registration notes below before saving. Governed
-                  devices must link to their company's approved catalog
+                  devices must link to their supplier's approved catalog
                   identity.
                 </p>
                 <label className="block">
-                  Company demo registration notes
+                  Supplier demo registration notes
                   <textarea
                     required
                     className={`${css} block w-full`}
@@ -719,21 +815,27 @@ export default function DeviceDemosPage() {
                   />
                 </label>
                 <button
-                  disabled={busy || !notes.trim()}
+                  disabled={
+                    busy ||
+                    supplierLoading ||
+                    Boolean(supplierError) ||
+                    !candidate.supplier_id ||
+                    !notes.trim()
+                  }
                   className="rounded border px-3 py-2 disabled:opacity-40"
                 >
-                  Save company demo
+                  Save supplier demo
                 </button>
               </form>
             </details>
           )}
           <section>
             <h3 className="text-lg font-semibold">
-              Company demos and evaluation period
+              Supplier demos and evaluation period
             </h3>
             {!detail.demos.length && (
               <p className="text-slate-600">
-                Register one or more company demos to begin.
+                Register one or more supplier demos to begin.
               </p>
             )}
             <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -772,9 +874,9 @@ export default function DeviceDemosPage() {
           <section className="space-y-3 rounded border bg-slate-50 p-4">
             <h3 className="font-semibold">Document the demo</h3>
             <label className="block">
-              Company demo
+              Supplier demo
               <select
-                aria-label="Company demo"
+                aria-label="Supplier demo"
                 className={`${css} ml-3`}
                 value={demoId}
                 onChange={(e) => {
@@ -1023,7 +1125,7 @@ export default function DeviceDemosPage() {
               <table className="mt-2 w-full text-left">
                 <thead>
                   <tr>
-                    <th>Company / device</th>
+                    <th>Supplier / device</th>
                     <th>Reports</th>
                     <th>Score / 100</th>
                     <th>Suitability</th>
@@ -1054,10 +1156,10 @@ export default function DeviceDemosPage() {
             {editable && detail.can_coordinate && (
               <div className="mt-3 space-y-2">
                 <p className="text-sm text-slate-600">
-                  Complete or withdraw every company demo and collect every
+                  Complete or withdraw every supplier demo and collect every
                   required report. Explain the best fit in the selection
                   rationale; the highest score does not automatically select a
-                  company.
+                  supplier.
                 </p>
                 <label>
                   Recommended demo
