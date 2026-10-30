@@ -279,3 +279,116 @@ test("SCM signs all-approved review with version and decision reason", async () 
     }),
   );
 });
+
+test("send form exposes grouped evidence fields and preserves inspectors across search", async () => {
+  api.reviewSchema.mockResolvedValue({ ...schema, can_manage: true });
+  api.reviewDirectory.mockResolvedValue([
+    { id: 2, name: "Inspector", role: "HOD", department_name: "Laboratory" },
+    {
+      id: 3,
+      name: "Other inspector",
+      role: "Requester",
+      department_name: "Imaging",
+    },
+  ]);
+  mount("/");
+  fireEvent.click(
+    await screen.findByRole("button", { name: "New technical review" }),
+  );
+  expect(
+    screen.getByRole("form", { name: "Send technical review request" }),
+  ).toBeVisible();
+  expect(
+    screen.getByRole("group", { name: /Request and supporting evidence/ }),
+  ).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Approved request"), {
+    target: { value: "20" },
+  });
+  await screen.findByText("Chair data sheet.pdf");
+  expect(screen.getByLabelText("Supplier name")).toBeInTheDocument();
+  expect(screen.getByLabelText("Manufacturer")).toBeInTheDocument();
+  expect(screen.getByLabelText("Model number")).toBeInTheDocument();
+  expect(screen.getByLabelText("Sample received date")).toBeRequired();
+  fireEvent.change(screen.getByLabelText("Review basis 30"), {
+    target: { value: "description" },
+  });
+  expect(
+    screen.getByLabelText("Why is a physical sample unavailable?"),
+  ).toBeRequired();
+  fireEvent.click(screen.getByLabelText("Inspector · HOD · Laboratory"));
+  fireEvent.change(screen.getByRole("searchbox", { name: "Find inspectors" }), {
+    target: { value: "Other Imaging" },
+  });
+  expect(
+    screen.queryByLabelText("Inspector · HOD · Laboratory"),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText("1 selected · 1 of 2 shown")).toBeInTheDocument();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Clear inspector search" }),
+  );
+  expect(screen.getByLabelText("Inspector · HOD · Laboratory")).toBeChecked();
+  expect(api.sendTechnicalReview).not.toHaveBeenCalled();
+});
+
+test("requirement edits are draft-only until saved with a reason", async () => {
+  api.reviewSchema.mockResolvedValue({ ...schema, can_manage: true });
+  api.saveReviewPolicy.mockResolvedValue({ require_for_all: true });
+  mount("/");
+  fireEvent.click(await screen.findByText("Technical review requirement"));
+  const save = screen.getByRole("button", { name: "Save review requirement" });
+  expect(save).toBeDisabled();
+  fireEvent.click(
+    screen.getByLabelText("Require clearance for every approved request"),
+  );
+  expect(screen.getByText("All approved requests")).toBeInTheDocument();
+  expect(
+    screen.getByRole("complementary", { name: "Draft review requirement" }),
+  ).toBeVisible();
+  expect(api.saveReviewPolicy).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Technical review policy reason"), {
+    target: { value: "   " },
+  });
+  expect(save).toBeDisabled();
+  const reason = "Align technical clearance\nwith procurement controls";
+  fireEvent.change(screen.getByLabelText("Technical review policy reason"), {
+    target: { value: reason },
+  });
+  fireEvent.click(save);
+  await waitFor(() =>
+    expect(api.saveReviewPolicy).toHaveBeenCalledWith({
+      require_for_all: true,
+      reason,
+    }),
+  );
+  await screen.findByText("Technical review requirement saved.");
+  expect(screen.getByLabelText("Technical review policy reason")).toHaveValue(
+    "",
+  );
+});
+
+test("failed requirement save retains the draft and reason for correction", async () => {
+  api.reviewSchema.mockResolvedValue({ ...schema, can_manage: true });
+  api.saveReviewPolicy.mockRejectedValue({
+    response: { data: { message: "Policy update denied" } },
+  });
+  mount("/");
+  fireEvent.click(await screen.findByText("Technical review requirement"));
+  fireEvent.click(
+    screen.getByLabelText("Require clearance for every approved request"),
+  );
+  fireEvent.change(screen.getByLabelText("Technical review policy reason"), {
+    target: { value: "Keep this audit reason" },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Save review requirement" }),
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Policy update denied",
+  );
+  expect(screen.getByLabelText("Technical review policy reason")).toHaveValue(
+    "Keep this audit reason",
+  );
+  expect(
+    screen.getByLabelText("Require clearance for every approved request"),
+  ).toBeChecked();
+});
