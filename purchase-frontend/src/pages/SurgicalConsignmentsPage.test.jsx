@@ -127,7 +127,18 @@ beforeEach(() => {
   api.schema.mockResolvedValue(meta);
   api.list.mockResolvedValue([{ ...record }]);
   api.get.mockResolvedValue(record);
+  api.routing.mockResolvedValue({
+    surgeon: { id: 1, name: "Submitting surgeon" },
+    nurse: { id: 3, name: "Nurse" },
+    receiver: { id: 4, name: "Receiver" },
+    manager: { id: 5, name: "Manager" },
+    cmo: { id: 6, name: "CMO" },
+    scm: { id: 8, name: "SCM" },
+    warehouse: { id: 11, name: "Surgical warehouse" },
+  });
   api.options.mockResolvedValue({
+    configured: true,
+    sections: [],
     departments: [{ id: 1, name: "Surgery" }],
     users: [
       { id: 2, name: "Surgeon", role: "Requester", department_id: 1 },
@@ -284,7 +295,7 @@ test("stale row conflicts retain user notes until deliberate reload", async () =
   );
   expect(api.get).toHaveBeenCalledTimes(1);
 });
-test("F18 requests authorize the range and independent roles without a purchase of all sizes", async () => {
+test("the surgeon submits clinical need and a free-text vendor recommendation without staff or commercial selections", async () => {
   api.schema.mockResolvedValue({
     ...meta,
     can_create: true,
@@ -292,52 +303,62 @@ test("F18 requests authorize the range and independent roles without a purchase 
   });
   api.create.mockResolvedValue({ ...record, status: "AWAITING_AUTHORIZATION" });
   mount("/");
-  await screen.findByText("New surgical consignment request");
-  fireEvent.click(screen.getByText("New surgical consignment request"));
+  fireEvent.click(await screen.findByText("New surgical consignment request"));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Submit request for authorization" }),
+    ).not.toBeDisabled(),
+  );
   for (const [field, value] of [
-    ["Surgical department", "1"],
-    ["Expected surgery date", "2026-10-29"],
+    ["Expected surgery date", "2026-10-30"],
     ["Patient MRN", "MRN-F18"],
     ["Procedure type", "Test procedure"],
-    ["Vendor contact", "Vendor phone"],
-    ["Vendor agreement / price-list reference", "Contract A"],
-    ["Vendor", "9"],
-    ["Assigned surgeon", "2"],
-    ["Assigned nurse", "3"],
-    ["Assigned hospital receiver", "4"],
-    ["Surgical department manager", "5"],
-    ["CMO authorizer", "6"],
-    ["SCM authorizer", "8"],
+    [
+      "Vendor recommendation (optional)",
+      "A surgeon suggested vendor not in the directory",
+    ],
   ])
     fireEvent.change(screen.getByLabelText(field, { exact: true }), {
       target: { value },
     });
-  fireEvent.click(screen.getByLabelText("Patient specific"));
   for (const [field, value] of [
     ["item_name", "Screws range"],
-    ["catalogue_code", "RANGE-A"],
     ["functional_specs", "Multiple lengths"],
   ])
     fireEvent.change(screen.getByLabelText(`Requested ${field} 1`), {
       target: { value },
     });
+  expect(
+    screen.queryByLabelText("Assigned surgeon", { exact: true }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByLabelText("Vendor agreement / price-list reference", {
+      exact: true,
+    }),
+  ).not.toBeInTheDocument();
   fireEvent.click(screen.getByText("Submit request for authorization"));
   await waitFor(() =>
     expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({
         patient_mrn: "MRN-F18",
         department_id: "1",
-        surgeon_id: "2",
-        nurse_id: "3",
-        receiver_id: "4",
-        manager_id: "5",
-        cmo_id: "6",
-        scm_id: "8",
-        justification: ["PATIENT_SPECIFIC"],
+        recommended_vendor: "A surgeon suggested vendor not in the directory",
+        justification: ["SURGEON_REQUEST"],
       }),
     ),
   );
-  expect(api.get).not.toHaveBeenCalled();
+  const payload = api.create.mock.calls[0][0];
+  for (const field of [
+    "surgeon_id",
+    "nurse_id",
+    "receiver_id",
+    "manager_id",
+    "cmo_id",
+    "scm_id",
+    "supplier_id",
+    "agreement_reference",
+  ])
+    expect(payload).not.toHaveProperty(field);
 });
 
 test("a cancelled procedure can prepare a zero-use return reconciliation without pretending surgery occurred", async () => {
@@ -395,18 +416,21 @@ test("new request shortcut opens the grouped form and range removal preserves th
     screen.getByRole("group", { name: /Case details/ }),
   ).toBeInTheDocument();
   expect(
-    screen.getByRole("group", { name: /Vendor agreement/ }),
-  ).toBeInTheDocument();
+    screen.queryByRole("group", { name: /Vendor agreement/ }),
+  ).not.toBeInTheDocument();
   expect(
-    screen.getByRole("group", { name: /Team and authorization/ }),
-  ).toBeInTheDocument();
+    screen.queryByRole("group", { name: /Team and authorization/ }),
+  ).not.toBeInTheDocument();
   fireEvent.change(
     screen.getByLabelText("Surgical department", { exact: true }),
     { target: { value: "1" } },
   );
-  fireEvent.change(screen.getByLabelText("Vendor", { exact: true }), {
-    target: { value: "9" },
-  });
+  fireEvent.change(
+    screen.getByLabelText("Vendor recommendation (optional)", { exact: true }),
+    {
+      target: { value: "Suggested supplier" },
+    },
+  );
   fireEvent.change(screen.getByLabelText("Requested item_name 1"), {
     target: { value: "Retained range" },
   });
@@ -480,4 +504,96 @@ test("read-only queue does not expose the creation form or patient identifiers",
     screen.queryByRole("form", { name: "Surgical consignment request" }),
   ).not.toBeInTheDocument();
   expect(screen.queryByText(record.patient_mrn)).not.toBeInTheDocument();
+});
+
+test("unconfigured or ambiguous automatic assignments block only new submissions with actionable guidance", async () => {
+  api.schema.mockResolvedValue({
+    ...meta,
+    can_create: true,
+    current_user_id: 1,
+  });
+  api.routing.mockRejectedValueOnce({
+    response: {
+      data: { message: "Expected one active CMO; found 2. Review Management." },
+    },
+  });
+  mount("/");
+  fireEvent.click(await screen.findByText("New surgical consignment request"));
+  await screen.findByText(
+    "Expected one active CMO; found 2. Review Management.",
+  );
+  expect(
+    screen.getByRole("button", { name: "Submit request for authorization" }),
+  ).toBeDisabled();
+  expect(api.create).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Patient MRN", { exact: true }), {
+    target: { value: "Keep clinical draft" },
+  });
+  fireEvent.click(screen.getByText("Retry team assignment"));
+  await waitFor(() =>
+    expect(
+      screen.getByRole("button", { name: "Submit request for authorization" }),
+    ).not.toBeDisabled(),
+  );
+  expect(screen.getByLabelText("Patient MRN", { exact: true })).toHaveValue(
+    "Keep clinical draft",
+  );
+});
+test("SCM confirms the supplier and commercial reference at authorization, separately from the surgeon recommendation", async () => {
+  const c = {
+    ...record,
+    status: "AWAITING_AUTHORIZATION",
+    current_user_id: 8,
+    can_scm: true,
+    supplier_id: null,
+    supplier_name: null,
+    vendor_contact: null,
+    agreement_reference: null,
+    recommended_vendor: "Surgeon preferred company",
+    approvals: record.approvals.map((a) =>
+      a.role === "SCM" ? { ...a, status: "PENDING" } : a,
+    ),
+    files: [{ id: 22, purpose: "AGREEMENT", file_name: "Supplier quote.pdf" }],
+  };
+  api.schema.mockResolvedValue({
+    ...meta,
+    can_create: true,
+    current_user_id: 8,
+  });
+  api.get.mockResolvedValue(c);
+  api.action.mockResolvedValue({ ...c, status: "AUTHORIZED" });
+  mount();
+  await screen.findByText(/Surgeon recommendation: Surgeon preferred company/);
+  fireEvent.change(screen.getByLabelText("Confirmed supplier"), {
+    target: { value: "9" },
+  });
+  fireEvent.change(screen.getByLabelText("Supplier contact", { exact: true }), {
+    target: { value: "Vendor phone" },
+  });
+  fireEvent.change(
+    screen.getByLabelText("Vendor agreement / price-list reference", {
+      exact: true,
+    }),
+    { target: { value: "Supplier quote Q-53" } },
+  );
+  fireEvent.change(screen.getByLabelText("Agreement evidence"), {
+    target: { value: "22" },
+  });
+  fireEvent.click(screen.getByLabelText(/I acknowledge vendor ownership/));
+  fireEvent.change(screen.getByLabelText("Consignment action notes"), {
+    target: { value: "Commercial terms confirmed" },
+  });
+  fireEvent.click(screen.getByText("Approve consignment authorization"));
+  await waitFor(() =>
+    expect(api.action).toHaveBeenCalledWith(
+      7,
+      "approve",
+      expect.objectContaining({
+        supplier_id: "9",
+        vendor_contact: "Vendor phone",
+        agreement_reference: "Supplier quote Q-53",
+        agreement_file_id: "22",
+      }),
+    ),
+  );
 });
