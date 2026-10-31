@@ -163,6 +163,8 @@ const Management = () => {
   const [routes, setRoutes] = useState([]);
   const [routesVersionLabel, setRoutesVersionLabel] = useState('');
   const [autoAssignmentRules, setAutoAssignmentRules] = useState([]);
+  const [autoAssignmentAssignees, setAutoAssignmentAssignees] = useState([]);
+  const [autoAssignmentWarehouses, setAutoAssignmentWarehouses] = useState([]);
   const [autoAssignmentTypes, setAutoAssignmentTypes] = useState(defaultAutoAssignmentTypes);
   const [autoAssignmentForm, setAutoAssignmentForm] = useState(initialAutoAssignmentRule);
   const [editingAutoAssignmentId, setEditingAutoAssignmentId] = useState(null);
@@ -255,8 +257,7 @@ const Management = () => {
       canManageRoles: hasAnyPermission(currentUser, ['roles.manage', 'permissions.manage']),
       canManagePermissions: hasPermission(currentUser, 'permissions.manage'),
       canManageContractApprovalRules: hasAnyPermission(currentUser, ['contracts.manage', 'permissions.manage']),
-      canManageAutoAssignments: hasAnyPermission(currentUser, ['requests.manage', 'permissions.manage', 'users.manage']) ||
-        ['Admin', 'SCM'].includes(currentUser.role),
+      canManageAutoAssignments: hasPermission(currentUser, 'requests.manage'),
       canManagePrintServiceSettings: hasPermission(currentUser, 'departments.manage') ||
         ['Admin', 'SCM'].includes(currentUser.role),
     };
@@ -344,13 +345,13 @@ const Management = () => {
 
   /* eslint-disable react-hooks/exhaustive-deps -- Data loaders are declared below these effects and are gated by permission/tab state. */
   useEffect(() => {
-    if (canViewUsers || canManageRoutes || canManagePermissions || canManageRoles || canManageAutoAssignments) {
+    if (canViewUsers || canManageRoutes || canManagePermissions || canManageRoles) {
       fetchRoles();
     }
-    if (canViewUsers || canManagePermissions || canManageRoles || canManageAutoAssignments) {
+    if (canViewUsers || canManagePermissions || canManageRoles) {
       fetchUsers();
     }
-    if (canManageDepartments || canViewUsers || canManagePermissions || canManageRoles || canManageAutoAssignments || canManageProjects || canManagePrintServiceSettings) {
+    if (canManageDepartments || canViewUsers || canManagePermissions || canManageRoles || canManageProjects || canManagePrintServiceSettings) {
       fetchDepartments();
     }
     if (canManageRoutes) {
@@ -370,7 +371,6 @@ const Management = () => {
     canManageDepartments,
     canManageAccountRequests,
     canManageProjects,
-    canManageAutoAssignments,
     canManagePrintServiceSettings,
   ]);
 
@@ -555,6 +555,8 @@ const Management = () => {
     try {
       const res = await api.get('/request-auto-assignment-rules');
       setAutoAssignmentRules(res.data?.rules || []);
+      setAutoAssignmentAssignees(res.data?.assignees || []);
+      setAutoAssignmentWarehouses(res.data?.warehouses || []);
       setAutoAssignmentTypes(res.data?.request_types || defaultAutoAssignmentTypes);
     } catch (err) {
       console.error('Failed to load auto-assignment rules', err);
@@ -1484,13 +1486,6 @@ const Management = () => {
   const filteredAutoAssignmentRules = autoAssignmentRules.filter((rule) => matchesManagementSearch(
     rule.request_type, rule.assignee_name, rule.assignee_email, warehouseMap[rule.warehouse_id]?.name,
   ));
-
-  const procurementAssigneeUsers = useMemo(
-    () => users.filter((entry) =>
-      entry.is_active && ['ProcurementSpecialist', 'SCM'].includes(entry.role),
-    ),
-    [users],
-  );
 
   const activeUserCount = useMemo(
     () => users.filter((user) => user.is_active).length,
@@ -2528,7 +2523,7 @@ const Management = () => {
             onChange={(e) => setRule((prev) => ({ ...prev, warehouse_id: e.target.value }))}
           >
             <option value="">{rule.request_type === 'Stock' ? '--Select warehouse--' : 'Not applicable'}</option>
-            {warehouses.map((warehouse) => (
+            {autoAssignmentWarehouses.map((warehouse) => (
               <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
             ))}
           </select>
@@ -2541,7 +2536,7 @@ const Management = () => {
             onChange={(e) => setRule((prev) => ({ ...prev, assignee_user_id: e.target.value }))}
           >
             <option value="">--Select user--</option>
-            {procurementAssigneeUsers.map((assignee) => (
+            {autoAssignmentAssignees.map((assignee) => (
               <option key={assignee.id} value={assignee.id}>
                 {assignee.name} ({assignee.role})
               </option>

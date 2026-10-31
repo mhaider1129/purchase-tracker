@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "../api/axios";
 import { Button } from "./ui/Button";
 
-const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
+const AssignRequestPanel = ({ requestId, currentAssignee, currentAssigneeId, onSuccess }) => {
   const uiText = useUiTranslation();
   const [users, setUsers] = useState([]);
   const [items, setItems] = useState([]);
@@ -19,7 +19,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
   useEffect(() => {
     const fetchProcurementUsers = async () => {
       try {
-        const res = await axios.get("/requests/procurement-users");
+        const res = await axios.get("/requests/procurement-users", { params: { request_id: requestId } });
         setUsers(res.data);
       } catch (err) {
         console.error("❌ Failed to fetch procurement users:", err);
@@ -28,7 +28,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
     };
 
     fetchProcurementUsers();
-  }, []);
+  }, [requestId]);
 
   useEffect(() => {
     const fetchRequestItems = async () => {
@@ -85,6 +85,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
       await axios.put("/requests/assign-procurement", {
         request_id: requestId,
         user_id: selectedUser,
+        expected_assignee_id: currentAssigneeId,
       });
       setMessage({
         type: "success",
@@ -114,6 +115,8 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
     try {
       await axios.put(`/requests/${requestId}/split-assign-procurement`, {
         assignments: splitAssignments,
+        expected_assignee_id: currentAssigneeId,
+        expected_item_assignees: Object.fromEntries(assignableItems.filter(item => splitAssignments.some(a => a.requested_item_ids.includes(Number(item.id)))).map(item => [item.id, item.assigned_to ?? null])),
       });
       setMessage({
         type: "success",
