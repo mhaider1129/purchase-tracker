@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useState } from "react";
 import { searchGenericItems, searchApprovedProducts } from "../api/itemMaster";
 import {
@@ -40,6 +41,7 @@ export function isBulkApprovalSafe(rows, user) {
 }
 
 function MappingDialog({ row, onClose, onMapped }) {
+  const uiText = useUiTranslation();
   const [query, setQuery] = useState(row.stock_item_name || "");
   const [options, setOptions] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -249,9 +251,7 @@ function MappingDialog({ row, onClose, onMapped }) {
               type="button"
               className="rounded-lg border px-4 py-2"
               onClick={onClose}
-            >
-              Cancel
-            </button>
+            >{uiText("Cancel")}</button>
             <button
               type="submit"
               disabled={!selected || saving || !reason.trim()}
@@ -267,6 +267,7 @@ function MappingDialog({ row, onClose, onMapped }) {
 }
 
 export default function StockItemMappingWorkspace() {
+  const uiText = useUiTranslation();
   const { user } = useAuth();
   const [filters, setFilters] = useState({ page: 1 });
   const [search, setSearch] = useState("");
@@ -398,9 +399,7 @@ export default function StockItemMappingWorkspace() {
         <a
           href="/item-master"
           className="self-start rounded-lg border bg-white px-4 py-2 text-sm font-semibold text-blue-700"
-        >
-          Open Item Master
-        </a>
+        >{uiText("Open Item Master")}</a>
       </header>
       {error && (
         <div role="alert" className="rounded-lg bg-amber-50 p-3 text-amber-900">
@@ -443,7 +442,7 @@ export default function StockItemMappingWorkspace() {
                 }))
               }
             >
-              <option value="">All statuses</option>
+              <option value="">{uiText("All statuses")}</option>
               {[
                 "unmapped",
                 "proposed",
@@ -476,17 +475,13 @@ export default function StockItemMappingWorkspace() {
               setFilters({ page: 1 });
               setSearch("");
             }}
-          >
-            Clear filters
-          </button>
+          >{uiText("Clear filters")}</button>
           <button
             type="button"
             disabled={loading}
             className="self-end rounded-lg border px-3 py-2.5"
             onClick={load}
-          >
-            Refresh
-          </button>
+          >{uiText("Refresh")}</button>
         </div>
         {advanced && (
           <div className="grid gap-3 sm:grid-cols-3">
@@ -607,16 +602,12 @@ export default function StockItemMappingWorkspace() {
                               disabled={busy}
                               className="rounded bg-emerald-600 px-3 py-1 text-white"
                               onClick={() => chooseAction(row, "approve")}
-                            >
-                              Approve
-                            </button>
+                            >{uiText("Approve")}</button>
                             <button
                               disabled={busy}
                               className="rounded border px-3 py-1 text-red-700"
                               onClick={() => chooseAction(row, "reject")}
-                            >
-                              Reject
-                            </button>
+                            >{uiText("Reject")}</button>
                           </>
                         )}
                         {["proposed", "review_required"].includes(
@@ -650,9 +641,7 @@ export default function StockItemMappingWorkspace() {
                       disabled={busy}
                       className="rounded border px-3 py-1"
                       onClick={() => showHistory(row)}
-                    >
-                      History
-                    </button>
+                    >{uiText("History")}</button>
                   </div>
                 </td>
               </tr>
@@ -679,9 +668,7 @@ export default function StockItemMappingWorkspace() {
                 page: pagination.page - 1,
               }))
             }
-          >
-            Previous
-          </button>
+          >{uiText("Previous")}</button>
           <span>
             Page {pagination.page} · {pagination.total} records
           </span>
@@ -695,9 +682,7 @@ export default function StockItemMappingWorkspace() {
                 page: pagination.page + 1,
               }))
             }
-          >
-            Next
-          </button>
+          >{uiText("Next")}</button>
         </div>
       </div>
       {actionTarget && (
@@ -730,9 +715,7 @@ export default function StockItemMappingWorkspace() {
               disabled={busy}
               onClick={() => setActionTarget(null)}
               className="rounded-lg border px-4 py-2"
-            >
-              Cancel
-            </button>
+            >{uiText("Cancel")}</button>
           </div>
         </form>
       )}

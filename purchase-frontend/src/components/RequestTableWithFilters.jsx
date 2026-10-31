@@ -1,9 +1,11 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useMemo, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 
 const valueOrFallback = (value, fallback = "—") => value || fallback;
 
 const RequestTableWithFilters = ({ requests = [], onRowClick }) => {
+  const uiText = useUiTranslation();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
   const [type, setType] = useState("all");
@@ -50,14 +52,11 @@ const RequestTableWithFilters = ({ requests = [], onRowClick }) => {
       <div className="border-b border-slate-200 bg-slate-50/70 p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-            <SlidersHorizontal aria-hidden="true" className="h-4 w-4" /> Filter
-            requests
-          </div>
+            <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />{" "}{uiText("Filter requests")}</div>
           <span
             className="text-xs font-medium text-slate-500"
             aria-live="polite"
-          >
-            Showing {filteredRequests.length} of {requests.length}
+          >{uiText("Showing")}{" "}{filteredRequests.length}{" "}{uiText("of")}{" "}{requests.length}
           </span>
         </div>
         <div className="grid gap-3 md:grid-cols-[minmax(15rem,1fr)_12rem_12rem_auto]">
@@ -80,7 +79,7 @@ const RequestTableWithFilters = ({ requests = [], onRowClick }) => {
             onChange={(event) => setStatus(event.target.value)}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
           >
-            <option value="all">All statuses</option>
+            <option value="all">{uiText("All statuses")}</option>
             {statuses.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -93,7 +92,7 @@ const RequestTableWithFilters = ({ requests = [], onRowClick }) => {
             onChange={(event) => setType(event.target.value)}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
           >
-            <option value="all">All types</option>
+            <option value="all">{uiText("All types")}</option>
             {types.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -106,9 +105,7 @@ const RequestTableWithFilters = ({ requests = [], onRowClick }) => {
               onClick={clearFilters}
               className="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200"
             >
-              <X className="h-4 w-4" />
-              Clear
-            </button>
+              <X className="h-4 w-4" />{uiText("Clear")}</button>
           )}
         </div>
       </div>

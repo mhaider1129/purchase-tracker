@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -20,11 +21,12 @@ const readinessCards = [
 ];
 
 export default function SupplierPortalReadinessPage() {
+  const uiText = useUiTranslation();
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <section className="rounded-xl border border-indigo-100 bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-semibold text-gray-900">Supplier Portal Readiness</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{uiText("Supplier Portal Readiness")}</h1>
           <p className="mt-2 text-sm text-gray-600">
             Backend schema is prepared. Frontend should now align on supplier login, RFQ response upload,
             and PO acknowledgment user flows.

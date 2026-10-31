@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import { openProtectedFile } from '../api/attachments';
 import PaginationControls from "../components/ui/PaginationControls";
 import useRequestListPagination from "../hooks/useRequestListPagination";
@@ -37,6 +38,7 @@ import usePersistedRequestViewMode, {
 } from "../hooks/usePersistedRequestViewMode";
 
 const ApprovalsPanel = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const [onboardingVersion, setOnboardingVersion] = useState(0);
   const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
@@ -429,7 +431,7 @@ const ApprovalsPanel = () => {
                 const attachmentsError = attachmentErrorMap[req.request_id];
                 const isExpanded = expandedId === req.request_id;
                 const requesterDisplay = getRequesterDisplay(req);
-                const approvalStatus = req.approval_status || "Pending";
+                const approvalStatus = req.approval_status || uiText("Pending");
                 const isOnHold = approvalStatus.trim().toLowerCase() === "on hold";
                 const holdLoading = Boolean(holdLoadingMap[req.approval_id]);
 
@@ -711,20 +713,15 @@ const ApprovalsPanel = () => {
                     >
                       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                          <h3 className="text-lg font-semibold text-slate-900">
-                            Request #{requestId}
+                          <h3 className="text-lg font-semibold text-slate-900">{uiText("Request #")}{requestId}
                           </h3>
                           <dl className="mt-2 grid gap-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
                             <div>
-                              <dt className="font-medium text-slate-500">
-                                Department
-                              </dt>
+                              <dt className="font-medium text-slate-500">{uiText("Department")}</dt>
                               <dd>{req.department_name || "—"}</dd>
                             </div>
                             <div>
-                              <dt className="font-medium text-slate-500">
-                                Section
-                              </dt>
+                              <dt className="font-medium text-slate-500">{uiText("Section")}</dt>
                               <dd>{req.section_name || "—"}</dd>
                             </div>
                             <div>
@@ -734,17 +731,14 @@ const ApprovalsPanel = () => {
                               <dd>{req.project_name || "Not applicable"}</dd>
                             </div>
                             <div>
-                              <dt className="font-medium text-slate-500">
-                                Requester
-                              </dt>
+                              <dt className="font-medium text-slate-500">{uiText("Requester")}</dt>
                               <dd>{getRequesterDisplay(req)}</dd>
                             </div>
                           </dl>
                           <div className="mt-3 text-sm text-slate-700">
-                            <span className="font-medium text-slate-500">
-                              Justification:{" "}
+                            <span className="font-medium text-slate-500">{uiText("Justification:")}{" "}
                             </span>
-                            {req.justification || "No justification provided."}
+                            {req.justification || uiText("No justification provided.")}
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 sm:min-w-56">
@@ -768,7 +762,7 @@ const ApprovalsPanel = () => {
                                   )
                                 }
                               >
-                                {decision === "Approved" ? "Approve" : "Reject"}
+                                {decision === "Approved" ? uiText("Approve") : uiText("Reject")}
                               </button>
                             ))}
                           </div>
@@ -796,9 +790,7 @@ const ApprovalsPanel = () => {
                           <label
                             className="block text-sm font-medium text-blue-900"
                             htmlFor={`summary-cost-${requestId}`}
-                          >
-                            Estimated cost
-                          </label>
+                          >{uiText("Estimated cost")}</label>
                           <AmountInput
                             id={`summary-cost-${requestId}`}
                             className="mt-1 w-full rounded border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -871,9 +863,7 @@ const ApprovalsPanel = () => {
                 variant="ghost"
                 onClick={approvalSummary.close}
                 disabled={approvalSummary.submitting}
-              >
-                Cancel
-              </Button>
+              >{uiText("Cancel")}</Button>
             </div>
           </div>
         </div>

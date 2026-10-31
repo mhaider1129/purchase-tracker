@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React from "react";
 import { RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "../ui/Button";
@@ -31,6 +32,7 @@ const ApprovalsFilters = ({
   tabs,
   resultCount,
 }) => {
+  const uiText = useUiTranslation();
   const {
     searchPlaceholder = "Search by ID, justification, department or section",
     typeLabel = "Request Type",
@@ -93,7 +95,7 @@ const ApprovalsFilters = ({
               type="button"
               onClick={() => onSearchChange("")}
               className="rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
-              aria-label="Clear search"
+              aria-label={uiText("Clear search")}
             >
               <X className="h-4 w-4" />
             </button>

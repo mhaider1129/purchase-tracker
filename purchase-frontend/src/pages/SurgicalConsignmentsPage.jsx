@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import "./SurgicalConsignmentsPage.css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -48,6 +49,7 @@ const initial = () => ({
 });
 const money = (v) => String(v ?? "0.00");
 export default function SurgicalConsignmentsPage() {
+  const uiText = useUiTranslation();
   const createRef = useRef(null);
   const [queueStatus, setQueueStatus] = useState("");
   const [team, setTeam] = useState(null),
@@ -425,7 +427,7 @@ export default function SurgicalConsignmentsPage() {
             value={queueStatus}
             onChange={(event) => setQueueStatus(event.target.value)}
           >
-            <option value="">All statuses</option>
+            <option value="">{uiText("All statuses")}</option>
             {[...new Set([queueStatus, ...rows.map((row) => row.status)])]
               .filter(Boolean)
               .map((status) => (
@@ -435,9 +437,7 @@ export default function SurgicalConsignmentsPage() {
               ))}
           </select>
         </label>
-        <button disabled={busy} className="rounded border px-3">
-          Search
-        </button>
+        <button disabled={busy} className="rounded border px-3">{uiText("Search")}</button>
         {(search || queueStatus) && (
           <button
             type="button"
@@ -463,7 +463,7 @@ export default function SurgicalConsignmentsPage() {
           </summary>
           <form
             className="surgical-request-form mt-4 space-y-4"
-            aria-label="Surgical consignment request"
+            aria-label={uiText("Surgical consignment request")}
             onSubmit={(e) => {
               e.preventDefault();
               perform(async () => {
@@ -627,9 +627,7 @@ export default function SurgicalConsignmentsPage() {
                                 ),
                               )
                             }
-                          >
-                            Remove
-                          </button>
+                          >{uiText("Remove")}</button>
                         )}
                       </div>
                       <div className="surgical-range-grid">
@@ -685,7 +683,7 @@ export default function SurgicalConsignmentsPage() {
                 <dl>
                   <div>
                     <dt>Surgical department</dt>
-                    <dd>{draftDepartment?.name || "Not selected"}</dd>
+                    <dd>{draftDepartment?.name || uiText("Not selected")}</dd>
                   </div>
                   <div>
                     <dt>Vendor recommendation</dt>
@@ -762,7 +760,7 @@ export default function SurgicalConsignmentsPage() {
                 disabled={busy || !team || teamLoading || Boolean(teamError)}
                 className="rounded bg-indigo-700 px-4 py-2 text-white"
               >
-                {busy ? "Please wait…" : "Submit request for authorization"}
+                {busy ? uiText("Please wait…") : "Submit request for authorization"}
               </button>
             </div>
           </form>
@@ -773,8 +771,7 @@ export default function SurgicalConsignmentsPage() {
         className="surgical-queue rounded-xl border bg-white p-4"
       >
         <h2 className="font-semibold">
-          Consignment queue · {visibleRows.length} shown
-        </h2>
+          Consignment queue · {visibleRows.length}{" "}{uiText("shown")}</h2>
         <p className="surgical-help">
           Open a case to review its authorization, delivery, usage and
           reconciliation records.
@@ -788,11 +785,11 @@ export default function SurgicalConsignmentsPage() {
           <table className="mt-3 w-full text-left">
             <thead>
               <tr>
-                <th>Reference</th>
-                <th>Department</th>
+                <th>{uiText("Reference")}</th>
+                <th>{uiText("Department")}</th>
                 <th>Vendor</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>{uiText("Status")}</th>
+                <th>{uiText("Action")}</th>
               </tr>
             </thead>
             <tbody>
@@ -842,7 +839,7 @@ export default function SurgicalConsignmentsPage() {
             </h2>
             <p>
               {label(detail.status)} · Authorization{" "}
-              {detail.authorization_code || "Pending"} · {detail.currency}
+              {detail.authorization_code || uiText("Pending")} · {detail.currency}
             </p>
             <button
               className="mt-2 rounded border px-3 py-2"
@@ -1634,8 +1631,7 @@ export default function SurgicalConsignmentsPage() {
                     DPP.SC.001.F18 · Surgical Consignment Request · SC-
                     {detail.id}
                   </h3>
-                  <p>
-                    Requester: {detail.requester_snapshot.name} ·{" "}
+                  <p>{uiText("Requester:")}{" "}{detail.requester_snapshot.name} ·{" "}
                     {detail.requester_snapshot.role} ·{" "}
                     {detail.requester_snapshot.phone_number ||
                       detail.requester_snapshot.email}
@@ -1661,8 +1657,7 @@ export default function SurgicalConsignmentsPage() {
                       {l.catalogue_code} · {l.functional_specs}
                     </p>
                   ))}
-                  <p>
-                    Justification: {detail.justification.map(label).join(", ")}{" "}
+                  <p>{uiText("Justification:")}{" "}{detail.justification.map(label).join(", ")}{" "}
                     {detail.other_justification}
                   </p>
                   {detail.approvals.map((a) => (
@@ -1673,7 +1668,7 @@ export default function SurgicalConsignmentsPage() {
                       · {a.notes}
                     </p>
                   ))}
-                  <p>Authorization: {detail.authorization_code || "Pending"}</p>
+                  <p>Authorization: {detail.authorization_code || uiText("Pending")}</p>
                 </article>
                 <article className="rounded border p-4">
                   <h3 className="text-xl font-semibold">
@@ -1762,7 +1757,7 @@ export default function SurgicalConsignmentsPage() {
                           <th>Delivered</th>
                           <th>Used</th>
                           <th>Returned intact</th>
-                          <th>Damaged</th>
+                          <th>{uiText("Damaged")}</th>
                           <th>Returned damaged</th>
                           <th>Missing</th>
                           <th>Still intact on hand</th>

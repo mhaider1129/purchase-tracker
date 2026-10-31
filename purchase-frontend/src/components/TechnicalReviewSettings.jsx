@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useState } from "react";
 import * as api from "../api/technicalWorkflow";
 const base = {
@@ -16,6 +17,7 @@ const base = {
 };
 const cls = "block w-full rounded border p-2";
 export default function TechnicalReviewSettings() {
+  const uiText = useUiTranslation();
   const [data, setData] = useState(null),
     [key, setKey] = useState("unclassified"),
     [settings, setSettings] = useState(base),
@@ -195,9 +197,7 @@ export default function TechnicalReviewSettings() {
             </p>
             {settings.reviewers.map((r, i) => (
               <div key={i} className="grid gap-2 sm:grid-cols-3">
-                <label>
-                  Department
-                  <select
+                <label>{uiText("Department")}<select
                     aria-label={`Technical department ${i + 1}`}
                     className={cls}
                     value={r.department_id}

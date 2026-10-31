@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 import {
@@ -17,6 +18,7 @@ export default function ItemHierarchyCreateForm({
   canMaintainReferences = false,
   initialValues = {},
 }) {
+  const uiText = useUiTranslation();
   const [refs, setRefs] = useState({
     categories: [],
     uom: [],
@@ -136,7 +138,7 @@ export default function ItemHierarchyCreateForm({
           setForm((previous) => ({ ...previous, [key]: event.target.value }))
         }
       >
-        <option value="">Select {label.toLowerCase()}</option>
+        <option value="">{uiText("Select")}{" "}{label.toLowerCase()}</option>
         {rows.map((row) => (
           <option key={row.id} value={row.id}>
             {row.code ? `${row.code} · ` : ""}
@@ -218,9 +220,7 @@ export default function ItemHierarchyCreateForm({
               ? "Product for approval"
               : "Supplier Catalog offer"}
         </h3>
-        <button type="button" onClick={onClose} disabled={busy}>
-          Cancel
-        </button>
+        <button type="button" onClick={onClose} disabled={busy}>{uiText("Cancel")}</button>
       </div>
       <p className="text-sm text-slate-600">
         {level === "generic"
@@ -382,8 +382,7 @@ export default function ItemHierarchyCreateForm({
                 disabled={busy || loading || Boolean(editingReference)}
                 className="text-sm text-blue-700 underline"
                 onClick={() => setEditingReference(type)}
-              >
-                Add{" "}
+              >{uiText("Add")}{" "}
                 {type === "categories"
                   ? "category"
                   : type === "uom"

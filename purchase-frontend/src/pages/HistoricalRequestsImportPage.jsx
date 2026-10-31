@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import apiRequests from "../api/requests";
@@ -21,6 +22,7 @@ const defaultItem = {
 };
 
 const HistoricalRequestsImportPage = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const formatAmount = (value) => {
     const num = Number(value);
@@ -343,12 +345,12 @@ const HistoricalRequestsImportPage = () => {
                     <option value="">
                       {t("historicalRequests.placeholders.selectType", "Select type")}
                     </option>
-                    <option value="Stock">Stock</option>
-                    <option value="Non-Stock">Non-Stock</option>
-                    <option value="Maintenance">Maintenance</option>
-                    <option value="Medical Device">Medical Device</option>
-                    <option value="Medication">Medication</option>
-                    <option value="Warehouse Supply">Warehouse Supply</option>
+                    <option value="Stock">{uiText("Stock")}</option>
+                    <option value="Non-Stock">{uiText("Non-Stock")}</option>
+                    <option value="Maintenance">{uiText("Maintenance")}</option>
+                    <option value="Medical Device">{uiText("Medical Device")}</option>
+                    <option value="Medication">{uiText("Medication")}</option>
+                    <option value="Warehouse Supply">{uiText("Warehouse Supply")}</option>
                   </select>
                 </div>
 

@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import api from '../api/axios';
@@ -6,6 +7,7 @@ const INITIAL_ASSIGN_FORM = { title: '', description: '', assigned_to: '' };
 const STATUS_OPTIONS = ['pending', 'in_progress', 'blocked', 'completed'];
 
 export default function TaskManagementPage() {
+  const uiText = useUiTranslation();
   const { user } = useAuth();
   const role = String(user?.role || '').toLowerCase();
   const canAssign = role === 'scm' || role === 'coo';
@@ -108,12 +110,12 @@ export default function TaskManagementPage() {
         <form onSubmit={assignTask} className="space-y-3 rounded border p-4 bg-white">
           <h2 className="font-semibold">Assign New Task</h2>
           <input className="w-full rounded border p-2" placeholder="Task title" value={assignForm.title} onChange={(e) => setAssignForm((f) => ({ ...f, title: e.target.value }))} required />
-          <textarea className="w-full rounded border p-2" placeholder="Description" value={assignForm.description} onChange={(e) => setAssignForm((f) => ({ ...f, description: e.target.value }))} />
+          <textarea className="w-full rounded border p-2" placeholder={uiText("Description")} value={assignForm.description} onChange={(e) => setAssignForm((f) => ({ ...f, description: e.target.value }))} />
           <select className="w-full rounded border p-2" value={assignForm.assigned_to} onChange={(e) => setAssignForm((f) => ({ ...f, assigned_to: e.target.value }))} required>
             <option value="">Select employee</option>
             {employees.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
           </select>
-          <button disabled={saving} className="rounded bg-blue-600 px-4 py-2 text-white">{saving ? 'Assigning...' : 'Assign Task'}</button>
+          <button disabled={saving} className="rounded bg-blue-600 px-4 py-2 text-white">{saving ? uiText("Assigning...") : 'Assign Task'}</button>
         </form>
       )}
 
@@ -137,7 +139,7 @@ export default function TaskManagementPage() {
           <div className="flex items-center gap-3">
             <h2 className="font-semibold">Tasks I Issued (SCM/COO Management View)</h2>
             <select className="rounded border p-2 text-sm" value={managerFilter} onChange={(e) => setManagerFilter(e.target.value)}>
-              <option value="">All statuses</option>
+              <option value="">{uiText("All statuses")}</option>
               {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
             </select>
           </div>
@@ -152,7 +154,7 @@ export default function TaskManagementPage() {
               <textarea
                 className="w-full rounded border p-2 text-sm"
                 defaultValue={task.description || ''}
-                placeholder="Description"
+                placeholder={uiText("Description")}
                 onBlur={(e) => manageTask(task.id, { description: e.target.value })}
               />
               <div className="grid gap-2 md:grid-cols-3">
@@ -164,7 +166,7 @@ export default function TaskManagementPage() {
                 </select>
                 <button type="button" className="rounded bg-red-600 px-3 py-2 text-white" onClick={() => deleteTask(task.id)}>Delete Task</button>
               </div>
-              <div className="text-xs text-gray-600">Assigned to: {task.assigned_to_name || employeeMap.get(String(task.assigned_to)) || 'Unknown'}</div>
+              <div className="text-xs text-gray-600">Assigned to: {task.assigned_to_name || employeeMap.get(String(task.assigned_to)) || uiText("Unknown")}</div>
               <div className="text-xs text-gray-600">Employee progress: {task.employee_update || 'No update yet'}</div>
             </div>
           ))}

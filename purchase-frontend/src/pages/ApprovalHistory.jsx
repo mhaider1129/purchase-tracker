@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 //src/pages/ApprovalHistory.js
 import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -10,6 +11,7 @@ import useStatusCommunications from '../hooks/useStatusCommunications';
 import { Download, FileText, History, RotateCcw, Search } from 'lucide-react';
 
 const ApprovalHistory = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const [history, setHistory] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -356,8 +358,7 @@ const ApprovalHistory = () => {
             onClick={resetFilters}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
-            <RotateCcw className="h-4 w-4" aria-hidden /> Reset
-          </button>
+            <RotateCcw className="h-4 w-4" aria-hidden />{" "}{uiText("Reset")}</button>
         </div>
 
         {/* 📁 Export Buttons */}
@@ -367,15 +368,13 @@ const ApprovalHistory = () => {
             title="Export to CSV"
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-emerald-700"
           >
-            <Download className="h-4 w-4" aria-hidden /> Download CSV
-          </button>
+            <Download className="h-4 w-4" aria-hidden />{" "}{uiText("Download CSV")}</button>
           <button
             onClick={downloadPDF}
             title="Export to PDF"
             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm hover:bg-slate-50"
           >
-            <FileText className="h-4 w-4 text-rose-600" aria-hidden /> Download PDF
-          </button>
+            <FileText className="h-4 w-4 text-rose-600" aria-hidden />{" "}{uiText("Download PDF")}</button>
           <div className="ml-auto flex items-center text-sm text-gray-500">
             <span>
               {t('approvalHistory.summary.showing', { filtered: filtered.length, total: history.length })}
@@ -530,8 +529,7 @@ const ApprovalHistory = () => {
                                 }}
                                 disabled={communicationLoading[item.request_id]}
                               >
-                                {expandedCommunicationId === item.request_id ? 'Hide' : 'View'} updates
-                              </button>
+                                {expandedCommunicationId === item.request_id ? uiText("Hide") : uiText("View")}{" "}{uiText("updates")}</button>
                             ) : (
                               <span className="text-xs text-gray-400">{t('approvalHistory.table.notAvailable')}</span>
                             )}
@@ -599,9 +597,7 @@ const ApprovalHistory = () => {
                                   className="text-xs font-medium text-indigo-700 underline"
                                   onClick={() => refreshCommunications(item.request_id)}
                                   disabled={communicationLoading[item.request_id]}
-                                >
-                                  Refresh
-                                </button>
+                                >{uiText("Refresh")}</button>
                               </div>
 
                               <div className="mt-3 space-y-2">
@@ -621,8 +617,8 @@ const ApprovalHistory = () => {
                                     className="rounded border border-indigo-100 bg-white px-3 py-2 text-xs text-slate-700"
                                   >
                                     <div className="flex flex-wrap justify-between gap-1">
-                                      <span className="font-semibold text-indigo-900">{entry.actor_name || 'Unknown'}</span>
-                                      <span className="text-slate-500">{entry.status_at_time || 'Pending'}</span>
+                                      <span className="font-semibold text-indigo-900">{entry.actor_name || uiText("Unknown")}</span>
+                                      <span className="text-slate-500">{entry.status_at_time || uiText("Pending")}</span>
                                       <span className="text-slate-400">
                                         {entry.timestamp ? new Date(entry.timestamp).toLocaleString() : ''}
                                       </span>
@@ -650,7 +646,7 @@ const ApprovalHistory = () => {
                                       onClick={() => handleSendCommunication(item.request_id, item.status)}
                                       disabled={!!communicationSending[item.request_id]}
                                     >
-                                      {communicationSending[item.request_id] ? 'Sending...' : 'Send to SCM'}
+                                      {communicationSending[item.request_id] ? uiText("Sending...") : uiText("Send to SCM")}
                                     </button>
                                   </div>
                                 )}
@@ -671,9 +667,7 @@ const ApprovalHistory = () => {
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
                   className="px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                >
-                  Previous
-                </button>
+                >{uiText("Previous")}</button>
                 {[...Array(totalPages)].map((_, i) => (
                   <button
                     key={i}
@@ -689,9 +683,7 @@ const ApprovalHistory = () => {
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
                   className="px-3 py-1 border rounded bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                >
-                  Next
-                </button>
+                >{uiText("Next")}</button>
               </div>
             )}
           </>

@@ -1,7 +1,9 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useState } from 'react';
 import { listAccountsPayable, listPayments, recordPayablePayment } from '../api/procureToPay';
 
 export default function ProcureToPayPaymentsPage() {
+  const uiText = useUiTranslation();
   const [history, setHistory] = useState([]);
   const [duePayables, setDuePayables] = useState([]);
   const [amountById, setAmountById] = useState({});
@@ -31,8 +33,8 @@ export default function ProcureToPayPaymentsPage() {
       </div>
 
       <div className="bg-white rounded shadow overflow-x-auto">
-        <table className="w-full text-sm"><thead className="bg-gray-50"><tr><th className="p-2 text-left">Payment Number</th><th className="p-2 text-left">Supplier</th><th className="p-2 text-left">Payable / Invoice Reference</th><th className="p-2 text-left">Payment Date</th><th className="p-2 text-right">Amount</th><th className="p-2 text-left">Status</th><th className="p-2">Actions</th></tr></thead><tbody>
-          {history.map((row) => <tr key={row.id} className="border-t"><td className="p-2">PAY-{row.id}</td><td className="p-2">{row.supplier_name || '-'}</td><td className="p-2">AP-{row.payable_id || '-'} / INV-{row.invoice_number || '-'}</td><td className="p-2">{row.paid_at ? new Date(row.paid_at).toLocaleDateString() : '-'}</td><td className="p-2 text-right">{Number(row.amount_paid || 0).toFixed(2)}</td><td className="p-2">{row.payment_status}</td><td className="p-2">Open</td></tr>)}
+        <table className="w-full text-sm"><thead className="bg-gray-50"><tr><th className="p-2 text-left">Payment Number</th><th className="p-2 text-left">{uiText("Supplier")}</th><th className="p-2 text-left">Payable / Invoice Reference</th><th className="p-2 text-left">Payment Date</th><th className="p-2 text-right">Amount</th><th className="p-2 text-left">{uiText("Status")}</th><th className="p-2">{uiText("Actions")}</th></tr></thead><tbody>
+          {history.map((row) => <tr key={row.id} className="border-t"><td className="p-2">PAY-{row.id}</td><td className="p-2">{row.supplier_name || '-'}</td><td className="p-2">AP-{row.payable_id || '-'} / INV-{row.invoice_number || '-'}</td><td className="p-2">{row.paid_at ? new Date(row.paid_at).toLocaleDateString() : '-'}</td><td className="p-2 text-right">{Number(row.amount_paid || 0).toFixed(2)}</td><td className="p-2">{row.payment_status}</td><td className="p-2">{uiText("Open")}</td></tr>)}
         </tbody></table>
       </div>
     </div>

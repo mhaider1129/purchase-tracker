@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from "react";
 import { fixedAssetsApi as api } from "../../api/fixedAssets";
@@ -41,6 +42,7 @@ const returnable = new Set([
 const msg = (e) => e.response?.data?.message || e.message;
 
 export function Locations({ user }) {
+  const uiText = useUiTranslation();
   const [rows, setRows] = useState([]),
     [query, setQuery] = useState({}),
     [form, setForm] = useState(null),
@@ -131,7 +133,7 @@ export function Locations({ user }) {
             <span
               className={`rounded-full px-2 py-1 text-xs font-bold ${x.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
             >
-              {x.is_active ? "Active" : "Inactive"}
+              {x.is_active ? uiText("Active") : "Inactive"}
             </span>
             {can && (
               <>
@@ -149,9 +151,7 @@ export function Locations({ user }) {
                       isActive: x.is_active,
                     })
                   }
-                >
-                  Edit
-                </button>
+                >{uiText("Edit")}</button>
                 <button
                   className="font-semibold text-cyan-700 hover:underline"
                   onClick={() =>
@@ -168,7 +168,7 @@ export function Locations({ user }) {
                   className="font-semibold text-slate-600 hover:underline"
                   onClick={() => toggle(x)}
                 >
-                  {x.is_active ? "Deactivate" : "Activate"}
+                  {x.is_active ? uiText("Deactivate") : "Activate"}
                 </button>
               </>
             )}
@@ -241,8 +241,8 @@ export function Locations({ user }) {
           aria-label="Location activity"
           onChange={(e) => setQuery({ ...query, active: e.target.value })}
         >
-          <option value="">All statuses</option>
-          <option value="true">Active</option>
+          <option value="">{uiText("All statuses")}</option>
+          <option value="true">{uiText("Active")}</option>
           <option value="false">Inactive</option>
         </select>
       </div>
@@ -347,11 +347,9 @@ export function Locations({ user }) {
               className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-white"
               type="button"
               onClick={() => setForm(null)}
-            >
-              Cancel
-            </button>
+            >{uiText("Cancel")}</button>
             <button className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-cyan-800">
-              {form.id ? "Save changes" : "Create location"}
+              {form.id ? uiText("Save changes") : "Create location"}
               <ArrowRight size={17} />
             </button>
           </div>
@@ -383,9 +381,7 @@ export function Locations({ user }) {
             ))}
           </select>
           <button>Move location</button>
-          <button type="button" onClick={() => setReparenting(null)}>
-            Cancel
-          </button>
+          <button type="button" onClick={() => setReparenting(null)}>{uiText("Cancel")}</button>
         </form>
       )}
       {!rows.length && !form ? (
@@ -433,6 +429,7 @@ const actions = {
   IN_TRANSIT: ["receive"],
 };
 export function Movements({ user, initialAssetId }) {
+  const uiText = useUiTranslation();
   const preselected = initialAssetId;
   const [rows, setRows] = useState([]),
     [locations, setLocations] = useState([]),
@@ -563,7 +560,7 @@ export function Movements({ user, initialAssetId }) {
           aria-label="Movement status"
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
         >
-          <option value="">All statuses</option>
+          <option value="">{uiText("All statuses")}</option>
           {Object.keys(actions).map((x) => (
             <option key={x}>{x.replaceAll("_", " ")}</option>
           ))}
@@ -739,9 +736,7 @@ export function Movements({ user, initialAssetId }) {
                 />
               </label>
             )}
-            <label className="text-sm font-semibold text-slate-700 md:col-span-2">
-              Reason
-              <textarea
+            <label className="text-sm font-semibold text-slate-700 md:col-span-2">{uiText("Reason")}<textarea
                 className={`${control} mt-1 min-h-24 resize-y`}
                 placeholder="Explain why this movement is required"
                 aria-label="Movement reason"
@@ -756,9 +751,7 @@ export function Movements({ user, initialAssetId }) {
               className="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-white"
               type="button"
               onClick={() => setForm(null)}
-            >
-              Cancel
-            </button>
+            >{uiText("Cancel")}</button>
             <button
               disabled={!eligibleLocations.length}
               className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-300"
@@ -858,8 +851,7 @@ export function Movements({ user, initialAssetId }) {
       {detail && (
         <aside className="m-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <h3 className="font-bold">Movement MV-{detail.id}</h3>
-          <p className="mt-1 text-sm text-slate-600">
-            Requested {detail.requested_at} → Approved{" "}
+          <p className="mt-1 text-sm text-slate-600">{uiText("Requested")}{" "}{detail.requested_at} → Approved{" "}
             {detail.approved_at || "pending"} → Dispatched{" "}
             {detail.dispatched_at || "pending"} → Received{" "}
             {detail.received_at || "pending"}

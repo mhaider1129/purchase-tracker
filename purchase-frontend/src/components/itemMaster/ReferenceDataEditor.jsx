@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useState } from "react";
 import { createItemMasterReference } from "../../api/itemMaster";
 
@@ -9,6 +10,7 @@ const labels = {
 
 // A fieldset, rather than a nested form, so reference setup can live inside an item draft.
 export default function ReferenceDataEditor({ type, onCreated, onClose }) {
+  const uiText = useUiTranslation();
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,7 +37,7 @@ export default function ReferenceDataEditor({ type, onCreated, onClose }) {
   };
   return (
     <fieldset disabled={busy} className="space-y-3 rounded border bg-white p-3">
-      <legend className="px-1 font-semibold">Add {label}</legend>
+      <legend className="px-1 font-semibold">{uiText("Add")}{" "}{label}</legend>
       {type === "uom" && (
         <label className="block text-sm">
           UOM code

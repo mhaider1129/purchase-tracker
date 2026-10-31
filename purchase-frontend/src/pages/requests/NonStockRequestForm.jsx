@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 // src/pages/requests/NonStockRequestForm.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardList, FileText, Layers, Paperclip, Send } from 'lucide-react';
@@ -17,6 +18,7 @@ import { withRequestItemIdentity } from '../../utils/requestItemIdentity';
 import { HOSPITAL_UNITS_OF_MEASURE } from '../../constants/unitsOfMeasure';
 
 const NonStockRequestForm = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const tr = useCallback(
     (key, options) => t(`nonStockRequestPage.${key}`, options),
@@ -627,7 +629,7 @@ ${templateText}`
                     />
                   </div>
                   <div className="md:col-span-3">
-                    <label className="block text-xs font-medium ns-muted mb-1">Unit of measure</label>
+                    <label className="block text-xs font-medium ns-muted mb-1">{uiText("Unit of measure")}</label>
                     <select
                       value={item.unit_of_measure}
                       onChange={(e) => handleItemChange(index, 'unit_of_measure', e.target.value)}

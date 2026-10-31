@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -103,6 +104,7 @@ const summaryIconStyles = {
 };
 
 const MyEvaluationsPage = () => {
+  const uiText = useUiTranslation();
   const [evaluations, setEvaluations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -168,9 +170,7 @@ const MyEvaluationsPage = () => {
           <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400">
             Contract performance
           </p>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-4xl">
-            My Evaluations
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-4xl">{uiText("My Evaluations")}</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
             Review assigned criteria, complete pending scorecards, and track
             your submitted assessments.
@@ -194,13 +194,13 @@ const MyEvaluationsPage = () => {
             color: "blue",
           },
           {
-            label: "Completed",
+            label: uiText("Completed"),
             value: summary.completed,
             icon: CheckCircle2,
             color: "emerald",
           },
           {
-            label: "Pending",
+            label: uiText("Pending"),
             value: summary.pending,
             icon: Clock3,
             color: "amber",
@@ -267,9 +267,9 @@ const MyEvaluationsPage = () => {
               onChange={(event) => setStatusFilter(event.target.value)}
               className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
             >
-              <option value="all">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
+              <option value="all">{uiText("All statuses")}</option>
+              <option value="pending">{uiText("Pending")}</option>
+              <option value="completed">{uiText("Completed")}</option>
             </select>
           </div>
         </div>

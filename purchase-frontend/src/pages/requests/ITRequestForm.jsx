@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import './RequestForms.css';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import AmountInput from '../../components/ui/AmountInput';
@@ -28,6 +29,7 @@ const MAX_ATTACHMENTS = 5;
 const MAX_ATTACHMENT_SIZE_MB = 10;
 
 const ITRequestForm = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const tr = useCallback(
     (key, options) => t(`itRequestFormPage.${key}`, options),
@@ -294,7 +296,7 @@ const ITRequestForm = () => {
           <h2 className="text-lg font-semibold mb-2 text-blue-800">{tr('overview.heading')}</h2>
           <p className="mb-3 text-sm text-blue-800" role="status">
             {isDraftSaving
-              ? 'Saving draft...'
+              ? uiText("Saving draft...")
               : lastSavedLabel
                 ? `Draft autosaved at ${lastSavedLabel}. You can resume if interrupted before submitting.`
                 : 'Draft autosave is active as IT items are filled in.'}

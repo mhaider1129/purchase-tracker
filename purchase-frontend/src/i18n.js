@@ -3,9 +3,12 @@ import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
 import ar from "./locales/ar.json";
 
+import interfaceEn from "./locales/interface.en.json";
+import interfaceAr from "./locales/interface.ar.json";
+
 const resources = {
-  en: { translation: en },
-  ar: { translation: ar },
+  en: { translation: en, interface: interfaceEn },
+  ar: { translation: ar, interface: interfaceAr },
 };
 
 const savedLang = localStorage.getItem("lang") || "en";

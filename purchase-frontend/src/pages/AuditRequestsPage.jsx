@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from '../api/axios';
@@ -9,6 +10,7 @@ import useApprovalTimeline from '../hooks/useApprovalTimeline';
 import usePageTranslation from '../utils/usePageTranslation';
 
 const AuditRequestsPage = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const tr = usePageTranslation('auditRequests');
   const [requests, setRequests] = useState([]);
@@ -486,7 +488,7 @@ const AuditRequestsPage = () => {
                                 }
                                 className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100"
                               >
-                                {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                                {alphabetizedItemsId === req.id ? uiText("Original order") : uiText("Sort A-Z")}
                               </button>
                             )}
                           </div>

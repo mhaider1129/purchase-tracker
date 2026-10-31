@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import { listPendingItems, resolvePendingItem } from "../../api/itemMaster";
 import GenericItemSelector from "../requests/GenericItemSelector";
@@ -5,6 +6,7 @@ import { hasPermission } from "../../utils/permissions";
 import ItemHierarchyCreateForm from "./ItemHierarchyCreateForm";
 
 export default function PendingItemWorkspace({ user }) {
+  const uiText = useUiTranslation();
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -76,8 +78,8 @@ export default function PendingItemWorkspace({ user }) {
             <tr>
               <th className="p-2">Proposed item</th>
               <th className="p-2">Request / line</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Action</th>
+              <th className="p-2">{uiText("Status")}</th>
+              <th className="p-2">{uiText("Action")}</th>
             </tr>
           </thead>
           <tbody>
@@ -125,18 +127,14 @@ export default function PendingItemWorkspace({ user }) {
         <button
           disabled={page <= 1}
           onClick={() => setPage((value) => value - 1)}
-        >
-          Previous
-        </button>
+        >{uiText("Previous")}</button>
         <span>
           Page {page} · {total} referrals
         </span>
         <button
           disabled={page * 10 >= total}
           onClick={() => setPage((value) => value + 1)}
-        >
-          Next
-        </button>
+        >{uiText("Next")}</button>
       </div>
       {target && (
         <section className="space-y-3 rounded-lg border bg-slate-50 p-4">
@@ -175,9 +173,7 @@ export default function PendingItemWorkspace({ user }) {
             />
           ) : (
             <form onSubmit={save} className="space-y-3">
-              <label className="block text-sm">
-                Decision
-                <select
+              <label className="block text-sm">{uiText("Decision")}<select
                   className="ml-3 rounded border p-2"
                   value={decision}
                   disabled={busy}
@@ -235,9 +231,7 @@ export default function PendingItemWorkspace({ user }) {
                   )}
                 </div>
               )}
-              <label className="block text-sm">
-                Decision notes
-                <textarea
+              <label className="block text-sm">{uiText("Decision notes")}<textarea
                   required
                   className="mt-1 w-full rounded border p-2"
                   value={notes}
@@ -262,9 +256,7 @@ export default function PendingItemWorkspace({ user }) {
                   onClick={() => setTarget(null)}
                   disabled={busy}
                   className="rounded border px-4 py-2"
-                >
-                  Cancel
-                </button>
+                >{uiText("Cancel")}</button>
               </div>
             </form>
           )}

@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React from "react";
 import {
   Download,
@@ -17,6 +18,7 @@ const AttachmentsPanel = ({
   downloadingId,
   emptyLabel = "No attachments uploaded.",
 }) => {
+  const uiText = useUiTranslation();
   return (
     <section
       className="rounded-xl border border-slate-200 bg-white p-4"
@@ -37,7 +39,7 @@ const AttachmentsPanel = ({
       {loading ? (
         <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
           <Loader2 className="h-4 w-4 animate-spin text-blue-600" aria-hidden />
-          <span>Loading attachments…</span>
+          <span>{uiText("Loading attachments…")}</span>
         </div>
       ) : error ? (
         <p
@@ -79,8 +81,7 @@ const AttachmentsPanel = ({
                     className="inline-flex items-center gap-1 font-medium text-blue-600 hover:text-blue-800"
                     onClick={() => onView?.(att.file_url, filename)}
                   >
-                    <ExternalLink className="h-3.5 w-3.5" aria-hidden /> View
-                  </button>
+                    <ExternalLink className="h-3.5 w-3.5" aria-hidden />{" "}{uiText("View")}</button>
                 )}
                 <button
                   type="button"
@@ -93,7 +94,7 @@ const AttachmentsPanel = ({
                   ) : (
                     <Download className="h-3.5 w-3.5" aria-hidden />
                   )}
-                  {downloadingId === att.id ? "Downloading…" : "Download"}
+                  {downloadingId === att.id ? uiText("Downloading…") : uiText("Download")}
                 </button>
               </li>
             );

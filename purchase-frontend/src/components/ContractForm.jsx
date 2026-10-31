@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React from "react";
 import { Building2, Check, CircleDollarSign, FileText, Landmark, Users } from "lucide-react";
 import AmountInput from "./ui/AmountInput";
@@ -23,14 +24,15 @@ const ContractForm = ({
   suppliersLoading,
   suppliersError,
 }) => {
+  const uiText = useUiTranslation();
   const [activeStructuredSection, setActiveStructuredSection] = React.useState("scope_summary");
   const [activeStep, setActiveStep] = React.useState("overview");
 
   const steps = [
-    { key: "overview", label: "Overview", description: "Identity and ownership", icon: FileText },
+    { key: "overview", label: uiText("Overview"), description: "Identity and ownership", icon: FileText },
     { key: "parties", label: "Parties", description: "Supplier and contacts", icon: Users },
     { key: "terms", label: "Terms", description: "Scope and obligations", icon: Building2 },
-    { key: "governance", label: "Governance", description: "Reviews and approvals", icon: Landmark },
+    { key: "governance", label: uiText("Governance"), description: "Reviews and approvals", icon: Landmark },
     { key: "payment", label: "Payment", description: "Commercial controls", icon: CircleDollarSign },
   ];
 
@@ -127,7 +129,7 @@ const ContractForm = ({
           <h3 className="flex items-center gap-2 border-b border-slate-200 pb-3 text-base font-bold text-slate-900 dark:border-slate-700 dark:text-white"><FileText className="h-4 w-4 text-blue-600" /> Core Contract Header</h3>
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="institute">Institute</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="institute">{uiText("Institute")}</label>
           <input id="institute" name="institute" type="text" value={formState.institute} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
         </div>
         <div>
@@ -143,7 +145,7 @@ const ContractForm = ({
           <input id="renewal_notice_days" name="renewal_notice_days" type="number" min="0" value={formState.renewal_notice_days} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="currency">Currency</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200" htmlFor="currency">{uiText("Currency")}</label>
           <select id="currency" name="currency" value={formState.currency} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
             <option value="IQD">IQD</option>
             <option value="USD">USD</option>
@@ -154,7 +156,7 @@ const ContractForm = ({
         </div>
         <div><input name="first_party" value={formState.first_party} onChange={handleInputChange} placeholder="First party" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="second_party" value={formState.second_party} onChange={handleInputChange} placeholder="Second party" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
-        <div><input name="authorized_signatory" value={formState.authorized_signatory} onChange={handleInputChange} placeholder="Authorized signatory" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
+        <div><input name="authorized_signatory" value={formState.authorized_signatory} onChange={handleInputChange} placeholder={uiText("Authorized signatory")} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="vendor_contact_person" value={formState.vendor_contact_person} onChange={handleInputChange} placeholder="Vendor contact person" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="vendor_contact_email" value={formState.vendor_contact_email} onChange={handleInputChange} placeholder="Vendor email" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
         <div><input name="vendor_contact_phone" value={formState.vendor_contact_phone} onChange={handleInputChange} placeholder="Vendor phone" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" /></div>
@@ -266,7 +268,7 @@ const ContractForm = ({
             ))}
           </select>
           {suppliersLoading && (
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Loading suppliers…</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{uiText("Loading suppliers…")}</p>
           )}
           {suppliersError && (
             <p className="mt-1 text-xs text-red-600 dark:text-red-400">{suppliersError}</p>
@@ -276,9 +278,7 @@ const ContractForm = ({
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="reference_number"
-          >
-            Reference number
-          </label>
+          >{uiText("Reference number")}</label>
           <input
             id="reference_number"
             name="reference_number"
@@ -325,7 +325,7 @@ const ContractForm = ({
           >
             <option value="purchasing">Purchasing</option>
             <option value="leasing">Leasing</option>
-            <option value="other">Other</option>
+            <option value="other">{uiText("Other")}</option>
           </select>
         </div>
         <div>
@@ -396,9 +396,7 @@ const ContractForm = ({
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="status"
-          >
-            Status
-          </label>
+          >{uiText("Status")}</label>
           <select
             id="status"
             name="status"
@@ -439,7 +437,7 @@ const ContractForm = ({
           >
             <option value="">
               {departmentsLoading
-                ? "Loading departments..."
+                ? uiText("Loading departments...")
                 : "No department (send to CMO/COO)"}
             </option>
             {departments.map((department) => (
@@ -478,7 +476,7 @@ const ContractForm = ({
               {users.map((user) => (
                 <option key={user.id} value={String(user.id)}>
                   {user.name || user.email || `User #${user.id}`} (
-                  {(user.role || "").toUpperCase() || "Unknown"})
+                  {(user.role || "").toUpperCase() || uiText("Unknown")})
                 </option>
               ))}
             </select>
@@ -545,9 +543,7 @@ const ContractForm = ({
           <label
             className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200"
             htmlFor="description"
-          >
-            Notes
-          </label>
+          >{uiText("Notes")}</label>
           <textarea
             id="description"
             name="description"
@@ -594,10 +590,10 @@ const ContractForm = ({
         </div>
         <div id="payment-controls" className="scroll-mt-24 sm:col-span-2">
           <div className="grid gap-3 sm:grid-cols-2">
-            <select name="payment_methods" multiple value={formState.payment_methods} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"><option>Cash</option><option>Transfer</option><option>LC</option></select>
+            <select name="payment_methods" multiple value={formState.payment_methods} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"><option>Cash</option><option>{uiText("Transfer")}</option><option>LC</option></select>
             <input name="payment_period" value={formState.payment_period} onChange={handleInputChange} placeholder="Payment Period" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
             <input name="payment_advance_percentage" value={formState.payment_advance_percentage} onChange={handleInputChange} placeholder="Advance Payment %" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-            <select name="payment_retention" value={formState.payment_retention} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"><option value="">Retention</option><option>Yes</option><option>No</option></select>
+            <select name="payment_retention" value={formState.payment_retention} onChange={handleInputChange} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"><option value="">Retention</option><option>{uiText("Yes")}</option><option>{uiText("No")}</option></select>
             <textarea name="payment_milestone_details" rows={2} value={formState.payment_milestone_details} onChange={handleInputChange} placeholder="Milestone Payments" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
             <textarea name="payment_invoice_requirements" rows={2} value={formState.payment_invoice_requirements} onChange={handleInputChange} placeholder="Invoice Requirements" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
           </div>
@@ -627,7 +623,7 @@ const ContractForm = ({
           className="ml-auto inline-flex items-center justify-center rounded-xl border border-transparent bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
         >
           {saving
-            ? "Saving..."
+            ? uiText("Saving...")
             : editingId
               ? "Update contract"
               : "Create contract"}

@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 // src/pages/ClosedRequestsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
@@ -71,6 +72,7 @@ const mapStatusColor = (status) => {
 };
 
 const ClosedRequestsPage = () => {
+  const uiText = useUiTranslation();
   const { t: translate, i18n } = useTranslation();
   const tr = useMemo(
     () => (key, options) => translate(`closedRequests.${key}`, options),
@@ -926,7 +928,7 @@ const ClosedRequestsPage = () => {
                                       }
                                       className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                                     >
-                                      {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                                      {alphabetizedItemsId === req.id ? uiText("Original order") : uiText("Sort A-Z")}
                                     </button>
                                   )}
                                 </div>
@@ -1241,7 +1243,7 @@ const ClosedRequestsPage = () => {
                               }
                               className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                             >
-                              {alphabetizedItemsId === req.id ? 'Original order' : 'Sort A-Z'}
+                              {alphabetizedItemsId === req.id ? uiText("Original order") : uiText("Sort A-Z")}
                             </button>
                           )}
                         </div>

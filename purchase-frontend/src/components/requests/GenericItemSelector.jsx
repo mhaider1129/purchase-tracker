@@ -1,9 +1,11 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useState } from 'react';
 import { getItemMasterReferences, searchGenericItems } from '../../api/itemMaster';
 
 import { ITEM_TYPES } from '../../constants/itemTypes';
 
 export default function GenericItemSelector({ value, onChange, disabled = false, allowPendingCreation = true }) {
+  const uiText = useUiTranslation();
   const [query, setQuery] = useState(value?.item_name || '');
   const [options, setOptions] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -66,7 +68,7 @@ export default function GenericItemSelector({ value, onChange, disabled = false,
             {ITEM_TYPES.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
           </select>
           <select disabled={disabled} aria-label="Pending category" className="rounded border p-2" value={value.pending_item?.category || ''} onChange={event => onChange({ pending_item: { ...value.pending_item, category: event.target.value } })}>
-            <option value="">Select category</option>
+            <option value="">{uiText("Select category")}</option>
             {categories.map(category => <option key={category.id || category.name} value={category.name}>{category.name}</option>)}
           </select>
         </div>

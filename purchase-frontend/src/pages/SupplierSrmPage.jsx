@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, ClipboardList, FileText, Gavel, PackageCheck, Plus, Receipt, Shield, UsersRound, X } from "lucide-react";
 import {
@@ -86,6 +87,7 @@ const formatDate = (value) => {
 };
 
 const SupplierSrmPage = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -534,25 +536,21 @@ const SupplierSrmPage = () => {
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Supplier SRM</h1>
+            <h1 className="text-2xl font-semibold">{uiText("Supplier SRM")}</h1>
             <p className="text-sm text-gray-600 dark:text-gray-300">
               Track performance scorecards, issues/CAPA, and compliance health for suppliers.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex items-center gap-3">
-              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="supplier-select">
-                Supplier
-              </label>
+              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="supplier-select">{uiText("Supplier")}</label>
               <select
                 id="supplier-select"
                 className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
                 value={selectedSupplierId}
                 onChange={(event) => setSelectedSupplierId(event.target.value)}
               >
-                <option value="" disabled>
-                  Select supplier
-                </option>
+                <option value="" disabled>{uiText("Select supplier")}</option>
                 {suppliers.map((supplier) => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.name}
@@ -598,7 +596,7 @@ const SupplierSrmPage = () => {
         )}
 
         {selectedSupplier && (
-          <Panel title={`Open Supplier Workspace • ${selectedSupplier?.name || "Supplier"}`} icon={ClipboardList}>
+          <Panel title={`Open Supplier Workspace • ${selectedSupplier?.name || uiText("Supplier")}`} icon={ClipboardList}>
             <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
               Contextual workspace view for supplier operations: contracts, POs, delivery KPIs, compliance, invoices, disputes, CAPA history, and risk.
             </p>
@@ -634,9 +632,9 @@ const SupplierSrmPage = () => {
               <Panel title="Classification" icon={Shield}>
                 <form className="space-y-3" onSubmit={handleClassificationSubmit}>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <SelectField label="Supplier type" value={classificationForm.supplier_type} onChange={(event) => setClassificationForm((prev) => ({ ...prev, supplier_type: event.target.value }))} options={["Manufacturer", "Authorized Agent", "Authorized Distributor", "Sub-distributor", "Local Trader", "Service Provider", "Contractor"]} />
+                    <SelectField label={uiText("Supplier type")} value={classificationForm.supplier_type} onChange={(event) => setClassificationForm((prev) => ({ ...prev, supplier_type: event.target.value }))} options={["Manufacturer", "Authorized Agent", "Authorized Distributor", "Sub-distributor", "Local Trader", "Service Provider", "Contractor"]} />
                     <SelectField label="Regulatory risk" value={classificationForm.regulatory_risk_level} onChange={(event) => setClassificationForm((prev) => ({ ...prev, regulatory_risk_level: event.target.value }))} options={["low", "medium", "high", "critical"]} />
-                    <SelectField label="Supplier category" value={classificationForm.supplier_category} onChange={(event) => setClassificationForm((prev) => ({ ...prev, supplier_category: event.target.value }))} options={SUPPLIER_CATEGORY_OPTIONS} placeholder="Select category" />
+                    <SelectField label="Supplier category" value={classificationForm.supplier_category} onChange={(event) => setClassificationForm((prev) => ({ ...prev, supplier_category: event.target.value }))} options={SUPPLIER_CATEGORY_OPTIONS} placeholder={uiText("Select category")} />
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2">
                     {[
@@ -654,7 +652,7 @@ const SupplierSrmPage = () => {
                     ))}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Notes</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{uiText("Notes")}</label>
                     <textarea className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" rows={3} value={classificationForm.notes} onChange={(event) => setClassificationForm((prev) => ({ ...prev, notes: event.target.value }))} />
                   </div>
                   <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Save classification</button>
@@ -665,7 +663,7 @@ const SupplierSrmPage = () => {
                 <form className="space-y-3" onSubmit={handlePrincipalSubmit}>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <InputField label="Principal / Company Name" value={principalForm.principal_name} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, principal_name: event.target.value }))} required />
-                    <SelectField label="Country" value={principalForm.principal_country} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, principal_country: event.target.value }))} options={PRINCIPAL_COUNTRY_OPTIONS} placeholder="Select country" />
+                    <SelectField label={uiText("Country")} value={principalForm.principal_country} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, principal_country: event.target.value }))} options={PRINCIPAL_COUNTRY_OPTIONS} placeholder="Select country" />
                     <SelectField label="Relationship type" value={principalForm.relationship_type} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, relationship_type: event.target.value }))} options={["Manufacturer", "Exclusive Agent", "Non-Exclusive Agent", "Authorized Distributor", "Sub-distributor", "Service Partner", "Maintenance Partner"]} />
                     <SelectField label="Authorization status" value={principalForm.authorization_status} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, authorization_status: event.target.value }))} options={["Pending Verification", "Verified", "Expired", "Rejected", "Suspended"]} />
                     <InputField label="Start date" type="date" value={principalForm.authorization_start_date} onChange={(event) => setPrincipalForm((prev) => ({ ...prev, authorization_start_date: event.target.value }))} />
@@ -703,10 +701,10 @@ const SupplierSrmPage = () => {
                       <td className="px-3 py-2">{principal.verified_by_name || principal.verified_by || "-"}</td>
                       <td className="px-3 py-2">{formatDate(principal.verified_at)}</td>
                       <td className="space-x-2 px-3 py-2">
-                        <button type="button" onClick={() => handleEditPrincipal(principal)} className="text-blue-600 hover:underline">Edit</button>
+                        <button type="button" onClick={() => handleEditPrincipal(principal)} className="text-blue-600 hover:underline">{uiText("Edit")}</button>
                         <button type="button" onClick={() => handleVerifyPrincipal(principal.id)} className="text-emerald-600 hover:underline">Verify</button>
                         <button type="button" onClick={() => handleSuspendPrincipal(principal.id)} className="text-red-600 hover:underline">Suspend</button>
-                        <button type="button" onClick={() => handleDeactivatePrincipal(principal.id)} className="text-gray-600 hover:underline">Deactivate</button>
+                        <button type="button" onClick={() => handleDeactivatePrincipal(principal.id)} className="text-gray-600 hover:underline">{uiText("Deactivate")}</button>
                       </td>
                     </tr>
                   ))}
@@ -825,7 +823,7 @@ const SupplierSrmPage = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Notes</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{uiText("Notes")}</label>
                   <textarea
                     className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
                     rows={3}
@@ -875,7 +873,7 @@ const SupplierSrmPage = () => {
             <Panel title="Issues & CAPA" icon={AlertTriangle}>
               <form className="space-y-3" onSubmit={handleIssueSubmit}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Description</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{uiText("Description")}</label>
                   <textarea
                     className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
                     rows={3}
@@ -897,13 +895,13 @@ const SupplierSrmPage = () => {
                         setIssueForm((prev) => ({ ...prev, severity: event.target.value }))
                       }
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
+                      <option value="low">{uiText("Low")}</option>
+                      <option value="medium">{uiText("Medium")}</option>
+                      <option value="high">{uiText("High")}</option>
                     </select>
                   </div>
                   <InputField
-                    label="Due date"
+                    label={uiText("Due date")}
                     type="date"
                     value={issueForm.due_date}
                     onChange={(event) =>
@@ -971,8 +969,7 @@ const SupplierSrmPage = () => {
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Status {item.status} • Due {formatDate(item.due_date)}
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{uiText("Status")}{" "}{item.status} • Due {formatDate(item.due_date)}
                     </p>
                     {item.capa_required && (
                       <p className="text-xs text-amber-600 dark:text-amber-400">CAPA: {item.capa_plan || "Plan pending"}</p>
@@ -990,7 +987,7 @@ const SupplierSrmPage = () => {
               <form className="space-y-3" onSubmit={handleComplianceSubmit}>
                 <div className="grid gap-3 md:grid-cols-3">
                   <InputField
-                    label="Type"
+                    label={uiText("Type")}
                     value={complianceForm.artifact_type}
                     onChange={(event) =>
                       setComplianceForm((prev) => ({ ...prev, artifact_type: event.target.value }))
@@ -998,7 +995,7 @@ const SupplierSrmPage = () => {
                     required
                   />
                   <InputField
-                    label="Name"
+                    label={uiText("Name")}
                     value={complianceForm.name}
                     onChange={(event) =>
                       setComplianceForm((prev) => ({ ...prev, name: event.target.value }))
@@ -1022,7 +1019,7 @@ const SupplierSrmPage = () => {
                     }
                   />
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Status</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{uiText("Status")}</label>
                     <select
                       className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-offset-gray-950"
                       value={complianceForm.status}
@@ -1030,8 +1027,8 @@ const SupplierSrmPage = () => {
                         setComplianceForm((prev) => ({ ...prev, status: event.target.value }))
                       }
                     >
-                      <option value="active">Active</option>
-                      <option value="expired">Expired</option>
+                      <option value="active">{uiText("Active")}</option>
+                      <option value="expired">{uiText("Expired")}</option>
                       <option value="blocked">Blocked</option>
                     </select>
                   </div>
@@ -1092,8 +1089,7 @@ const SupplierSrmPage = () => {
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-100">
-                          <CheckCircle2 className="h-4 w-4" /> Active
-                        </span>
+                          <CheckCircle2 className="h-4 w-4" />{" "}{uiText("Active")}</span>
                       )}
                       <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-200">
                         {artifact.status}
@@ -1208,13 +1204,14 @@ const StatusBadge = ({ value }) => {
 };
 
 const ExpiryBadge = ({ value }) => {
+  const uiText = useUiTranslation();
   const classes = {
     Active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-100",
     "Expiring Soon": "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-100",
     Expired: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-100",
   };
 
-  return <span className={`rounded-full px-2 py-1 text-xs font-semibold ${classes[value] || classes.Active}`}>{value || "Active"}</span>;
+  return <span className={`rounded-full px-2 py-1 text-xs font-semibold ${classes[value] || classes.Active}`}>{value || uiText("Active")}</span>;
 };
 
 export default SupplierSrmPage;

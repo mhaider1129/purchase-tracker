@@ -1,8 +1,10 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getTechnicalInspection } from "../api/technicalInspections";
 
 export default function HistoricalInspectionDetail({ id }) {
+  const uiText = useUiTranslation();
   const [record, setRecord] = useState(null),
     [error, setError] = useState("");
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function HistoricalInspectionDetail({ id }) {
               ].map(([title, value]) => (
                 <div key={title}>
                   <dt className="text-sm text-slate-500">{title}</dt>
-                  <dd>{value || "Not recorded"}</dd>
+                  <dd>{value || uiText("Not recorded")}</dd>
                 </div>
               ))}
             </dl>
@@ -83,7 +85,7 @@ export default function HistoricalInspectionDetail({ id }) {
                       <td className="p-2">{check.item}</td>
                       <td>
                         {check.condition?.replaceAll("_", " ") ||
-                          "Not recorded"}
+                          uiText("Not recorded")}
                       </td>
                       <td>{check.comment}</td>
                       <td>{check.action_required}</td>
@@ -114,7 +116,7 @@ export default function HistoricalInspectionDetail({ id }) {
             </p>
             <p>{record.acceptance_notes}</p>
             <p className="mt-2 text-sm text-slate-500">
-              Recorded by {record.created_by_name || "Unknown"}. This historical
+              Recorded by {record.created_by_name || uiText("Unknown")}. This historical
               form has no assigned task or quantity disposition; it is not a
               Goods Receipt acceptance decision.
             </p>

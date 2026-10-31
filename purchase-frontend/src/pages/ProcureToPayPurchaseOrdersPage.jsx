@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Clock3, FilePlus2, PackageCheck, RefreshCw, Search, ShoppingCart } from 'lucide-react';
@@ -67,6 +68,7 @@ const EMPTY_MANUAL_ITEM = { requested_item_id: null, item_name: '', quantity: '1
 const formatAmount = (value) => Number(value || 0).toFixed(2);
 
 const ProcureToPayPurchaseOrdersPage = () => {
+  const uiText = useUiTranslation();
   const { requestId } = useParams();
   const [rows, setRows] = useState([]);
   const [sourceRequests, setSourceRequests] = useState([]);
@@ -262,9 +264,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
             await handleMutation(() => approvePurchaseOrder(po.id), `Purchase order ${po.po_number} approved.`);
             setBusyPoId(null);
           }}
-        >
-          Approve
-        </button>
+        >{uiText("Approve")}</button>
       );
     }
 
@@ -279,9 +279,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
             await handleMutation(() => submitPurchaseOrderForApproval(po.id), `Purchase order ${po.po_number} submitted for approval.`);
             setBusyPoId(null);
           }}
-        >
-          Submit
-        </button>
+        >{uiText("Submit")}</button>
       );
     }
 
@@ -296,9 +294,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
             await handleMutation(() => issuePurchaseOrder(po.id, { supplier_contact_email: po.supplier_contact_email || null }), `Purchase order ${po.po_number} issued to supplier.`);
             setBusyPoId(null);
           }}
-        >
-          Issue
-        </button>
+        >{uiText("Issue")}</button>
       );
     }
 
@@ -332,9 +328,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
             await handleMutation(() => cancelPurchaseOrder(po.id, { reason }), `Purchase order ${po.po_number} cancelled.`);
             setBusyPoId(null);
           }}
-        >
-          Cancel
-        </button>
+        >{uiText("Cancel")}</button>
       );
     }
 
@@ -362,8 +356,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
           </div>
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => load(1)} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-60">
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
-            </button>
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />{" "}{uiText("Refresh")}</button>
             <button type="button" onClick={openCreateWorkspace} className="inline-flex items-center gap-2 rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold shadow-lg hover:bg-indigo-400">
               <FilePlus2 size={17} /> Create PO
             </button>
@@ -390,11 +383,11 @@ const ProcureToPayPurchaseOrdersPage = () => {
 
       <form className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[2fr_1fr_1fr_auto]" onSubmit={(event) => { event.preventDefault(); load(1); }}>
         <label className="relative"><span className="sr-only">Search purchase orders</span><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><input className="w-full rounded-xl border border-slate-300 py-2.5 pl-9 pr-3" placeholder="Search PO number, supplier, or request" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} /></label>
-        <input aria-label="Filter by supplier" className="rounded-xl border border-slate-300 px-3 py-2.5" placeholder="Supplier" value={filters.supplier} onChange={(e) => setFilters((p) => ({ ...p, supplier: e.target.value }))} />
+        <input aria-label="Filter by supplier" className="rounded-xl border border-slate-300 px-3 py-2.5" placeholder={uiText("Supplier")} value={filters.supplier} onChange={(e) => setFilters((p) => ({ ...p, supplier: e.target.value }))} />
         <select aria-label="Filter by status" className="rounded-xl border border-slate-300 px-3 py-2.5" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}>
           {STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status] || status}</option>)}
         </select>
-        <button type="submit" className="rounded-xl bg-slate-900 px-5 py-2.5 font-semibold text-white hover:bg-slate-700">Apply filters</button>
+        <button type="submit" className="rounded-xl bg-slate-900 px-5 py-2.5 font-semibold text-white hover:bg-slate-700">{uiText("Apply filters")}</button>
       </form>
 
       {!isCreating ? (
@@ -433,7 +426,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
                 applySourceRequestToPoItems(e.target.value);
               }} disabled={Boolean(scopedRequestId)}>
                 <option value="">Select approved request</option>
-                {sourceRequests.map((r) => <option key={r.id} value={r.id}>Request #{r.id} · {r.request_type} · {(r.remaining_items || []).length} remaining lines</option>)}
+                {sourceRequests.map((r) => <option key={r.id} value={r.id}>{uiText("Request #")}{r.id} · {r.request_type} · {(r.remaining_items || []).length} remaining lines</option>)}
               </select>
             ) : (
               <input className="border rounded px-2 py-1" placeholder="Source reference / contract no." value={manualForm.source_document_id} onChange={(e) => setManualForm((prev) => ({ ...prev, source_document_id: e.target.value }))} />
@@ -442,7 +435,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
             <input className="border rounded px-2 py-1" placeholder="Supplier contact person" value={manualForm.supplier_contact_person} onChange={(e) => setManualForm((prev) => ({ ...prev, supplier_contact_person: e.target.value }))} />
             <input className="border rounded px-2 py-1" type="date" value={manualForm.expected_delivery_date} onChange={(e) => setManualForm((prev) => ({ ...prev, expected_delivery_date: e.target.value }))} />
             <input className="border rounded px-2 py-1" placeholder="Delivery location" value={manualForm.delivery_location} onChange={(e) => setManualForm((prev) => ({ ...prev, delivery_location: e.target.value }))} />
-            <input className="border rounded px-2 py-1" placeholder="Currency" value={manualForm.currency} onChange={(e) => setManualForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} />
+            <input className="border rounded px-2 py-1" placeholder={uiText("Currency")} value={manualForm.currency} onChange={(e) => setManualForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} />
             <input className="border rounded px-2 py-1" placeholder="Tax / discount terms" value={manualForm.tax_terms} onChange={(e) => setManualForm((prev) => ({ ...prev, tax_terms: e.target.value }))} />
             <input className="border rounded px-2 py-1" placeholder="Payment due terms" value={manualForm.payment_terms} onChange={(e) => setManualForm((prev) => ({ ...prev, payment_terms: e.target.value }))} />
             <input className="border rounded px-2 py-1" placeholder="Incoterms / freight terms" value={manualForm.shipping_terms} onChange={(e) => setManualForm((prev) => ({ ...prev, shipping_terms: e.target.value }))} />
@@ -458,13 +451,13 @@ const ProcureToPayPurchaseOrdersPage = () => {
             {manualItems.map((item, index) => (
               <div key={index} className="grid sm:grid-cols-6 gap-2">
                 <input className="border rounded px-2 py-1 sm:col-span-2" placeholder="Item description" value={item.item_name} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, item_name: e.target.value } : row)))} />
-                <input className="border rounded px-2 py-1" placeholder="Qty" type="number" min="0" value={item.quantity} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, quantity: e.target.value } : row)))} />
+                <input className="border rounded px-2 py-1" placeholder={uiText("Qty")} type="number" min="0" value={item.quantity} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, quantity: e.target.value } : row)))} />
                 <input className="border rounded px-2 py-1" placeholder="UOM" value={item.uom} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, uom: e.target.value } : row)))} />
                 <input className="border rounded px-2 py-1" placeholder="Unit price" type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => setManualItems((prev) => prev.map((row, i) => (i === index ? { ...row, unit_price: e.target.value } : row)))} />
-                <button type="button" className="rounded border border-red-300 px-2 py-1 text-sm text-red-700" onClick={() => setManualItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : [EMPTY_MANUAL_ITEM]))}>Delete</button>
+                <button type="button" className="rounded border border-red-300 px-2 py-1 text-sm text-red-700" onClick={() => setManualItems((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : [EMPTY_MANUAL_ITEM]))}>{uiText("Delete")}</button>
               </div>
             ))}
-            <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setManualItems((prev) => [...prev, EMPTY_MANUAL_ITEM])}>Add item</button>
+            <button type="button" className="rounded border px-3 py-1 text-sm" onClick={() => setManualItems((prev) => [...prev, EMPTY_MANUAL_ITEM])}>{uiText("Add item")}</button>
           </div>
           <button
             className="bg-emerald-600 text-white rounded px-3 py-1 disabled:bg-gray-300"
@@ -505,7 +498,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
         <p className="mb-3 text-xs text-gray-600">{activeTab === 'Overview' ? 'Open PO list, search/filter, source links, approval, receiving, invoice, communication, and manual close controls.' : `${activeTab} workspace foundation is ready for linked PO records and future detail panels.`}</p>
         <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50"><tr><th className="p-2 text-left">PO Number</th><th className="p-2 text-left">Supplier</th><th className="p-2 text-left">Business Status</th><th className="p-2 text-left">System Code</th><th className="p-2 text-left">Source</th><th className="p-2 text-left">Delivery / Budget</th><th className="p-2 text-left">Date</th><th className="p-2 text-right">Total</th><th className="p-2 text-left">Items</th><th className="p-2 text-left">Actions</th></tr></thead>
+          <thead className="bg-gray-50"><tr><th className="p-2 text-left">{uiText("PO Number")}</th><th className="p-2 text-left">{uiText("Supplier")}</th><th className="p-2 text-left">Business Status</th><th className="p-2 text-left">System Code</th><th className="p-2 text-left">Source</th><th className="p-2 text-left">Delivery / Budget</th><th className="p-2 text-left">{uiText("Date")}</th><th className="p-2 text-right">{uiText("Total")}</th><th className="p-2 text-left">{uiText("Items")}</th><th className="p-2 text-left">{uiText("Actions")}</th></tr></thead>
           <tbody>
             {!loading && rows.map((po) => (
               <tr key={po.id} className="border-t align-top transition hover:bg-slate-50/80">

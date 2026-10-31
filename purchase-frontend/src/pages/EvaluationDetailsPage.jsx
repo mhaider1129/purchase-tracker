@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -123,6 +124,7 @@ const normalizeEvaluation = (evaluation) => {
 };
 
 const EvaluationDetailsPage = () => {
+  const uiText = useUiTranslation();
   const { id } = useParams();
   const [evaluation, setEvaluation] = useState(null);
   const [scores, setScores] = useState({});
@@ -304,9 +306,7 @@ const EvaluationDetailsPage = () => {
           </div>
           <div className="grid gap-6 p-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="lg:col-span-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Criterion
-              </span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{uiText("Criterion")}</span>
               <p className="mt-1 font-semibold text-slate-900 dark:text-white">
                 {evaluation.evaluation_criteria?.criterionName || "—"}
               </p>
@@ -532,7 +532,7 @@ const EvaluationDetailsPage = () => {
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Save size={16} aria-hidden="true" />
-            {saving ? "Saving..." : "Submit evaluation"}
+            {saving ? uiText("Saving...") : "Submit evaluation"}
           </button>
         </div>
       </form>

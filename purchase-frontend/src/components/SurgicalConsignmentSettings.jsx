@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import * as api from "../api/surgicalConsignments";
 const empty = {
@@ -15,6 +16,7 @@ const role = (u) =>
     .toLowerCase()
     .replace(/[\s_]/g, "");
 export default function SurgicalConsignmentSettings() {
+  const uiText = useUiTranslation();
   const [data, setData] = useState(null),
     [form, setForm] = useState(empty),
     [reason, setReason] = useState(""),
@@ -163,8 +165,7 @@ export default function SurgicalConsignmentSettings() {
                   disabled={busy}
                   onClick={() => select(String(s.department_id))}
                   className="text-blue-700 underline"
-                >
-                  Edit{" "}
+                >{uiText("Edit")}{" "}
                   {
                     data.departments.find(
                       (d) => String(d.id) === String(s.department_id),
@@ -258,9 +259,7 @@ export default function SurgicalConsignmentSettings() {
           </p>
           {form.section_nurses.map((n, index) => (
             <div key={index} className="my-2 flex gap-2">
-              <label>
-                Section
-                <select
+              <label>{uiText("Section")}<select
                   required
                   aria-label={`Nurse override section ${index + 1}`}
                   value={n.section_id}
@@ -311,9 +310,7 @@ export default function SurgicalConsignmentSettings() {
                     ),
                   })
                 }
-              >
-                Remove
-              </button>
+              >{uiText("Remove")}</button>
             </div>
           ))}
           <button

@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 // src/pages/CompletedAssignedRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "../api/axios";
@@ -108,6 +109,7 @@ const PRINT_TRANSLATIONS = {
 };
 
 const CompletedAssignedRequestsPage = () => {
+  const uiText = useUiTranslation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expandedRequestId, setExpandedRequestId] = useState(null);
@@ -716,8 +718,7 @@ const CompletedAssignedRequestsPage = () => {
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-50">
-                <Archive size={14} aria-hidden="true" /> Request archive
-              </div>
+                <Archive size={14} aria-hidden="true" />{" "}{uiText("Request archive")}</div>
               <h1 className="text-3xl font-bold tracking-tight">
                 My Completed Requests
               </h1>
@@ -737,8 +738,7 @@ const CompletedAssignedRequestsPage = () => {
         <section className="workspace-kpi-grid grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
             <p className="flex items-center gap-2 text-xs uppercase tracking-wide text-gray-500">
-              <FileText size={15} /> Completed
-            </p>
+              <FileText size={15} />{" "}{uiText("Completed")}</p>
             <p className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
               {requests.length}
             </p>
@@ -777,9 +777,7 @@ const CompletedAssignedRequestsPage = () => {
               <label
                 className="block text-sm font-medium text-gray-700 dark:text-gray-200"
                 htmlFor="completed-search"
-              >
-                Search
-              </label>
+              >{uiText("Search")}</label>
               <div className="relative mt-1">
                 <Search
                   size={17}
@@ -796,15 +794,13 @@ const CompletedAssignedRequestsPage = () => {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Request type
-              </label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">{uiText("Request type")}</label>
               <select
                 className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-2.5 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
               >
-                <option value="all">All types</option>
+                <option value="all">{uiText("All types")}</option>
                 {requestTypeOptions.map((option) => (
                   <option key={option} value={option}>
                     {option}
@@ -841,8 +837,8 @@ const CompletedAssignedRequestsPage = () => {
                   type="button"
                   className="inline-flex h-[42px] items-center justify-center rounded-lg border border-gray-300 px-3 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300"
                   onClick={handleResetFilters}
-                  aria-label="Reset filters"
-                  title="Reset filters"
+                  aria-label={uiText("Reset filters")}
+                  title={uiText("Reset filters")}
                 >
                   <RotateCcw size={17} />
                 </button>
@@ -898,8 +894,7 @@ const CompletedAssignedRequestsPage = () => {
                   <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-3 flex-wrap">
-                        <h3 className="text-xl font-semibold text-gray-900">
-                          Request #{req.id}
+                        <h3 className="text-xl font-semibold text-gray-900">{uiText("Request #")}{req.id}
                         </h3>
                         {req.request_type && (
                           <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-sm font-medium">
@@ -911,13 +906,10 @@ const CompletedAssignedRequestsPage = () => {
                             <span
                               className="block h-2 w-2 rounded-full bg-red-500"
                               aria-hidden="true"
-                            />
-                            Urgent
-                          </span>
+                            />{uiText("Urgent")}</span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Completed {formatDateTime(req.completed_at)}
+                      <p className="text-sm text-gray-500 mt-1">{uiText("Completed")}{" "}{formatDateTime(req.completed_at)}
                       </p>
                     </div>
                     <div className="text-sm text-gray-500">
@@ -932,9 +924,7 @@ const CompletedAssignedRequestsPage = () => {
 
                   {req.justification && (
                     <p className="mt-4 text-gray-700">
-                      <span className="font-medium text-gray-900">
-                        Justification:
-                      </span>{" "}
+                      <span className="font-medium text-gray-900">{uiText("Justification:")}</span>{" "}
                       {req.justification}
                     </p>
                   )}
@@ -946,7 +936,7 @@ const CompletedAssignedRequestsPage = () => {
                       className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 transition hover:bg-gray-200"
                     >
                       <span aria-hidden="true">🖨</span>
-                      <span>Print</span>
+                      <span>{uiText("Print")}</span>
                     </button>
 
                     <button
@@ -956,8 +946,8 @@ const CompletedAssignedRequestsPage = () => {
                     >
                       <span>
                         {expandedRequestId === req.id
-                          ? "Hide Items"
-                          : "View Items"}
+                          ? uiText("Hide Items")
+                          : uiText("View Items")}
                       </span>
                       <span aria-hidden="true">
                         {expandedRequestId === req.id ? "▲" : "▼"}
@@ -972,8 +962,8 @@ const CompletedAssignedRequestsPage = () => {
                     >
                       <span>
                         {expandedAttachmentsId === req.id
-                          ? "Hide Attachments"
-                          : "View Attachments"}
+                          ? uiText("Hide Attachments")
+                          : uiText("View Attachments")}
                       </span>
                       <span aria-hidden="true">
                         {expandedAttachmentsId === req.id ? "▲" : "▼"}
@@ -999,27 +989,19 @@ const CompletedAssignedRequestsPage = () => {
                               </p>
                               {item.specs && (
                                 <p className="mt-2 whitespace-pre-wrap text-sm text-gray-600">
-                                  <span className="font-medium text-gray-700">
-                                    Specs:
-                                  </span>{" "}
+                                  <span className="font-medium text-gray-700">{uiText("Specs:")}</span>{" "}
                                   {item.specs}
                                 </p>
                               )}
                               <p className="text-sm text-gray-600 mt-1">
-                                <span className="font-medium text-gray-700">
-                                  Requested:
-                                </span>{" "}
+                                <span className="font-medium text-gray-700">{uiText("Requested:")}</span>{" "}
                                 {item.quantity} {item.unit_of_measure || ""}
                                 <span className="mx-2 text-gray-400">•</span>
-                                <span className="font-medium text-gray-700">
-                                  Purchased:
-                                </span>{" "}
+                                <span className="font-medium text-gray-700">{uiText("Purchased:")}</span>{" "}
                                 {item.purchased_quantity ?? "—"}{" "}
                                 {item.unit_of_measure || ""}
                                 <span className="mx-2 text-gray-400">•</span>
-                                <span className="font-medium text-gray-700">
-                                  Status:
-                                </span>{" "}
+                                <span className="font-medium text-gray-700">{uiText("Status:")}</span>{" "}
                                 {item.procurement_status || "—"}
                               </p>
                               {item.procurement_comment && (
@@ -1030,9 +1012,7 @@ const CompletedAssignedRequestsPage = () => {
                             </div>
                           ))
                         ) : (
-                          <p className="text-sm text-gray-500">
-                            No items found.
-                          </p>
+                          <p className="text-sm text-gray-500">{uiText("No items found.")}</p>
                         )}
                       </div>
                     )}

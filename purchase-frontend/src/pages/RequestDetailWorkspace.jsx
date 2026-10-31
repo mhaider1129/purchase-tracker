@@ -1,3 +1,5 @@
+import { workflowLabel } from '../utils/workflowTranslation';
+import useUiTranslation from "../utils/useUiTranslation";
 import RequestApprovalsReview from "../components/requests/RequestApprovalsReview";
 import RequestItemsFocus from "../components/requests/RequestItemsFocus";
 import { matchesSearchTokens } from "../utils/search";
@@ -16,6 +18,7 @@ import AiAssistantDrawer from '../components/ai/AiAssistantDrawer';
 import RequestAiButton from '../components/ai/RequestAiButton';
 
 const tabs = ['Overview', 'Items', 'Approvals', 'Procurement', 'Timeline', 'Documents', 'Linked Records', 'Communication', 'Audit'];
+const documentLabels = { request: 'Request', item: 'Item', rfq: 'Request for quotation', quotation: 'Quotation', po: 'Purchase order', grn: 'Goods receipt', invoice: 'Invoice', inspection: 'Inspection', contract: 'Contract' };
 const noteTypes = ['internal_note', 'department_follow_up', 'supplier_follow_up', 'clarification', 'finance_note', 'warehouse_note'];
 const EMPTY_ARRAY = [];
 const EMPTY_OBJECT = {};
@@ -84,9 +87,10 @@ const formatMoney = (value) => {
 };
 
 const StatusBadge = ({ children }) => {
+  const uiText = useUiTranslation();
   const text = children || 'Unknown';
   const key = String(text).trim().toLowerCase();
-  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses[key] || 'bg-slate-100 text-slate-700'}`}>{text}</span>;
+  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses[key] || 'bg-slate-100 text-slate-700'}`}>{uiText(workflowLabel(text))}</span>;
 };
 
 const Card = ({ title, value, helper }) => (
@@ -97,23 +101,24 @@ const Card = ({ title, value, helper }) => (
   </div>
 );
 
-const EmptyState = ({ children = 'No records available.' }) => (
-  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">{children}</div>
-);
+const EmptyState = ({ children = 'No records available.' }) => { const uiText = useUiTranslation(); return (
+  <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">{children === 'No records available.' ? uiText(children) : children}</div>
+); };
 
-const ModalShell = ({ title, children, onClose }) => (
+const ModalShell = ({ title, children, onClose }) => { const uiText = useUiTranslation(); return (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
     <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-        <button type="button" aria-label={`Close ${title}`} onClick={onClose} className="rounded-full px-3 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+        <button type="button" aria-label={uiText("Close {{title}}", { title })} onClick={onClose} className="rounded-full px-3 py-1 text-slate-500 hover:bg-slate-100">✕</button>
       </div>
       {children}
     </div>
   </div>
-);
+); };
 
 const RequestDetailWorkspace = () => {
+  const uiText = useUiTranslation();
   const { requestId } = useParams();
   const navigate = useNavigate();
   const [resolutionItem, setResolutionItem] = useState(null);
@@ -148,12 +153,12 @@ const RequestDetailWorkspace = () => {
       const response = await api.get(`/requests/${requestId}/full-details`);
       setWorkspace(response.data);
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to load request workspace.');
+      setError(err.response?.data?.error || err.response?.data?.message || uiText("Failed to load request workspace."));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [requestId]);
+  }, [requestId, uiText]);
 
   useEffect(() => {
     fetchWorkspace(false);
@@ -278,21 +283,20 @@ const RequestDetailWorkspace = () => {
       setActiveTab('Procurement');
       if (response.data?.requires_scm_approval) alert(response.data.message);
     } catch (err) {
-      setProcurementError(err.response?.data?.error || err.response?.data?.message || 'Failed to save procurement entry.');
+      setProcurementError(err.response?.data?.error || err.response?.data?.message || uiText("Failed to save procurement entry."));
     } finally {
       setSubmitting(false);
     }
   };
 
   const decideOverage = async (eventId, decision) => {
-    const label = decision === 'approved' ? 'approve' : 'reject';
-    if (!window.confirm(`${label[0].toUpperCase()}${label.slice(1)} this over-quantity procurement entry?`)) return;
+    if (!window.confirm(uiText(decision === 'approved' ? "Approve this over-quantity procurement entry?" : "Reject this over-quantity procurement entry?"))) return;
     setSubmitting(true);
     try {
       await api.patch(`/requests/${requestId}/procurement-events/${eventId}/overage-decision`, { decision });
       await fetchWorkspace(true);
     } catch (err) {
-      alert(err.response?.data?.error || err.response?.data?.message || `Failed to ${label} over-quantity entry.`);
+      alert(err.response?.data?.error || err.response?.data?.message || uiText(decision === 'approved' ? "Failed to approve over-quantity entry." : "Failed to reject over-quantity entry."));
     } finally {
       setSubmitting(false);
     }
@@ -313,7 +317,7 @@ const RequestDetailWorkspace = () => {
       await fetchWorkspace(true);
       setActiveTab('Items');
     } catch (err) {
-      alert(err.response?.data?.error || err.response?.data?.message || 'Failed to update item status.');
+      alert(err.response?.data?.error || err.response?.data?.message || uiText("Failed to update item status."));
     } finally {
       setSubmitting(false);
     }
@@ -321,11 +325,11 @@ const RequestDetailWorkspace = () => {
 
   const markRequestCompleted = async () => {
     if (!completionReadiness.canComplete) {
-      alert('Before completing, mark every item as purchased/completed or Not Procured/Canceled and make sure the request has a saved total cost.');
+      alert(uiText("Before completing, mark every item as purchased/completed or Not Procured/Canceled and make sure the request has a saved total cost."));
       return;
     }
 
-    if (!window.confirm('Mark this request as completed? Items marked Not Procured or Canceled will remain closed without purchase.')) return;
+    if (!window.confirm(uiText("Mark this request as completed? Items marked Not Procured or Canceled will remain closed without purchase."))) return;
 
     setSubmitting(true);
     try {
@@ -360,7 +364,7 @@ const RequestDetailWorkspace = () => {
       await fetchWorkspace(true);
       setActiveTab('Communication');
     } catch (err) {
-      alert(err.response?.data?.error || err.response?.data?.message || 'Failed to add note.');
+      alert(err.response?.data?.error || err.response?.data?.message || uiText("Failed to add note."));
     } finally {
       setSubmitting(false);
     }
@@ -370,18 +374,18 @@ const RequestDetailWorkspace = () => {
   const printWorkspace = () => window.print();
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl animate-pulse rounded-2xl bg-white p-8 text-slate-500 shadow">Loading request workspace…</div></div>;
+    return <div className="min-h-screen bg-slate-50 p-6"><div className="mx-auto max-w-7xl animate-pulse rounded-2xl bg-white p-8 text-slate-500 shadow">{uiText("Loading request workspace…")}</div></div>;
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-slate-50 p-6">
         <div className="mx-auto max-w-3xl rounded-2xl border border-rose-200 bg-white p-8 text-center shadow">
-          <h1 className="text-2xl font-bold text-rose-700">Unable to open request</h1>
+          <h1 className="text-2xl font-bold text-rose-700">{uiText("Unable to open request")}</h1>
           <p className="mt-3 text-slate-600">{error}</p>
           <div className="mt-6 flex justify-center gap-3">
-            <button onClick={() => navigate(-1)} className="rounded-lg border px-4 py-2">Go back</button>
-            <button onClick={() => fetchWorkspace(false)} className="rounded-lg bg-blue-600 px-4 py-2 text-white">Retry</button>
+            <button onClick={() => navigate(-1)} className="rounded-lg border px-4 py-2">{uiText("Go back")}</button>
+            <button onClick={() => fetchWorkspace(false)} className="rounded-lg bg-blue-600 px-4 py-2 text-white">{uiText("Retry")}</button>
           </div>
         </div>
       </div>
@@ -395,35 +399,35 @@ const RequestDetailWorkspace = () => {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <button type="button" onClick={() => navigate(-1)} className="text-sm text-slate-500 hover:text-slate-900 print:hidden">← Back</button>
-                <h1 className="text-2xl font-black text-slate-900">Request #{request.request_number || request.request_id}</h1>
+                <button type="button" onClick={() => navigate(-1)} className="text-sm text-slate-500 hover:text-slate-900 print:hidden">{uiText("← Back")}</button>
+                <h1 className="text-2xl font-black text-slate-900">{uiText("Request #{{id}}", { id: request.request_number || request.request_id })}</h1>
                 <StatusBadge>{request.request_status}</StatusBadge>
                 <StatusBadge>{request.approval_status}</StatusBadge>
                 <StatusBadge>{request.procurement_status}</StatusBadge>
-                {request.emergency_flag ? <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">Emergency</span> : null}
-                {request.priority ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{request.priority}</span> : null}
+                {request.emergency_flag ? <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">{uiText("Emergency")}</span> : null}
+                {request.priority ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">{uiText(workflowLabel(request.priority))}</span> : null}
               </div>
               <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
-                <span>{request.department_name || 'No department'}{request.section_name ? ` / ${request.section_name}` : ''}</span>
-                <span>Requester: {request.requester_name || '—'}</span>
-                <span>Created: {formatDate(request.created_at)}</span>
-                <span>Assigned: {request.assigned_to_name || 'Unassigned'}</span>
+                <span>{request.department_name || uiText("No department")}{request.section_name ? ` / ${request.section_name}` : ''}</span>
+                <span>{uiText("Requester:")}{" "}{request.requester_name || '—'}</span>
+                <span>{uiText("Created:")}{" "}{formatDate(request.created_at)}</span>
+                <span>{uiText("Assigned:")}{" "}{request.assigned_to_name || uiText("Unassigned")}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
               <RequestAiButton onClick={() => setAiDrawerOpen(true)} />
               <ScmRequestIntervention requestId={requestId} allowed={actions.has('scm_reject_request')} onRejected={() => fetchWorkspace(true)} />
-              {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(procurableItems[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">Register Procurement</button> : null}
-              {actions.has('create_po') ? <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} title="Create a governed purchase order from approved supplier awards" className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">Create Purchase Order</Link> : null}
-              <Link to={`/device-demos?request=${requestId}`} className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700">Device demos</Link>
-              {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Add Note</button> : null}
-              {actions.has('mark_request_completed') ? <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} title={completionReadiness.canComplete ? 'Complete this request' : 'Finalize every item and save total cost before completing'} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>Mark Completed</button> : null}
-              {actions.has('export_pdf') ? <button onClick={printWorkspace} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100">Print / PDF</button> : null}
-              <button onClick={() => fetchWorkspace(true)} disabled={refreshing} className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">{refreshing ? 'Refreshing…' : 'Refresh'}</button>
+              {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(procurableItems[0])} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700">{uiText("Register Procurement")}</button> : null}
+              {actions.has('create_po') ? <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} title={uiText("Create a governed purchase order from approved supplier awards")} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">{uiText("Create Purchase Order")}</Link> : null}
+              <Link to={`/device-demos?request=${requestId}`} className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700">{uiText("Device demos")}</Link>
+              {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">{uiText("Add Note")}</button> : null}
+              {actions.has('mark_request_completed') ? <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} title={completionReadiness.canComplete ? uiText("Complete this request") : uiText("Finalize every item and save total cost before completing")} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>{uiText("Mark Completed")}</button> : null}
+              {actions.has('export_pdf') ? <button onClick={printWorkspace} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100">{uiText("Print / PDF")}</button> : null}
+              <button onClick={() => fetchWorkspace(true)} disabled={refreshing} className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">{refreshing ? uiText("Refreshing…") : uiText("Refresh")}</button>
             </div>
           </div>
-          <div role="tablist" aria-label="Request workspace sections" className="mt-4 flex gap-2 overflow-x-auto print:hidden">
-            {tabs.map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{tab}{tabCounts[tab] !== undefined ? <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${activeTab === tab ? 'bg-white/20' : 'bg-white'}`}>{tabCounts[tab]}</span> : null}</button>)}
+          <div role="tablist" aria-label={uiText("Request workspace sections")} className="mt-4 flex gap-2 overflow-x-auto print:hidden">
+            {tabs.map((tab) => <button key={tab} role="tab" aria-selected={activeTab === tab} onClick={() => setActiveTab(tab)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>{uiText(tab)}{tabCounts[tab] !== undefined ? <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${activeTab === tab ? 'bg-white/20' : 'bg-white'}`}>{tabCounts[tab]}</span> : null}</button>)}
           </div>
         </div>
       </div>
@@ -433,41 +437,41 @@ const RequestDetailWorkspace = () => {
         {activeTab === 'Overview' && (
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-              <Card title="Total items" value={summary.totalItems} />
-              <Card title="Fully procured" value={summary.fullyProcured} />
-              <Card title="Partially procured" value={summary.partiallyProcured} />
-              <Card title="Remaining qty" value={summary.remainingQuantity} />
-              <Card title="Pending approvals" value={summary.pendingApprovals} />
-              <Card title="Attachments" value={summary.attachmentsCount} />
+              <Card title={uiText("Total items")} value={summary.totalItems} />
+              <Card title={uiText("Fully procured")} value={summary.fullyProcured} />
+              <Card title={uiText("Partially procured")} value={summary.partiallyProcured} />
+              <Card title={uiText("Remaining qty")} value={summary.remainingQuantity} />
+              <Card title={uiText("Pending approvals")} value={summary.pendingApprovals} />
+              <Card title={uiText("Attachments")} value={summary.attachmentsCount} />
             </div>
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="procurement-progress-heading">
               <div className="flex flex-wrap items-end justify-between gap-2">
-                <div><h2 id="procurement-progress-heading" className="font-bold text-slate-900">Procurement progress</h2><p className="mt-1 text-sm text-slate-500">Based on purchased quantity across approved request items.</p></div>
+                <div><h2 id="procurement-progress-heading" className="font-bold text-slate-900">{uiText("Procurement progress")}</h2><p className="mt-1 text-sm text-slate-500">{uiText("Based on purchased quantity across approved request items.")}</p></div>
                 <p className="text-2xl font-black text-blue-700">{procurementProgress}%</p>
               </div>
-              <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-label="Procurement progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow={procurementProgress}><div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all" style={{ width: `${procurementProgress}%` }} /></div>
+              <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-label={uiText("Procurement progress")} aria-valuemin="0" aria-valuemax="100" aria-valuenow={procurementProgress}><div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all" style={{ width: `${procurementProgress}%` }} /></div>
             </section>
             {actions.has('mark_request_completed') ? (
               <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm print:hidden">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-emerald-950">Request completion</h2>
-                    <p className="text-sm text-emerald-800">Complete the request after purchased items are recorded. Any item that will not be bought must be marked Not Procured or Canceled first.</p>
-                    {!completionReadiness.hasSavedCost ? <p className="mt-2 text-xs font-semibold text-rose-700">A saved total cost is required before completion.</p> : null}
-                    {completionReadiness.incompleteItems.length > 0 ? <p className="mt-1 text-xs font-semibold text-rose-700">{completionReadiness.incompleteItems.length} item(s) still need a final purchased, completed, not procured, or canceled status.</p> : null}
+                    <h2 className="text-lg font-bold text-emerald-950">{uiText("Request completion")}</h2>
+                    <p className="text-sm text-emerald-800">{uiText("Complete the request after purchased items are recorded. Any item that will not be bought must be marked Not Procured or Canceled first.")}</p>
+                    {!completionReadiness.hasSavedCost ? <p className="mt-2 text-xs font-semibold text-rose-700">{uiText("A saved total cost is required before completion.")}</p> : null}
+                    {completionReadiness.incompleteItems.length > 0 ? <p className="mt-1 text-xs font-semibold text-rose-700">{completionReadiness.incompleteItems.length}{" "}{uiText("item(s) still need a final purchased, completed, not procured, or canceled status.")}</p> : null}
                   </div>
-                  <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>Mark Request as Completed</button>
+                  <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>{uiText("Mark Request as Completed")}</button>
                 </div>
               </section>
             ) : null}
             <div className="grid gap-6 lg:grid-cols-3">
               <section className="rounded-2xl bg-white p-6 shadow-sm lg:col-span-2">
-                <h2 className="text-lg font-bold text-slate-900">Request summary</h2>
+                <h2 className="text-lg font-bold text-slate-900">{uiText("Request summary")}</h2>
                 <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div><dt className="text-xs uppercase text-slate-500">Justification</dt><dd className="mt-1 text-slate-800">{request.justification || '—'}</dd></div>
-                  <div><dt className="text-xs uppercase text-slate-500">Intended use</dt><dd className="mt-1 text-slate-800">{request.intended_use || '—'}</dd></div>
-                  <div><dt className="text-xs uppercase text-slate-500">Estimated cost</dt><dd className="mt-1 text-slate-800">{formatMoney(request.estimated_cost)}</dd></div>
-                  <div><dt className="text-xs uppercase text-slate-500">Required delivery</dt><dd className="mt-1 text-slate-800">{formatDate(request.required_delivery_date)}</dd></div>
+                  <div><dt className="text-xs uppercase text-slate-500">{uiText("Justification")}</dt><dd className="mt-1 text-slate-800">{request.justification || '—'}</dd></div>
+                  <div><dt className="text-xs uppercase text-slate-500">{uiText("Intended use")}</dt><dd className="mt-1 text-slate-800">{request.intended_use || '—'}</dd></div>
+                  <div><dt className="text-xs uppercase text-slate-500">{uiText("Estimated cost")}</dt><dd className="mt-1 text-slate-800">{formatMoney(request.estimated_cost)}</dd></div>
+                  <div><dt className="text-xs uppercase text-slate-500">{uiText("Required delivery")}</dt><dd className="mt-1 text-slate-800">{formatDate(request.required_delivery_date)}</dd></div>
                 </dl>
               </section>
               <RequestOverviewReview
@@ -478,38 +482,38 @@ const RequestDetailWorkspace = () => {
               />
             </div>
             {priority ? <section aria-labelledby="request-priority-heading" className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-              <h2 id="request-priority-heading" className="text-lg font-bold text-blue-950">Procurement Priority</h2>
+              <h2 id="request-priority-heading" className="text-lg font-bold text-blue-950">{uiText("Procurement Priority")}</h2>
               <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
-                {priority.department_rank !== undefined && <div><dt className="text-slate-500">Department Rank</dt><dd className="font-semibold">{priority.department_rank ?? '—'}</dd></div>}
-                {priority.institutional_rank !== undefined && <div><dt className="text-slate-500">Institutional Rank</dt><dd className="font-semibold">{priority.institutional_rank ?? '—'}</dd></div>}
-                {priority.system_score !== undefined && <div><dt className="text-slate-500">IPPS Score</dt><dd className="font-semibold">{priority.system_score ?? '—'}</dd></div>}
-                {priority.system_tier !== undefined && <div><dt className="text-slate-500">Tier</dt><dd className="font-semibold">{priority.system_tier ?? '—'}</dd></div>}
-                {priority.priority_group !== undefined && <div><dt className="text-slate-500">Priority Group</dt><dd className="font-semibold">{priority.priority_group || '—'}</dd></div>}
-                {priority.last_recalculated_at !== undefined && <div><dt className="text-slate-500">Last Recalculated</dt><dd className="font-semibold">{formatDateTime(priority.last_recalculated_at)}</dd></div>}
+                {priority.department_rank !== undefined && <div><dt className="text-slate-500">{uiText("Department Rank")}</dt><dd className="font-semibold">{priority.department_rank ?? '—'}</dd></div>}
+                {priority.institutional_rank !== undefined && <div><dt className="text-slate-500">{uiText("Institutional Rank")}</dt><dd className="font-semibold">{priority.institutional_rank ?? '—'}</dd></div>}
+                {priority.system_score !== undefined && <div><dt className="text-slate-500">{uiText("IPPS Score")}</dt><dd className="font-semibold">{priority.system_score ?? '—'}</dd></div>}
+                {priority.system_tier !== undefined && <div><dt className="text-slate-500">{uiText("Tier")}</dt><dd className="font-semibold">{priority.system_tier ?? '—'}</dd></div>}
+                {priority.priority_group !== undefined && <div><dt className="text-slate-500">{uiText("Priority Group")}</dt><dd className="font-semibold">{priority.priority_group || '—'}</dd></div>}
+                {priority.last_recalculated_at !== undefined && <div><dt className="text-slate-500">{uiText("Last Recalculated")}</dt><dd className="font-semibold">{formatDateTime(priority.last_recalculated_at)}</dd></div>}
               </dl>
-              {priority.procurement_case_id ? <Link to={`/procurement-priorities/manage?case=${priority.procurement_case_id}`} className="mt-3 inline-block font-semibold text-blue-700">View Priority Details</Link> : null}
+              {priority.procurement_case_id ? <Link to={`/procurement-priorities/manage?case=${priority.procurement_case_id}`} className="mt-3 inline-block font-semibold text-blue-700">{uiText("View Priority Details")}</Link> : null}
             </section> : null}
           </div>
         )}
 
-        {actions.has('resolve_item_identity') && items.some(needsItemIdentity) && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p>Some items still need Item Master identity. Resolve them from the Items tab. Management controls temporary free-text procurement during catalog setup.</p><button type="button" onClick={() => setActiveTab('Items')} className="rounded-lg border border-amber-300 bg-white px-3 py-2 font-semibold">Review item identities</button></div>}
+        {actions.has('resolve_item_identity') && items.some(needsItemIdentity) && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p>{uiText("Some items still need Item Master identity. Resolve them from the Items tab. Management controls temporary free-text procurement during catalog setup.")}</p><button type="button" onClick={() => setActiveTab('Items')} className="rounded-lg border border-amber-300 bg-white px-3 py-2 font-semibold">{uiText("Review item identities")}</button></div>}
         {activeTab === 'Items' && (
           <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
             <div className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 px-4 py-3 print:hidden">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Requested items</h2>
-                <p className="text-xs text-slate-500">Sorting only changes this view and does not update the saved request.</p>
+                <h2 className="text-lg font-bold text-slate-900">{uiText("Requested items")}</h2>
+                <p className="text-xs text-slate-500">{uiText("Sorting only changes this view and does not update the saved request.")}</p>
               </div>
               <div className="flex flex-1 flex-wrap items-end justify-end gap-2">
-                <label className="min-w-[15rem] text-xs font-semibold text-slate-600">Search items<input type="search" value={itemQuery} onChange={(event) => setItemQuery(event.target.value)} placeholder="Name, specs, supplier, or ID" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
-                <label className="text-xs font-semibold text-slate-600">Status<select value={itemStatusFilter} onChange={(event) => setItemStatusFilter(event.target.value)} className="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"><option value="all">All statuses</option>{Array.from(new Set(items.map((item) => String(getWorkspaceItemStatus(item)).trim().toLowerCase()))).sort().map((status) => <option key={status} value={status}>{status.replaceAll('_', ' ')}</option>)}</select></label>
+                <label className="min-w-[15rem] text-xs font-semibold text-slate-600">{uiText("Search items")}<input type="search" value={itemQuery} onChange={(event) => setItemQuery(event.target.value)} placeholder={uiText("Name, specs, supplier, or ID")} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal" /></label>
+                <label className="text-xs font-semibold text-slate-600">{uiText("Status")}<select value={itemStatusFilter} onChange={(event) => setItemStatusFilter(event.target.value)} className="mt-1 block rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal"><option value="all">{uiText("All statuses")}</option>{Array.from(new Set(items.map((item) => String(getWorkspaceItemStatus(item)).trim().toLowerCase()))).sort().map((status) => <option key={status} value={status}>{uiText(workflowLabel(status))}</option>)}</select></label>
               {items.length > 1 ? (
                 <button
                   type="button"
                   onClick={() => setSortItemsAlphabetically((prev) => !prev)}
                   className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                 >
-                  {sortItemsAlphabetically ? 'Original order' : 'Sort A-Z'}
+                  {sortItemsAlphabetically ? uiText("Original order") : uiText("Sort A-Z")}
                 </button>
               ) : null}
               </div>
@@ -525,10 +529,10 @@ const RequestDetailWorkspace = () => {
             />
             <WorkspaceTableScroll className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Item</th><th className="px-4 py-3">Specs</th><th className="px-4 py-3">Intended use</th><th className="px-4 py-3">Unit of measure</th><th className="px-4 py-3">Requested</th><th className="px-4 py-3">Purchased</th><th className="px-4 py-3">Remaining</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Supplier</th><th className="px-4 py-3">Latest unit cost</th><th className="px-4 py-3 print:hidden">Actions</th></tr></thead>
+                <thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">{uiText("Item")}</th><th className="px-4 py-3">{uiText("Specs")}</th><th className="px-4 py-3">{uiText("Intended use")}</th><th className="px-4 py-3">{uiText("Unit of measure")}</th><th className="px-4 py-3">{uiText("Requested")}</th><th className="px-4 py-3">{uiText("Purchased")}</th><th className="px-4 py-3">{uiText("Remaining")}</th><th className="px-4 py-3">{uiText("Status")}</th><th className="px-4 py-3">{uiText("Supplier")}</th><th className="px-4 py-3">{uiText("Latest unit cost")}</th><th className="px-4 py-3 print:hidden">{uiText("Actions")}</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
-                  {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p><p className="mt-1 text-xs text-amber-700">{item.catalog_status || (item.generic_item_id ? 'Catalog identity linked' : item.request_mode === 'service' ? 'Service item' : item.request_mode === 'approved_free_text_exception' ? 'Approved free-text exception' : 'Identity unresolved')}{item.generic_item_id ? ` · Generic #${item.generic_item_id}` : ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{item.unit_of_measure || '—'}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{getWorkspaceItemStatus(item)}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') && !isRejectedItem(item) ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">Register</button> : null}{actions.has('resolve_item_identity') && !isRejectedItem(item) ? <button onClick={() => setResolutionItem(item)} className="rounded bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">Resolve identity</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">History</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Add Note</button> : null}{actions.has('mark_item_unable_to_procure') && !isRejectedItem(item) ? <><button onClick={() => openItemStatusModal(item, 'completed')} className="rounded bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Close as Completed</button><button onClick={() => openItemStatusModal(item, 'not_procured')} className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Not Procured</button><button onClick={() => openItemStatusModal(item, 'canceled')} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Cancel Item</button></> : null}</div></td></tr>)}
-                  {displayedItems.length === 0 ? <tr><td colSpan="11" className="p-6"><EmptyState>{items.length === 0 ? 'No requested items found.' : 'No items match the current filters.'}</EmptyState></td></tr> : null}
+                  {displayedItems.map((item) => <tr key={item.item_id || item.id} className="align-top"><td className="px-4 py-3"><p className="font-semibold text-slate-900">{item.item_name}</p><p className="text-xs text-slate-500">{item.brand || item.category || ''}</p><p className="mt-1 text-xs text-amber-700">{(item.catalog_status && uiText(workflowLabel(item.catalog_status))) || (item.generic_item_id ? uiText("Catalog identity linked") : item.request_mode === 'service' ? uiText("Service item") : item.request_mode === 'approved_free_text_exception' ? uiText("Approved free-text exception") : uiText("Identity unresolved"))}{item.generic_item_id ? ` · Generic #${item.generic_item_id}` : ''}</p></td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.specs || '—'}</td><td className="max-w-xs whitespace-pre-wrap px-4 py-3 text-slate-700">{item.intended_use || '—'}</td><td className="px-4 py-3">{uiText(workflowLabel(item.unit_of_measure || '—'))}</td><td className="px-4 py-3">{item.requested_quantity}</td><td className="px-4 py-3">{item.purchased_quantity}</td><td className="px-4 py-3">{item.remaining_quantity}</td><td className="px-4 py-3"><StatusBadge>{getWorkspaceItemStatus(item)}</StatusBadge></td><td className="px-4 py-3">{item.supplier_name || '—'}</td><td className="px-4 py-3">{formatMoney(item.unit_cost)}</td><td className="px-4 py-3 print:hidden"><div className="flex flex-wrap gap-2">{actions.has('register_procurement_entry') && !isRejectedItem(item) ? <button onClick={() => openProcurementModal(item)} className="rounded bg-purple-50 px-3 py-1 text-xs font-semibold text-purple-700">{uiText("Register")}</button> : null}{actions.has('resolve_item_identity') && !isRejectedItem(item) ? <button onClick={() => setResolutionItem(item)} className="rounded bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">{uiText("Resolve identity")}</button> : null}<button onClick={() => { setHistoryItem(item); setActiveTab('Procurement'); }} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold">{uiText("History")}</button>{actions.has('add_note') ? <button onClick={() => { setNoteTarget(item); setNoteModalOpen(true); }} className="rounded bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">{uiText("Add Note")}</button> : null}{actions.has('mark_item_unable_to_procure') && !isRejectedItem(item) ? <><button onClick={() => openItemStatusModal(item, 'completed')} className="rounded bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">{uiText("Close as Completed")}</button><button onClick={() => openItemStatusModal(item, 'not_procured')} className="rounded bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">{uiText("Not Procured")}</button><button onClick={() => openItemStatusModal(item, 'canceled')} className="rounded bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">{uiText("Cancel Item")}</button></> : null}</div></td></tr>)}
+                  {displayedItems.length === 0 ? <tr><td colSpan="11" className="p-6"><EmptyState>{items.length === 0 ? uiText("No requested items found.") : uiText("No items match the current filters.")}</EmptyState></td></tr> : null}
                 </tbody>
               </table>
             </WorkspaceTableScroll>
@@ -539,10 +543,10 @@ const RequestDetailWorkspace = () => {
 
         {activeTab === 'Procurement' && (
           <section className="space-y-4">
-            {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(isRejectedItem(historyItem) ? procurableItems[0] : (historyItem || procurableItems[0]))} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white print:hidden">Register Procurement Entry</button> : null}
-            {Object.entries(groupedProcurementEvents).filter(([itemId]) => !historyItem || String(historyItem.item_id || historyItem.id) === String(itemId)).map(([itemId, group]) => <div key={itemId} className="rounded-2xl bg-white p-5 shadow-sm"><h3 className="text-lg font-bold text-slate-900">{group.item_name}</h3><WorkspaceTableScroll className="mt-4 overflow-x-auto"><table className="min-w-full text-sm"><thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-2 pr-4">Date</th><th className="py-2 pr-4">Purchased as</th><th className="py-2 pr-4">Requested qty</th><th className="py-2 pr-4">Previous</th><th className="py-2 pr-4">New</th><th className="py-2 pr-4">Remaining</th><th className="py-2 pr-4">Unit cost</th><th className="py-2 pr-4">Supplier</th><th className="py-2 pr-4">Note / approval</th></tr></thead><tbody>{group.events.map((event) => <tr key={event.event_id} className="border-t"><td className="py-2 pr-4">{formatDate(event.procurement_date || event.created_at)}</td><td className="py-2 pr-4">{event.procurement_quantity || event.event_quantity} {event.procurement_unit_of_measure || ''}{Number(event.units_per_package || 1) > 1 ? ` × ${event.units_per_package}` : ''}</td><td className="py-2 pr-4">{event.event_quantity}</td><td className="py-2 pr-4">{event.previous_purchased_quantity}</td><td className="py-2 pr-4">{event.new_purchased_quantity}</td><td className="py-2 pr-4">{event.remaining_quantity}</td><td className="py-2 pr-4">{formatMoney(event.unit_cost)}</td><td className="py-2 pr-4">{event.supplier_name || '—'}</td><td className="py-2 pr-4"><div>{event.note || '—'}</div>{event.overage_approval_status === 'pending' ? <div className="mt-2"><StatusBadge>Pending SCM approval</StatusBadge>{actions.has('decide_procurement_overage') ? <div className="mt-2 flex gap-2"><button disabled={submitting} onClick={() => decideOverage(event.event_id, 'approved')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">Approve overage</button><button disabled={submitting} onClick={() => decideOverage(event.event_id, 'rejected')} className="rounded bg-rose-600 px-2 py-1 text-xs font-semibold text-white">Reject</button></div> : null}</div> : event.overage_approval_status && event.overage_approval_status !== 'not_required' ? <div className="mt-2"><StatusBadge>{`Overage ${event.overage_approval_status}`}</StatusBadge></div> : null}</td></tr>)}</tbody></table></WorkspaceTableScroll></div>)}
-            {historyItem ? <button onClick={() => setHistoryItem(null)} className="text-sm font-semibold text-blue-700 print:hidden">Show all procurement history</button> : null}
-            {procurementEvents.length === 0 ? <EmptyState>No procurement events yet.</EmptyState> : null}
+            {actions.has('register_procurement_entry') && procurableItems.length > 0 ? <button onClick={() => openProcurementModal(isRejectedItem(historyItem) ? procurableItems[0] : (historyItem || procurableItems[0]))} className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white print:hidden">{uiText("Register Procurement Entry")}</button> : null}
+            {Object.entries(groupedProcurementEvents).filter(([itemId]) => !historyItem || String(historyItem.item_id || historyItem.id) === String(itemId)).map(([itemId, group]) => <div key={itemId} className="rounded-2xl bg-white p-5 shadow-sm"><h3 className="text-lg font-bold text-slate-900">{group.item_name}</h3><WorkspaceTableScroll className="mt-4 overflow-x-auto"><table className="min-w-full text-sm"><thead className="text-left text-xs uppercase text-slate-500"><tr><th className="py-2 pr-4">{uiText("Date")}</th><th className="py-2 pr-4">{uiText("Purchased as")}</th><th className="py-2 pr-4">{uiText("Requested qty")}</th><th className="py-2 pr-4">{uiText("Previous")}</th><th className="py-2 pr-4">{uiText("New")}</th><th className="py-2 pr-4">{uiText("Remaining")}</th><th className="py-2 pr-4">{uiText("Unit cost")}</th><th className="py-2 pr-4">{uiText("Supplier")}</th><th className="py-2 pr-4">{uiText("Note / approval")}</th></tr></thead><tbody>{group.events.map((event) => <tr key={event.event_id} className="border-t"><td className="py-2 pr-4">{formatDate(event.procurement_date || event.created_at)}</td><td className="py-2 pr-4">{event.procurement_quantity || event.event_quantity} {event.procurement_unit_of_measure || ''}{Number(event.units_per_package || 1) > 1 ? ` × ${event.units_per_package}` : ''}</td><td className="py-2 pr-4">{event.event_quantity}</td><td className="py-2 pr-4">{event.previous_purchased_quantity}</td><td className="py-2 pr-4">{event.new_purchased_quantity}</td><td className="py-2 pr-4">{event.remaining_quantity}</td><td className="py-2 pr-4">{formatMoney(event.unit_cost)}</td><td className="py-2 pr-4">{event.supplier_name || '—'}</td><td className="py-2 pr-4"><div>{event.note || '—'}</div>{event.overage_approval_status === 'pending' ? <div className="mt-2"><StatusBadge>{uiText("Pending SCM approval")}</StatusBadge>{actions.has('decide_procurement_overage') ? <div className="mt-2 flex gap-2"><button disabled={submitting} onClick={() => decideOverage(event.event_id, 'approved')} className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white">{uiText("Approve overage")}</button><button disabled={submitting} onClick={() => decideOverage(event.event_id, 'rejected')} className="rounded bg-rose-600 px-2 py-1 text-xs font-semibold text-white">{uiText("Reject")}</button></div> : null}</div> : event.overage_approval_status && event.overage_approval_status !== 'not_required' ? <div className="mt-2"><StatusBadge>{`Overage ${event.overage_approval_status}`}</StatusBadge></div> : null}</td></tr>)}</tbody></table></WorkspaceTableScroll></div>)}
+            {historyItem ? <button onClick={() => setHistoryItem(null)} className="text-sm font-semibold text-blue-700 print:hidden">{uiText("Show all procurement history")}</button> : null}
+            {procurementEvents.length === 0 ? <EmptyState>{uiText("No procurement events yet.")}</EmptyState> : null}
           </section>
         )}
 
@@ -550,47 +554,47 @@ const RequestDetailWorkspace = () => {
 
         {activeTab === 'Documents' && (
           <section className="space-y-4">
-            {['request', 'item', 'rfq', 'quotation', 'po', 'grn', 'invoice', 'inspection', 'contract'].map((group) => <div key={group} className="rounded-2xl bg-white p-5 shadow-sm"><h3 className="font-bold capitalize text-slate-900">{group} documents</h3><div className="mt-3 grid gap-3 md:grid-cols-2">{(groupedAttachments[group] || []).map((attachment) => <a key={attachment.id} href={attachment.file_path} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-3 text-sm hover:bg-slate-50"><p className="font-semibold text-blue-700">{attachment.file_name}</p><p className="text-xs text-slate-500">Uploaded by {attachment.uploaded_by_name || '—'} • {formatDateTime(attachment.uploaded_at)}</p></a>)}</div>{(groupedAttachments[group] || []).length === 0 ? <p className="mt-2 text-sm text-slate-400">No files.</p> : null}</div>)}
+            {['request', 'item', 'rfq', 'quotation', 'po', 'grn', 'invoice', 'inspection', 'contract'].map((group) => <div key={group} className="rounded-2xl bg-white p-5 shadow-sm"><h3 className="font-bold capitalize text-slate-900">{uiText("{{kind}} documents", { kind: uiText(documentLabels[group]) })}</h3><div className="mt-3 grid gap-3 md:grid-cols-2">{(groupedAttachments[group] || []).map((attachment) => <a key={attachment.id} href={attachment.file_path} target="_blank" rel="noreferrer" className="rounded-xl border border-slate-200 p-3 text-sm hover:bg-slate-50"><p className="font-semibold text-blue-700">{attachment.file_name}</p><p className="text-xs text-slate-500">{uiText("Uploaded by")}{" "}{attachment.uploaded_by_name || '—'} • {formatDateTime(attachment.uploaded_at)}</p></a>)}</div>{(groupedAttachments[group] || []).length === 0 ? <p className="mt-2 text-sm text-slate-400">{uiText("No files.")}</p> : null}</div>)}
           </section>
         )}
 
         {activeTab === 'Linked Records' && (
           <section className="grid gap-4 lg:grid-cols-2">
-            {Object.entries({ RFQs: linkedRecords.rfqs || [], Quotations: linkedRecords.quotations || [], POs: linkedRecords.purchase_orders || [], GRNs: linkedRecords.grns || [], Inspections: linkedRecords.inspections || [], Invoices: linkedRecords.invoices || [], Contracts: linkedRecords.contracts || [], Payments: linkedRecords.payments || [] }).map(([label, records]) => <div key={label} className="rounded-2xl bg-white p-5 shadow-sm"><h3 className="font-bold text-slate-900">{label}</h3><div className="mt-3 space-y-3">{records.map((record) => <div key={`${label}-${record.id}`} className="rounded-xl border border-slate-200 p-3 text-sm"><div className="flex items-start justify-between gap-2"><div><p className="font-semibold text-slate-900">{record.title || record.po_number || record.invoice_number || record.receipt_number || record.reference_number || `Record #${record.id}`}</p><p className="text-xs text-slate-500">{record.status || record.acceptance_status || record.supplier_name || record.vendor || record.supplier || '—'}</p></div><Link to={`/requests/${requestId}/procure-to-pay`} className="text-xs font-semibold text-blue-700 print:hidden">Open</Link></div></div>)}{records.length === 0 ? <p className="text-sm text-slate-400">No linked records.</p> : null}</div></div>)}
+            {Object.entries({ RFQs: linkedRecords.rfqs || [], Quotations: linkedRecords.quotations || [], POs: linkedRecords.purchase_orders || [], GRNs: linkedRecords.grns || [], Inspections: linkedRecords.inspections || [], Invoices: linkedRecords.invoices || [], Contracts: linkedRecords.contracts || [], Payments: linkedRecords.payments || [] }).map(([label, records]) => <div key={label} className="rounded-2xl bg-white p-5 shadow-sm"><h3 className="font-bold text-slate-900">{label}</h3><div className="mt-3 space-y-3">{records.map((record) => <div key={`${label}-${record.id}`} className="rounded-xl border border-slate-200 p-3 text-sm"><div className="flex items-start justify-between gap-2"><div><p className="font-semibold text-slate-900">{record.title || record.po_number || record.invoice_number || record.receipt_number || record.reference_number || `Record #${record.id}`}</p><p className="text-xs text-slate-500">{record.status || record.acceptance_status || record.supplier_name || record.vendor || record.supplier || '—'}</p></div><Link to={`/requests/${requestId}/procure-to-pay`} className="text-xs font-semibold text-blue-700 print:hidden">{uiText("Open")}</Link></div></div>)}{records.length === 0 ? <p className="text-sm text-slate-400">{uiText("No linked records.")}</p> : null}</div></div>)}
           </section>
         )}
 
         {activeTab === 'Communication' && (
           <section className="space-y-4">
-            {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white print:hidden">Add Note</button> : null}
-            {notes.map((note) => <div key={note.log_id || note.note_id} className="rounded-2xl bg-white p-5 shadow-sm"><div className="flex flex-wrap justify-between gap-2"><h3 className="font-bold text-slate-900">{note.action || note.note_type}</h3><span className="text-xs text-slate-500">{formatDateTime(note.created_at)}</span></div><p className="mt-2 text-sm text-slate-700">{note.comments || '—'}</p><p className="mt-2 text-xs text-slate-500">By {note.actor_name || 'System'} • {note.note_type}</p></div>)}
-            {notes.length === 0 ? <EmptyState>No notes or request logs yet.</EmptyState> : null}
+            {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white print:hidden">{uiText("Add Note")}</button> : null}
+            {notes.map((note) => <div key={note.log_id || note.note_id} className="rounded-2xl bg-white p-5 shadow-sm"><div className="flex flex-wrap justify-between gap-2"><h3 className="font-bold text-slate-900">{note.action || note.note_type}</h3><span className="text-xs text-slate-500">{formatDateTime(note.created_at)}</span></div><p className="mt-2 text-sm text-slate-700">{note.comments || '—'}</p><p className="mt-2 text-xs text-slate-500">{uiText("By")}{" "}{note.actor_name || uiText("System")} • {note.note_type}</p></div>)}
+            {notes.length === 0 ? <EmptyState>{uiText("No notes or request logs yet.")}</EmptyState> : null}
           </section>
         )}
 
         {activeTab === 'Audit' && (
           <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-            <WorkspaceTableScroll className="overflow-x-auto"><table className="min-w-full divide-y divide-slate-200 text-sm"><thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">Time</th><th className="px-4 py-3">Actor</th><th className="px-4 py-3">Action</th><th className="px-4 py-3">Target</th><th className="px-4 py-3">Description</th></tr></thead><tbody className="divide-y divide-slate-100">{auditLogs.map((audit) => <tr key={audit.id}><td className="px-4 py-3">{formatDateTime(audit.created_at)}</td><td className="px-4 py-3">{audit.actor_name || 'System'}</td><td className="px-4 py-3">{audit.action || '—'}</td><td className="px-4 py-3">{audit.target_type || 'request'} #{audit.target_id || requestId}</td><td className="px-4 py-3">{audit.description || JSON.stringify(audit.details || {})}</td></tr>)}{auditLogs.length === 0 ? <tr><td colSpan="5" className="p-6"><EmptyState>No audit records found.</EmptyState></td></tr> : null}</tbody></table></WorkspaceTableScroll>
+            <WorkspaceTableScroll className="overflow-x-auto"><table className="min-w-full divide-y divide-slate-200 text-sm"><thead className="bg-slate-100 text-left text-xs uppercase text-slate-500"><tr><th className="px-4 py-3">{uiText("Time")}</th><th className="px-4 py-3">{uiText("Actor")}</th><th className="px-4 py-3">{uiText("Action")}</th><th className="px-4 py-3">{uiText("Target")}</th><th className="px-4 py-3">{uiText("Description")}</th></tr></thead><tbody className="divide-y divide-slate-100">{auditLogs.map((audit) => <tr key={audit.id}><td className="px-4 py-3">{formatDateTime(audit.created_at)}</td><td className="px-4 py-3">{audit.actor_name || uiText("System")}</td><td className="px-4 py-3">{audit.action || '—'}</td><td className="px-4 py-3">{audit.target_type || 'request'} #{audit.target_id || requestId}</td><td className="px-4 py-3">{audit.description || JSON.stringify(audit.details || {})}</td></tr>)}{auditLogs.length === 0 ? <tr><td colSpan="5" className="p-6"><EmptyState>{uiText("No audit records found.")}</EmptyState></td></tr> : null}</tbody></table></WorkspaceTableScroll>
           </section>
         )}
       </main>
 
       {resolutionItem && <ItemIdentityResolutionDialog requestId={requestId} item={resolutionItem} onClose={() => setResolutionItem(null)} onSaved={async () => { setResolutionItem(null); await fetchWorkspace(true); }} />}
       {procurementModalOpen && (
-        <ModalShell title="Register Procurement Entry" onClose={() => setProcurementModalOpen(false)}>
+        <ModalShell title={uiText("Register Procurement Entry")} onClose={() => setProcurementModalOpen(false)}>
           <form onSubmit={submitProcurementEvent} className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
-              <label className="block text-sm font-semibold text-slate-700">Search items<input type="search" value={procurementItemSearch} onChange={(event) => setProcurementItemSearch(event.target.value)} placeholder="Search by item, brand, specs, intended use, or supplier" className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label>
-              <label className="block text-sm font-semibold text-slate-700">Item<select value={procurementForm.item_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, item_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required>{filteredProcurementItems.map((item) => <option key={item.item_id || item.id} value={item.item_id || item.id}>{item.item_name}</option>)}</select></label>
+              <label className="block text-sm font-semibold text-slate-700">{uiText("Search items")}<input type="search" value={procurementItemSearch} onChange={(event) => setProcurementItemSearch(event.target.value)} placeholder={uiText("Search by item, brand, specs, intended use, or supplier")} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label>
+              <label className="block text-sm font-semibold text-slate-700">{uiText("Item")}<select value={procurementForm.item_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, item_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required>{filteredProcurementItems.map((item) => <option key={item.item_id || item.id} value={item.item_id || item.id}>{item.item_name}</option>)}</select></label>
             </div>
-            {procurementError && <div role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{procurementError}{actions.has('resolve_item_identity') && selectedProcurementItem && <button type="button" className="ml-3 font-semibold underline" onClick={() => { setProcurementModalOpen(false); setResolutionItem(selectedProcurementItem); }}>Resolve selected item</button>}<Link className="ml-3 underline" to="/item-master">Open Item Master</Link></div>}
-            {filteredProcurementItems.length === 0 ? <p className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">No items match that search.</p> : null}
-            {selectedProcurementItem ? <div className="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-3"><span>Requested: <b>{selectedProcurementItem.requested_quantity} {selectedProcurementItem.unit_of_measure || ''}</b></span><span>Purchased: <b>{selectedProcurementItem.purchased_quantity} {selectedProcurementItem.unit_of_measure || ''}</b></span><span>Remaining: <b>{selectedProcurementItem.remaining_quantity} {selectedProcurementItem.unit_of_measure || ''}</b></span><span className="sm:col-span-3">Specs: <b>{selectedProcurementItem.specs || '—'}</b></span><span className="sm:col-span-3">Intended use: <b>{selectedProcurementItem.intended_use || '—'}</b></span></div> : null}
-            <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-semibold text-slate-700">Purchased quantity<input type="number" min="1" step="1" value={procurementForm.procurement_quantity} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_quantity: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /></label><label className="block text-sm font-semibold text-slate-700">Purchasing unit of measure<input type="text" value={procurementForm.procurement_unit_of_measure} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_unit_of_measure: event.target.value }))} placeholder={selectedProcurementItem?.unit_of_measure || 'Box, case, piece…'} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /></label><label className="block text-sm font-semibold text-slate-700">Requested units per purchased unit<input type="number" min="1" step="1" value={procurementForm.units_per_package} onChange={(event) => setProcurementForm((prev) => ({ ...prev, units_per_package: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /><span className="mt-1 block text-xs font-normal text-slate-500">Use 1 when the purchasing and requested units are the same.</span></label><label className="block text-sm font-semibold text-slate-700">Cost per purchased unit<input type="number" min="0" step="0.01" value={procurementForm.unit_cost} onChange={(event) => setProcurementForm((prev) => ({ ...prev, unit_cost: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label><label className="block text-sm font-semibold text-slate-700">Supplier<select value={procurementForm.supplier_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, supplier_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2"><option value="">No supplier selected</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label><label className="block text-sm font-semibold text-slate-700">Procurement date<input type="date" value={procurementForm.procurement_date} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_date: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label></div>
-            {Number(procurementForm.procurement_quantity) > 0 && Number(procurementForm.units_per_package) > 0 ? <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"><b>{Number(procurementForm.procurement_quantity).toLocaleString()} {procurementForm.procurement_unit_of_measure || 'purchasing units'}</b> × <b>{Number(procurementForm.units_per_package).toLocaleString()}</b> = <b>{(Number(procurementForm.procurement_quantity) * Number(procurementForm.units_per_package)).toLocaleString()} {selectedProcurementItem?.unit_of_measure || 'requested units'}</b>. {procurementForm.unit_cost !== '' ? <>Normalized cost: <b>{(Number(procurementForm.unit_cost) / Number(procurementForm.units_per_package)).toLocaleString(undefined, { maximumFractionDigits: 6 })}</b> per {selectedProcurementItem?.unit_of_measure || 'requested unit'}.</> : null}</div> : null}
-            {Number(procurementForm.procurement_quantity) * Number(procurementForm.units_per_package) > Number(selectedProcurementItem?.remaining_quantity || 0) ? <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><b>SCM approval required.</b> This entry exceeds the remaining requested quantity. It will stay pending and will not change purchased totals until SCM approves it. Add a justification in the note below.</div> : null}
-            <label className="block text-sm font-semibold text-slate-700">Note<textarea value={procurementForm.procurement_note} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_note: event.target.value }))} className="mt-1 min-h-24 w-full rounded-lg border border-slate-300 p-2" /></label>
-            <div className="flex justify-end gap-2"><button type="button" onClick={() => setProcurementModalOpen(false)} className="rounded-lg border px-4 py-2">Cancel</button><button disabled={submitting} className="rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Saving…' : 'Save entry'}</button></div>
+            {procurementError && <div role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{procurementError}{actions.has('resolve_item_identity') && selectedProcurementItem && <button type="button" className="ml-3 font-semibold underline" onClick={() => { setProcurementModalOpen(false); setResolutionItem(selectedProcurementItem); }}>{uiText("Resolve selected item")}</button>}<Link className="ml-3 underline" to="/item-master">{uiText("Open Item Master")}</Link></div>}
+            {filteredProcurementItems.length === 0 ? <p className="rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">{uiText("No items match that search.")}</p> : null}
+            {selectedProcurementItem ? <div className="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-3"><span>{uiText("Requested:")}{" "}<b>{selectedProcurementItem.requested_quantity} {uiText(workflowLabel(selectedProcurementItem.unit_of_measure || ''))}</b></span><span>{uiText("Purchased:")}{" "}<b>{selectedProcurementItem.purchased_quantity} {uiText(workflowLabel(selectedProcurementItem.unit_of_measure || ''))}</b></span><span>{uiText("Remaining:")}{" "}<b>{selectedProcurementItem.remaining_quantity} {uiText(workflowLabel(selectedProcurementItem.unit_of_measure || ''))}</b></span><span className="sm:col-span-3">{uiText("Specs:")}{" "}<b>{selectedProcurementItem.specs || '—'}</b></span><span className="sm:col-span-3">{uiText("Intended use:")}{" "}<b>{selectedProcurementItem.intended_use || '—'}</b></span></div> : null}
+            <div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-semibold text-slate-700">{uiText("Purchased quantity")}<input type="number" min="1" step="1" value={procurementForm.procurement_quantity} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_quantity: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /></label><label className="block text-sm font-semibold text-slate-700">{uiText("Purchasing unit of measure")}<input type="text" value={procurementForm.procurement_unit_of_measure} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_unit_of_measure: event.target.value }))} placeholder={selectedProcurementItem?.unit_of_measure || 'Box, case, piece…'} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /></label><label className="block text-sm font-semibold text-slate-700">{uiText("Requested units per purchased unit")}<input type="number" min="1" step="1" value={procurementForm.units_per_package} onChange={(event) => setProcurementForm((prev) => ({ ...prev, units_per_package: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" required /><span className="mt-1 block text-xs font-normal text-slate-500">{uiText("Use 1 when the purchasing and requested units are the same.")}</span></label><label className="block text-sm font-semibold text-slate-700">{uiText("Cost per purchased unit")}<input type="number" min="0" step="0.01" value={procurementForm.unit_cost} onChange={(event) => setProcurementForm((prev) => ({ ...prev, unit_cost: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label><label className="block text-sm font-semibold text-slate-700">{uiText("Supplier")}<select value={procurementForm.supplier_id} onChange={(event) => setProcurementForm((prev) => ({ ...prev, supplier_id: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2"><option value="">{uiText("No supplier selected")}</option>{suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}</select></label><label className="block text-sm font-semibold text-slate-700">{uiText("Procurement date")}<input type="date" value={procurementForm.procurement_date} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_date: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2" /></label></div>
+            {Number(procurementForm.procurement_quantity) > 0 && Number(procurementForm.units_per_package) > 0 ? <div className="rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900"><b>{Number(procurementForm.procurement_quantity).toLocaleString()} {procurementForm.procurement_unit_of_measure || 'purchasing units'}</b> × <b>{Number(procurementForm.units_per_package).toLocaleString()}</b> = <b>{(Number(procurementForm.procurement_quantity) * Number(procurementForm.units_per_package)).toLocaleString()} {uiText(workflowLabel(selectedProcurementItem?.unit_of_measure || uiText("Requested units")))}</b>. {procurementForm.unit_cost !== '' ? <>{uiText("Normalized cost:")}{" "}<b>{(Number(procurementForm.unit_cost) / Number(procurementForm.units_per_package)).toLocaleString(undefined, { maximumFractionDigits: 6 })}</b>{" "}{uiText("per")}{" "}{uiText(workflowLabel(selectedProcurementItem?.unit_of_measure || uiText("Requested unit")))}.</> : null}</div> : null}
+            {Number(procurementForm.procurement_quantity) * Number(procurementForm.units_per_package) > Number(selectedProcurementItem?.remaining_quantity || 0) ? <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><b>{uiText("SCM approval required.")}</b>{" "}{uiText("This entry exceeds the remaining requested quantity. It will stay pending and will not change purchased totals until SCM approves it. Add a justification in the note below.")}</div> : null}
+            <label className="block text-sm font-semibold text-slate-700">{uiText("Note")}<textarea value={procurementForm.procurement_note} onChange={(event) => setProcurementForm((prev) => ({ ...prev, procurement_note: event.target.value }))} className="mt-1 min-h-24 w-full rounded-lg border border-slate-300 p-2" /></label>
+            <div className="flex justify-end gap-2"><button type="button" onClick={() => setProcurementModalOpen(false)} className="rounded-lg border px-4 py-2">{uiText("Cancel")}</button><button disabled={submitting} className="rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? uiText("Saving…") : uiText("Save entry")}</button></div>
           </form>
         </ModalShell>
       )}
@@ -598,19 +602,19 @@ const RequestDetailWorkspace = () => {
       <AiAssistantDrawer open={aiDrawerOpen} onClose={() => setAiDrawerOpen(false)} requestId={requestId} />
 
       {itemStatusModalOpen && (
-        <ModalShell title={itemStatusTarget ? `Finalize ${itemStatusTarget.item_name}` : 'Finalize Item'} onClose={() => { setItemStatusModalOpen(false); setItemStatusTarget(null); }}>
+        <ModalShell title={itemStatusTarget ? uiText("Finalize {{item}}", { item: itemStatusTarget.item_name }) : uiText("Finalize Item")} onClose={() => { setItemStatusModalOpen(false); setItemStatusTarget(null); }}>
           <form onSubmit={submitItemStatus} className="space-y-4">
-            <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">Use this to manually close an item when no further procurement will happen, including partially procured items whose remaining quantity will not be purchased.</p>
-            <label className="block text-sm font-semibold text-slate-700">Final item status<select value={itemStatusForm.procurement_status} onChange={(event) => setItemStatusForm((prev) => ({ ...prev, procurement_status: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2"><option value="completed">Completed / Close remaining quantity</option><option value="not_procured">Not Procured / Will not be purchased</option><option value="canceled">Canceled</option></select></label>
-            <label className="block text-sm font-semibold text-slate-700">Reason / note<textarea value={itemStatusForm.procurement_comment} onChange={(event) => setItemStatusForm((prev) => ({ ...prev, procurement_comment: event.target.value }))} className="mt-1 min-h-28 w-full rounded-lg border border-slate-300 p-2" placeholder="Explain why this item is being closed and whether any remaining quantity will not be purchased." /></label>
-            <div className="flex justify-end gap-2"><button type="button" onClick={() => setItemStatusModalOpen(false)} className="rounded-lg border px-4 py-2">Cancel</button><button disabled={submitting} className="rounded-lg bg-rose-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Saving…' : 'Save status'}</button></div>
+            <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{uiText("Use this to manually close an item when no further procurement will happen, including partially procured items whose remaining quantity will not be purchased.")}</p>
+            <label className="block text-sm font-semibold text-slate-700">{uiText("Final item status")}<select value={itemStatusForm.procurement_status} onChange={(event) => setItemStatusForm((prev) => ({ ...prev, procurement_status: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2"><option value="completed">{uiText("Completed / Close remaining quantity")}</option><option value="not_procured">{uiText("Not Procured / Will not be purchased")}</option><option value="canceled">{uiText("Canceled")}</option></select></label>
+            <label className="block text-sm font-semibold text-slate-700">{uiText("Reason / note")}<textarea value={itemStatusForm.procurement_comment} onChange={(event) => setItemStatusForm((prev) => ({ ...prev, procurement_comment: event.target.value }))} className="mt-1 min-h-28 w-full rounded-lg border border-slate-300 p-2" placeholder={uiText("Explain why this item is being closed and whether any remaining quantity will not be purchased.")} /></label>
+            <div className="flex justify-end gap-2"><button type="button" onClick={() => setItemStatusModalOpen(false)} className="rounded-lg border px-4 py-2">{uiText("Cancel")}</button><button disabled={submitting} className="rounded-lg bg-rose-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? uiText("Saving…") : uiText("Save status")}</button></div>
           </form>
         </ModalShell>
       )}
 
       {noteModalOpen && (
-        <ModalShell title={noteTarget ? `Add Note for ${noteTarget.item_name}` : 'Add Request Note'} onClose={() => { setNoteModalOpen(false); setNoteTarget(null); }}>
-          <form onSubmit={submitNote} className="space-y-4"><label className="block text-sm font-semibold text-slate-700">Note type<select value={noteForm.note_type} onChange={(event) => setNoteForm((prev) => ({ ...prev, note_type: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2">{noteTypes.map((type) => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}</select></label><label className="block text-sm font-semibold text-slate-700">Note<textarea value={noteForm.note} onChange={(event) => setNoteForm((prev) => ({ ...prev, note: event.target.value }))} className="mt-1 min-h-32 w-full rounded-lg border border-slate-300 p-2" required /></label><div className="flex justify-end gap-2"><button type="button" onClick={() => setNoteModalOpen(false)} className="rounded-lg border px-4 py-2">Cancel</button><button disabled={submitting} className="rounded-lg bg-slate-800 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? 'Saving…' : 'Add note'}</button></div></form>
+        <ModalShell title={noteTarget ? uiText("Add Note for {{item}}", { item: noteTarget.item_name }) : uiText("Add Request Note")} onClose={() => { setNoteModalOpen(false); setNoteTarget(null); }}>
+          <form onSubmit={submitNote} className="space-y-4"><label className="block text-sm font-semibold text-slate-700">{uiText("Note type")}<select value={noteForm.note_type} onChange={(event) => setNoteForm((prev) => ({ ...prev, note_type: event.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 p-2">{noteTypes.map((type) => <option key={type} value={type}>{uiText(workflowLabel(type))}</option>)}</select></label><label className="block text-sm font-semibold text-slate-700">{uiText("Note")}<textarea value={noteForm.note} onChange={(event) => setNoteForm((prev) => ({ ...prev, note: event.target.value }))} className="mt-1 min-h-32 w-full rounded-lg border border-slate-300 p-2" required /></label><div className="flex justify-end gap-2"><button type="button" onClick={() => setNoteModalOpen(false)} className="rounded-lg border px-4 py-2">{uiText("Cancel")}</button><button disabled={submitting} className="rounded-lg bg-slate-800 px-4 py-2 font-semibold text-white disabled:opacity-50">{submitting ? uiText("Saving…") : uiText("Add note")}</button></div></form>
         </ModalShell>
       )}
     </div>

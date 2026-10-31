@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import "./ProcurementPriorityManagementPage.css";
 import { matchesSearchTokens } from "../utils/search";
 import React, {
@@ -98,6 +99,7 @@ export const toCanonicalAssessmentDto = (form) => ({
   p0_justification: form.p0_justification,
 });
 function AssessmentForm({ profile, onSaved }) {
+  const uiText = useUiTranslation();
   const [form, setForm] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -250,13 +252,14 @@ function AssessmentForm({ profile, onSaved }) {
         disabled={saving}
         className="priority-primary rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save assessment"}
+        {saving ? uiText("Saving…") : "Save assessment"}
       </button>
     </form>
   );
 }
 
 function GroupManager({ cases }) {
+  const uiText = useUiTranslation();
   const [groups, setGroups] = useState([]);
   const [groupState, setGroupState] = useState("loading");
   const [groupError, setGroupError] = useState("");
@@ -411,7 +414,7 @@ function GroupManager({ cases }) {
                   }
                 />{" "}
                 {caseLabel(item)} · {item.public_title} ·{" "}
-                {item.department_name || "Department"} ·{" "}
+                {item.department_name || uiText("Department")} ·{" "}
                 {item.system_tier || "Not assessed"} ·{" "}
                 {item.system_score ?? "—"} · {item.case_status}
               </label>
@@ -457,12 +460,12 @@ function GroupManager({ cases }) {
           <thead>
             <tr>
               <th>Group title</th>
-              <th>Tier</th>
+              <th>{uiText("Tier")}</th>
               <th>Derived score</th>
               <th>Institutional rank</th>
               <th>Active members</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>{uiText("Status")}</th>
+              <th>{uiText("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -493,9 +496,7 @@ function GroupManager({ cases }) {
                         member_case_ids: group.member_case_ids || [],
                       });
                     }}
-                  >
-                    Edit
-                  </button>{" "}
+                  >{uiText("Edit")}</button>{" "}
                   <button
                     onClick={async () => {
                       try {
@@ -522,6 +523,7 @@ function GroupManager({ cases }) {
 }
 
 export default function ProcurementPriorityManagementPage() {
+  const uiText = useUiTranslation();
   const { user } = useAuth();
   const canManageGroups = hasPermission(
     user,
@@ -701,22 +703,18 @@ export default function ProcurementPriorityManagementPage() {
       >
         <div className="priority-section-heading">
           <div>
-            <h2 id="priority-filter-title">Find requests</h2>
+            <h2 id="priority-filter-title">{uiText("Find requests")}</h2>
             <p className="priority-help">
               Each request occupies one position. Suggested priority reflects
               its most urgent active item.
             </p>
           </div>
           {filtersActive && (
-            <button type="button" onClick={() => setFilters(emptyFilters)}>
-              Clear filters
-            </button>
+            <button type="button" onClick={() => setFilters(emptyFilters)}>{uiText("Clear filters")}</button>
           )}
         </div>
         <div className="priority-filters grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-          <label>
-            Search
-            <input
+          <label>{uiText("Search")}<input
               aria-label="Search priorities"
               placeholder="Search request or title"
               className="rounded border p-2"
@@ -741,7 +739,7 @@ export default function ProcurementPriorityManagementPage() {
                   setFilters({ ...filters, [key]: e.target.value })
                 }
               >
-                <option value="">All</option>
+                <option value="">{uiText("All")}</option>
                 {[
                   ...new Set(
                     rows
@@ -763,9 +761,7 @@ export default function ProcurementPriorityManagementPage() {
             </label>
           ))}
         </div>
-        <p role="status" className="priority-help">
-          Showing {shown.length} of {rows.length} requests
-        </p>
+        <p role="status" className="priority-help">{uiText("Showing")}{" "}{shown.length}{" "}{uiText("of")}{" "}{rows.length}{" "}{uiText("requests")}</p>
       </section>
       <section
         id="priority-queue"
@@ -945,7 +941,7 @@ export default function ProcurementPriorityManagementPage() {
               onClick={saveOrder}
               className="priority-primary rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
             >
-              {savingOrder ? "Saving…" : "Save institutional order"}
+              {savingOrder ? uiText("Saving…") : "Save institutional order"}
             </button>
           )}
           {orderError && (
@@ -997,8 +993,7 @@ export default function ProcurementPriorityManagementPage() {
           <button onClick={() => setSelected(null)} className="float-right">
             Close
           </button>
-          <h2 className="text-xl font-bold">
-            Request{" "}
+          <h2 className="text-xl font-bold">{uiText("Request")}{" "}
             {detailRequest?.request_reference || detailRequest?.request_id}
           </h2>
           <p>
@@ -1034,9 +1029,9 @@ export default function ProcurementPriorityManagementPage() {
             <span>{selected.system_score}</span>
             <b>System Suggested Rank</b>
             <span>{detailRequest?.system_suggested_rank ?? "—"}</span>
-            <b>Institutional Rank</b>
+            <b>{uiText("Institutional Rank")}</b>
             <span>{detailRequest?.institutional_rank ?? "—"}</span>
-            <b>Department Rank</b>
+            <b>{uiText("Department Rank")}</b>
             <span>{detailRequest?.department_rank ?? "—"}</span>
           </div>
           <PriorityFactorBreakdown

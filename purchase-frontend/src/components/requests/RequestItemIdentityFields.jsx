@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import GenericItemSelector from "./GenericItemSelector";
 import { searchApprovedProducts } from "../../api/itemMaster";
@@ -20,6 +21,7 @@ export default function RequestItemIdentityFields({
   user,
   disabled = false,
 }) {
+  const uiText = useUiTranslation();
   const mode = value.request_mode || "free_text";
   const [products, setProducts] = useState([]);
   const [error, setError] = useState("");
@@ -173,9 +175,7 @@ export default function RequestItemIdentityFields({
       {["specific_approved_product", "approved_free_text_exception"].includes(
         mode,
       ) && (
-        <label className="block text-sm">
-          Justification
-          <textarea
+        <label className="block text-sm">{uiText("Justification")}<textarea
             className="mt-1 block min-h-20 w-full rounded-lg border border-slate-300 p-2.5"
             required
             aria-label="Identity justification"

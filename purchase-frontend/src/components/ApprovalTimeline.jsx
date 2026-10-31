@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React from "react";
 import { CheckCircle2, Clock3, ShieldCheck, XCircle } from "lucide-react";
 
@@ -26,6 +27,7 @@ const ApprovalTimeline = ({
   isUrgent = false,
   formatDate,
 }) => {
+  const uiText = useUiTranslation();
   const mergedLabels = {
     ...defaultLabels,
     ...labels,
@@ -148,7 +150,7 @@ const ApprovalTimeline = ({
                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold capitalize ring-1 ring-inset ${className}`}
                       >
                         <Icon className="h-3.5 w-3.5" />
-                        {approval.status || "Pending"}
+                        {approval.status || uiText("Pending")}
                       </span>
                     </td>
                     <td className="max-w-xs px-3 py-3 text-slate-600">

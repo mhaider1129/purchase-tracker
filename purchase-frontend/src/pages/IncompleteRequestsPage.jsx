@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
@@ -5,6 +6,7 @@ import { Link } from 'react-router-dom';
 import PaginationControls from '../components/ui/PaginationControls';
 
 const IncompleteRequestsPage = () => {
+  const uiText = useUiTranslation();
   const [requests, setRequests] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [userRole, setUserRole] = useState(null);
@@ -224,16 +226,16 @@ const IncompleteRequestsPage = () => {
             <p className="text-sm text-gray-500">Total Incomplete</p>
             <p className="text-2xl font-semibold text-blue-700">{filtered.length}</p>
             {lastUpdated && (
-              <p className="text-xs text-gray-400 mt-1">Last updated {lastUpdated}</p>
+              <p className="text-xs text-gray-400 mt-1">{uiText("Last updated")}{" "}{lastUpdated}</p>
             )}
           </div>
           <div className="rounded border p-4 bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Estimated Cost</p>
+            <p className="text-sm text-gray-500">{uiText("Estimated Cost")}</p>
             <p className="text-2xl font-semibold text-green-600">{formatCurrency(totalEstimatedCost)}</p>
             <p className="text-xs text-gray-400 mt-1">Across filtered results</p>
           </div>
           <div className="rounded border p-4 bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Departments involved</p>
+            <p className="text-sm text-gray-500">{uiText("Departments involved")}</p>
             <p className="text-2xl font-semibold text-indigo-600">{uniqueDepartments}</p>
             <p className="text-xs text-gray-400 mt-1">Unique departments in view</p>
           </div>
@@ -257,23 +259,23 @@ const IncompleteRequestsPage = () => {
 
         <div className="flex flex-wrap gap-4 mb-6 items-end">
           <div>
-            <label className="block text-sm font-medium">Request Type</label>
+            <label className="block text-sm font-medium">{uiText("Request Type")}</label>
             <select
               value={requestType}
               onChange={(e) => setRequestType(e.target.value)}
               className="p-2 border rounded"
             >
-              <option value="">All</option>
-              <option value="Stock">Stock</option>
-              <option value="Non-Stock">Non-Stock</option>
-              <option value="Medical Device">Medical Device</option>
-              <option value="Medication">Medication</option>
-              <option value="IT Item">IT Item</option>
+              <option value="">{uiText("All")}</option>
+              <option value="Stock">{uiText("Stock")}</option>
+              <option value="Non-Stock">{uiText("Non-Stock")}</option>
+              <option value="Medical Device">{uiText("Medical Device")}</option>
+              <option value="Medication">{uiText("Medication")}</option>
+              <option value="IT Item">{uiText("IT Item")}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Department</label>
+            <label className="block text-sm font-medium">{uiText("Department")}</label>
             <input
               type="text"
               value={department}
@@ -304,13 +306,13 @@ const IncompleteRequestsPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium">Status</label>
+            <label className="block text-sm font-medium">{uiText("Status")}</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="p-2 border rounded"
             >
-              <option value="">All</option>
+              <option value="">{uiText("All")}</option>
               {statusOptions.map(option => (
                 <option key={option} value={option}>
                   {option}
@@ -320,7 +322,7 @@ const IncompleteRequestsPage = () => {
           </div>
 
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium">Search</label>
+            <label className="block text-sm font-medium">{uiText("Search")}</label>
             <input
               type="text"
               value={searchTerm}
@@ -335,7 +337,7 @@ const IncompleteRequestsPage = () => {
             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             disabled={loadingExport}
           >
-            {loadingExport ? 'Exporting...' : 'Export CSV'}
+            {loadingExport ? 'Exporting...' : uiText("Export CSV")}
           </button>
 
           <button
@@ -343,7 +345,7 @@ const IncompleteRequestsPage = () => {
             className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
             disabled={loadingExport}
           >
-            {loadingExport ? 'Exporting...' : 'Export PDF'}
+            {loadingExport ? 'Exporting...' : uiText("Export PDF")}
           </button>
         </div>
 
@@ -359,7 +361,7 @@ const IncompleteRequestsPage = () => {
         )}
 
         {loading ? (
-          <p className="text-gray-600">Loading requests...</p>
+          <p className="text-gray-600">{uiText("Loading requests...")}</p>
         ) : error ? (
           <p className="text-red-600">❌ {error}</p>
         ) : paginatedData.length === 0 ? (
@@ -370,14 +372,14 @@ const IncompleteRequestsPage = () => {
               <table className="min-w-full text-sm" aria-label="Incomplete requests table">
                 <thead className="bg-gray-100 text-left">
                   <tr>
-                    <th className="p-2 border">ID</th>
-                    <th className="p-2 border">Type</th>
-                    <th className="p-2 border">Department</th>
-                    <th className="p-2 border">Section</th>
-                    <th className="p-2 border">Justification</th>
-                    <th className="p-2 border">Estimated Cost</th>
-                    <th className="p-2 border">Status</th>
-                    <th className="p-2 border">Created At</th>
+                    <th className="p-2 border">{uiText("ID")}</th>
+                    <th className="p-2 border">{uiText("Type")}</th>
+                    <th className="p-2 border">{uiText("Department")}</th>
+                    <th className="p-2 border">{uiText("Section")}</th>
+                    <th className="p-2 border">{uiText("Justification")}</th>
+                    <th className="p-2 border">{uiText("Estimated Cost")}</th>
+                    <th className="p-2 border">{uiText("Status")}</th>
+                    <th className="p-2 border">{uiText("Created At")}</th>
                   </tr>
                 </thead>
                 <tbody>

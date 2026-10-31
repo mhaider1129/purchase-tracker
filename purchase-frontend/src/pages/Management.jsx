@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import ProcurementIdentitySettings from '../components/itemMaster/ProcurementIdentitySettings';
 import MaintenanceApprovalReportingSettings from '../components/MaintenanceApprovalReportingSettings';
 import TechnicalReviewSettings from '../components/TechnicalReviewSettings';
@@ -81,6 +82,7 @@ const DepartmentVisibilityChecklist = ({
   ariaLabel,
   className = '',
 }) => {
+  const uiText = useUiTranslation();
   const selectedIds = Array.isArray(selectedDepartmentIds) ? selectedDepartmentIds : [];
   const selectedSet = new Set(selectedIds.map((id) => Number(id)));
   const departmentIds = departments.map((department) => Number(department.id)).filter(Boolean);
@@ -108,9 +110,7 @@ const DepartmentVisibilityChecklist = ({
             checked={selectedIds.length === 0}
             onChange={() => onChange([])}
             disabled={disabled}
-          />
-          All departments
-        </label>
+          />{uiText("All departments")}</label>
         <button
           type="button"
           className="text-xs font-semibold text-blue-600 hover:underline disabled:text-gray-400 disabled:no-underline"
@@ -149,6 +149,7 @@ const DepartmentVisibilityChecklist = ({
 };
 
 const Management = () => {
+  const uiText = useUiTranslation();
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -1008,7 +1009,7 @@ const Management = () => {
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {savingPermissions ? 'Saving...' : 'Save permissions'}
+            {savingPermissions ? uiText("Saving...") : 'Save permissions'}
           </button>
         </div>
       </div>
@@ -1523,9 +1524,7 @@ const Management = () => {
         <div className="flex flex-col gap-3 mb-4">
         <div className="flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex-1">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Search
-            </label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">{uiText("Search")}</label>
             <input
               type="search"
               className="mt-1 w-full rounded border border-gray-300 p-2"
@@ -1537,9 +1536,7 @@ const Management = () => {
             />
           </div>
           <div className="lg:w-48">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Role
-            </label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">{uiText("Role")}</label>
             <select
               className="mt-1 w-full rounded border border-gray-300 p-2"
               value={userFilters.role}
@@ -1574,23 +1571,23 @@ const Management = () => {
       </div>
       {renderInlineUserPermissionsEditor()}
       {loadingUsers ? (
-        <p>Loading users...</p>
+        <p>{uiText("Loading users...")}</p>
       ) : filteredUsers.length === 0 ? (
         <p className="text-sm text-gray-600">No users match the current filters.</p>
       ) : (
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-gray-200 text-left">
-              <th className="p-2">Name</th>
-              <th className="p-2">Employee ID</th>
-              <th className="p-2">Email</th>
-              <th className="p-2">Role</th>
-              <th className="p-2">Department</th>
-              <th className="p-2">Section</th>
-              <th className="p-2">Warehouse</th>
+              <th className="p-2">{uiText("Name")}</th>
+              <th className="p-2">{uiText("Employee ID")}</th>
+              <th className="p-2">{uiText("Email")}</th>
+              <th className="p-2">{uiText("Role")}</th>
+              <th className="p-2">{uiText("Department")}</th>
+              <th className="p-2">{uiText("Section")}</th>
+              <th className="p-2">{uiText("Warehouse")}</th>
               <th className="p-2">Medication?</th>
-              <th className="p-2">Active</th>
-              <th className="p-2">Actions</th>
+              <th className="p-2">{uiText("Active")}</th>
+              <th className="p-2">{uiText("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1731,24 +1728,20 @@ const Management = () => {
                         }
                       />
                     ) : user.can_request_medication ? (
-                      'Yes'
+                      uiText("Yes")
                     ) : (
-                      'No'
+                      uiText("No")
                     )}
                   </td>
-                  <td className="p-2">{user.is_active ? 'Yes' : 'No'}</td>
+                  <td className="p-2">{user.is_active ? uiText("Yes") : uiText("No")}</td>
                   <td className="p-2">
                     {editUserId === user.id ? (
                       <>
                         <button
                           onClick={() => saveEdit(user.id)}
                           className="text-green-600 mr-2"
-                        >
-                          Save
-                        </button>
-                        <button onClick={cancelEdit} className="text-gray-600">
-                          Cancel
-                        </button>
+                        >{uiText("Save")}</button>
+                        <button onClick={cancelEdit} className="text-gray-600">{uiText("Cancel")}</button>
                       </>
                     ) : (
                       <>
@@ -1756,16 +1749,12 @@ const Management = () => {
                           <button
                             onClick={() => deactivateUser(user.id)}
                             className="text-red-600 hover:underline mr-2"
-                          >
-                            Deactivate
-                          </button>
+                          >{uiText("Deactivate")}</button>
                         )}
                         <button
                           onClick={() => startEdit(user)}
                           className="text-blue-600 hover:underline mr-2"
-                        >
-                          Assign
-                        </button>
+                        >{uiText("Assign")}</button>
                         {canManagePermissions && (
                           <button
                             type="button"
@@ -1801,9 +1790,7 @@ const Management = () => {
       <div className="overflow-x-auto">
         <div className="flex flex-col gap-3 mb-4 md:flex-row md:items-end">
         <div className="flex-1">
-          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Search
-          </label>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">{uiText("Search")}</label>
           <input
             type="search"
             className="mt-1 w-full rounded border border-gray-300 p-2"
@@ -1815,9 +1802,7 @@ const Management = () => {
           />
         </div>
         <div className="md:w-48">
-          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Status
-          </label>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">{uiText("Status")}</label>
           <select
             className="mt-1 w-full rounded border border-gray-300 p-2"
             value={requestFilters.status}
@@ -1825,10 +1810,10 @@ const Management = () => {
               setRequestFilters((prev) => ({ ...prev, status: e.target.value }))
             }
           >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+            <option value="all">{uiText("All")}</option>
+            <option value="pending">{uiText("Pending")}</option>
+            <option value="approved">{uiText("Approved")}</option>
+            <option value="rejected">{uiText("Rejected")}</option>
           </select>
         </div>
       </div>
@@ -1841,14 +1826,14 @@ const Management = () => {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-gray-200 text-left">
-              <th className="p-2">Name</th>
-              <th className="p-2">Email</th>
-              <th className="p-2">Department</th>
-              <th className="p-2">Section</th>
-              <th className="p-2">Status</th>
-              <th className="p-2">Submitted</th>
+              <th className="p-2">{uiText("Name")}</th>
+              <th className="p-2">{uiText("Email")}</th>
+              <th className="p-2">{uiText("Department")}</th>
+              <th className="p-2">{uiText("Section")}</th>
+              <th className="p-2">{uiText("Status")}</th>
+              <th className="p-2">{uiText("Submitted")}</th>
               <th className="p-2">Reviewer</th>
-              <th className="p-2">Actions</th>
+              <th className="p-2">{uiText("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1877,15 +1862,11 @@ const Management = () => {
                         <button
                           onClick={() => approveAccountRequest(req.id)}
                           className="bg-green-600 text-white px-2 py-1 rounded"
-                        >
-                          Approve
-                        </button>
+                        >{uiText("Approve")}</button>
                         <button
                           onClick={() => rejectAccountRequest(req.id)}
                           className="bg-red-600 text-white px-2 py-1 rounded"
-                        >
-                          Reject
-                        </button>
+                        >{uiText("Reject")}</button>
                       </div>
                     ) : (
                       <div className="text-xs text-gray-600">
@@ -1921,16 +1902,16 @@ const Management = () => {
         )}
         {organizationMessage && <p className="mb-2 text-sm text-green-700">{organizationMessage}</p>}
       {loadingDepartments ? (
-        <p>Loading departments...</p>
+        <p>{uiText("Loading departments...")}</p>
       ) : (
         <>
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gray-200 text-left">
-                <th className="p-2">Department</th>
-                <th className="p-2">Type</th>
+                <th className="p-2">{uiText("Department")}</th>
+                <th className="p-2">{uiText("Type")}</th>
                 <th className="p-2">Sections</th>
-                <th className="p-2">Actions</th>
+                <th className="p-2">{uiText("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -1946,8 +1927,8 @@ const Management = () => {
                     {editingDepartment?.id === dept.id ? (
                       <select className="rounded border px-2 py-1" value={editingDepartment.type?.toLowerCase()}
                         onChange={(e) => setEditingDepartment({ ...editingDepartment, type: e.target.value })}>
-                        <option value="medical">Medical</option>
-                        <option value="operational">Operational</option>
+                        <option value="medical">{uiText("Medical")}</option>
+                        <option value="operational">{uiText("Operational")}</option>
                       </select>
                     ) : <span className="rounded-full bg-blue-100 px-2 py-1 text-xs uppercase tracking-wide text-blue-700">{dept.type}</span>}
                   </td>
@@ -1960,11 +1941,11 @@ const Management = () => {
                               <span className="inline-flex gap-1">
                                 <input className="rounded border px-2 py-1" value={editingSection.name}
                                   onChange={(e) => setEditingSection({ ...editingSection, name: e.target.value })} />
-                                <button className="text-green-700" onClick={saveSection}>Save</button>
-                                <button className="text-gray-600" onClick={() => setEditingSection(null)}>Cancel</button>
+                                <button className="text-green-700" onClick={saveSection}>{uiText("Save")}</button>
+                                <button className="text-gray-600" onClick={() => setEditingSection(null)}>{uiText("Cancel")}</button>
                               </span>
                             ) : <span>{section.name}{' '}<button className="text-xs text-blue-700 hover:underline"
-                              onClick={() => setEditingSection({ id: section.id, departmentId: dept.id, name: section.name })}>Edit</button></span>}
+                              onClick={() => setEditingSection({ id: section.id, departmentId: dept.id, name: section.name })}>{uiText("Edit")}</button></span>}
                           </li>
                         ))}
                       </ul>
@@ -1975,11 +1956,11 @@ const Management = () => {
                   <td className="p-2">
                     {editingDepartment?.id === dept.id ? (
                       <span className="flex gap-2">
-                        <button className="text-green-700 hover:underline" onClick={saveDepartment}>Save</button>
-                        <button className="text-gray-600 hover:underline" onClick={() => setEditingDepartment(null)}>Cancel</button>
+                        <button className="text-green-700 hover:underline" onClick={saveDepartment}>{uiText("Save")}</button>
+                        <button className="text-gray-600 hover:underline" onClick={() => setEditingDepartment(null)}>{uiText("Cancel")}</button>
                       </span>
                     ) : <button className="text-blue-700 hover:underline"
-                      onClick={() => setEditingDepartment({ id: dept.id, name: dept.name, type: dept.type })}>Edit</button>}
+                      onClick={() => setEditingDepartment({ id: dept.id, name: dept.name, type: dept.type })}>{uiText("Edit")}</button>}
                   </td>
                 </tr>
               ))}
@@ -2001,8 +1982,8 @@ const Management = () => {
                 value={newDept.type}
                 onChange={(e) => setNewDept({ ...newDept, type: e.target.value })}
               >
-                <option value="medical">Medical</option>
-                <option value="operational">Operational</option>
+                <option value="medical">{uiText("Medical")}</option>
+                <option value="operational">{uiText("Operational")}</option>
               </select>
               <button
                 onClick={addDepartment}
@@ -2022,7 +2003,7 @@ const Management = () => {
                   setNewSection({ ...newSection, department_id: e.target.value })
                 }
               >
-                <option value="">Select department</option>
+                <option value="">{uiText("Select department")}</option>
                 {departments.map((dept) => (
                   <option key={dept.id} value={dept.id}>
                     {dept.name}
@@ -2078,9 +2059,9 @@ const Management = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-gray-200 text-left">
-                  <th className="p-2">Name</th>
-                  <th className="p-2">Type</th>
-                  <th className="p-2">Actions</th>
+                  <th className="p-2">{uiText("Name")}</th>
+                  <th className="p-2">{uiText("Type")}</th>
+                  <th className="p-2">{uiText("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2111,22 +2092,18 @@ const Management = () => {
                             disabled={savingWarehouse}
                             className="rounded bg-green-600 px-3 py-1 text-white hover:bg-green-700 disabled:bg-gray-400"
                           >
-                            {savingWarehouse ? 'Saving…' : 'Save'}
+                            {savingWarehouse ? uiText("Saving…") : uiText("Save")}
                           </button>
                           <button
                             onClick={cancelWarehouseEdit}
                             className="rounded border border-gray-300 px-3 py-1 hover:bg-gray-100"
-                          >
-                            Cancel
-                          </button>
+                          >{uiText("Cancel")}</button>
                         </div>
                       ) : (
                         <button
                           onClick={() => startEditingWarehouse(warehouse)}
                           className="rounded border border-blue-200 px-3 py-1 text-blue-700 hover:bg-blue-50"
-                        >
-                          Edit
-                        </button>
+                        >{uiText("Edit")}</button>
                       )}
                     </td>
                   </tr>
@@ -2150,7 +2127,7 @@ const Management = () => {
             disabled={savingWarehouse}
             className="w-full rounded bg-blue-600 px-3 py-2 text-white hover:bg-blue-700 disabled:bg-gray-400"
           >
-            {savingWarehouse ? 'Saving…' : 'Add warehouse'}
+            {savingWarehouse ? uiText("Saving…") : uiText("Add warehouse")}
           </button>
         </div>
       </div>
@@ -2200,14 +2177,14 @@ const Management = () => {
           <table className="min-w-full text-sm">
           <thead>
             <tr className="bg-gray-200 text-left">
-              <th className="p-2">Type</th>
+              <th className="p-2">{uiText("Type")}</th>
               <th className="p-2">Dept Type</th>
-              <th className="p-2">Level</th>
-              <th className="p-2">Role</th>
+              <th className="p-2">{uiText("Level")}</th>
+              <th className="p-2">{uiText("Role")}</th>
               <th className="p-2">Min</th>
               <th className="p-2">Max</th>
-              <th className="p-2">Warehouse</th>
-              <th className="p-2">Actions</th>
+              <th className="p-2">{uiText("Warehouse")}</th>
+              <th className="p-2">{uiText("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -2244,8 +2221,8 @@ const Management = () => {
                           }))
                         }
                       >
-                        <option value="medical">Medical</option>
-                        <option value="operational">Operational</option>
+                        <option value="medical">{uiText("Medical")}</option>
+                        <option value="operational">{uiText("Operational")}</option>
                       </select>
                     ) : (
                       route.department_type
@@ -2352,9 +2329,7 @@ const Management = () => {
                         <button
                           onClick={() => saveRoute({ id: route.id, ...data })}
                           className="text-green-600 mr-2"
-                        >
-                          Save
-                        </button>
+                        >{uiText("Save")}</button>
                         <button
                           onClick={() =>
                             setEditRoutes((prev) => {
@@ -2364,9 +2339,7 @@ const Management = () => {
                             })
                           }
                           className="text-gray-600"
-                        >
-                          Cancel
-                        </button>
+                        >{uiText("Cancel")}</button>
                       </>
                     ) : (
                       <>
@@ -2397,15 +2370,11 @@ const Management = () => {
                             }))
                           }
                           className="text-blue-600 mr-2"
-                        >
-                          Edit
-                        </button>
+                        >{uiText("Edit")}</button>
                         <button
                           onClick={() => deleteRoute(route.id)}
                           className="text-red-600"
-                        >
-                          Delete
-                        </button>
+                        >{uiText("Delete")}</button>
                       </>
                     )}
                   </td>
@@ -2430,8 +2399,8 @@ const Management = () => {
                     setNewRoute((prev) => ({ ...prev, department_type: e.target.value }))
                   }
                 >
-                  <option value="medical">Medical</option>
-                  <option value="operational">Operational</option>
+                  <option value="medical">{uiText("Medical")}</option>
+                  <option value="operational">{uiText("Operational")}</option>
                 </select>
               </td>
               <td className="p-2">
@@ -2510,9 +2479,7 @@ const Management = () => {
                 <button
                   onClick={() => saveRoute(newRoute)}
                   className="bg-green-600 text-white px-2 py-1 rounded"
-                >
-                  Add
-                </button>
+                >{uiText("Add")}</button>
               </td>
             </tr>
           </tbody>
@@ -2534,7 +2501,7 @@ const Management = () => {
     const renderRuleInputs = (rule, setRule, saveLabel, onSave) => (
       <div className="grid gap-3 rounded border bg-white p-4 md:grid-cols-5 md:items-end">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">Request type</label>
+          <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">{uiText("Request type")}</label>
           <select
             className="mt-1 w-full rounded border border-gray-300 p-2"
             value={rule.request_type}
@@ -2586,9 +2553,7 @@ const Management = () => {
             type="checkbox"
             checked={rule.is_active !== false}
             onChange={(e) => setRule((prev) => ({ ...prev, is_active: e.target.checked }))}
-          />
-          Active
-        </label>
+          />{uiText("Active")}</label>
         <button
           type="button"
           onClick={onSave}
@@ -2628,11 +2593,11 @@ const Management = () => {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gray-200 text-left">
-                <th className="p-2">Request type</th>
+                <th className="p-2">{uiText("Request type")}</th>
                 <th className="p-2">Submitted warehouse</th>
-                <th className="p-2">Assigned user</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Actions</th>
+                <th className="p-2">{uiText("Assigned user")}</th>
+                <th className="p-2">{uiText("Status")}</th>
+                <th className="p-2">{uiText("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -2661,7 +2626,7 @@ const Management = () => {
                         <td className="p-2">{rule.request_type}</td>
                         <td className="p-2">{rule.warehouse_name || 'Not applicable'}</td>
                         <td className="p-2">{rule.assignee_name || rule.assignee_user_id}</td>
-                        <td className="p-2">{rule.is_active ? 'Active' : 'Inactive'}</td>
+                        <td className="p-2">{rule.is_active ? uiText("Active") : 'Inactive'}</td>
                         <td className="p-2">
                           <button
                             type="button"
@@ -2675,16 +2640,12 @@ const Management = () => {
                               });
                             }}
                             className="mr-2 text-blue-600 hover:underline"
-                          >
-                            Edit
-                          </button>
+                          >{uiText("Edit")}</button>
                           <button
                             type="button"
                             onClick={() => deleteAutoAssignmentRule(rule.id)}
                             className="text-red-600 hover:underline"
-                          >
-                            Delete
-                          </button>
+                          >{uiText("Delete")}</button>
                         </td>
                       </>
                     )}
@@ -2744,8 +2705,7 @@ const Management = () => {
               Current link: {printSettings?.department_name || 'Not configured; legacy IT-name matching is used.'}
             </p>
             {printSettings?.updated_at && (
-              <p className="text-xs text-gray-500">
-                Last updated {new Date(printSettings.updated_at).toLocaleString()}
+              <p className="text-xs text-gray-500">{uiText("Last updated")}{" "}{new Date(printSettings.updated_at).toLocaleString()}
                 {printSettings.updated_by_name ? ` by ${printSettings.updated_by_name}` : ''}.
               </p>
             )}
@@ -2759,7 +2719,7 @@ const Management = () => {
                   : 'bg-cyan-600 hover:bg-cyan-700'
               }`}
             >
-              {savingPrintSettings ? 'Saving…' : 'Save queue department'}
+              {savingPrintSettings ? uiText("Saving…") : 'Save queue department'}
             </button>
           </div>
         )}
@@ -2796,11 +2756,9 @@ const Management = () => {
                 <p className="text-lg font-bold">{roles.length || 0}</p>
               </div>
               <div className="rounded-lg bg-white/15 px-3 py-2">
-                <p className="text-[11px] uppercase tracking-wide opacity-80">Status</p>
+                <p className="text-[11px] uppercase tracking-wide opacity-80">{uiText("Status")}</p>
                 <p className="flex items-center gap-1 text-lg font-semibold">
-                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-300" aria-hidden />
-                  Active
-                </p>
+                  <span className="inline-block h-2 w-2 rounded-full bg-emerald-300" aria-hidden />{uiText("Active")}</p>
               </div>
               <div className="col-span-2 rounded-lg bg-white/15 px-3 py-2 md:col-span-1">
                 <p className="text-[11px] uppercase tracking-wide opacity-80">Access</p>
@@ -2840,7 +2798,7 @@ const Management = () => {
               className="rounded bg-blue-600 px-4 py-2 text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
               disabled={savingRole}
             >
-              {savingRole ? 'Saving…' : 'Add role'}
+              {savingRole ? uiText("Saving…") : 'Add role'}
             </button>
           </form>
           {roleSuccess && (
@@ -2872,8 +2830,8 @@ const Management = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-gray-100 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                  <th className="px-3 py-2">Name</th>
-                  <th className="px-3 py-2 text-right">Actions</th>
+                  <th className="px-3 py-2">{uiText("Name")}</th>
+                  <th className="px-3 py-2 text-right">{uiText("Actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -2899,16 +2857,12 @@ const Management = () => {
                             onClick={handleUpdateRole}
                             className="rounded bg-emerald-600 px-3 py-1 text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
                             disabled={savingRole}
-                          >
-                            Save
-                          </button>
+                          >{uiText("Save")}</button>
                           <button
                             onClick={cancelEditingRole}
                             className="rounded border px-3 py-1 text-gray-700 transition hover:bg-gray-50"
                             type="button"
-                          >
-                            Cancel
-                          </button>
+                          >{uiText("Cancel")}</button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-end gap-2">
@@ -2916,15 +2870,13 @@ const Management = () => {
                             onClick={() => startEditingRole(role)}
                             className="rounded border px-3 py-1 text-gray-800 transition hover:bg-gray-50"
                             type="button"
-                          >
-                            Edit
-                          </button>
+                          >{uiText("Edit")}</button>
                           <button
                             onClick={() => handleDeleteRole(role.id)}
                             className="rounded bg-red-600 px-3 py-1 text-white shadow-sm transition hover:bg-red-700 disabled:opacity-60"
                             disabled={deletingRoleId === role.id}
                           >
-                            {deletingRoleId === role.id ? 'Deleting…' : 'Delete'}
+                            {deletingRoleId === role.id ? 'Deleting…' : uiText("Delete")}
                           </button>
                         </div>
                       )}
@@ -3003,11 +2955,11 @@ const Management = () => {
             <table className="min-w-full text-sm">
             <thead>
               <tr className="bg-gray-200 text-left">
-                <th className="p-2">Name</th>
-                <th className="p-2">Active</th>
+                <th className="p-2">{uiText("Name")}</th>
+                <th className="p-2">{uiText("Active")}</th>
                 <th className="p-2">Visible to</th>
                 <th className="p-2">Created</th>
-                <th className="p-2">Actions</th>
+                <th className="p-2">{uiText("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -3016,7 +2968,7 @@ const Management = () => {
                 return (
                   <tr key={project.id} className="border-b">
                     <td className="p-2 font-medium text-gray-900">{project.name}</td>
-                    <td className="p-2">{project.is_active !== false ? 'Yes' : 'No'}</td>
+                    <td className="p-2">{project.is_active !== false ? uiText("Yes") : uiText("No")}</td>
                     <td className="p-2 min-w-[18rem]">
                       <DepartmentVisibilityChecklist
                         departments={departments}
@@ -3039,9 +2991,7 @@ const Management = () => {
                         <button
                           onClick={() => deactivateProject(project)}
                           className="text-red-600 hover:underline"
-                        >
-                          Deactivate
-                        </button>
+                        >{uiText("Deactivate")}</button>
                       ) : (
                         <span className="text-xs text-gray-500">Inactive</span>
                       )}
@@ -3091,9 +3041,7 @@ const Management = () => {
                 />
               </span>
             </label>
-            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              User
-            </label>
+            <label className="block text-xs font-semibold uppercase tracking-wide text-gray-500">{uiText("User")}</label>
             <select
               className="mt-1 w-full rounded border border-gray-300 p-2"
               value={selectedPermissionUserId}
@@ -3178,7 +3126,7 @@ const Management = () => {
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {savingPermissions ? 'Saving...' : 'Save permissions'}
+            {savingPermissions ? uiText("Saving...") : 'Save permissions'}
           </button>
         </div>
       </div>
@@ -3239,10 +3187,10 @@ const Management = () => {
               <thead>
                 <tr className="bg-gray-100 text-left text-xs uppercase tracking-wide text-gray-500">
                   <th className="p-2">Feature</th>
-                  <th className="p-2">Description</th>
+                  <th className="p-2">{uiText("Description")}</th>
                   <th className="p-2">Permissions</th>
                   <th className="p-2">Requirement</th>
-                  <th className="p-2">Actions</th>
+                  <th className="p-2">{uiText("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3321,9 +3269,7 @@ const Management = () => {
                                   type="button"
                                   onClick={() => setEditingAccessPermissions([])}
                                   className="rounded border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:bg-gray-100"
-                                >
-                                  Clear all
-                                </button>
+                                >{uiText("Clear all")}</button>
                               </div>
                             </div>
                             {editingAccessPermissions.length > 0 ? (
@@ -3390,24 +3336,20 @@ const Management = () => {
                                   : 'bg-green-600 hover:bg-green-700'
                               }`}
                             >
-                              {savingAccessConfig ? 'Saving…' : 'Save'}
+                              {savingAccessConfig ? uiText("Saving…") : uiText("Save")}
                             </button>
                             <button
                               type="button"
                               onClick={cancelEditingAccessResource}
                               className="rounded border border-gray-300 px-3 py-1 text-sm font-semibold text-gray-700 hover:bg-gray-100"
-                            >
-                              Cancel
-                            </button>
+                            >{uiText("Cancel")}</button>
                           </div>
                         ) : (
                           <button
                             type="button"
                             onClick={() => startEditingAccessResource(resource)}
                             className="rounded border border-blue-200 px-3 py-1 text-sm font-semibold text-blue-700 hover:bg-blue-50"
-                          >
-                            Edit
-                          </button>
+                          >{uiText("Edit")}</button>
                         )}
                       </td>
                     </tr>
@@ -3444,12 +3386,12 @@ const Management = () => {
               <table className="mb-3 min-w-full text-sm">
                 <thead>
                   <tr className="bg-gray-200 text-left">
-                    <th className="p-2">Level</th>
+                    <th className="p-2">{uiText("Level")}</th>
                     <th className="p-2">Stage Key</th>
                     <th className="p-2">Stage Label</th>
-                    <th className="p-2">Role</th>
+                    <th className="p-2">{uiText("Role")}</th>
                     <th className="p-2">Suggest Edits</th>
-                    <th className="p-2">Description</th>
+                    <th className="p-2">{uiText("Description")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3459,7 +3401,7 @@ const Management = () => {
                       <td className="p-2">{stage.key || '—'}</td>
                       <td className="p-2">{stage.label || '—'}</td>
                       <td className="p-2">{stage.roleType || '—'}</td>
-                      <td className="p-2">{stage.canSuggestEdits ? 'Yes' : 'No'}</td>
+                      <td className="p-2">{stage.canSuggestEdits ? uiText("Yes") : uiText("No")}</td>
                       <td className="p-2">{stage.description || '—'}</td>
                     </tr>
                   ))}
@@ -3572,7 +3514,7 @@ const Management = () => {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Active users</p>
                   <p className="mt-2 text-3xl font-bold text-slate-900">{activeUserCount}</p>
-                  <p className="text-xs text-slate-500">of {users.length} total</p>
+                  <p className="text-xs text-slate-500">{uiText("of")}{" "}{users.length} total</p>
                 </div>
                 <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">Live</span>
               </div>
@@ -3596,7 +3538,7 @@ const Management = () => {
                   <p className="mt-2 text-3xl font-bold text-slate-900">{warehouses.length}</p>
                   <p className="text-xs text-slate-500">Available locations</p>
                 </div>
-                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Stock</span>
+                <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">{uiText("Stock")}</span>
               </div>
             </div>
             <div className="group relative overflow-hidden rounded-xl border border-indigo-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -3615,7 +3557,7 @@ const Management = () => {
           <div className="mt-8 grid items-start gap-6 lg:grid-cols-[17rem_minmax(0,1fr)]">
             <aside className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:sticky lg:top-6" aria-label="Management sections">
               <div className="px-3 pb-3 pt-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Administration</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{uiText("Administration")}</p>
                 <p className="mt-1 text-sm text-slate-600">Choose a workspace to manage.</p>
               </div>
               <nav className="space-y-4">
@@ -3649,7 +3591,7 @@ const Management = () => {
                 {['departments', 'warehouses', 'projects', 'roles', 'routes', 'autoAssignments', 'permissions', 'interfaceAccess'].includes(tab) && (
                   <label className="relative sm:ml-auto sm:w-72">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-                    <span className="sr-only">Search {currentTab[0].toLowerCase()}</span>
+                    <span className="sr-only">{uiText("Search")}{" "}{currentTab[0].toLowerCase()}</span>
                     <input type="search" value={managementSearch} onChange={(e) => setManagementSearch(e.target.value)}
                       placeholder={`Search ${currentTab[0].toLowerCase()}`}
                       className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100" />

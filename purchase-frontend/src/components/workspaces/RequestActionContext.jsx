@@ -1,9 +1,12 @@
+import useUiTranslation from '../../utils/useUiTranslation';
+import { translateWorkflowAction } from '../../utils/workflowTranslation';
 import React from "react";
 import useWorkspaceTranslation from "./useWorkspaceTranslation";
 import { ArrowRightCircle, UserRound, CircleAlert } from "lucide-react";
 
 export default function RequestActionContext({ request }) {
   const t = useWorkspaceTranslation();
+  const uiText = useUiTranslation();
   const fields = [
     {
       key: "nextAction",
@@ -25,7 +28,7 @@ export default function RequestActionContext({ request }) {
               <Icon size={16} aria-hidden="true" />
               {t(`operationalWorkspace.${key}`)}
             </dt>
-            <dd>{value || t("operationalWorkspace.notProvided")}</dd>
+            <dd>{(key === "assignedTo" ? value : translateWorkflowAction(value, uiText)) || t("operationalWorkspace.notProvided")}</dd>
           </div>
         ))}
       </dl>

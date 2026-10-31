@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 // src/pages/StockItemApprovals.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -26,6 +27,7 @@ const statusMeta = {
 };
 
 const StockItemApprovals = () => {
+  const uiText = useUiTranslation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -101,7 +103,7 @@ const StockItemApprovals = () => {
             </p>
           </div>
           <div className="rounded-lg bg-blue-50 border border-blue-100 px-4 py-3 shadow-sm">
-            <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Pending</p>
+            <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">{uiText("Pending")}</p>
             <p className="text-3xl font-bold text-blue-900">{pendingCount}</p>
             <p className="text-xs text-blue-700">awaiting your decision</p>
           </div>
@@ -120,15 +122,13 @@ const StockItemApprovals = () => {
               onClick={loadRequests}
               className="px-3 py-2 text-sm font-semibold text-blue-700 border border-blue-200 rounded hover:bg-blue-50"
               disabled={loading}
-            >
-              Refresh
-            </button>
+            >{uiText("Refresh")}</button>
           </div>
 
           {error && <div className="p-4 text-sm text-red-700 bg-red-50 border-b border-red-100">{error}</div>}
 
           {loading ? (
-            <div className="p-6 text-center text-gray-600">Loading requests...</div>
+            <div className="p-6 text-center text-gray-600">{uiText("Loading requests...")}</div>
           ) : requests.length === 0 ? (
             <div className="p-6 text-center text-gray-600">No stock item requests found.</div>
           ) : (
@@ -136,24 +136,14 @@ const StockItemApprovals = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Item
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{uiText("Item")}</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Unit
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Submitted
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{uiText("Description")}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{uiText("Submitted")}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{uiText("Status")}</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">{uiText("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
@@ -169,7 +159,7 @@ const StockItemApprovals = () => {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">{req.unit || '—'}</td>
                         <td className="px-4 py-3 text-sm text-gray-700 whitespace-pre-line max-w-md">
-                          {req.description || 'No description provided.'}
+                          {req.description || uiText("No description provided.")}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           {req.inserted_at
@@ -187,17 +177,13 @@ const StockItemApprovals = () => {
                             onClick={() => handleStatusChange(req.id, 'rejected')}
                             className="px-3 py-1.5 text-sm font-semibold text-rose-700 border border-rose-200 rounded hover:bg-rose-50 disabled:opacity-50"
                             disabled={actioningId === req.id || normalizedStatus !== 'pending'}
-                          >
-                            Reject
-                          </button>
+                          >{uiText("Reject")}</button>
                           <button
                             type="button"
                             onClick={() => handleStatusChange(req.id, 'approved')}
                             className="px-3 py-1.5 text-sm font-semibold text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-50 disabled:opacity-50"
                             disabled={actioningId === req.id || normalizedStatus !== 'pending'}
-                          >
-                            Approve
-                          </button>
+                          >{uiText("Approve")}</button>
                         </td>
                       </tr>
                     );

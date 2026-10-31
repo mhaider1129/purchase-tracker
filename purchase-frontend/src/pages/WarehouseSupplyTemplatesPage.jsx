@@ -1,8 +1,10 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
 
 const WarehouseSupplyTemplatesPage = () => {
+  const uiText = useUiTranslation();
   const { user, loading } = useCurrentUser();
   const [templates, setTemplates] = useState([]);
   const [newTemplate, setNewTemplate] = useState({ template_name: '', items: [{ item_name: '' }] });
@@ -120,7 +122,7 @@ const WarehouseSupplyTemplatesPage = () => {
   if (loading || !user) {
     return (
       <>
-          <div className="p-6 text-gray-600">Loading...</div>
+          <div className="p-6 text-gray-600">{uiText("Loading...")}</div>
       </>
     );
   }
@@ -140,15 +142,13 @@ const WarehouseSupplyTemplatesPage = () => {
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Warehouse Supply Templates</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{uiText("Warehouse Supply Templates")}</h1>
             <p className="text-sm text-gray-600">Create reusable supply lists and manage existing templates.</p>
           </div>
           <button
             onClick={fetchTemplates}
             className="px-3 py-1.5 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
-          >
-            Refresh
-          </button>
+          >{uiText("Refresh")}</button>
         </div>
 
         <section className="space-y-4">
@@ -179,15 +179,11 @@ const WarehouseSupplyTemplatesPage = () => {
                         <button
                           onClick={() => startEditing(template)}
                           className="rounded border border-blue-200 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
-                        >
-                          Edit
-                        </button>
+                        >{uiText("Edit")}</button>
                         <button
                           onClick={() => deleteTemplate(template.id)}
                           className="rounded border border-red-200 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
+                        >{uiText("Delete")}</button>
                       </div>
                     </div>
                   </div>
@@ -257,9 +253,7 @@ const WarehouseSupplyTemplatesPage = () => {
                       type="button"
                       onClick={() => removeItem(idx)}
                       className="self-end text-sm font-medium text-red-600 hover:underline sm:self-auto"
-                    >
-                      Remove
-                    </button>
+                    >{uiText("Remove")}</button>
                   )}
                 </div>
               ))}
@@ -278,7 +272,7 @@ const WarehouseSupplyTemplatesPage = () => {
                 disabled={isSaving}
                 className="inline-flex items-center justify-center rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
               >
-                {isSaving ? 'Saving…' : editingTemplateId ? 'Save changes' : 'Save template'}
+                {isSaving ? uiText("Saving…") : editingTemplateId ? uiText("Save changes") : 'Save template'}
               </button>
               {!editingTemplateId && (
                 <p className="text-xs text-gray-500">

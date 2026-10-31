@@ -1,7 +1,9 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import api from "../../api/axios";
 
 export default function ProcurementIdentitySettings() {
+  const uiText = useUiTranslation();
   const [policy, setPolicy] = useState(null);
   const [enforce, setEnforce] = useState(true);
   const [reason, setReason] = useState("");
@@ -115,7 +117,7 @@ export default function ProcurementIdentitySettings() {
             disabled={!policy.configured || busy || !reason.trim()}
             className="rounded-lg bg-blue-700 px-4 py-2 font-semibold text-white disabled:opacity-40"
           >
-            {busy ? "Saving…" : "Save procurement policy"}
+            {busy ? uiText("Saving…") : "Save procurement policy"}
           </button>
           <p className="text-xs text-slate-500">
             Last reason: {policy.reason || "Default strict policy"}

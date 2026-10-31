@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   LineChart,
@@ -53,6 +54,7 @@ const Metric = ({ label, value, icon: Icon, tone = 'text-slate-700' }) => (
 );
 
 const SupplierEvaluationDashboard = () => {
+  const uiText = useUiTranslation();
   const [supplierStats, setSupplierStats] = useState(null);
   const [evaluationStats, setEvaluationStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -249,7 +251,7 @@ const SupplierEvaluationDashboard = () => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-gradient-to-br from-indigo-50 via-white to-white shadow-sm">
             <Metric
-              label="Total suppliers"
+              label={uiText("Total suppliers")}
               value={formatNumber(supplierStats?.totals?.suppliers, '0')}
               icon={Users}
               tone="text-indigo-600"
@@ -289,7 +291,7 @@ const SupplierEvaluationDashboard = () => {
                 {formatPercent(coverageStats.contactCoverage)}
               </p>
               <p className="text-sm text-slate-600">
-                {formatNumber(coverageStats.withContact)} of {formatNumber(coverageStats.totalSuppliers)} suppliers
+                {formatNumber(coverageStats.withContact)}{" "}{uiText("of")}{" "}{formatNumber(coverageStats.totalSuppliers)} suppliers
                 have an email or phone on record.
               </p>
               <div className="h-2 rounded-full bg-slate-100">
@@ -306,7 +308,7 @@ const SupplierEvaluationDashboard = () => {
                 {formatPercent(coverageStats.evaluationCoverage)}
               </p>
               <p className="text-sm text-slate-600">
-                {formatNumber(coverageStats.evaluatedSuppliers)} of {formatNumber(coverageStats.totalSuppliers)}
+                {formatNumber(coverageStats.evaluatedSuppliers)}{" "}{uiText("of")}{" "}{formatNumber(coverageStats.totalSuppliers)}
                 suppliers have been evaluated.
               </p>
               <div className="h-2 rounded-full bg-slate-100">
@@ -441,7 +443,7 @@ const SupplierEvaluationDashboard = () => {
               </div>
               {supplierIndicatorAverages.length ? (
                 <label className="flex items-center gap-2 text-sm text-slate-600">
-                  <span>Supplier</span>
+                  <span>{uiText("Supplier")}</span>
                   <select
                     className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none"
                     value={selectedSupplier}
@@ -549,7 +551,7 @@ const SupplierEvaluationDashboard = () => {
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead>
                   <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                    <th className="px-3 py-2">Supplier</th>
+                    <th className="px-3 py-2">{uiText("Supplier")}</th>
                     <th className="px-3 py-2">Evaluations</th>
                     <th className="px-3 py-2">Last evaluation</th>
                     <th className="px-3 py-2">Avg weighted</th>
@@ -656,9 +658,9 @@ const SupplierEvaluationDashboard = () => {
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                  <th className="px-3 py-2">Supplier</th>
-                  <th className="px-3 py-2">Email</th>
-                  <th className="px-3 py-2">Phone</th>
+                  <th className="px-3 py-2">{uiText("Supplier")}</th>
+                  <th className="px-3 py-2">{uiText("Email")}</th>
+                  <th className="px-3 py-2">{uiText("Phone")}</th>
                   <th className="px-3 py-2">Evaluations</th>
                   <th className="px-3 py-2">Last evaluation</th>
                 </tr>

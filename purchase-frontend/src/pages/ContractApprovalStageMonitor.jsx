@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -55,6 +56,7 @@ const getAssignedLabel = (stage) => {
 };
 
 const ContractApprovalStageMonitor = () => {
+  const uiText = useUiTranslation();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -285,7 +287,7 @@ const ContractApprovalStageMonitor = () => {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-start gap-2 lg:justify-end">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClass(stage.stage_status)}`}>{stage.stage_status || 'Unknown'}</span>
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${statusClass(stage.stage_status)}`}>{stage.stage_status || uiText("Unknown")}</span>
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${activeClass(stage.is_active)}`}>{stage.is_active ? 'Active now' : 'Inactive'}</span>
                       <span className="w-full text-xs text-slate-500 lg:text-right">Decided {formatDateTime(stage.decided_at)}</span>
                     </div>

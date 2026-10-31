@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import { openProtectedFile } from '../../api/attachments';
 import "../../styles/RequestLists.css";
 // src/components/approvals/ApprovalsWorkspace.jsx
@@ -45,6 +46,7 @@ const ITEM_ROW_HIGHLIGHTS = {
 };
 
 const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
+  const uiText = useUiTranslation();
   const { t, i18n } = useTranslation();
 
   const [requests, setRequests] = useState([]);
@@ -977,8 +979,8 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                 className="rounded border border-slate-200 px-2 py-1 text-slate-700"
               >
                 <option value="none">None</option>
-                <option value="department">Department</option>
-                <option value="project">Project</option>
+                <option value="department">{uiText("Department")}</option>
+                <option value="project">{uiText("Project")}</option>
               </select>
             </div>
             <Button variant="secondary" onClick={resetFilters} aria-label={t('maintenanceHODApprovals.filters.resetAria')}>
@@ -1209,13 +1211,13 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                       <tbody className="divide-y divide-slate-100">
                                         {request.items.map((item) => {
                                           const decision = decisionsForRequest[item.id] || {
-                                            status: item?.approval_status || 'Pending',
+                                            status: item?.approval_status || uiText("Pending"),
                                             comments: getEditableItemComment(item),
                                           };
                                           const normalizedStatus =
                                             ITEM_STATUS_OPTIONS.includes(decision.status)
                                               ? decision.status
-                                              : 'Pending';
+                                              : uiText("Pending");
                                           const rowHighlight = ITEM_ROW_HIGHLIGHTS[normalizedStatus] || '';
                                           const selectId = `item-${request.request_id}-${item.id}-status`;
                                           const commentId = `item-${request.request_id}-${item.id}-comment`;
@@ -1316,7 +1318,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                           reference: request.maintenance_ref_number,
                                         })}
                                       >
-                                        {isSavingItems ? 'Saving...' : t('maintenanceHODApprovals.itemActions.save')}
+                                        {isSavingItems ? uiText("Saving...") : t('maintenanceHODApprovals.itemActions.save')}
                                       </Button>
                                     </div>
                                   </div>
@@ -1490,7 +1492,7 @@ const ApprovalsWorkspace = ({ requestType = 'maintenance' }) => {
                                   reference: request.maintenance_ref_number,
                                 })}
                               >
-                                {isProcessing && processingDecision === 'Rejected' ? 'Submitting…' : t('maintenanceHODApprovals.actions.reject')}
+                                {isProcessing && processingDecision === 'Rejected' ? uiText("Submitting…") : t('maintenanceHODApprovals.actions.reject')}
                               </Button>
                             </div>
                           </div>

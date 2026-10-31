@@ -1,7 +1,9 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 const LanguageSwitcher = ({ className = "" }) => {
+  const uiText = useUiTranslation();
   const { i18n, t } = useTranslation();
 
   const currentLang = i18n.language?.startsWith("ar") ? "ar" : "en";
@@ -27,7 +29,7 @@ const LanguageSwitcher = ({ className = "" }) => {
         onChange={handleChange}
         className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="en">English</option>
+        <option value="en">{uiText("English")}</option>
         <option value="ar">العربية</option>
       </select>
     </div>

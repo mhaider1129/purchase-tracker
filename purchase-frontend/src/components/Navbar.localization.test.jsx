@@ -1,0 +1,23 @@
+import React from 'react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import i18n from '../i18n';
+import Navbar from './Navbar';
+jest.mock('../hooks/useAuth', () => ({ useAuth: () => ({ user: { name: 'Ahmed', role: 'SCM', permissions: ['fixed-assets.view'] }, logout: jest.fn(), isLoading: false }) }));
+jest.mock('../hooks/useAccessControl', () => ({ useAccessControl: () => ({ hasAccess: () => false }) }));
+jest.mock('../hooks/useDarkMode', () => () => [false, jest.fn()]);
+jest.mock('../theme/ThemeProvider', () => ({ useTheme: () => ({ theme: 'light', themes: { light: 'light', dark: 'dark', highContrast: 'contrast' } }) }));
+jest.mock('./ui/NotificationBell', () => () => null);
+const LocationProbe = () => <output>{useLocation().pathname}</output>;
+test('Arabic fixed-asset navigation and theme switcher update without changing route URLs', async () => {
+  await i18n.changeLanguage('ar');
+  render(<MemoryRouter><Navbar /><LocationProbe /></MemoryRouter>);
+  fireEvent.click(screen.getByRole('button', { name: 'الأصول الثابتة' }));
+  expect(screen.getByText('فاتح')).toBeInTheDocument();
+  fireEvent.click(screen.getAllByRole('button', { name: 'سجل الأصول' })[0]);
+  expect(screen.getByText('/fixed-assets/register')).toBeInTheDocument();
+  expect(screen.getAllByText('قارئات RFID').length).toBeGreaterThan(0);
+  await act(async () => { await i18n.changeLanguage('en'); });
+  expect(screen.getByRole('button', { name: 'FIXED ASSETS' })).toBeInTheDocument();
+  expect(screen.getByText('Light')).toBeInTheDocument();
+});

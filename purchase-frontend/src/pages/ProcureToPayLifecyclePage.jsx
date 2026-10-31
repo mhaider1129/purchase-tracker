@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -111,6 +112,7 @@ const buildTransactionTimeline = (payload = {}) => {
 };
 
 const ProcureToPayLifecyclePage = () => {
+  const uiText = useUiTranslation();
   const { requestId } = useParams();
   const hasRequestContext = Number.isInteger(Number(requestId)) && Number(requestId) > 0;
   const { user } = useAuth();
@@ -402,7 +404,7 @@ const ProcureToPayLifecyclePage = () => {
         <div className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div className="bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-900 px-6 py-10 text-white sm:px-10">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-200">Operations control center</p>
-            <h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">Procure-to-Pay Lifecycle</h1>
+            <h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">{uiText("Procure-to-Pay Lifecycle")}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Follow every handoff from approved demand to supplier payment in one governed, auditable workspace.</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/procure-to-pay" className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-violet-900 shadow-sm transition hover:bg-violet-50">Open P2P dashboard <ArrowRight size={16} /></Link>
@@ -436,9 +438,9 @@ const ProcureToPayLifecyclePage = () => {
           <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
             <div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-violet-200">
-                <Link to="/procure-to-pay" className="hover:text-white">Procure-to-Pay</Link>
+                <Link to="/procure-to-pay" className="hover:text-white">{uiText("Procure-to-Pay")}</Link>
                 <ChevronRight size={14} />
-                <span>Request #{requestId}</span>
+                <span>{uiText("Request #")}{requestId}</span>
               </div>
               <h1 className="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Procurement lifecycle</h1>
               <p className="mt-2 max-w-2xl text-sm text-slate-300">One connected record for operational handoffs, financial controls, and audit evidence.</p>
@@ -449,7 +451,7 @@ const ProcureToPayLifecyclePage = () => {
               </div>
               <div>
                 <p className="text-xs text-slate-300">Lifecycle progress</p>
-                <p className="font-bold">{lifecycleStageState.completedCount} of {LIFECYCLE_STAGES.length} stages</p>
+                <p className="font-bold">{lifecycleStageState.completedCount}{" "}{uiText("of")}{" "}{LIFECYCLE_STAGES.length} stages</p>
               </div>
             </div>
           </div>
@@ -468,7 +470,7 @@ const ProcureToPayLifecyclePage = () => {
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">0{index + 1}</span>
                   </div>
                   <p className="mt-3 text-sm font-bold">{stage.label}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-400">{complete ? 'Complete' : active ? 'Current stage' : stage.hint}</p>
+                  <p className="mt-0.5 text-[11px] text-slate-400">{complete ? uiText("Complete") : active ? 'Current stage' : stage.hint}</p>
                 </div>
               );
             })}
@@ -501,7 +503,7 @@ const ProcureToPayLifecyclePage = () => {
         {[
           [ShoppingCart, 'Procurement state', formatState(data?.lifecycle?.procurement_state), 'bg-violet-50 text-violet-700'],
           [Landmark, 'Finance state', formatState(data?.lifecycle?.finance_state), 'bg-emerald-50 text-emerald-700'],
-          [Warehouse, 'Assigned warehouse', data?.request?.supply_warehouse_name || 'Not assigned', 'bg-blue-50 text-blue-700'],
+          [Warehouse, 'Assigned warehouse', data?.request?.supply_warehouse_name || uiText("Not assigned"), 'bg-blue-50 text-blue-700'],
           [FileCheck2, 'Linked documents', chainCards.reduce((sum, [, records]) => sum + records.length, 0), 'bg-amber-50 text-amber-700'],
         ].map(([Icon, label, value, tone]) => (
           <div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -516,7 +518,7 @@ const ProcureToPayLifecyclePage = () => {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div><h2 className="font-bold text-slate-900">Transaction timeline</h2><p className="mt-1 text-sm text-slate-500">Milestones and approval evidence</p></div>
-            <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"><RefreshCw size={14} /> Refresh</button>
+            <button type="button" onClick={refresh} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"><RefreshCw size={14} />{" "}{uiText("Refresh")}</button>
           </div>
           <ol className="mt-5 space-y-3">
             {transactionTimeline.map((step, index) => (
@@ -525,7 +527,7 @@ const ProcureToPayLifecyclePage = () => {
                   <span className={`flex h-6 w-6 items-center justify-center rounded-full ${step.done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>{step.done ? <Check size={13} strokeWidth={3} /> : <span className="h-2 w-2 rounded-full bg-current" />}</span>
                   {index !== transactionTimeline.length - 1 && <span className="h-full w-px bg-slate-200" />}
                 </div>
-                <div className="pb-2"><p className="text-sm font-semibold text-slate-800">{step.title}</p>{step.detail && <p className="text-xs text-slate-600">{step.detail}</p>}<p className="text-xs text-slate-400">{formatTimelineDate(step.at) || (step.done ? 'Completed · timestamp unavailable' : 'Pending')}</p></div>
+                <div className="pb-2"><p className="text-sm font-semibold text-slate-800">{step.title}</p>{step.detail && <p className="text-xs text-slate-600">{step.detail}</p>}<p className="text-xs text-slate-400">{formatTimelineDate(step.at) || (step.done ? 'Completed · timestamp unavailable' : uiText("Pending"))}</p></div>
               </li>
             ))}
           </ol>
@@ -563,9 +565,7 @@ const ProcureToPayLifecyclePage = () => {
           {!canManageReceipts && <p className="text-sm text-amber-700">You have read-only access to this section.</p>}
 
           <div className="grid md:grid-cols-2 gap-3">
-            <label className="text-sm">
-              Warehouse
-              <select
+            <label className="text-sm">{uiText("Warehouse")}<select
                 className="mt-1 w-full rounded border px-2 py-1"
                 value={receiptForm.warehouse_id}
                 onChange={(e) => setReceiptForm((prev) => ({ ...prev, warehouse_id: e.target.value }))}
@@ -594,8 +594,8 @@ const ProcureToPayLifecyclePage = () => {
               <div key={item.requested_item_id || index} className="rounded border p-2">
                 <p className="font-medium">{item.item_name}</p>
                 <div className="grid md:grid-cols-4 gap-2 mt-2">
-                  <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.received_quantity} onChange={(e) => updateReceiptLine(index, 'received_quantity', e.target.value)} disabled={!canManageReceipts} placeholder="Received" />
-                  <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.damaged_quantity} onChange={(e) => updateReceiptLine(index, 'damaged_quantity', e.target.value)} disabled={!canManageReceipts} placeholder="Damaged" />
+                  <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.received_quantity} onChange={(e) => updateReceiptLine(index, 'received_quantity', e.target.value)} disabled={!canManageReceipts} placeholder={uiText("Received")} />
+                  <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.damaged_quantity} onChange={(e) => updateReceiptLine(index, 'damaged_quantity', e.target.value)} disabled={!canManageReceipts} placeholder={uiText("Damaged")} />
                   <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.short_quantity} onChange={(e) => updateReceiptLine(index, 'short_quantity', e.target.value)} disabled={!canManageReceipts} placeholder="Short" />
                   <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => updateReceiptLine(index, 'unit_price', e.target.value)} disabled={!canManageReceipts} placeholder="Unit price" />
                 </div>
@@ -655,7 +655,7 @@ const ProcureToPayLifecyclePage = () => {
               <div key={item.requested_item_id || index} className="rounded border p-2">
                 <input className="rounded border px-2 py-1 w-full" value={item.description} onChange={(e) => updateInvoiceLine(index, 'description', e.target.value)} disabled={!canManageInvoices} />
                 <div className="grid md:grid-cols-3 gap-2 mt-2">
-                  <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.quantity} onChange={(e) => updateInvoiceLine(index, 'quantity', e.target.value)} disabled={!canManageInvoices} placeholder="Qty" />
+                  <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.quantity} onChange={(e) => updateInvoiceLine(index, 'quantity', e.target.value)} disabled={!canManageInvoices} placeholder={uiText("Qty")} />
                   <input className="rounded border px-2 py-1" type="number" min="0" step="0.01" value={item.unit_price} onChange={(e) => updateInvoiceLine(index, 'unit_price', e.target.value)} disabled={!canManageInvoices} placeholder="Unit price" />
                   <input className="rounded border px-2 py-1 bg-gray-50" type="number" value={item.line_total} readOnly placeholder="Line total" />
                 </div>

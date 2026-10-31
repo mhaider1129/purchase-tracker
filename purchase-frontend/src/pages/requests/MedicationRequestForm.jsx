@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import './RequestForms.css';
 import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -11,6 +12,7 @@ import useRequestDraftAutosave from '../../hooks/useRequestDraftAutosave';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const MedicationRequestForm = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const [justification, setJustification] = useState('');
   const [items, setItems] = useState([{ item_name: '', dosage: '', quantity: 1 }]);
@@ -304,7 +306,7 @@ const MedicationRequestForm = () => {
           </div>
           <div>
             <label className="block font-semibold mb-1">{t('medicationRequestForm.fields.section')}</label>
-            <p className="p-2 border rounded bg-gray-100">{user.section_name || 'N/A'}</p>
+            <p className="p-2 border rounded bg-gray-100">{user.section_name || uiText("N/A")}</p>
           </div>
           <div>
             <label htmlFor="MedicationRequestForm-justification" className="block font-semibold mb-1">{t('medicationRequestForm.fields.justification')}</label>
@@ -358,8 +360,7 @@ const MedicationRequestForm = () => {
                   className="request-item-card space-y-3"
                 >
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-gray-700">
-                      Medication {index + 1}
+                    <span className="font-semibold text-gray-700">{uiText("Medication")}{" "}{index + 1}
                     </span>
                     <div className="flex items-center gap-3">
                       <button
@@ -367,18 +368,14 @@ const MedicationRequestForm = () => {
                         onClick={() => duplicateItem(index)}
                         className="text-blue-600 hover:underline disabled:text-gray-400"
                         disabled={isSubmitting}
-                      >
-                        Duplicate
-                      </button>
+                      >{uiText("Duplicate")}</button>
                       {items.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeItem(index)}
                           className="text-red-600 hover:underline disabled:text-gray-400"
                           disabled={isSubmitting}
-                        >
-                          Remove
-                        </button>
+                        >{uiText("Remove")}</button>
                       )}
                     </div>
                   </div>
@@ -459,9 +456,7 @@ const MedicationRequestForm = () => {
             </button>
           </div>
           <div className="request-form-panel">
-            <label className="block font-semibold mb-1">
-              Attachments
-              <HelpTooltip text={t('medicationRequestForm.uploadHelp')} />
+            <label className="block font-semibold mb-1">{uiText("Attachments")}<HelpTooltip text={t('medicationRequestForm.uploadHelp')} />
             </label>
             <input
               type="file"
@@ -489,9 +484,7 @@ const MedicationRequestForm = () => {
                       className="text-red-600 hover:underline disabled:text-gray-400"
                       onClick={() => handleRemoveAttachment(index)}
                       disabled={isSubmitting}
-                    >
-                      Remove
-                    </button>
+                    >{uiText("Remove")}</button>
                   </li>
                 ))}
               </ul>

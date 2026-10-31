@@ -1,3 +1,5 @@
+import { workflowLabel } from '../utils/workflowTranslation';
+import useUiTranslation from "../utils/useUiTranslation";
 import "./DeviceDemosPage.css";
 import { matchesSearchTokens } from "../utils/search";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -8,7 +10,7 @@ const css = "rounded border border-slate-300 bg-white p-2 text-sm";
 const key = () =>
   window.crypto?.randomUUID?.() ||
   `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-const readable = (value) => String(value || "").replaceAll("_", " ");
+
 const emptyCandidate = () => ({
   supplier_id: "",
   supplier_catalog_item_id: "",
@@ -21,6 +23,8 @@ const emptyCandidate = () => ({
   description: "",
 });
 export default function DeviceDemosPage() {
+  const uiText = useUiTranslation();
+  const readable = (value) => uiText(workflowLabel(value), { context: "status" });
   const setupRef = useRef(null);
   const [evaluatorSearch, setEvaluatorSearch] = useState("");
   const [params, setParams] = useSearchParams(),
@@ -270,17 +274,14 @@ export default function DeviceDemosPage() {
     comparison.length > 0 &&
     comparison.every((d) => d.count === detail.reviewers.length) &&
     detail.demos.every((d) => ["COMPLETED", "WITHDRAWN"].includes(d.status));
-  if (loading) return <main className="p-6">Loading device demos…</main>;
+  if (loading) return <main className="p-6">{uiText("Loading device demos…")}</main>;
   return (
     <main className="device-demos mx-auto max-w-7xl space-y-6 p-6">
       <header className="demo-hero rounded-xl bg-slate-900 p-6 text-white">
         <div>
-          <p className="text-sm text-cyan-200">DEVICE DEMONSTRATIONS</p>
-          <h1 className="text-3xl font-bold">Device demo workspace</h1>
-          <p className="mt-2">
-            Compare supplier demos, document trials and departmental
-            evaluations, then obtain COO approval for the selected device.
-          </p>
+          <p className="text-sm text-cyan-200">{uiText("DEVICE DEMONSTRATIONS")}</p>
+          <h1 className="text-3xl font-bold">{uiText("Device demo workspace")}</h1>
+          <p className="mt-2">{uiText("Compare supplier demos, document trials and departmental evaluations, then obtain COO approval for the selected device.")}</p>
         </div>
         <div className="demo-hero-actions">
           {schema?.can_initiate && (
@@ -298,18 +299,16 @@ export default function DeviceDemosPage() {
                     ?.focus({ preventScroll: true });
                 }
               }}
-            >
-              New demo workspace
-            </button>
+            >{uiText("New demo workspace")}</button>
           )}
-          <a href="#demo-workspaces">View workspaces ↓</a>
+          <a href="#demo-workspaces">{uiText("View workspaces ↓")}</a>
         </div>
       </header>
       <section
         className="demo-workflow"
-        aria-label="Device demonstration workflow"
+        aria-label={uiText("Device demonstration workflow")}
       >
-        <h2>From demo setup to an approved selection</h2>
+        <h2>{uiText("From demo setup to an approved selection")}</h2>
         <ol>
           {[
             ["Set up", "Choose the requested device and evaluation team"],
@@ -322,8 +321,8 @@ export default function DeviceDemosPage() {
           ].map(([title, description], index) => (
             <li key={title}>
               <span>{index + 1}</span>
-              <strong>{title}</strong>
-              <p>{description}</p>
+              <strong>{uiText(title)}</strong>
+              <p>{uiText(description)}</p>
             </li>
           ))}
         </ol>
@@ -339,9 +338,7 @@ export default function DeviceDemosPage() {
               className="ml-3 underline"
               disabled={busy}
               onClick={refresh}
-            >
-              Reload latest workspace
-            </button>
+            >{uiText("Reload latest workspace")}</button>
           )}
         </div>
       )}
@@ -352,7 +349,7 @@ export default function DeviceDemosPage() {
       )}
       <form
         className="demo-search"
-        aria-label="Find demo workspaces"
+        aria-label={uiText("Find demo workspaces")}
         onSubmit={(e) => {
           e.preventDefault();
           perform(async () => {
@@ -362,19 +359,15 @@ export default function DeviceDemosPage() {
           });
         }}
       >
-        <label>
-          Search workspaces
-          <input
-            aria-label="Search demos"
+        <label>{uiText("Search workspaces")}<input
+            aria-label={uiText("Search demos")}
             className={css}
-            placeholder="Request number or device name"
+            placeholder={uiText("Request number or device name")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
-        <button disabled={busy} className="rounded border px-3">
-          Search
-        </button>
+        <button disabled={busy} className="rounded border px-3">{uiText("Search")}</button>
         {search && (
           <button
             type="button"
@@ -387,9 +380,7 @@ export default function DeviceDemosPage() {
                   setEligible(await api.eligibleDemoItems(""));
               });
             }}
-          >
-            Clear search
-          </button>
+          >{uiText("Clear search")}</button>
         )}
       </form>
       {schema?.can_initiate && (
@@ -398,12 +389,10 @@ export default function DeviceDemosPage() {
           id="demo-setup"
           className="demo-setup rounded-xl border bg-white p-4"
         >
-          <summary className="cursor-pointer font-semibold">
-            Open a device demo workspace
-          </summary>
+          <summary className="cursor-pointer font-semibold">{uiText("Open a device demo workspace")}</summary>
           <form
             className="demo-setup-form mt-4 space-y-3"
-            aria-label="Open device demo workspace"
+            aria-label={uiText("Open device demo workspace")}
             onSubmit={(e) => {
               e.preventDefault();
               if (!weightsValid) {
@@ -434,11 +423,8 @@ export default function DeviceDemosPage() {
               <div className="demo-setup-fields">
                 <fieldset className="demo-form-section">
                   <legend>
-                    <span>1</span>Device and objectives
-                  </legend>
-                  <label className="block">
-                    Requested device
-                    <select
+                    <span>1</span>{uiText("Device and objectives")}</legend>
+                  <label className="block">{uiText("Requested device")}<select
                       required
                       className={`${css} block w-full`}
                       value={itemId}
@@ -450,7 +436,7 @@ export default function DeviceDemosPage() {
                         );
                       }}
                     >
-                      <option value="">Select outstanding device</option>
+                      <option value="">{uiText("Select outstanding device")}</option>
                       {eligible.map((item) => (
                         <option key={item.id} value={item.id}>
                           #{item.maintenance_ref_number || item.request_id} ·{" "}
@@ -459,23 +445,15 @@ export default function DeviceDemosPage() {
                       ))}
                     </select>
                   </label>
-                  <p className="text-sm text-slate-600">
-                    Medical-devices and SCM approvers can open at their active
-                    approval step. SCM can also open for approved requests
-                    before procurement starts.
-                  </p>
-                  <label className="block">
-                    Workspace title
-                    <input
+                  <p className="text-sm text-slate-600">{uiText("Medical-devices and SCM approvers can open at their active approval step. SCM can also open for approved requests before procurement starts.")}</p>
+                  <label className="block">{uiText("Workspace title")}<input
                       required
                       className={`${css} block w-full`}
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                     />
                   </label>
-                  <label className="block">
-                    Demo objectives and intended use
-                    <textarea
+                  <label className="block">{uiText("Demo objectives and intended use")}<textarea
                       required
                       className={`${css} block w-full`}
                       value={objectives}
@@ -485,36 +463,25 @@ export default function DeviceDemosPage() {
                 </fieldset>
                 <fieldset className="demo-form-section rounded border p-3">
                   <legend>
-                    <span>2</span>Required evaluators
-                  </legend>
-                  <p className="text-sm text-slate-600">
-                    Include the requesting department. Each evaluator reports on
-                    every completed demo. COO selection approval must be
-                    independent.
-                  </p>
+                    <span>2</span>{uiText("Required evaluators")}</legend>
+                  <p className="text-sm text-slate-600">{uiText("Include the requesting department. Each evaluator reports on every completed demo. COO selection approval must be independent.")}</p>
                   <div className="demo-evaluator-toolbar">
-                    <label>
-                      Find evaluators
-                      <input
+                    <label>{uiText("Find evaluators")}<input
                         type="search"
                         value={evaluatorSearch}
                         onChange={(event) =>
                           setEvaluatorSearch(event.target.value)
                         }
-                        placeholder="Name, role, or department"
+                        placeholder={uiText("Name, role, or department")}
                       />
                     </label>
                     <p role="status">
-                      {reviewers.length} selected · {visibleEvaluators.length}{" "}
-                      of {directory.length} shown
-                    </p>
+                      {reviewers.length}{" "}{uiText("selected ·")}{" "}{visibleEvaluators.length}{" "}{uiText("of")}{" "}{directory.length}{" "}{uiText("shown")}</p>
                     {evaluatorSearch && (
                       <button
                         type="button"
                         onClick={() => setEvaluatorSearch("")}
-                      >
-                        Clear evaluator search
-                      </button>
+                      >{uiText("Clear evaluator search")}</button>
                     )}
                   </div>
                   <div className="demo-evaluator-list">
@@ -540,34 +507,28 @@ export default function DeviceDemosPage() {
                       </label>
                     ))}
                     {visibleEvaluators.length === 0 && (
-                      <p className="demo-empty">
-                        No evaluators match this search.
-                      </p>
+                      <p className="demo-empty">{uiText("No evaluators match this search.")}</p>
                     )}
                   </div>
                 </fieldset>
                 <fieldset className="demo-form-section rounded border p-3">
                   <legend>
-                    <span>3</span>Evaluation criteria — weights total 100%
-                  </legend>
-                  <p className="text-sm text-slate-600">
-                    Agree the criteria before trials begin. Each criterion is
-                    scored 0–5 with evidence.
-                  </p>
+                    <span>3</span>{uiText("Evaluation criteria — weights total 100%")}</legend>
+                  <p className="text-sm text-slate-600">{uiText("Agree the criteria before trials begin. Each criterion is scored 0–5 with evidence.")}</p>
                   <div
                     className={`demo-weight-total ${weightsValid ? "demo-weight-total--valid" : "demo-weight-total--invalid"}`}
                     role="status"
                   >
-                    <strong>Weight total: {weightTotal}%</strong>
+                    <strong>{uiText("Weight total:")}{" "}{weightTotal}%</strong>
                     <span>
                       {weightsValid
-                        ? "Ready — weights total 100%."
-                        : "Use positive whole-number weights totaling 100%."}
+                        ? uiText("Ready — weights total 100%.")
+                        : uiText("Use positive whole-number weights totaling 100%.")}
                     </span>
                   </div>
                   <div className="demo-criteria-heading" aria-hidden="true">
-                    <span>Criterion</span>
-                    <span>Weight (%)</span>
+                    <span>{uiText("Criterion")}</span>
+                    <span>{uiText("Weight (%)")}</span>
                   </div>
                   {criteria.map((criterion, index) => (
                     <div
@@ -613,54 +574,48 @@ export default function DeviceDemosPage() {
               </div>
               <aside
                 className="demo-setup-summary"
-                aria-label="Demo setup summary"
+                aria-label={uiText("Demo setup summary")}
               >
-                <h3>Workspace at a glance</h3>
+                <h3>{uiText("Workspace at a glance")}</h3>
                 <dl>
                   <div>
-                    <dt>Requested device</dt>
-                    <dd>{requestedDevice?.item_name || "Not selected"}</dd>
+                    <dt>{uiText("Requested device")}</dt>
+                    <dd>{requestedDevice?.item_name || uiText("Not selected")}</dd>
                   </div>
                   <div>
-                    <dt>Request / reference</dt>
+                    <dt>{uiText("Request / reference")}</dt>
                     <dd>
                       {requestedDevice
                         ? `#${requestedDevice.maintenance_ref_number || requestedDevice.request_id}`
-                        : "Not selected"}
+                        : uiText("Not selected")}
                     </dd>
                   </div>
                   <div>
-                    <dt>Department</dt>
+                    <dt>{uiText("Department")}</dt>
                     <dd>
-                      {requestedDevice?.department_name || "Not selected"}
+                      {requestedDevice?.department_name || uiText("Not selected")}
                     </dd>
                   </div>
                   <div>
-                    <dt>Evaluators selected</dt>
+                    <dt>{uiText("Evaluators selected")}</dt>
                     <dd>{reviewers.length}</dd>
                   </div>
                   <div>
-                    <dt>Criteria</dt>
+                    <dt>{uiText("Criteria")}</dt>
                     <dd>{criteria.length}</dd>
                   </div>
                 </dl>
-                <p>Every required evaluator reports on each completed demo.</p>
-                <p>
-                  Workspace creation does not select a supplier. Complete trials
-                  and reports before requesting COO review.
-                </p>
+                <p>{uiText("Every required evaluator reports on each completed demo.")}</p>
+                <p>{uiText("Workspace creation does not select a supplier. Complete trials and reports before requesting COO review.")}</p>
               </aside>
             </div>
             <div className="demo-setup-submit">
-              <p>
-                Choose the requested device, agree the evaluation team and
-                confirm weights before opening.
-              </p>
+              <p>{uiText("Choose the requested device, agree the evaluation team and confirm weights before opening.")}</p>
               <button
                 className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
                 disabled={busy || !itemId || !reviewers.length || !weightsValid}
               >
-                {busy ? "Please wait…" : "Open demo workspace"}
+                {busy ? uiText("Please wait…") : uiText("Open demo workspace")}
               </button>
             </div>
           </form>
@@ -670,25 +625,23 @@ export default function DeviceDemosPage() {
         id="demo-workspaces"
         className="demo-queue rounded-xl border bg-white p-4"
       >
-        <h2 className="text-lg font-semibold">Demo workspaces</h2>
+        <h2 className="text-lg font-semibold">{uiText("Demo workspaces")}</h2>
         <p className="demo-help">
-          {rows.length} workspaces shown. Open a workspace to review supplier
-          trials, reports and selection decisions.
-        </p>
-        {!rows.length && <p>No demo workspaces found.</p>}
+          {rows.length}{" "}{uiText("workspaces shown. Open a workspace to review supplier trials, reports and selection decisions.")}</p>
+        {!rows.length && <p>{uiText("No demo workspaces found.")}</p>}
         <div
           className="demo-table-scroll overflow-x-auto"
           role="region"
-          aria-label="Demo workspace table"
+          aria-label={uiText("Demo workspace table")}
           tabIndex={0}
         >
           <table className="w-full text-left">
             <thead>
               <tr>
-                <th>Device / request</th>
-                <th>Status</th>
-                <th>Supplier demos</th>
-                <th>Workspace</th>
+                <th>{uiText("Device / request")}</th>
+                <th>{uiText("Status")}</th>
+                <th>{uiText("Supplier demos")}</th>
+                <th>{uiText("Workspace")}</th>
               </tr>
             </thead>
             <tbody>
@@ -714,7 +667,7 @@ export default function DeviceDemosPage() {
                         })
                       }
                     >
-                      Open DEMO-{w.id}
+                      {uiText("Open")} DEMO-{w.id}
                     </button>
                   </td>
                 </tr>
@@ -734,33 +687,22 @@ export default function DeviceDemosPage() {
               <Link
                 className="text-blue-700 underline"
                 to={`/requests/${detail.request_id}`}
-              >
-                Request #{detail.maintenance_ref_number || detail.request_id}
+              >{uiText("Request #")}{detail.maintenance_ref_number || detail.request_id}
               </Link>
             </p>
             <p>{detail.objectives}</p>
-            <p className="mt-2 text-sm">
-              Requested: {detail.item_snapshot.item_name} ·{" "}
+            <p className="mt-2 text-sm">{uiText("Requested:")}{" "}{detail.item_snapshot.item_name} ·{" "}
               {detail.item_snapshot.quantity}{" "}
               {detail.item_snapshot.unit_of_measure} ·{" "}
               {detail.item_snapshot.specs}
             </p>
-            <p className="text-sm text-slate-600">
-              Demo receipt and return are trial custody records. They do not
-              mark the purchase request received or completed.
-            </p>
+            <p className="text-sm text-slate-600">{uiText("Demo receipt and return are trial custody records. They do not mark the purchase request received or completed.")}</p>
           </header>
           <section className="space-y-3 rounded border border-indigo-200 bg-indigo-50 p-4">
-            <h3 className="text-lg font-semibold">Workspace documents</h3>
-            <p className="text-sm">
-              Attach specification sheets, data sheets, brochures and supporting
-              files at any point in the demo process. Each file is recorded in
-              the workspace journal.
-            </p>
+            <h3 className="text-lg font-semibold">{uiText("Workspace documents")}</h3>
+            <p className="text-sm">{uiText("Attach specification sheets, data sheets, brochures and supporting files at any point in the demo process. Each file is recorded in the workspace journal.")}</p>
             {!detail.attachments.length && (
-              <p className="text-sm text-slate-600">
-                No supporting files attached yet.
-              </p>
+              <p className="text-sm text-slate-600">{uiText("No supporting files attached yet.")}</p>
             )}
             {detail.attachments.map((file) => {
               const entry = detail.events.find((event) =>
@@ -775,8 +717,7 @@ export default function DeviceDemosPage() {
                     {file.file_name}
                   </button>
                   {entry && (
-                    <p className="text-sm text-slate-600">
-                      Attached by {entry.actor_snapshot.name} ·{" "}
+                    <p className="text-sm text-slate-600">{uiText("Attached by")}{" "}{entry.actor_snapshot.name} ·{" "}
                       {new Date(entry.created_at).toLocaleString()} ·{" "}
                       {entry.notes}
                     </p>
@@ -787,19 +728,15 @@ export default function DeviceDemosPage() {
             {(detail.can_coordinate || assigned) &&
               detail.status !== "CANCELLED" && (
                 <div className="space-y-3">
-                  <label className="block">
-                    Document description (optional)
-                    <input
-                      aria-label="Workspace document description"
+                  <label className="block">{uiText("Document description (optional)")}<input
+                      aria-label={uiText("Workspace document description")}
                       className={`${css} block w-full`}
                       value={documentNote}
                       onChange={(e) => setDocumentNote(e.target.value)}
                     />
                   </label>
-                  <label className="block">
-                    Upload a specification / data sheet
-                    <input
-                      aria-label="Upload workspace document"
+                  <label className="block">{uiText("Upload a specification / data sheet")}<input
+                      aria-label={uiText("Upload workspace document")}
                       type="file"
                       disabled={busy}
                       onChange={(e) => {
@@ -826,9 +763,7 @@ export default function DeviceDemosPage() {
                     />
                   </label>
                   <details>
-                    <summary className="cursor-pointer text-sm font-medium">
-                      Attach existing request files
-                    </summary>
+                    <summary className="cursor-pointer text-sm font-medium">{uiText("Attach existing request files")}</summary>
                     <div className="my-2">
                       {attachments.map((file) => (
                         <label key={file.id} className="mr-4 block">
@@ -860,15 +795,13 @@ export default function DeviceDemosPage() {
                           attachDocuments(documentIds, documentNote.trim()),
                         )
                       }
-                    >
-                      Attach selected files to workspace
-                    </button>
+                    >{uiText("Attach selected files to workspace")}</button>
                   </details>
                 </div>
               )}
           </section>
           <section>
-            <h3 className="font-semibold">Evaluation team</h3>
+            <h3 className="font-semibold">{uiText("Evaluation team")}</h3>
             {detail.reviewers.map((r) => (
               <p key={r.reviewer_id}>
                 {r.name} · {r.role} · {r.department_name}
@@ -877,9 +810,7 @@ export default function DeviceDemosPage() {
           </section>
           {editable && detail.can_coordinate && (
             <details className="rounded border p-4">
-              <summary className="cursor-pointer font-semibold">
-                Add a supplier demo
-              </summary>
+              <summary className="cursor-pointer font-semibold">{uiText("Add a supplier demo")}</summary>
               <form
                 className="mt-3 space-y-3"
                 onSubmit={(e) => {
@@ -894,22 +825,15 @@ export default function DeviceDemosPage() {
                 }}
               >
                 <div className="rounded border bg-slate-50 p-3">
-                  <p className="text-sm text-slate-600">
-                    Choose an existing supplier from the Suppliers directory. No
-                    separate company setup is needed.
-                  </p>
+                  <p className="text-sm text-slate-600">{uiText("Choose an existing supplier from the Suppliers directory. No separate company setup is needed.")}</p>
                   <button
                     type="button"
                     disabled={busy || supplierLoading}
                     className="mt-2 rounded border px-3 py-2 text-sm disabled:opacity-40"
                     onClick={() => loadSupplierOptions(detail.id)}
-                  >
-                    Reload suppliers
-                  </button>
+                  >{uiText("Reload suppliers")}</button>
                   {supplierLoading && (
-                    <p role="status" className="mt-2 text-sm">
-                      Loading suppliers…
-                    </p>
+                    <p role="status" className="mt-2 text-sm">{uiText("Loading suppliers…")}</p>
                   )}
                   {supplierError && (
                     <p role="alert" className="mt-2 text-sm text-red-700">
@@ -919,16 +843,10 @@ export default function DeviceDemosPage() {
                   {!supplierLoading &&
                     !supplierError &&
                     !options.suppliers.length && (
-                      <p role="status" className="mt-2 text-sm text-amber-800">
-                        No eligible suppliers are available. Add or activate the
-                        supplier in the Suppliers directory, then reload.
-                        Suppliers assigned to another institute are excluded.
-                      </p>
+                      <p role="status" className="mt-2 text-sm text-amber-800">{uiText("No eligible suppliers are available. Add or activate the supplier in the Suppliers directory, then reload. Suppliers assigned to another institute are excluded.")}</p>
                     )}
                 </div>
-                <label className="block">
-                  Supplier
-                  <select
+                <label className="block">{uiText("Supplier")}<select
                     required
                     className={`${css} block w-full`}
                     value={candidate.supplier_id}
@@ -948,8 +866,8 @@ export default function DeviceDemosPage() {
                   >
                     <option value="">
                       {supplierLoading
-                        ? "Loading suppliers…"
-                        : "Select supplier"}
+                        ? uiText("Loading suppliers…")
+                        : uiText("Select supplier")}
                     </option>
                     {options.suppliers.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -959,9 +877,7 @@ export default function DeviceDemosPage() {
                   </select>
                 </label>
                 {detail.item_snapshot.generic_item_id && (
-                  <label className="block">
-                    Approved device product
-                    <select
+                  <label className="block">{uiText("Approved device product")}<select
                       required
                       className={`${css} block w-full`}
                       value={candidate.supplier_catalog_item_id}
@@ -972,9 +888,7 @@ export default function DeviceDemosPage() {
                         })
                       }
                     >
-                      <option value="">
-                        Select the supplier's approved catalog device
-                      </option>
+                      <option value="">{uiText("Select the supplier's approved catalog device")}</option>
                       {options.catalog
                         .filter(
                           (c) =>
@@ -1018,9 +932,7 @@ export default function DeviceDemosPage() {
                     </label>
                   ))}
                 </div>
-                <label className="block">
-                  Demo configuration / description
-                  <textarea
+                <label className="block">{uiText("Demo configuration / description")}<textarea
                     required
                     className={`${css} block w-full`}
                     value={candidate.description}
@@ -1032,14 +944,8 @@ export default function DeviceDemosPage() {
                     }
                   />
                 </label>
-                <p className="text-sm">
-                  Record the registration notes below before saving. Governed
-                  devices must link to their supplier's approved catalog
-                  identity.
-                </p>
-                <label className="block">
-                  Supplier demo registration notes
-                  <textarea
+                <p className="text-sm">{uiText("Record the registration notes below before saving. Governed devices must link to their supplier's approved catalog identity.")}</p>
+                <label className="block">{uiText("Supplier demo registration notes")}<textarea
                     required
                     className={`${css} block w-full`}
                     value={notes}
@@ -1055,20 +961,14 @@ export default function DeviceDemosPage() {
                     !notes.trim()
                   }
                   className="rounded border px-3 py-2 disabled:opacity-40"
-                >
-                  Save supplier demo
-                </button>
+                >{uiText("Save supplier demo")}</button>
               </form>
             </details>
           )}
           <section>
-            <h3 className="text-lg font-semibold">
-              Supplier demos and evaluation period
-            </h3>
+            <h3 className="text-lg font-semibold">{uiText("Supplier demos and evaluation period")}</h3>
             {!detail.demos.length && (
-              <p className="text-slate-600">
-                Register one or more supplier demos to begin.
-              </p>
+              <p className="text-slate-600">{uiText("Register one or more supplier demos to begin.")}</p>
             )}
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               {detail.demos.map((d) => (
@@ -1077,8 +977,8 @@ export default function DeviceDemosPage() {
                     {d.supplier_name} · {d.manufacturer} {d.model}
                   </h4>
                   <p>
-                    {readable(d.status)} · Serial:{" "}
-                    {d.serial_number || "Not recorded"}
+                    {readable(d.status)}{" "}{uiText("· Serial:")}{" "}
+                    {d.serial_number || uiText("Not recorded")}
                   </p>
                   <p>
                     {String(d.planned_start).slice(0, 10)} →{" "}
@@ -1104,11 +1004,9 @@ export default function DeviceDemosPage() {
             </div>
           </section>
           <section className="space-y-3 rounded border bg-slate-50 p-4">
-            <h3 className="font-semibold">Document the demo</h3>
-            <label className="block">
-              Supplier demo
-              <select
-                aria-label="Supplier demo"
+            <h3 className="font-semibold">{uiText("Document the demo")}</h3>
+            <label className="block">{uiText("Supplier demo")}<select
+                aria-label={uiText("Supplier demo")}
                 className={`${css} ml-3`}
                 value={demoId}
                 onChange={(e) => {
@@ -1125,7 +1023,7 @@ export default function DeviceDemosPage() {
                   });
                 }}
               >
-                <option value="">Select demo</option>
+                <option value="">{uiText("Select demo")}</option>
                 {detail.demos.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.supplier_name} · {d.model} · {readable(d.status)}
@@ -1133,10 +1031,8 @@ export default function DeviceDemosPage() {
                 ))}
               </select>
             </label>
-            <label className="block">
-              Action notes / selection rationale
-              <textarea
-                aria-label="Demo action notes"
+            <label className="block">{uiText("Action notes / selection rationale")}<textarea
+                aria-label={uiText("Demo action notes")}
                 className={`${css} block w-full`}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -1144,10 +1040,8 @@ export default function DeviceDemosPage() {
             </label>
             {(detail.can_coordinate || assigned) && editable && (
               <div>
-                <label>
-                  Upload supporting evidence
-                  <input
-                    aria-label="Upload demo evidence"
+                <label>{uiText("Upload supporting evidence")}<input
+                    aria-label={uiText("Upload demo evidence")}
                     type="file"
                     disabled={busy}
                     onChange={(e) => {
@@ -1208,14 +1102,14 @@ export default function DeviceDemosPage() {
                       act("transition", { demo_id: demoId, status })
                     }
                   >
-                    {
+                    {uiText(
                       {
                         RECEIVED: "Record demo receipt",
                         EVALUATING: "Start evaluation",
                         COMPLETED: "Complete evaluation",
                         WITHDRAWN: "Withdraw demo",
                       }[status]
-                    }
+                    )}
                   </button>
                 ))}
               {editable &&
@@ -1228,9 +1122,7 @@ export default function DeviceDemosPage() {
                     disabled={busy || !notes.trim()}
                     className="rounded border px-3 py-2 disabled:opacity-40"
                     onClick={() => act("observation", { demo_id: demoId })}
-                  >
-                    Record observation
-                  </button>
+                  >{uiText("Record observation")}</button>
                 )}
               {detail.can_coordinate &&
                 selectedDemo?.received_at &&
@@ -1240,9 +1132,7 @@ export default function DeviceDemosPage() {
                     disabled={busy || !notes.trim()}
                     className="rounded border px-3 py-2 disabled:opacity-40"
                     onClick={() => act("return", { demo_id: demoId })}
-                  >
-                    Record device return
-                  </button>
+                  >{uiText("Record device return")}</button>
                 )}
             </div>
           </section>
@@ -1258,11 +1148,8 @@ export default function DeviceDemosPage() {
                 });
               }}
             >
-              <h3 className="text-lg font-semibold">My evaluation report</h3>
-              <p>
-                Score each criterion from 0 to 5. The weighted result is
-                calculated by the server.
-              </p>
+              <h3 className="text-lg font-semibold">{uiText("My evaluation report")}</h3>
+              <p>{uiText("Score each criterion from 0 to 5. The weighted result is calculated by the server.")}</p>
               {report.scores.map((row, index) => (
                 <div key={row.key} className="grid gap-2 md:grid-cols-3">
                   <label>
@@ -1282,14 +1169,13 @@ export default function DeviceDemosPage() {
                         })
                       }
                     >
-                      <option value="">Select</option>
+                      <option value="">{uiText("Select")}</option>
                       {[0, 1, 2, 3, 4, 5].map((n) => (
                         <option key={n}>{n}</option>
                       ))}
                     </select>
                   </label>
-                  <label className="md:col-span-2">
-                    Evidence for {detail.criteria[index].name}
+                  <label className="md:col-span-2">{uiText("Evidence for")}{" "}{detail.criteria[index].name}
                     <textarea
                       required
                       aria-label={`Evidence ${row.key}`}
@@ -1314,8 +1200,8 @@ export default function DeviceDemosPage() {
                     required
                     aria-label={
                       field === "findings"
-                        ? "Evaluation findings"
-                        : "Safety findings"
+                        ? uiText("Evaluation findings")
+                        : uiText("Safety findings")
                     }
                     className={`${css} block w-full`}
                     value={report[field]}
@@ -1325,10 +1211,8 @@ export default function DeviceDemosPage() {
                   />
                 </label>
               ))}
-              <label>
-                Suitability
-                <select
-                  aria-label="Demo suitability"
+              <label>{uiText("Suitability")}<select
+                  aria-label={uiText("Demo suitability")}
                   required
                   className={`${css} ml-3`}
                   value={report.recommendation}
@@ -1336,31 +1220,27 @@ export default function DeviceDemosPage() {
                     setReport({ ...report, recommendation: e.target.value })
                   }
                 >
-                  <option value="">Select</option>
-                  <option value="SUITABLE">Suitable</option>
-                  <option value="NOT_SUITABLE">Not suitable</option>
+                  <option value="">{uiText("Select")}</option>
+                  <option value="SUITABLE">{uiText("Suitable")}</option>
+                  <option value="NOT_SUITABLE">{uiText("Not suitable")}</option>
                 </select>
               </label>
               <button
                 disabled={busy}
                 className="ml-3 rounded bg-indigo-700 px-4 py-2 text-white"
-              >
-                Submit evaluation and attest
-              </button>
+              >{uiText("Submit evaluation and attest")}</button>
             </form>
           )}
           <section>
-            <h3 className="text-lg font-semibold">
-              Comparison and recommendation
-            </h3>
+            <h3 className="text-lg font-semibold">{uiText("Comparison and recommendation")}</h3>
             <div className="overflow-x-auto">
               <table className="mt-2 w-full text-left">
                 <thead>
                   <tr>
-                    <th>Supplier / device</th>
-                    <th>Reports</th>
-                    <th>Score / 100</th>
-                    <th>Suitability</th>
+                    <th>{uiText("Supplier / device")}</th>
+                    <th>{uiText("Reports")}</th>
+                    <th>{uiText("Score / 100")}</th>
+                    <th>{uiText("Suitability")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1375,10 +1255,10 @@ export default function DeviceDemosPage() {
                       <td>{d.score}</td>
                       <td>
                         {d.count < detail.reviewers.length
-                          ? "Awaiting reports"
+                          ? uiText("Awaiting reports")
                           : d.suitable
-                            ? "Suitable"
-                            : "Not suitable"}
+                            ? uiText("Suitable")
+                            : uiText("Not suitable")}
                       </td>
                     </tr>
                   ))}
@@ -1387,21 +1267,14 @@ export default function DeviceDemosPage() {
             </div>
             {editable && detail.can_coordinate && (
               <div className="mt-3 space-y-2">
-                <p className="text-sm text-slate-600">
-                  Complete or withdraw every supplier demo and collect every
-                  required report. Explain the best fit in the selection
-                  rationale; the highest score does not automatically select a
-                  supplier.
-                </p>
-                <label>
-                  Recommended demo
-                  <select
-                    aria-label="Recommended demo"
+                <p className="text-sm text-slate-600">{uiText("Complete or withdraw every supplier demo and collect every required report. Explain the best fit in the selection rationale; the highest score does not automatically select a supplier.")}</p>
+                <label>{uiText("Recommended demo")}<select
+                    aria-label={uiText("Recommended demo")}
                     className={`${css} ml-2`}
                     value={selectedId}
                     onChange={(e) => setSelectedId(e.target.value)}
                   >
-                    <option value="">Select suitable device</option>
+                    <option value="">{uiText("Select suitable device")}</option>
                     {comparison
                       .filter((d) => d.suitable)
                       .map((d) => (
@@ -1415,9 +1288,7 @@ export default function DeviceDemosPage() {
                   disabled={busy || !ready || !selectedId || !notes.trim()}
                   className="ml-3 rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
                   onClick={() => act("recommend", { demo_id: selectedId })}
-                >
-                  Send selection to COO
-                </button>
+                >{uiText("Send selection to COO")}</button>
               </div>
             )}
           </section>
@@ -1426,8 +1297,7 @@ export default function DeviceDemosPage() {
               key={s.id}
               className="rounded border border-indigo-200 bg-indigo-50 p-4"
             >
-              <h3 className="font-semibold">
-                Selection {s.id} · {s.status}
+              <h3 className="font-semibold">{uiText("Selection")}{" "}{s.id} · {s.status}
               </h3>
               <p>
                 {
@@ -1441,10 +1311,9 @@ export default function DeviceDemosPage() {
                 }
               </p>
               <p>{s.rationale}</p>
-              <p>Submitted: {new Date(s.submitted_at).toLocaleString()}</p>
+              <p>{uiText("Submitted:")}{" "}{new Date(s.submitted_at).toLocaleString()}</p>
               {s.signature && (
-                <p>
-                  Decision by {s.signature.name} ({s.signature.role}) ·{" "}
+                <p>{uiText("Decision by")}{" "}{s.signature.name} ({s.signature.role}) ·{" "}
                   {new Date(s.decided_at).toLocaleString()} · {s.decision_notes}
                 </p>
               )}
@@ -1452,12 +1321,8 @@ export default function DeviceDemosPage() {
           ))}
           {detail.can_decide && detail.status === "COO_REVIEW" && (
             <section className="space-y-2 rounded border border-indigo-300 p-4">
-              <h3 className="font-semibold">COO selection decision</h3>
-              <p>
-                Review the comparison, evaluator reports and recommendation.
-                Your decision approves the selection; normal purchase-request
-                approvals still apply.
-              </p>
+              <h3 className="font-semibold">{uiText("COO selection decision")}</h3>
+              <p>{uiText("Review the comparison, evaluator reports and recommendation. Your decision approves the selection; normal purchase-request approvals still apply.")}</p>
               {["APPROVED", "REJECTED"].map((decision) => (
                 <button
                   key={decision}
@@ -1466,14 +1331,14 @@ export default function DeviceDemosPage() {
                   onClick={() => act("decision", { decision })}
                 >
                   {decision === "APPROVED"
-                    ? "Approve selected device"
-                    : "Return selection for revision"}
+                    ? uiText("Approve selected device")
+                    : uiText("Return selection for revision")}
                 </button>
               ))}
             </section>
           )}
           <section className="space-y-2">
-            <h3 className="text-lg font-semibold">Signed evaluator reports</h3>
+            <h3 className="text-lg font-semibold">{uiText("Signed evaluator reports")}</h3>
             {detail.reports.map((r) => (
               <details key={r.id} className="rounded border p-3">
                 <summary>
@@ -1485,22 +1350,21 @@ export default function DeviceDemosPage() {
                   {readable(r.recommendation)}
                 </summary>
                 <p>{r.findings}</p>
-                <p>Safety: {r.safety_findings}</p>
+                <p>{uiText("Safety:")}{" "}{r.safety_findings}</p>
                 {r.scores.map((s) => (
                   <p key={s.key}>
                     {detail.criteria.find((c) => c.key === s.key)?.name}:{" "}
                     {s.score}/5 · {s.comment}
                   </p>
                 ))}
-                <p className="text-sm">
-                  Attested by {r.signature.name} ({r.signature.role}) ·{" "}
+                <p className="text-sm">{uiText("Attested by")}{" "}{r.signature.name} ({r.signature.role}) ·{" "}
                   {new Date(r.submitted_at).toLocaleString()}
                 </p>
               </details>
             ))}
           </section>
           <section>
-            <h3 className="text-lg font-semibold">Demo journal and evidence</h3>
+            <h3 className="text-lg font-semibold">{uiText("Demo journal and evidence")}</h3>
             {detail.events.map((event) => (
               <article key={event.id} className="mt-2 rounded border p-3">
                 <p className="font-medium">
@@ -1530,9 +1394,7 @@ export default function DeviceDemosPage() {
               disabled={busy || !notes.trim()}
               className="rounded border border-red-200 px-3 py-2 text-red-700 disabled:opacity-40"
               onClick={() => act("cancel")}
-            >
-              Cancel workspace with reason
-            </button>
+            >{uiText("Cancel workspace with reason")}</button>
           )}
         </section>
       )}

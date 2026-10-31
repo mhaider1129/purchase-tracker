@@ -1,9 +1,11 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React from 'react';
 import { hasPermission } from '../../utils/permissions';
 
 export const URGENT_REQUEST_PERMISSION = 'requests.mark-urgent-on-submit';
 
 const UrgentRequestToggle = ({ user, checked, onChange, disabled = false }) => {
+  const uiText = useUiTranslation();
   if (!hasPermission(user, URGENT_REQUEST_PERMISSION)) {
     return null;
   }
@@ -19,7 +21,7 @@ const UrgentRequestToggle = ({ user, checked, onChange, disabled = false }) => {
           className="mt-1 h-4 w-4 rounded border-amber-300 text-amber-600 focus:ring-amber-500 disabled:opacity-50"
         />
         <span>
-          <span className="block font-semibold">Mark this request as urgent</span>
+          <span className="block font-semibold">{uiText("Mark this request as urgent")}</span>
           <span className="mt-1 block text-sm text-amber-800">
             Use only for time-sensitive requests that require priority attention during approval and procurement.
           </span>
