@@ -1,12 +1,14 @@
 import { openProtectedFile } from '../api/attachments';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api/axios';
+import { hasPermission } from '../utils/permissions';
 import useCurrentUser from '../hooks/useCurrentUser';
 import PageShell from '../components/layout/PageShell';
 import AmountInput from '../components/ui/AmountInput';
 
 const ProcurementPlansPage = () => {
   const { user } = useCurrentUser();
+  const canManage = hasPermission(user,'planning.manage');
   const [plans, setPlans] = useState([]);
   const [year, setYear] = useState(new Date().getFullYear());
   const [file, setFile] = useState(null);
@@ -20,6 +22,7 @@ const ProcurementPlansPage = () => {
   const [planItems, setPlanItems] = useState([]);
   const [isLoadingItems, setIsLoadingItems] = useState(false);
   const [itemsError, setItemsError] = useState('');
+  const [dataLimitations,setDataLimitations] = useState([]);
   const [integrationInsights, setIntegrationInsights] = useState([]);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
   const [itemForm, setItemForm] = useState({
@@ -107,6 +110,7 @@ const ProcurementPlansPage = () => {
         ]);
         setPlanItems(varianceRes.data || []);
         setIntegrationInsights(insightsRes.data?.items || []);
+        setDataLimitations(insightsRes.data?.data_limitations || []);
       } catch (err) {
         console.error('Failed to load plan items', err);
         setItemsError('Unable to load plan line items. Please try again.');
@@ -401,12 +405,14 @@ const ProcurementPlansPage = () => {
       }
       kpis={kpis}
     >
+      {!canManage && <p className="text-sm text-gray-600">Read-only planning access. Plan preparation requires planning management permission.</p>}
       <section className="grid gap-6 md:grid-cols-2">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900">Upload a plan</h2>
             <p className="mt-1 text-sm text-gray-600">
               Accepted file types include PDF, Excel, and Word documents up to 10MB.
             </p>
+            <fieldset disabled={!canManage} aria-label="Upload plan">
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700" htmlFor="plan-year">
@@ -464,6 +470,7 @@ const ProcurementPlansPage = () => {
                 </div>
               )}
             </form>
+            </fieldset>
           </div>
 
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -509,6 +516,7 @@ const ProcurementPlansPage = () => {
               </select>
             </div>
 
+            <fieldset disabled={!canManage} aria-label="Prepare plan items">
             <form onSubmit={handleItemSubmit} className="grid gap-3 md:grid-cols-2">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700" htmlFor="item-name">
@@ -596,6 +604,7 @@ const ProcurementPlansPage = () => {
                 </button>
               </div>
             </form>
+            </fieldset>
           </div>
 
           {itemsError && (
@@ -608,6 +617,7 @@ const ProcurementPlansPage = () => {
 
           <div className="pt-4">
             <h3 className="text-md font-semibold text-gray-900">Integrated planning insights</h3>
+            {dataLimitations.map(note => <p key={note} className="text-sm text-gray-600">{note}</p>)}
             <p className="mt-1 text-sm text-gray-600">
               Connect plan items to consumption history, demand planning, reorder policy, lead time, and seasonal usage.
             </p>

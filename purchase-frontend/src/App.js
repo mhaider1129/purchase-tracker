@@ -741,7 +741,8 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ProcurementPlansPage />}
-          resourceKey="feature.procurementPlans"
+          requiredPermissions={["planning.view", "planning.manage"]}
+          resourceKey="feature.procurementPlanning"
         />
       }
     />
@@ -1015,7 +1016,7 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<PlanningWorkbench />}
-          allowedRoles={["SCM", "admin"]}
+          requiredPermissions={["planning.view", "planning.manage", "replenishment.manage"]}
           resourceKey="feature.demandPlanning"
         />
       }

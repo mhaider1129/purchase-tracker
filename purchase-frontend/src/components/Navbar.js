@@ -190,8 +190,8 @@ const Navbar = () => {
     );
     const canManageProcurement = hasAccess(
       currentUser,
-      "feature.procurementPlans",
-      ["procurement.update-status", "procurement.update-cost"],
+      "feature.procurementPlanning",
+      ["planning.view", "planning.manage"],
     );
     const canHandleProcurementQueues = hasAccess(
       currentUser,
@@ -311,8 +311,8 @@ const Navbar = () => {
       "warehouse.manage-supply",
     ]);
     const canRunPlanning =
-      ["scm", "admin"].includes(normalizedRole) &&
-      hasAccess(currentUser, "feature.demandPlanning", []);
+      ["planning.view", "planning.manage", "replenishment.manage"].some(p => hasPermission(currentUser,p)) &&
+      hasAccess(currentUser, "feature.demandPlanning", ["planning.view", "planning.manage", "replenishment.manage"]);
     const canManageContracts = hasAccess(currentUser, "feature.contracts", [
       "contracts.manage",
     ]);
