@@ -31,7 +31,8 @@ This change:
 languages. The two flat catalogues contain **782 messages**. Message-key separators
 are disabled for this namespace's helper, so punctuation and colons are literal
 text, not resource paths. The existing default namespace and language selector
-remain in use. `useUiTranslation` subscribes components to language changes through
+remain in use. Integrating master retains both the planning permission checks and
+translation subscription; the planning memo remains safe before results load. `useUiTranslation` subscribes components to language changes through
 `react-i18next`; interpolated sentences retain placeholders in both languages.
 
 `workflowTranslation` interprets only an explicit vocabulary and known generated
@@ -54,7 +55,7 @@ node scripts/audit-ui-translations.cjs
 node scripts/audit-ui-translations.cjs --json
 ```
 
-- Full frontend suite: **102 suites / 462 tests passed**.
+- Full frontend suite after integrating master `afba8da3`: **104 suites / 467 tests passed**.
 - New tests exercise live English/Arabic switching, punctuation/count interpolation,
   known approval guidance with names preserved, catalogue/placeholder parity,
   canonical filter parameters in Arabic, procurement quantities and original UOM,
@@ -74,7 +75,7 @@ node scripts/audit-ui-translations.cjs --json
 
 ## Remaining module coverage
 
-The scan finds **2,583 literal JSX text candidates across 105 files**. They require
+The scan finds **2,584 literal JSX text candidates across 105 files**. They require
 manual review: technical identifiers and deliberately English text are not always
 translation defects. This count is a lower bound on review scope because captions
 assembled dynamically, backend errors, default props and export templates may also

@@ -19,6 +19,8 @@ import {
   saveReplenishmentPolicy,
   runMrp,
 } from "../api/planning";
+import useCurrentUser from "../hooks/useCurrentUser";
+import { hasPermission } from "../utils/permissions";
 import formatNumber from "../utils/formatNumber";
 import ForecastingDemandModuleCard from "../components/planning/ForecastingDemandModuleCard";
 
@@ -83,6 +85,10 @@ export const summarizeForecast = (forecast = []) => {
 
 const PlanningWorkbench = () => {
   const uiText = useUiTranslation();
+  const { user } = useCurrentUser();
+  const canManage = hasPermission(user,'planning.manage');
+  const canManageInstitute = hasPermission(user,'planning.cross-department') && hasPermission(user,'planning.cross-warehouse');
+  const canReplenish = hasPermission(user,'replenishment.manage');
   const [forecastForm, setForecastForm] = useState(defaultForecastForm);
   const [sopRows, setSopRows] = useState([]);
   const [seasonalityRows, setSeasonalityRows] = useState([]);
@@ -117,6 +123,7 @@ const PlanningWorkbench = () => {
   const [defaultsMessage, setDefaultsMessage] = useState("");
 
   const loadPlanningDefaults = async () => {
+    try {
     const warehouseId = defaultsWarehouseId ? Number(defaultsWarehouseId) : undefined;
     const res = await fetchPlanningDefaults(warehouseId);
     const s = res.data.settings || {};
@@ -125,9 +132,11 @@ const PlanningWorkbench = () => {
     setMrpItem((f) => ({ ...f, horizon_days: Number(s.mrp_horizon_days || 84), bucket_days: Number(s.mrp_bucket_days || 7), lead_time_days: Number(s.safety_lead_time_days || 14) }));
     setPolicyForm((f) => ({ ...f, lead_time_days: Number(s.safety_lead_time_days || 14), review_period_days: Number(s.safety_review_period_days || 7), warehouse_id: warehouseId || f.warehouse_id }));
     setDefaultsMessage("Defaults loaded.");
+    } catch (error) { setDefaultsMessage(error.response?.data?.message || "Unable to load defaults"); }
   };
 
   const savePlanningDefaults = async () => {
+    try {
     await savePlanningDefaultsApi({
       warehouse_id: defaultsWarehouseId ? Number(defaultsWarehouseId) : null,
       forecast_horizon_months: forecastForm.horizon_months,
@@ -138,6 +147,7 @@ const PlanningWorkbench = () => {
       mrp_bucket_days: mrpItem.bucket_days,
     });
     setDefaultsMessage("Defaults saved.");
+    } catch (error) { setDefaultsMessage(error.response?.data?.message || "Unable to save defaults"); }
   };
 
   const addSopRow = () => {
@@ -416,7 +426,7 @@ const PlanningWorkbench = () => {
         </table>
       </div>
     );
-  }, [mrpResult.plans, uiText]);
+  }, [mrpResult, uiText]);
 
   const forecastInsights = useMemo(
     () => summarizeForecast(forecastResult?.forecast),
@@ -455,11 +465,11 @@ const PlanningWorkbench = () => {
         <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex items-end gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Warehouse override (optional)</label>
-              <input className="mt-1 rounded border border-gray-300 px-3 py-2 text-sm" value={defaultsWarehouseId} onChange={(e) => setDefaultsWarehouseId(e.target.value)} placeholder="Global defaults when blank" />
+              <label htmlFor="planning-defaults-warehouse" className="block text-sm font-medium text-gray-700">Warehouse override (optional)</label>
+              <input id="planning-defaults-warehouse" className="mt-1 rounded border border-gray-300 px-3 py-2 text-sm" value={defaultsWarehouseId} onChange={(e) => setDefaultsWarehouseId(e.target.value)} placeholder="Institute defaults when blank" />
             </div>
             <button type="button" onClick={loadPlanningDefaults} className="rounded bg-slate-700 px-3 py-2 text-sm font-medium text-white">Load defaults</button>
-            <button type="button" onClick={savePlanningDefaults} className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white">Save current as defaults</button>
+            <button type="button" onClick={savePlanningDefaults} disabled={!canManage || (!defaultsWarehouseId && !canManageInstitute)} className="rounded bg-blue-600 px-3 py-2 text-sm font-medium text-white">Save current as defaults</button>
           </div>
           {defaultsMessage && <p className="mt-2 text-sm text-green-700">{defaultsMessage}</p>}
         </section>
@@ -974,7 +984,7 @@ const PlanningWorkbench = () => {
               <button
                 type="submit"
                 className="inline-flex items-center justify-center rounded bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-                disabled={policyLoading}
+                disabled={policyLoading || !canReplenish}
               >
                 {policyLoading ? uiText("Saving…") : "Save policy"}
               </button>
@@ -982,7 +992,7 @@ const PlanningWorkbench = () => {
                 type="button"
                 onClick={handleReplenishmentRun}
                 className="inline-flex items-center justify-center rounded border border-amber-200 bg-white px-4 py-2 text-sm font-semibold text-amber-700 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
-                disabled={replenishmentLoading || !policyForm.warehouse_id}
+                disabled={!canReplenish || replenishmentLoading || !policyForm.warehouse_id}
               >
                 {replenishmentLoading ? "Generating…" : "Run replenishment"}
               </button>
