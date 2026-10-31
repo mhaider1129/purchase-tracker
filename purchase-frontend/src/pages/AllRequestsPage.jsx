@@ -2108,6 +2108,7 @@ const AllRequestsPage = () => {
                     <AssignRequestPanel
                       requestId={request.id}
                       currentAssignee={request.assigned_user_name}
+                      currentAssigneeId={request.assigned_to ?? null}
                       onSuccess={fetchRequests}
                     />
                   )}
