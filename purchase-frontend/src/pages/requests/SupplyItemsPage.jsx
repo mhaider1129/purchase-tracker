@@ -1,5 +1,5 @@
 import useUiTranslation from "../../utils/useUiTranslation";
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
 import useWarehouses from '../../hooks/useWarehouses';
@@ -23,49 +23,48 @@ const SupplyItemsPage = () => {
   const {
     items: warehouseItems,
     loading: warehouseItemsLoading,
+    refresh: refreshWarehouseItems,
   } = useWarehouseStockItems(supplyWarehouseId);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const supplyListRes = await api.get('/warehouse-supply');
-        const supplyRequest = (supplyListRes.data || []).find((req) => req.id === Number(id));
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const supplyListRes = await api.get('/warehouse-supply');
+      const supplyRequest = (supplyListRes.data || []).find((req) => req.id === Number(id));
 
-        if (!supplyRequest) {
-          setRequest(null);
-          setItems([]);
-          setError('Request not found or no longer available for this warehouse.');
-          return;
-        }
-
-        setRequest(supplyRequest);
-        const requestItems = supplyRequest.items || [];
-        setItems(requestItems);
-        const supplied = {};
-        if (supplyRequest?.items) {
-          supplyRequest.items.forEach((item) => {
-            supplied[item.id] = Number(item.supplied_quantity || 0);
-          });
-        }
-        setSuppliedMap(supplied);
-
-        const defaultQuantities = {};
-        requestItems.forEach((item) => {
-          const outstanding = Math.max(Number(item.quantity || 0) - (supplied[item.id] || 0), 0);
-          defaultQuantities[item.id] = outstanding;
-        });
-        setQtyMap(defaultQuantities);
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to load supply request.');
-      } finally {
-        setLoading(false);
+      if (!supplyRequest) {
+        setRequest(null);
+        setItems([]);
+        setError('Request not found or no longer available for this warehouse.');
+        return;
       }
-    };
 
-    fetchData();
+      setRequest(supplyRequest);
+      const requestItems = supplyRequest.items || [];
+      setItems(requestItems);
+      const supplied = {};
+      if (supplyRequest?.items) {
+        supplyRequest.items.forEach((item) => {
+          supplied[item.id] = Number(item.supplied_quantity || 0);
+        });
+      }
+      setSuppliedMap(supplied);
+
+      const defaultQuantities = {};
+      requestItems.forEach((item) => {
+        const outstanding = Math.max(Number(item.quantity || 0) - (supplied[item.id] || 0), 0);
+        defaultQuantities[item.id] = outstanding;
+      });
+      setQtyMap(defaultQuantities);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to load supply request.');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleChange = (itemId, value) => {
     const parsed = Number(value);
@@ -87,6 +86,7 @@ const SupplyItemsPage = () => {
         .map((it) => ({
           item_id: it.id,
           supplied_quantity: Number(qtyMap[it.id]) || 0,
+          expected_supplied_quantity: suppliedMap[it.id] || 0,
           ...(batchSelectionMap[it.id] || {}),
         }))
         .filter((entry) => entry.supplied_quantity > 0),
@@ -99,11 +99,17 @@ const SupplyItemsPage = () => {
 
     try {
       setSaving(true);
+      setError('');
       await api.post(`/warehouse-supply/${id}/items`, payload);
+      await fetchData();
+      await refreshWarehouseItems();
+      setBatchSelectionMap({});
       alert('Supplied quantities saved');
     } catch (err) {
       console.error('Save failed:', err);
-      alert(err.response?.data?.message || 'Failed to save quantities');
+      const message = err.response?.data?.message || 'Failed to save quantities';
+      setError(message);
+      alert(message);
     } finally {
       setSaving(false);
     }
@@ -119,12 +125,14 @@ const SupplyItemsPage = () => {
     const map = {};
     items.forEach((requestItem) => {
       const options = warehouseItems
-        .filter((stockRow) => stockRow.item_name?.toLowerCase() === requestItem.item_name?.toLowerCase() && Number(stockRow.quantity || 0) > 0)
+        .filter((stockRow) => stockRow.item_name?.toLowerCase() === requestItem.item_name?.toLowerCase() && stockRow.stock_status === 'AVAILABLE' && Number(stockRow.available_quantity || 0) > 0)
         .map((stockRow) => ({
+          warehouse_stock_level_id: stockRow.warehouse_stock_level_id,
+          stock_item_id: stockRow.stock_item_id,
           batch_id: stockRow.batch_id,
           lot_number: stockRow.lot_number || '',
           expiry_date: stockRow.expiry_date || '',
-          quantity: Number(stockRow.quantity || 0),
+          quantity: Number(stockRow.available_quantity || 0),
         }));
       map[requestItem.id] = options;
     });
@@ -134,9 +142,11 @@ const SupplyItemsPage = () => {
   const availableMap = useMemo(() => {
     const map = {};
     warehouseItems.forEach((item) => {
-      map[item.stock_item_id] = Number(item.quantity || 0);
+      if (item.stock_status !== 'AVAILABLE') return;
+      const available = Number(item.available_quantity || 0);
+      map[item.stock_item_id] = (map[item.stock_item_id] || 0) + available;
       const key = item.item_name?.toLowerCase();
-      if (key) map[key] = Number(item.quantity || 0);
+      if (key) map[key] = (map[key] || 0) + available;
     });
     return map;
   }, [warehouseItems]);
@@ -149,6 +159,8 @@ const SupplyItemsPage = () => {
       ...prev,
       [itemId]: selected
         ? {
+            warehouse_stock_level_id: selected.warehouse_stock_level_id,
+            stock_item_id: selected.stock_item_id,
             batch_id: selected.batch_id,
             lot_number: selected.lot_number || null,
             expiry_date: selected.expiry_date || null,
@@ -167,11 +179,11 @@ const SupplyItemsPage = () => {
     );
   }
 
-  if (error) {
+  if (error && !request) {
     return (
       <>
           <div className="mx-auto max-w-3xl p-6">
-          <p className="text-red-600">{error}</p>
+          <p role="alert" className="text-red-600">{error}</p>
         </div>
       </>
     );
@@ -180,6 +192,14 @@ const SupplyItemsPage = () => {
   return (
     <>
       <div className="mx-auto max-w-4xl p-6 space-y-6">
+        {error && <div className="space-y-2">
+          <p role="alert" className="text-red-600">{error}</p>
+          <button type="button" disabled={saving} onClick={async () => {
+            await fetchData();
+            await refreshWarehouseItems();
+            setBatchSelectionMap({});
+          }} className="rounded border border-blue-200 px-3 py-1 text-blue-700">Reload quantities and stock</button>
+        </div>}
         <header className="flex flex-col gap-2">
           <p className="text-sm text-gray-500">Request ID #{id}</p>
           <h1 className="text-2xl font-bold text-gray-900">Warehouse supply fulfillment</h1>
@@ -231,7 +251,7 @@ const SupplyItemsPage = () => {
                     <label className="mt-2 block text-xs font-medium text-gray-700">Batch/Lot to supply</label>
                     <select
                       className="mt-1 w-full rounded border border-gray-300 p-2 text-sm"
-                      value={(batchOptionsByItem[it.id] || []).findIndex((opt) => opt.batch_id === batchSelectionMap[it.id]?.batch_id && (opt.lot_number || '') === (batchSelectionMap[it.id]?.lot_number || '') && (opt.expiry_date || '') === (batchSelectionMap[it.id]?.expiry_date || ''))}
+                      value={(batchOptionsByItem[it.id] || []).findIndex((opt) => opt.warehouse_stock_level_id === batchSelectionMap[it.id]?.warehouse_stock_level_id)}
                       onChange={(e) => handleBatchSelectionChange(it.id, e.target.value)}
                     >
                       <option value={-1}>Select batch/lot</option>
