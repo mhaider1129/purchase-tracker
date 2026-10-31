@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 // src/components/Navbar.js
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -23,6 +24,7 @@ import { featureRegistry } from "../config/featureRegistry";
 import { hasPermission } from "../utils/permissions";
 
 const Navbar = () => {
+  const uiText = useUiTranslation();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
@@ -171,6 +173,7 @@ const Navbar = () => {
   };
 
   const NavItems = ({ variant = "desktop" }) => {
+  const uiText = useUiTranslation();
     if (isLoading || !user) return null;
 
     const normalizedRole = user.role?.toLowerCase?.() ?? "";
@@ -510,71 +513,71 @@ const Navbar = () => {
       },
       {
         id: "fixedAssets",
-        label: "FIXED ASSETS",
+        label: uiText("FIXED ASSETS"),
         items: [
           createItem(
             canAccessFixedAssets,
-            "Dashboard",
+            uiText("Dashboard"),
             "/fixed-assets/dashboard",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "Asset Register",
+            uiText("Asset Register"),
             "/fixed-assets/register",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "Register Asset",
+            uiText("Register Asset"),
             "/fixed-assets/new",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "Movements",
+            uiText("Movements"),
             "/fixed-assets/movements",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "Physical Locations",
+            uiText("Physical Locations"),
             "/fixed-assets/locations",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "Physical Inventory",
+            uiText("Physical Inventory"),
             "/fixed-assets/inventory",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "Reconciliation",
+            uiText("Reconciliation"),
             "/fixed-assets/reconciliation",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "RFID Events",
+            uiText("RFID Events"),
             "/fixed-assets/events",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "RFID Readers",
+            uiText("RFID Readers"),
             "/fixed-assets/readers",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "RFID Portals",
+            uiText("RFID Portals"),
             "/fixed-assets/portals",
             "text-cyan-700",
           ),
           createItem(
             canAccessFixedAssets,
-            "Exceptions",
+            uiText("Exceptions"),
             "/fixed-assets/exceptions",
             "text-rose-700",
           ),
@@ -678,9 +681,7 @@ const Navbar = () => {
           createItem(
             canUseAi,
             <span className="inline-flex items-center gap-2">
-              <Sparkles size={16} aria-hidden="true" />
-              AI Assistant
-            </span>,
+              <Sparkles size={16} aria-hidden="true" />{uiText("AI Assistant")}</span>,
             "/ai-assistant",
             "text-blue-700",
           ),
@@ -692,19 +693,19 @@ const Navbar = () => {
           ),
           createItem(
             true,
-            "Institutional Priorities",
+            uiText("Institutional Priorities"),
             "/procurement-priorities",
             "text-blue-700",
           ),
           createItem(
             canRankDepartmentPriorities,
-            "Department Priorities",
+            uiText("Department Priorities"),
             "/procurement-priorities/department",
             "text-blue-700",
           ),
           createItem(
             canManageProcurementPriorities,
-            "Priority Management",
+            uiText("Priority Management"),
             "/procurement-priorities/manage",
             "text-blue-800",
           ),
@@ -747,7 +748,7 @@ const Navbar = () => {
           ),
           createItem(
             canUseAdminTools,
-            "Organization Hierarchy",
+            uiText("Organization Hierarchy"),
             "/admin/organization",
             "text-emerald-600",
           ),
@@ -1131,10 +1132,10 @@ const Navbar = () => {
               )}
               <span className="hidden text-xs font-semibold xl:inline">
                 {theme === themes.light
-                  ? "Light"
+                  ? uiText("Light")
                   : theme === themes.dark
-                    ? "Dark"
-                    : "Contrast"}
+                    ? uiText("Dark")
+                    : uiText("Contrast")}
               </span>
             </button>
           </div>

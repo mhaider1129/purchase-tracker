@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
@@ -9,6 +10,7 @@ const MAX_ATTACHMENT_SIZE_MB = 500;
 const MAX_ATTACHMENT_SIZE_BYTES = MAX_ATTACHMENT_SIZE_MB * 1024 * 1024;
 
 const PrintingLogbookRequestForm = () => {
+  const uiText = useUiTranslation();
   const navigate = useNavigate();
   const { user, loading, error } = useCurrentUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,15 +95,15 @@ const PrintingLogbookRequestForm = () => {
     }
   };
 
-  if (loading) return <div className="p-6 text-center text-gray-600">Loading user information...</div>;
-  if (error || !user) return <div className="p-6 text-center text-red-600">Unable to load user details.</div>;
+  if (loading) return <div className="p-6 text-center text-gray-600">{uiText("Loading user information...")}</div>;
+  if (error || !user) return <div className="p-6 text-center text-red-600">{uiText("Unable to load user details.")}</div>;
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Printing Logbook Request</h1>
+      <h1 className="text-2xl font-bold mb-4">{uiText("Printing Logbook Request")}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block font-semibold mb-1">Approved Form (PDF/Word)</label>
+          <label className="block font-semibold mb-1">{uiText("Approved Form (PDF/Word)")}</label>
           <input
             type="file"
             accept=".pdf,.doc,.docx,image/*,.heic,.heif"
@@ -114,69 +116,61 @@ const PrintingLogbookRequestForm = () => {
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">Logbook Name</label>
+          <label className="block font-semibold mb-1">{uiText("Logbook Name")}</label>
           <input
             type="text"
             className="w-full border rounded p-2"
             value={form.logbookName}
             onChange={(e) => onChange('logbookName', e.target.value)}
-            placeholder="Enter the name of the logbook"
+            placeholder={uiText("Enter the name of the logbook")}
             required
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block">Logbook Orientation
-            <select className="w-full border rounded p-2" value={form.orientation} onChange={(e) => onChange('orientation', e.target.value)}>
-              <option value="portrait">Portrait</option>
-              <option value="landscape">Landscape</option>
+          <label className="block">{uiText("Logbook Orientation")}<select className="w-full border rounded p-2" value={form.orientation} onChange={(e) => onChange('orientation', e.target.value)}>
+              <option value="portrait">{uiText("Portrait")}</option>
+              <option value="landscape">{uiText("Landscape")}</option>
             </select>
           </label>
 
-          <label className="block">Number of Pages
-            <input type="number" min="1" className="w-full border rounded p-2" value={form.numberOfPages} onChange={(e) => onChange('numberOfPages', Number(e.target.value) || 1)} required />
+          <label className="block">{uiText("Number of Pages")}<input type="number" min="1" className="w-full border rounded p-2" value={form.numberOfPages} onChange={(e) => onChange('numberOfPages', Number(e.target.value) || 1)} required />
           </label>
 
-          <label className="block">Starting Direction
-            <select className="w-full border rounded p-2" value={form.pageDirection} onChange={(e) => onChange('pageDirection', e.target.value)}>
-              <option value="left_to_right">Left to Right</option>
-              <option value="right_to_left">Right to Left</option>
+          <label className="block">{uiText("Starting Direction")}<select className="w-full border rounded p-2" value={form.pageDirection} onChange={(e) => onChange('pageDirection', e.target.value)}>
+              <option value="left_to_right">{uiText("Left to Right")}</option>
+              <option value="right_to_left">{uiText("Right to Left")}</option>
             </select>
           </label>
 
-          <label className="block">Serial Numbering
-            <select className="w-full border rounded p-2" value={form.serialNumbering} onChange={(e) => onChange('serialNumbering', e.target.value)}>
-              <option value="auto">Auto Numbered</option>
-              <option value="none">No Numbering</option>
+          <label className="block">{uiText("Serial Numbering")}<select className="w-full border rounded p-2" value={form.serialNumbering} onChange={(e) => onChange('serialNumbering', e.target.value)}>
+              <option value="auto">{uiText("Auto Numbered")}</option>
+              <option value="none">{uiText("No Numbering")}</option>
             </select>
           </label>
 
           {form.serialNumbering === 'auto' && (
-            <label className="block">Numbering Starts From
-              <input type="number" min="1" className="w-full border rounded p-2" value={form.numberingStart} onChange={(e) => onChange('numberingStart', Number(e.target.value) || 1)} />
+            <label className="block">{uiText("Numbering Starts From")}<input type="number" min="1" className="w-full border rounded p-2" value={form.numberingStart} onChange={(e) => onChange('numberingStart', Number(e.target.value) || 1)} />
             </label>
           )}
 
-          <label className="block">Printing Type
-            <select className="w-full border rounded p-2" value={form.printSided} onChange={(e) => onChange('printSided', e.target.value)}>
-              <option value="single_sided">Single-sided</option>
-              <option value="double_sided">Double-sided</option>
+          <label className="block">{uiText("Printing Type")}<select className="w-full border rounded p-2" value={form.printSided} onChange={(e) => onChange('printSided', e.target.value)}>
+              <option value="single_sided">{uiText("Single-sided")}</option>
+              <option value="double_sided">{uiText("Double-sided")}</option>
             </select>
           </label>
         </div>
 
         <div className="flex gap-6">
           <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={form.ncr} onChange={(e) => onChange('ncr', e.target.checked)} /> NCR required
-          </label>
+            <input type="checkbox" checked={form.ncr} onChange={(e) => onChange('ncr', e.target.checked)} />{" "}{uiText("NCR required")}</label>
           <label className="inline-flex items-center gap-2">
-            <input type="checkbox" checked={form.tearOffPages} onChange={(e) => onChange('tearOffPages', e.target.checked)} /> Tear-off pages
-          </label>
+            <input type="checkbox" checked={form.tearOffPages} onChange={(e) => onChange('tearOffPages', e.target.checked)} />{" "}{uiText("Tear-off pages")}</label>
         </div>
 
         <div>
-          <label className="block font-semibold mb-1">Other details/specifications</label>
-          <textarea className="w-full border rounded p-2" rows={4} value={form.otherDetails} onChange={(e) => onChange('otherDetails', e.target.value)} placeholder="Any extra instructions: paper quality, binding, perforation, cover color, etc." />
+          <label className="block font-semibold mb-1">{uiText("Other details/specifications")}</label>
+          <textarea className="w-full border rounded p-2" rows={4} value={form.otherDetails} onChange={(e) => onChange('otherDetails', e.target.value)} placeholder={uiText("Any extra instructions: paper quality, binding, perforation, cover color, etc.")} />
         </div>
 
           <UrgentRequestToggle
@@ -187,7 +181,7 @@ const PrintingLogbookRequestForm = () => {
           />
 
         <button type="submit" disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded disabled:opacity-50">
-          {isSubmitting ? 'Submitting...' : 'Submit Printing Request'}
+          {isSubmitting ? uiText("Submitting...") : 'Submit Printing Request'}
         </button>
       </form>
     </div>

@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 import { stableRequestItemId } from '../utils/requestItemIdentity';
 // src/pages/MyMaintenanceRequests.jsx
@@ -38,6 +39,7 @@ import {
 } from '../utils/requestStatus';
 
 const MyMaintenanceRequests = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const { user } = useAuth();
   const canViewAllMaintenanceRequests = hasPermission(user, 'maintenance-requests.view-all');
@@ -1113,7 +1115,7 @@ const MyMaintenanceRequests = () => {
                   <th className="border px-3 py-2 text-left">{tr('table.attachments')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.items')}</th>
                   <th className="border px-3 py-2 text-left">{tr('table.approvals')}</th>
-                  <th className="border px-3 py-2 text-left">Actions</th>
+                  <th className="border px-3 py-2 text-left">{uiText("Actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -1206,9 +1208,7 @@ const MyMaintenanceRequests = () => {
                               type="button"
                               onClick={() => openEditRequest(r)}
                               className="rounded bg-amber-600 px-3 py-1 text-xs font-semibold text-white hover:bg-amber-700"
-                            >
-                              Edit request
-                            </button>
+                            >{uiText("Edit request")}</button>
                           ) : (
                             <span className="text-xs text-gray-400">—</span>
                           )}
@@ -1374,9 +1374,7 @@ const MyMaintenanceRequests = () => {
               <button type="button" onClick={closeEditRequest} className="text-gray-500 hover:text-gray-700">✕</button>
             </div>
             {editError && <div className="mb-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{editError}</div>}
-            <label className="mb-3 block text-sm font-medium text-gray-700">
-              Justification
-              <textarea
+            <label className="mb-3 block text-sm font-medium text-gray-700">{uiText("Justification")}<textarea
                 value={editForm.justification}
                 onChange={(event) => setEditForm((prev) => ({ ...prev, justification: event.target.value }))}
                 className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
@@ -1384,23 +1382,19 @@ const MyMaintenanceRequests = () => {
               />
             </label>
             <div className="mb-3 grid gap-3 md:grid-cols-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Department
-                <select
+              <label className="block text-sm font-medium text-gray-700">{uiText("Department")}<select
                   value={editForm.department_id}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, department_id: event.target.value, section_id: '' }))}
                   className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
                   required
                 >
-                  <option value="">Select department</option>
+                  <option value="">{uiText("Select department")}</option>
                   {departments.map((department) => (
                     <option key={department.id} value={department.id}>{department.name}</option>
                   ))}
                 </select>
               </label>
-              <label className="block text-sm font-medium text-gray-700">
-                Section
-                <select
+              <label className="block text-sm font-medium text-gray-700">{uiText("Section")}<select
                   value={editForm.section_id}
                   onChange={(event) => setEditForm((prev) => ({ ...prev, section_id: event.target.value }))}
                   className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
@@ -1416,23 +1410,23 @@ const MyMaintenanceRequests = () => {
             </div>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Items</h3>
-                <button type="button" onClick={addEditItem} className="rounded border px-3 py-1 text-sm font-medium hover:bg-gray-50">Add item</button>
+                <h3 className="font-semibold">{uiText("Items")}</h3>
+                <button type="button" onClick={addEditItem} className="rounded border px-3 py-1 text-sm font-medium hover:bg-gray-50">{uiText("Add item")}</button>
               </div>
               {editForm.items.map((item, index) => (
                 <div key={index} className="grid gap-2 rounded border border-gray-200 p-3 md:grid-cols-5">
-                  <input value={item.item_name} onChange={(event) => handleEditItemChange(index, 'item_name', event.target.value)} placeholder="Item name" className="rounded border px-2 py-1 md:col-span-2" />
-                  <input value={item.quantity} onChange={(event) => handleEditItemChange(index, 'quantity', event.target.value)} placeholder="Qty" type="number" min="1" className="rounded border px-2 py-1" />
-                  <input value={item.unit_cost} onChange={(event) => handleEditItemChange(index, 'unit_cost', event.target.value)} placeholder="Unit cost" type="number" min="0" className="rounded border px-2 py-1" />
-                  <button type="button" onClick={() => removeEditItem(index)} disabled={editForm.items.length === 1} className="rounded border px-2 py-1 text-sm text-red-600 disabled:opacity-50">Remove</button>
-                  <input value={item.brand} onChange={(event) => handleEditItemChange(index, 'brand', event.target.value)} placeholder="Brand" className="rounded border px-2 py-1" />
-                  <input value={item.specs} onChange={(event) => handleEditItemChange(index, 'specs', event.target.value)} placeholder="Specs" className="rounded border px-2 py-1 md:col-span-4" />
+                  <input value={item.item_name} onChange={(event) => handleEditItemChange(index, 'item_name', event.target.value)} placeholder={uiText("Item name")} className="rounded border px-2 py-1 md:col-span-2" />
+                  <input value={item.quantity} onChange={(event) => handleEditItemChange(index, 'quantity', event.target.value)} placeholder={uiText("Qty")} type="number" min="1" className="rounded border px-2 py-1" />
+                  <input value={item.unit_cost} onChange={(event) => handleEditItemChange(index, 'unit_cost', event.target.value)} placeholder={uiText("Unit cost")} type="number" min="0" className="rounded border px-2 py-1" />
+                  <button type="button" onClick={() => removeEditItem(index)} disabled={editForm.items.length === 1} className="rounded border px-2 py-1 text-sm text-red-600 disabled:opacity-50">{uiText("Remove")}</button>
+                  <input value={item.brand} onChange={(event) => handleEditItemChange(index, 'brand', event.target.value)} placeholder={uiText("Brand")} className="rounded border px-2 py-1" />
+                  <input value={item.specs} onChange={(event) => handleEditItemChange(index, 'specs', event.target.value)} placeholder={uiText("Specs")} className="rounded border px-2 py-1 md:col-span-4" />
                 </div>
               ))}
             </div>
             <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={closeEditRequest} className="rounded border px-4 py-2">Cancel</button>
-              <button type="submit" disabled={editSubmitting} className="rounded bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-60">{editSubmitting ? 'Saving…' : 'Save and request SCM approval'}</button>
+              <button type="button" onClick={closeEditRequest} className="rounded border px-4 py-2">{uiText("Cancel")}</button>
+              <button type="submit" disabled={editSubmitting} className="rounded bg-blue-600 px-4 py-2 font-semibold text-white disabled:opacity-60">{editSubmitting ? uiText("Saving…") : 'Save and request SCM approval'}</button>
             </div>
           </form>
         </div>

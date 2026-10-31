@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, Bot, Database, Send, Sparkles } from "lucide-react";
@@ -130,6 +131,7 @@ const AiConversation = ({
   compact = false,
   disabled = false,
 }) => {
+  const uiText = useUiTranslation();
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [draft, setDraft] = useState("");
@@ -311,7 +313,7 @@ const AiConversation = ({
             className="inline-flex h-12 items-center gap-2 rounded-xl bg-blue-700 px-4 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send size={17} />
-            <span className="hidden sm:inline">Send</span>
+            <span className="hidden sm:inline">{uiText("Send")}</span>
           </button>
         </div>
         <p className="mx-auto mt-2 max-w-3xl text-right text-xs text-slate-400">

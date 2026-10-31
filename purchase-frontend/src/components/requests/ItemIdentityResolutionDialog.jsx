@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../api/axios";
@@ -9,6 +10,7 @@ export default function ItemIdentityResolutionDialog({
   onClose,
   onSaved,
 }) {
+  const uiText = useUiTranslation();
   const [selection, setSelection] = useState({
     request_mode: "generic_item",
     item_name: "",
@@ -104,9 +106,7 @@ export default function ItemIdentityResolutionDialog({
               disabled={saving}
               onClick={onClose}
               className="rounded-lg border px-4 py-2"
-            >
-              Cancel
-            </button>
+            >{uiText("Cancel")}</button>
             <button
               disabled={
                 saving ||
@@ -116,7 +116,7 @@ export default function ItemIdentityResolutionDialog({
               className="rounded-lg bg-blue-700 px-4 py-2 text-white disabled:opacity-40"
             >
               {saving
-                ? "Saving…"
+                ? uiText("Saving…")
                 : pending
                   ? "Refer to Item Master"
                   : "Save identity resolution"}

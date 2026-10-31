@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, AlertTriangle, Boxes, CalendarDays, Gauge, RefreshCw, Users } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -18,6 +19,7 @@ const Metric = ({ label, value, helper, icon: Icon, coverage }) => (
 );
 
 export default function SupplyChainPerformancePage() {
+  const uiText = useUiTranslation();
   const [filters,setFilters]=useState({ date_from: '' }); const [data,setData]=useState(null); const [error,setError]=useState(''); const [loading,setLoading]=useState(true); const [refreshKey,setRefreshKey]=useState(0);
   const fetchData = useCallback(() => { let active=true; void refreshKey; setLoading(true); setError(''); const params = Object.fromEntries(Object.entries(filters).filter(([,v])=>v)); getPerformanceDashboard(params).then(r=>active&&setData(r.data)).catch(()=>active&&setError('Performance data is unavailable. Please try again.')).finally(()=>active&&setLoading(false)); return()=>{active=false}; },[filters,refreshKey]);
   useEffect(()=>fetchData(),[fetchData]);
@@ -26,11 +28,11 @@ export default function SupplyChainPerformancePage() {
   const requestedValue = requestedMetric && typeof requestedMetric === 'object' ? (requestedMetric.status === 'not_available' ? 'Not available' : number(requestedMetric.value)) : number(requestedMetric);
   const totalPwu = useMemo(()=>complexity.reduce((sum,item)=>sum+Number(item.pwu||0),0),[complexity]);
   return <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
-    <AnalyticsPageHeader eyebrow="Procurement intelligence" title="Supply Chain Performance & Workload" description="A governed view of demand, portfolio complexity, sourcing effort, and operational constraints." icon={Gauge} meta={["PWU measures portfolio effort — not employee performance", "Evidence-aware metrics"]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4" /> Refresh</button>} />
+    <AnalyticsPageHeader eyebrow="Procurement intelligence" title={uiText("Supply Chain Performance & Workload")} description="A governed view of demand, portfolio complexity, sourcing effort, and operational constraints." icon={Gauge} meta={["PWU measures portfolio effort — not employee performance", "Evidence-aware metrics"]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4" />{" "}{uiText("Refresh")}</button>} />
     <section className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:justify-between" aria-label="Performance filters"><label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Date from<div className="relative mt-2"><CalendarDays className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400"/><input aria-label="Date from" className="rounded-xl border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:ring-blue-500" type="date" value={filters.date_from} onChange={e=>setFilters(x=>({...x,date_from:e.target.value}))}/></div></label><p className="text-xs text-slate-500">Metrics show cases within your authorised institute scope.</p></section>
     {error ? <AnalyticsError message={error} onRetry={()=>setRefreshKey(x=>x+1)}/> : loading ? <AnalyticsLoading label="Building performance view…"/> : <>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Executive Overview">
-        <Metric label="Requested items" value={requestedValue} helper={`${number(data?.metrics?.demand?.prs)} purchase requests`} icon={Boxes} coverage={requestedMetric?.coverage || data?.metrics?.demand?.coverage}/>
+        <Metric label={uiText("Requested items")} value={requestedValue} helper={`${number(data?.metrics?.demand?.prs)} purchase requests`} icon={Boxes} coverage={requestedMetric?.coverage || data?.metrics?.demand?.coverage}/>
         <Metric label="Departments" value={number(data?.metrics?.demand?.departments)} helper="Contributing demand" icon={Users} coverage={data?.metrics?.demand?.coverage}/>
         <Metric label="Portfolio workload" value={`${number(totalPwu)} PWU`} helper={`${number(data?.metrics?.complexity?.assessed_cases)} assessed cases`} icon={Activity} coverage={data?.metrics?.complexity?.coverage}/>
         <Metric label="Open constraints" value={number(pending.reduce((s,x)=>s+Number(x.count||0),0))} helper="Cases with a recorded root cause" icon={AlertTriangle}/>

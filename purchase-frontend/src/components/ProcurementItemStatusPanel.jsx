@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 // src/components/ProcurementItemStatusPanel.jsx
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "../api/axios";
@@ -5,6 +6,7 @@ import usePageTranslation from "../utils/usePageTranslation";
 import AmountInput from "./ui/AmountInput";
 
 const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
+  const uiText = useUiTranslation();
   const [status, setStatus] = useState(item.procurement_status || "");
   const [comment, setComment] = useState(item.procurement_comment || "");
   const [poIssuanceMethod, setPoIssuanceMethod] = useState(
@@ -845,47 +847,45 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
               </div>
 
               <div className="mt-4 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm sm:grid-cols-3">
-                <div><span className="block text-xs uppercase text-slate-400">Requested quantity</span><strong>{formatNumber(requestedQty)}</strong></div>
-                <div><span className="block text-xs uppercase text-slate-400">Already purchased</span><strong>{formatNumber(purchasedQtyNumber)}</strong></div>
-                <div><span className="block text-xs uppercase text-slate-400">Remaining quantity</span><strong>{formatNumber(remainingQty)}</strong></div>
+                <div><span className="block text-xs uppercase text-slate-400">{uiText("Requested quantity")}</span><strong>{formatNumber(requestedQty)}</strong></div>
+                <div><span className="block text-xs uppercase text-slate-400">{uiText("Already purchased")}</span><strong>{formatNumber(purchasedQtyNumber)}</strong></div>
+                <div><span className="block text-xs uppercase text-slate-400">{uiText("Remaining quantity")}</span><strong>{formatNumber(remainingQty)}</strong></div>
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Quantity to add</label>
+                  <label className="block text-sm font-medium text-slate-700">{uiText("Quantity to add")}</label>
                   <input type="number" min={1} step={1} max={remainingQty || undefined} value={entryForm.event_quantity} onChange={(e) => setEntryForm((prev) => ({ ...prev, event_quantity: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Unit cost</label>
+                  <label className="block text-sm font-medium text-slate-700">{uiText("Unit cost")}</label>
                   <AmountInput min={0} step="0.01" value={entryForm.unit_cost} onChange={(e) => setEntryForm((prev) => ({ ...prev, unit_cost: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Supplier</label>
+                  <label className="block text-sm font-medium text-slate-700">{uiText("Supplier")}</label>
                   <select value={entryForm.supplier_id} onChange={(e) => setEntryForm((prev) => ({ ...prev, supplier_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                    <option value="">No supplier selected</option>
+                    <option value="">{uiText("No supplier selected")}</option>
                     {suppliers.map((supplier) => (
                       <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Procurement date</label>
+                  <label className="block text-sm font-medium text-slate-700">{uiText("Procurement date")}</label>
                   <input type="date" value={entryForm.procurement_date} onChange={(e) => setEntryForm((prev) => ({ ...prev, procurement_date: e.target.value }))} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
                 </div>
               </div>
 
-              <label className="mt-3 block text-sm font-medium text-slate-700">Note</label>
+              <label className="mt-3 block text-sm font-medium text-slate-700">{uiText("Note")}</label>
               <textarea value={entryForm.procurement_note} onChange={(e) => setEntryForm((prev) => ({ ...prev, procurement_note: e.target.value }))} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
 
               {Number(entryForm.event_quantity || 0) > 0 && Number(entryForm.event_quantity || 0) < Number(remainingQty || 0) && (
-                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                  This will register a partial procurement entry. The remaining quantity will stay open.
-                </div>
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{uiText("This will register a partial procurement entry. The remaining quantity will stay open.")}</div>
               )}
 
               <div className="mt-5 flex justify-end gap-2">
-                <button type="button" onClick={() => setShowProcurementEntryModal(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">Cancel</button>
-                <button type="button" onClick={handleAddProcurementEntry} disabled={savingEntry || !procurementEventsSupported || Number(remainingQty || 0) <= 0} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">{savingEntry ? "Saving…" : "Save entry"}</button>
+                <button type="button" onClick={() => setShowProcurementEntryModal(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">{uiText("Cancel")}</button>
+                <button type="button" onClick={handleAddProcurementEntry} disabled={savingEntry || !procurementEventsSupported || Number(remainingQty || 0) <= 0} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-slate-300">{savingEntry ? uiText("Saving…") : uiText("Save entry")}</button>
               </div>
             </div>
           </div>
@@ -904,14 +904,14 @@ const ProcurementItemStatusPanel = ({ item, onUpdate }) => {
 
               <div className="mt-4 max-h-[60vh] overflow-auto">
                 {loadingHistory ? (
-                  <p className="text-sm text-slate-500">Loading procurement history…</p>
+                  <p className="text-sm text-slate-500">{uiText("Loading procurement history…")}</p>
                 ) : historyEvents.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">No detailed procurement events recorded.</p>
+                  <p className="rounded-lg border border-dashed border-slate-300 p-4 text-sm text-slate-500">{uiText("No detailed procurement events recorded.")}</p>
                 ) : (
                   <table className="min-w-full divide-y divide-slate-200 text-sm">
                     <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                       <tr>
-                        <th className="px-3 py-2 text-left">Date</th><th className="px-3 py-2 text-left">Event Qty</th><th className="px-3 py-2 text-left">Previous</th><th className="px-3 py-2 text-left">New</th><th className="px-3 py-2 text-left">Remaining</th><th className="px-3 py-2 text-left">Unit Cost</th><th className="px-3 py-2 text-left">Total Cost</th><th className="px-3 py-2 text-left">Supplier</th><th className="px-3 py-2 text-left">User</th><th className="px-3 py-2 text-left">Note</th>
+                        <th className="px-3 py-2 text-left">{uiText("Date")}</th><th className="px-3 py-2 text-left">{uiText("Event Qty")}</th><th className="px-3 py-2 text-left">{uiText("Previous")}</th><th className="px-3 py-2 text-left">{uiText("New")}</th><th className="px-3 py-2 text-left">{uiText("Remaining")}</th><th className="px-3 py-2 text-left">{uiText("Unit Cost")}</th><th className="px-3 py-2 text-left">{uiText("Total Cost")}</th><th className="px-3 py-2 text-left">{uiText("Supplier")}</th><th className="px-3 py-2 text-left">{uiText("User")}</th><th className="px-3 py-2 text-left">{uiText("Note")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

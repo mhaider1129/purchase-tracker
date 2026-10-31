@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useState } from "react";
 import { Activity, RefreshCw, Sparkles } from "lucide-react";
 import aiService from "../api/aiService";
@@ -48,6 +49,7 @@ const unavailableMessage = (details) => {
 };
 
 const AiAssistantPage = () => {
+  const uiText = useUiTranslation();
   const [health, setHealth] = useState("checking");
   const [healthDetails, setHealthDetails] = useState(null);
   const checkHealth = useCallback(() => {
@@ -107,9 +109,7 @@ const AiAssistantPage = () => {
             <h1 className="flex items-center gap-3 text-2xl font-black text-slate-900 dark:text-white">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-700 text-white">
                 <Sparkles size={21} />
-              </span>{" "}
-              AI Assistant
-            </h1>
+              </span>{" "}{uiText("AI Assistant")}</h1>
             <p className="mt-1 pl-0 text-sm text-slate-500 dark:text-slate-400 sm:pl-[3.25rem]">
               Supply Chain Intelligence
             </p>

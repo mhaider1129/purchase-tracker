@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { saveAs } from "file-saver";
@@ -172,6 +173,7 @@ const normalizeCostDraft = (draft) => ({
 });
 
 const ProcurementEvaluationDetail = () => {
+  const uiText = useUiTranslation();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState(
     window.location.hash === "#recommendation" ? "Recommendation" : "Overview",
@@ -680,7 +682,7 @@ const ProcurementEvaluationDetail = () => {
               >
                 <input
                   className={inputClass}
-                  placeholder="Supplier name"
+                  placeholder={uiText("Supplier name")}
                   value={offerForm.supplier_name}
                   onChange={(e) =>
                     setOfferForm({
@@ -701,7 +703,7 @@ const ProcurementEvaluationDetail = () => {
                 />
                 <input
                   className={inputClass}
-                  placeholder="Manufacturer"
+                  placeholder={uiText("Manufacturer")}
                   onChange={(e) =>
                     setOfferForm({
                       ...offerForm,
@@ -711,7 +713,7 @@ const ProcurementEvaluationDetail = () => {
                 />
                 <input
                   className={inputClass}
-                  placeholder="Model"
+                  placeholder={uiText("Model")}
                   onChange={(e) =>
                     setOfferForm({ ...offerForm, model_name: e.target.value })
                   }
@@ -841,7 +843,7 @@ const ProcurementEvaluationDetail = () => {
                     <dt>Compliance</dt>
                     <dd>{offer.compliance_status || "PENDING"}</dd>
                     <dt>Disqualified</dt>
-                    <dd>{offer.is_disqualified ? "Yes" : "No"}</dd>
+                    <dd>{offer.is_disqualified ? uiText("Yes") : uiText("No")}</dd>
                     {offer.pricing_model === "REAGENT_RENTAL" && (
                       <>
                         <dt>Min amount</dt>
@@ -909,9 +911,7 @@ const ProcurementEvaluationDetail = () => {
                     )
                   }
                   className="rounded-lg border px-4 py-2 font-semibold text-slate-700"
-                >
-                  Export CSV
-                </button>
+                >{uiText("Export CSV")}</button>
                 <button
                   type="button"
                   onClick={exportComparisonExcel}
@@ -1270,7 +1270,7 @@ const ProcurementEvaluationDetail = () => {
               <form onSubmit={createCriteria} className="flex flex-wrap gap-3">
                 <input
                   className={inputClass}
-                  placeholder="Criteria"
+                  placeholder={uiText("Criteria")}
                   value={criteriaForm.criteria_name}
                   onChange={(e) =>
                     setCriteriaForm({
@@ -1430,7 +1430,7 @@ const ProcurementEvaluationDetail = () => {
                                 readOnly || c.scoring_type === "automatic"
                               }
                               className={`${inputClass} mt-1`}
-                              placeholder="Comments"
+                              placeholder={uiText("Comments")}
                               defaultValue={existing?.comments || ""}
                               onChange={(e) =>
                                 setScoreDrafts({
@@ -1690,7 +1690,7 @@ const ProcurementEvaluationDetail = () => {
 
         {activeTab === "Documents" && (
           <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <h2 className="text-xl font-bold">Documents</h2>
+            <h2 className="text-xl font-bold">{uiText("Documents")}</h2>
             <p className="mt-2 text-slate-600">
               Attach quotations, brochures, technical specs, price lists,
               service terms, warranty documents, compliance certificates, and

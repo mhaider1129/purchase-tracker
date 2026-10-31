@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import saveAs from 'file-saver';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -302,6 +303,7 @@ const initialFormState = {
 };
 
 const ContractsPage = () => {
+  const uiText = useUiTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { contractId: routeContractId } = useParams();
@@ -1972,7 +1974,7 @@ const ContractsPage = () => {
         <div className="mb-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
           <StatCard
             tone="active"
-            title="Active contracts"
+            title={uiText("Active contracts")}
             value={activeCount}
             description="Based on current status"
           />
@@ -1984,7 +1986,7 @@ const ContractsPage = () => {
           />
           <StatCard
             tone="expired"
-            title="Expired"
+            title={uiText("Expired")}
             value={expiredCount}
             description="Requires close-out or archiving"
           />
@@ -2111,23 +2113,18 @@ const ContractsPage = () => {
                     type="button"
                     onClick={exportContractsToCsv}
                     className="inline-flex items-center justify-center rounded-md border border-transparent bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                  >
-                    Export CSV
-                  </button>
+                  >{uiText("Export CSV")}</button>
                   <button
                     type="button"
                     onClick={handlePrintContracts}
                     className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                  >
-                    Print
-                  </button>
+                  >{uiText("Print")}</button>
                   <button
                     type="button"
                     onClick={fetchContracts}
                     className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
                   >
-                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" /> Refresh
-                  </button>
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />{" "}{uiText("Refresh")}</button>
                   <button
                     type="button"
                     onClick={() => navigate('/contracts/approvals')}
@@ -2165,15 +2162,14 @@ const ContractsPage = () => {
                   Renewal watch
                 </button>
                 <button type="button" onClick={() => setShowAdvancedFilters((current) => !current)} aria-expanded={showAdvancedFilters} className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
-                  <Filter className="h-3.5 w-3.5" aria-hidden="true" /> More filters
-                  <ChevronDown className={`h-3.5 w-3.5 transition ${showAdvancedFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
+                  <Filter className="h-3.5 w-3.5" aria-hidden="true" />{" "}{uiText("More filters")}<ChevronDown className={`h-3.5 w-3.5 transition ${showAdvancedFilters ? 'rotate-180' : ''}`} aria-hidden="true" />
                 </button>
               </div>
               {showAdvancedFilters && (
                 <div className="grid gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 sm:grid-cols-2 lg:grid-cols-4 dark:border-blue-900/50 dark:bg-blue-950/20">
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Contract type
                     <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="mt-1 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-normal dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-                      <option value="all">All types</option><option value="purchasing">Purchasing</option><option value="leasing">Leasing</option><option value="other">Other</option>
+                      <option value="all">{uiText("All types")}</option><option value="purchasing">Purchasing</option><option value="leasing">Leasing</option><option value="other">{uiText("Other")}</option>
                     </select>
                   </label>
                   <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">Contract owner
@@ -2191,10 +2187,9 @@ const ContractsPage = () => {
               )}
               {hasActiveFilters && (
                 <div className="flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
-                  <span>Showing {sortedContracts.length} of {contracts.length} contracts with active filters</span>
+                  <span>{uiText("Showing")}{" "}{sortedContracts.length}{" "}{uiText("of")}{" "}{contracts.length} contracts with active filters</span>
                   <button type="button" onClick={clearFilters} className="inline-flex items-center gap-1 font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400">
-                    <X className="h-3.5 w-3.5" aria-hidden="true" /> Clear filters
-                  </button>
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />{" "}{uiText("Clear filters")}</button>
                 </div>
               )}
               {error && (
@@ -2269,18 +2264,14 @@ const ContractsPage = () => {
                 <table className="min-w-[1120px] divide-y divide-gray-200 text-sm dark:divide-gray-700" aria-label="Contracts table">
                   <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur dark:bg-gray-800/90">
                     <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
-                        Contract
-                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{uiText("Contract")}</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         First party
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Vendor
                       </th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
-                        Request
-                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{uiText("Request")}</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Value
                       </th>
@@ -2290,15 +2281,11 @@ const ContractsPage = () => {
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Paid
                       </th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
-                        Status
-                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{uiText("Status")}</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
                         Renewal
                       </th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
-                        Actions
-                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{uiText("Actions")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white/60 dark:divide-gray-800 dark:bg-gray-900/70">
@@ -2390,9 +2377,7 @@ const ContractsPage = () => {
                                     navigate(`/contracts/${contract.id}/edit`);
                                   }}
                                   className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-                                >
-                                  Edit
-                                </button>
+                                >{uiText("Edit")}</button>
                                 <button
                                   type="button"
                                   onClick={(event) => {
@@ -2438,7 +2423,7 @@ const ContractsPage = () => {
                                   disabled={deletingId === contract.id}
                                   className="rounded-md border border-transparent bg-rose-100 px-3 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200 focus:outline-none focus:ring-2 focus:ring-rose-500 disabled:opacity-60 dark:bg-rose-900/30 dark:text-rose-200 dark:hover:bg-rose-900/50"
                                 >
-                                  {deletingId === contract.id ? 'Deleting...' : 'Delete'}
+                                  {deletingId === contract.id ? 'Deleting...' : uiText("Delete")}
                                 </button>
                               </div>
                             </td>
@@ -2593,17 +2578,17 @@ const ContractsPage = () => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">First party</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
-                        {viewingContract.first_party || <span className="italic text-gray-500">Not specified</span>}
+                        {viewingContract.first_party || <span className="italic text-gray-500">{uiText("Not specified")}</span>}
                       </p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Second party</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
-                        {viewingContract.second_party || <span className="italic text-gray-500">Not specified</span>}
+                        {viewingContract.second_party || <span className="italic text-gray-500">{uiText("Not specified")}</span>}
                       </p>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Currency</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{uiText("Currency")}</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">{normalizeCurrency(viewingContract.currency)}</p>
                     </div>
                     <div>
@@ -2615,7 +2600,7 @@ const ContractsPage = () => {
                       </p>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Reference number</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{uiText("Reference number")}</h3>
                       <p className="mt-1 text-gray-900 dark:text-gray-100">
                         {viewingContract.reference_number || <span className="italic text-gray-500">None</span>}
                       </p>
@@ -2682,7 +2667,7 @@ const ContractsPage = () => {
                       })()}
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{uiText("Status")}</h3>
                       <div className="mt-1">{renderStatusBadge(viewingContract.status)}</div>
                     </div>
                     <div>
@@ -2700,7 +2685,7 @@ const ContractsPage = () => {
                         {viewingContract.contract_manager_id
                           ? getContractManagerLabel(viewingContract.contract_manager_id) ||
                             `User #${viewingContract.contract_manager_id}`
-                          : 'Not assigned'}
+                          : uiText("Not assigned")}
                       </p>
                     </div>
                     <div className="sm:col-span-2 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
@@ -2713,9 +2698,9 @@ const ContractsPage = () => {
                       <form onSubmit={handleCreatePayment} className="grid gap-2 sm:grid-cols-4">
                         <input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm((current) => ({ ...current, amount: event.target.value }))} placeholder="Amount" className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
                         <input type="date" value={paymentForm.payment_date} onChange={(event) => setPaymentForm((current) => ({ ...current, payment_date: event.target.value }))} className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-                        <input type="text" value={paymentForm.notes} onChange={(event) => setPaymentForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes (optional)" className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
+                        <input type="text" value={paymentForm.notes} onChange={(event) => setPaymentForm((current) => ({ ...current, notes: event.target.value }))} placeholder={uiText("Notes (optional)")} className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
                         <button type="submit" disabled={addingPayment} className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
-                          {addingPayment ? 'Saving...' : 'Register payment'}
+                          {addingPayment ? uiText("Saving...") : 'Register payment'}
                         </button>
                       </form>
                       {paymentsError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{paymentsError}</p>}
@@ -2728,9 +2713,9 @@ const ContractsPage = () => {
                           <table className="min-w-full text-sm">
                             <thead>
                               <tr className="text-left text-xs uppercase text-gray-500 dark:text-gray-400">
-                                <th className="py-1">Date</th>
+                                <th className="py-1">{uiText("Date")}</th>
                                 <th className="py-1">Amount</th>
-                                <th className="py-1">Notes</th>
+                                <th className="py-1">{uiText("Notes")}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -2765,7 +2750,7 @@ const ContractsPage = () => {
                       </p>
                     </div>
                     <div className="sm:col-span-2">
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{uiText("Notes")}</h3>
                       <p className="mt-1 text-gray-800 dark:text-gray-200">
                         {viewingContract.description || <span className="italic text-gray-500">No notes</span>}
                       </p>
@@ -2773,19 +2758,19 @@ const ContractsPage = () => {
                     <div className="sm:col-span-2">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Delivery Terms</h3>
                       <p className="mt-1 text-gray-800 dark:text-gray-200">
-                        {viewingContract.delivery_terms || <span className="italic text-gray-500">Not specified</span>}
+                        {viewingContract.delivery_terms || <span className="italic text-gray-500">{uiText("Not specified")}</span>}
                       </p>
                     </div>
                     <div className="sm:col-span-2">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Warranty Terms</h3>
                       <p className="mt-1 text-gray-800 dark:text-gray-200">
-                        {viewingContract.warranty_terms || <span className="italic text-gray-500">Not specified</span>}
+                        {viewingContract.warranty_terms || <span className="italic text-gray-500">{uiText("Not specified")}</span>}
                       </p>
                     </div>
                     <div className="sm:col-span-2">
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Performance Management</h3>
                       <p className="mt-1 text-gray-800 dark:text-gray-200">
-                        {viewingContract.performance_management || <span className="italic text-gray-500">Not specified</span>}
+                        {viewingContract.performance_management || <span className="italic text-gray-500">{uiText("Not specified")}</span>}
                       </p>
                     </div>
                       </div>
@@ -2817,7 +2802,7 @@ const ContractsPage = () => {
                 <div className="mb-4 flex flex-wrap gap-2">
                   {['documents', 'obligations', 'renewals', 'financials', 'items', 'approvals', 'consumption', 'risk', 'ai_summary'].map((tab) => (
                     <button key={tab} type="button" onClick={() => setDetailTab(tab)} className={`rounded px-3 py-1 text-sm ${detailTab === tab ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                      {tab === 'documents' ? 'Documents' : tab === 'obligations' ? 'Obligations' : tab === 'renewals' ? 'Renewals' : tab === 'financials' ? 'Financials' : tab === 'items' ? 'Items / Price Catalog' : tab === 'approvals' ? 'Approvals' : tab === 'consumption' ? 'Consumption' : tab === 'ai_summary' ? 'AI Summary' : 'Risk & Compliance'}
+                      {tab === 'documents' ? uiText("Documents") : tab === 'obligations' ? 'Obligations' : tab === 'renewals' ? 'Renewals' : tab === 'financials' ? 'Financials' : tab === 'items' ? 'Items / Price Catalog' : tab === 'approvals' ? uiText("Approvals") : tab === 'consumption' ? 'Consumption' : tab === 'ai_summary' ? 'AI Summary' : 'Risk & Compliance'}
                     </button>
                   ))}
                 </div>
@@ -2845,10 +2830,10 @@ const ContractsPage = () => {
                 </div>
                 </>}
 
-                {detailTab === 'obligations' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/obligations`,{title:'New obligation',obligation_type:'general',priority:'medium',status:'open'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Add Obligation</button>{obligations.map((o)=><div key={o.id} className="rounded border p-2 text-sm"><div className="font-medium">{o.title}</div><div>{o.obligation_type} · due {o.due_date || '—'} · {o.recurrence} · {o.priority} · {o.computed_status || o.status}</div><div className="mt-1 flex gap-2"><button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/complete`,{completion_notes:'Completed from UI'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Complete</button><button className="rounded bg-amber-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/waive`,{notes:'Waived'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Waive</button><button className="rounded bg-rose-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/cancel`,{notes:'Cancelled'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Cancel</button></div></div>)}</div>}
+                {detailTab === 'obligations' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/obligations`,{title:'New obligation',obligation_type:'general',priority:'medium',status:'open'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Add Obligation</button>{obligations.map((o)=><div key={o.id} className="rounded border p-2 text-sm"><div className="font-medium">{o.title}</div><div>{o.obligation_type} · due {o.due_date || '—'} · {o.recurrence} · {o.priority} · {o.computed_status || o.status}</div><div className="mt-1 flex gap-2"><button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/complete`,{completion_notes:'Completed from UI'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>{uiText("Complete")}</button><button className="rounded bg-amber-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/waive`,{notes:'Waived'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Waive</button><button className="rounded bg-rose-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/cancel`,{notes:'Cancelled'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>{uiText("Cancel")}</button></div></div>)}</div>}
                 {detailTab === 'renewals' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/renewal-events`,{renewal_type:'manual',renewal_date:new Date().toISOString().slice(0,10),notice_days:90}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Add Renewal Event</button>{renewalEvents.map((r)=><div key={r.id} className="rounded border p-2 text-sm">{r.renewal_date || '—'} · alert {r.alert_date || '—'} · {r.notice_days} days · {r.status} · {r.decision || '—'} <button className="ml-2 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/renewal-events/${r.id}/decision`,{decision:'renew',decision_notes:'Approved'}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Decide Renew</button></div>)}</div>}
 
-                {detailTab === 'financials' && <div className="space-y-2 text-sm"><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">Remaining: {financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
+                {detailTab === 'financials' && <div className="space-y-2 text-sm"><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">{uiText("Remaining:")}{" "}{financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
                 {detailTab === 'items' && (
                   <div className="space-y-4">
                     <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
@@ -2858,7 +2843,7 @@ const ContractsPage = () => {
                       </p>
                       {stockItemsError && <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">{stockItemsError}</p>}
                       <form onSubmit={handleCreateContractItem} className="mt-4 grid gap-3 md:grid-cols-4">
-                        <select required aria-label="Generic Item" name="generic_item_id" value={contractItemForm.generic_item_id} onChange={handleContractGenericSelection} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
+                        <select required aria-label={uiText("Generic Item")} name="generic_item_id" value={contractItemForm.generic_item_id} onChange={handleContractGenericSelection} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
                           <option value="">Select Generic Item *</option>
                           {contractGenerics.map(item => <option key={item.id} value={item.id}>{item.item_code} — {item.generic_name}</option>)}
                         </select>
@@ -2871,7 +2856,7 @@ const ContractsPage = () => {
                           {contractCatalogItems.map(item => <option key={item.id} value={item.id}>{item.supplier_item_code} — {item.supplier_description || item.product_name}</option>)}
                         </select>
                         <select name="item_id" value={contractItemForm.item_id} onChange={handleContractStockItemSelection} className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100">
-                          <option value="">No warehouse Stock Item mapping</option>
+                          <option value="">{uiText("No warehouse Stock Item mapping")}</option>
                           {stockItems.map((stockItem) => (
                             <option key={stockItem.id} value={stockItem.id}>{stockItem.name}{stockItem.brand ? ` • ${stockItem.brand}` : ''}</option>
                           ))}
@@ -2894,14 +2879,14 @@ const ContractsPage = () => {
                       const requested = Number(it.requested_quantity || 0);
                       const delivered = Number(it.delivered_quantity || 0);
                       const deliveryPercent = requested > 0 ? Math.min(100, Math.round((delivered / requested) * 100)) : null;
-                      return <div key={it.id} className="rounded border p-3 text-sm dark:border-gray-700"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-gray-900 dark:text-gray-100">{it.item_name}</p>{it.item_id && <p className="text-xs text-blue-600 dark:text-blue-300">Linked stock item #{it.item_id}</p>}<p className="text-gray-600 dark:text-gray-300">{it.unit || 'Unit —'} · {it.contracted_price || '—'} {it.currency || ''} · lead time {it.lead_time_days || '—'} days</p><p className="text-xs text-gray-500">{it.notes || 'No requester guidance.'}</p></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${it.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{it.is_active ? 'Selectable' : 'Inactive'}</span></div><div className="mt-3"><div className="flex justify-between text-xs text-gray-600 dark:text-gray-300"><span>Delivered {delivered || 0} of {requested || '—'}</span><span>{deliveryPercent === null ? 'No contract quantity' : `${deliveryPercent}% delivered`}</span></div>{deliveryPercent !== null && <div className="mt-1 h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div className="h-2 rounded-full bg-emerald-500" style={{ width: `${deliveryPercent}%` }} /></div>}</div></div>;
+                      return <div key={it.id} className="rounded border p-3 text-sm dark:border-gray-700"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold text-gray-900 dark:text-gray-100">{it.item_name}</p>{it.item_id && <p className="text-xs text-blue-600 dark:text-blue-300">Linked stock item #{it.item_id}</p>}<p className="text-gray-600 dark:text-gray-300">{it.unit || 'Unit —'} · {it.contracted_price || '—'} {it.currency || ''} · lead time {it.lead_time_days || '—'} days</p><p className="text-xs text-gray-500">{it.notes || 'No requester guidance.'}</p></div><span className={`rounded-full px-2 py-1 text-xs font-semibold ${it.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>{it.is_active ? 'Selectable' : 'Inactive'}</span></div><div className="mt-3"><div className="flex justify-between text-xs text-gray-600 dark:text-gray-300"><span>Delivered {delivered || 0}{" "}{uiText("of")}{" "}{requested || '—'}</span><span>{deliveryPercent === null ? 'No contract quantity' : `${deliveryPercent}% delivered`}</span></div>{deliveryPercent !== null && <div className="mt-1 h-2 rounded-full bg-gray-200 dark:bg-gray-800"><div className="h-2 rounded-full bg-emerald-500" style={{ width: `${deliveryPercent}%` }} /></div>}</div></div>;
                     })}
                   </div>
                 )}
                 {detailTab === 'approvals' && <div className="space-y-2"><button type="button" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/submit-review`); const {data}=await api.get(`/contracts/${id}/approvals`); setApprovals(data||[]);}} className="rounded bg-blue-600 px-3 py-1 text-sm text-white">Submit for Review</button>{approvals.map((a)=><div key={a.id} className="rounded border p-2 text-sm">L{a.approval_level} {a.stage} - {a.status} {a.is_active ? '(Active)' : ''}</div>)}</div>}
-                {detailTab === 'consumption' && consumption && <div className="text-sm space-y-1"><p>Consumed: {consumption.actual_consumed_value}</p><p>Paid: {consumption.paid_amount}</p><p>Remaining: {consumption.remaining_balance}</p><p>Consumed %: {consumption.consumed_percentage}</p></div>}
-                {detailTab === 'risk' && <div className="text-sm space-y-2"><div className="rounded border p-2"><p>Risk: <span className="font-semibold">{risk?.risk_level || '—'}</span> ({risk?.risk_score ?? '—'})</p><button type="button" className="mt-1 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; const {data}=await api.post(`/contracts/${id}/risk/recalculate`,{}); setRisk(data||null); const h=await api.get(`/contracts/${id}/risk/history`); setRiskHistory(h.data||[]);}}>Recalculate risk</button></div><div className="rounded border p-2"><p className="font-medium">Factors</p><ul className="list-disc pl-5">{(risk?.risk_factors||[]).map((f,i)=><li key={i}><span className="font-medium">{f.label || f.code}</span> (+{f.points}) — {f.explanation}</li>)}</ul></div><div className="rounded border p-2"><p className="font-medium">History</p>{riskHistory.slice(0,5).map((h)=><div key={h.id} className="text-xs">{h.assessed_at}: {h.risk_level} ({h.risk_score})</div>)}</div><div className="rounded border p-2"><p className="font-medium">Dashboard snapshot</p><div className="grid grid-cols-2 gap-1 text-xs md:grid-cols-4"><div>Low: {riskDashboard?.low_count ?? 0}</div><div>Medium: {riskDashboard?.medium_count ?? 0}</div><div>High: {riskDashboard?.high_count ?? 0}</div><div>Critical: {riskDashboard?.critical_count ?? 0}</div><div>Avg: {riskDashboard?.average_risk_score ?? 0}</div></div></div></div>}
-                {detailTab === 'ai_summary' && <div className="space-y-2 text-sm"><button type="button" className="rounded bg-indigo-600 px-3 py-1 text-white text-xs" onClick={async()=>{try{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/ai-extract`,{}); setAiMessage('Extraction requested successfully.');}catch(err){if(err?.response?.status===501){setAiMessage('AI extraction is prepared but no provider is configured yet.');}else{setAiMessage('Extraction failed.');}} const id=editingId||viewingContract?.id; const {data}=await api.get(`/contracts/${id}/ai-extractions`); setAiExtractions(data||[]);}}>Run AI Extraction</button>{aiMessage && <p className="text-xs text-slate-600">{aiMessage}</p>}{aiExtractions[0] ? <div className="rounded border p-2"><p>Status: {aiExtractions[0].extraction_status}</p><p>Summary: {aiExtractions[0].summary || '—'}</p><p>Parties: {JSON.stringify(aiExtractions[0].extracted_parties || {})}</p><p>Dates: {JSON.stringify(aiExtractions[0].extracted_dates || {})}</p><p>Value: {JSON.stringify(aiExtractions[0].extracted_value || {})}</p><p>Payment Terms: {JSON.stringify(aiExtractions[0].extracted_payment_terms || {})}</p><p>Renewal: {JSON.stringify(aiExtractions[0].extracted_renewal_clause || {})}</p><p>Termination: {JSON.stringify(aiExtractions[0].extracted_termination_clause || {})}</p><p>Obligations: {JSON.stringify(aiExtractions[0].extracted_obligations || [])}</p><p>Risks: {JSON.stringify(aiExtractions[0].extracted_risks || [])}</p></div> : <p>No AI extraction yet.</p>}</div>}
+                {detailTab === 'consumption' && consumption && <div className="text-sm space-y-1"><p>Consumed: {consumption.actual_consumed_value}</p><p>Paid: {consumption.paid_amount}</p><p>{uiText("Remaining:")}{" "}{consumption.remaining_balance}</p><p>Consumed %: {consumption.consumed_percentage}</p></div>}
+                {detailTab === 'risk' && <div className="text-sm space-y-2"><div className="rounded border p-2"><p>Risk: <span className="font-semibold">{risk?.risk_level || '—'}</span> ({risk?.risk_score ?? '—'})</p><button type="button" className="mt-1 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; const {data}=await api.post(`/contracts/${id}/risk/recalculate`,{}); setRisk(data||null); const h=await api.get(`/contracts/${id}/risk/history`); setRiskHistory(h.data||[]);}}>Recalculate risk</button></div><div className="rounded border p-2"><p className="font-medium">Factors</p><ul className="list-disc pl-5">{(risk?.risk_factors||[]).map((f,i)=><li key={i}><span className="font-medium">{f.label || f.code}</span> (+{f.points}) — {f.explanation}</li>)}</ul></div><div className="rounded border p-2"><p className="font-medium">{uiText("History")}</p>{riskHistory.slice(0,5).map((h)=><div key={h.id} className="text-xs">{h.assessed_at}: {h.risk_level} ({h.risk_score})</div>)}</div><div className="rounded border p-2"><p className="font-medium">Dashboard snapshot</p><div className="grid grid-cols-2 gap-1 text-xs md:grid-cols-4"><div>Low: {riskDashboard?.low_count ?? 0}</div><div>Medium: {riskDashboard?.medium_count ?? 0}</div><div>High: {riskDashboard?.high_count ?? 0}</div><div>Critical: {riskDashboard?.critical_count ?? 0}</div><div>Avg: {riskDashboard?.average_risk_score ?? 0}</div></div></div></div>}
+                {detailTab === 'ai_summary' && <div className="space-y-2 text-sm"><button type="button" className="rounded bg-indigo-600 px-3 py-1 text-white text-xs" onClick={async()=>{try{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/ai-extract`,{}); setAiMessage('Extraction requested successfully.');}catch(err){if(err?.response?.status===501){setAiMessage('AI extraction is prepared but no provider is configured yet.');}else{setAiMessage('Extraction failed.');}} const id=editingId||viewingContract?.id; const {data}=await api.get(`/contracts/${id}/ai-extractions`); setAiExtractions(data||[]);}}>Run AI Extraction</button>{aiMessage && <p className="text-xs text-slate-600">{aiMessage}</p>}{aiExtractions[0] ? <div className="rounded border p-2"><p>{uiText("Status:")}{" "}{aiExtractions[0].extraction_status}</p><p>Summary: {aiExtractions[0].summary || '—'}</p><p>Parties: {JSON.stringify(aiExtractions[0].extracted_parties || {})}</p><p>Dates: {JSON.stringify(aiExtractions[0].extracted_dates || {})}</p><p>Value: {JSON.stringify(aiExtractions[0].extracted_value || {})}</p><p>Payment Terms: {JSON.stringify(aiExtractions[0].extracted_payment_terms || {})}</p><p>Renewal: {JSON.stringify(aiExtractions[0].extracted_renewal_clause || {})}</p><p>Termination: {JSON.stringify(aiExtractions[0].extracted_termination_clause || {})}</p><p>Obligations: {JSON.stringify(aiExtractions[0].extracted_obligations || [])}</p><p>Risks: {JSON.stringify(aiExtractions[0].extracted_risks || [])}</p></div> : <p>No AI extraction yet.</p>}</div>}
               </div>
             )}
 
@@ -2949,7 +2934,7 @@ const ContractsPage = () => {
                                 disabled={deletingEvaluationId === evaluation.id}
                                 className="rounded-md bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-200 disabled:opacity-60"
                               >
-                                {deletingEvaluationId === evaluation.id ? 'Removing...' : 'Delete'}
+                                {deletingEvaluationId === evaluation.id ? 'Removing...' : uiText("Delete")}
                               </button>
                             </div>
                           </div>

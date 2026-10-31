@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React from "react";
 import { Button } from "../ui/Button";
 import { FEEDBACK_TEXT_STYLES } from "../../hooks/useApprovalsData";
@@ -33,10 +34,11 @@ const ItemDecisionTable = ({
   feedback,
   labels = {},
 }) => {
+  const uiText = useUiTranslation();
   if (!items.length) {
     return (
       <p className="mt-2 text-sm text-slate-500">
-        {labels.emptyLabel || "No items found for this request."}
+        {labels.emptyLabel || uiText("No items found for this request.")}
       </p>
     );
   }
@@ -112,15 +114,9 @@ const ItemDecisionTable = ({
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="sticky top-0 z-10 bg-slate-50 shadow-[0_1px_0_0_rgb(226,232,240)]">
               <tr>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Item
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Brand
-                </th>
-                <th className="px-3 py-2 text-left font-medium text-slate-600">
-                  Specs
-                </th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">{uiText("Item")}</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">{uiText("Brand")}</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-600">{uiText("Specs")}</th>
                 <th className="px-3 py-2 text-left font-medium text-slate-600">
                   {quantityLabel}
                 </th>
@@ -149,13 +145,13 @@ const ItemDecisionTable = ({
             <tbody className="divide-y divide-slate-100">
               {items.map((item) => {
                 const decision = decisions[item.id] || {
-                  status: item.approval_status || "Pending",
+                  status: item.approval_status || uiText("Pending"),
                   comments: item.approval_comments || "",
                 };
                 const normalizedStatus =
                   typeof decision.status === "string"
                     ? `${decision.status.charAt(0).toUpperCase()}${decision.status.slice(1).toLowerCase()}`
-                    : "Pending";
+                    : uiText("Pending");
                 const rowHighlight = STATUS_HIGHLIGHTS[normalizedStatus] || "";
                 const decisionLocked = canEdit && isItemLockedForUser?.(item);
                 const quantityValue =
@@ -222,15 +218,15 @@ const ItemDecisionTable = ({
                           }
                           disabled={decisionLocked || convertSelected}
                         >
-                          <option value="Pending">Pending</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Rejected">Rejected</option>
+                          <option value="Pending">{uiText("Pending")}</option>
+                          <option value="Approved">{uiText("Approved")}</option>
+                          <option value="Rejected">{uiText("Rejected")}</option>
                         </select>
                       ) : (
                         <span
                           className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${normalizedStatus === "Approved" ? "bg-emerald-100 text-emerald-700" : normalizedStatus === "Rejected" ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-600"}`}
                         >
-                          {decision.status || "Pending"}
+                          {decision.status || uiText("Pending")}
                         </span>
                       )}
                     </td>

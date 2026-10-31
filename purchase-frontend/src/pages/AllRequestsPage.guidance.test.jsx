@@ -106,3 +106,16 @@ test("empty-state clear filters reloads the list with cleared API parameters", a
     ).toBe(true),
   );
 });
+
+test('Arabic filters preserve canonical request-type values sent to the API', async () => {
+  await i18n.changeLanguage('ar');
+  api.get.mockImplementation((url) => Promise.resolve({ data: url === '/requests' ? { data: [], total: 0 } : [] }));
+  mount();
+  await screen.findByRole('heading', { name: 'البحث عن الطلبات' });
+  fireEvent.click(screen.getByRole('button', { name: 'المزيد من عوامل التصفية' }));
+  expect(screen.getByText('جميع المراحل الحالية')).toBeInTheDocument();
+  expect(screen.getByText('مرجع الصيانة')).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('نوع الطلب'), { target: { value: 'Medical Device' } });
+  fireEvent.click(screen.getByRole('button', { name: 'تطبيق عوامل التصفية' }));
+  await waitFor(() => expect(api.get.mock.calls.some(([url, options]) => url === '/requests' && options.params.request_type === 'Medical Device')).toBe(true));
+});

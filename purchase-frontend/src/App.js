@@ -1,3 +1,4 @@
+import useUiTranslation from "./utils/useUiTranslation";
 // src/App.js
 import React from "react";
 import {
@@ -138,12 +139,13 @@ const ProtectedRoute = ({
   resourceKey,
   routeKey,
 }) => {
+  const uiText = useUiTranslation();
   const { isAuthenticated, isLoading, user } = useAuth();
   const { resolvePermissions } = useAccessControl();
   const location = useLocation();
 
   if (isLoading) {
-    return <div className="p-6 text-center text-gray-600">Loading...</div>;
+    return <div className="p-6 text-center text-gray-600">{uiText("Loading...")}</div>;
   }
 
   if (!isAuthenticated) {

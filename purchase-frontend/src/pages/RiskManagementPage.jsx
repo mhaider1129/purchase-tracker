@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -66,6 +67,7 @@ const supplierScoreLevel = (score) => {
 };
 
 const RiskManagementPage = () => {
+  const uiText = useUiTranslation();
   const [risks, setRisks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -537,7 +539,7 @@ const RiskManagementPage = () => {
           </div>
         </div>
 
-        <p className="text-sm text-gray-700 dark:text-gray-200">{risk.description || "No description provided."}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-200">{risk.description || uiText("No description provided.")}</p>
 
         <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
           <div className="flex items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-blue-800 dark:bg-blue-900/40 dark:text-blue-100">
@@ -555,7 +557,7 @@ const RiskManagementPage = () => {
           <div className="flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100">
             <ShieldCheck className="h-4 w-4" aria-hidden="true" />
             <span>
-              Owner: <strong className="font-semibold">{risk.owner || "Unassigned"}</strong>
+              Owner: <strong className="font-semibold">{risk.owner || uiText("Unassigned")}</strong>
             </span>
           </div>
         </div>
@@ -569,7 +571,7 @@ const RiskManagementPage = () => {
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-              <div>Item: {medication.item_description || "N/A"}</div>
+              <div>Item: {medication.item_description || uiText("N/A")}</div>
               <div>Criticality: {medication.criticality ?? "-"}</div>
               <div>Consumption variability: {medication.consumption_variability ?? "-"}</div>
               <div>Lead time risk: {medication.lead_time_risk ?? "-"}</div>
@@ -606,7 +608,7 @@ const RiskManagementPage = () => {
               <table className="w-full text-left text-xs md:text-sm">
                 <thead>
                   <tr className="text-gray-600 dark:text-gray-200">
-                    <th className="px-2 py-1">Stage</th>
+                    <th className="px-2 py-1">{uiText("Stage")}</th>
                     <th className="px-2 py-1">Severity (S)</th>
                     <th className="px-2 py-1">Rating (R)</th>
                     <th className="px-2 py-1">Risk</th>
@@ -627,7 +629,7 @@ const RiskManagementPage = () => {
               </table>
             </div>
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900 dark:text-amber-100">
-              <span>Control measures: {highRiskItem.control_measures || "N/A"}</span>
+              <span>Control measures: {highRiskItem.control_measures || uiText("N/A")}</span>
               <span>Initial score: {highRiskItem.initial_risk_score ?? "-"}</span>
               <span>Total risk: {highRiskItem.total_risk ?? "-"}</span>
             </div>
@@ -657,7 +659,7 @@ const RiskManagementPage = () => {
               </div>
             </div>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <div>Supplier: {supplier.supplier_name || "N/A"}</div>
+              <div>Supplier: {supplier.supplier_name || uiText("N/A")}</div>
               <div>Last assessment: {formatDate(supplier.last_assessment_date)}</div>
             </div>
             <div className="mt-2 overflow-x-auto">
@@ -668,7 +670,7 @@ const RiskManagementPage = () => {
                     <th className="px-2 py-1">Likelihood</th>
                     <th className="px-2 py-1">Impact</th>
                     <th className="px-2 py-1">Score</th>
-                    <th className="px-2 py-1">Level</th>
+                    <th className="px-2 py-1">{uiText("Level")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -689,15 +691,13 @@ const RiskManagementPage = () => {
               </table>
             </div>
             <p className="mt-2 text-xs text-emerald-900 dark:text-emerald-100">
-              Mitigation: {supplier.risk_mitigation_actions || "N/A"}
+              Mitigation: {supplier.risk_mitigation_actions || uiText("N/A")}
             </p>
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-            Status
-            <select
+          <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Status")}<select
               className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
               value={draft.status || "open"}
               onChange={(event) => updateDraft(risk.id, "status", event.target.value)}
@@ -710,9 +710,7 @@ const RiskManagementPage = () => {
             </select>
           </label>
 
-          <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-            Due date
-            <input
+          <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Due date")}<input
               type="date"
               value={draft.due_date || risk.due_date || ""}
               onChange={(event) => updateDraft(risk.id, "due_date", event.target.value)}
@@ -733,7 +731,7 @@ const RiskManagementPage = () => {
 
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 dark:text-gray-400">
           <div className="flex gap-3">
-            <span>Created: {formatDate(risk.created_at)}</span>
+            <span>{uiText("Created:")}{" "}{formatDate(risk.created_at)}</span>
             <span>Updated: {formatDate(risk.updated_at)}</span>
             <span>Due: {formatDate(risk.due_date)}</span>
           </div>
@@ -742,9 +740,7 @@ const RiskManagementPage = () => {
               type="button"
               onClick={() => setDrafts((current) => ({ ...current, [risk.id]: risk }))}
               className="rounded-md border border-gray-200 px-3 py-1 font-medium text-gray-700 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900"
-            >
-              Reset
-            </button>
+            >{uiText("Reset")}</button>
             <button
               type="button"
               onClick={() => handleUpdate(risk.id)}
@@ -782,8 +778,7 @@ const RiskManagementPage = () => {
             onClick={loadRisks}
             className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
           >
-            <RefreshCcw className="h-4 w-4" /> Refresh
-          </button>
+            <RefreshCcw className="h-4 w-4" />{" "}{uiText("Refresh")}</button>
         </div>
 
         {error && (
@@ -803,9 +798,7 @@ const RiskManagementPage = () => {
               <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Add general risk</h2>
             </div>
 
-            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-              Title
-              <input
+            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Title")}<input
                 type="text"
                 required
                 value={form.title}
@@ -815,9 +808,7 @@ const RiskManagementPage = () => {
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-              Category
-              <input
+            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Category")}<input
                 type="text"
                 value={form.category}
                 onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
@@ -826,9 +817,7 @@ const RiskManagementPage = () => {
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-              Description
-              <textarea
+            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Description")}<textarea
                 value={form.description}
                 onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
                 className="min-h-[100px] rounded-md border border-gray-200 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
@@ -889,9 +878,7 @@ const RiskManagementPage = () => {
               />
             </label>
 
-            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-              Due date
-              <input
+            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Due date")}<input
                 type="date"
                 value={form.due_date}
                 onChange={(event) => setForm((current) => ({ ...current, due_date: event.target.value }))}
@@ -930,8 +917,7 @@ const RiskManagementPage = () => {
                 <span>Active risk register</span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm">
-                <span className="rounded-md bg-emerald-50 px-2 py-1 font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100">
-                  Showing {visibleRisks.length} of {sortedRisks.length || 0} risks
+                <span className="rounded-md bg-emerald-50 px-2 py-1 font-semibold text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100">{uiText("Showing")}{" "}{visibleRisks.length}{" "}{uiText("of")}{" "}{sortedRisks.length || 0} risks
                 </span>
                 {visibleRisks.length < sortedRisks.length && (
                   <button
@@ -1043,9 +1029,7 @@ const RiskManagementPage = () => {
               <span className="text-xs text-gray-500 dark:text-gray-400">Lifecycle total: {highRiskTotal}</span>
             </div>
 
-            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-              Item
-              <input
+            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Item")}<input
                 type="text"
                 value={highRiskForm.item}
                 onChange={(event) => setHighRiskForm((current) => ({ ...current, item: event.target.value }))}
@@ -1058,7 +1042,7 @@ const RiskManagementPage = () => {
               <table className="w-full text-left">
                 <thead>
                   <tr className="text-amber-900 dark:text-amber-100">
-                    <th className="px-2 py-1">Stage</th>
+                    <th className="px-2 py-1">{uiText("Stage")}</th>
                     <th className="px-2 py-1">S</th>
                     <th className="px-2 py-1">R</th>
                     <th className="px-2 py-1">Risk</th>
@@ -1215,9 +1199,7 @@ const RiskManagementPage = () => {
           </label>
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
-              Supplier name
-              <input
+            <label className="flex flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">{uiText("Supplier name")}<input
                 type="text"
                 required
                 value={supplierForm.supplier_name}
@@ -1259,7 +1241,7 @@ const RiskManagementPage = () => {
                   <th className="px-2 py-1">Likelihood</th>
                   <th className="px-2 py-1">Impact</th>
                   <th className="px-2 py-1">Score</th>
-                  <th className="px-2 py-1">Level</th>
+                  <th className="px-2 py-1">{uiText("Level")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1272,7 +1254,7 @@ const RiskManagementPage = () => {
                 },
                 {
                   key: "operational",
-                  label: "Operational",
+                  label: uiText("Operational"),
                   likelihood: "operational_likelihood",
                   impact: "operational_impact",
                   score: supplierScores.operational,

@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
@@ -108,6 +109,7 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;");
 
 const DepartmentRequestedItemsBoard = () => {
+  const uiText = useUiTranslation();
   const navigate = useNavigate();
   const [filters, setFilters] = useState(emptyFilters);
   const [searchInput, setSearchInput] = useState("");
@@ -342,8 +344,8 @@ const DepartmentRequestedItemsBoard = () => {
   const renderStatus = (row) => (
     <div className="flex flex-wrap gap-1">
       <Badge className="bg-slate-100 text-slate-700">{row.procurement_status || "pending"}</Badge>
-      {row.emergency_flag && <Badge className="bg-red-100 text-red-700">Emergency</Badge>}
-      {row.overdue_flag && <Badge className="bg-amber-100 text-amber-800">Overdue</Badge>}
+      {row.emergency_flag && <Badge className="bg-red-100 text-red-700">{uiText("Emergency")}</Badge>}
+      {row.overdue_flag && <Badge className="bg-amber-100 text-amber-800">{uiText("Overdue")}</Badge>}
       {row.partially_procured_flag && <Badge className="bg-blue-100 text-blue-700">Partial</Badge>}
     </div>
   );
@@ -353,7 +355,7 @@ const DepartmentRequestedItemsBoard = () => {
       <table className="min-w-full divide-y divide-gray-200 text-sm">
         <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
           <tr>
-            <th className="px-3 py-2"><span className="sr-only">Select items</span><input aria-label="Select all items in this table" type="checkbox" checked={tableRows.length > 0 && tableRows.every((row) => selectedItems.has(row.item_id))} onChange={(e) => toggleAll(tableRows, e.target.checked)} /></th><th className="px-3 py-2">Request ID</th><th className="px-3 py-2">Section</th><th className="px-3 py-2">Requester</th><th className="px-3 py-2"><button onClick={() => setSort("item_name")} className="font-semibold hover:text-blue-700">Item {filters.sort_by === "item_name" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">Specs</th><th className="px-3 py-2">Requested</th><th className="px-3 py-2">Purchased</th><th className="px-3 py-2"><button onClick={() => setSort("remaining_quantity")} className="font-semibold hover:text-blue-700">Remaining {filters.sort_by === "remaining_quantity" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2"><button onClick={() => setSort("procurement_status")} className="font-semibold hover:text-blue-700">Status {filters.sort_by === "procurement_status" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">Required Date</th><th className="px-3 py-2"><button onClick={() => setSort("days_since_request")} className="font-semibold hover:text-blue-700">Age {filters.sort_by === "days_since_request" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">Actions</th>
+            <th className="px-3 py-2"><span className="sr-only">Select items</span><input aria-label="Select all items in this table" type="checkbox" checked={tableRows.length > 0 && tableRows.every((row) => selectedItems.has(row.item_id))} onChange={(e) => toggleAll(tableRows, e.target.checked)} /></th><th className="px-3 py-2">{uiText("Request ID")}</th><th className="px-3 py-2">{uiText("Section")}</th><th className="px-3 py-2">{uiText("Requester")}</th><th className="px-3 py-2"><button onClick={() => setSort("item_name")} className="font-semibold hover:text-blue-700">{uiText("Item")}{" "}{filters.sort_by === "item_name" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">{uiText("Specs")}</th><th className="px-3 py-2">{uiText("Requested")}</th><th className="px-3 py-2">{uiText("Purchased")}</th><th className="px-3 py-2"><button onClick={() => setSort("remaining_quantity")} className="font-semibold hover:text-blue-700">{uiText("Remaining")}{" "}{filters.sort_by === "remaining_quantity" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2"><button onClick={() => setSort("procurement_status")} className="font-semibold hover:text-blue-700">{uiText("Status")}{" "}{filters.sort_by === "procurement_status" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">Required Date</th><th className="px-3 py-2"><button onClick={() => setSort("days_since_request")} className="font-semibold hover:text-blue-700">{uiText("Age")}{" "}{filters.sort_by === "days_since_request" ? (filters.sort_dir === "asc" ? "↑" : "↓") : ""}</button></th><th className="px-3 py-2">{uiText("Actions")}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">
@@ -394,7 +396,7 @@ const DepartmentRequestedItemsBoard = () => {
             className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20 disabled:opacity-60"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
-            {loading ? "Refreshing…" : "Refresh data"}
+            {loading ? uiText("Refreshing…") : uiText("Refresh data")}
           </button>
         )}
       />
@@ -423,11 +425,11 @@ const DepartmentRequestedItemsBoard = () => {
           <select value={filters.department_id} onChange={(e) => updateFilter("department_id", e.target.value)} className="rounded border p-2"><option value="">All Departments</option>{departments.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
           <select value={filters.section_id} onChange={(e) => updateFilter("section_id", e.target.value)} className="rounded border p-2"><option value="">All Sections</option>{activeSections.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
           <select value={filters.requester_id} onChange={(e) => updateFilter("requester_id", e.target.value)} className="rounded border p-2"><option value="">All Requesters</option>{requesters.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
-          <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" /><input aria-label="Search requested items" value={filters.search} onChange={(e) => updateFilter("search", e.target.value)} placeholder="Search items, requests, departments" className="w-full rounded border py-2 pl-9 pr-3" /></div>          <select value={filters.request_type} onChange={(e) => updateFilter("request_type", e.target.value)} className="rounded border p-2"><option value="">All Request Types</option>{requestTypes.map((v) => <option key={v}>{v}</option>)}</select>
+          <div className="relative"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" /><input aria-label="Search requested items" value={filters.search} onChange={(e) => updateFilter("search", e.target.value)} placeholder="Search items, requests, departments" className="w-full rounded border py-2 pl-9 pr-3" /></div>          <select value={filters.request_type} onChange={(e) => updateFilter("request_type", e.target.value)} className="rounded border p-2"><option value="">{uiText("All Request Types")}</option>{requestTypes.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.approval_status} onChange={(e) => updateFilter("approval_status", e.target.value)} className="rounded border p-2"><option value="">Approval Status</option>{approvalStatuses.map((v) => <option key={v}>{v}</option>)}</select>
-          <select value={filters.procurement_status} onChange={(e) => updateFilter("procurement_status", e.target.value)} className="rounded border p-2"><option value="">Procurement Status</option>{procurementStatuses.map((v) => <option key={v}>{v}</option>)}</select>
+          <select value={filters.procurement_status} onChange={(e) => updateFilter("procurement_status", e.target.value)} className="rounded border p-2"><option value="">{uiText("Procurement Status")}</option>{procurementStatuses.map((v) => <option key={v}>{v}</option>)}</select>
           <select value={filters.group_by} onChange={(e) => updateFilter("group_by", e.target.value)} className="rounded border p-2"><option value="department">Grouped by Department</option><option value="section">Grouped by Section</option><option value="none">Flat Table</option></select>
-          <select value={filters.sort_by} onChange={(e) => updateFilter("sort_by", e.target.value)} className="rounded border p-2" aria-label="Sort requested items"><option value="">Default sorting</option>{Object.entries(sortableColumns).map(([value, label]) => <option key={value} value={value}>Sort by {label}</option>)}</select>
+          <select value={filters.sort_by} onChange={(e) => updateFilter("sort_by", e.target.value)} className="rounded border p-2" aria-label="Sort requested items"><option value="">Default sorting</option>{Object.entries(sortableColumns).map(([value, label]) => <option key={value} value={value}>{uiText("Sort by")}{" "}{label}</option>)}</select>
           <select value={filters.sort_dir} onChange={(e) => updateFilter("sort_dir", e.target.value)} className="rounded border p-2" aria-label="Sort direction" disabled={!filters.sort_by}><option value="asc">Ascending</option><option value="desc">Descending</option></select>
           <input type="date" value={filters.date_from} onChange={(e) => updateFilter("date_from", e.target.value)} className="rounded border p-2" />
           <input type="date" value={filters.date_to} onChange={(e) => updateFilter("date_to", e.target.value)} className="rounded border p-2" />
@@ -446,10 +448,10 @@ const DepartmentRequestedItemsBoard = () => {
       </section>
 
       {error && <div className="rounded border border-red-200 bg-red-50 p-3 text-red-700">{error}</div>}
-      {actionMessage && !error && <div role="status" className="flex items-center justify-between rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800"><span>{actionMessage}</span><button onClick={() => setActionMessage("")} aria-label="Dismiss notification" className="font-bold">×</button></div>}
+      {actionMessage && !error && <div role="status" className="flex items-center justify-between rounded border border-emerald-200 bg-emerald-50 p-3 text-emerald-800"><span>{actionMessage}</span><button onClick={() => setActionMessage("")} aria-label={uiText("Dismiss notification")} className="font-bold">×</button></div>}
       {loading && <div className="rounded border bg-white p-4 text-gray-600">Loading department requested items...</div>}
 
-      {!loading && selectedRows.length > 0 && <div role="status" aria-label={`${selectedRows.length} item${selectedRows.length === 1 ? "" : "s"} selected`} className="sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 p-4 text-white shadow-lg"><div><span className="font-bold">{selectedRows.length}</span> item{selectedRows.length === 1 ? "" : "s"} selected{selectedDepartmentCount > 1 && <span className="ml-2 text-xs text-amber-300">Choose one department for follow-up actions</span>}</div><div className="flex flex-wrap gap-2"><button onClick={() => generateMessage(selectedRows)} className="rounded bg-purple-600 px-3 py-2 text-sm font-semibold">Prepare message</button><button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} disabled={selectedDepartmentCount > 1} title={selectedDepartmentCount > 1 ? "Follow-up notes must be scoped to one department" : ""} className="rounded bg-emerald-600 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">Add note</button><button onClick={() => setSelectedItems(new Set())} className="rounded border border-slate-500 px-3 py-2 text-sm font-semibold">Clear selection</button></div></div>}
+      {!loading && selectedRows.length > 0 && <div role="status" aria-label={`${selectedRows.length} item${selectedRows.length === 1 ? "" : "s"} selected`} className="sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-900 p-4 text-white shadow-lg"><div><span className="font-bold">{selectedRows.length}</span> item{selectedRows.length === 1 ? "" : "s"} selected{selectedDepartmentCount > 1 && <span className="ml-2 text-xs text-amber-300">Choose one department for follow-up actions</span>}</div><div className="flex flex-wrap gap-2"><button onClick={() => generateMessage(selectedRows)} className="rounded bg-purple-600 px-3 py-2 text-sm font-semibold">Prepare message</button><button onClick={() => setNoteModal({ open: true, itemIds: selectedRows.map((row) => row.item_id) })} disabled={selectedDepartmentCount > 1} title={selectedDepartmentCount > 1 ? "Follow-up notes must be scoped to one department" : ""} className="rounded bg-emerald-600 px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">{uiText("Add note")}</button><button onClick={() => setSelectedItems(new Set())} className="rounded border border-slate-500 px-3 py-2 text-sm font-semibold">Clear selection</button></div></div>}
 
       {!loading && filters.group_by !== "none" && grouped.map((group, index) => (
         <div key={`${group.department_id || group.section_id || index}`} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
@@ -471,12 +473,11 @@ const DepartmentRequestedItemsBoard = () => {
 
       {!loading && filters.group_by === "none" && <div className="rounded-xl border bg-white shadow-sm">{renderTable(rows)}</div>}
 
-      {!loading && rows.length === 0 && !error && <div className="rounded-xl border border-dashed bg-white p-10 text-center shadow-sm"><div className="text-lg font-semibold text-gray-800">No requested items found</div><p className="mt-1 text-sm text-gray-500">Try changing the filters or include completed items.</p>{hasActiveFilters && <button onClick={resetFilters} className="mt-4 rounded bg-blue-700 px-4 py-2 font-semibold text-white">Clear Filters</button>}</div>}
+      {!loading && rows.length === 0 && !error && <div className="rounded-xl border border-dashed bg-white p-10 text-center shadow-sm"><div className="text-lg font-semibold text-gray-800">No requested items found</div><p className="mt-1 text-sm text-gray-500">Try changing the filters or include completed items.</p>{hasActiveFilters && <button onClick={resetFilters} className="mt-4 rounded bg-blue-700 px-4 py-2 font-semibold text-white">{uiText("Clear Filters")}</button>}</div>}
 
       {!loading && pagination.total > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-white p-4 text-sm text-gray-700 shadow-sm">
-          <div>
-            Showing {(pagination.page - 1) * pagination.limit + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} items
+          <div>{uiText("Showing")}{" "}{(pagination.page - 1) * pagination.limit + 1}-{Math.min(pagination.page * pagination.limit, pagination.total)}{" "}{uiText("of")}{" "}{pagination.total} items
           </div>
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2">
@@ -494,16 +495,16 @@ const DepartmentRequestedItemsBoard = () => {
                 {[50, 100, 250].map((value) => <option key={value} value={value}>{value}</option>)}
               </select>
             </label>
-            <button onClick={() => fetchRows(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1} className="rounded border px-3 py-2 disabled:opacity-50">Previous</button>
-            <span>Page {pagination.page} of {pagination.total_pages || 1}</span>
-            <button onClick={() => fetchRows(Math.min(pagination.total_pages || 1, pagination.page + 1))} disabled={pagination.page >= (pagination.total_pages || 1)} className="rounded border px-3 py-2 disabled:opacity-50">Next</button>
+            <button onClick={() => fetchRows(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1} className="rounded border px-3 py-2 disabled:opacity-50">{uiText("Previous")}</button>
+            <span>Page {pagination.page}{" "}{uiText("of")}{" "}{pagination.total_pages || 1}</span>
+            <button onClick={() => fetchRows(Math.min(pagination.total_pages || 1, pagination.page + 1))} disabled={pagination.page >= (pagination.total_pages || 1)} className="rounded border px-3 py-2 disabled:opacity-50">{uiText("Next")}</button>
           </div>
         </div>
       )}
 
       {messagePreview && <div className="rounded-xl border bg-white p-4 shadow-sm"><div className="mb-2 font-semibold">Follow-Up Message Preview</div><textarea readOnly value={messagePreview} className="h-48 w-full rounded border p-3" /><button onClick={() => navigator.clipboard?.writeText(messagePreview)} className="mt-2 rounded bg-purple-700 px-4 py-2 font-semibold text-white">Copy Message</button></div>}
 
-      {noteModal.open && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"><h2 className="text-xl font-bold">Add Follow-Up Note</h2><textarea value={noteForm.note} onChange={(e) => setNoteForm((f) => ({ ...f, note: e.target.value }))} placeholder="Note" className="mt-4 h-28 w-full rounded border p-3" /><input value={noteForm.department_response} onChange={(e) => setNoteForm((f) => ({ ...f, department_response: e.target.value }))} placeholder="Department response" className="mt-3 w-full rounded border p-3" /><input type="date" value={noteForm.next_follow_up_date} onChange={(e) => setNoteForm((f) => ({ ...f, next_follow_up_date: e.target.value }))} className="mt-3 w-full rounded border p-3" /><div className="mt-4 flex justify-end gap-2"><button onClick={() => setNoteModal({ open: false, itemIds: [] })} className="rounded border px-4 py-2">Cancel</button><button onClick={saveNote} className="rounded bg-emerald-700 px-4 py-2 font-semibold text-white">Save Note</button></div></div></div>}
+      {noteModal.open && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl"><h2 className="text-xl font-bold">Add Follow-Up Note</h2><textarea value={noteForm.note} onChange={(e) => setNoteForm((f) => ({ ...f, note: e.target.value }))} placeholder={uiText("Note")} className="mt-4 h-28 w-full rounded border p-3" /><input value={noteForm.department_response} onChange={(e) => setNoteForm((f) => ({ ...f, department_response: e.target.value }))} placeholder="Department response" className="mt-3 w-full rounded border p-3" /><input type="date" value={noteForm.next_follow_up_date} onChange={(e) => setNoteForm((f) => ({ ...f, next_follow_up_date: e.target.value }))} className="mt-3 w-full rounded border p-3" /><div className="mt-4 flex justify-end gap-2"><button onClick={() => setNoteModal({ open: false, itemIds: [] })} className="rounded border px-4 py-2">{uiText("Cancel")}</button><button onClick={saveNote} className="rounded bg-emerald-700 px-4 py-2 font-semibold text-white">Save Note</button></div></div></div>}
     </div>
   );
 };

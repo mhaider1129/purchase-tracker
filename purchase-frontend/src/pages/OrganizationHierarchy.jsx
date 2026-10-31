@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, {
   useCallback,
   useEffect,
@@ -130,6 +131,7 @@ function Field({ label, children }) {
   );
 }
 function UnitForm({ mode, unit, units, options, onClose, onSaved }) {
+  const uiText = useUiTranslation();
   const [form, setForm] = useState({
     name: unit?.name || "",
     code: unit?.code || "",
@@ -192,9 +194,9 @@ function UnitForm({ mode, unit, units, options, onClose, onSaved }) {
       onClose={onClose}
     >
       <form onSubmit={submit}>
-        <Field label="Name">
+        <Field label={uiText("Name")}>
           <input
-            aria-label="Name"
+            aria-label={uiText("Name")}
             value={form.name}
             onChange={(e) => set("name", e.target.value)}
             required
@@ -244,9 +246,9 @@ function UnitForm({ mode, unit, units, options, onClose, onSaved }) {
               </select>
             </Field>
             {form.unitType === "DEPARTMENT" && (
-              <Field label="Department">
+              <Field label={uiText("Department")}>
                 <select
-                  aria-label="Department"
+                  aria-label={uiText("Department")}
                   value={form.departmentId}
                   onChange={(e) => set("departmentId", e.target.value)}
                   required
@@ -261,9 +263,9 @@ function UnitForm({ mode, unit, units, options, onClose, onSaved }) {
               </Field>
             )}
             {form.unitType === "SECTION" && (
-              <Field label="Section">
+              <Field label={uiText("Section")}>
                 <select
-                  aria-label="Section"
+                  aria-label={uiText("Section")}
                   value={form.sectionId}
                   onChange={(e) => set("sectionId", e.target.value)}
                   required
@@ -286,9 +288,9 @@ function UnitForm({ mode, unit, units, options, onClose, onSaved }) {
             onChange={(e) => set("classification", e.target.value)}
           />
         </Field>
-        <Field label="Sort order">
+        <Field label={uiText("Sort order")}>
           <input
-            aria-label="Sort order"
+            aria-label={uiText("Sort order")}
             type="number"
             value={form.sortOrder}
             onChange={(e) => set("sortOrder", e.target.value)}
@@ -296,11 +298,9 @@ function UnitForm({ mode, unit, units, options, onClose, onSaved }) {
         </Field>
         <ErrorText error={error} />
         <div className="modal-actions">
-          <button type="button" onClick={onClose}>
-            Cancel
-          </button>
+          <button type="button" onClick={onClose}>{uiText("Cancel")}</button>
           <button className="primary" disabled={busy}>
-            {busy ? "Saving…" : "Save"}
+            {busy ? uiText("Saving…") : uiText("Save")}
           </button>
         </div>
       </form>
@@ -308,6 +308,7 @@ function UnitForm({ mode, unit, units, options, onClose, onSaved }) {
   );
 }
 function MoveDialog({ unit, units, onClose, onSaved }) {
+  const uiText = useUiTranslation();
   const [target, setTarget] = useState(unit.parent_unit_id || ""),
     [confirm, setConfirm] = useState(false),
     [busy, setBusy] = useState(false),
@@ -378,9 +379,7 @@ function MoveDialog({ unit, units, onClose, onSaved }) {
         </label>
         <ErrorText error={error} />
         <div className="modal-actions">
-          <button type="button" onClick={onClose}>
-            Cancel
-          </button>
+          <button type="button" onClick={onClose}>{uiText("Cancel")}</button>
           <button className="primary" disabled={busy || unchanged}>
             {busy ? "Moving…" : "Move unit"}
           </button>
@@ -390,6 +389,7 @@ function MoveDialog({ unit, units, onClose, onSaved }) {
   );
 }
 function HeadDialog({ unit, options, onClose, onSaved }) {
+  const uiText = useUiTranslation();
   const [form, setForm] = useState({
       userId: "",
       effectiveFrom: new Date().toISOString().slice(0, 10),
@@ -422,12 +422,12 @@ function HeadDialog({ unit, options, onClose, onSaved }) {
               ? unit.unitHead.userName
               : unit.unitHead?.status === "AMBIGUOUS"
                 ? "Ambiguous"
-                : "Unassigned"}
+                : uiText("Unassigned")}
           </dd>
           <dt>Current effective period</dt>
           <dd>
             {unit.unitHead?.status === "RESOLVED"
-              ? `${unit.unitHead.effectiveFrom || "Open"} — ${unit.unitHead.effectiveTo || "Open"}`
+              ? `${unit.unitHead.effectiveFrom || uiText("Open")} — ${unit.unitHead.effectiveTo || uiText("Open")}`
               : "None"}
           </dd>
           <dt>Incoming Head</dt>
@@ -479,9 +479,7 @@ function HeadDialog({ unit, options, onClose, onSaved }) {
         </Field>
         <ErrorText error={error} />
         <div className="modal-actions">
-          <button type="button" onClick={onClose}>
-            Cancel
-          </button>
+          <button type="button" onClick={onClose}>{uiText("Cancel")}</button>
           <button className="primary" disabled={busy}>
             {busy ? "Assigning…" : "Assign head"}
           </button>
@@ -491,6 +489,7 @@ function HeadDialog({ unit, options, onClose, onSaved }) {
   );
 }
 function ReconciliationDialog({ onClose, onChanged }) {
+  const uiText = useUiTranslation();
   const [rows, setRows] = useState([]),
     [busy, setBusy] = useState(true),
     [error, setError] = useState(""),
@@ -562,10 +561,10 @@ function ReconciliationDialog({ onClose, onChanged }) {
             <table>
               <thead>
                 <tr>
-                  <th>Department</th>
+                  <th>{uiText("Department")}</th>
                   <th>Legacy HOD user(s)</th>
                   <th>Organization head</th>
-                  <th>Status</th>
+                  <th>{uiText("Status")}</th>
                   <th>Suggested action</th>
                 </tr>
               </thead>
@@ -594,7 +593,7 @@ function ReconciliationDialog({ onClose, onChanged }) {
                         </button>
                       ) : row.status === "CONFLICT" ? (
                         <div>
-                          <Field label="Reason">
+                          <Field label={uiText("Reason")}>
                             <input
                               aria-label={`Decision reason ${row.department.name}`}
                               value={reason}
@@ -701,6 +700,7 @@ function HealthPanel({
   );
 }
 function PositionsDialog({ unit, options, onClose, onChanged }) {
+  const uiText = useUiTranslation();
   const empty = {
     positionType: "CUSTOM",
     positionName: "",
@@ -783,10 +783,10 @@ function PositionsDialog({ unit, options, onClose, onChanged }) {
                   {positionStatus(p)}
                 </span>
                 <small>
-                  {p.user_name || "Unassigned"} · {p.position_type}
+                  {p.user_name || uiText("Unassigned")} · {p.position_type}
                 </small>
               </div>
-              <button onClick={() => edit(p)}>Edit</button>
+              <button onClick={() => edit(p)}>{uiText("Edit")}</button>
               <button onClick={() => archive(p)}>Archive</button>
             </div>
           ))
@@ -860,12 +860,10 @@ function PositionsDialog({ unit, options, onClose, onChanged }) {
             type="checkbox"
             checked={form.isActive}
             onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-          />{" "}
-          Active
-        </label>
+          />{" "}{uiText("Active")}</label>
         <ErrorText error={error} />
         <button className="primary" disabled={busy}>
-          {busy ? "Saving…" : editing ? "Save position" : "Add position"}
+          {busy ? uiText("Saving…") : editing ? "Save position" : "Add position"}
         </button>
       </form>
     </Dialog>
@@ -885,6 +883,7 @@ function Node({
   setDropTarget,
   onDropUnit,
 }) {
+  const uiText = useUiTranslation();
   if (!subtreeMatches(node, query)) return null;
   const closed = collapsed.has(node.id);
   const isDragged = String(draggedUnit?.id) === String(node.id);
@@ -954,7 +953,7 @@ function Node({
             ? node.unitHead.userName
             : node.unitHead?.status === "AMBIGUOUS"
               ? "Ambiguous"
-              : "Unassigned"}
+              : uiText("Unassigned")}
         </small>
         {!node.is_active && <small>ARCHIVED</small>}
       </button>
@@ -985,6 +984,7 @@ function Node({
   );
 }
 export default function OrganizationHierarchy() {
+  const uiText = useUiTranslation();
   const { user } = useAuth();
   const canManage = hasPermission(user, "organization.manage");
   const [state, setState] = useState("loading"),
@@ -1167,7 +1167,7 @@ export default function OrganizationHierarchy() {
           Collapse All
         </button>
         <button onClick={() => setView(view === "tree" ? "table" : "tree")}>
-          {view === "tree" ? "Table view" : "Tree view"}
+          {view === "tree" ? uiText("Table view") : "Tree view"}
         </button>
         <span className="org-result-count" aria-live="polite">
           {visibleCount} {visibleCount === 1 ? "unit" : "units"}
@@ -1200,7 +1200,7 @@ export default function OrganizationHierarchy() {
       {error && state !== "error" && <p role="alert">{error}</p>}
       {state === "loading" && <p>Loading organization hierarchy…</p>}
       {state === "error" && <p role="alert">{error}</p>}
-      {state === "error" && <button onClick={() => load()}>Try again</button>}
+      {state === "error" && <button onClick={() => load()}>{uiText("Try again")}</button>}
       {state === "ready" && (
         <section className="org-workspace">
           {visibleCount === 0 ? (
@@ -1208,7 +1208,7 @@ export default function OrganizationHierarchy() {
               <Search />
               <h2>No matching units</h2>
               <p>Try another name or code, or clear the current search.</p>
-              <button onClick={() => setQuery("")}>Clear search</button>
+              <button onClick={() => setQuery("")}>{uiText("Clear search")}</button>
             </div>
           ) : view === "tree" ? (
             <div
@@ -1255,11 +1255,11 @@ export default function OrganizationHierarchy() {
                 <thead>
                   <tr>
                     <th>Unit</th>
-                    <th>Type</th>
+                    <th>{uiText("Type")}</th>
                     <th>Parent</th>
                     <th>Classification</th>
                     <th>Head</th>
-                    <th>Status</th>
+                    <th>{uiText("Status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1280,7 +1280,7 @@ export default function OrganizationHierarchy() {
                             ? x.unitHead.userName
                             : x.unitHead?.status === "AMBIGUOUS"
                               ? "Ambiguous"
-                              : "Unassigned"}
+                              : uiText("Unassigned")}
                         </td>
                         <td>{x.is_active ? "ACTIVE" : "ARCHIVED"}</td>
                       </tr>
@@ -1305,7 +1305,7 @@ export default function OrganizationHierarchy() {
                 </p>
               )}
               <dl>
-                <dt>Type</dt>
+                <dt>{uiText("Type")}</dt>
                 <dd>{selected.unit_type}</dd>
                 <dt>Classification</dt>
                 <dd>{selected.classification || "Not set"}</dd>
@@ -1327,7 +1327,7 @@ export default function OrganizationHierarchy() {
                     ? selected.unitHead.userName
                     : selected.unitHead?.status === "AMBIGUOUS"
                       ? "Ambiguous"
-                      : "Unassigned"}
+                      : uiText("Unassigned")}
                 </dd>
                 <dt>Executive Owner</dt>
                 <dd>
@@ -1335,9 +1335,9 @@ export default function OrganizationHierarchy() {
                     ? selected.executiveOwner.userName
                     : selected.executiveOwner?.status === "AMBIGUOUS"
                       ? "Ambiguous"
-                      : "Unassigned"}
+                      : uiText("Unassigned")}
                 </dd>
-                <dt>Status</dt>
+                <dt>{uiText("Status")}</dt>
                 <dd>{selected.is_active ? "ACTIVE" : "ARCHIVED"}</dd>
                 {selected.unit_type === "DEPARTMENT" && (
                   <>
@@ -1364,7 +1364,7 @@ export default function OrganizationHierarchy() {
                 .filter((p) => positionStatus(p) === "ACTIVE")
                 .map((p) => (
                   <p key={p.id}>
-                    {p.position_name}: {p.user_name || "Unassigned"}
+                    {p.position_name}: {p.user_name || uiText("Unassigned")}
                   </p>
                 ))}
               {canManage && (

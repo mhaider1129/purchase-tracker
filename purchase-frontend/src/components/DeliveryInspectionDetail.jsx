@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import * as api from "../api/technicalWorkflow";
@@ -6,6 +7,7 @@ import useRequestAttachments from "../hooks/useRequestAttachments";
 const label = (v) => String(v).replaceAll("_", " ");
 const cls = "block w-full rounded border p-2";
 export default function DeliveryInspectionDetail({ id }) {
+  const uiText = useUiTranslation();
   const [task, setTask] = useState(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
@@ -133,7 +135,7 @@ export default function DeliveryInspectionDetail({ id }) {
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt className="text-sm text-slate-500">{k}</dt>
-                  <dd>{v || "Not recorded"}</dd>
+                  <dd>{v || uiText("Not recorded")}</dd>
                 </div>
               ))}
             </dl>
@@ -159,14 +161,12 @@ export default function DeliveryInspectionDetail({ id }) {
                 </p>
                 {a.opinion && (
                   <>
-                    <p>
-                      Accept {a.opinion.accepted_quantity} · Reject{" "}
+                    <p>{uiText("Accept")}{" "}{a.opinion.accepted_quantity} · Reject{" "}
                       {a.opinion.rejected_quantity} · Hold{" "}
                       {a.opinion.held_quantity}
                     </p>
                     <p>{a.opinion.notes}</p>
-                    <p className="text-sm">
-                      Attested by {a.opinion.signature?.name} · {a.submitted_at}
+                    <p className="text-sm">{uiText("Attested by")}{" "}{a.opinion.signature?.name} · {a.submitted_at}
                     </p>
                   </>
                 )}
@@ -230,9 +230,7 @@ export default function DeliveryInspectionDetail({ id }) {
                     </label>
                   ))}
                 </div>
-                <label>
-                  Decision
-                  <select
+                <label>{uiText("Decision")}<select
                     required
                     className={cls}
                     value={form.decision}

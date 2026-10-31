@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -41,6 +42,7 @@ const integrationLinks = [
 const formatQuantity = (value) => new Intl.NumberFormat().format(value);
 
 const ForecastingDemandModuleCard = () => {
+  const uiText = useUiTranslation();
   const [forecastInput, setForecastInput] = useState({
     institute: "",
     item: "",
@@ -75,7 +77,7 @@ const ForecastingDemandModuleCard = () => {
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-900">Permissions involved</h3>
+        <h3 className="text-sm font-semibold text-gray-900">{uiText("Permissions involved")}</h3>
         <div className="mt-2 flex flex-wrap gap-2 text-xs">
           {[
             "department requester",
@@ -102,9 +104,9 @@ const ForecastingDemandModuleCard = () => {
             <table className="min-w-full text-xs">
               <thead className="bg-gray-50 text-left text-gray-600">
                 <tr>
-                  <th className="px-2 py-2">Item</th>
+                  <th className="px-2 py-2">{uiText("Item")}</th>
                   <th className="px-2 py-2">Past usage</th>
-                  <th className="px-2 py-2">Stock</th>
+                  <th className="px-2 py-2">{uiText("Stock")}</th>
                   <th className="px-2 py-2">Open POs</th>
                   <th className="px-2 py-2">Pending req.</th>
                   <th className="px-2 py-2">Near expiry</th>
@@ -131,7 +133,7 @@ const ForecastingDemandModuleCard = () => {
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <input
               type="text"
-              placeholder="Institute"
+              placeholder={uiText("Institute")}
               value={forecastInput.institute}
               onChange={(event) =>
                 setForecastInput((current) => ({ ...current, institute: event.target.value }))
@@ -140,7 +142,7 @@ const ForecastingDemandModuleCard = () => {
             />
             <input
               type="text"
-              placeholder="Item"
+              placeholder={uiText("Item")}
               value={forecastInput.item}
               onChange={(event) =>
                 setForecastInput((current) => ({ ...current, item: event.target.value }))

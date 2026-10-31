@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import useCurrentUser from '../hooks/useCurrentUser';
@@ -28,6 +29,7 @@ const workflowHintByStatus = {
 };
 
 export default function AuditRegistryPage() {
+  const uiText = useUiTranslation();
   const { user } = useCurrentUser();
   const normalizedRole = String(user?.role || '').toUpperCase();
   const [entries, setEntries] = useState([]);
@@ -143,8 +145,8 @@ export default function AuditRegistryPage() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">My Audit Registry</h1>
-        <button onClick={loadEntries} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Refresh</button>
+        <h1 className="text-2xl font-semibold">{uiText("My Audit Registry")}</h1>
+        <button onClick={loadEntries} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">{uiText("Refresh")}</button>
       </div>
 
       <form onSubmit={submitRegistryRequest} className="bg-white border rounded p-4 space-y-3">
@@ -182,7 +184,7 @@ export default function AuditRegistryPage() {
             <input value={form.account_name} onChange={(e) => onFormChange('account_name', e.target.value)} className="w-full border rounded px-3 py-2" />
           </label>
           <label className="text-sm">
-            <span className="block text-gray-700 mb-1">Currency</span>
+            <span className="block text-gray-700 mb-1">{uiText("Currency")}</span>
             <input value={form.currency} onChange={(e) => onFormChange('currency', e.target.value.toUpperCase())} className="w-full border rounded px-3 py-2" maxLength={6} />
           </label>
           <label className="text-sm">
@@ -192,7 +194,7 @@ export default function AuditRegistryPage() {
         </div>
 
         <label className="text-sm block">
-          <span className="block text-gray-700 mb-1">Business Justification</span>
+          <span className="block text-gray-700 mb-1">{uiText("Business Justification")}</span>
           <textarea value={form.notes} onChange={(e) => onFormChange('notes', e.target.value)} className="w-full border rounded px-3 py-2" rows={3} placeholder="Purpose of advance payment and activity details" />
         </label>
 
@@ -209,18 +211,18 @@ export default function AuditRegistryPage() {
         {submitError ? <p className="text-red-600 text-sm">{submitError}</p> : null}
         <div>
           <button type="submit" disabled={submitLoading} className="px-4 py-2 rounded bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60">
-            {submitLoading ? 'Submitting...' : 'Submit Request'}
+            {submitLoading ? uiText("Submitting...") : uiText("Submit Request")}
           </button>
         </div>
       </form>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="border rounded p-3 bg-white"><p className="text-sm text-gray-500">Issued</p><p className="text-xl font-semibold">{totals.issued.toFixed(2)}</p></div>
-        <div className="border rounded p-3 bg-white"><p className="text-sm text-gray-500">Returned</p><p className="text-xl font-semibold">{totals.returned.toFixed(2)}</p></div>
-        <div className="border rounded p-3 bg-white"><p className="text-sm text-gray-500">Remaining</p><p className="text-xl font-semibold">{totals.remaining.toFixed(2)}</p></div>
+        <div className="border rounded p-3 bg-white"><p className="text-sm text-gray-500">{uiText("Returned")}</p><p className="text-xl font-semibold">{totals.returned.toFixed(2)}</p></div>
+        <div className="border rounded p-3 bg-white"><p className="text-sm text-gray-500">{uiText("Remaining")}</p><p className="text-xl font-semibold">{totals.remaining.toFixed(2)}</p></div>
       </div>
 
-      {loading ? <p>Loading...</p> : null}
+      {loading ? <p>{uiText("Loading...")}</p> : null}
       {error ? <p className="text-red-600">{error}</p> : null}
 
       {!loading && !entries.length ? <p className="text-gray-600">No audit registry entries yet.</p> : null}
@@ -230,14 +232,14 @@ export default function AuditRegistryPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
-                <th className="px-3 py-2">Request</th>
-                <th className="px-3 py-2">Type</th>
-                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2">{uiText("Request")}</th>
+                <th className="px-3 py-2">{uiText("Type")}</th>
+                <th className="px-3 py-2">{uiText("Status")}</th>
                 <th className="px-3 py-2">Required Before Payment</th>
                 <th className="px-3 py-2">Required After Payment</th>
                 <th className="px-3 py-2">Issued</th>
-                <th className="px-3 py-2">Returned</th>
-                <th className="px-3 py-2">Remaining</th>
+                <th className="px-3 py-2">{uiText("Returned")}</th>
+                <th className="px-3 py-2">{uiText("Remaining")}</th>
                 <th className="px-3 py-2">Review Action</th>
               </tr>
             </thead>
@@ -271,9 +273,7 @@ export default function AuditRegistryPage() {
                           type="button"
                           onClick={() => approveEntry(row.id, 'ACTION_REQUIRED')}
                           className="px-3 py-1 rounded bg-rose-600 text-white hover:bg-rose-700"
-                        >
-                          Reject
-                        </button>
+                        >{uiText("Reject")}</button>
                       </div>
                     ) : (
                       <span className="text-gray-400 text-xs">No action</span>

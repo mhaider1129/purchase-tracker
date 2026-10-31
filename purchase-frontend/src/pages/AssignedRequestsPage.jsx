@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import PaginationControls from "../components/ui/PaginationControls";
 import useRequestListPagination from "../hooks/useRequestListPagination";
 import "../styles/RequestLists.css";
@@ -262,6 +263,7 @@ const ITEM_SECTION_CONFIG = [
 ];
 
 const AssignedRequestsPage = () => {
+  const uiText = useUiTranslation();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const tr = usePageTranslation("assignedRequests");
@@ -1606,8 +1608,7 @@ const AssignedRequestsPage = () => {
                           to={`/requests/${request.id}`}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                         >
-                          <FileText size={15} /> Workspace
-                        </Link>
+                          <FileText size={15} />{" "}{uiText("Workspace")}</Link>
                         <button
                           onClick={() => toggleExpand(request.id)}
                           className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:col-auto"

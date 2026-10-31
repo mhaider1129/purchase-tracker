@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from "react";
 import * as api from "../api/approvalPolicies";
 import { getOrganizationOptions } from "../api/organization";
@@ -373,12 +374,13 @@ export function ShadowComparison({ run }) {
   );
 }
 function ResolverReference({ step, onChange, options = {} }) {
+  const uiText = useUiTranslation();
   const type = step.resolverType;
   if (type === "POSITION")
     return (
       <select
         className={fieldClass}
-        aria-label="Position"
+        aria-label={uiText("Position")}
         value={step.resolverReference || ""}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -441,6 +443,7 @@ function ConditionValue({
   options = {},
   ariaLabel,
 }) {
+  const uiText = useUiTranslation();
   const choices = {
     REQUEST_TYPE_EQUALS: REQUEST_TYPES.map((value) => ({
       value,
@@ -470,7 +473,7 @@ function ConditionValue({
         value={condition.value || "true"}
         onChange={(event) => onChange(event.target.value)}
       >
-        <option value="true">Yes</option>
+        <option value="true">{uiText("Yes")}</option>
       </select>
     );
 
@@ -508,6 +511,7 @@ function ConditionValue({
   );
 }
 export function VersionDetail({ version, onRefresh, options = {} }) {
+  const uiText = useUiTranslation();
   const [draft, setDraft] = useState(() => ({ rules: version.rules || [] })),
     [validation, setValidation] = useState(null),
     [routingReadiness, setRoutingReadiness] = useState(null),
@@ -713,9 +717,7 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
                     onChange={(e) => updateRule(ri, { name: e.target.value })}
                   />
                 </label>
-                <label className={labelClass}>
-                  Priority
-                  <input
+                <label className={labelClass}>{uiText("Priority")}<input
                     className={fieldClass}
                     aria-label={`Rule ${ri + 1} priority`}
                     type="number"
@@ -987,7 +989,7 @@ export function VersionDetail({ version, onRefresh, options = {} }) {
               onClick={save}
             >
               <Save className="h-4 w-4" />
-              {saving ? "Saving…" : "Save draft"}
+              {saving ? uiText("Saving…") : "Save draft"}
             </button>
             <button
               className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100"
@@ -1018,6 +1020,7 @@ export function PolicyDetail({
   canManage = true,
   options = {},
 }) {
+  const uiText = useUiTranslation();
   const [selected, setSelected] = useState(),
     [error, setError] = useState(""),
     [editingMetadata, setEditingMetadata] = useState(false),
@@ -1145,9 +1148,7 @@ export function PolicyDetail({
                     }
                   />
                 </label>
-                <label className={labelClass}>
-                  Description
-                  <textarea
+                <label className={labelClass}>{uiText("Description")}<textarea
                     className={`${fieldClass} min-h-24 resize-y`}
                     aria-label="Policy description"
                     value={metadata.description}
@@ -1163,9 +1164,7 @@ export function PolicyDetail({
                   className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   type="button"
                   onClick={() => setEditingMetadata(false)}
-                >
-                  Cancel
-                </button>
+                >{uiText("Cancel")}</button>
               </div>
             </form>
           )}
@@ -1198,12 +1197,12 @@ export function PolicyDetail({
             <thead>
               <tr className="border-b border-slate-200 bg-white text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <th className="px-6 py-3.5">Version</th>
-                <th className="px-6 py-3.5">Status</th>
+                <th className="px-6 py-3.5">{uiText("Status")}</th>
                 <th className="px-6 py-3.5">Effective dates</th>
                 <th className="px-6 py-3.5">Created</th>
                 <th className="px-6 py-3.5">Shadow status</th>
                 <th className="px-6 py-3.5">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{uiText("Actions")}</span>
                 </th>
               </tr>
             </thead>
@@ -1278,6 +1277,7 @@ export function PolicyDetail({
   );
 }
 export function ShadowDashboard({ versions = [], departments = [] }) {
+  const uiText = useUiTranslation();
   const [form, setForm] = useState({
     policyVersionId: "",
     requestId: "",
@@ -1397,11 +1397,9 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
               policy. Your live workflow will not change.
             </p>
             <div className="mt-5 flex items-end gap-3">
-              <label className={`${labelClass} flex-1`}>
-                Request ID
-                <input
+              <label className={`${labelClass} flex-1`}>{uiText("Request ID")}<input
                   className={fieldClass}
-                  aria-label="Request ID"
+                  aria-label={uiText("Request ID")}
                   inputMode="numeric"
                   placeholder="e.g. 10482"
                   value={form.requestId}
@@ -1454,9 +1452,7 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
                   onChange={(e) => setForm({ ...form, dateTo: e.target.value })}
                 />
               </label>
-              <label className={labelClass}>
-                Department
-                <select
+              <label className={labelClass}>{uiText("Department")}<select
                   className={fieldClass}
                   aria-label="Shadow department"
                   value={form.departmentId}
@@ -1464,7 +1460,7 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
                     setForm({ ...form, departmentId: e.target.value })
                   }
                 >
-                  <option value="">All</option>
+                  <option value="">{uiText("All")}</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -1472,9 +1468,7 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
                   ))}
                 </select>
               </label>
-              <label className={labelClass}>
-                Request type
-                <input
+              <label className={labelClass}>{uiText("Request type")}<input
                   className={fieldClass}
                   placeholder="All request types"
                   value={form.requestType}
@@ -1577,6 +1571,7 @@ export function ShadowDashboard({ versions = [], departments = [] }) {
   );
 }
 export function PolicySimulator({ versions = [], departments = [] }) {
+  const uiText = useUiTranslation();
   const [form, setForm] = useState({
     versionId: "",
     departmentId: "",
@@ -1661,9 +1656,7 @@ export function PolicySimulator({ versions = [], departments = [] }) {
                 ))}
               </select>
             </label>
-            <label className={labelClass}>
-              Department
-              <select
+            <label className={labelClass}>{uiText("Department")}<select
                 className={fieldClass}
                 aria-label="Simulation department"
                 value={form.departmentId}
@@ -1679,9 +1672,7 @@ export function PolicySimulator({ versions = [], departments = [] }) {
                 ))}
               </select>
             </label>
-            <label className={labelClass}>
-              Request type
-              <input
+            <label className={labelClass}>{uiText("Request type")}<input
                 className={fieldClass}
                 aria-label="Simulation request type"
                 value={form.requestType}
@@ -1758,8 +1749,7 @@ export function PolicySimulator({ versions = [], departments = [] }) {
                   key={i}
                   className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
                 >
-                  <strong>
-                    Level {s.approvalLevel}: {s.displayName}
+                  <strong>{uiText("Level")}{" "}{s.approvalLevel}: {s.displayName}
                   </strong>
                   <p>Purpose: <SemanticPurpose value={s.semanticKey} /></p>
                   <p>
@@ -1894,6 +1884,7 @@ export default function ApprovalPoliciesPage({
   onOpenPolicy,
   onClosePolicy,
 }) {
+  const uiText = useUiTranslation();
   const [items, setItems] = useState(null);
   const [orgOptions, setOrgOptions] = useState({
     departments: [],
@@ -1982,9 +1973,7 @@ export default function ApprovalPoliciesPage({
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
               <ShieldCheck className="h-4 w-4" /> Governance control center
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Approval Engine 2.0
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{uiText("Approval Engine 2.0")}</h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
               Design, validate, and safely test intelligent approval routes
               before they reach production. Existing approval routing remains
@@ -1996,8 +1985,7 @@ export default function ApprovalPoliciesPage({
               className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
               onClick={load}
             >
-              <RefreshCw className="h-4 w-4" /> Refresh
-            </button>
+              <RefreshCw className="h-4 w-4" />{" "}{uiText("Refresh")}</button>
             {canManage && (
               <button
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-400"
@@ -2012,7 +2000,7 @@ export default function ApprovalPoliciesPage({
       {error && (
         <div>
           <p role="alert">{error}</p>
-          <button onClick={load}>Retry</button>
+          <button onClick={load}>{uiText("Retry")}</button>
         </div>
       )}
       {!items && !error && <p>Loading approval policies…</p>}
@@ -2133,7 +2121,7 @@ export default function ApprovalPoliciesPage({
                 Policy name
                 <input
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-                  aria-label="Name"
+                  aria-label={uiText("Name")}
                   name="name"
                   required
                 />
@@ -2147,11 +2135,9 @@ export default function ApprovalPoliciesPage({
                   required
                 />
               </label>
-              <label className="text-sm font-medium text-slate-700 md:col-span-2">
-                Description
-                <textarea
+              <label className="text-sm font-medium text-slate-700 md:col-span-2">{uiText("Description")}<textarea
                   className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2"
-                  aria-label="Description"
+                  aria-label={uiText("Description")}
                   name="description"
                   rows="2"
                 />
@@ -2164,9 +2150,7 @@ export default function ApprovalPoliciesPage({
                   className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
                   type="button"
                   onClick={() => setCreating(false)}
-                >
-                  Cancel
-                </button>
+                >{uiText("Cancel")}</button>
               </div>
             </form>
           )}
@@ -2209,11 +2193,11 @@ export default function ApprovalPoliciesPage({
                   <table className="min-w-full text-sm">
                     <thead>
                       <tr className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
-                        <th className="px-5 py-3">Name</th>
+                        <th className="px-5 py-3">{uiText("Name")}</th>
                         <th className="px-5 py-3">Code</th>
-                        <th className="px-5 py-3">Status</th>
+                        <th className="px-5 py-3">{uiText("Status")}</th>
                         <th className="px-5 py-3">Shadow version</th>
-                        <th className="px-5 py-3">Last updated</th>
+                        <th className="px-5 py-3">{uiText("Last updated")}</th>
                         <th></th>
                       </tr>
                     </thead>

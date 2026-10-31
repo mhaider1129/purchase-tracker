@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useRef } from "react";
 import { Sparkles, X } from "lucide-react";
 import AiConversation from "./AiConversation";
@@ -9,6 +10,7 @@ const requestPrompts = [
 ];
 
 const AiAssistantDrawer = ({ open, onClose, requestId }) => {
+  const uiText = useUiTranslation();
   const closeRef = useRef(null);
 
   useEffect(() => {
@@ -43,10 +45,8 @@ const AiAssistantDrawer = ({ open, onClose, requestId }) => {
               id="request-ai-title"
               className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-white"
             >
-              <Sparkles className="text-blue-600" size={20} /> Analyze with AI
-            </h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Request #{requestId} · Supply Chain Intelligence
+              <Sparkles className="text-blue-600" size={20} />{" "}{uiText("Analyze with AI")}</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{uiText("Request #")}{requestId} · Supply Chain Intelligence
             </p>
           </div>
           <button

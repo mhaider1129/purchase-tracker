@@ -1,9 +1,11 @@
+import useUiTranslation from "../utils/useUiTranslation";
 // src/pages/IncompleteOperationalRequestsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import { Link } from 'react-router-dom';
 
 const IncompleteOperationalRequestsPage = () => {
+  const uiText = useUiTranslation();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -90,23 +92,23 @@ const IncompleteOperationalRequestsPage = () => {
             <p className="text-sm text-gray-500">Total Incomplete</p>
             <p className="text-2xl font-semibold text-purple-700">{requests.length}</p>
             {lastUpdated && (
-              <p className="text-xs text-gray-400 mt-1">Last updated {lastUpdated}</p>
+              <p className="text-xs text-gray-400 mt-1">{uiText("Last updated")}{" "}{lastUpdated}</p>
             )}
           </div>
           <div className="rounded border p-4 bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Estimated Cost</p>
+            <p className="text-sm text-gray-500">{uiText("Estimated Cost")}</p>
             <p className="text-2xl font-semibold text-green-600">{formatCurrency(totalEstimatedCost)}</p>
             <p className="text-xs text-gray-400 mt-1">Across all results</p>
           </div>
           <div className="rounded border p-4 bg-white shadow-sm">
-            <p className="text-sm text-gray-500">Departments involved</p>
+            <p className="text-sm text-gray-500">{uiText("Departments involved")}</p>
             <p className="text-2xl font-semibold text-indigo-600">{uniqueDepartments}</p>
             <p className="text-xs text-gray-400 mt-1">Unique departments</p>
           </div>
         </div>
 
         {loading ? (
-          <p className="text-gray-600">Loading requests...</p>
+          <p className="text-gray-600">{uiText("Loading requests...")}</p>
         ) : error ? (
           <p className="text-red-600">❌ {error}</p>
         ) : (
@@ -115,14 +117,14 @@ const IncompleteOperationalRequestsPage = () => {
               <table className="min-w-full text-sm" aria-label="Operational incomplete requests table">
                 <thead className="bg-gray-100 text-left">
                   <tr>
-                    <th className="p-2 border">ID</th>
-                    <th className="p-2 border">Type</th>
-                    <th className="p-2 border">Department</th>
-                    <th className="p-2 border">Section</th>
-                    <th className="p-2 border">Justification</th>
-                    <th className="p-2 border">Estimated Cost</th>
-                    <th className="p-2 border">Status</th>
-                    <th className="p-2 border">Created At</th>
+                    <th className="p-2 border">{uiText("ID")}</th>
+                    <th className="p-2 border">{uiText("Type")}</th>
+                    <th className="p-2 border">{uiText("Department")}</th>
+                    <th className="p-2 border">{uiText("Section")}</th>
+                    <th className="p-2 border">{uiText("Justification")}</th>
+                    <th className="p-2 border">{uiText("Estimated Cost")}</th>
+                    <th className="p-2 border">{uiText("Status")}</th>
+                    <th className="p-2 border">{uiText("Created At")}</th>
                   </tr>
                 </thead>
                 <tbody>

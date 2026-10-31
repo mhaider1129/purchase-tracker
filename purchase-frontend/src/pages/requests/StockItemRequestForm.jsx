@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 // src/pages/requests/StockItemRequestForm.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +7,7 @@ import { HelpTooltip } from '../../components/ui/HelpTooltip';
 import { buildRequestSubmissionState } from '../../utils/requestSubmission';
 
 const StockItemRequestForm = () => {
+  const uiText = useUiTranslation();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [unit, setUnit] = useState('');
@@ -82,7 +84,7 @@ const StockItemRequestForm = () => {
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block font-semibold mb-1">Item Name</label>
+            <label className="block font-semibold mb-1">{uiText("Item Name")}</label>
             <input
               type="text"
               value={name}
@@ -152,7 +154,7 @@ const StockItemRequestForm = () => {
             className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 disabled:opacity-50"
             disabled={isSubmitting}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            {isSubmitting ? uiText("Submitting...") : uiText("Submit Request")}
           </button>
         </form>
       </div>

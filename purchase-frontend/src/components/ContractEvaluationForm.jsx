@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useState, useEffect, useMemo } from "react";
 import api from "../api/axios";
 
@@ -29,6 +30,7 @@ const normalizeComponents = (components) => {
 };
 
 const ContractEvaluationForm = ({ contractId, onClose }) => {
+  const uiText = useUiTranslation();
   const [criteriaOptions, setCriteriaOptions] = useState([]);
   const [selectedCriterionId, setSelectedCriterionId] = useState("");
   const [evaluatorId, setEvaluatorId] = useState("");
@@ -274,7 +276,7 @@ const ContractEvaluationForm = ({ contractId, onClose }) => {
                   disabled={saving || criteriaLoading || candidatesLoading}
                   className="w-full rounded-md bg-blue-500 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60"
                 >
-                  {saving ? "Sending..." : "Send"}
+                  {saving ? uiText("Sending...") : uiText("Send")}
                 </button>
               </div>
             </form>

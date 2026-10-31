@@ -1,23 +1,23 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import api from "../api/axios";
 import { DOCUMENT_BRANDING_UPDATED_EVENT } from "./DocumentPrintBranding";
 
 const emptySettings = { logo_data: "", document_code: "", template_data: "" };
 
-const ImageSetting = ({ label, value, alt, disabled, onChange, onRemove }) => (
-  <label className="block">
+const ImageSetting = ({ label, value, alt, disabled, onChange, onRemove }) => { const uiText = useUiTranslation(); return (<label className="block">
     <span className="block text-xs font-semibold uppercase tracking-wide text-gray-600">{label}</span>
     <input type="file" accept="image/*" disabled={disabled}
       className="mt-1 w-full rounded border border-gray-300 bg-white p-2 text-sm"
       onChange={(event) => onChange(event.target.files?.[0])} />
     {value && <span className="mt-2 flex items-center gap-3">
       <img src={value} alt={alt} className="h-14 max-w-40 object-contain" />
-      <button type="button" className="text-sm text-red-700 underline" onClick={onRemove}>Remove</button>
+      <button type="button" className="text-sm text-red-700 underline" onClick={onRemove}>{uiText("Remove")}</button>
     </span>}
-  </label>
-);
+  </label>); };
 
 const DocumentBrandingSettings = () => {
+  const uiText = useUiTranslation();
   const [settings, setSettings] = useState(emptySettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -81,7 +81,7 @@ const DocumentBrandingSettings = () => {
       <ImageSetting label="Page template / watermark" value={settings.template_data} alt="Current print template" disabled={saving}
         onChange={(file) => readImage("template_data", file)} onRemove={() => setSettings((value) => ({ ...value, template_data: "" }))} />
     </div>
-    {settings.updated_at && <p className="text-xs text-gray-600">Last updated {new Date(settings.updated_at).toLocaleString()}{settings.updated_by_name ? ` by ${settings.updated_by_name}` : ""}.</p>}
+    {settings.updated_at && <p className="text-xs text-gray-600">{uiText("Last updated")}{" "}{new Date(settings.updated_at).toLocaleString()}{settings.updated_by_name ? ` by ${settings.updated_by_name}` : ""}.</p>}
     <button type="button" onClick={save} disabled={saving}
       className={`rounded px-4 py-2 font-semibold text-white ${saving ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}>
       {saving ? "Saving branding…" : "Save branding for all users"}

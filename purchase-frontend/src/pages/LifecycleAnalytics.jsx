@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
 import { ArrowRight, Clock3, GitCommitHorizontal, RefreshCw, Route, TimerReset } from 'lucide-react';
@@ -14,6 +15,7 @@ const KpiCard = ({ title, value, helper, icon: Icon, tone = 'blue' }) => {
 };
 
 const LifecycleAnalytics = () => {
+  const uiText = useUiTranslation();
   const [data, setData] = useState(null); const [error, setError] = useState(''); const [loading, setLoading] = useState(true); const [refreshKey, setRefreshKey] = useState(0);
   const fetchData = useCallback(async () => { void refreshKey; setLoading(true); setError(''); try { const res = await axios.get('/dashboard/lifecycle'); setData(res.data); } catch (err) { console.error('❌ Failed to load lifecycle analytics:', err); setError('Lifecycle data is currently unavailable.'); } finally { setLoading(false); } }, [refreshKey]);
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -21,7 +23,7 @@ const LifecycleAnalytics = () => {
   const categories = useMemo(() => (data?.spend_by_category || []).map(x => ({ ...x, total_cost: Number(x.total_cost || 0) })).sort((a,b)=>b.total_cost-a.total_cost).slice(0,8), [data]);
   const bottleneck = data?.bottleneck_stage;
   return <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
-    <AnalyticsPageHeader eyebrow="Process intelligence" title="Lifecycle Analytics" description="Trace procurement velocity from request creation through final approval and the first governed purchase order." icon={Route} meta={["PR → approval", "PR → purchase order", "Stage-level bottlenecks"]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4"/> Refresh</button>}/>
+    <AnalyticsPageHeader eyebrow="Process intelligence" title={uiText("Lifecycle Analytics")} description="Trace procurement velocity from request creation through final approval and the first governed purchase order." icon={Route} meta={["PR → approval", "PR → purchase order", "Stage-level bottlenecks"]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4"/>{" "}{uiText("Refresh")}</button>}/>
     {error ? <AnalyticsError message={error} onRetry={()=>setRefreshKey(x=>x+1)}/> : loading ? <AnalyticsLoading label="Tracing lifecycle performance…"/> : <>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Lifecycle key performance indicators">
         <KpiCard title="PR to final approval" value={formatDays(data?.avg_pr_to_final_approval_days ?? data?.avg_approval_time_days)} helper="Active days from request creation to final approval" icon={Clock3}/>

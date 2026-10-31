@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -41,6 +42,7 @@ const MetricSkeleton = () => (
 );
 
 const ProcureToPayDashboardPage = () => {
+  const uiText = useUiTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -78,7 +80,7 @@ const ProcureToPayDashboardPage = () => {
             <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-300">
               <FileCheck2 size={16} /> Operations command center
             </div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Procure-to-Pay</h1>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{uiText("Procure-to-Pay")}</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
               Monitor every handoff from approved demand through receipt, invoice matching, and payment.
             </p>
@@ -89,8 +91,7 @@ const ProcureToPayDashboardPage = () => {
               {lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Connecting…'}
             </div>
             <button type="button" onClick={loadDashboard} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-60">
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} /> Refresh
-            </button>
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />{" "}{uiText("Refresh")}</button>
           </div>
         </div>
       </section>
@@ -98,7 +99,7 @@ const ProcureToPayDashboardPage = () => {
       {error && (
         <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3"><AlertTriangle size={20} /><span>{error}</span></div>
-          <button type="button" onClick={loadDashboard} className="self-start rounded-lg bg-red-700 px-3 py-2 text-sm font-semibold text-white sm:self-auto">Try again</button>
+          <button type="button" onClick={loadDashboard} className="self-start rounded-lg bg-red-700 px-3 py-2 text-sm font-semibold text-white sm:self-auto">{uiText("Try again")}</button>
         </div>
       )}
 
@@ -123,7 +124,7 @@ const ProcureToPayDashboardPage = () => {
       <div className="grid gap-5 lg:grid-cols-3">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2" aria-labelledby="attention-heading">
           <div className="flex items-start justify-between gap-4">
-            <div><h2 id="attention-heading" className="text-lg font-bold text-slate-900">Needs attention</h2><p className="mt-1 text-sm text-slate-500">Prioritize exceptions that can delay settlement</p></div>
+            <div><h2 id="attention-heading" className="text-lg font-bold text-slate-900">{uiText("Needs attention")}</h2><p className="mt-1 text-sm text-slate-500">Prioritize exceptions that can delay settlement</p></div>
             <span className={`rounded-full px-3 py-1 text-xs font-bold ${attentionCount ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>{loading ? 'Checking' : `${attentionCount} open`}</span>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">

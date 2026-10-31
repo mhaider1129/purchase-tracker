@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import useCurrentUser from '../hooks/useCurrentUser';
@@ -147,6 +148,7 @@ const initialFiltersState = {
 };
 
 const SupplierEvaluationsPage = () => {
+  const uiText = useUiTranslation();
   const [searchParams] = useSearchParams();
   const supplierFromParams = searchParams.get('supplier')?.trim() || '';
   const startDateFromParams = searchParams.get('start_date') || '';
@@ -805,7 +807,7 @@ const SupplierEvaluationsPage = () => {
       <main className="max-w-7xl mx-auto px-4 py-6">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-semibold">Supplier Evaluations</h1>
+            <h1 className="text-2xl font-semibold">{uiText("Supplier Evaluations")}</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Track supplier performance scores, strengths, weaknesses, and follow-up actions.
             </p>
@@ -814,27 +816,23 @@ const SupplierEvaluationsPage = () => {
 
         <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm mb-6 p-4">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <h2 className="text-lg font-semibold">Filters</h2>
+            <h2 className="text-lg font-semibold">{uiText("Filters")}</h2>
             <button
               type="button"
               onClick={handleClearFilters}
               disabled={!hasActiveFilters}
               className="inline-flex items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Clear filters
-            </button>
+            >{uiText("Clear filters")}</button>
           </div>
           <div className="grid gap-4 md:grid-cols-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium mb-1" htmlFor="search">
-                Search suppliers
-              </label>
+              <label className="block text-sm font-medium mb-1" htmlFor="search">{uiText("Search suppliers")}</label>
               <input
                 id="search"
                 type="search"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Search by supplier name"
+                placeholder={uiText("Search by supplier name")}
                 className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -872,7 +870,7 @@ const SupplierEvaluationsPage = () => {
         <section className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm mb-6">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold">Supplier evaluation history</h2>
-            {loading && <span className="text-sm text-gray-500">Loading...</span>}
+            {loading && <span className="text-sm text-gray-500">{uiText("Loading...")}</span>}
           </div>
 
           {error && (
@@ -885,7 +883,7 @@ const SupplierEvaluationsPage = () => {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold">Supplier</th>
+                  <th className="px-4 py-3 text-left font-semibold">{uiText("Supplier")}</th>
                   <th className="px-4 py-3 text-left font-semibold">Evaluation date</th>
                   <th className="px-4 py-3 text-left font-semibold">Weighted KPI</th>
                   <th className="px-4 py-3 text-left font-semibold">OTIF</th>
@@ -893,8 +891,8 @@ const SupplierEvaluationsPage = () => {
                   <th className="px-4 py-3 text-left font-semibold">ESG compliance</th>
                   <th className="px-4 py-3 text-left font-semibold">Legacy overall</th>
                   <th className="px-4 py-3 text-left font-semibold">Evaluator</th>
-                  <th className="px-4 py-3 text-left font-semibold">Updated</th>
-                  <th className="px-4 py-3" aria-label="Actions" />
+                  <th className="px-4 py-3 text-left font-semibold">{uiText("Updated")}</th>
+                  <th className="px-4 py-3" aria-label={uiText("Actions")} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -955,7 +953,7 @@ const SupplierEvaluationsPage = () => {
                               disabled={deletingId === evaluation.id}
                               className="text-sm text-red-600 dark:text-red-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {deletingId === evaluation.id ? 'Deleting…' : 'Delete'}
+                              {deletingId === evaluation.id ? 'Deleting…' : uiText("Delete")}
                             </button>
                           )}
                         </div>
@@ -989,9 +987,7 @@ const SupplierEvaluationsPage = () => {
                   <option value="year">Yearly</option>
                 </select>
               </label>
-              <label className="text-sm text-gray-600 dark:text-gray-300">
-                Supplier
-                <select
+              <label className="text-sm text-gray-600 dark:text-gray-300">{uiText("Supplier")}<select
                   value={benchmarkSupplier}
                   onChange={(event) => setBenchmarkSupplier(event.target.value)}
                   className="ml-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1017,7 +1013,7 @@ const SupplierEvaluationsPage = () => {
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
               <thead className="bg-gray-50 dark:bg-gray-900/50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold">Supplier</th>
+                  <th className="px-4 py-3 text-left font-semibold">{uiText("Supplier")}</th>
                   <th className="px-4 py-3 text-left font-semibold">Period</th>
                   <th className="px-4 py-3 text-left font-semibold">Weighted KPI</th>
                   <th className="px-4 py-3 text-left font-semibold">OTIF</th>
@@ -1115,8 +1111,7 @@ const SupplierEvaluationsPage = () => {
             <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2 grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="block text-sm font-medium mb-1" htmlFor="supplier_id">
-                    Supplier<span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium mb-1" htmlFor="supplier_id">{uiText("Supplier")}<span className="text-red-500">*</span>
                   </label>
                   <select
                     id="supplier_id"
@@ -1126,14 +1121,14 @@ const SupplierEvaluationsPage = () => {
                     required
                     className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Select supplier</option>
+                    <option value="">{uiText("Select supplier")}</option>
                     {supplierOptions.map((supplier) => (
                       <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
                     ))}
                   </select>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {suppliersLoading
-                      ? 'Loading suppliers…'
+                      ? uiText("Loading suppliers…")
                       : suppliersError || 'Supplier name is stored only as a display copy from the selected supplier record.'}
                   </p>
                 </div>
@@ -1171,9 +1166,7 @@ const SupplierEvaluationsPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" htmlFor="delivery_score">
-                  Delivery score
-                </label>
+                <label className="block text-sm font-medium mb-1" htmlFor="delivery_score">{uiText("Delivery score")}</label>
                 <input
                   id="delivery_score"
                   name="delivery_score"
@@ -1402,8 +1395,8 @@ const SupplierEvaluationsPage = () => {
                       onChange={handleInputChange}
                       className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
+                      <option value="yes">{uiText("Yes")}</option>
+                      <option value="no">{uiText("No")}</option>
                     </select>
                   </div>
 
@@ -1418,8 +1411,8 @@ const SupplierEvaluationsPage = () => {
                       onChange={handleInputChange}
                       className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
+                      <option value="no">{uiText("No")}</option>
+                      <option value="yes">{uiText("Yes")}</option>
                     </select>
                   </div>
                 </div>
@@ -1439,7 +1432,7 @@ const SupplierEvaluationsPage = () => {
                           required
                           className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          <option value="">Select</option>
+                          <option value="">{uiText("Select")}</option>
                           {RATING_SCALE_OPTIONS.map((option) => (
                             <option key={option} value={option}>
                               {option}
@@ -1513,9 +1506,7 @@ const SupplierEvaluationsPage = () => {
                   type="button"
                   onClick={resetForm}
                   className="rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                >
-                  Clear
-                </button>
+                >{uiText("Clear")}</button>
                 <button
                   type="submit"
                   disabled={submitting}
@@ -1523,10 +1514,10 @@ const SupplierEvaluationsPage = () => {
                 >
                   {submitting
                     ? editingId
-                      ? 'Saving...'
+                      ? uiText("Saving...")
                       : 'Creating...'
                     : editingId
-                    ? 'Save changes'
+                    ? uiText("Save changes")
                     : 'Create evaluation'}
                 </button>
               </div>

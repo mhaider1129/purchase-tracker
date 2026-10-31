@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 // src/pages/requests/MedicalDeviceRequestForm.jsx
 import { useTranslation } from 'react-i18next';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -13,6 +14,7 @@ import AmountInput from '../../components/ui/AmountInput';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const MedicalDeviceRequestForm = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const { user, loading } = useCurrentUser();
   const navigate = useNavigate();
@@ -621,9 +623,7 @@ const MedicalDeviceRequestForm = () => {
                             onClick={() => handleRemoveItemAttachment(index, fileIdx)}
                             className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
                             disabled={isSubmitting}
-                          >
-                            Remove
-                          </button>
+                          >{uiText("Remove")}</button>
                         </li>
                       ))}
                     </ul>
@@ -679,9 +679,7 @@ const MedicalDeviceRequestForm = () => {
                       onClick={() => handleRemoveRequestAttachment(index)}
                       className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
                       disabled={isSubmitting}
-                    >
-                      Remove
-                    </button>
+                    >{uiText("Remove")}</button>
                   </li>
                 ))}
               </ul>

@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, {
   createContext,
   useCallback,
@@ -53,6 +54,7 @@ const playNotificationSound = (type = "info") => {
 };
 
 const ToastPortal = ({ toasts, onDismiss }) => {
+  const uiText = useUiTranslation();
   if (typeof document === "undefined") return null;
 
   if (toasts.length === 0) {
@@ -82,7 +84,7 @@ const ToastPortal = ({ toasts, onDismiss }) => {
                 type="button"
                 onClick={() => onDismiss(id)}
                 className="inline-flex shrink-0 items-center justify-center rounded-md p-1 text-xs font-medium opacity-80 transition hover:bg-black/10 hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                aria-label="Dismiss notification"
+                aria-label={uiText("Dismiss notification")}
               >
                 ✕
               </button>

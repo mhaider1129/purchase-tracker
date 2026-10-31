@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   createTechnicalInspection,
@@ -163,6 +164,7 @@ const normalizeChecklistForForm = (entries, template) => {
 };
 
 const TechnicalInspectionsPage = () => {
+  const uiText = useUiTranslation();
   const location = useLocation();
   const prefillInspection = location.state?.prefillInspection;
   const opened = useRef(null);
@@ -449,7 +451,7 @@ const TechnicalInspectionsPage = () => {
       tone: "indigo",
     },
     {
-      label: "Pending",
+      label: uiText("Pending"),
       value: inspectionMetrics.pending,
       icon: Clock3,
       tone: "amber",
@@ -461,7 +463,7 @@ const TechnicalInspectionsPage = () => {
       tone: "emerald",
     },
     {
-      label: "Rejected",
+      label: uiText("Rejected"),
       value: inspectionMetrics.failed,
       icon: ShieldAlert,
       tone: "rose",
@@ -567,9 +569,7 @@ const TechnicalInspectionsPage = () => {
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
               <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Search
-                  </label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">{uiText("Search")}</label>
                   <div className="relative">
                     <Search
                       className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400"
@@ -630,7 +630,7 @@ const TechnicalInspectionsPage = () => {
                     }
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   >
-                    <option value="">All categories</option>
+                    <option value="">{uiText("All categories")}</option>
                     {CATEGORY_OPTIONS.map((option) => (
                       <option key={option} value={option}>
                         {option}
@@ -639,9 +639,7 @@ const TechnicalInspectionsPage = () => {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    Decision
-                  </label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-200">{uiText("Decision")}</label>
                   <select
                     value={filters.acceptance_status}
                     onChange={(e) =>
@@ -653,9 +651,9 @@ const TechnicalInspectionsPage = () => {
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                   >
                     <option value="">All decisions</option>
-                    <option value="pending">Pending</option>
+                    <option value="pending">{uiText("Pending")}</option>
                     <option value="passed">Accepted</option>
-                    <option value="failed">Rejected</option>
+                    <option value="failed">{uiText("Rejected")}</option>
                   </select>
                 </div>
               </div>
@@ -663,9 +661,7 @@ const TechnicalInspectionsPage = () => {
                 type="button"
                 onClick={resetForm}
                 className="inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-700"
-              >
-                Reset form
-              </button>
+              >{uiText("Reset form")}</button>
             </div>
           </section>
 
@@ -684,7 +680,7 @@ const TechnicalInspectionsPage = () => {
                   Checklist completion
                 </span>
                 <span className="font-medium text-indigo-700 dark:text-indigo-200">
-                  {checklistProgress.completed} of {checklistProgress.total}{" "}
+                  {checklistProgress.completed}{" "}{uiText("of")}{" "}{checklistProgress.total}{" "}
                   checks · {checklistProgress.percentage}%
                 </span>
               </div>
@@ -718,9 +714,7 @@ const TechnicalInspectionsPage = () => {
                       />
                     </label>
                     <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Location
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">{uiText("Location")}</span>
                       <input
                         type="text"
                         value={formState.location}
@@ -800,7 +794,7 @@ const TechnicalInspectionsPage = () => {
                       </div>
                       <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-indigo-700 shadow-sm dark:bg-indigo-800/70 dark:text-indigo-100">
                         {linkedRequest.status === "loading"
-                          ? "Loading..."
+                          ? uiText("Loading...")
                           : linkedRequest.status === "error"
                             ? "Not found"
                             : linkedRequest.data
@@ -827,9 +821,7 @@ const TechnicalInspectionsPage = () => {
                     {linkedRequest.data?.request && (
                       <div className="mt-3 grid gap-3 sm:grid-cols-3">
                         <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
-                            Type
-                          </p>
+                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">{uiText("Type")}</p>
                           <p className="font-medium text-gray-900 dark:text-gray-50">
                             {linkedRequest.data.request.request_type || ""}
                           </p>
@@ -838,9 +830,7 @@ const TechnicalInspectionsPage = () => {
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
-                            Requester
-                          </p>
+                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">{uiText("Requester")}</p>
                           <p className="font-medium text-gray-900 dark:text-gray-50">
                             {linkedRequest.data.request.requester_name ||
                               linkedRequest.data.request
@@ -855,9 +845,7 @@ const TechnicalInspectionsPage = () => {
                           )}
                         </div>
                         <div>
-                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">
-                            Items
-                          </p>
+                          <p className="text-xs uppercase text-gray-600 dark:text-gray-300">{uiText("Items")}</p>
                           <p className="font-medium text-gray-900 dark:text-gray-50">
                             {linkedRequest.data.items?.length || 0} line
                             {linkedRequest.data.items?.length === 1 ? "" : "s"}
@@ -914,9 +902,7 @@ const TechnicalInspectionsPage = () => {
                   </h3>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Item name
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">{uiText("Item name")}</span>
                       <input
                         type="text"
                         value={formState.item_name}
@@ -924,7 +910,7 @@ const TechnicalInspectionsPage = () => {
                           handleFieldChange("item_name", e.target.value)
                         }
                         required
-                        placeholder="Item name"
+                        placeholder={uiText("Item name")}
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
                     </label>
@@ -939,7 +925,7 @@ const TechnicalInspectionsPage = () => {
                         }
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       >
-                        <option value="">Select category</option>
+                        <option value="">{uiText("Select category")}</option>
                         {CATEGORY_OPTIONS.map((option) => (
                           <option key={option} value={option}>
                             {option}
@@ -994,32 +980,28 @@ const TechnicalInspectionsPage = () => {
                       />
                     </label>
                     <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Manufacturer
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">{uiText("Manufacturer")}</span>
                       <input
                         type="text"
                         value={formState.manufacturer}
                         onChange={(e) =>
                           handleFieldChange("manufacturer", e.target.value)
                         }
-                        placeholder="Manufacturer"
+                        placeholder={uiText("Manufacturer")}
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
                     </label>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="flex flex-col gap-1 text-sm">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        Supplier
-                      </span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">{uiText("Supplier")}</span>
                       <input
                         type="text"
                         value={formState.supplier_name}
                         onChange={(e) =>
                           handleFieldChange("supplier_name", e.target.value)
                         }
-                        placeholder="Supplier"
+                        placeholder={uiText("Supplier")}
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       />
                     </label>
@@ -1078,7 +1060,7 @@ const TechnicalInspectionsPage = () => {
                                 e.target.value,
                               )
                             }
-                            placeholder="Comments"
+                            placeholder={uiText("Comments")}
                             className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                           />
                           <textarea
@@ -1150,7 +1132,7 @@ const TechnicalInspectionsPage = () => {
                                 e.target.value,
                               )
                             }
-                            placeholder="Comments"
+                            placeholder={uiText("Comments")}
                             className="min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                           />
                           <textarea
@@ -1193,7 +1175,7 @@ const TechnicalInspectionsPage = () => {
                         }
                         className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                       >
-                        <option value="">Select condition</option>
+                        <option value="">{uiText("Select condition")}</option>
                         {CONDITION_OPTIONS.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
@@ -1329,7 +1311,7 @@ const TechnicalInspectionsPage = () => {
                     className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70"
                   >
                     {submitting
-                      ? "Saving..."
+                      ? uiText("Saving...")
                       : editingId
                         ? "Update inspection"
                         : "Save inspection"}
@@ -1353,33 +1335,21 @@ const TechnicalInspectionsPage = () => {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Date
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Item
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Category
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">{uiText("Date")}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">{uiText("Item")}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">{uiText("Category")}</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                       Request link
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Supplier
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Location
-                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">{uiText("Supplier")}</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">{uiText("Location")}</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                       Overall condition
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
                       Technical inspection status
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">
-                      Actions
-                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">{uiText("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
@@ -1475,16 +1445,12 @@ const TechnicalInspectionsPage = () => {
                               type="button"
                               onClick={() => handleEdit(inspection)}
                               className="rounded-md border border-indigo-200 px-3 py-1 text-indigo-700 transition hover:bg-indigo-50 dark:border-indigo-700/60 dark:text-indigo-200 dark:hover:bg-indigo-900/40"
-                            >
-                              Edit
-                            </button>
+                            >{uiText("Edit")}</button>
                             <button
                               type="button"
                               onClick={() => handleDelete(inspection.id)}
                               className="rounded-md border border-red-200 px-3 py-1 text-red-700 transition hover:bg-red-50 dark:border-red-700/60 dark:text-red-200 dark:hover:bg-red-900/40"
-                            >
-                              Delete
-                            </button>
+                            >{uiText("Delete")}</button>
                           </div>
                         </td>
                       </tr>

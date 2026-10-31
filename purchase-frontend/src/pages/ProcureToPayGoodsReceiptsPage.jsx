@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import { receiptInspectionOptions } from '../api/technicalWorkflow';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -107,6 +108,7 @@ const createLineFromPoItem = (item) => {
 };
 
 const ProcureToPayGoodsReceiptsPage = () => {
+  const uiText = useUiTranslation();
   const { requestId: requestIdParam } = useParams();
   const [rows, setRows] = useState([]);
   const [inspectionProfiles, setInspectionProfiles] = useState([]);
@@ -398,7 +400,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">Verify every delivery against its purchase order, capture quality findings, and post trusted inventory in one guided workspace.</p>
           </div>
           <div className="flex flex-wrap gap-2 text-sm">
-            <Link to="/procure-to-pay/purchase-orders" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 font-semibold transition hover:bg-white/20"><FileSearch size={16} /> Purchase orders</Link>
+            <Link to="/procure-to-pay/purchase-orders" className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 font-semibold transition hover:bg-white/20"><FileSearch size={16} />{" "}{uiText("Purchase orders")}</Link>
             <Link to="/procure-to-pay/document-flow" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 transition hover:bg-cyan-300">Document flow <ArrowRight size={16} /></Link>
           </div>
         </div>
@@ -419,7 +421,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
       <div className="grid gap-4 xl:grid-cols-[2fr,1fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
           <div>
-            <h2 className="font-semibold text-slate-900">Main purpose</h2>
+            <h2 className="font-semibold text-slate-900">{uiText("Main purpose")}</h2>
             <p className="mt-1 text-sm text-gray-600">Confirm what was actually delivered and whether it meets requirements before stock is posted.</p>
           </div>
           <div>
@@ -445,7 +447,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
 
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
           <div>
-            <h2 className="font-semibold text-slate-900">Completion point</h2>
+            <h2 className="font-semibold text-slate-900">{uiText("Completion point")}</h2>
             <p className="mt-1 text-sm text-gray-600">Receipt is posted accurately and stock / discrepancy status is updated.</p>
           </div>
           <div>
@@ -471,10 +473,10 @@ const ProcureToPayGoodsReceiptsPage = () => {
           {isLoading && <span className="text-sm text-gray-500">Loading receipts…</span>}
         </div>
         <div className="grid gap-2 md:grid-cols-5 xl:grid-cols-6">
-          <input className="rounded border px-3 py-2 text-sm" placeholder="Supplier" value={filters.supplier} onChange={(event) => setFilters((prev) => ({ ...prev, supplier: event.target.value }))} />
+          <input className="rounded border px-3 py-2 text-sm" placeholder={uiText("Supplier")} value={filters.supplier} onChange={(event) => setFilters((prev) => ({ ...prev, supplier: event.target.value }))} />
           <input className="rounded border px-3 py-2 text-sm" placeholder="PO ID" value={filters.po_id} onChange={(event) => setFilters((prev) => ({ ...prev, po_id: event.target.value }))} />
           <select className="rounded border px-3 py-2 text-sm" value={filters.status} onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}>
-            <option value="">All statuses</option>
+            <option value="">{uiText("All statuses")}</option>
             <option value="POSTED">Posted</option>
             <option value="FULLY_RECEIVED">Fully received</option>
             <option value="PARTIAL">Partial</option>
@@ -490,10 +492,10 @@ const ProcureToPayGoodsReceiptsPage = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="p-2 text-left">Receipt Number</th>
-                <th className="p-2 text-left">PO Number</th>
-                <th className="p-2 text-left">Supplier</th>
+                <th className="p-2 text-left">{uiText("PO Number")}</th>
+                <th className="p-2 text-left">{uiText("Supplier")}</th>
                 <th className="p-2 text-left">Receipt Date</th>
-                <th className="p-2 text-left">Status</th>
+                <th className="p-2 text-left">{uiText("Status")}</th>
                 <th className="p-2 text-left">Received By</th>
               </tr>
             </thead>
@@ -557,7 +559,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium text-slate-900">{po.po_number}</span>
-                    <span className="text-xs text-gray-500">Request #{po.request_id || 'N/A'}</span>
+                    <span className="text-xs text-gray-500">{uiText("Request #")}{po.request_id || uiText("N/A")}</span>
                   </div>
                   <p className="mt-1 text-gray-600">{po.supplier_name || 'Supplier not set'}</p>
                   <p className="mt-1 text-xs text-gray-500">Ordered: {formatQuantity(po.ordered_qty)} · Received: {formatQuantity(po.received_qty)}</p>
@@ -600,9 +602,7 @@ const ProcureToPayGoodsReceiptsPage = () => {
               Warehouse ID (inventory lines)
               <input className="mt-1 w-full rounded border px-3 py-2" type="number" min="1" value={receiptForm.warehouse_id} onChange={(event) => setReceiptForm((prev) => ({ ...prev, warehouse_id: event.target.value }))} placeholder="Canonical warehouse ID" />
             </label>
-            <label className="text-sm text-gray-700">
-              Received at
-              <input className="mt-1 w-full rounded border px-3 py-2" type="datetime-local" value={receiptForm.received_at} onChange={(event) => setReceiptForm((prev) => ({ ...prev, received_at: event.target.value }))} />
+            <label className="text-sm text-gray-700">{uiText("Received at")}<input className="mt-1 w-full rounded border px-3 py-2" type="datetime-local" value={receiptForm.received_at} onChange={(event) => setReceiptForm((prev) => ({ ...prev, received_at: event.target.value }))} />
             </label>
             <label className="text-sm text-gray-700">
               Receipt result
@@ -647,14 +647,14 @@ const ProcureToPayGoodsReceiptsPage = () => {
             <table className="w-full min-w-[1100px] text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="p-2 text-left">Item</th>
+                  <th className="p-2 text-left">{uiText("Item")}</th>
                   <th className="p-2 text-right">Ordered</th>
                   <th className="p-2 text-right">Prev. received</th>
                   <th className="p-2 text-right">Delivered</th>
                   <th className="p-2 text-left">Batch / Serial</th>
                   <th className="p-2 text-left">Expiry</th>
                   <th className="p-2 text-left">Condition</th>
-                  <th className="p-2 text-right">Damaged</th>
+                  <th className="p-2 text-right">{uiText("Damaged")}</th>
                   <th className="p-2 text-right">Short</th>
                 </tr>
               </thead>

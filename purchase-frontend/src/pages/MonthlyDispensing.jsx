@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../api/axios';
@@ -73,6 +74,7 @@ const NumberBadge = ({ value }) => (
 );
 
 const MonthlyDispensing = () => {
+  const uiText = useUiTranslation();
   const [rows, setRows] = useState([createEmptyRow()]);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
@@ -194,7 +196,7 @@ const MonthlyDispensing = () => {
     <>
       <div className="max-w-6xl mx-auto p-6 space-y-8">
         <div className="bg-white shadow rounded-lg p-6 space-y-3">
-          <h1 className="text-2xl font-bold text-indigo-700">Monthly Dispensing</h1>
+          <h1 className="text-2xl font-bold text-indigo-700">{uiText("Monthly Dispensing")}</h1>
           <p className="text-gray-600">
             Upload monthly dispensing snapshots from your HIS or pharmacy exports to
             keep consumption analytics current.
@@ -252,12 +254,12 @@ const MonthlyDispensing = () => {
               <thead>
                 <tr className="text-left text-gray-600">
                   <th className="p-2">Month (YYYY-MM)</th>
-                  <th className="p-2">Item</th>
-                  <th className="p-2">Quantity</th>
+                  <th className="p-2">{uiText("Item")}</th>
+                  <th className="p-2">{uiText("Quantity")}</th>
                   <th className="p-2">Unit</th>
                   <th className="p-2">Facility</th>
-                  <th className="p-2">Notes</th>
-                  <th className="p-2">Actions</th>
+                  <th className="p-2">{uiText("Notes")}</th>
+                  <th className="p-2">{uiText("Actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -327,9 +329,7 @@ const MonthlyDispensing = () => {
                         onClick={() => removeRow(index)}
                         className="text-red-600 hover:underline"
                         disabled={rows.length === 1}
-                      >
-                        Remove
-                      </button>
+                      >{uiText("Remove")}</button>
                     </td>
                   </tr>
                 ))}
@@ -343,7 +343,7 @@ const MonthlyDispensing = () => {
               disabled={submitting}
               className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60"
             >
-              {submitting ? 'Saving...' : 'Save monthly data'}
+              {submitting ? uiText("Saving...") : 'Save monthly data'}
             </button>
           </div>
         </form>
@@ -441,11 +441,11 @@ const MonthlyDispensing = () => {
                 <thead>
                   <tr className="text-left text-gray-600">
                     <th className="p-2">Month</th>
-                    <th className="p-2">Item</th>
-                    <th className="p-2">Quantity</th>
+                    <th className="p-2">{uiText("Item")}</th>
+                    <th className="p-2">{uiText("Quantity")}</th>
                     <th className="p-2">Unit</th>
                     <th className="p-2">Facility</th>
-                    <th className="p-2">Notes</th>
+                    <th className="p-2">{uiText("Notes")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

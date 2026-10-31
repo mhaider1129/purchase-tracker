@@ -1,5 +1,5 @@
 import i18n from '../i18n';
-import {fireEvent,render,screen,waitFor,within} from '@testing-library/react';
+import {act,fireEvent,render,screen,waitFor,within} from '@testing-library/react';
 import {MemoryRouter,Route,Routes} from 'react-router-dom';
 import RequestDetailWorkspace from './RequestDetailWorkspace';
 import api from '../api/axios';
@@ -80,4 +80,20 @@ test('approval filters stay read-only in the request workspace', async () => {
  expect(screen.queryByText('Ahmed')).not.toBeInTheDocument();
  expect(screen.getByText('Sara')).toBeInTheDocument();
  expect(api.post).not.toHaveBeenCalled();
+});
+
+test('Arabic workspace translates procurement controls without changing original UOM or API quantities', async () => {
+ await i18n.changeLanguage('ar');
+ api.post.mockClear();
+ const workspace={request:{request_id:90,request_status:'Submitted',approval_status:'Pending',current_bottleneck:'Approval level 3',next_required_action:'Awaiting Hassanin approval'},items:[{item_id:12,item_name:'Hook',requested_quantity:30,purchased_quantity:0,remaining_quantity:30,unit_of_measure:'Piece',request_mode:'approved_free_text_exception'}],available_actions:['register_procurement_entry']};
+ api.get.mockImplementation(async url=>({data:url.includes('full-details')?workspace:[]}));
+ api.post.mockResolvedValue({data:{}});
+ render(<MemoryRouter initialEntries={['/requests/90']}><Routes><Route path="/requests/:requestId" element={<RequestDetailWorkspace />} /></Routes></MemoryRouter>);
+ fireEvent.click(await screen.findByRole('button',{name:'تسجيل عملية شراء'}));
+ expect(screen.getByText('تسجيل حركة شراء')).toBeInTheDocument();
+ expect(screen.getByText('وحدة قياس الشراء')).toBeInTheDocument();
+ fireEvent.change(screen.getByLabelText('الكمية المشتراة'),{target:{value:'2'}});
+ fireEvent.click(screen.getByRole('button',{name:'حفظ الحركة'}));
+ await waitFor(()=>expect(api.post).toHaveBeenCalledWith('/requests/90/items/12/procurement-events',expect.objectContaining({procurement_quantity:2,procurement_unit_of_measure:'Piece',units_per_package:1})));
+ await act(async()=>{await i18n.changeLanguage('en');});
 });

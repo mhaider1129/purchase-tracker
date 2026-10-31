@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from "react";
 import { listTechnicalInspections } from "../api/technicalInspections";
 
@@ -16,6 +17,7 @@ const statusLabel = (value) => {
 };
 
 const ScmTechnicalInspectionsReviewPage = () => {
+  const uiText = useUiTranslation();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -82,10 +84,10 @@ const ScmTechnicalInspectionsReviewPage = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
           >
-            <option value="">All statuses</option>
-            <option value="pending">Pending</option>
+            <option value="">{uiText("All statuses")}</option>
+            <option value="pending">{uiText("Pending")}</option>
             <option value="passed">Accepted</option>
-            <option value="failed">Rejected</option>
+            <option value="failed">{uiText("Rejected")}</option>
           </select>
           <button
             type="button"
@@ -94,9 +96,7 @@ const ScmTechnicalInspectionsReviewPage = () => {
               setStatusFilter("");
             }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-200"
-          >
-            Clear filters
-          </button>
+          >{uiText("Clear filters")}</button>
         </div>
 
         {error && (
@@ -109,18 +109,18 @@ const ScmTechnicalInspectionsReviewPage = () => {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">Date</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">Request</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">Item</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">Supplier</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">Location</th>
-                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">Status</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">{uiText("Date")}</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">{uiText("Request")}</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">{uiText("Item")}</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">{uiText("Supplier")}</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">{uiText("Location")}</th>
+                <th className="px-3 py-2 text-left text-xs font-semibold uppercase">{uiText("Status")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-sm">Loading...</td>
+                  <td colSpan={6} className="px-3 py-6 text-center text-sm">{uiText("Loading...")}</td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
                 <tr>

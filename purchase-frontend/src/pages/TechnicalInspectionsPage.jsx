@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useEffect, useState } from "react";
 import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
 import DeliveryInspectionDetail from "../components/DeliveryInspectionDetail";
@@ -27,6 +28,7 @@ const names = {
 const field =
   "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900";
 export default function TechnicalInspectionsPage() {
+  const uiText = useUiTranslation();
   const location = useLocation();
   const [params] = useSearchParams();
   const [filters, setFilters] = useState(initial);
@@ -88,9 +90,7 @@ export default function TechnicalInspectionsPage() {
     <main className="mx-auto max-w-7xl space-y-6 px-4 py-8 text-slate-900 dark:text-slate-100">
       <header className="rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-900 p-7 text-white">
         <p className="text-sm text-cyan-200">Supply Chain Quality</p>
-        <h1 className="mt-1 text-3xl font-bold">
-          Technical Reviews &amp; Inspections
-        </h1>
+        <h1 className="mt-1 text-3xl font-bold">{uiText("Technical Reviews & Inspections")}</h1>
         <p className="mt-2 text-slate-200">
           Review assigned products before procurement and follow inspection
           records through acceptance.
@@ -118,9 +118,7 @@ export default function TechnicalInspectionsPage() {
         aria-label="Filter technical tasks"
         className="grid gap-3 rounded-xl border bg-white p-4 dark:border-slate-700 dark:bg-slate-800 sm:grid-cols-2 lg:grid-cols-3"
       >
-        <label>
-          Search
-          <input
+        <label>{uiText("Search")}<input
             className={field}
             type="search"
             placeholder="Reference, item or assigned department"
@@ -135,7 +133,7 @@ export default function TechnicalInspectionsPage() {
             value={filters.type}
             onChange={(e) => change("type", e.target.value)}
           >
-            <option value="">All types</option>
+            <option value="">{uiText("All types")}</option>
             <option value="PRE_PROCUREMENT">Pre-procurement review</option>
             <option value="DELIVERY_INSPECTION">Delivery inspection</option>
             <option value="LEGACY_INSPECTION">Historical inspection</option>
@@ -148,7 +146,7 @@ export default function TechnicalInspectionsPage() {
             value={filters.department}
             onChange={(e) => change("department", e.target.value)}
           >
-            <option value="">All departments</option>
+            <option value="">{uiText("All departments")}</option>
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -163,7 +161,7 @@ export default function TechnicalInspectionsPage() {
             value={filters.status}
             onChange={(e) => change("status", e.target.value)}
           >
-            <option value="">All statuses</option>
+            <option value="">{uiText("All statuses")}</option>
             {Object.entries(names).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -171,18 +169,14 @@ export default function TechnicalInspectionsPage() {
             ))}
           </select>
         </label>
-        <label>
-          From
-          <input
+        <label>{uiText("From")}<input
             className={field}
             type="date"
             value={filters.from}
             onChange={(e) => change("from", e.target.value)}
           />
         </label>
-        <label>
-          To
-          <input
+        <label>{uiText("To")}<input
             className={field}
             type="date"
             value={filters.to}
@@ -192,9 +186,7 @@ export default function TechnicalInspectionsPage() {
         <button
           className="text-left text-indigo-700 underline dark:text-indigo-300"
           onClick={() => setFilters(initial)}
-        >
-          Reset filters
-        </button>
+        >{uiText("Reset filters")}</button>
       </section>
       <section
         aria-label="Technical task summary"
@@ -234,9 +226,7 @@ export default function TechnicalInspectionsPage() {
           className="rounded border border-red-300 bg-red-50 p-4 text-red-800"
         >
           {error}{" "}
-          <button className="underline" onClick={() => setReload((v) => v + 1)}>
-            Retry
-          </button>
+          <button className="underline" onClick={() => setReload((v) => v + 1)}>{uiText("Retry")}</button>
         </div>
       )}
       {(data?.warnings || []).map((warning) => (
@@ -330,7 +320,7 @@ export default function TechnicalInspectionsPage() {
                           : "Historical inspection"}
                     </td>
                     <td className="px-4 py-4">
-                      {row.assigned_department || "Not assigned"}
+                      {row.assigned_department || uiText("Not assigned")}
                     </td>
                     <td className="px-4 py-4">
                       {names[row.status]}
@@ -350,10 +340,10 @@ export default function TechnicalInspectionsPage() {
                         }
                       >
                         {row.status === "COMPLETED"
-                          ? "View"
+                          ? uiText("View")
                           : row.awaiting_me
                             ? "Review"
-                            : "Open"}
+                            : uiText("Open")}
                       </Link>
                     </td>
                   </tr>
@@ -372,17 +362,13 @@ export default function TechnicalInspectionsPage() {
             <button
               disabled={loading || filters.page === 1}
               onClick={() => change("page", filters.page - 1)}
-            >
-              Previous
-            </button>
+            >{uiText("Previous")}</button>
             <button
               disabled={
                 loading || !data || filters.page * data.page_size >= data.total
               }
               onClick={() => change("page", filters.page + 1)}
-            >
-              Next
-            </button>
+            >{uiText("Next")}</button>
           </div>
         </footer>
       </section>

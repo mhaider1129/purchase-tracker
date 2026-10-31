@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -27,6 +28,7 @@ const errorMessage = (error) =>
   error.response?.data?.error || error.response?.data?.message || error.message;
 
 export default function ApprovalDelegationsPage() {
+  const uiText = useUiTranslation();
   const { user } = useAuth();
   const canView = hasPermission(user, "approval-delegation.view");
   const canManage = hasPermission(user, "approval-delegation.manage");
@@ -159,9 +161,7 @@ export default function ApprovalDelegationsPage() {
           disabled={loading || busy}
           onClick={load}
         >
-          <RefreshCw size={16} className={loading ? "delegations-spin" : ""} />{" "}
-          Refresh
-        </button>
+          <RefreshCw size={16} className={loading ? "delegations-spin" : ""} />{" "}{uiText("Refresh")}</button>
       </header>
       <section className="delegations-metrics" aria-label="Delegation overview">
         {[
@@ -227,7 +227,7 @@ export default function ApprovalDelegationsPage() {
                     onChange={update}
                   >
                     <option value="POSITION">Structural position</option>
-                    <option value="USER">User</option>
+                    <option value="USER">{uiText("User")}</option>
                   </select>
                 </label>
                 {form.authorityKind === "POSITION" ? (
@@ -322,8 +322,7 @@ export default function ApprovalDelegationsPage() {
                     </option>
                   </select>
                 </label>
-                <label className="delegations-field">
-                  Reason{" "}
+                <label className="delegations-field">{uiText("Reason")}{" "}
                   <textarea
                     required
                     placeholder="Explain why approval authority is being delegated…"
@@ -336,7 +335,7 @@ export default function ApprovalDelegationsPage() {
                 <div className="delegations-form-footer">
                   <span>Changes are recorded in the audit history.</span>
                   <button className="delegations-button primary" type="submit">
-                    <Plus size={16} /> {busy ? "Saving…" : "Create delegation"}
+                    <Plus size={16} /> {busy ? uiText("Saving…") : "Create delegation"}
                   </button>
                 </div>
               </fieldset>
@@ -370,10 +369,10 @@ export default function ApprovalDelegationsPage() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="ALL">All statuses</option>
+                <option value="ALL">{uiText("All statuses")}</option>
                 <option value="ACTIVE">Effective now</option>
-                <option value="SCHEDULED">Scheduled</option>
-                <option value="EXPIRED">Expired</option>
+                <option value="SCHEDULED">{uiText("Scheduled")}</option>
+                <option value="EXPIRED">{uiText("Expired")}</option>
                 <option value="REVOKED">Revoked</option>
               </select>
             </div>
@@ -431,7 +430,7 @@ export default function ApprovalDelegationsPage() {
                 </p>
                 <p>Scope: {row.scope}</p>
                 <p>Reason: {row.reason}</p>
-                <p>Status: {row.status}</p>
+                <p>{uiText("Status:")}{" "}{row.status}</p>
                 {canManage && row.status === "ACTIVE" && (
                   <button
                     className="delegations-button danger"
@@ -466,9 +465,7 @@ export default function ApprovalDelegationsPage() {
                       disabled={busy}
                       type="button"
                       onClick={() => setRevoking(null)}
-                    >
-                      Cancel
-                    </button>
+                    >{uiText("Cancel")}</button>
                   </form>
                 )}
               </article>

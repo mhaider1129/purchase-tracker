@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 // src/pages/AdminTools.jsx
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import api from "../api/axios";
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 const AdminTools = () => {
+  const uiText = useUiTranslation();
   const [message, setMessage] = useState("");
   const [activeAction, setActiveAction] = useState("");
   const [deactivateEmail, setDeactivateEmail] = useState("");
@@ -696,8 +698,7 @@ const AdminTools = () => {
                               {log?.actor_name || tr("systemActor", "System")}
                             </p>
                             {log?.actor_id && (
-                              <p className="text-xs text-slate-400">
-                                ID {log.actor_id}
+                              <p className="text-xs text-slate-400">{uiText("ID")}{" "}{log.actor_id}
                               </p>
                             )}
                           </td>

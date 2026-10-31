@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import "../styles/RequestLists.css";
 import AllRequestGuidance from "../components/requests/AllRequestGuidance";
 import WorkspaceTableScroll from '../components/workspaces/WorkspaceTableScroll';
@@ -278,6 +279,7 @@ const isPostApprovalStatus = (status) => {
 };
 
 const AllRequestsPage = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const { user } = useCurrentUser();
   const [requestViewMode, setRequestViewMode] = usePersistedRequestViewMode(
@@ -426,37 +428,37 @@ const AllRequestsPage = () => {
   const requestSummary = useMemo(() => {
     return [
       {
-        label: "Total requests",
+        label: uiText("Total requests"),
         value: totalRequests,
         icon: ListChecks,
         tone: "blue",
       },
       {
-        label: "Urgent requests",
+        label: uiText("Urgent requests"),
         value: summaryCounts.urgent,
         icon: AlertTriangle,
         tone: "red",
       },
       {
-        label: "Approved",
+        label: uiText("Approved"),
         value: summaryCounts.approved,
         icon: CheckCircle2,
         tone: "emerald",
       },
       {
-        label: "Pending",
+        label: uiText("Pending"),
         value: summaryCounts.pending,
         icon: Timer,
         tone: "amber",
       },
       {
-        label: "Completed",
+        label: uiText("Completed"),
         value: summaryCounts.completed,
         icon: CheckCircle2,
         tone: "violet",
       },
     ];
-  }, [summaryCounts, totalRequests]);
+  }, [summaryCounts, totalRequests, uiText]);
   const activeFilterCount = useMemo(
     () =>
       Object.entries(appliedFilters).filter(
@@ -1370,16 +1372,9 @@ const AllRequestsPage = () => {
           <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-200">
-                <ListChecks size={15} aria-hidden="true" /> Procurement
-                workspace
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                All purchase requests
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">
-                Review demand, follow approvals, and move every request from
-                submission to completion.
-              </p>
+                <ListChecks size={15} aria-hidden="true" />{" "}{uiText("Procurement workspace")}</div>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{uiText("All purchase requests")}</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">{uiText("Review demand, follow approvals, and move every request from submission to completion.")}</p>
             </div>
             <button
               type="button"
@@ -1392,25 +1387,25 @@ const AllRequestsPage = () => {
                 className={loading ? "animate-spin" : ""}
                 aria-hidden="true"
               />
-              {loading ? "Refreshing…" : "Refresh data"}
+              {loading ? uiText("Refreshing…") : uiText("Refresh data")}
             </button>
           </div>
         </section>
 
         <section
           className="workspace-kpi-grid mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5"
-          aria-label="Request overview"
+          aria-label={uiText("Request overview")}
         >
           {requestSummary.map((item) => {
             const SummaryIcon = item.icon;
             return (
               <Card
-                key={item.label}
+                key={uiText(item.label)}
                 className="group flex min-h-[112px] items-center justify-between overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {item.label}
+                    {uiText(item.label)}
                   </p>
                   <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
                     {item.value.toLocaleString()}
@@ -1436,25 +1431,17 @@ const AllRequestsPage = () => {
                   <Filter size={18} aria-hidden="true" />
                 </span>
                 <div>
-                  <h2 className="font-semibold text-slate-900">
-                    Find requests
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Showing {requests.length} of{" "}
-                    {totalRequests.toLocaleString()} requests
-                  </p>
+                  <h2 className="font-semibold text-slate-900">{uiText("Find requests")}</h2>
+                  <p className="text-xs text-slate-500">{uiText("Showing {{shown}} of {{total}} requests", { shown: requests.length.toLocaleString(), total: totalRequests.toLocaleString() })}</p>
                 </div>
                 {activeFilterCount > 0 && (
                   <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-bold text-blue-700">
-                    {activeFilterCount} active
-                  </span>
+                    {activeFilterCount}{" "}{uiText("active")}</span>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {hasDraftFilterChanges && (
-                  <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                    Changes not applied
-                  </span>
+                  <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">{uiText("Changes not applied")}</span>
                 )}
                 <button
                   type="button"
@@ -1462,8 +1449,7 @@ const AllRequestsPage = () => {
                   className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   aria-expanded={showAdvancedFilters}
                 >
-                  <SlidersHorizontal size={16} aria-hidden="true" /> More
-                  filters{" "}
+                  <SlidersHorizontal size={16} aria-hidden="true" />{" "}{uiText("More filters")}{" "}
                   <ChevronDown
                     size={15}
                     className={`transition ${showAdvancedFilters ? "rotate-180" : ""}`}
@@ -1476,8 +1462,7 @@ const AllRequestsPage = () => {
                   disabled={!activeFilterCount && !hasDraftFilterChanges}
                   className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-40"
                 >
-                  <X size={16} aria-hidden="true" /> Clear
-                </button>
+                  <X size={16} aria-hidden="true" />{" "}{uiText("Clear")}</button>
               </div>
             </div>
           </div>
@@ -1490,7 +1475,7 @@ const AllRequestsPage = () => {
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
               <label className="sm:col-span-2 lg:col-span-2">
-                <span className={filterLabelClass}>Search</span>
+                <span className={filterLabelClass}>{uiText("Search")}</span>
                 <span className="relative block">
                   <Search
                     size={17}
@@ -1500,45 +1485,45 @@ const AllRequestsPage = () => {
                   <input
                     type="search"
                     className={`${fieldClass} pl-9`}
-                    placeholder="ID, requester, project, or keyword"
+                    placeholder={uiText("ID, requester, project, or keyword")}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </span>
               </label>
               <label>
-                <span className={filterLabelClass}>Status</span>
+                <span className={filterLabelClass}>{uiText("Status")}</span>
                 <select
                   className={fieldClass}
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <option value="">All statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Partially Procured">Partially Procured</option>
-                  <option value="Received">Received</option>
-                  <option value="Rejected">Rejected</option>
-                  <option value="Completed">Completed</option>
+                  <option value="">{uiText("All statuses")}</option>
+                  <option value="Pending">{uiText("Pending")}</option>
+                  <option value="Approved">{uiText("Approved")}</option>
+                  <option value="Partially Procured">{uiText("Partially Procured")}</option>
+                  <option value="Received">{uiText("Received")}</option>
+                  <option value="Rejected">{uiText("Rejected")}</option>
+                  <option value="Completed">{uiText("Completed")}</option>
                 </select>
               </label>
               <label>
-                <span className={filterLabelClass}>Request type</span>
+                <span className={filterLabelClass}>{uiText("Request type")}</span>
                 <select
                   className={fieldClass}
                   value={requestType}
                   onChange={(e) => setRequestType(e.target.value)}
                 >
-                  <option value="">All types</option>
+                  <option value="">{uiText("All types")}</option>
                   {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {uiText(option.label)}
                     </option>
                   ))}
                 </select>
               </label>
               <label>
-                <span className={filterLabelClass}>Department</span>
+                <span className={filterLabelClass}>{uiText("Department")}</span>
                 <select
                   className={fieldClass}
                   value={department}
@@ -1547,7 +1532,7 @@ const AllRequestsPage = () => {
                     setSection("");
                   }}
                 >
-                  <option value="">All departments</option>
+                  <option value="">{uiText("All departments")}</option>
                   {departments.map((dep) => (
                     <option key={dep.id} value={dep.id}>
                       {dep.name}
@@ -1556,16 +1541,16 @@ const AllRequestsPage = () => {
                 </select>
               </label>
               <label>
-                <span className={filterLabelClass}>Current step</span>
+                <span className={filterLabelClass}>{uiText("Current step")}</span>
                 <select
                   className={fieldClass}
                   value={currentStep}
                   onChange={(e) => setCurrentStep(e.target.value)}
                 >
-                  <option value="">All current steps</option>
+                  <option value="">{uiText("All current steps")}</option>
                   {CURRENT_STEP_FILTER_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {uiText(option.label)}
                     </option>
                   ))}
                 </select>
@@ -1574,65 +1559,65 @@ const AllRequestsPage = () => {
             {showAdvancedFilters && (
               <div className="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
                 <label>
-                  <span className={filterLabelClass}>Assignment</span>
+                  <span className={filterLabelClass}>{uiText("Assignment")}</span>
                   <select
                     className={fieldClass}
                     value={filter}
                     onChange={(e) => setFilter(e.target.value)}
                   >
-                    <option value="">All requests</option>
-                    <option value="unassigned">Unassigned only</option>
+                    <option value="">{uiText("All requests")}</option>
+                    <option value="unassigned">{uiText("Unassigned only")}</option>
                   </select>
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Sort order</span>
+                  <span className={filterLabelClass}>{uiText("Sort order")}</span>
                   <select
                     className={fieldClass}
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                   >
-                    <option value="">Newest first</option>
-                    <option value="assigned">Assigned first</option>
+                    <option value="">{uiText("Newest first")}</option>
+                    <option value="assigned">{uiText("Assigned first")}</option>
                   </select>
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Domain</span>
+                  <span className={filterLabelClass}>{uiText("Domain")}</span>
                   <select
                     className={fieldClass}
                     value={requestDomain}
                     onChange={(e) => setRequestDomain(e.target.value)}
                   >
-                    <option value="">All domains</option>
-                    <option value="operational">Operational</option>
-                    <option value="medical">Medical</option>
+                    <option value="">{uiText("All domains")}</option>
+                    <option value="operational">{uiText("Operational")}</option>
+                    <option value="medical">{uiText("Medical")}</option>
                   </select>
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Request ID</span>
+                  <span className={filterLabelClass}>{uiText("Request ID")}</span>
                   <input
                     className={fieldClass}
-                    placeholder="Exact ID"
+                    placeholder={uiText("Exact ID")}
                     value={requestId}
                     onChange={(e) => setRequestId(e.target.value)}
                   />
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Maintenance ref.</span>
+                  <span className={filterLabelClass}>{uiText("Maintenance ref.")}</span>
                   <input
                     className={fieldClass}
-                    placeholder="Reference number"
+                    placeholder={uiText("Reference number")}
                     value={maintenanceRefNumber}
                     onChange={(e) => setMaintenanceRefNumber(e.target.value)}
                   />
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Section</span>
+                  <span className={filterLabelClass}>{uiText("Section")}</span>
                   <select
                     className={fieldClass}
                     value={section}
                     onChange={(e) => setSection(e.target.value)}
                   >
-                    <option value="">All sections</option>
+                    <option value="">{uiText("All sections")}</option>
                     {sectionOptions.map((sec) => (
                       <option key={sec.id} value={sec.id}>
                         {department
@@ -1643,14 +1628,14 @@ const AllRequestsPage = () => {
                   </select>
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Assigned user</span>
+                  <span className={filterLabelClass}>{uiText("Assigned user")}</span>
                   <select
                     className={fieldClass}
                     value={assignedUser}
                     onChange={(e) => setAssignedUser(e.target.value)}
                   >
-                    <option value="">All assigned users</option>
-                    <option value="unassigned">Unassigned</option>
+                    <option value="">{uiText("All assigned users")}</option>
+                    <option value="unassigned">{uiText("Unassigned")}</option>
                     {procurementUsers.map((person) => (
                       <option key={person.id} value={person.id}>
                         {person.name}
@@ -1659,19 +1644,19 @@ const AllRequestsPage = () => {
                   </select>
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Central Supply</span>
+                  <span className={filterLabelClass}>{uiText("Central Supply")}</span>
                   <select
                     className={fieldClass}
                     value={centralSupplyStatus}
                     onChange={(e) => setCentralSupplyStatus(e.target.value)}
                   >
-                    <option value="">Any transfer status</option>
-                    <option value="not_sent">Not sent</option>
-                    <option value="sent">Sent</option>
+                    <option value="">{uiText("Any transfer status")}</option>
+                    <option value="not_sent">{uiText("Not sent")}</option>
+                    <option value="sent">{uiText("Sent")}</option>
                   </select>
                 </label>
                 <label>
-                  <span className={filterLabelClass}>From date</span>
+                  <span className={filterLabelClass}>{uiText("From date")}</span>
                   <input
                     type="date"
                     className={fieldClass}
@@ -1680,7 +1665,7 @@ const AllRequestsPage = () => {
                   />
                 </label>
                 <label>
-                  <span className={filterLabelClass}>To date</span>
+                  <span className={filterLabelClass}>{uiText("To date")}</span>
                   <input
                     type="date"
                     className={fieldClass}
@@ -1689,23 +1674,21 @@ const AllRequestsPage = () => {
                   />
                 </label>
                 <label>
-                  <span className={filterLabelClass}>Print language</span>
+                  <span className={filterLabelClass}>{uiText("Print language")}</span>
                   <select
                     id="print-language"
                     className={fieldClass}
                     value={printLanguage}
                     onChange={(e) => setPrintLanguage(e.target.value)}
                   >
-                    <option value="en">English</option>
-                    <option value="ar">Arabic</option>
+                    <option value="en">{uiText("English")}</option>
+                    <option value="ar">{uiText("Arabic")}</option>
                   </select>
                 </label>
               </div>
             )}
             <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-slate-500">
-                Press Enter to apply your filters.
-              </p>
+              <p className="text-xs text-slate-500">{uiText("Press Enter to apply your filters.")}</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
@@ -1727,8 +1710,7 @@ const AllRequestsPage = () => {
                   type="submit"
                   className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
                 >
-                  <Search size={16} aria-hidden="true" /> Apply filters
-                </button>
+                  <Search size={16} aria-hidden="true" />{" "}{uiText("Apply filters")}</button>
               </div>
             </div>
           </form>
@@ -1756,13 +1738,10 @@ const AllRequestsPage = () => {
 
         <div id="all-results" tabIndex={-1} className="workspace-results-anchor" />
         {loading ? (
-          <p className="text-gray-600">Loading requests...</p>
+          <p className="text-gray-600">{uiText("Loading requests...")}</p>
         ) : requests.length === 0 ? (
           <Card>
-            <p className="text-sm text-gray-600">
-              No requests found for the selected filters. Try adjusting or
-              clearing filters.
-            </p>
+            <p className="text-sm text-gray-600">{uiText("No requests found for the selected filters. Try adjusting or clearing filters.")}</p>
             <button
               type="button"
               onClick={clearFilters}
@@ -1806,7 +1785,7 @@ const AllRequestsPage = () => {
                 ? `${request.assigned_user_name}${request.assigned_user_role ? ` (${request.assigned_user_role})` : ""}`
                 : request.split_assignees?.length > 0
                   ? `Split among ${request.split_assignees.map((user) => user.name).join(", ")}`
-                  : "Not Assigned";
+                  : uiText("Not Assigned");
 
               const toggleCommunication = (requestId) => {
                 const nextId =
@@ -1833,15 +1812,14 @@ const AllRequestsPage = () => {
                       }
                     >
                       <div className="flex items-center gap-3 flex-wrap">
-                        <p className="font-semibold text-gray-800">
-                          ID: {request.id}
+                        <p className="font-semibold text-gray-800">{uiText("ID:")}{" "}{request.id}
                         </p>
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${request.sent_to_central_supply_at ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
                           title={
                             request.sent_to_central_supply_at
                               ? `Sent ${new Date(request.sent_to_central_supply_at).toLocaleString()}`
-                              : "This request has not been sent to the Central Supply Chain Center"
+                              : uiText("This request has not been sent to the Central Supply Chain Center")
                           }
                         >
                           <span
@@ -1849,27 +1827,25 @@ const AllRequestsPage = () => {
                             aria-hidden="true"
                           />
                           {request.sent_to_central_supply_at
-                            ? "Sent to Central Supply"
-                            : "Not sent to Central Supply"}
+                            ? uiText("Sent to Central Supply")
+                            : uiText("Not sent to Central Supply")}
                         </span>
                         {isUrgent && (
                           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide">
                             <span
                               className="block h-2 w-2 rounded-full bg-red-500"
                               aria-hidden="true"
-                            />
-                            Urgent
-                          </span>
+                            />{uiText("Urgent")}</span>
                         )}
                         {isSummaryRequestView && (
                           <>
                             <span
                               className={`px-2 py-1 rounded text-xs font-semibold ${getStepColor(step)}`}
                             >
-                              {step}
+                              {uiText(step)}
                             </span>
                             <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-                              {request.request_type || "Request"}
+                              {uiText(request.request_type || uiText("Request"))}
                             </span>
                           </>
                         )}
@@ -1879,39 +1855,31 @@ const AllRequestsPage = () => {
                         <>
                           <p className="line-clamp-2 text-sm font-medium text-gray-800">
                             {request.justification ||
-                              "No justification provided."}
+                              uiText("No justification provided.")}
                           </p>
                           <div
                             className="flex flex-wrap gap-2 text-xs font-medium text-slate-600"
                             aria-label={`Summary for request ${request.id}`}
                           >
                             {getMaintenanceReference(request) && (
-                              <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                                Maintenance Ref #:{" "}
+                              <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Maintenance Ref #:")}{" "}
                                 {getMaintenanceReference(request)}
                               </span>
                             )}
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                              Project: {request.project_name || "—"}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Project:")}{" "}{request.project_name || "—"}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                              Department: {request.department_name || "—"}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Department:")}{" "}{request.department_name || "—"}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                              Requester: {requesterDisplay}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Requester:")}{" "}{requesterDisplay}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                              Assigned: {assignedDisplay}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Assigned:")}{" "}{assignedDisplay}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                              Items:{" "}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Items:")}{" "}
                               {Number.isFinite(itemCount) ? itemCount : 0}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                              Attachments: {attachmentCount}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Attachments:")}{" "}{attachmentCount}
                             </span>
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5">
-                              Estimated: {estimatedCostValue.toLocaleString()}{" "}
+                            <span className="rounded-full bg-slate-100 px-2 py-0.5">{uiText("Estimated:")}{" "}{estimatedCostValue.toLocaleString()}{" "}
                               IQD
                             </span>
                           </div>
@@ -1919,34 +1887,34 @@ const AllRequestsPage = () => {
                       ) : (
                         <>
                           <p>
-                            <strong>Type:</strong> {request.request_type}
+                            <strong>{uiText("Type:")}</strong> {request.request_type}
                           </p>
                           {getMaintenanceReference(request) && (
                             <p>
-                              <strong>Maintenance Ref #:</strong>{" "}
+                              <strong>{uiText("Maintenance Ref #:")}</strong>{" "}
                               {getMaintenanceReference(request)}
                             </p>
                           )}
                           <p>
-                            <strong>Project:</strong>{" "}
+                            <strong>{uiText("Project:")}</strong>{" "}
                             {request.project_name || "—"}
                           </p>
                           <p>
-                            <strong>Department:</strong>{" "}
+                            <strong>{uiText("Department:")}</strong>{" "}
                             {request.department_name || "—"}
                           </p>
                           <p>
-                            <strong>Section:</strong>{" "}
+                            <strong>{uiText("Section:")}</strong>{" "}
                             {request.section_name || "—"}
                           </p>
                           <p>
-                            <strong>Requester:</strong> {requesterDisplay}
+                            <strong>{uiText("Requester:")}</strong> {requesterDisplay}
                           </p>
                           <p>
-                            <strong>Assigned To:</strong> {assignedDisplay}
+                            <strong>{uiText("Assigned To:")}</strong> {assignedDisplay}
                           </p>
                           <p className="request-card-justification">
-                            <strong>Justification:</strong>{" "}
+                            <strong>{uiText("Justification:")}</strong>{" "}
                             {request.justification}
                           </p>
                         </>
@@ -1962,24 +1930,20 @@ const AllRequestsPage = () => {
                           disabled={updatingCentralSupplyIds.has(request.id)}
                         >
                           {updatingCentralSupplyIds.has(request.id)
-                            ? "Updating..."
+                            ? uiText("Updating...")
                             : request.sent_to_central_supply_at
-                              ? "Mark as not sent"
-                              : "Mark sent to Central Supply"}
+                              ? uiText("Mark as not sent")
+                              : uiText("Mark sent to Central Supply")}
                         </button>
                       )}
                       <Link
                         to={`/requests/${request.id}`}
                         className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                      >
-                        Open Workspace
-                      </Link>
+                      >{uiText("Open Workspace")}</Link>
                       <button
                         className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
                         onClick={() => handlePrint(request.id)}
-                      >
-                        Print
-                      </button>
+                      >{uiText("Print")}</button>
                       {canRemindCurrentApprover && (
                         <button
                           type="button"
@@ -1993,40 +1957,34 @@ const AllRequestsPage = () => {
                           }
                           title={
                             request.current_approver_role
-                              ? "Email a reminder to the current approver"
-                              : "No current approver to remind"
+                              ? uiText("Email a reminder to the current approver")
+                              : uiText("No current approver to remind")
                           }
                         >
                           {remindingApproverIds.has(request.id)
-                            ? "Sending reminder..."
-                            : "Remind Approver"}
+                            ? uiText("Sending reminder...")
+                            : uiText("Remind Approver")}
                         </button>
                       )}
                       {isPostApprovalStatus(request.status) && (
                         <Link
                           to={`/requests/${request.id}/procure-to-pay/purchase-orders`}
                           className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
-                          title="Create a governed purchase order from approved supplier awards"
-                        >
-                          Create Purchase Order
-                        </Link>
+                          title={uiText("Create a governed purchase order from approved supplier awards")}
+                        >{uiText("Create Purchase Order")}</Link>
                       )}
                       {canHardDeleteRequests && (
                         <button
                           className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
                           onClick={() => handleHardDelete(request.id)}
-                        >
-                          Delete Permanently
-                        </button>
+                        >{uiText("Delete Permanently")}</button>
                       )}
                       {canReclassifyRequests && (
-                        <details className="request-type-correction"><summary>Correct request type</summary><div className="request-type-correction-fields">
+                        <details className="request-type-correction"><summary>{uiText("Correct request type")}</summary><div className="request-type-correction-fields">
                           <label
                             className="mb-1 block text-xs font-semibold text-blue-900"
                             htmlFor={`request-type-${request.id}`}
-                          >
-                            Correct request type
-                          </label>
+                          >{uiText("Correct request type")}</label>
                           <select
                             id={`request-type-${request.id}`}
                             className="w-full rounded border border-blue-300 bg-white px-2 py-2 text-sm text-gray-900"
@@ -2044,7 +2002,7 @@ const AllRequestsPage = () => {
                           >
                             {REQUEST_TYPE_FILTER_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>
-                                {option.label}
+                                {uiText(option.label)}
                               </option>
                             ))}
                           </select>
@@ -2059,8 +2017,8 @@ const AllRequestsPage = () => {
                             }
                           >
                             {rewiringRequestId === request.id
-                              ? "Rewiring approvals…"
-                              : "Change & rewire"}
+                              ? uiText("Rewiring approvals…")
+                              : uiText("Change & rewire")}
                           </button>
                         </div></details>
                       )}
@@ -2070,8 +2028,8 @@ const AllRequestsPage = () => {
                         disabled={loadingItemsId === request.id}
                       >
                         {expandedItemsId === request.id
-                          ? "Hide Items"
-                          : "View Items"}
+                          ? uiText("Hide Items")
+                          : uiText("View Items")}
                       </button>
                       <button
                         className="text-blue-600 underline"
@@ -2079,8 +2037,8 @@ const AllRequestsPage = () => {
                         disabled={attachmentLoadingMap[request.id]}
                       >
                         {expandedAttachmentsId === request.id
-                          ? "Hide Attachments"
-                          : "View Attachments"}
+                          ? uiText("Hide Attachments")
+                          : uiText("View Attachments")}
                       </button>
                       <button
                         className="text-blue-600 underline"
@@ -2088,8 +2046,8 @@ const AllRequestsPage = () => {
                         disabled={loadingApprovalsId === request.id}
                       >
                         {expandedApprovalsId === request.id
-                          ? "Hide Approvals"
-                          : "View Approvals"}
+                          ? uiText("Hide Approvals")
+                          : uiText("View Approvals")}
                       </button>
                       {showCommunication && (
                         <button
@@ -2098,8 +2056,8 @@ const AllRequestsPage = () => {
                           disabled={communicationLoading[request.id]}
                         >
                           {isCommunicationExpanded
-                            ? "Hide Status Chat"
-                            : "View Status Chat"}
+                            ? uiText("Hide Status Chat")
+                            : uiText("View Status Chat")}
                         </button>
                       )}
                       {showDirectPurchaseSection && (
@@ -2113,8 +2071,8 @@ const AllRequestsPage = () => {
                           disabled={directPurchaseSending[request.id]}
                         >
                           {isDirectPurchaseExpanded
-                            ? "Hide Direct Purchase Note"
-                            : "Document Direct Purchase"}
+                            ? uiText("Hide Direct Purchase Note")
+                            : uiText("Document Direct Purchase")}
                         </button>
                       )}
                       {request.status === "Approved" && (
@@ -2129,10 +2087,10 @@ const AllRequestsPage = () => {
                           }
                         >
                           {expandedAssignId === request.id
-                            ? "Hide"
+                            ? uiText("Hide")
                             : request.assigned_user_name
-                              ? "Reassign"
-                              : "Assign"}
+                              ? uiText("Reassign")
+                              : uiText("Assign")}
                         </button>
                       )}
                     </div>
@@ -2140,7 +2098,7 @@ const AllRequestsPage = () => {
 
                   <AllRequestGuidance
                     request={request}
-                    step={step}
+                    step={uiText(step)}
                     assignedDisplay={
                       assignedDisplay === "Not Assigned" ? undefined : assignedDisplay
                     }
@@ -2173,13 +2131,8 @@ const AllRequestsPage = () => {
                     <section className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                         <div>
-                          <h3 className="font-semibold text-slate-800">
-                            Requested Items
-                          </h3>
-                          <p className="text-xs text-gray-500">
-                            Sort items in this request view only; the saved
-                            request order is unchanged.
-                          </p>
+                          <h3 className="font-semibold text-slate-800">{uiText("Requested Items")}</h3>
+                          <p className="text-xs text-gray-500">{uiText("Sort items in this request view only; the saved request order is unchanged.")}</p>
                         </div>
                         {itemsMap[request.id]?.length > 1 && (
                           <button
@@ -2193,26 +2146,26 @@ const AllRequestsPage = () => {
                             className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-100"
                           >
                             {alphabetizedItemsId === request.id
-                              ? "Original order"
-                              : "Sort A-Z"}
+                              ? uiText("Original order")
+                              : uiText("Sort A-Z")}
                           </button>
                         )}
                       </div>
                       {loadingItemsId === request.id ? (
-                        <p className="text-gray-500">Loading items...</p>
+                        <p className="text-gray-500">{uiText("Loading items...")}</p>
                       ) : itemsMap[request.id]?.length > 0 ? (
                         <WorkspaceTableScroll><table className="w-full text-sm border">
                           <thead>
                             <tr className="bg-gray-100">
-                              <th className="border p-1">Item</th>
-                              <th className="border p-1">Specs</th>
-                              <th className="border p-1">Brand</th>
-                              <th className="border p-1">Qty</th>
-                              <th className="border p-1">Procured Qty</th>
-                              <th className="border p-1">Unit Cost</th>
-                              <th className="border p-1">Total</th>
-                              <th className="border p-1">Status</th>
-                              <th className="border p-1">Assigned To</th>
+                              <th className="border p-1">{uiText("Item")}</th>
+                              <th className="border p-1">{uiText("Specs")}</th>
+                              <th className="border p-1">{uiText("Brand")}</th>
+                              <th className="border p-1">{uiText("Qty")}</th>
+                              <th className="border p-1">{uiText("Procured Qty")}</th>
+                              <th className="border p-1">{uiText("Unit Cost")}</th>
+                              <th className="border p-1">{uiText("Total")}</th>
+                              <th className="border p-1">{uiText("Status")}</th>
+                              <th className="border p-1">{uiText("Assigned To")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2247,7 +2200,7 @@ const AllRequestsPage = () => {
                                   <span
                                     className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${getItemStatus(item).className}`}
                                   >
-                                    {getItemStatus(item).label}
+                                    {uiText(getItemStatus(item).label)}
                                   </span>
                                 </td>
                                 <td className="border p-1 align-top">
@@ -2258,9 +2211,7 @@ const AllRequestsPage = () => {
                           </tbody>
                         </table></WorkspaceTableScroll>
                       ) : (
-                        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                          No items found.
-                        </div>
+                        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">{uiText("No items found.")}</div>
                       )}
                     </section>
                   )}
@@ -2279,17 +2230,10 @@ const AllRequestsPage = () => {
                     <div className="mt-4 border-t pt-3 space-y-3 rounded border-amber-200 bg-amber-50 px-3 py-3">
                       <div className="flex flex-wrap items-start justify-between gap-2">
                         <div>
-                          <p className="text-sm font-semibold text-amber-900">
-                            Urgent Direct Purchase Communication
-                          </p>
-                          <p className="text-xs text-amber-700">
-                            Document urgent department-led purchasing so supply
-                            chain can align and follow up.
-                          </p>
+                          <p className="text-sm font-semibold text-amber-900">{uiText("Urgent Direct Purchase Communication")}</p>
+                          <p className="text-xs text-amber-700">{uiText("Document urgent department-led purchasing so supply chain can align and follow up.")}</p>
                         </div>
-                        <p className="text-xs text-amber-800 font-medium">
-                          Recipients: Supply Chain + Requesting Department
-                        </p>
+                        <p className="text-xs text-amber-800 font-medium">{uiText("Recipients: Supply Chain + Requesting Department")}</p>
                       </div>
 
                       {directPurchaseError[request.id] && (
@@ -2305,13 +2249,11 @@ const AllRequestsPage = () => {
 
                       <div className="grid gap-3 md:grid-cols-2">
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-semibold text-amber-900">
-                            What is being purchased directly?
-                          </label>
+                          <label className="text-xs font-semibold text-amber-900">{uiText("What is being purchased directly?")}</label>
                           <textarea
                             className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
                             rows={3}
-                            placeholder="Describe the items or services procured directly and who initiated it."
+                            placeholder={uiText("Describe the items or services procured directly and who initiated it.")}
                             value={directPurchaseDrafts[request.id] || ""}
                             onChange={(event) =>
                               setDirectPurchaseDrafts((prev) => ({
@@ -2322,13 +2264,11 @@ const AllRequestsPage = () => {
                           />
                         </div>
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-semibold text-amber-900">
-                            Urgency / policy alignment notes (optional)
-                          </label>
+                          <label className="text-xs font-semibold text-amber-900">{uiText("Urgency / policy alignment notes (optional)")}</label>
                           <textarea
                             className="w-full rounded border border-amber-200 bg-white p-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-200"
                             rows={3}
-                            placeholder="Share the urgency reason, risk, or policy guidance needed from supply chain."
+                            placeholder={uiText("Share the urgency reason, risk, or policy guidance needed from supply chain.")}
                             value={directPurchaseUrgency[request.id] || ""}
                             onChange={(event) =>
                               setDirectPurchaseUrgency((prev) => ({
@@ -2349,13 +2289,10 @@ const AllRequestsPage = () => {
                           disabled={!!directPurchaseSending[request.id]}
                         >
                           {directPurchaseSending[request.id]
-                            ? "Sending..."
-                            : "Send update"}
+                            ? uiText("Sending...")
+                            : uiText("Send update")}
                         </button>
-                        <p className="text-xs text-amber-800">
-                          These notes are logged to the request and shared with
-                          supply chain stakeholders.
-                        </p>
+                        <p className="text-xs text-amber-800">{uiText("These notes are logged to the request and shared with supply chain stakeholders.")}</p>
                       </div>
 
                       {(directPurchaseEntries[request.id] || [])
@@ -2366,9 +2303,7 @@ const AllRequestsPage = () => {
                             className="rounded border border-amber-100 bg-white px-3 py-2 text-xs text-slate-700"
                           >
                             <div className="flex flex-wrap justify-between gap-1">
-                              <span className="font-semibold text-amber-900">
-                                Direct purchase documented
-                              </span>
+                              <span className="font-semibold text-amber-900">{uiText("Direct purchase documented")}</span>
                               <span className="text-slate-500">
                                 {entry.timestamp
                                   ? new Date(entry.timestamp).toLocaleString()
@@ -2387,12 +2322,8 @@ const AllRequestsPage = () => {
                     <div className="mt-4 border-t pt-3 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="text-sm font-semibold text-indigo-900">
-                            SCM Status Communication
-                          </p>
-                          <p className="text-xs text-indigo-700">
-                            Discuss the status of this approved request (current
-                            status: {statusLabel}).
+                          <p className="text-sm font-semibold text-indigo-900">{uiText("SCM Status Communication")}</p>
+                          <p className="text-xs text-indigo-700">{uiText("Discuss the status of this approved request (current status:")}{" "}{statusLabel}).
                           </p>
                         </div>
                         <button
@@ -2400,16 +2331,12 @@ const AllRequestsPage = () => {
                           className="text-xs font-medium text-indigo-700 underline"
                           onClick={() => refreshCommunications(request.id)}
                           disabled={communicationLoading[request.id]}
-                        >
-                          Refresh
-                        </button>
+                        >{uiText("Refresh")}</button>
                       </div>
 
                       <div className="space-y-2">
                         {communicationLoading[request.id] && (
-                          <p className="text-xs text-indigo-700">
-                            Loading communications...
-                          </p>
+                          <p className="text-xs text-indigo-700">{uiText("Loading communications...")}</p>
                         )}
                         {communicationError[request.id] && (
                           <p className="text-xs text-rose-600">
@@ -2431,10 +2358,10 @@ const AllRequestsPage = () => {
                             >
                               <div className="flex flex-wrap justify-between gap-1">
                                 <span className="font-semibold text-indigo-900">
-                                  {entry.actor_name || "Unknown"}
+                                  {entry.actor_name || uiText("Unknown")}
                                 </span>
                                 <span className="text-slate-500">
-                                  {entry.status_at_time || "Pending"}
+                                  {entry.status_at_time || uiText("Pending")}
                                 </span>
                                 <span className="text-slate-400">
                                   {entry.timestamp
@@ -2453,7 +2380,7 @@ const AllRequestsPage = () => {
                             <textarea
                               className="w-full rounded border border-indigo-200 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                               rows={3}
-                              placeholder="Share an update with the SCM team..."
+                              placeholder={uiText("Share an update with the SCM team...")}
                               value={communicationDrafts[request.id] || ""}
                               onChange={(event) =>
                                 setCommunicationDrafts((prev) => ({
@@ -2470,8 +2397,8 @@ const AllRequestsPage = () => {
                               disabled={!!communicationSending[request.id]}
                             >
                               {communicationSending[request.id]
-                                ? "Sending..."
-                                : "Send to SCM"}
+                                ? uiText("Sending...")
+                                : uiText("Send to SCM")}
                             </button>
                           </div>
                         )}

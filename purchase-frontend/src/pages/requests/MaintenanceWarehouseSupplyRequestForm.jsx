@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
@@ -11,6 +12,7 @@ import useWarehouseStockItems from '../../hooks/useWarehouseStockItems';
 import UrgentRequestToggle from '../../components/requests/UrgentRequestToggle';
 
 const MaintenanceWarehouseSupplyRequestForm = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const [items, setItems] = useState([{ stock_item_id: '', item_name: '', quantity: 1 }]);
   const [templates, setTemplates] = useState([]);
@@ -198,7 +200,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
   if (loading) {
     return (
       <>
-          <div className="p-6 text-center text-gray-600">Loading...</div>
+          <div className="p-6 text-center text-gray-600">{uiText("Loading...")}</div>
       </>
     );
   }
@@ -206,7 +208,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
   if (error || !user) {
     return (
       <>
-          <div className="p-6 text-center text-red-600">Unable to load user info.</div>
+          <div className="p-6 text-center text-red-600">{uiText("Unable to load user info.")}</div>
       </>
     );
   }
@@ -221,7 +223,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block font-semibold mb-1">Target Department</label>
+            <label className="block font-semibold mb-1">{uiText("Target Department")}</label>
             <select
               value={targetDeptId}
               onChange={(e) => {
@@ -243,7 +245,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
 
           {sections.length > 0 && (
             <div>
-              <label className="block font-semibold mb-1">Target Section</label>
+              <label className="block font-semibold mb-1">{uiText("Target Section")}</label>
               <select
                 value={targetSectionId}
                 onChange={(e) => setTargetSectionId(e.target.value)}
@@ -251,7 +253,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
                 disabled={submitting}
                 required
               >
-                <option value="">Select Section</option>
+                <option value="">{uiText("Select Section")}</option>
                 {sections.map((section) => (
                   <option key={section.id} value={section.id}>
                     {section.name}
@@ -262,7 +264,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
           )}
 
           <div>
-            <label className="block font-semibold mb-1">Justification</label>
+            <label className="block font-semibold mb-1">{uiText("Justification")}</label>
             <textarea
               className="w-full p-2 border rounded"
               rows={3}
@@ -274,7 +276,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
           </div>
 
           <div>
-            <label className="block font-semibold mb-1">Fulfillment Warehouse</label>
+            <label className="block font-semibold mb-1">{uiText("Fulfillment Warehouse")}</label>
             <select
               value={supplyWarehouseId}
               onChange={(e) => handleWarehouseChange(e.target.value)}
@@ -282,7 +284,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
               disabled={submitting || warehousesLoading || warehouses.length === 0}
               required
             >
-              <option value="">Select Warehouse</option>
+              <option value="">{uiText("Select Warehouse")}</option>
               {warehouses.map((wh) => (
                 <option key={wh.id} value={wh.id}>
                   {wh.name}
@@ -295,14 +297,14 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
           </div>
 
         <div>
-          <label className="block font-semibold mb-1">Template</label>
+          <label className="block font-semibold mb-1">{uiText("Template")}</label>
           <select
             value={selectedTemplateId}
             onChange={(e) => applyTemplate(e.target.value)}
             className="p-2 border rounded"
             disabled={submitting}
           >
-            <option value="">-- Select Template --</option>
+            <option value="">{uiText("-- Select Template --")}</option>
             {templates.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.template_name}
@@ -319,22 +321,18 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
         />
 
           <div>
-            <label className="block font-semibold mb-2">Items</label>
+            <label className="block font-semibold mb-2">{uiText("Items")}</label>
             {supplyWarehouseId === '' && (
-              <p className="text-sm text-gray-600 mb-2">
-                Select a warehouse to choose from its available items.
-              </p>
+              <p className="text-sm text-gray-600 mb-2">{uiText("Select a warehouse to choose from its available items.")}</p>
             )}
             {warehouseItemsError && (
               <p className="text-sm text-red-600 mb-2">{warehouseItemsError}</p>
             )}
             {warehouseItemsLoading && (
-              <p className="text-sm text-gray-600 mb-2">Loading warehouse items...</p>
+              <p className="text-sm text-gray-600 mb-2">{uiText("Loading warehouse items...")}</p>
             )}
             {supplyWarehouseId && !warehouseItemsLoading && warehouseItems.length === 0 && (
-              <p className="text-sm text-gray-600 mb-2">
-                No items are configured for this warehouse.
-              </p>
+              <p className="text-sm text-gray-600 mb-2">{uiText("No items are configured for this warehouse.")}</p>
             )}
             {items.map((it, idx) => (
               <div key={idx} className="flex gap-2 mb-2 items-center flex-wrap">
@@ -350,7 +348,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
                     warehouseItems.length === 0
                   }
                 >
-                  <option value="">Select item</option>
+                  <option value="">{uiText("Select item")}</option>
                   {warehouseItems.map((item) => (
                     <option key={item.stock_item_id} value={item.stock_item_id}>
                       {item.item_name} ({item.quantity} available)
@@ -383,9 +381,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
             onClick={addItem}
             className="text-blue-600 mt-2"
             disabled={submitting}
-          >
-            + Add Item
-          </button>
+          >{uiText("+ Add Item")}</button>
         </div>
 
           <UrgentRequestToggle
@@ -400,7 +396,7 @@ const MaintenanceWarehouseSupplyRequestForm = () => {
             disabled={submitting}
             className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            {submitting ? 'Submitting...' : 'Submit Request'}
+            {submitting ? uiText("Submitting...") : uiText("Submit Request")}
           </button>
         </form>
       </div>

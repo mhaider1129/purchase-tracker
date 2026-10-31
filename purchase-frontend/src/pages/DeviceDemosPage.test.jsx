@@ -1,5 +1,6 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import i18n from "../i18n";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Page from "./DeviceDemosPage";
 import * as api from "../api/deviceDemos";
@@ -75,7 +76,8 @@ function mount(path = "/?workspace=1") {
     </MemoryRouter>,
   );
 }
-beforeEach(() => {
+beforeEach(async () => {
+  await i18n.changeLanguage("en");
   jest.resetAllMocks();
   api.demoSchema.mockResolvedValue({
     can_initiate: true,
@@ -393,19 +395,19 @@ test("registers a demo against an existing supplier ID without separate company 
     screen.getByRole("option", { name: "Select supplier" }),
   ).toBeInTheDocument();
   fireEvent.change(select, { target: { value: "13" } });
-  fireEvent.change(screen.getByLabelText("manufacturer"), {
+  fireEvent.change(screen.getByLabelText(/manufacturer/i), {
     target: { value: "Device maker" },
   });
-  fireEvent.change(screen.getByLabelText("model"), {
+  fireEvent.change(screen.getByLabelText(/model/i), {
     target: { value: "Device 100" },
   });
-  fireEvent.change(screen.getByLabelText("location"), {
+  fireEvent.change(screen.getByLabelText(/location/i), {
     target: { value: "Imaging" },
   });
-  fireEvent.change(screen.getByLabelText("planned start"), {
+  fireEvent.change(screen.getByLabelText(/planned start/i), {
     target: { value: "2026-10-30" },
   });
-  fireEvent.change(screen.getByLabelText("planned end"), {
+  fireEvent.change(screen.getByLabelText(/planned end/i), {
     target: { value: "2026-11-10" },
   });
   fireEvent.change(screen.getByLabelText("Demo configuration / description"), {
@@ -440,7 +442,7 @@ test("supplier load failure is visible beside the selector and retry preserves r
   );
   expect(screen.getByLabelText("Supplier")).toBeDisabled();
   expect(screen.getByText("Save supplier demo")).toBeDisabled();
-  fireEvent.change(screen.getByLabelText("model"), {
+  fireEvent.change(screen.getByLabelText(/model/i), {
     target: { value: "Keep device model" },
   });
   fireEvent.change(screen.getByLabelText("Supplier demo registration notes"), {
@@ -450,7 +452,7 @@ test("supplier load failure is visible beside the selector and retry preserves r
   await waitFor(() =>
     expect(screen.getByLabelText("Supplier")).not.toBeDisabled(),
   );
-  expect(screen.getByLabelText("model")).toHaveValue("Keep device model");
+  expect(screen.getByLabelText(/model/i)).toHaveValue("Keep device model");
   expect(screen.getByLabelText("Supplier demo registration notes")).toHaveValue(
     "Keep notes",
   );
@@ -472,7 +474,7 @@ test("reloading clears a supplier which is no longer eligible without losing oth
   fireEvent.change(screen.getByLabelText("Supplier"), {
     target: { value: "13" },
   });
-  fireEvent.change(screen.getByLabelText("model"), {
+  fireEvent.change(screen.getByLabelText(/model/i), {
     target: { value: "Keep model" },
   });
   api.demoOptions.mockResolvedValueOnce({
@@ -483,7 +485,7 @@ test("reloading clears a supplier which is no longer eligible without losing oth
   await waitFor(() =>
     expect(screen.getByLabelText("Supplier")).toHaveValue(""),
   );
-  expect(screen.getByLabelText("model")).toHaveValue("Keep model");
+  expect(screen.getByLabelText(/model/i)).toHaveValue("Keep model");
   expect(screen.getByText("Save supplier demo")).toBeDisabled();
 });
 
@@ -581,4 +583,22 @@ test("read-only search reset cannot expose workspace setup or eligible item look
   await waitFor(() => expect(api.listDemos).toHaveBeenLastCalledWith(""));
   expect(api.eligibleDemoItems).not.toHaveBeenCalled();
   expect(api.openDemoWorkspace).not.toHaveBeenCalled();
+});
+
+
+test("Arabic demo workspace translates supplier controls and keeps supplier IDs and descriptions intact", async () => {
+  await i18n.changeLanguage("ar");
+  api.demoAction.mockResolvedValue(workspace);
+  mount();
+  const supplier = await screen.findByLabelText("المورّد");
+  expect(screen.getByRole("heading", { name: "مساحة عمل تجارب الأجهزة" })).toBeInTheDocument();
+  expect(screen.getByText("من إعداد التجربة إلى اعتماد الاختيار")).toBeInTheDocument();
+  await waitFor(() => expect(supplier).not.toBeDisabled());
+  fireEvent.change(supplier, { target: { value: "13" } });
+  for (const [label, value] of [["الشركة المصنّعة", "Device maker"], ["الطراز", "Device 100"], ["الموقع", "Imaging"], ["بداية التجربة المخططة", "2026-10-30"], ["نهاية التجربة المخططة", "2026-11-10"], ["تجهيز الجهاز التجريبي / الوصف", "Trial settings"], ["ملاحظات تسجيل تجربة المورد", "Supplier confirmed loan"]]) {
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+  }
+  fireEvent.click(screen.getByText("حفظ تجربة المورد"));
+  await waitFor(() => expect(api.demoAction).toHaveBeenCalledWith(1, "candidate", expect.objectContaining({ supplier_id: "13", model: "Device 100", notes: "Supplier confirmed loan" })));
+  await act(async () => { await i18n.changeLanguage("en"); });
 });

@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getDepartmentPriorityQueue, reorderDepartmentPriority } from '../api/procurementPriority';
 import usePriorityQueueRefresh from '../hooks/usePriorityQueueRefresh';
@@ -9,6 +10,7 @@ const normalize = row => ({ id: row.request_id, requestId: row.request_id,
   tier: row.system_tier, age: row.age, snapshot: row.snapshot, rank: row.department_rank });
 
 export default function DepartmentPrioritiesPage() {
+  const uiText = useUiTranslation();
   const [rows, setRows] = useState([]);
   const [original, setOriginal] = useState([]);
   const [state, setState] = useState('loading');
@@ -63,9 +65,9 @@ export default function DepartmentPrioritiesPage() {
       <DepartmentPriorityQueue entries={rows} canRank={!saving} onMove={move} onDragMove={move} />
       {!rows.length && <p className="mt-4">No active departmental priorities.</p>}
       <div className="sticky bottom-0 mt-4 flex flex-wrap items-center gap-3 border-t bg-white py-3">
-        <button disabled={!needsSave || saving} onClick={save} className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-40">{saving ? 'Saving…' : 'Save Changes'}</button>
-        <button disabled={!dirty || saving} onClick={() => { setRows(original); setSaved(false); }} className="rounded border px-4 py-2 disabled:opacity-40">Cancel</button>
-        <button disabled={dirty || saving} onClick={() => load()} className="rounded border px-4 py-2 disabled:opacity-40">Refresh</button>
+        <button disabled={!needsSave || saving} onClick={save} className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-40">{saving ? uiText("Saving…") : 'Save Changes'}</button>
+        <button disabled={!dirty || saving} onClick={() => { setRows(original); setSaved(false); }} className="rounded border px-4 py-2 disabled:opacity-40">{uiText("Cancel")}</button>
+        <button disabled={dirty || saving} onClick={() => load()} className="rounded border px-4 py-2 disabled:opacity-40">{uiText("Refresh")}</button>
         {dirty && <span className="text-sm text-amber-700">Unsaved changes</span>}
         {saved && <p role="status" className="text-emerald-700">Department priority order saved.</p>}
       </div>

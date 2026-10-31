@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../api/axios';
@@ -5,6 +6,7 @@ import useWarehouses from '../../hooks/useWarehouses';
 import useWarehouseStockItems from '../../hooks/useWarehouseStockItems';
 
 const SupplyItemsPage = () => {
+  const uiText = useUiTranslation();
   const { id } = useParams();
   const [request, setRequest] = useState(null);
   const [items, setItems] = useState([]);
@@ -186,13 +188,11 @@ const SupplyItemsPage = () => {
               Fulfilling warehouse: {warehousesLoading ? 'Loading…' : supplyWarehouseName}
             </span>
             {(request?.department_name || request?.section_name) && (
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
-                Department: {request.department_name || '—'}
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">{uiText("Department:")}{" "}{request.department_name || '—'}
                 {request.section_name ? ` · Section ${request.section_name}` : ''}
               </span>
             )}
-            <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700">
-              Status: {request?.status || 'Pending'}
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700">{uiText("Status:")}{" "}{request?.status || uiText("Pending")}
             </span>
           </div>
         </header>
@@ -220,7 +220,7 @@ const SupplyItemsPage = () => {
                 <div key={it.id} className="grid gap-3 px-4 py-3 md:grid-cols-12 md:items-center">
                   <div className="md:col-span-4">
                     <p className="font-medium text-gray-900">{it.item_name}</p>
-                    <p className="text-xs text-gray-500">Requested: {it.quantity}</p>
+                    <p className="text-xs text-gray-500">{uiText("Requested:")}{" "}{it.quantity}</p>
                   </div>
                   <div className="md:col-span-3 space-y-1 text-sm text-gray-700">
                     <p>Supplied so far: {alreadySupplied}</p>
@@ -285,7 +285,7 @@ const SupplyItemsPage = () => {
               saving || warehouseItemsLoading ? 'cursor-not-allowed opacity-60' : 'hover:bg-blue-700'
             }`}
           >
-            {saving ? 'Saving…' : 'Save supplied quantities'}
+            {saving ? uiText("Saving…") : 'Save supplied quantities'}
           </button>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import PendingItemWorkspace from '../components/itemMaster/PendingItemWorkspace';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
@@ -74,6 +75,7 @@ const mapItemToForm = item => ({
 });
 
 export default function ItemMasterPage() {
+  const uiText = useUiTranslation();
   const { user } = useAuth();
   const canMaintainLegacy = hasPermission(user, 'item-master.legacy-maintain');
   const [items, setItems] = useState([]);
@@ -214,9 +216,9 @@ export default function ItemMasterPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">Total</div><div className="text-2xl font-semibold">{summary.total}</div></div>
+          <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">{uiText("Total")}</div><div className="text-2xl font-semibold">{summary.total}</div></div>
           <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">Pending Approval</div><div className="text-2xl font-semibold text-amber-700">{summary.pending}</div></div>
-          <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">Active</div><div className="text-2xl font-semibold text-emerald-700">{summary.active}</div></div>
+          <div className="rounded border p-3 bg-white"><div className="text-xs text-slate-500">{uiText("Active")}</div><div className="text-2xl font-semibold text-emerald-700">{summary.active}</div></div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -227,17 +229,17 @@ export default function ItemMasterPage() {
                 <option value="">All status</option>
                 <option value="draft">Draft</option>
                 <option value="pending_approval">Pending approval</option>
-                <option value="active">Active</option>
-                <option value="rejected">Rejected</option>
+                <option value="active">{uiText("Active")}</option>
+                <option value="rejected">{uiText("Rejected")}</option>
               </select>
               <select className="border rounded px-3 py-2" value={filters.item_classification} onChange={e => setFilters(prev => ({ ...prev, item_classification: e.target.value }))}>
                 <option value="">All classifications</option>
                 {CLASSIFICATIONS.map(value => <option key={value} value={value}>{value}</option>)}
               </select>
             </div>
-            <button type="button" onClick={loadItems} className="px-3 py-1.5 border rounded">Apply filters</button>
+            <button type="button" onClick={loadItems} className="px-3 py-1.5 border rounded">{uiText("Apply filters")}</button>
 
-            {loading && <p className="text-sm text-slate-500">Loading...</p>}
+            {loading && <p className="text-sm text-slate-500">{uiText("Loading...")}</p>}
             {error && <p className="text-sm text-red-600">{error}</p>}
             {message && <p className="text-sm text-emerald-700">{message}</p>}
 
@@ -246,10 +248,10 @@ export default function ItemMasterPage() {
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="text-left p-2">Code</th>
-                    <th className="text-left p-2">Name</th>
+                    <th className="text-left p-2">{uiText("Name")}</th>
                     <th className="text-left p-2">Classification</th>
-                    <th className="text-left p-2">Status</th>
-                    <th className="text-left p-2">Actions</th>
+                    <th className="text-left p-2">{uiText("Status")}</th>
+                    <th className="text-left p-2">{uiText("Actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -260,20 +262,20 @@ export default function ItemMasterPage() {
                       <td className="p-2">{item.item_classification}</td>
                       <td className="p-2">{item.status}</td>
                       <td className="p-2 space-x-2">
-                        <button type="button" className="underline" onClick={() => loadItemDetails(item.id)}>View</button>
+                        <button type="button" className="underline" onClick={() => loadItemDetails(item.id)}>{uiText("View")}</button>
                         {canMaintainLegacy && (item.status === 'draft' || item.status === 'rejected') && (
-                          <button type="button" className="underline" onClick={() => startEdit(item)}>Edit</button>
+                          <button type="button" className="underline" onClick={() => startEdit(item)}>{uiText("Edit")}</button>
                         )}
                         {canMaintainLegacy && (item.status === 'draft' || item.status === 'rejected') && (
-                          <button type="button" className="underline" onClick={() => runAction(() => submitItemMaster(item.id), 'Submitted for approval.')}>Submit</button>
+                          <button type="button" className="underline" onClick={() => runAction(() => submitItemMaster(item.id), 'Submitted for approval.')}>{uiText("Submit")}</button>
                         )}
                         {item.status === 'pending_approval' && (
                           <>
-                            <button type="button" className="underline text-emerald-700" onClick={() => runAction(() => approveItemMaster(item.id), 'Item approved and activated.')}>Approve</button>
+                            <button type="button" className="underline text-emerald-700" onClick={() => runAction(() => approveItemMaster(item.id), 'Item approved and activated.')}>{uiText("Approve")}</button>
                             <button type="button" className="underline text-red-700" onClick={() => {
                               const reason = window.prompt('Enter rejection reason');
                               if (reason) runAction(() => rejectItemMaster(item.id, reason), 'Item rejected.');
-                            }}>Reject</button>
+                            }}>{uiText("Reject")}</button>
                           </>
                         )}
                       </td>
@@ -288,10 +290,10 @@ export default function ItemMasterPage() {
             <h2 className="font-semibold">{editingId ? `Edit Legacy Item #${editingId}` : 'Create Legacy Item'}</h2>
             <form className="space-y-2" onSubmit={submitForm}>
               <input className="w-full border rounded px-3 py-2" name="item_code" value={form.item_code} onChange={onFormChange} placeholder="Item code" required />
-              <input className="w-full border rounded px-3 py-2" name="item_name" value={form.item_name} onChange={onFormChange} placeholder="Item name" required />
+              <input className="w-full border rounded px-3 py-2" name="item_name" value={form.item_name} onChange={onFormChange} placeholder={uiText("Item name")} required />
               <input className="w-full border rounded px-3 py-2" name="generic_name" value={form.generic_name} onChange={onFormChange} placeholder="Generic name" />
               <input className="w-full border rounded px-3 py-2" name="brand_name" value={form.brand_name} onChange={onFormChange} placeholder="Brand name" />
-              <input className="w-full border rounded px-3 py-2" name="category" value={form.category} onChange={onFormChange} placeholder="Category" required />
+              <input className="w-full border rounded px-3 py-2" name="category" value={form.category} onChange={onFormChange} placeholder={uiText("Category")} required />
               <input className="w-full border rounded px-3 py-2" name="subcategory" value={form.subcategory} onChange={onFormChange} placeholder="Subcategory" />
               <select className="w-full border rounded px-3 py-2" name="item_classification" value={form.item_classification} onChange={onFormChange}>
                 {CLASSIFICATIONS.map(value => <option key={value} value={value}>{value}</option>)}
@@ -299,7 +301,7 @@ export default function ItemMasterPage() {
               <input className="w-full border rounded px-3 py-2" name="unit_of_measure" value={form.unit_of_measure} onChange={onFormChange} placeholder="UOM" required />
               <input className="w-full border rounded px-3 py-2" name="pack_size" value={form.pack_size} onChange={onFormChange} placeholder="Pack size" />
               <input className="w-full border rounded px-3 py-2" name="storage_condition" value={form.storage_condition} onChange={onFormChange} placeholder="Storage condition" />
-              <input className="w-full border rounded px-3 py-2" name="specifications" value={form.specifications} onChange={onFormChange} placeholder="Specifications" />
+              <input className="w-full border rounded px-3 py-2" name="specifications" value={form.specifications} onChange={onFormChange} placeholder={uiText("Specifications")} />
               <input className="w-full border rounded px-3 py-2" name="preferred_suppliers" value={form.preferred_suppliers} onChange={onFormChange} placeholder="Preferred suppliers (comma separated)" />
               <input className="w-full border rounded px-3 py-2" name="institute_applicability" value={form.institute_applicability} onChange={onFormChange} placeholder="Institute applicability (comma separated)" />
               <div className="grid grid-cols-3 gap-2 text-sm">
@@ -311,7 +313,7 @@ export default function ItemMasterPage() {
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="expiry_controlled" checked={form.expiry_controlled} onChange={onFormChange} /> Expiry controlled</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="serial_controlled" checked={form.serial_controlled} onChange={onFormChange} /> Serial controlled</label>
               <label className="flex items-center gap-2 text-sm"><input type="checkbox" name="contract_eligibility" checked={form.contract_eligibility} onChange={onFormChange} /> Contract eligible</label>
-              <button disabled={saving} className="w-full rounded bg-slate-900 text-white py-2" type="submit">{saving ? 'Saving...' : editingId ? 'Update item' : 'Create item'}</button>
+              <button disabled={saving} className="w-full rounded bg-slate-900 text-white py-2" type="submit">{saving ? uiText("Saving...") : editingId ? 'Update item' : 'Create item'}</button>
             </form>
 
             {selectedItem && (

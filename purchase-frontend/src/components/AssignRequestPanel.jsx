@@ -1,9 +1,11 @@
+import useUiTranslation from "../utils/useUiTranslation";
 //src/components/AssignRequestPanel.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "../api/axios";
 import { Button } from "./ui/Button";
 
 const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
+  const uiText = useUiTranslation();
   const [users, setUsers] = useState([]);
   const [items, setItems] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
@@ -174,7 +176,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
                 </option>
               ))
             ) : (
-              <option disabled>Loading users...</option>
+              <option disabled>{uiText("Loading users...")}</option>
             )}
           </select>
 
@@ -184,7 +186,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
             fullWidth
             disabled={loading || users.length === 0}
           >
-            {currentAssignee ? "Reassign" : "Assign"}
+            {currentAssignee ? uiText("Reassign") : uiText("Assign")}
           </Button>
         </>
       ) : (
@@ -200,10 +202,10 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
               <table className="w-full border text-sm">
                 <thead>
                   <tr className="bg-gray-100 text-left">
-                    <th className="border p-2">Item</th>
-                    <th className="border p-2">Qty</th>
+                    <th className="border p-2">{uiText("Item")}</th>
+                    <th className="border p-2">{uiText("Qty")}</th>
                     <th className="border p-2">Procurement User</th>
-                    <th className="border p-2">Notes</th>
+                    <th className="border p-2">{uiText("Notes")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -220,7 +222,7 @@ const AssignRequestPanel = ({ requestId, currentAssignee, onSuccess }) => {
                           onChange={(e) => setItemAssignments((prev) => ({ ...prev, [item.id]: e.target.value }))}
                           className="w-full rounded border p-2"
                         >
-                          <option value="">Unassigned</option>
+                          <option value="">{uiText("Unassigned")}</option>
                           {users.map((user) => (
                             <option key={user.id} value={user.id}>
                               {user.name} ({user.role})

@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React from 'react';
 
 export function SemanticPurpose({ value }) {
@@ -24,6 +25,7 @@ const format = (value) =>
         ? JSON.stringify(value)
         : String(value);
 export default function PolicyDiagnostics({ diagnostics, policy }) {
+  const uiText = useUiTranslation();
   return (
     <section
       className="mt-4 rounded-xl border border-slate-200 bg-white p-4"
@@ -33,10 +35,10 @@ export default function PolicyDiagnostics({ diagnostics, policy }) {
       {policy && (
         <p className="mt-2 text-sm text-slate-600">
           Evaluated policy: {policy.name || policy.code || policy.id} · Version{' '}
-          {policy.versionNumber ?? 'unavailable'} (ID{' '}
-          {policy.versionId ?? 'unavailable'}) · {policy.status} ·{' '}
-          {policy.activeRuleCount ?? 'unavailable'} active /{' '}
-          {policy.ruleCount ?? 'unavailable'} total rules
+          {policy.versionNumber ?? uiText("unavailable")} (ID{' '}
+          {policy.versionId ?? uiText("unavailable")}) · {policy.status} ·{' '}
+          {policy.activeRuleCount ?? uiText("unavailable")} active /{' '}
+          {policy.ruleCount ?? uiText("unavailable")} total rules
         </p>
       )}
       {!diagnostics ? (
@@ -58,13 +60,12 @@ export default function PolicyDiagnostics({ diagnostics, policy }) {
             <h4 className="font-semibold">
               {rule.code} · {rule.result}
             </h4>
-            <p className="text-xs text-slate-600">
-              Priority {rule.priority} ·{' '}
+            <p className="text-xs text-slate-600">{uiText("Priority")}{" "}{rule.priority} ·{' '}
               {rule.selected
                 ? 'Selected for shadow route'
                 : rule.skippedBy
                   ? `Not selected: processing stopped by ${rule.skippedBy}`
-                  : 'Not selected'}
+                  : uiText("Not selected")}
             </p>
             {rule.conditions.length === 0 && (
               <p className="text-sm">

@@ -1,3 +1,5 @@
+import useUiTranslation from '../../utils/useUiTranslation';
+import { translateWorkflowAction } from '../../utils/workflowTranslation';
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowRightCircle, UserRound } from "lucide-react";
@@ -32,6 +34,7 @@ export function getRequestGuidanceKey(request) {
 
 export default function AllRequestGuidance({ request, step, assignedDisplay }) {
   const { t } = useTranslation();
+  const uiText = useUiTranslation();
   const tr = (key) => t(`allRequestGuidance.${key}`);
   const guidance = getRequestGuidanceKey(request);
   // Terminal requests must not display a stale action supplied by the server.
@@ -67,7 +70,7 @@ export default function AllRequestGuidance({ request, step, assignedDisplay }) {
       </div>
       <RequestAgeBadge createdAt={request.created_at} />
       <p className="all-request-guidance-action">
-        {nextAction || tr(guidance)}
+        {translateWorkflowAction(nextAction, uiText) || tr(guidance)}
       </p>
     </section>
   );

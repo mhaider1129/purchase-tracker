@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
@@ -23,6 +24,7 @@ const formatDateTime = (value) => {
 };
 
 const WarehouseSupplyRequestsPage = () => {
+  const uiText = useUiTranslation();
   const tr = usePageTranslation('warehouseSupplyRequests');
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -1022,7 +1024,7 @@ const WarehouseSupplyRequestsPage = () => {
                               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                   <p className="font-medium text-gray-900">{item.item_name}</p>
-                                  <p className="text-xs text-gray-500">ID: {item.item_id || item.id}</p>
+                                  <p className="text-xs text-gray-500">{uiText("ID:")}{" "}{item.item_id || item.id}</p>
                                 </div>
                                 <div className="flex flex-wrap gap-3 text-sm">
                                   <span className="text-gray-700">

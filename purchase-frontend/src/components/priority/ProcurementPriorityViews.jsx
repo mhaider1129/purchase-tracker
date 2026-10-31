@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import React from 'react';
 import PriorityTierBadge from './PriorityTierBadge';
 
@@ -26,17 +27,19 @@ export function CurrentProcurementPriorities({ entries = [], status = 'ready' })
 }
 
 export function PriorityFactorBreakdown({ breakdown, score, tier }) {
+  const uiText = useUiTranslation();
   return <div><dl aria-label="Priority factor breakdown" className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-2 text-sm">
     {FACTORS.map(([label, key, maximum]) => { const value=valueFor(breakdown,label,key); return <React.Fragment key={key}><dt>{label}</dt><dd className="text-right tabular-nums">{value == null ? 'Not assessed' : `${value} / ${maximum}`}</dd></React.Fragment>; })}
-    <dt className="border-t pt-2 font-bold">Total</dt><dd className="border-t pt-2 text-right font-bold tabular-nums">{score == null ? 'Not assessed' : `${score} / 100`}</dd>
-  </dl><div className="mt-3 flex items-center gap-2 font-semibold">Tier <PriorityTierBadge tier={tier} /></div></div>;
+    <dt className="border-t pt-2 font-bold">{uiText("Total")}</dt><dd className="border-t pt-2 text-right font-bold tabular-nums">{score == null ? 'Not assessed' : `${score} / 100`}</dd>
+  </dl><div className="mt-3 flex items-center gap-2 font-semibold">{uiText("Tier")}{" "}<PriorityTierBadge tier={tier} /></div></div>;
 }
 export const FactorBreakdown = PriorityFactorBreakdown;
 
 export function DepartmentPriorityQueue({ entries = [], canRank, onMove, onDragMove }) {
+  const uiText = useUiTranslation();
   return <section><h1 className="text-2xl font-bold">Department Priorities</h1>
     <p className="text-sm text-slate-600">Rank whole active requests relative to other work in your department. Each request occupies one position.</p>
-    <div className="mt-4 overflow-x-auto"><table className="min-w-full border-separate border-spacing-y-2"><thead><tr className="text-left text-xs uppercase text-slate-500"><th>Department Rank</th><th>Request reference</th><th>Request items</th><th>Age</th><th>Status</th><th>Institutional Tier</th>{canRank && <th>Order</th>}</tr></thead>
+    <div className="mt-4 overflow-x-auto"><table className="min-w-full border-separate border-spacing-y-2"><thead><tr className="text-left text-xs uppercase text-slate-500"><th>{uiText("Department Rank")}</th><th>Request reference</th><th>Request items</th><th>{uiText("Age")}</th><th>{uiText("Status")}</th><th>Institutional Tier</th>{canRank && <th>{uiText("Order")}</th>}</tr></thead>
       <tbody>{entries.map((entry, index) => <tr key={entry.id} draggable={canRank} onDragStart={e=>e.dataTransfer.setData('text/plain', String(entry.id))} onDragOver={e=>canRank&&e.preventDefault()} onDrop={e=>{e.preventDefault();onDragMove?.(e.dataTransfer.getData('text/plain'),index)}} className="rounded border bg-white shadow-sm">
         <td className="p-3 font-bold">{index + 1}</td><td className="p-3">{entry.requestId ? <a className="text-blue-700 underline" href={`/requests/${entry.requestId}`}>{entry.requestNumber}</a> : entry.requestNumber}</td><td className="p-3">{entry.safeTitle}</td><td className="p-3">{entry.age == null ? '—' : `${entry.age} days`}</td><td className="p-3">{entry.stage}</td><td className="p-3"><PriorityTierBadge tier={entry.tier} /></td>
         {canRank && <td className="p-3 whitespace-nowrap"><button type="button" aria-label={`Move ${entry.safeTitle} up`} disabled={!index} onClick={() => onMove(entry.id, index - 1)} className="rounded border px-2 py-1 disabled:opacity-40">Up</button> <button type="button" aria-label={`Move ${entry.safeTitle} down`} disabled={index === entries.length - 1} onClick={() => onMove(entry.id, index + 1)} className="rounded border px-2 py-1 disabled:opacity-40">Down</button></td>}

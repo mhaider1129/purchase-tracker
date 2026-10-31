@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import UrgentRequestBadge from '../components/requests/UrgentRequestBadge';
 import RequestTrackingBrief from '../components/requests/RequestTrackingBrief';
 import {
@@ -94,6 +95,7 @@ const mapStatusColor = (status) => {
 };
 
 const OpenRequestsPage = () => {
+  const uiText = useUiTranslation();
   const { t: translate, i18n } = useTranslation();
   const tr = useMemo(
     () => (key, options) => translate(`openRequests.${key}`, options),
@@ -1164,9 +1166,7 @@ const OpenRequestsPage = () => {
                               <Link
                                 to={`/requests/${req.id}`}
                                 className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-blue-700"
-                              >
-                                Workspace
-                              </Link>
+                              >{uiText("Workspace")}</Link>
                               <button
                                 type="button"
                                 onClick={() => openEditRequest(req)}
@@ -1266,8 +1266,8 @@ const OpenRequestsPage = () => {
                                     className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                                   >
                                     {alphabetizedItemsId === req.id
-                                      ? 'Original order'
-                                      : 'Sort A-Z'}
+                                      ? uiText("Original order")
+                                      : uiText("Sort A-Z")}
                                   </button>
                                 )}
                               </div>
@@ -1429,9 +1429,7 @@ const OpenRequestsPage = () => {
                         <Link
                           to={`/requests/${req.id}`}
                           className="mb-2 inline-flex rounded bg-blue-600 px-3 py-1 text-xs font-semibold text-white"
-                        >
-                          Open Workspace
-                        </Link>
+                        >{uiText("Open Workspace")}</Link>
                         <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                           {tr('table.id')} #{req.id}<UrgentRequestBadge urgent={req.is_urgent} />
                         </p>
@@ -1573,8 +1571,8 @@ const OpenRequestsPage = () => {
                               className="rounded-md border border-gray-300 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
                             >
                               {alphabetizedItemsId === req.id
-                                ? 'Original order'
-                                : 'Sort A-Z'}
+                                ? uiText("Original order")
+                                : uiText("Sort A-Z")}
                             </button>
                           )}
                         </div>

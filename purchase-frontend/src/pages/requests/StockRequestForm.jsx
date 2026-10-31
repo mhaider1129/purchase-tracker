@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import './RequestForms.css';
 // src/pages/requests/StockRequestForm.js
 
@@ -63,6 +64,7 @@ const parsePositiveQuantity = (value) => {
 };
 
 const StockRequestForm = () => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const [itemsList, setItemsList] = useState([]);
   const [selectedItems, setSelectedItems] = useState([createEmptyItem()]);
@@ -887,8 +889,7 @@ const StockRequestForm = () => {
                 ))}
               </ul>
               {itemsList.length > catalogPreview.length && (
-                <p className="text-xs text-gray-500 mt-2">
-                  Showing {catalogPreview.length} of {itemsList.length} catalog
+                <p className="text-xs text-gray-500 mt-2">{uiText("Showing")}{" "}{catalogPreview.length}{" "}{uiText("of")}{" "}{itemsList.length} catalog
                   entries.
                 </p>
               )}
@@ -1005,18 +1006,14 @@ const StockRequestForm = () => {
                         onClick={() => duplicateItem(index)}
                         className="text-sm text-blue-600 hover:underline"
                         disabled={isSubmitting}
-                      >
-                        Duplicate
-                      </button>
+                      >{uiText("Duplicate")}</button>
                       {selectedItems.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeItem(index)}
                           className="text-sm text-red-600 hover:underline"
                           disabled={isSubmitting}
-                        >
-                          Remove
-                        </button>
+                        >{uiText("Remove")}</button>
                       )}
                     </div>
                   </div>
@@ -1037,9 +1034,7 @@ const StockRequestForm = () => {
                       />
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Item name
-                      </label>
+                      <label className="block text-sm text-gray-600 mb-1">{uiText("Item name")}</label>
                       <div className="flex gap-2">
                         <select
                           value={item.stock_item_id}
@@ -1064,9 +1059,7 @@ const StockRequestForm = () => {
                           onClick={() => clearItemSelection(index)}
                           className="shrink-0 px-3 py-2 border border-gray-300 rounded text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                           disabled={isSubmitting || !item.stock_item_id}
-                        >
-                          Clear
-                        </button>
+                        >{uiText("Clear")}</button>
                       </div>
                       {!filteredOptions.length && scopedCatalog.length > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
@@ -1080,9 +1073,7 @@ const StockRequestForm = () => {
                       )}
                     </div>
                     <div className="w-40">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Brand
-                      </label>
+                      <label className="block text-sm text-gray-600 mb-1">{uiText("Brand")}</label>
                       <input
                         type="text"
                         placeholder={t('stockPurchaseRequestForm.fields.optional')}
@@ -1095,9 +1086,7 @@ const StockRequestForm = () => {
                       />
                     </div>
                     <div className="w-32">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Available
-                      </label>
+                      <label className="block text-sm text-gray-600 mb-1">{uiText("Available")}</label>
                       <input
                         type="number"
                         min={0}
@@ -1115,9 +1104,7 @@ const StockRequestForm = () => {
                       />
                     </div>
                     <div className="w-36">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Unit of measure
-                      </label>
+                      <label className="block text-sm text-gray-600 mb-1">{uiText("Unit of measure")}</label>
                       <select
                         value={item.unit_of_measure}
                         onChange={(e) =>
@@ -1135,9 +1122,7 @@ const StockRequestForm = () => {
                       </select>
                     </div>
                     <div className="w-32">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Requested
-                      </label>
+                      <label className="block text-sm text-gray-600 mb-1">{uiText("Requested")}</label>
                       <input
                         type="number"
                         min={1}
@@ -1184,9 +1169,7 @@ const StockRequestForm = () => {
                     </div>
 
                     <div className="flex-1 min-w-[240px]">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Notes
-                      </label>
+                      <label className="block text-sm text-gray-600 mb-1">{uiText("Notes")}</label>
                       <textarea
                         value={item.notes}
                         onChange={(e) =>
@@ -1199,9 +1182,7 @@ const StockRequestForm = () => {
                       />
                     </div>
                     <div className="flex-1 min-w-[200px]">
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Item attachments
-                      </label>
+                      <label className="block text-sm text-gray-600 mb-1">{uiText("Item attachments")}</label>
                       <input
                         type="file"
                         multiple
@@ -1224,9 +1205,7 @@ const StockRequestForm = () => {
               onClick={addItem}
               className="request-add-item"
               disabled={isSubmitting}
-            >
-              + Add Another Item
-            </button>
+            >{uiText("+ Add Another Item")}</button>
           </div>
 
           {/* Attachments */}
@@ -1255,7 +1234,7 @@ const StockRequestForm = () => {
               isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            {isSubmitting ? uiText("Submitting...") : uiText("Submit Request")}
             <HelpTooltip text={t('stockPurchaseRequestForm.submitHelp')} />
           </button>
         </form>

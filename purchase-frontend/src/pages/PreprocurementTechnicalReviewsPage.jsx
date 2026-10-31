@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import * as api from "../api/preprocurementTechnicalReviews";
@@ -53,6 +54,7 @@ const newReport = (packet, schema) =>
       };
 
 export default function PreprocurementTechnicalReviewsPage() {
+  const uiText = useUiTranslation();
   const sendRef = useRef(null);
   const [reviewerSearch, setReviewerSearch] = useState("");
   const [params, setParams] = useSearchParams();
@@ -351,9 +353,7 @@ export default function PreprocurementTechnicalReviewsPage() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </label>
-          <button disabled={busy} className="rounded border px-3 py-2">
-            Search
-          </button>
+          <button disabled={busy} className="rounded border px-3 py-2">{uiText("Search")}</button>
           {search && (
             <button
               type="button"
@@ -366,9 +366,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                     setRequests(await api.eligibleReviewRequests(""));
                 });
               }}
-            >
-              Clear search
-            </button>
+            >{uiText("Clear search")}</button>
           )}
         </form>
       )}
@@ -503,8 +501,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                       className="technical-review-item space-y-3 rounded border p-4"
                     >
                       <legend>
-                        <span className="technical-review-item-number">
-                          Item {index + 1}
+                        <span className="technical-review-item-number">{uiText("Item")}{" "}{index + 1}
                         </span>
                         <label>
                           <input
@@ -525,7 +522,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                       </legend>
                       <p className="text-sm text-slate-600">
                         Requested specifications:{" "}
-                        {packet.specs || "Not recorded"}
+                        {packet.specs || uiText("Not recorded")}
                       </p>
                       {packet.selected && (
                         <>
@@ -784,13 +781,11 @@ export default function PreprocurementTechnicalReviewsPage() {
                         onChange={(event) =>
                           setReviewerSearch(event.target.value)
                         }
-                        placeholder="Name, role, or department"
+                        placeholder={uiText("Name, role, or department")}
                       />
                     </label>
                     <p role="status">
-                      {reviewerIds.length} selected · {visibleInspectors.length}{" "}
-                      of {directory.length} shown
-                    </p>
+                      {reviewerIds.length}{" "}{uiText("selected ·")}{" "}{visibleInspectors.length}{" "}{uiText("of")}{" "}{directory.length}{" "}{uiText("shown")}</p>
                     {reviewerSearch && (
                       <button
                         type="button"
@@ -852,13 +847,13 @@ export default function PreprocurementTechnicalReviewsPage() {
                     <dd>
                       {selectedRequest
                         ? `#${selectedRequest.maintenance_ref_number || selectedRequest.id}`
-                        : "Not selected"}
+                        : uiText("Not selected")}
                     </dd>
                   </div>
                   <div>
                     <dt>Requesting department</dt>
                     <dd>
-                      {selectedRequest?.department_name || "Not selected"}
+                      {selectedRequest?.department_name || uiText("Not selected")}
                     </dd>
                   </div>
                   <div>
@@ -894,7 +889,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                 }
                 className="rounded bg-indigo-700 px-4 py-2 text-white disabled:opacity-40"
               >
-                {busy ? "Please wait…" : "Send technical review"}
+                {busy ? uiText("Please wait…") : "Send technical review"}
               </button>
             </div>
           </form>
@@ -926,12 +921,12 @@ export default function PreprocurementTechnicalReviewsPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr>
-                  <th>Reference</th>
-                  <th>Request</th>
+                  <th>{uiText("Reference")}</th>
+                  <th>{uiText("Request")}</th>
                   <th>State</th>
                   <th>Pending opinions</th>
                   <th>Rejected opinions</th>
-                  <th>Open</th>
+                  <th>{uiText("Open")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -980,8 +975,7 @@ export default function PreprocurementTechnicalReviewsPage() {
               <h2 className="text-xl font-bold">
                 Technical Review · TR-{detail.id}
               </h2>
-              <p>
-                Request #{detail.maintenance_ref_number || detail.request_id} ·{" "}
+              <p>{uiText("Request #")}{detail.maintenance_ref_number || detail.request_id} ·{" "}
                 {detail.requesting_department_name} · {detail.status}
               </p>
               <p className="text-sm">
@@ -1006,14 +1000,14 @@ export default function PreprocurementTechnicalReviewsPage() {
               <p>{packet.snapshot.specs}</p>
               <p>
                 {label(packet.evidence.basis)} · {packet.evidence.category} ·
-                Supplier: {packet.evidence.supplier_name || "Not specified"} ·
-                Manufacturer: {packet.evidence.manufacturer || "Not specified"}{" "}
+                Supplier: {packet.evidence.supplier_name || uiText("Not specified")} ·
+                Manufacturer: {packet.evidence.manufacturer || uiText("Not specified")}{" "}
                 · Model: {packet.evidence.model_number || "—"} · Serial / batch:{" "}
                 {packet.evidence.serial_batch_number || "—"}
               </p>
               <p>
                 Sample received:{" "}
-                {packet.evidence.sample_received_date || "Not recorded"}
+                {packet.evidence.sample_received_date || uiText("Not recorded")}
               </p>
               <p>{packet.evidence.evidence_description}</p>
               {packet.evidence.no_sample_reason && (
@@ -1045,8 +1039,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                 {row.department_name}: {row.status}
               </h3>
               {row.signature && (
-                <p className="text-sm">
-                  Attested by {row.signature.name} ({row.signature.title}),{" "}
+                <p className="text-sm">{uiText("Attested by")}{" "}{row.signature.name} ({row.signature.title}),{" "}
                   {row.signature.contact} ·{" "}
                   {new Date(row.submitted_at).toLocaleString()}
                 </p>
@@ -1088,7 +1081,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                         <tr>
                           <th>Check</th>
                           <th>Condition</th>
-                          <th>Comments</th>
+                          <th>{uiText("Comments")}</th>
                           <th>Action required</th>
                         </tr>
                       </thead>
@@ -1326,7 +1319,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                                         )
                                       }
                                     >
-                                      <option value="">Select</option>
+                                      <option value="">{uiText("Select")}</option>
                                       {choices.map((choice) => (
                                         <option key={choice} value={choice}>
                                           {label(choice)}
@@ -1373,7 +1366,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                             )
                           }
                         >
-                          <option value="">Select</option>
+                          <option value="">{uiText("Select")}</option>
                           {["excellent", "good", "fair", "poor"].map(
                             (value) => (
                               <option key={value} value={value}>
@@ -1414,7 +1407,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                         changeReport(index, "decision", event.target.value)
                       }
                     >
-                      <option value="">Select</option>
+                      <option value="">{uiText("Select")}</option>
                       <option value="APPROVED">Approve for procurement</option>
                       {schema.workflow_available && (
                         <>
@@ -1497,7 +1490,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                         >
                           <option value="sample">Physical sample</option>
                           <option value="data_sheet">Data sheet</option>
-                          <option value="description">Description</option>
+                          <option value="description">{uiText("Description")}</option>
                         </select>
                       </label>
                       <label>
@@ -1659,7 +1652,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                         />
                       </label>
                     ))}
-                    <p>Supporting documents</p>
+                    <p>{uiText("Supporting documents")}</p>
                     {revisionFiles.map((f) => (
                       <label key={f.id} className="mr-3 inline-block">
                         <input
@@ -1931,7 +1924,7 @@ export default function PreprocurementTechnicalReviewsPage() {
                 })
               }
             >
-              {busy ? "Please wait…" : "Save review requirement"}
+              {busy ? uiText("Please wait…") : "Save review requirement"}
             </button>
           </div>
         </details>

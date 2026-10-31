@@ -1,3 +1,4 @@
+import useUiTranslation from "../../utils/useUiTranslation";
 import "../../styles/RequestLists.css";
 import RequestAgeBadge from '../workspaces/RequestAgeBadge';
 import React from "react";
@@ -27,6 +28,7 @@ const ApprovalRequestCard = ({
   compactView = false,
   summaryStats = {},
 }) => {
+  const uiText = useUiTranslation();
   const { t } = useTranslation();
   const isOnHold = String(approvalStatus || '').trim().toLowerCase() === 'on hold';
   const nextAction = isOnHold
@@ -113,15 +115,13 @@ const ApprovalRequestCard = ({
               </span>
             )}
           {request?.budget_exceeded && (
-              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
-                Over budget
-              </span>
+              <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">{uiText("Over budget")}</span>
             )}
             {getApprovalStatusChip()}
             <RequestAgeBadge createdAt={request.created_at || request.request_date} />
           </div>
           <p className={titleClass}>
-            {request.justification || "No justification provided."}
+            {request.justification || uiText("No justification provided.")}
           </p>
           {compactView && (
             <div
