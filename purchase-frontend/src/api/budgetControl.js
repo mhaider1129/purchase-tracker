@@ -10,3 +10,7 @@ export const saveDepartmentBudget = async (payload) => {
   const response = await api.post("/budget-control", payload);
   return response.data?.data;
 };
+export const fetchBudgetControlData = async (fiscalYear) => {
+  const response=await api.get('/budget-control',{params:fiscalYear?{fiscal_year:fiscalYear}:{}});
+  return response.data || {data:[],departments:[]};
+};

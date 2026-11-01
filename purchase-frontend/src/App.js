@@ -350,8 +350,7 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<BudgetControlPage />}
-          requiredPermissions={["dashboard.view"]}
-          allowedRoles={["scm", "admin", "finance", "financeapprover", "cfo"]}
+          requiredPermissions={["procure-to-pay.lifecycle.view"]}
         />
       }
     />

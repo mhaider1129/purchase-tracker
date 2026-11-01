@@ -299,13 +299,7 @@ const Navbar = () => {
       currentUser,
       "procurement-priority.manage",
     );
-    const canAccessBudgetControl = [
-      "scm",
-      "admin",
-      "finance",
-      "financeapprover",
-      "cfo",
-    ].includes(normalizedRole);
+    const canAccessBudgetControl = hasPermission(currentUser,"procure-to-pay.lifecycle.view");
     const canViewAnalytics = hasAccess(currentUser, "feature.analytics", [
       "dashboard.view",
     ]);
