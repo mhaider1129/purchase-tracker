@@ -182,13 +182,7 @@ const RfxPortalPage = () => {
     () => hasPermission(user, "rfx.manage"),
     [user],
   );
-  const canRespond = useMemo(
-    () =>
-      !isAuthenticated ||
-      hasPermission(user, "rfx.respond") ||
-      user?.role?.toLowerCase?.() === "supplier",
-    [isAuthenticated, user],
-  );
+  const canRespond = canManage;
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -724,6 +718,7 @@ const RfxPortalPage = () => {
                       {t("rfxPortal.fields.requestIdOptional")}
                     </label>
                     <input
+                      required
                       id="request_id"
                       name="request_id"
                       type="number"

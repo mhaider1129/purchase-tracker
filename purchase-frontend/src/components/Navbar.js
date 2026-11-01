@@ -322,7 +322,6 @@ const Navbar = () => {
     ]);
     const canAccessRfxPortal = hasAccess(currentUser, "feature.rfxPortal", [
       "rfx.manage",
-      "rfx.respond",
     ]);
     const canAccessSupplierPortalReadiness = hasAccess(
       currentUser,
@@ -422,12 +421,7 @@ const Navbar = () => {
           resolveFeatureNavItem("historicalRequests", canImportHistorical),
           resolveFeatureNavItem("procurementPlans", canManageProcurement),
           createItem(
-            [
-              "admin",
-              "scm",
-              "procurementsupervisor",
-              "procurementspecialist",
-            ].includes(normalizedRole),
+            hasPermission(currentUser,"evaluations.manage"),
             t("navbar.procurementEvaluations"),
             "/procurement-evaluations",
             "text-fuchsia-700",
