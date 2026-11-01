@@ -3062,7 +3062,7 @@
       "type": "RFX Type",
       "dueDate": "Due date",
       "description": "Description",
-      "requestIdOptional": "Request ID (optional)",
+      "requestIdOptional": "Linked request ID (required)",
       "poNumber": "PO number",
       "awardNotes": "Award notes",
       "supplierName": "Supplier name",
@@ -3102,7 +3102,7 @@
       "brand": "Preferred brand"
     },
     "hints": {
-      "requestId": "Link the RFX to an approved request so an award can update the requisition.",
+      "requestId": "Sourcing requires an approved request in your institute.",
       "award": "PO number and notes will be applied when awarding a supplier response."
     },
     "errors": {

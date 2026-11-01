@@ -761,8 +761,7 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ProcurementEvaluationsPage />}
-          allowedRoles={["admin", "SCM", "ProcurementSupervisor", "ProcurementSpecialist"]}
-          requiredPermissions={["evaluations.manage", "procurement.update-status"]}
+          requiredPermissions={["evaluations.manage"]}
         />
       }
     />
@@ -771,8 +770,7 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute
           element={<ProcurementEvaluationDetail />}
-          allowedRoles={["admin", "SCM", "ProcurementSupervisor", "ProcurementSpecialist", "CMO", "CFO", "COO", "CEO"]}
-          requiredPermissions={["evaluations.manage", "procurement.update-status", "requests.view-all"]}
+          requiredPermissions={["evaluations.manage"]}
         />
       }
     />
@@ -867,7 +865,7 @@ const AppRoutes = () => (
         />
       }
     />
-    <Route path="/rfx-portal" element={<RfxPortalPage />} />
+    <Route path="/rfx-portal" element={<ProtectedRoute element={<RfxPortalPage />} requiredPermissions={["rfx.manage"]} />} />
     <Route path="/supplier-portal-readiness" element={<ProtectedRoute element={<SupplierPortalReadinessPage />} />} />
     <Route
       path="/supplier-evaluations"
