@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import saveAs from 'file-saver';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ContractForm from '../components/ContractForm';
+import ContractFinancialHistoryNotice from '../components/ContractFinancialHistoryNotice';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
 import { listContractDocuments } from '../api/contracts';
@@ -382,8 +383,6 @@ const ContractsPage = () => {
   const [contractPayments, setContractPayments] = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsError, setPaymentsError] = useState('');
-  const [addingPayment, setAddingPayment] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({ amount: '', payment_date: '', notes: '' });
 
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
@@ -826,39 +825,9 @@ const ContractsPage = () => {
     }
   }, []);
 
-  const handleCreatePayment = async (event) => {
-    event.preventDefault();
-    if (!viewingContract?.id) return;
-    const amount = Number(paymentForm.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setPaymentsError('Payment amount must be a positive number.');
-      return;
-    }
-    setAddingPayment(true);
-    setPaymentsError('');
-    try {
-      await api.post(`/contracts/${viewingContract.id}/payments`, {
-        amount,
-        payment_date: paymentForm.payment_date || undefined,
-        notes: paymentForm.notes.trim() || undefined,
-        currency: viewingContract.currency || undefined,
-      });
-      setPaymentForm({ amount: '', payment_date: '', notes: '' });
-      await Promise.all([fetchContractPayments(viewingContract.id), fetchContracts()]);
-      const { data: refreshedContract } = await api.get(`/contracts/${viewingContract.id}`);
-      setViewingContract(refreshedContract);
-    } catch (err) {
-      console.error('Failed to register payment', err);
-      setPaymentsError(err?.response?.data?.message || 'Failed to register payment.');
-    } finally {
-      setAddingPayment(false);
-    }
-  };
-
   useEffect(() => {
     if (!viewingContract?.id) {
       setContractPayments([]);
-      setPaymentForm({ amount: '', payment_date: '', notes: '' });
       setPaymentsError('');
       return;
     }
@@ -1134,7 +1103,6 @@ const ContractsPage = () => {
     payload.renewal_notice_days =
       formState.renewal_notice_days === '' ? null : Number(formState.renewal_notice_days);
     payload.estimated_contract_value = parseOptionalNumericField(formState.estimated_contract_value);
-    payload.actual_consumed_value = parseOptionalNumericField(formState.actual_consumed_value);
     if (!payload.title) {
       setFormError('A contract title is required.');
       return;
@@ -1166,29 +1134,6 @@ const ContractsPage = () => {
       payload.contract_value = null;
     }
 
-    if (formState.amount_paid !== '') {
-      const numericPaid = Number(formState.amount_paid);
-      if (!Number.isFinite(numericPaid)) {
-        setFormError('Amount paid must be a valid number.');
-        return;
-      }
-      if (Math.abs(numericPaid) >= 1000000000000) {
-        setFormError('Amount paid is too large.');
-        return;
-      }
-      if (numericPaid < 0) {
-        setFormError('Amount paid cannot be negative.');
-        return;
-      }
-      if (payload.contract_value !== null && numericPaid > payload.contract_value) {
-        setFormError('Amount paid cannot exceed the contract value.');
-        return;
-      }
-      payload.amount_paid = numericPaid;
-    } else {
-      payload.amount_paid = null;
-    }
-
     if (payload.renewal_notice_days !== null && !Number.isFinite(payload.renewal_notice_days)) {
       setFormError('Renewal notice period must be a valid number of days.');
       return;
@@ -1200,13 +1145,7 @@ const ContractsPage = () => {
       setFormError('Estimated contract value must be a valid number.');
       return;
     }
-    if (
-      payload.actual_consumed_value !== null &&
-      !Number.isFinite(payload.actual_consumed_value)
-    ) {
-      setFormError('Actual consumed value must be a valid number.');
-      return;
-    }
+
 
     const exceedsNumericColumnLimit = (value) => Math.abs(value) >= 1000000000000;
     if (
@@ -1216,13 +1155,7 @@ const ContractsPage = () => {
       setFormError('Estimated contract value is too large.');
       return;
     }
-    if (
-      payload.actual_consumed_value !== null &&
-      exceedsNumericColumnLimit(payload.actual_consumed_value)
-    ) {
-      setFormError('Actual consumed value is too large.');
-      return;
-    }
+
 
     if (formState.end_user_department_id) {
       const parsedDepartment = Number(formState.end_user_department_id);
@@ -1380,7 +1313,6 @@ const ContractsPage = () => {
         start_date: proposedStart || null,
         end_date: proposedEnd,
         contract_value: contract.contract_value,
-        amount_paid: contract.amount_paid,
       });
 
       setSuccessMessage('Contract renewed successfully.');
@@ -2695,14 +2627,7 @@ const ContractsPage = () => {
                           {contractPayments.length} payment{contractPayments.length === 1 ? '' : 's'}
                         </span>
                       </div>
-                      <form onSubmit={handleCreatePayment} className="grid gap-2 sm:grid-cols-4">
-                        <input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm((current) => ({ ...current, amount: event.target.value }))} placeholder="Amount" className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-                        <input type="date" value={paymentForm.payment_date} onChange={(event) => setPaymentForm((current) => ({ ...current, payment_date: event.target.value }))} className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-                        <input type="text" value={paymentForm.notes} onChange={(event) => setPaymentForm((current) => ({ ...current, notes: event.target.value }))} placeholder={uiText("Notes (optional)")} className="rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100" />
-                        <button type="submit" disabled={addingPayment} className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">
-                          {addingPayment ? uiText("Saving...") : 'Register payment'}
-                        </button>
-                      </form>
+                      <ContractFinancialHistoryNotice />
                       {paymentsError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{paymentsError}</p>}
                       <div className="mt-3 max-h-48 overflow-auto">
                         {paymentsLoading ? (
@@ -2833,7 +2758,7 @@ const ContractsPage = () => {
                 {detailTab === 'obligations' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/obligations`,{title:'New obligation',obligation_type:'general',priority:'medium',status:'open'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Add Obligation</button>{obligations.map((o)=><div key={o.id} className="rounded border p-2 text-sm"><div className="font-medium">{o.title}</div><div>{o.obligation_type} · due {o.due_date || '—'} · {o.recurrence} · {o.priority} · {o.computed_status || o.status}</div><div className="mt-1 flex gap-2"><button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/complete`,{completion_notes:'Completed from UI'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>{uiText("Complete")}</button><button className="rounded bg-amber-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/waive`,{notes:'Waived'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Waive</button><button className="rounded bg-rose-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/cancel`,{notes:'Cancelled'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>{uiText("Cancel")}</button></div></div>)}</div>}
                 {detailTab === 'renewals' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/renewal-events`,{renewal_type:'manual',renewal_date:new Date().toISOString().slice(0,10),notice_days:90}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Add Renewal Event</button>{renewalEvents.map((r)=><div key={r.id} className="rounded border p-2 text-sm">{r.renewal_date || '—'} · alert {r.alert_date || '—'} · {r.notice_days} days · {r.status} · {r.decision || '—'} <button className="ml-2 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/renewal-events/${r.id}/decision`,{decision:'renew',decision_notes:'Approved'}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Decide Renew</button></div>)}</div>}
 
-                {detailTab === 'financials' && <div className="space-y-2 text-sm"><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">{uiText("Remaining:")}{" "}{financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
+                {detailTab === 'financials' && <div className="space-y-2 text-sm"><ContractFinancialHistoryNotice /><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">{uiText("Remaining:")}{" "}{financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
                 {detailTab === 'items' && (
                   <div className="space-y-4">
                     <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">

@@ -780,5 +780,8 @@
   "{{kind}} documents": "{{kind}} documents",
   "{{selected}} selected · {{shown}} of {{total}} shown": "{{selected}} selected · {{shown}} of {{total}} shown",
   "· Serial:": "· Serial:",
-  "← Back": "← Back"
+  "← Back": "← Back",
+  "Legacy contract financial history is read-only.": "Legacy contract financial history is read-only.",
+  "Use verified invoices and posted AP payables for new transactions. Do not recreate an already settled obligation. Contract-only records without a canonical source require finance reconciliation.": "Use verified invoices and posted AP payables for new transactions. Do not recreate an already settled obligation. Contract-only records without a canonical source require finance reconciliation.",
+  "Open Accounts Payable": "Open Accounts Payable"
 }

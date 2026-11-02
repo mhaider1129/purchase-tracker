@@ -780,5 +780,8 @@
   "{{kind}} documents": "مستندات {{kind}}",
   "{{selected}} selected · {{shown}} of {{total}} shown": "المحدد: {{selected}} · عرض {{shown}} من {{total}}",
   "· Serial:": "· الرقم التسلسلي:",
-  "← Back": "← رجوع"
+  "← Back": "← رجوع",
+  "Legacy contract financial history is read-only.": "السجل المالي السابق للعقود متاح للقراءة فقط.",
+  "Use verified invoices and posted AP payables for new transactions. Do not recreate an already settled obligation. Contract-only records without a canonical source require finance reconciliation.": "استخدم الفواتير التي تم التحقق منها والذمم الدائنة المُرحّلة للمعاملات الجديدة. لا تُنشئ التزاماً سبق تسويته مرة أخرى. تتطلب سجلات العقود غير المرتبطة بمصدر معتمد مراجعة ومطابقة من الإدارة المالية.",
+  "Open Accounts Payable": "فتح الذمم الدائنة"
 }
