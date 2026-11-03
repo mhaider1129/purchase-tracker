@@ -10,6 +10,7 @@ export const createPurchaseOrder = async (requestId, payload) => {
     throw new Error('Purchase order creation requires award selections; legacy manual PO creation is disabled.');
   }
   const canonicalPayload = {
+    ...(payload.contract_id ? { contract_id: payload.contract_id } : {}),
     awards: payload.awards.map(({ award_id: awardId, quantity }) => ({ award_id: awardId, quantity })),
     expected_delivery_date: payload.expected_delivery_date || null,
     delivery_location: payload.delivery_location || null,

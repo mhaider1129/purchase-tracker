@@ -4,6 +4,7 @@ import saveAs from 'file-saver';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import ContractForm from '../components/ContractForm';
 import ContractFinancialHistoryNotice from '../components/ContractFinancialHistoryNotice';
+import ContractCanonicalFinancials from '../components/ContractCanonicalFinancials';
 import ContractEvaluationForm from '../components/ContractEvaluationForm';
 import api from '../api/axios';
 import { listContractDocuments } from '../api/contracts';
@@ -128,17 +129,10 @@ const sortOptions = [
 const EXPIRING_SOON_THRESHOLD_DAYS = 30;
 
 const CURRENCY_OPTIONS = ['IQD', 'USD'];
-const USD_TO_IQD_RATE = Number(process.env.REACT_APP_USD_TO_IQD_RATE || 1600);
 
 const normalizeCurrency = (currency) => {
   const normalized = String(currency || 'IQD').trim().toUpperCase();
   return CURRENCY_OPTIONS.includes(normalized) ? normalized : 'IQD';
-};
-
-const toIqd = (amount, currency) => {
-  const numeric = Number(amount);
-  if (!Number.isFinite(numeric)) return null;
-  return normalizeCurrency(currency) === 'USD' ? numeric * USD_TO_IQD_RATE : numeric;
 };
 
 const statStyles = {
@@ -368,7 +362,6 @@ const ContractsPage = () => {
   const [approvals, setApprovals] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [, setContractDocuments] = useState([]);
-  const [consumption, setConsumption] = useState(null);
   const [risk, setRisk] = useState(null);
   const [riskHistory, setRiskHistory] = useState([]);
   const [riskDashboard, setRiskDashboard] = useState(null);
@@ -568,7 +561,6 @@ const ContractsPage = () => {
     api.get('/contracts/dashboard/risk').then(r=>setRiskDashboard(r.data||null)).catch(()=>setRiskDashboard(null));
     api.get(`/contracts/${contractId}/ai-extractions`).then(r=>setAiExtractions(r.data||[])).catch(()=>setAiExtractions([]));
     listContractDocuments(contractId).then(setContractDocuments).catch(() => setContractDocuments([]));
-    api.get(`/contracts/${contractId}/consumption`).then(r => setConsumption(r.data || null)).catch(() => setConsumption(null));
     api.get(`/contracts/${contractId}/risk`).then(r => setRisk(r.data || null)).catch(() => setRisk(null));
   }, [editingId, viewingContract]);
 
@@ -1364,23 +1356,12 @@ const ContractsPage = () => {
       expiringSoon: 0,
       expired: 0,
       nextRenewal: null,
-      totalValue: 0,
-      totalPaid: 0,
     };
 
     contracts.forEach((contract) => {
       const normalizedStatus = (contract.status || '').toLowerCase();
       if (normalizedStatus === 'active') {
         stats.active += 1;
-      }
-
-      const iqdValue = toIqd(contract.contract_value, contract.currency);
-      const iqdPaid = toIqd(contract.amount_paid, contract.currency);
-      if (Number.isFinite(iqdValue)) {
-        stats.totalValue += iqdValue;
-      }
-      if (Number.isFinite(iqdPaid)) {
-        stats.totalPaid += iqdPaid;
       }
 
       if (contract.is_expired) {
@@ -1407,12 +1388,7 @@ const ContractsPage = () => {
       }
     });
 
-    const paidCoverage =
-      stats.totalValue > 0
-        ? Number(Math.min((stats.totalPaid / stats.totalValue) * 100, 9999).toFixed(1))
-        : null;
-
-    return { ...stats, paidCoverage };
+    return stats;
   }, [contracts, isExpiringSoon]);
 
   const {
@@ -1420,9 +1396,6 @@ const ContractsPage = () => {
     expiringSoon: expiringSoonCount,
     expired: expiredCount,
     nextRenewal,
-    totalValue,
-    totalPaid,
-    paidCoverage,
   } = contractStats;
 
   const filteredContracts = useMemo(() => {
@@ -1448,7 +1421,7 @@ const ContractsPage = () => {
         return aDays - bDays;
       }
       if (sortBy === 'value_desc') {
-        return (toIqd(b.contract_value, b.currency) || 0) - (toIqd(a.contract_value, a.currency) || 0);
+        return String(a.currency||'').localeCompare(String(b.currency||'')) || (Number(b.contract_value)||0)-(Number(a.contract_value)||0);
       }
       if (sortBy === 'title') {
         return (a.title || '').localeCompare(b.title || '', undefined, { sensitivity: 'base' });
@@ -1940,13 +1913,9 @@ const ContractsPage = () => {
           />
           <StatCard
             tone="paid"
-            title="Paid to date"
-            value={formatCurrency(totalPaid, 'IQD') ?? '—'}
-            description={
-              totalValue
-                ? `of ${formatCurrency(totalValue, 'IQD')}${paidCoverage !== null ? ` • ${paidCoverage}% paid` : ''}`
-                : 'Add contract values to track spend'
-            }
+            title={uiText("Accounts payable and payments")}
+            value={uiText("By contract currency")}
+            description={uiText("Open a contract financial tab for posted AP, recorded payments and remaining capacity.")}
           />
         </div>
         )}
@@ -2179,7 +2148,7 @@ const ContractsPage = () => {
                             <div className="font-medium text-gray-800 dark:text-gray-100">{renderExpiry(contract)}</div>
                           </div>
                           <div className="col-span-2">
-                            <p className="text-gray-500 dark:text-gray-400">Paid progress</p>
+                            <p className="text-gray-500 dark:text-gray-400">{uiText("Historical recorded amount")}</p>
                             <p className="font-medium text-gray-800 dark:text-gray-100">
                               {paidSummary.formattedPaid ?? '—'}
                               {paidSummary.formattedTotal ? ` of ${paidSummary.formattedTotal}` : ''}
@@ -2211,7 +2180,7 @@ const ContractsPage = () => {
                         Estimated value
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
-                        Paid
+                        {uiText("Historical recorded amount")}
                       </th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">{uiText("Status")}</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">
@@ -2451,7 +2420,7 @@ const ContractsPage = () => {
                         </div>
                         {selectedContractInsights.paidCoverage !== null && (
                           <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm ring-1 ring-blue-100 dark:bg-blue-900 dark:text-blue-100 dark:ring-blue-800">
-                            {selectedContractInsights.paidCoverage}% paid coverage
+                            {selectedContractInsights.paidCoverage}% {uiText("historical coverage")}
                           </span>
                         )}
                       </div>
@@ -2570,7 +2539,7 @@ const ContractsPage = () => {
                       </p>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Paid to date</h3>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{uiText("Historical recorded amount")}</h3>
                       {(() => {
                         const paidSummary = getPaidSummary(viewingContract);
                         return (
@@ -2627,6 +2596,8 @@ const ContractsPage = () => {
                           {contractPayments.length} payment{contractPayments.length === 1 ? '' : 's'}
                         </span>
                       </div>
+                      <ContractCanonicalFinancials contractId={viewingContract.id} />
+                      <h3 className="font-semibold">{uiText("Historical legacy totals")}</h3>
                       <ContractFinancialHistoryNotice />
                       {paymentsError && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{paymentsError}</p>}
                       <div className="mt-3 max-h-48 overflow-auto">
@@ -2758,7 +2729,7 @@ const ContractsPage = () => {
                 {detailTab === 'obligations' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/obligations`,{title:'New obligation',obligation_type:'general',priority:'medium',status:'open'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Add Obligation</button>{obligations.map((o)=><div key={o.id} className="rounded border p-2 text-sm"><div className="font-medium">{o.title}</div><div>{o.obligation_type} · due {o.due_date || '—'} · {o.recurrence} · {o.priority} · {o.computed_status || o.status}</div><div className="mt-1 flex gap-2"><button className="rounded bg-emerald-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/complete`,{completion_notes:'Completed from UI'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>{uiText("Complete")}</button><button className="rounded bg-amber-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/waive`,{notes:'Waived'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>Waive</button><button className="rounded bg-rose-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/obligations/${o.id}/cancel`,{notes:'Cancelled'}); const {data}=await api.get(`/contracts/${id}/obligations`); setObligations(data||[]);}}>{uiText("Cancel")}</button></div></div>)}</div>}
                 {detailTab === 'renewals' && <div className="space-y-2"><button type="button" className="rounded bg-blue-600 px-3 py-1 text-sm text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/renewal-events`,{renewal_type:'manual',renewal_date:new Date().toISOString().slice(0,10),notice_days:90}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Add Renewal Event</button>{renewalEvents.map((r)=><div key={r.id} className="rounded border p-2 text-sm">{r.renewal_date || '—'} · alert {r.alert_date || '—'} · {r.notice_days} days · {r.status} · {r.decision || '—'} <button className="ml-2 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; await api.patch(`/contracts/${id}/renewal-events/${r.id}/decision`,{decision:'renew',decision_notes:'Approved'}); const {data}=await api.get(`/contracts/${id}/renewal-events`); setRenewalEvents(data||[]);}}>Decide Renew</button></div>)}</div>}
 
-                {detailTab === 'financials' && <div className="space-y-2 text-sm"><ContractFinancialHistoryNotice /><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">{uiText("Remaining:")}{" "}{financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
+                {detailTab === 'financials' && <div className="space-y-2 text-sm"><ContractCanonicalFinancials contractId={editingId || viewingContract?.id} /><h3 className="font-semibold">{uiText("Historical legacy totals")}</h3><ContractFinancialHistoryNotice /><div className="grid grid-cols-2 gap-2 md:grid-cols-3"><div className="rounded border p-2">Contract: {financialSummary?.contract_value ?? '—'}</div><div className="rounded border p-2">Invoiced: {financialSummary?.total_invoiced ?? '—'}</div><div className="rounded border p-2">Paid: {financialSummary?.total_paid ?? '—'}</div><div className="rounded border p-2">Consumed: {financialSummary?.total_consumed ?? '—'}</div><div className="rounded border p-2">{uiText("Remaining:")}{" "}{financialSummary?.remaining_contract_value ?? '—'}</div><div className="rounded border p-2">Warn/Fail: {(financialSummary?.matching_warning_count||0)}/{(financialSummary?.matching_failed_count||0)}</div></div><div>Invoices: {invoices.length} | Payments: {payments.length} | Consumption: {consumptionEntries.length}</div></div>}
                 {detailTab === 'items' && (
                   <div className="space-y-4">
                     <div className="rounded-lg border border-blue-100 bg-blue-50/60 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
@@ -2809,7 +2780,7 @@ const ContractsPage = () => {
                   </div>
                 )}
                 {detailTab === 'approvals' && <div className="space-y-2"><button type="button" onClick={async()=>{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/submit-review`); const {data}=await api.get(`/contracts/${id}/approvals`); setApprovals(data||[]);}} className="rounded bg-blue-600 px-3 py-1 text-sm text-white">Submit for Review</button>{approvals.map((a)=><div key={a.id} className="rounded border p-2 text-sm">L{a.approval_level} {a.stage} - {a.status} {a.is_active ? '(Active)' : ''}</div>)}</div>}
-                {detailTab === 'consumption' && consumption && <div className="text-sm space-y-1"><p>Consumed: {consumption.actual_consumed_value}</p><p>Paid: {consumption.paid_amount}</p><p>{uiText("Remaining:")}{" "}{consumption.remaining_balance}</p><p>Consumed %: {consumption.consumed_percentage}</p></div>}
+                {detailTab === 'consumption' && <ContractCanonicalFinancials contractId={editingId || viewingContract?.id} />}
                 {detailTab === 'risk' && <div className="text-sm space-y-2"><div className="rounded border p-2"><p>Risk: <span className="font-semibold">{risk?.risk_level || '—'}</span> ({risk?.risk_score ?? '—'})</p><button type="button" className="mt-1 rounded bg-indigo-600 px-2 py-1 text-xs text-white" onClick={async()=>{const id=editingId||viewingContract?.id; const {data}=await api.post(`/contracts/${id}/risk/recalculate`,{}); setRisk(data||null); const h=await api.get(`/contracts/${id}/risk/history`); setRiskHistory(h.data||[]);}}>Recalculate risk</button></div><div className="rounded border p-2"><p className="font-medium">Factors</p><ul className="list-disc pl-5">{(risk?.risk_factors||[]).map((f,i)=><li key={i}><span className="font-medium">{f.label || f.code}</span> (+{f.points}) — {f.explanation}</li>)}</ul></div><div className="rounded border p-2"><p className="font-medium">{uiText("History")}</p>{riskHistory.slice(0,5).map((h)=><div key={h.id} className="text-xs">{h.assessed_at}: {h.risk_level} ({h.risk_score})</div>)}</div><div className="rounded border p-2"><p className="font-medium">Dashboard snapshot</p><div className="grid grid-cols-2 gap-1 text-xs md:grid-cols-4"><div>Low: {riskDashboard?.low_count ?? 0}</div><div>Medium: {riskDashboard?.medium_count ?? 0}</div><div>High: {riskDashboard?.high_count ?? 0}</div><div>Critical: {riskDashboard?.critical_count ?? 0}</div><div>Avg: {riskDashboard?.average_risk_score ?? 0}</div></div></div></div>}
                 {detailTab === 'ai_summary' && <div className="space-y-2 text-sm"><button type="button" className="rounded bg-indigo-600 px-3 py-1 text-white text-xs" onClick={async()=>{try{const id=editingId||viewingContract?.id; await api.post(`/contracts/${id}/ai-extract`,{}); setAiMessage('Extraction requested successfully.');}catch(err){if(err?.response?.status===501){setAiMessage('AI extraction is prepared but no provider is configured yet.');}else{setAiMessage('Extraction failed.');}} const id=editingId||viewingContract?.id; const {data}=await api.get(`/contracts/${id}/ai-extractions`); setAiExtractions(data||[]);}}>Run AI Extraction</button>{aiMessage && <p className="text-xs text-slate-600">{aiMessage}</p>}{aiExtractions[0] ? <div className="rounded border p-2"><p>{uiText("Status:")}{" "}{aiExtractions[0].extraction_status}</p><p>Summary: {aiExtractions[0].summary || '—'}</p><p>Parties: {JSON.stringify(aiExtractions[0].extracted_parties || {})}</p><p>Dates: {JSON.stringify(aiExtractions[0].extracted_dates || {})}</p><p>Value: {JSON.stringify(aiExtractions[0].extracted_value || {})}</p><p>Payment Terms: {JSON.stringify(aiExtractions[0].extracted_payment_terms || {})}</p><p>Renewal: {JSON.stringify(aiExtractions[0].extracted_renewal_clause || {})}</p><p>Termination: {JSON.stringify(aiExtractions[0].extracted_termination_clause || {})}</p><p>Obligations: {JSON.stringify(aiExtractions[0].extracted_obligations || [])}</p><p>Risks: {JSON.stringify(aiExtractions[0].extracted_risks || [])}</p></div> : <p>No AI extraction yet.</p>}</div>}
               </div>

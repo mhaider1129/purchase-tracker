@@ -45,6 +45,7 @@ const STATUS_STYLES = {
 const WORKSPACE_TABS = ['Overview', 'Items', 'Receipts / GRNs', 'Invoices', 'Documents', 'Communication', 'Timeline', 'Audit'];
 
 const EMPTY_PO_FORM = {
+  contract_id: '',
   supplier_name: '',
   expected_delivery_date: '',
   delivery_location: '',
@@ -433,6 +434,7 @@ const ProcureToPayPurchaseOrdersPage = () => {
             )}
             <input className="border rounded px-2 py-1" placeholder="Supplier / vendor" value={manualForm.supplier_name} onChange={(e) => setManualForm((prev) => ({ ...prev, supplier_name: e.target.value }))} />
             <input className="border rounded px-2 py-1" placeholder="Supplier contact person" value={manualForm.supplier_contact_person} onChange={(e) => setManualForm((prev) => ({ ...prev, supplier_contact_person: e.target.value }))} />
+            <label className="text-sm">{uiText("Contract ID (optional)")}<input className="ml-2 rounded border px-2 py-1" type="number" min="1" value={manualForm.contract_id} onChange={e=>setManualForm(prev=>({...prev,contract_id:e.target.value}))} /></label>
             <input className="border rounded px-2 py-1" type="date" value={manualForm.expected_delivery_date} onChange={(e) => setManualForm((prev) => ({ ...prev, expected_delivery_date: e.target.value }))} />
             <input className="border rounded px-2 py-1" placeholder="Delivery location" value={manualForm.delivery_location} onChange={(e) => setManualForm((prev) => ({ ...prev, delivery_location: e.target.value }))} />
             <input className="border rounded px-2 py-1" placeholder={uiText("Currency")} value={manualForm.currency} onChange={(e) => setManualForm((prev) => ({ ...prev, currency: e.target.value.toUpperCase() }))} />

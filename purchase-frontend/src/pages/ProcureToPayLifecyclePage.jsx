@@ -1,4 +1,5 @@
 import useUiTranslation from "../utils/useUiTranslation";
+import CanonicalFinancialDocuments from "../components/CanonicalFinancialDocuments";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
@@ -490,6 +491,7 @@ const ProcureToPayLifecyclePage = () => {
           { id: 'match_and_pay', title: 'Run match and complete payment', tip: 'Verify ledger posting before marking invoices as paid.' },
         ]}
       />
+      <CanonicalFinancialDocuments data={data} />
       <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Lifecycle workspaces">
         {[
           ['PO', 'purchase-orders'], ['GRPO', 'receipts'], ['A/P Invoice', 'invoices'], ['Matching', 'matching'],
