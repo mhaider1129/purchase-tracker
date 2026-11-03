@@ -23,6 +23,14 @@ describe('award-based purchase order API', () => {
     });
   });
 
+  test('passes an explicit contract source without accepting supplier or institute authority',async()=>{
+    api.post.mockResolvedValue({data:{}});
+    await createPurchaseOrder(7,{awards:[{award_id:11,quantity:'4'}],contract_id:'19',institute_id:999,supplier_id:999});
+    expect(api.post.mock.calls[0][1]).toMatchObject({contract_id:'19',awards:[{award_id:11,quantity:'4'}]});
+    expect(api.post.mock.calls[0][1]).not.toHaveProperty('institute_id');
+    expect(api.post.mock.calls[0][1]).not.toHaveProperty('supplier_id');
+  });
+
   test('fails closed before HTTP for legacy arbitrary PO payloads', async () => {
     await expect(createPurchaseOrder(7, { supplier_name: 'Legacy', items: [{ unit_price: 2 }] }))
       .rejects.toThrow('legacy manual PO creation is disabled');

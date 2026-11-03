@@ -1,3 +1,4 @@
+import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createRfxEvent,
@@ -156,6 +157,7 @@ const sourcingWorkflowSteps = [
 
 const RfxPortalPage = () => {
   const { t } = useTranslation();
+  const uiText=useUiTranslation();
   const { user, isAuthenticated } = useAuth();
   const [events, setEvents] = useState([]);
   const [responses, setResponses] = useState([]);
@@ -170,7 +172,7 @@ const RfxPortalPage = () => {
   const [savingResponse, setSavingResponse] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [awardForm, setAwardForm] = useState({ po_number: "", notes: "" });
+  const [awardForm, setAwardForm] = useState({ po_number: "", notes: "", contract_id: "" });
   const [awardingResponseId, setAwardingResponseId] = useState(null);
 
   const selectedEvent = useMemo(
@@ -448,6 +450,7 @@ const RfxPortalPage = () => {
 
     const payload = {
       response_id: responseId,
+      ...(awardForm.contract_id ? {contract_id:awardForm.contract_id} : {}),
       po_number: awardForm.po_number?.trim() || undefined,
       notes: awardForm.notes?.trim() || undefined,
     };
@@ -455,7 +458,7 @@ const RfxPortalPage = () => {
     try {
       await awardRfxResponse(selectedEventId, payload);
       setSuccessMessage(t("rfxPortal.success.awardIssued"));
-      setAwardForm({ po_number: "", notes: "" });
+      setAwardForm({ po_number: "", notes: "", contract_id: "" });
       await loadEvents();
       await loadResponses(selectedEventId);
     } catch (err) {
@@ -470,7 +473,7 @@ const RfxPortalPage = () => {
     setSelectedEventId(eventId);
     setResponses([]);
     setSuccessMessage("");
-    setAwardForm({ po_number: "", notes: "" });
+    setAwardForm({ po_number: "", notes: "", contract_id: "" });
   };
 
   const handleStatusChange = async (eventId, status) => {
@@ -1256,6 +1259,8 @@ const RfxPortalPage = () => {
                     />
                   </div>
                   <div>
+                    <label className="block text-xs font-medium text-gray-700" htmlFor="award_contract_id">{uiText("Contract ID (optional)")}</label>
+                    <input id="award_contract_id" name="contract_id" type="number" min="1" value={awardForm.contract_id} onChange={handleAwardFieldChange} className="mt-1 mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
                     <label className="block text-xs font-medium text-gray-700" htmlFor="award_notes">
                       {t("rfxPortal.fields.awardNotes")}
                     </label>
