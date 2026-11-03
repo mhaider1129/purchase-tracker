@@ -122,6 +122,28 @@ describe("canonical API client", () => {
     Object.defineProperty(global, "window", { configurable: true, value: originalWindow });
   });
 
+  test.each([null, "stale-token"])("a missing-token workspace response returns to login (stored token: %p)", async (token) => {
+    const { default: api } = loadClient();
+    if (token) localStorage.setItem("token", token);
+    const originalWindow = global.window;
+    const fakeWindow = { location: { href: "/requests/1396" }, dispatchEvent: jest.fn() };
+    Object.defineProperty(global, "window", { configurable: true, value: fakeWindow });
+    const error = {
+      config: { method: "get", url: "/requests/1396/full-details" },
+      response: {
+        status: 401,
+        data: { success: false, message: "Unauthorized: Missing or malformed token", code: "INVALID_TOKEN" },
+      },
+    };
+    try {
+      await expect(responseErrorInterceptor(api)(error)).rejects.toBe(error);
+      expect(localStorage.getItem("token")).toBeNull();
+      expect(fakeWindow.location.href).toBe("/login");
+    } finally {
+      Object.defineProperty(global, "window", { configurable: true, value: originalWindow });
+    }
+  });
+
   test("replaces an HTTP 413 response with the friendly upload-size message", async () => {
     const { default: api } = loadClient();
     const error = {
