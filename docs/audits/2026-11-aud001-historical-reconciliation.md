@@ -95,7 +95,7 @@ No hosted SQL, historical backfill, deployment or merge was performed. `LIVE_ROU
 
 Final local results:
 
-- `npm run test:contract-reconciliation-postgres`: **30 new cases passed**, plus all **38 Phase 5B cases** and populated initial/repeat patch preservation. Every review command is surrounded by exact historical/canonical/outbox hash comparisons, including successful confirmations, retries, denials, concurrency and audit failures.
+- `npm run test:contract-reconciliation-postgres`: **31 new cases passed**, plus all **38 Phase 5B cases** and populated initial/repeat patch preservation. Every review command is surrounded by exact historical/canonical/outbox hash comparisons, including successful confirmations, retries, denials, concurrency and audit failures.
 - `npm run test:contracts-postgres`: **51 passed**, preserving institute scope and contract lifecycle behavior.
 - Backend `npm test -- --runInBand`: **220 suites / 1,864 tests passed; 3 tests failed** (baseline failures listed below).
 - Frontend focused component/API/locale regression command: **6 suites / 14 tests passed**, including Arabic controls and exact string amounts.
