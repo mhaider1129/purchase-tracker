@@ -352,12 +352,14 @@ const Dashboard = () => {
             title={translate('overviewTitle', { defaultValue: '📊 Dashboard Overview' })}
             description={translate('overviewSubtitle', { defaultValue: 'Monitor demand, approvals, spend, and operational exceptions from one decision-ready view.' })}
             icon={LayoutDashboard}
-            meta={[`${formatAmount(totalRequests)} total requests`, `${completionRate.toFixed(1)}% completion rate`, `Reporting year ${year}`]}
+            meta={[`${formatAmount(totalRequests)} total requests`, `${completionRate.toFixed(1)}% ${uiText('Operational closure rate')}`, `Reporting year ${year}`]}
             actions={<button type="button" onClick={() => window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT))} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4" />{" "}{uiText("Refresh data")}</button>}
           />
         </div>
         <p className="mb-4 text-sm text-slate-600">{translate('timingNote', { defaultValue: 'Timing metrics exclude recorded approval hold periods.' })}</p>
         <div className="mb-8"><CurrentProcurementPriorities status={priorityState.status} entries={priorityState.entries} /></div>
+
+        {summary?.completion_dimensions && <section className="mb-6 rounded-xl border bg-white p-4"><h2 className="font-semibold">{uiText('Verified completion in your institute')}</h2><p className="text-sm">{uiText('Ordering and stock availability are distinct from accepted receiving and department fulfillment.')}</p><dl className="mt-3 grid gap-3 md:grid-cols-4">{[['procurement_complete_requests','Procurement committed'],['receipt_complete_requests','Receiving accepted'],['fulfilled_requests','Department fulfillment verified'],['legacy_unverified_requests','Historical completion without verified fulfillment']].map(([key,label])=><div key={key}><dt>{uiText(label)}</dt><dd className="font-semibold">{summary.completion_dimensions[key]}</dd></div>)}</dl></section>}
 
         {/* Overview Highlights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -366,17 +368,13 @@ const Dashboard = () => {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm text-purple-700 font-medium">
-                  {translate('completionPerformance', {
-                    defaultValue: 'Completion performance',
-                  })}
+                  {uiText('Operational closure performance')}
                 </p>
                 <p className="text-3xl font-bold text-purple-900">
                   {`${completionRate.toFixed(1)}%`}
                 </p>
                 <p className="text-xs text-purple-600">
-                  {translate('completionHelper', {
-                    defaultValue: 'Share of requests completed so far',
-                  })}
+                  {uiText('Historical closure labels and stock-ready requests; see verified fulfillment separately.')}
                 </p>
               </div>
               <span
@@ -627,9 +625,7 @@ const Dashboard = () => {
             </h3>
             <p className="text-xl font-bold text-green-700">{formatAmount(approvedRequests)}</p>
             <p className="text-xs text-green-600">
-              {translate('completionHelper', {
-                defaultValue: 'Share of requests completed so far',
-              })}
+              {uiText('Historical closure labels and stock-ready requests; see verified fulfillment separately.')}
             </p>
           </Card>
           <Card className="text-center border border-amber-100 shadow-sm bg-amber-50">
@@ -643,7 +639,7 @@ const Dashboard = () => {
           </Card>
           <Card className="text-center border border-blue-100 shadow-sm bg-blue-50">
             <h3 className="text-sm text-gray-600">
-              {translate('completed', { defaultValue: 'Completed' })}
+              {uiText('Operationally closed')}
             </h3>
             <p className="text-xl font-bold text-blue-700">{formatAmount(completedRequests)}</p>
             <p className="text-xs text-blue-600">
@@ -661,11 +657,11 @@ const Dashboard = () => {
           </Card>
           <Card className="text-center border border-indigo-100 shadow-sm bg-indigo-50">
             <h3 className="text-sm text-gray-600">
-              {translate('completionRate', { defaultValue: 'Completion Rate' })}
+              {uiText('Operational closure rate')}
             </h3>
             <p className="text-xl font-bold text-indigo-700">{`${completionRate.toFixed(1)}%`}</p>
             <p className="text-xs text-indigo-600">
-              {translate('completionSparkLabel', { defaultValue: 'Completion velocity' })}
+              {uiText('Operational closure velocity')}
             </p>
           </Card>
           <Card className="text-center border border-sky-100 shadow-sm bg-sky-50">
@@ -1039,7 +1035,7 @@ const Dashboard = () => {
                   type="monotone"
                   dataKey="completed_count"
                   stroke="#00C49F"
-                  name={translate('completed', { defaultValue: 'Completed' })}
+                  name={uiText('Operationally closed')}
                 />
               </LineChart>
             </ResponsiveContainer>
