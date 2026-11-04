@@ -1,3 +1,4 @@
+import ProcurementCompletionPanel from '../components/ProcurementCompletionPanel';
 import useUiTranslation from "../utils/useUiTranslation";
 import CanonicalFinancialDocuments from "../components/CanonicalFinancialDocuments";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -491,6 +492,7 @@ const ProcureToPayLifecyclePage = () => {
           { id: 'match_and_pay', title: 'Run match and complete payment', tip: 'Verify ledger posting before marking invoices as paid.' },
         ]}
       />
+      <ProcurementCompletionPanel completion={data?.completion} />
       <CanonicalFinancialDocuments data={data} />
       <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm" aria-label="Lifecycle workspaces">
         {[

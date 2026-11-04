@@ -1,3 +1,4 @@
+import ProcurementCompletionPanel from '../components/ProcurementCompletionPanel';
 import { workflowLabel } from '../utils/workflowTranslation';
 import useUiTranslation from "../utils/useUiTranslation";
 import RequestApprovalsReview from "../components/requests/RequestApprovalsReview";
@@ -243,16 +244,10 @@ const RequestDetailWorkspace = () => {
 
   const selectedProcurementItem = items.find((item) => String(item.item_id || item.id) === String(procurementForm.item_id));
 
-  const completionReadiness = useMemo(() => {
-    const finalizedStatuses = new Set(['purchased', 'completed', 'not_procured', 'canceled']);
-    const hasSavedCost = request.estimated_cost !== null && request.estimated_cost !== undefined && request.estimated_cost !== '' && Number(request.estimated_cost) >= 0;
-    const incompleteItems = items.filter((item) => !isRejectedItem(item) && !finalizedStatuses.has(String(item.procurement_status || '').trim().toLowerCase()));
-    return {
-      canComplete: hasSavedCost && items.length > 0 && incompleteItems.length === 0,
-      hasSavedCost,
-      incompleteItems,
-    };
-  }, [items, request.estimated_cost]);
+  const completionReadiness = useMemo(() => ({
+    canComplete: workspace?.completion?.can_complete === true,
+    incompleteItems: (workspace?.completion?.items || []).filter(line => line.eligible && !line.fulfillment_complete),
+  }), [workspace?.completion]);
 
   useEffect(() => {
     if (!procurementModalOpen || filteredProcurementItems.length === 0) return;
@@ -323,13 +318,21 @@ const RequestDetailWorkspace = () => {
     }
   };
 
+  const acknowledgeReceipt = async (line) => {
+    if (!window.confirm(uiText('Confirm that you physically received the currently accepted or warehouse-issued quantity for this item?'))) return;
+    setSubmitting(true);
+    try { await api.patch(`/requests/${requestId}/mark-received`, { item_id: line.requested_item_id }); await fetchWorkspace(true); }
+    catch (err) { alert(err.response?.data?.message || uiText('Failed to confirm physical receipt.')); }
+    finally { setSubmitting(false); }
+  };
+
   const markRequestCompleted = async () => {
     if (!completionReadiness.canComplete) {
-      alert(uiText("Before completing, mark every item as purchased/completed or Not Procured/Canceled and make sure the request has a saved total cost."));
+      alert(uiText("Verified fulfillment evidence is required before completion"));
       return;
     }
 
-    if (!window.confirm(uiText("Mark this request as completed? Items marked Not Procured or Canceled will remain closed without purchase."))) return;
+    if (!window.confirm(uiText("Mark this request as completed using its verified fulfillment evidence?"))) return;
 
     setSubmitting(true);
     try {
@@ -421,7 +424,7 @@ const RequestDetailWorkspace = () => {
               {actions.has('create_po') ? <Link to={`/requests/${requestId}/procure-to-pay/purchase-orders`} title={uiText("Create a governed purchase order from approved supplier awards")} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700">{uiText("Create Purchase Order")}</Link> : null}
               <Link to={`/device-demos?request=${requestId}`} className="rounded-lg border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700">{uiText("Device demos")}</Link>
               {actions.has('add_note') ? <button onClick={() => setNoteModalOpen(true)} className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">{uiText("Add Note")}</button> : null}
-              {actions.has('mark_request_completed') ? <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} title={completionReadiness.canComplete ? uiText("Complete this request") : uiText("Finalize every item and save total cost before completing")} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>{uiText("Mark Completed")}</button> : null}
+              {actions.has('mark_request_completed') ? <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} title={completionReadiness.canComplete ? uiText("Complete this request") : uiText("Verified fulfillment evidence is required before completion")} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>{uiText("Mark Completed")}</button> : null}
               {actions.has('export_pdf') ? <button onClick={printWorkspace} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-100">{uiText("Print / PDF")}</button> : null}
               <button onClick={() => fetchWorkspace(true)} disabled={refreshing} className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50">{refreshing ? uiText("Refreshing…") : uiText("Refresh")}</button>
             </div>
@@ -434,6 +437,7 @@ const RequestDetailWorkspace = () => {
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <RequestActionContext request={request} />
+        <ProcurementCompletionPanel completion={workspace?.completion} onAcknowledge={actions.has('acknowledge_verified_receipt') ? acknowledgeReceipt : undefined} submitting={submitting} />
         {activeTab === 'Overview' && (
           <div className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
@@ -456,9 +460,8 @@ const RequestDetailWorkspace = () => {
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h2 className="text-lg font-bold text-emerald-950">{uiText("Request completion")}</h2>
-                    <p className="text-sm text-emerald-800">{uiText("Complete the request after purchased items are recorded. Any item that will not be bought must be marked Not Procured or Canceled first.")}</p>
-                    {!completionReadiness.hasSavedCost ? <p className="mt-2 text-xs font-semibold text-rose-700">{uiText("A saved total cost is required before completion.")}</p> : null}
-                    {completionReadiness.incompleteItems.length > 0 ? <p className="mt-1 text-xs font-semibold text-rose-700">{completionReadiness.incompleteItems.length}{" "}{uiText("item(s) still need a final purchased, completed, not procured, or canceled status.")}</p> : null}
+                    <p className="text-sm text-emerald-800">{uiText("Complete the request when every eligible demand line has verified accepted receiving or department handoff evidence.")}</p>
+                    {completionReadiness.incompleteItems.length > 0 ? <p className="mt-1 text-xs font-semibold text-rose-700">{completionReadiness.incompleteItems.length}{" "}{uiText("demand line(s) still need verified fulfillment evidence.")}</p> : null}
                   </div>
                   <button onClick={markRequestCompleted} disabled={submitting || !completionReadiness.canComplete} className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${completionReadiness.canComplete ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-300 cursor-not-allowed'}`}>{uiText("Mark Request as Completed")}</button>
                 </div>
