@@ -1,3 +1,4 @@
+import ContractFinancialReconciliation from '../components/ContractFinancialReconciliation';
 import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useState } from 'react';
 import { listAccountsPayable } from '../api/procureToPay';
@@ -21,6 +22,7 @@ export default function ProcureToPayAccountsPayablePage() {
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">Accounts Payable</h1>
+      <ContractFinancialReconciliation />
       <div className="bg-white p-4 rounded shadow grid md:grid-cols-4 gap-2">
         <input className="border rounded px-2 py-1" placeholder={uiText("Supplier")} value={filters.supplier} onChange={(e) => setFilters((p) => ({ ...p, supplier: e.target.value }))} />
         <select className="border rounded px-2 py-1" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}><option>ALL</option><option>OPEN</option><option>PARTIALLY_PAID</option><option>PAID</option></select>
