@@ -144,19 +144,72 @@ test("Arabic guidance uses application translations", async () => {
   ).toBeInTheDocument();
 });
 
-test('assigned request pagination synchronizes both controls and resets after filtering', async () => {
-  const many = Array.from({length:21}, (_,index) => ({...requests[0],id:index+100,justification:`Assigned case ${index}`,is_urgent:index===0}));
-  api.get.mockResolvedValue({data:{data:many}});
+test("assigned request pagination synchronizes both controls and resets after filtering", async () => {
+  const many = Array.from({ length: 21 }, (_, index) => ({
+    ...requests[0],
+    id: index + 100,
+    justification: `Assigned case ${index}`,
+    is_urgent: index === 0,
+  }));
+  api.get.mockResolvedValue({ data: { data: many } });
   renderPage();
-  const top=within(await screen.findByRole('navigation',{name:'Pagination (top)'}));
-  const bottom=within(screen.getByRole('navigation',{name:'Pagination'}));
+  const top = within(
+    await screen.findByRole("navigation", { name: "Pagination (top)" }),
+  );
+  const bottom = within(screen.getByRole("navigation", { name: "Pagination" }));
   expect(screen.getAllByText(/Assigned case \d+/)).toHaveLength(10);
-  fireEvent.click(top.getByRole('button',{name:'2'}));
-  expect(bottom.getByRole('button',{name:'2'})).toHaveAttribute('aria-current','page');
-  fireEvent.change(bottom.getByRole('combobox'),{target:{value:'3'}});
+  fireEvent.click(top.getByRole("button", { name: "2" }));
+  expect(bottom.getByRole("button", { name: "2" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  fireEvent.change(bottom.getByRole("combobox"), { target: { value: "3" } });
   expect(screen.getAllByText(/Assigned case \d+/)).toHaveLength(1);
-  fireEvent.click(screen.getByRole('button',{name:'Urgent only'}));
-  expect(screen.getByText('Assigned case 0')).toBeInTheDocument();
-  expect(screen.queryByRole('navigation',{name:'Pagination (top)'})).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Urgent only" }));
+  expect(screen.getByText("Assigned case 0")).toBeInTheDocument();
+  expect(
+    screen.queryByRole("navigation", { name: "Pagination (top)" }),
+  ).not.toBeInTheDocument();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+test("registration is the primary item action and advanced actions start collapsed", async () => {
+  api.get.mockImplementation((url) =>
+    Promise.resolve({
+      data: url.includes("/items")
+        ? {
+            items: [
+              {
+                id: 30,
+                request_id: 2,
+                item_name: "Clinical chair",
+                quantity: 10,
+                purchased_quantity: 4,
+                remaining_quantity: 6,
+                procurement_status: "partially_procured",
+              },
+            ],
+          }
+        : url.includes("/assigned")
+          ? { data: requests }
+          : [],
+    }),
+  );
+  renderPage();
+  const actions = await screen.findAllByRole("button", {
+    name: "Register procurement",
+  });
+  fireEvent.click(actions[1]);
+  expect(await screen.findByText("Clinical chair")).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "Mark all as purchased" }),
+  ).not.toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Register Procurement" }));
+  expect(
+    screen.getByRole("form", {
+      name: "Register procurement for Clinical chair",
+    }),
+  ).toBeInTheDocument();
+  expect(screen.getByLabelText("Quantity purchased")).toHaveValue(6);
   expect(api.post).not.toHaveBeenCalled();
 });
