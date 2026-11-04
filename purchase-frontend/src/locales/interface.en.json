@@ -911,5 +911,18 @@
   "demand line(s) still need verified fulfillment evidence.": "demand line(s) still need verified fulfillment evidence.",
   "Operational closure performance": "Operational closure performance",
   "Historical closure labels and stock-ready requests; see verified fulfillment separately.": "Historical closure labels and stock-ready requests; see verified fulfillment separately.",
-  "Operational closure velocity": "Operational closure velocity"
+  "Operational closure velocity": "Operational closure velocity",
+  "Quality accepted": "Quality accepted",
+  "Pending inspection": "Pending inspection",
+  "Accepted awaiting availability": "Accepted awaiting availability",
+  "Available accepted": "Available accepted",
+  "Technical acceptance does not make quarantined stock available. Warehouse intake does not establish department fulfillment.": "Technical acceptance does not make quarantined stock available. Warehouse intake does not establish department fulfillment.",
+  "Partially accepted": "Partially accepted",
+  "Partially fulfilled": "Partially fulfilled",
+  "Verified receiving and fulfillment": "Verified receiving and fulfillment",
+  "Current accepted receiving and department fulfillment within the filtered case population.": "Current accepted receiving and department fulfillment within the filtered case population.",
+  "Cases with accepted receiving": "Cases with accepted receiving",
+  "Cases with department fulfillment": "Cases with department fulfillment",
+  "Based on current verified quantities": "Based on current verified quantities",
+  "Verified receiving metrics are unavailable.": "Verified receiving metrics are unavailable."
 }
