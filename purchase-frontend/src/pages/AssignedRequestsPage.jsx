@@ -2,9 +2,11 @@ import useUiTranslation from "../utils/useUiTranslation";
 import PaginationControls from "../components/ui/PaginationControls";
 import useRequestListPagination from "../hooks/useRequestListPagination";
 import "../styles/RequestLists.css";
-import AssignedWorkGuidance, { AssignedWorkViews } from '../components/requests/AssignedWorkGuidance';
-import WorkspaceSectionNav from '../components/workspaces/WorkspaceSectionNav';
-import './OperationalWorkspaces.css';
+import AssignedWorkGuidance, {
+  AssignedWorkViews,
+} from "../components/requests/AssignedWorkGuidance";
+import WorkspaceSectionNav from "../components/workspaces/WorkspaceSectionNav";
+import "./OperationalWorkspaces.css";
 // src/pages/AssignedRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -1171,10 +1173,18 @@ const AssignedRequestsPage = () => {
     [filteredRequests, sortBy],
   );
 
-  const { currentPage, totalPages, setPage, paginatedItems } = useRequestListPagination(
-    visibleRequests,
-    JSON.stringify([searchTerm, typeFilter, departmentFilter, completionFilter, urgencyFilter, sortBy]),
-  );
+  const { currentPage, totalPages, setPage, paginatedItems } =
+    useRequestListPagination(
+      visibleRequests,
+      JSON.stringify([
+        searchTerm,
+        typeFilter,
+        departmentFilter,
+        completionFilter,
+        urgencyFilter,
+        sortBy,
+      ]),
+    );
 
   const resetFilters = () => {
     setSearchTerm("");
@@ -1285,9 +1295,25 @@ const AssignedRequestsPage = () => {
         </div>
       ) : (
         <>
-          <WorkspaceSectionNav sections={[{ id: 'assigned-filters', label: 'filters' }, { id: 'assigned-results', label: 'requestResults' }]} />
-          <AssignedWorkViews requests={requests} completionStates={completionStates} value={completionFilter} onChange={setCompletionFilter} urgency={urgencyFilter} onUrgencyChange={setUrgencyFilter} />
-          <div id="assigned-filters" tabIndex={-1} className="workspace-filter-panel mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <WorkspaceSectionNav
+            sections={[
+              { id: "assigned-filters", label: "filters" },
+              { id: "assigned-results", label: "requestResults" },
+            ]}
+          />
+          <AssignedWorkViews
+            requests={requests}
+            completionStates={completionStates}
+            value={completionFilter}
+            onChange={setCompletionFilter}
+            urgency={urgencyFilter}
+            onUrgencyChange={setUrgencyFilter}
+          />
+          <div
+            id="assigned-filters"
+            tabIndex={-1}
+            className="workspace-filter-panel mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
             <div className="mb-4 flex items-center gap-3 border-b border-slate-100 pb-4">
               <span
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
@@ -1476,11 +1502,18 @@ const AssignedRequestsPage = () => {
             totalPages={totalPages}
             onPageChange={setPage}
             disabled={loading}
-            summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+            summary={t("common.pageOf", {
+              current: currentPage,
+              total: totalPages,
+            })}
             previousLabel={t("common.prev")}
             nextLabel={t("common.next")}
           />
-          <div id="assigned-results" tabIndex={-1} className="workspace-results-anchor" />
+          <div
+            id="assigned-results"
+            tabIndex={-1}
+            className="workspace-results-anchor"
+          />
           {filteredRequests.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
               <p className="text-sm text-slate-600">
@@ -1489,7 +1522,13 @@ const AssignedRequestsPage = () => {
                   "No assigned requests match your search or filters.",
                 )}
               </p>
-              <button type="button" onClick={resetFilters} className="mt-3 text-sm font-semibold text-blue-600">{tr("filters.reset", "Reset filters")}</button>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-3 text-sm font-semibold text-blue-600"
+              >
+                {tr("filters.reset", "Reset filters")}
+              </button>
             </div>
           ) : (
             paginatedItems.map((request) => {
@@ -1510,9 +1549,7 @@ const AssignedRequestsPage = () => {
                 !completionState.canComplete;
               const containerClasses = [
                 "mb-6 overflow-hidden rounded-2xl border bg-white shadow-sm transition duration-200 hover:shadow-md",
-                isUrgent
-                  ? "request-card--urgent"
-                  : "border-slate-200",
+                isUrgent ? "request-card--urgent" : "border-slate-200",
               ]
                 .filter(Boolean)
                 .join(" ");
@@ -1608,15 +1645,21 @@ const AssignedRequestsPage = () => {
                           to={`/requests/${request.id}`}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                         >
-                          <FileText size={15} />{" "}{uiText("Workspace")}</Link>
+                          <FileText size={15} /> {uiText("Workspace")}
+                        </Link>
                         <button
                           onClick={() => toggleExpand(request.id)}
+                          aria-expanded={expandedRequestId === request.id}
+                          aria-controls={`assigned-procurement-${request.id}`}
                           className="col-span-2 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 sm:col-auto"
                         >
                           <PackageCheck size={16} />
                           {expandedRequestId === request.id
                             ? tr("requestCard.hideItems", "Hide Items")
-                            : tr("requestCard.viewItems", "View Items")}
+                            : tr(
+                                "requestCard.registerProcurement",
+                                "Register procurement",
+                              )}
                         </button>
                         <Link
                           to={`/requests/${request.id}/procure-to-pay/purchase-orders`}
@@ -1661,7 +1704,10 @@ const AssignedRequestsPage = () => {
                       </div>
                     </div>
 
-                    <AssignedWorkGuidance request={request} completionState={completionState} />
+                    <AssignedWorkGuidance
+                      request={request}
+                      completionState={completionState}
+                    />
                     <div
                       className="mt-5"
                       aria-label={tr(
@@ -1678,7 +1724,17 @@ const AssignedRequestsPage = () => {
                         </span>
                         <span>{progress}%</span>
                       </div>
-                      <div role="progressbar" aria-label={tr("requestCard.progressLabel", "Procurement progress")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        role="progressbar"
+                        aria-label={tr(
+                          "requestCard.progressLabel",
+                          "Procurement progress",
+                        )}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progress}
+                        className="h-2 overflow-hidden rounded-full bg-slate-100"
+                      >
                         <div
                           className={`h-full rounded-full transition-all ${progress === 100 ? "bg-emerald-500" : "bg-blue-600"}`}
                           style={{ width: `${progress}%` }}
@@ -1729,58 +1785,75 @@ const AssignedRequestsPage = () => {
                     )}
 
                     {expandedRequestId === request.id && (
-                      <div className="mt-6 border-t border-slate-200 pt-6">
-                        <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                            <div className="flex-1">
-                              <label className="block text-sm font-medium mb-1 text-slate-700">
-                                {tr(
-                                  "cost.recordedLabel",
-                                  "Total Cost Recorded",
-                                )}
-                              </label>
-                              <AmountInput
-                                min={0}
-                                step="0.01"
-                                value={requestCosts[request.id] ?? ""}
-                                onChange={(e) =>
-                                  handleCostChange(request.id, e.target.value)
-                                }
-                                className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
-                              />
-                              {autoTotal !== null && (
-                                <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
-                                  <span>
-                                    {tr(
-                                      "cost.suggestedLabel",
-                                      "Suggested total:",
-                                    )}{" "}
-                                    <strong>{formatAmount(autoTotal)}</strong>
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleCostChange(request.id, autoTotal)
-                                    }
-                                    className="text-blue-600 hover:text-blue-500"
-                                  >
-                                    {tr(
-                                      "cost.useSuggested",
-                                      "Use suggested value",
-                                    )}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => handleSaveTotalCost(request.id)}
-                              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                            >
-                              {tr("cost.saveButton", "Save Total Cost")}
-                            </button>
-                          </div>
+                      <div
+                        id={`assigned-procurement-${request.id}`}
+                        className="mt-6 border-t border-slate-200 pt-6"
+                      >
+                        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                          <h3 className="font-semibold">
+                            {uiText("Register purchases by item")}
+                          </h3>
+                          <p>
+                            {uiText(
+                              "Choose Register Procurement on an item, enter the quantity purchased, and record the purchase. Partial quantities stay open; complete the request after all items are finalized.",
+                            )}
+                          </p>
                         </div>
-
+                        <details className="mb-4 rounded-lg border border-slate-200 p-3">
+                          <summary className="cursor-pointer text-sm font-semibold">
+                            {uiText("Request total cost override")}
+                          </summary>
+                          <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                              <div className="flex-1">
+                                <label className="block text-sm font-medium mb-1 text-slate-700">
+                                  {tr(
+                                    "cost.recordedLabel",
+                                    "Total Cost Recorded",
+                                  )}
+                                </label>
+                                <AmountInput
+                                  min={0}
+                                  step="0.01"
+                                  value={requestCosts[request.id] ?? ""}
+                                  onChange={(e) =>
+                                    handleCostChange(request.id, e.target.value)
+                                  }
+                                  className="border border-gray-300 rounded px-3 py-2 w-full text-sm"
+                                />
+                                {autoTotal !== null && (
+                                  <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
+                                    <span>
+                                      {tr(
+                                        "cost.suggestedLabel",
+                                        "Suggested total:",
+                                      )}{" "}
+                                      <strong>{formatAmount(autoTotal)}</strong>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleCostChange(request.id, autoTotal)
+                                      }
+                                      className="text-blue-600 hover:text-blue-500"
+                                    >
+                                      {tr(
+                                        "cost.useSuggested",
+                                        "Use suggested value",
+                                      )}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => handleSaveTotalCost(request.id)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                              >
+                                {tr("cost.saveButton", "Save Total Cost")}
+                              </button>
+                            </div>
+                          </div>
+                        </details>
                         {loadingItems ? (
                           <p className="text-gray-500">
                             {tr("items.loading", "Loading items...")}
@@ -1798,48 +1871,53 @@ const AssignedRequestsPage = () => {
                               (item) =>
                                 item.supports_procurement_events !== false,
                             ) && (
-                              <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                  <div>
-                                    <h3 className="text-sm font-semibold text-emerald-900">
-                                      {tr(
-                                        "items.bulkFill.title",
-                                        "Auto-fill purchased quantities",
-                                      )}
-                                    </h3>
-                                    <p className="text-sm text-emerald-800">
-                                      {tr(
-                                        "items.bulkFill.description",
-                                        "Adds a procurement entry for each remaining quantity and marks fully procured items as purchased.",
-                                      )}
-                                    </p>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleAutoPurchaseAll(request.id)
-                                    }
-                                    disabled={
-                                      bulkUpdatingRequestId === request.id
-                                    }
-                                    className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white transition ${
-                                      bulkUpdatingRequestId === request.id
-                                        ? "bg-emerald-400 cursor-wait"
-                                        : "bg-emerald-600 hover:bg-emerald-700"
-                                    }`}
-                                  >
-                                    {bulkUpdatingRequestId === request.id
-                                      ? tr(
-                                          "items.bulkFill.updating",
-                                          "Updating items…",
-                                        )
-                                      : tr(
-                                          "items.bulkFill.cta",
-                                          "Mark all as purchased",
+                              <details className="mb-4 rounded-lg border border-slate-200 p-3">
+                                <summary className="cursor-pointer text-sm font-semibold">
+                                  {uiText("Bulk purchase actions")}
+                                </summary>
+                                <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div>
+                                      <h3 className="text-sm font-semibold text-emerald-900">
+                                        {tr(
+                                          "items.bulkFill.title",
+                                          "Auto-fill purchased quantities",
                                         )}
-                                  </button>
+                                      </h3>
+                                      <p className="text-sm text-emerald-800">
+                                        {tr(
+                                          "items.bulkFill.description",
+                                          "Adds a procurement entry for each remaining quantity and marks fully procured items as purchased.",
+                                        )}
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleAutoPurchaseAll(request.id)
+                                      }
+                                      disabled={
+                                        bulkUpdatingRequestId === request.id
+                                      }
+                                      className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white transition ${
+                                        bulkUpdatingRequestId === request.id
+                                          ? "bg-emerald-400 cursor-wait"
+                                          : "bg-emerald-600 hover:bg-emerald-700"
+                                      }`}
+                                    >
+                                      {bulkUpdatingRequestId === request.id
+                                        ? tr(
+                                            "items.bulkFill.updating",
+                                            "Updating items…",
+                                          )
+                                        : tr(
+                                            "items.bulkFill.cta",
+                                            "Mark all as purchased",
+                                          )}
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
+                              </details>
                             )}
                             <div className="mb-4 flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                               <div>
@@ -1932,31 +2010,39 @@ const AssignedRequestsPage = () => {
                                             className="mb-3 rounded-xl border border-slate-200 bg-white"
                                           >
                                             {canManuallyClose && (
-                                              <div className="flex flex-col gap-2 border-b border-slate-100 bg-amber-50/70 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                                                <p className="text-amber-900">
-                                                  {tr(
-                                                    "items.manualClose.helper",
-                                                    "If no more procurement will happen for this item, close the remaining quantity manually.",
+                                              <details className="p-3">
+                                                <summary className="cursor-pointer text-xs font-semibold">
+                                                  {uiText(
+                                                    "Close without further purchasing",
                                                   )}
-                                                </p>
-                                                <button
-                                                  type="button"
-                                                  onClick={() =>
-                                                    openManualStatusModal(
-                                                      itemWithRequest,
-                                                      "completed",
-                                                    )
-                                                  }
-                                                  className="self-start rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:self-auto"
-                                                >
-                                                  {tr(
-                                                    "items.manualClose.cta",
-                                                    "Close as Completed",
-                                                  )}
-                                                </button>
-                                              </div>
+                                                </summary>
+                                                <div className="flex flex-col gap-2 border-b border-slate-100 bg-amber-50/70 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                                                  <p className="text-amber-900">
+                                                    {tr(
+                                                      "items.manualClose.helper",
+                                                      "If no more procurement will happen for this item, close the remaining quantity manually.",
+                                                    )}
+                                                  </p>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                      openManualStatusModal(
+                                                        itemWithRequest,
+                                                        "completed",
+                                                      )
+                                                    }
+                                                    className="self-start rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:self-auto"
+                                                  >
+                                                    {tr(
+                                                      "items.manualClose.cta",
+                                                      "Close as Completed",
+                                                    )}
+                                                  </button>
+                                                </div>
+                                              </details>
                                             )}
                                             <ProcurementItemStatusPanel
+                                              inlineRegistration
                                               item={itemWithRequest}
                                               onUpdate={() =>
                                                 fetchItems(request.id)
@@ -2054,7 +2140,10 @@ const AssignedRequestsPage = () => {
           totalPages={totalPages}
           onPageChange={setPage}
           disabled={loading}
-          summary={t("common.pageOf", { current: currentPage, total: totalPages })}
+          summary={t("common.pageOf", {
+            current: currentPage,
+            total: totalPages,
+          })}
           previousLabel={t("common.prev")}
           nextLabel={t("common.next")}
         />
