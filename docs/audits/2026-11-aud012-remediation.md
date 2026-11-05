@@ -41,7 +41,7 @@ The runbook covers owner review, backup, maintenance-window stop, exact-source o
 | Executed command | Result |
 | --- | --- |
 | Backend `npm test -- --runInBand` | PASS: 227 suites, 1,897 tests |
-| `npm run test:rfid-recovery-postgres` | PASS: 27 real disposable PostgreSQL scenarios |
+| `npm run test:rfid-recovery-postgres` | PASS: 28 real disposable PostgreSQL scenarios |
 | `npm run test:database-governance-postgres` | PASS: 28 locked-contract PostgreSQL scenarios, no automatic capture |
 | `npm run test:p2p-postgres` | PASS: 92 PostgreSQL tests |
 | Frontend targeted RFID/fixed-assets tests | PASS: 2 suites, 11 tests |
@@ -50,7 +50,7 @@ The runbook covers owner review, backup, maintenance-window stop, exact-source o
 
 The build warnings are the existing unused `actionLoading` in `DepartmentRequestedItemsBoard.jsx` and missing hook dependency in `PhysicalInventory.jsx`; neither file was changed. React Router/i18next test setup warnings are likewise unrelated to the recovery behavior.
 
-The PostgreSQL suite covers all requested cases: normal processing; duplicate uploads; concurrent workers; crash after claim; disconnect before commit; lost acknowledgement after commit; expiry; active lease/row-lock protection; retry exhaustion; partial batch failure; scheduler restart/shutdown; actual `pg_terminate_backend` interruption; foreign institute; unsupported warehouse authority; unauthorized/inactive operators; duplicate EPC reads; asset ownership mismatch; audit rollback; notification retry; and populated inventory/asset/count/custody preservation. Additional cases verify explicit recovery idempotency, stale-token rejection, immutable history, final-attempt crashes, inconsistent foreign-reader references, containment of previously linked evidence and actual non-owner backend execution.
+The PostgreSQL suite covers all requested cases: normal processing; duplicate uploads; concurrent workers; crash after claim; disconnect before commit; lost acknowledgement after commit; expiry; active lease/row-lock protection; retry exhaustion; partial batch failure; scheduler restart/shutdown; actual `pg_terminate_backend` interruption; foreign institute; unsupported warehouse authority; unauthorized/inactive operators; duplicate EPC reads; asset ownership mismatch; audit rollback; notification retry; and populated inventory/asset/count/custody preservation. An additional evidence-context case ensures invalid neighboring reads and incompatible historical aggregates cannot influence or absorb a valid observation. Additional cases verify explicit recovery idempotency, stale-token rejection, immutable history, final-attempt crashes, inconsistent foreign-reader references, containment of previously linked evidence and actual non-owner backend execution.
 
 No hosted or Production URL is selected by the test runners. All database instances use generated loopback-only targets and disposable credentials. Local test databases may contain synthetic failure/history fixtures; no historical hosted RFID data was rewritten.
 
