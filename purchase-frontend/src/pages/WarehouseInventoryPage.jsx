@@ -1,3 +1,4 @@
+import useUiTranslation from '../utils/useUiTranslation';
 import InventoryAttention from '../components/warehouse/InventoryAttention';
 import TransferReviewDetails from '../components/warehouse/TransferReviewDetails';
 import { isLowStock, isExpiryDue, isTransferReviewable } from '../utils/warehouseInventoryFilters';
@@ -26,6 +27,7 @@ const formatExpiryDate = (value) => {
 
 const WarehouseInventoryPage = () => {
   const { t } = useTranslation();
+  const uiText=useUiTranslation();
   const tr = useCallback((key, fallback) => t(`warehouseInventory.${key}`, fallback), [t]);
   const { user, loading: userLoading } = useCurrentUser();
   const { warehouses, loading: warehousesLoading, error: warehousesError } = useWarehouses();
@@ -166,6 +168,7 @@ const WarehouseInventoryPage = () => {
     try {
       const res = await api.get('/warehouse-inventory/reports/weekly');
       setReport({
+        basis:res.data?.basis,
         departments: res.data?.departments || [],
         window_start: res.data?.window_start || '',
         window_end: res.data?.window_end || '',
@@ -1977,6 +1980,7 @@ const WarehouseInventoryPage = () => {
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{tr('report.title')}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">{tr('report.description')}</p>
+              {report.basis==='canonical_net_issue_quantities' && <p className="text-sm">{uiText('Net warehouse issues after reversals. Issue totals are separate from accepted receiving and whole-request fulfillment.')}</p>}
             </div>
             {reportRange && <span className="text-xs text-gray-500">{reportRange}</span>}
           </div>
@@ -2026,7 +2030,7 @@ const WarehouseInventoryPage = () => {
                             <tr key={`${dept.department_id}-${item.stock_item_id}-${item.item_name}`}>
                               <td className="px-3 py-2 text-gray-800 dark:text-gray-100">{item.item_name}</td>
                               <td className="px-3 py-2 text-gray-800 dark:text-gray-100">
-                                {numberFormatter.format(Number(item.total_quantity) || 0)}
+                                {report.basis==='canonical_net_issue_quantities'?`${item.total_quantity} ${item.base_uom || ''}`:numberFormatter.format(Number(item.total_quantity) || 0)}
                               </td>
                             </tr>
                           ))}

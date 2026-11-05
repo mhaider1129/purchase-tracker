@@ -1,3 +1,4 @@
+import {CompletionBadge} from '../components/CompletionReportingSummary';
 import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -880,6 +881,7 @@ const WarehouseSupplyRequestsPage = () => {
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-gray-700">{tr('requestCard.status', 'Status')}:</span>
                         {renderStatusBadge(req.status)}
+                        <CompletionBadge completion={req.completion}/>
                       </div>
                     </div>
                   </div>

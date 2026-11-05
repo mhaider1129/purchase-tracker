@@ -1,3 +1,4 @@
+import {CompletionBadge} from '../components/CompletionReportingSummary';
 import useUiTranslation from "../utils/useUiTranslation";
 // src/pages/CompletedAssignedRequestsPage.jsx
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -891,6 +892,7 @@ const CompletedAssignedRequestsPage = () => {
                 .join(" ");
               return (
                 <article key={req.id} className={articleClasses}>
+                  <CompletionBadge completion={req.completion}/>
                   <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-3 flex-wrap">

@@ -1,3 +1,4 @@
+import CompletionReportingSummary from '../components/CompletionReportingSummary';
 import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
@@ -25,6 +26,7 @@ const LifecycleAnalytics = () => {
   return <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6">
     <AnalyticsPageHeader eyebrow="Process intelligence" title={uiText("Lifecycle Analytics")} description="Trace procurement velocity from request creation through final approval and the first governed purchase order." icon={Route} meta={["PR → approval", "PR → purchase order", "Stage-level bottlenecks"]} actions={<button type="button" onClick={()=>setRefreshKey(x=>x+1)} className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-blue-50"><RefreshCw className="h-4 w-4"/>{" "}{uiText("Refresh")}</button>}/>
     {error ? <AnalyticsError message={error} onRetry={()=>setRefreshKey(x=>x+1)}/> : loading ? <AnalyticsLoading label="Tracing lifecycle performance…"/> : <>
+      <CompletionReportingSummary report={data?.completion_report}/>
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Lifecycle key performance indicators">
         <KpiCard title="PR to final approval" value={formatDays(data?.avg_pr_to_final_approval_days ?? data?.avg_approval_time_days)} helper="Active days from request creation to final approval" icon={Clock3}/>
         <KpiCard title="Average approval time" value={formatDays(data?.avg_approval_time_days)} helper="Approval time excluding recorded holds" icon={TimerReset} tone="violet"/>

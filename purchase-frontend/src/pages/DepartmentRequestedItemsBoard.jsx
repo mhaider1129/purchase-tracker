@@ -1,3 +1,4 @@
+import {CompletionBadge} from '../components/CompletionReportingSummary';
 import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -66,7 +67,8 @@ const excelColumns = [
   ["request_date", "Request Date"],
   ["submission_timeline", "Submission Timeline"],
   ["request_type", "Request Type"],
-  ["request_status", "Request Status"],
+  ["request_status", "Historical request status"],
+  ["completion_category", "Canonical completion"],
   ["approval_status", "Approval Status"],
   ["approval_started_at", "Approval Started At"],
   ["first_approval_at", "First Approval At"],
@@ -370,7 +372,7 @@ const DepartmentRequestedItemsBoard = () => {
               <td className="px-3 py-2">{row.requested_quantity}</td>
               <td className="px-3 py-2">{row.purchased_quantity}</td>
               <td className="px-3 py-2 font-bold text-red-700">{row.remaining_quantity}</td>
-              <td className="px-3 py-2">{renderStatus(row)}</td>
+              <td className="px-3 py-2">{renderStatus(row)}<CompletionBadge completion={row.completion}/></td>
               <td className="px-3 py-2">{row.required_delivery_date || "—"}</td>
               <td className="px-3 py-2">{row.days_since_request}</td>
               <td className="px-3 py-2"><div className="flex flex-wrap gap-1.5"><button onClick={() => navigate(`/requests/${row.request_id}`)} className="rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100">Open Request</button><button onClick={() => setNoteModal({ open: true, itemIds: [row.item_id] })} className="rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100">Add Follow-Up</button><button onClick={() => generateMessage([row])} className="rounded-md bg-violet-50 px-2.5 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-100">Copy Message</button></div></td>
