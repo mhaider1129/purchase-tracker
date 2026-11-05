@@ -48,12 +48,26 @@ export default function ProcurementCompletionPanel({
           "Ordering, receiving, department fulfillment and payment are separate stages. A status label or invoice does not prove fulfillment.",
         )}
       </p>
+      <p className="text-sm">
+        {text(
+          "Technical acceptance does not make quarantined stock available. Warehouse intake does not establish department fulfillment.",
+        )}
+      </p>
       <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stages.map(([key, label]) => (
           <div key={key}>
             <dt className="text-sm text-slate-600">{text(label)}</dt>
             <dd className="font-semibold">
-              {text(completion[key] ? "Verified" : "Pending evidence")}
+              {text(
+                completion[key]
+                  ? "Verified"
+                  : key === "receipt_complete" && completion.partially_received
+                    ? "Partially accepted"
+                    : key === "fulfillment_complete" &&
+                        completion.partially_fulfilled
+                      ? "Partially fulfilled"
+                      : "Pending evidence",
+              )}
             </dd>
           </div>
         ))}
@@ -98,7 +112,10 @@ export default function ProcurementCompletionPanel({
                 "Required",
                 "Ordered",
                 "Delivered",
-                "Accepted",
+                "Quality accepted",
+                "Pending inspection",
+                "Accepted awaiting availability",
+                "Available accepted",
                 "Rejected",
                 "Quarantined",
                 "Warehouse issued",
@@ -143,6 +160,9 @@ export default function ProcurementCompletionPanel({
                   "quantity",
                   "ordered_quantity",
                   "delivered_quantity",
+                  "technically_accepted_quantity",
+                  "pending_inspection_quantity",
+                  "accepted_pending_release_quantity",
                   "accepted_quantity",
                   "rejected_quantity",
                   "quarantined_quantity",

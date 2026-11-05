@@ -911,5 +911,18 @@
   "demand line(s) still need verified fulfillment evidence.": "بند احتياج لا يزال بحاجة إلى أدلة موثقة على تلبية الاحتياج.",
   "Operational closure performance": "أداء الإغلاق التشغيلي",
   "Historical closure labels and stock-ready requests; see verified fulfillment separately.": "حالات الإغلاق التاريخية والطلبات المتوفرة من المخزون؛ تُعرض تلبية الاحتياج الموثقة بصورة منفصلة.",
-  "Operational closure velocity": "سرعة الإغلاق التشغيلي"
+  "Operational closure velocity": "سرعة الإغلاق التشغيلي",
+  "Quality accepted": "مقبول من ناحية الجودة",
+  "Pending inspection": "بانتظار الفحص",
+  "Accepted awaiting availability": "مقبول بانتظار إتاحته",
+  "Available accepted": "مقبول ومتاح",
+  "Technical acceptance does not make quarantined stock available. Warehouse intake does not establish department fulfillment.": "القبول الفني لا يجعل المخزون المحجور متاحاً. الاستلام في المخزن لا يثبت تلبية احتياج القسم.",
+  "Partially accepted": "مقبول جزئياً",
+  "Partially fulfilled": "تمت تلبية الاحتياج جزئياً",
+  "Verified receiving and fulfillment": "الاستلام وتلبية الاحتياج الموثقان",
+  "Current accepted receiving and department fulfillment within the filtered case population.": "الاستلام المقبول الحالي وتلبية احتياج الأقسام ضمن حالات التصفية المحددة.",
+  "Cases with accepted receiving": "حالات الاستلام المقبول",
+  "Cases with department fulfillment": "حالات تلبية احتياج القسم",
+  "Based on current verified quantities": "بناءً على الكميات الموثقة الحالية",
+  "Verified receiving metrics are unavailable.": "مؤشرات الاستلام الموثق غير متاحة."
 }

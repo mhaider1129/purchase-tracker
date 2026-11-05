@@ -11,3 +11,12 @@ test('renders analytical sections, values, missing coverage and sends filters',a
  await screen.findByText('OEM sourced'); expect(screen.getByText('Not available')).toBeInTheDocument(); expect(screen.getByText(/Class D: 2/)).toBeInTheDocument(); expect(screen.getByText(/Buyer A: 7 PWU/)).toBeInTheDocument(); expect(screen.getByText(/CUSTOMS_REGULATORY: 1/)).toBeInTheDocument();
  fireEvent.change(screen.getByLabelText('Date from'),{target:{value:'2026-08-01'}}); await waitFor(()=>expect(getPerformanceDashboard).toHaveBeenLastCalledWith({date_from:'2026-08-01'}));
 });
+test('shows current accepted receiving independently of departmental fulfillment',async()=>{
+ getPerformanceDashboard.mockResolvedValue({data:{metrics:{completion:{basis:'canonical_quantities',accepted_delivery_cases:2,fulfilled_cases:1}}}});
+ render(<SupplyChainPerformancePage/>);
+ await screen.findByText('Cases with accepted receiving');
+ const receiving=screen.getByText('Cases with accepted receiving').parentElement;
+ const fulfillment=screen.getByText('Cases with department fulfillment').parentElement;
+ expect(receiving).toHaveTextContent('2');expect(fulfillment).toHaveTextContent('1');
+ expect(screen.queryByText('Verified receiving metrics are unavailable.')).not.toBeInTheDocument();
+});

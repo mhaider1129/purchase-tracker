@@ -80,3 +80,43 @@ test("requester confirmation uses exact remaining evidence and calls the existin
   );
   expect(onAcknowledge).toHaveBeenCalledWith(line);
 });
+
+test("quality acceptance of quarantined stock cannot offer requester acknowledgment", () => {
+  const onAcknowledge = jest.fn();
+  render(
+    <Panel
+      onAcknowledge={onAcknowledge}
+      completion={{
+        receipt_complete: false,
+        fulfillment_complete: false,
+        items: [
+          {
+            line_kind: "requested_item",
+            line_id: "4",
+            eligible: true,
+            quantity: "10",
+            technically_accepted_quantity: "10",
+            pending_inspection_quantity: "0",
+            accepted_pending_release_quantity: "10",
+            accepted_quantity: "0",
+            quarantined_quantity: "10",
+            fulfilled_quantity: "0",
+            warehouse_issued_quantity: "0",
+          },
+        ],
+      }}
+    />,
+  );
+  const headers = screen
+    .getAllByRole("columnheader")
+    .map((cell) => cell.textContent);
+  const cells = screen.getAllByRole("cell");
+  expect(cells[headers.indexOf("Quality accepted")]).toHaveTextContent("10");
+  expect(cells[headers.indexOf("Available accepted")]).toHaveTextContent("0");
+  expect(
+    cells[headers.indexOf("Accepted awaiting availability")],
+  ).toHaveTextContent("10");
+  expect(
+    screen.queryByRole("button", { name: "Confirm physical receipt" }),
+  ).not.toBeInTheDocument();
+});
