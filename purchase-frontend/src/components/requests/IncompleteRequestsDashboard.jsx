@@ -1,3 +1,4 @@
+import {CompletionBadge} from '../CompletionReportingSummary';
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -144,6 +145,7 @@ export default function IncompleteRequestsDashboard({ scope = "all" }) {
             r.section_name,
             r.justification,
             r.status,
+        r.completion?.category || "unavailable",
             r.requester_name,
             r.project_name,
           ])
@@ -200,7 +202,8 @@ export default function IncompleteRequestsDashboard({ scope = "all" }) {
         "Section",
         "Justification",
         "Estimated Cost (IQD)",
-        "Status",
+        "Historical status",
+        "Canonical completion",
         "Created At",
         "Urgent",
       ],
@@ -294,6 +297,7 @@ export default function IncompleteRequestsDashboard({ scope = "all" }) {
                 >
                   {r.status || "Not recorded"}
                 </span>
+                <CompletionBadge completion={r.completion}/>
               </td>
               <td>
                 <time dateTime={r.created_at || undefined}>

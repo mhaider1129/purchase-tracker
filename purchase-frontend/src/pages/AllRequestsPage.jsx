@@ -1,3 +1,4 @@
+import {CompletionBadge} from '../components/CompletionReportingSummary';
 import useUiTranslation from "../utils/useUiTranslation";
 import "../styles/RequestLists.css";
 import AllRequestGuidance from "../components/requests/AllRequestGuidance";
@@ -1803,6 +1804,7 @@ const AllRequestsPage = () => {
 
               return (
                 <Card key={request.id} className={`request-list-card ${isSummaryRequestView ? "request-list-card--summary" : "request-list-card--detailed"} transition ${cardClasses}`}>
+                  <CompletionBadge completion={request.completion}/>
                   <div className="request-card-layout">
                     <div
                       className={

@@ -1,3 +1,4 @@
+import {CompletionBadge} from '../components/CompletionReportingSummary';
 import useUiTranslation from "../utils/useUiTranslation";
 import PaginationControls from "../components/ui/PaginationControls";
 import useRequestListPagination from "../hooks/useRequestListPagination";
@@ -151,6 +152,7 @@ const summaryToneClasses = {
 };
 
 const evaluateCompletionState = (request = {}, itemsOverride = null) => {
+  if(request.completion)return {canComplete:request.completion.can_complete===true,missingCost:false,incompleteItems:!request.completion.fulfillment_complete};
   const summary = request.status_summary || {};
   const itemsList = Array.isArray(itemsOverride) ? itemsOverride : null;
 
@@ -194,7 +196,8 @@ const evaluateCompletionState = (request = {}, itemsOverride = null) => {
   }
 
   return {
-    canComplete: hasRecordedCost && itemsComplete,
+    // Legacy entry counters are hints, not verified authority to close.
+    canComplete: false,
     missingCost: !hasRecordedCost,
     incompleteItems: !itemsComplete,
   };
@@ -1559,6 +1562,7 @@ const AssignedRequestsPage = () => {
                     className={`h-1.5 ${isUrgent ? "bg-rose-500" : completionState.canComplete ? "bg-emerald-500" : "bg-blue-600"}`}
                     aria-hidden="true"
                   />
+                  <CompletionBadge completion={request.completion}/>
                   <div className="p-5 sm:p-6">
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0 flex-1">

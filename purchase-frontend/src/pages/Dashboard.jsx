@@ -1,3 +1,4 @@
+import CompletionReportingSummary from '../components/CompletionReportingSummary';
 import useUiTranslation from "../utils/useUiTranslation";
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import axios from '../api/axios';
@@ -359,7 +360,8 @@ const Dashboard = () => {
         <p className="mb-4 text-sm text-slate-600">{translate('timingNote', { defaultValue: 'Timing metrics exclude recorded approval hold periods.' })}</p>
         <div className="mb-8"><CurrentProcurementPriorities status={priorityState.status} entries={priorityState.entries} /></div>
 
-        {summary?.completion_dimensions && <section className="mb-6 rounded-xl border bg-white p-4"><h2 className="font-semibold">{uiText('Verified completion in your institute')}</h2><p className="text-sm">{uiText('Ordering and stock availability are distinct from accepted receiving and department fulfillment.')}</p><dl className="mt-3 grid gap-3 md:grid-cols-4">{[['procurement_complete_requests','Procurement committed'],['receipt_complete_requests','Receiving accepted'],['fulfilled_requests','Department fulfillment verified'],['legacy_unverified_requests','Historical completion without verified fulfillment']].map(([key,label])=><div key={key}><dt>{uiText(label)}</dt><dd className="font-semibold">{summary.completion_dimensions[key]}</dd></div>)}</dl></section>}
+        <CompletionReportingSummary report={summary?.completion_report}/>
+        <p className="mb-4 text-sm">{uiText("Historical archive indicators are retained below. Current accepted receiving and department fulfillment are reported above.")}</p>
 
         {/* Overview Highlights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
