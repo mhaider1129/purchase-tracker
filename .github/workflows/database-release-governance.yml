@@ -1,0 +1,35 @@
+name: Database release governance
+on:
+  pull_request:
+    paths:
+      - 'purchase-backend/**'
+      - '.github/workflows/database-release-governance.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'purchase-backend/**'
+      - '.github/workflows/database-release-governance.yml'
+permissions:
+  contents: read
+jobs:
+  contract-and-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: purchase-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: purchase-backend/package-lock.json
+      - run: npm ci
+      # Offline plan checks locked SQL/source digests; never connects to a database.
+      - run: npm run db:plan
+      - run: npm test -- --runInBand
+      # This runner validates and creates its own loopback-only disposable target.
+      # No repository or environment database secrets are supplied to this job.
+      - run: npm run test:database-governance-postgres
+      - run: npm run test:p2p-postgres
