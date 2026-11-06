@@ -34,7 +34,7 @@ test("canonical document links resolve to exact records without a settlement wri
       />,
     );
     expect(
-      document.getElementById("canonical-document-payable-3"),
+      screen.getByRole("listitem", {name:"Accounts payable #3"}),
     ).toHaveTextContent("9007199254740993.12 USD");
     expect(scroll).toHaveBeenCalled();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();

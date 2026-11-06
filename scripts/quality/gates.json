@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "nodeMajor": 22,
+  "databaseContract": "hospital-erp-2026-11-7c",
+  "requiredMigrations": ["067", "068", "069", "070", "071"],
+  "workers": {
+    "rfid": {
+      "protocol": "7B",
+      "migration": "070",
+      "gate": "rfid",
+      "source": "services/rfidEventProcessor.js"
+    },
+    "notifications": {
+      "protocol": "7C",
+      "migration": "071",
+      "gate": "events",
+      "source": "services/notificationEmailDelivery.js"
+    }
+  },
+  "gates": [
+    {
+      "id": "backend-unit",
+      "group": "backend",
+      "cwd": "purchase-backend",
+      "command": ["npm", "test", "--", "--runInBand", "--forceExit", "--json"],
+      "kind": "jest"
+    },
+    {
+      "id": "syntax",
+      "group": "backend",
+      "kind": "syntax"
+    },
+    {
+      "id": "frozen-history",
+      "group": "backend",
+      "kind": "history"
+    },
+    {
+      "id": "release-plan",
+      "group": "backend",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "db:plan"],
+      "markers": ["OFFLINE_DRY_RUN_NO_DATABASE_CONNECTION"]
+    },
+    {
+      "id": "quality-policy",
+      "group": "backend",
+      "cwd": ".",
+      "command": [
+        "node",
+        "--test",
+        "--test-reporter=tap",
+        "scripts/quality/policy.test.cjs"
+      ],
+      "markers": ["# fail 0"]
+    },
+    {
+      "id": "frontend-unit",
+      "group": "frontend",
+      "cwd": "purchase-frontend",
+      "command": ["npm", "test", "--", "--runInBand", "--json"],
+      "kind": "jest"
+    },
+    {
+      "id": "frontend-lint",
+      "group": "frontend",
+      "cwd": "purchase-frontend",
+      "command": ["npm", "run", "lint", "--", "--max-warnings=0"]
+    },
+    {
+      "id": "localization",
+      "group": "frontend",
+      "kind": "localization"
+    },
+    {
+      "id": "localization-source",
+      "group": "frontend",
+      "cwd": "purchase-frontend",
+      "command": ["node", "scripts/audit-ui-translations.cjs"],
+      "markers": ["Missing interface catalogue messages: 0"]
+    },
+    {
+      "id": "frontend-build",
+      "group": "frontend",
+      "cwd": "purchase-frontend",
+      "command": ["npm", "run", "build"],
+      "kind": "build",
+      "markers": ["Compiled successfully"]
+    },
+    {
+      "id": "schema",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:backend-contract-refresh"],
+      "kind": "schema",
+      "markers": ["Complete patch application 2 PASS"]
+    },
+    {
+      "id": "p2p",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:p2p-postgres"],
+      "markers": [
+        "AUD-014 payment audit INSERT failure",
+        "AUD-014 PO issuance audit INSERT failure"
+      ]
+    },
+    {
+      "id": "contracts",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:contracts-postgres"],
+      "markers": ["AUD-005 PostgreSQL regression cases passed:"]
+    },
+    {
+      "id": "contract-settlement",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:contract-settlement-postgres"],
+      "markers": ["AUD-001 Phase 5A PostgreSQL cases passed:"]
+    },
+    {
+      "id": "contract-finance",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:contract-finance-postgres"],
+      "markers": ["Canonical contract finance PostgreSQL cases passed:"]
+    },
+    {
+      "id": "reconciliation",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:contract-reconciliation-postgres"],
+      "markers": ["Historical contract reconciliation PostgreSQL cases passed:"]
+    },
+    {
+      "id": "request-workspace",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:request-workspace-postgres"],
+      "markers": ["PASS full-details with native integer audit IDs"]
+    },
+    {
+      "id": "device-demos",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:device-demos-postgres"],
+      "markers": ["SQL 050 device demos:"]
+    },
+    {
+      "id": "completion",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:completion-postgres"],
+      "markers": [
+        "Stock fulfillment:",
+        "SQL 054 technical workflow:",
+        "Canonical completion PostgreSQL cases passed:"
+      ]
+    },
+    {
+      "id": "receipt-reporting",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:completion-reporting-postgres"],
+      "markers": [
+        "Goods Receipt acceptance PostgreSQL scenarios passed:",
+        "Canonical reporting PostgreSQL scenarios passed:"
+      ]
+    },
+    {
+      "id": "governance",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:database-governance-postgres"],
+      "markers": ["Database governance PostgreSQL scenarios passed:"]
+    },
+    {
+      "id": "rfid",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:rfid-recovery-postgres"],
+      "markers": ["RFID recovery PostgreSQL scenarios passed:"]
+    },
+    {
+      "id": "events",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:event-reliability-postgres"],
+      "markers": ["Event reliability PostgreSQL scenarios passed:"]
+    }
+  ]
+}

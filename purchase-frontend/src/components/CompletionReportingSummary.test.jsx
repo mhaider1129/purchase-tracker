@@ -11,7 +11,7 @@ async function show(node,language='en') {
 }
 test('separates ordering, accepted delivery and fulfillment using the versioned server contract',async()=>{
  await show(<Summary report={{basis:'canonical_completion_v1',eligible_requests:4,procurement_complete_requests:3,receipt_complete_requests:2,fulfilled_requests:1,fulfillment_rate:25,categories:{awaiting_technical_acceptance:1}}}/>);
- for(const [label,count] of [['Procurement committed','3'],['Receiving accepted','2'],['Department fulfillment verified','1']])expect(within(screen.getByText(label).parentElement).getByText(count)).toBeInTheDocument();
+ for(const [label,count] of [['Procurement committed','3'],['Receiving accepted','2'],['Department fulfillment verified','1']])expect(within(screen.getByRole('group',{name:label})).getByText(count)).toBeInTheDocument();
  expect(screen.getByText(/25.0%/)).toBeInTheDocument();expect(screen.getByText(/Awaiting technical acceptance: 1/)).toBeInTheDocument();
 });
 test('missing or legacy metrics never become zero verified fulfillment',async()=>{

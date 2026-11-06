@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ItemHierarchyWorkspace from './ItemHierarchyWorkspace';
 import * as api from '../../api/itemMaster';
@@ -6,22 +6,30 @@ import * as api from '../../api/itemMaster';
 jest.mock('../../api/itemMaster');
 
 test('moves between real pages and resets reference pagination when the reference type changes', async () => {
-  api.searchGenericItems.mockImplementation(async ({ page }) => ({ total: 26, data: [{ id: page, generic_name: `Item page ${page}` }] }));
-  api.searchItemMasterReferences.mockImplementation(async (_type, { page }) => ({ total: 26, data: [{ id: page, uom_name: `Unit page ${page}`, is_active: true }] }));
-  render(<ItemHierarchyWorkspace />);
-  await screen.findByText('Item page 1');
-  expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
-  await userEvent.click(screen.getByRole('button', { name: 'Next' }));
-  await screen.findByText('Item page 2');
-  expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
-  await userEvent.click(screen.getByRole('button', { name: 'Previous' }));
-  await screen.findByText('Item page 1');
-  await userEvent.click(screen.getByRole('tab', { name: /Reference data/ }));
-  await screen.findByText('Unit page 1');
-  await userEvent.click(screen.getByRole('button', { name: 'Next' }));
-  await screen.findByText('Unit page 2');
-  await userEvent.selectOptions(screen.getByLabelText('Reference type'), 'categories');
-  await waitFor(() => expect(api.searchItemMasterReferences).toHaveBeenLastCalledWith('categories', { q: '', page: 1, page_size: 25 }));
+  // Exercise the real 350ms debounce deterministically; CPU load must not race
+  // Testing Library's default wait against a pagination request.
+  jest.useFakeTimers();
+  const user=userEvent.setup({advanceTimers:jest.advanceTimersByTime});
+  const search=async()=>act(async()=>{jest.advanceTimersByTime(350);});
+  let view;
+  try {
+    api.searchGenericItems.mockImplementation(async ({ page }) => ({ total: 26, data: [{ id: page, generic_name: `Item page ${page}` }] }));
+    api.searchItemMasterReferences.mockImplementation(async (_type, { page }) => ({ total: 26, data: [{ id: page, uom_name: `Unit page ${page}`, is_active: true }] }));
+    view=render(<ItemHierarchyWorkspace />);
+    await search();expect(screen.getByText('Item page 1')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Next' }));await search();
+    expect(screen.getByText('Item page 2')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Previous' }));await search();
+    expect(screen.getByText('Item page 1')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: /Reference data/ }));await search();
+    expect(screen.getByText('Unit page 1')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Next' }));await search();
+    expect(screen.getByText('Unit page 2')).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Reference type'), 'categories');await search();
+    expect(api.searchItemMasterReferences).toHaveBeenLastCalledWith('categories', { q: '', page: 1, page_size: 25 });
+  } finally {view?.unmount();jest.useRealTimers();}
 });
 
 test('explains disabled pagination for an empty list', async () => {

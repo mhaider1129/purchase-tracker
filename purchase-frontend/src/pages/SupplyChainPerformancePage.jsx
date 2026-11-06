@@ -12,7 +12,7 @@ const pretty = value => String(value || 'Unclassified').replaceAll('_', ' ').rep
 const coverageTone = { FULL: 'bg-emerald-50 text-emerald-700', PARTIAL: 'bg-amber-50 text-amber-700', MISSING: 'bg-slate-100 text-slate-600', LEGACY_INCOMPLETE: 'bg-orange-50 text-orange-700' };
 
 const Metric = ({ label, value, helper, icon: Icon, coverage }) => (
-  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+  <div role="group" aria-label={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div className="flex items-start justify-between gap-3"><span className="rounded-xl bg-blue-50 p-2 text-blue-700"><Icon className="h-5 w-5" /></span>{coverage && <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${coverageTone[coverage] || coverageTone.MISSING}`}>{coverage.replaceAll('_', ' ')}</span>}</div>
     <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p><p className="mt-1 text-3xl font-bold text-slate-950">{value}</p><p className="mt-1 text-xs text-slate-500">{helper}</p>
   </div>

@@ -15,8 +15,8 @@ test('shows current accepted receiving independently of departmental fulfillment
  getPerformanceDashboard.mockResolvedValue({data:{metrics:{completion:{basis:'canonical_quantities',accepted_delivery_cases:2,fulfilled_cases:1}}}});
  render(<SupplyChainPerformancePage/>);
  await screen.findByText('Cases with accepted receiving');
- const receiving=screen.getByText('Cases with accepted receiving').parentElement;
- const fulfillment=screen.getByText('Cases with department fulfillment').parentElement;
+ const receiving=screen.getByRole('group',{name:'Cases with accepted receiving'});
+ const fulfillment=screen.getByRole('group',{name:'Cases with department fulfillment'});
  expect(receiving).toHaveTextContent('2');expect(fulfillment).toHaveTextContent('1');
  expect(screen.queryByText('Verified receiving metrics are unavailable.')).not.toBeInTheDocument();
 });

@@ -2535,7 +2535,7 @@
       "invalidBulkItems": "Items must have a requested quantity greater than zero to be auto-filled.",
       "bulkPurchaseSuccess": "All items were marked as purchased using their requested quantities.",
       "bulkPurchaseFailed": "Failed to update all items. Some items may not have been updated.",
-      "generateDocumentFailedWithReason": "Generate Document Failed With Reason",
+      "generateDocumentFailedWithReason": "Failed to generate document: {{reason}}",
       "popupBlocked": "Please enable popups to print the request.",
       "printFailed": "❌ Failed to print request.",
       "printReady": "Request ready for printing."

@@ -19,6 +19,7 @@ const requests = [
     status: "Approved",
     estimated_cost: 0,
     justification: "Ready workstation",
+    completion: {can_complete:true,fulfillment_complete:true},
     status_summary: {
       total_items: 2,
       purchased_count: 2,
@@ -212,4 +213,12 @@ test("registration is the primary item action and advanced actions start collaps
   ).toBeInTheDocument();
   expect(screen.getByLabelText("Quantity purchased")).toHaveValue(6);
   expect(api.post).not.toHaveBeenCalled();
+});
+
+// A finalized purchase counter is never canonical fulfillment evidence.
+test('legacy counters cannot make a request ready without canonical completion',async()=>{
+ api.get.mockResolvedValue({data:{data:requests.map(({completion,...request})=>request)}});
+ renderPage();await screen.findByText('Ready workstation');
+ expect(screen.getAllByRole('button',{name:'Mark Request as Completed'}).every(button=>button.disabled)).toBe(true);
+ expect(screen.getByRole('button',{name:'Ready to complete 0'})).toBeInTheDocument();
 });

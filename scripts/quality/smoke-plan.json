@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "execution": "MANUAL_OWNER_ACCEPTANCE_REQUIRED",
+  "automaticLiveWrites": false,
+  "liveChecksPerformedByCI": false,
+  "rules": [
+    "Use a dedicated authorized Development fixture institute and synthetic records for write scenarios.",
+    "Production checks are non-mutating on existing authorized documents unless separately approved controlled testing exists.",
+    "Confirm GET handlers are non-mutating before invoking them: report recalculation and print/email routes can have side effects.",
+    "Do not run SQL, create payments, issue stock, ingest RFID, send external notifications or alter approval routing against live systems from this CI workflow.",
+    "Record actor, institute, release SHA, document IDs, expected/actual results, correlation IDs and reviewer without credentials or confidential payloads."
+  ],
+  "checks": [
+    {"domain":"Authentication","ciGates":["backend-unit","frontend-unit"],"development":"Use a synthetic active account; check successful login, denied invalid/expired token, and current-user identity.","production":"Inspect existing authenticated session and /health; never treat health alone as database or worker acceptance."},
+    {"domain":"Request creation","ciGates":["backend-unit","request-workspace"],"development":"Create an authorized synthetic PR, verify requester/institute, initial approval members and queued notice; reject foreign scope.","production":"Read an existing authorized request; do not submit a new PR."},
+    {"domain":"Approval routing","ciGates":["backend-unit","events"],"development":"Approve/reject synthetic steps, verify independent active member, transaction rollback and next-step notices with V2 disabled.","production":"Read existing route/history; do not decide or change approvals."},
+    {"domain":"Procurement assignment","ciGates":["backend-unit","events"],"development":"Assign/reassign eligible same-institute fixture buyers; test unauthorized/foreign/inactive denial and audit/outbox evidence.","production":"Read current assignment and history without running autoassignment."},
+    {"domain":"RFx","ciGates":["p2p","backend-unit"],"development":"Invite and submit synthetic supplier responses; prove competitor isolation and authorized same-institute award provenance.","production":"Read an existing authorized event; avoid report recalculation, invitations and submissions."},
+    {"domain":"PO issuance","ciGates":["p2p","completion"],"development":"Issue an approved fixture PO with independent approval and valid technical/budget authority; verify audit rollback and duplicate prevention.","production":"Read existing PO and issuance evidence; never issue a new PO."},
+    {"domain":"Goods Receipt","ciGates":["p2p","receipt-reporting"],"development":"Receive partial/full fixtures, verify quantity conservation and a single stock movement on retries.","production":"Read receipt and linked ledger evidence without posting a receipt."},
+    {"domain":"Technical acceptance","ciGates":["completion","receipt-reporting"],"development":"Attest independent review, reject/quarantine/release as authorized; verify rollback, signatures and accepted quantities.","production":"Read signed clearance/history; never submit an acceptance decision."},
+    {"domain":"Warehouse fulfillment","ciGates":["completion","receipt-reporting"],"development":"Issue only accepted available fixture stock and distinguish department fulfillment from warehouse intake.","production":"Read existing fulfillment/provenance; never issue stock or acknowledge receipt."},
+    {"domain":"Contracts","ciGates":["contracts","contract-finance","contract-settlement","reconciliation"],"development":"Exercise scoped lifecycle, canonical financial projection and explicit reconciliation with historical values unchanged.","production":"Read an authorized contract and canonical projection; do not edit, reconcile or settle."},
+    {"domain":"AP posting","ciGates":["p2p","contract-finance"],"development":"Post a verified fixture invoice liability with segregation of duties; failed audit/outbox must roll back posting.","production":"Read existing posted voucher/payable and balance; never post an AP entry."},
+    {"domain":"Payment","ciGates":["p2p","contract-finance"],"development":"Allocate synthetic partial/full payments, reject overpayment/duplicates/foreign scope, and verify actual audit INSERT failure rollback.","production":"Read existing settlement/allocation evidence; never create or alter a payment."},
+    {"domain":"RFID ingestion","ciGates":["rfid"],"development":"Use synthetic reader/client identities to ingest, crash/restart, recover stale leases and reject duplicates or foreign ownership.","production":"Read authorized queue/history and original client/reader status; do not ingest/recover/process live jobs."},
+    {"domain":"Audit trail","ciGates":["events","governance","p2p"],"development":"Verify committed business audits, before/after/source evidence, rollback and read-only missing-history diagnostics.","production":"Read authorized existing audit evidence; never fabricate or backfill history."},
+    {"domain":"Notifications","ciGates":["events","rfid"],"development":"Use stubbed transport; verify durable intentions, recipient revocation, stale recovery and ambiguous acknowledgment behavior.","production":"Inspect scoped operations counts/age/dead letters; no test email or replay without separate approval."},
+    {"domain":"Reporting","ciGates":["receipt-reporting","frontend-unit"],"development":"Reconcile canonical completion totals, currency-specific projections, scoped filters and exported fixture cohorts.","production":"Read approved non-mutating reports; do not run a GET/export that recalculates or writes evidence."}
+  ]
+}
