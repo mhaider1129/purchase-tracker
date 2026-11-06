@@ -15,13 +15,13 @@ test("distinguishes a paid, ordered request from unaccepted and unfulfilled dema
     />,
   );
   expect(
-    within(screen.getByText("Procurement committed").parentElement).getByText(
+    within(screen.getByRole("group",{name:"Procurement committed"})).getByText(
       "Verified",
     ),
   ).toBeInTheDocument();
   expect(
     within(
-      screen.getByText("Department fulfillment verified").parentElement,
+      screen.getByRole("group",{name:"Department fulfillment verified"}),
     ).getByText("Pending evidence"),
   ).toBeInTheDocument();
   expect(screen.getByText(/Financial completion/)).toHaveTextContent(

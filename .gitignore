@@ -4,3 +4,7 @@ purchase-frontend/node_modules/
 
 # Restricted clinical consignment documents; never publish in Git.
 /purchase-backend/private-uploads/
+
+# Generated quality evidence and release artifacts (uploaded by CI).
+/quality-results/
+/release-artifacts/

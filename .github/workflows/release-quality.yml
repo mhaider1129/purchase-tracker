@@ -1,0 +1,130 @@
+name: Release quality
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-quality-${{ github.ref }}
+  cancel-in-progress: true
+# No database/application secrets or deployment environments are available here.
+env:
+  CI: 'true'
+  LIVE_ROUTING_ENABLED: 'false'
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: purchase-backend/package-lock.json
+      - run: npm ci
+        working-directory: purchase-backend
+      - run: node scripts/quality/release.cjs group backend
+        env:
+          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: quality-evidence-backend
+          path: quality-results/
+          if-no-files-found: error
+          retention-days: 14
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: purchase-frontend/package-lock.json
+      - run: npm ci
+        working-directory: purchase-frontend
+      - run: node scripts/quality/release.cjs group frontend
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: quality-evidence-frontend
+          path: quality-results/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: frontend-build
+          path: purchase-frontend/build/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        gate: [schema, p2p, contracts, contract-settlement, contract-finance, reconciliation, request-workspace, device-demos, completion, receipt-reporting, governance, rfid, events]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: purchase-backend/package-lock.json
+      - run: npm ci
+        working-directory: purchase-backend
+      - run: node scripts/quality/release.cjs gate "${{ matrix.gate }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: quality-evidence-postgres-${{ matrix.gate }}
+          path: quality-results/
+          if-no-files-found: error
+          retention-days: 14
+  release-quality-gate:
+    name: Release quality gate
+    if: always()
+    needs: [backend, frontend, postgres]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: quality-evidence-*
+          path: quality-results/
+          merge-multiple: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: frontend-build
+          path: release-artifacts/frontend-build/
+      - name: Verify complete evidence and bind manifest
+        if: always()
+        env:
+          REQUIRED_JOB_RESULTS: ${{ toJSON(needs) }}
+        run: node scripts/quality/release.cjs manifest --needs "$REQUIRED_JOB_RESULTS" --build release-artifacts/frontend-build --output release-artifacts/release-manifest.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: release-manifest
+          path: release-artifacts/release-manifest.json
+          if-no-files-found: error
+          retention-days: 30

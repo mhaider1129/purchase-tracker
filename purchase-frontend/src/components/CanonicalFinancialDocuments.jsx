@@ -27,6 +27,7 @@ export default function CanonicalFinancialDocuments({ data }) {
               className="rounded p-2 target:ring-2 target:ring-blue-500"
               key={`${kind}-${record.id}`}
               id={`canonical-document-${kind}-${record.id}`}
+              aria-label={`${text(label)} #${record.id}`}
             >
               {text(label)} #{record.id} ·{" "}
               {record.invoice_number || record.po_number || ""} ·{" "}

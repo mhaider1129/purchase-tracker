@@ -59,3 +59,11 @@ test("prevents a follow-up message from mixing departments", async () => {
   expect(screen.getByText(/only include items from one department/i)).toBeInTheDocument();
   expect(previewDepartmentFollowUpMessage).not.toHaveBeenCalled();
 });
+test('blocks repeated follow-up actions while the first request is pending',async()=>{
+ let finish;previewDepartmentFollowUpMessage.mockReturnValueOnce(new Promise(resolve=>{finish=resolve;}));
+ show();await screen.findByText('Infusion pump');
+ const button=screen.getAllByRole('button',{name:'Copy Message'})[0];
+ await userEvent.click(button);expect(button).toBeDisabled();
+ await userEvent.click(button);expect(previewDepartmentFollowUpMessage).toHaveBeenCalledTimes(1);
+ finish({message:'Prepared fixture message'});await screen.findByText('Follow-Up Message Preview');expect(button).toBeEnabled();
+});

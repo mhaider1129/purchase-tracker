@@ -56,7 +56,7 @@ export default function CompletionReportingSummary({ report }) {
             "Historical completion without verified fulfillment",
           ],
         ].map(([key, label]) => (
-          <div key={key}>
+          <div key={key} role="group" aria-label={text(label)}>
             <dt>{text(label)}</dt>
             <dd className="font-semibold">{report[key] ?? "—"}</dd>
           </div>
