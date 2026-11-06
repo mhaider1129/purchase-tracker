@@ -64,7 +64,7 @@ The generated manifest contains:
 
 ## Manual release sequence
 
-1. **Review database prerequisites.** Confirm the actual target identity, governed 069/070/071 receipts, current contract `hospital-erp-2026-11-7c`, capability definitions, critical RLS/grants and worker versions. Review previous 7A–7C runbooks. CI's disposable database is not evidence of the hosted database state.
+1. **Review database prerequisites.** Confirm the actual target identity, governed 069/070/071/072 receipts, current contract `hospital-erp-2026-11-scop1`, capability definitions, critical RLS/grants and worker versions. Review previous 7A–7C runbooks. CI's disposable database is not evidence of the hosted database state.
 2. **Backup and recovery capability.** Preserve an approved database/files backup and demonstrate the approved restoration procedure in an isolated recovery environment. Record owner, backup time, recovery point and restoration evidence. Do not discover recovery failures during Production deployment.
 3. **Apply approved additive migrations manually, if needed.** If changing schema/source attestation, use the approved maintenance window and prior runbooks to drain/stop incompatible writers and workers before manual SQL. Task 7D introduces no schema migration and edits no frozen SQL. Any missing earlier release must follow its original governed manual process. Never fabricate receipts, run a glob of historical SQL or use destructive down migrations. If a changed backend source digest needs a new attestation, use the reviewed existing governed bundle/process, not a new invented APPLIED row.
 4. **Verify the actual database contract.** The authorized operator uses the existing read-only `db:verify` procedure with the actual restricted runtime identity and intended `APP_RELEASE_REF`/environment; require `DATABASE_READY`. Missing permission codes, invalid RLS, missing worker migration or incompatible functions blocks continuation. The agent/CI does not execute this hosted verification.
@@ -92,3 +92,7 @@ No live smoke request was executed by this task. A GET/export/report URL is not 
 ## Limits
 
 Repository branch rules and actual hosted infrastructure could not be verified with the integration's permissions. Physical RFID devices, real SMTP, Hetzner/PM2, actual hosted grants and recovery capability require owner acceptance. Existing test-console React/router/i18n warnings and dependency-data age advisories remain visible; strict ESLint/build gates do not suppress code warnings. Backend Jest uses its documented force-exit behavior after all assertions/results; native database tests close their pools and disposable resources normally. This is test readiness, not successful Production acceptance.
+
+## SCOP Phase 1 extension
+
+The PostgreSQL matrix now includes `scop-foundation`, which exercises the additive 072 contract, allocation concurrency/audit rollback, and existing canonical receiving/inspection/inventory regressions. Release checks also require the three `scop.allocations.*` permission definitions; no grants or feature activation are automatic. Follow the [Phase 1 manual migration and recovery instructions](../architecture/scop-phase1-foundation.md#manual-migration-and-recovery). Existing RFID/notification worker protocols remain unchanged.

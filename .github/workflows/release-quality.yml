@@ -74,7 +74,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        gate: [schema, p2p, contracts, contract-settlement, contract-finance, reconciliation, request-workspace, device-demos, completion, receipt-reporting, governance, rfid, events]
+        gate: [schema, p2p, contracts, contract-settlement, contract-finance, reconciliation, request-workspace, device-demos, completion, receipt-reporting, governance, rfid, events, scop-foundation]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
