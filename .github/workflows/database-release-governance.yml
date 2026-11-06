@@ -32,4 +32,5 @@ jobs:
       # This runner validates and creates its own loopback-only disposable target.
       # No repository or environment database secrets are supplied to this job.
       - run: npm run test:database-governance-postgres
+      - run: npm run test:rfid-recovery-postgres
       - run: npm run test:p2p-postgres
