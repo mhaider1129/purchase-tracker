@@ -9,7 +9,7 @@ The approved [roadmap](scop-implementation-roadmap.md) called its first small PR
 Repository inspection exposed two correctness issues requiring a bounded initial contract:
 
 - A warehouse-supply item may already point back to an original requested item. Enrolling both would double the same demand. Such diverted warehouse lines must use the original `requested_item` profile; independently created warehouse items can enroll natively.
-- Canonical execution lines do not yet carry an allocation ID. A PO, GR or warehouse-supply line is therefore attributed **whole** to one allocation, enforced by unique canonical foreign keys. Do not prorate a receipt's technical approval or reuse the same line in two allocations. Create separate canonical execution lines for separate allocations. Binding progress is read-only attribution, not authority to order or reserve stock. Existing execution routes are not re-engineered in this phase.
+- Canonical execution lines do not yet carry an allocation ID. A PO, GR or actual warehouse-supplied issue row is therefore attributed **whole** to one allocation, enforced by unique canonical foreign keys. Do not prorate a receipt's technical approval or reuse the same line in two allocations. Create separate canonical execution lines for separate allocations. In particular, two issues of 4 and 6 units against one 10-unit warehouse requirement are separate `warehouse_supplied_items` execution rows. Their read-only `canonical_supply_line_quantity` projection preserves the existing aggregate supply invariants and attributes each issue once; it does not post inventory or alter aggregate completion. Binding progress is read-only attribution, not authority to order or reserve stock. Existing execution routes are not re-engineered in this phase.
 
 This foundation must not be advertised as global enforcement of source-channel policy in all legacy execution routes. Existing writers still enforce their canonical approval, scope, inventory and financial controls. Allocate and execute in reviewed pilot cohorts; future execution-aware integration must carry allocation IDs at canonical service boundaries before claiming complete prevention of off-plan procurement.
 
@@ -23,7 +23,7 @@ Manual SQL **072_scop_operational_foundation.sql** adds only supporting operatio
 | `scop_fulfillment_policies` | Normalized standard, center-first, stock-first and contract-first classification. Nonstandard policies require an explicit evidenced local-allocation exception. They do not replace procurement approvals. |
 | `scop_requirement_profiles` | Explicit enrollment and classification of one canonical request item; institute/request, original item, existing `item_categories` category, requesting function via original `departments` ID, purpose, policy, UOM/quantity and approval snapshot. Unique source identity; immutable after enrollment. |
 | `scop_fulfillment_allocations` | Positive allocated responsibility quantities, source channel, responsible user and applicable warehouse/contract/transfer references. Split lineage, revision and terminal history are preserved. |
-| `scop_allocation_evidence` | Immutable unique links to existing `purchase_order_items`, `goods_receipt_items` or `warehouse_supply_items`. No receipt/inventory/payment copy and no independent inspection counters. |
+| `scop_allocation_evidence` | Immutable unique links to existing `purchase_order_items`, `goods_receipt_items` or `warehouse_supplied_items`. No receipt/inventory/payment copy and no independent inspection counters. |
 | `scop_allocation_commands` | Successful command fingerprint/result with institute, actor and request identity. Transactional idempotency; never a SAP posting queue. |
 
 Profiles capture real request approval and item provenance. Source rows and requesting department must belong to the same institute. The department is the requesting function's existing organizational identity; no parallel department/function master is introduced. Classification does not change `request_type`, item identity, requester, approval route, procurement priority, buyer assignment or workload policy. A new category/purpose/policy selection does not automatically recalculate an old approval.
@@ -144,7 +144,7 @@ Evidence example:
 }
 ```
 
-Evidence kinds: `PO_LINE`, `RECEIPT_LINE`, `SUPPLY_LINE`. Bind the issued PO line first, then its GR lines. Binding neither receives stock nor signs technical acceptance. A supplied warehouse line must lead back to the original requirement/department/institute; a linked line cannot be attributed twice. Canonical UOM or identity ambiguity fails closed. Existing allocations with execution evidence cannot be moved, split or cancelled via these APIs; use domain cancellation/reversal and reviewed forward reconciliation instead of erasing provenance.
+Evidence kinds: `PO_LINE`, `RECEIPT_LINE`, `SUPPLY_LINE` (the actual `warehouse_supplied_items.id`, not its parent requirement ID). Bind the issued PO line first, then its GR lines. Binding neither receives stock nor signs technical acceptance. A supplied warehouse execution row must lead back through its warehouse requirement to the original requirement/department/institute; a linked line cannot be attributed twice. Canonical UOM or identity ambiguity fails closed. Existing allocations with execution evidence cannot be moved, split or cancelled via these APIs; use domain cancellation/reversal and reviewed forward reconciliation instead of erasing provenance.
 
 Typical errors: 400 invalid body/ID/quantity, 403 missing authority, 404 disabled/foreign reference, 409 stale revision/capacity/state/UOM/evidence conflict, 503 missing reviewed database contract. Concurrency failures return 409; reload, verify the original command result and retry the same identity as appropriate.
 
@@ -177,7 +177,7 @@ Executed locally using isolated test configuration and runner-created loopback-o
 |---|---|
 | Backend unit/regression suite | 229 suites, 1,927 tests passed |
 | Existing frontend request/Central Supply consumers | 2 suites, 15 tests passed |
-| SCOP PostgreSQL profile | 33 foundation scenarios plus 43 canonical receipt/inspection/inventory scenarios passed |
+| SCOP PostgreSQL profile | 34 foundation scenarios plus 43 canonical receipt/inspection/inventory scenarios passed |
 | Database governance PostgreSQL profile | 31 scenarios passed, including exact grants, rollback, governed replay, source digest and startup |
 | Existing canonical P2P PostgreSQL suite | 94 tests passed |
 | Populated schema/backend query compatibility | 1,868 query plans passed; zero failed plans or postflight findings |
