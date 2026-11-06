@@ -134,6 +134,9 @@ function contract() {
     "finance.post-ledger",
     "procure-to-pay.purchase-orders.manage",
     "operations.events.view",
+    "scop.allocations.view",
+    "scop.allocations.manage",
+    "scop.allocations.override-policy",
   ])
     if (!schema.catalog.permissions.some((p) => p.code === code))
       throw Error("Required permission missing: " + code);

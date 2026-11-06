@@ -1,8 +1,8 @@
 {
   "version": 1,
   "nodeMajor": 22,
-  "databaseContract": "hospital-erp-2026-11-7c",
-  "requiredMigrations": ["067", "068", "069", "070", "071"],
+  "databaseContract": "hospital-erp-2026-11-scop1",
+  "requiredMigrations": ["067", "068", "069", "070", "071", "072"],
   "workers": {
     "rfid": {
       "protocol": "7B",
@@ -188,6 +188,13 @@
       "cwd": "purchase-backend",
       "command": ["npm", "run", "test:event-reliability-postgres"],
       "markers": ["Event reliability PostgreSQL scenarios passed:"]
+    },
+    {
+      "id": "scop-foundation",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": ["npm", "run", "test:scop-foundation-postgres"],
+      "markers": ["SCOP foundation PostgreSQL scenarios passed:"]
     }
   ]
 }
