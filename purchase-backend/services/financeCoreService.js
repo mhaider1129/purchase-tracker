@@ -171,11 +171,12 @@ const createJournalEntry = async (client, {
       source_type,
       source_id,
       journal_reference,
+      journal_number,
       entry_status,
       currency,
       total_amount,
       posted_by
-    ) VALUES ($1,$2,$3,$4,$5,'posted',$6,$7,$8)
+    ) VALUES ($1,$2,$3,$4,$5,$5,'posted',$6,$7,$8)
     RETURNING *`,
     [requestId, journalType, sourceType, sourceId ? String(sourceId) : null, journalReference, currency, normalizedAmount, actorId]
   );
@@ -188,12 +189,13 @@ const createJournalEntry = async (client, {
         `INSERT INTO journal_entry_lines (
           journal_entry_id,
           line_no,
+          line_number,
           account_code,
           cost_center_id,
           debit_amount,
           credit_amount,
           description
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        ) VALUES ($1,$2,$2,$3,$4,$5,$6,$7)`,
         [
           journalEntry.id,
           index + 1,

@@ -9,6 +9,11 @@ const {
 const directory = path.join(__dirname, "../database/releases");
 const CONTRACT_VERSION = "hospital-erp-2026-11-7c";
 function loadContract() {
+  const profile = process.env.DB_RELEASE_SCHEMA_PROFILE;
+  if (profile && profile !== "canonical")
+    return require("../scripts/lib/databaseRelease/profiles").loadProfile(
+      profile,
+    );
   return JSON.parse(
     fs.readFileSync(path.join(directory, "schema-contract.json"), "utf8"),
   );
@@ -205,11 +210,12 @@ async function verify(
   const observed = await catalog.fingerprint(db, actual),
     contractDigest = hash(JSON.stringify(contract));
   let receipts = [],
-    attestation = null;
+    attestation = null,
+    observedBaseline = null;
   if (actual.relations.some((r) => r.name === "database_release_migrations"))
     receipts = (
       await db.query(
-        "SELECT migration_id,filename,content_sha256,execution_environment,execution_status,application_release_ref FROM public.database_release_migrations ORDER BY id",
+        "SELECT migration_id,filename,content_sha256,execution_environment,execution_status,application_release_ref,evidence FROM public.database_release_migrations ORDER BY id",
       )
     ).rows;
   if (requireEvidence) {
@@ -218,10 +224,36 @@ async function verify(
         group: "release",
         reason: "explicit_release_and_environment_required",
       });
+    const baselineId = contract.observed_baseline_migration;
+    const baselineEntry =
+      baselineId &&
+      inventory.artifacts.find(
+        (r) => r.id === baselineId && r.profile === contract.profile,
+      );
+    const baseline =
+      baselineEntry &&
+      receipts.find(
+        (r) =>
+          r.migration_id === path.basename(baselineEntry.path, ".sql") &&
+          r.execution_environment === environment &&
+          r.execution_status === "APPLIED" &&
+          r.content_sha256 === baselineEntry.sha256 &&
+          r.filename === baselineEntry.path &&
+          r.evidence?.source === "REVIEWED_TRANSACTIONAL_FORWARD_BUNDLE" &&
+          r.evidence?.observed_baseline_profile === contract.profile,
+      );
+    if (baseline)
+      observedBaseline = {
+        migration: baseline.migration_id,
+        profile: contract.profile,
+        historical_execution: "UNVERIFIED",
+        observed_prior_controls: baselineEntry.observes_prior_controls,
+      };
     for (const entry of inventory.artifacts.filter(
       (r) =>
         r.classification === "active_forward_migration" ||
-        r.governed_receipt_required,
+        r.governed_receipt_required ||
+        r.id === baselineId,
     )) {
       const id = path.basename(entry.path, ".sql");
       const applied = receipts.find(
@@ -230,6 +262,12 @@ async function verify(
           r.execution_environment === environment &&
           r.execution_status === "APPLIED",
       );
+      if (
+        !applied &&
+        baseline &&
+        baselineEntry.observes_prior_controls?.includes(entry.id)
+      )
+        continue;
       if (!applied)
         findings.push({
           group: "ledger",
@@ -291,6 +329,7 @@ async function verify(
     historical_migrations:
       "UNVERIFIED_UNLESS_SUPPORTED_BY_SEPARATE_TRUSTWORTHY_EVIDENCE",
     attestation,
+    observed_baseline: observedBaseline,
   };
 }
 async function assertReady(db, options) {

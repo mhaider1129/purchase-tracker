@@ -45,7 +45,11 @@ async function main(options = args(process.argv.slice(2))) {
   const manifest = service.loadInventory(),
     contract = service.loadContract();
   if (options.command === "plan") {
-    const entries = selectMigrations(manifest, options.migration?.split(","));
+    const entries = selectMigrations(
+      manifest,
+      options.migration?.split(","),
+      contract.profile,
+    );
     const report = {
       mode: "OFFLINE_DRY_RUN_NO_DATABASE_CONNECTION",
       contract: contract.version,
@@ -85,8 +89,9 @@ async function main(options = args(process.argv.slice(2))) {
     throw new Error(
       "Explicit --environment, --release and DB_RELEASE_READONLY_URL are required",
     );
-  const { Client } = require("pg");
-  const db = new Client({
+  const RuntimeClient =
+    require("../utils/runtimeDatabaseIdentity").clientClass();
+  const db = new RuntimeClient({
     connectionString: process.env.DB_RELEASE_READONLY_URL,
     application_name: "purchase-tracker-read-only-release-verifier",
   });

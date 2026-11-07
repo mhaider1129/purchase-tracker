@@ -208,6 +208,20 @@
       "markers": [
         "Guided request PostgreSQL cases passed:"
       ]
+    },
+    {
+      "id": "hosted-recovery",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": [
+        "npm",
+        "run",
+        "test:hosted-recovery-postgres"
+      ],
+      "markers": [
+        "WICI hosted recovery PostgreSQL cases passed:",
+        "Goods Receipt acceptance PostgreSQL scenarios passed:"
+      ]
     }
   ]
 }
