@@ -969,5 +969,19 @@
   "Request total cost override": "Request total cost override",
   "Bulk purchase actions": "Bulk purchase actions",
   "Close without further purchasing": "Close without further purchasing",
-  "Not available": "Not available"
+  "Not available": "Not available",
+  "Pending Item Master review": "Pending Item Master review",
+  "Search catalog": "Search catalog",
+  "Select item type": "Select item type",
+  "Retry category loading": "Retry category loading",
+  "Loading categories…": "Loading categories…",
+  "No active categories are available. Ask an Item Master reference maintainer to add categories before submitting this referral.": "No active categories are available. Ask an Item Master reference maintainer to add categories before submitting this referral.",
+  "Searching Item Master…": "Searching Item Master…",
+  "No active Generic Items found. Drafts and legacy items must be governed and activated in Item Master before selection.": "No active Generic Items found. Drafts and legacy items must be governed and activated in Item Master before selection.",
+  "Cannot find the item": "Cannot find the item",
+  "Unable to load categories. Check Item Master view access and retry.": "Unable to load categories. Check Item Master view access and retry.",
+  "Unable to search Item Master. Please try again.": "Unable to search Item Master. Please try again.",
+  "Proposed generic name": "Proposed generic name",
+  "Why no catalog item is suitable": "Why no catalog item is suitable",
+  "Search active Generic Items by code, name or description": "Search active Generic Items by code, name or description"
 }

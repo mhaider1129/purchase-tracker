@@ -14,6 +14,7 @@ import {
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import RequestAccount from "./pages/RequestAccount";
+import GuidedRequestPage from "./pages/requests/GuidedRequestPage";
 import RequestTypeSelector from "./pages/requests/RequestTypeSelector";
 import StockRequestForm from "./pages/requests/StockRequestForm";
 import NonStockRequestForm from "./pages/requests/NonStockRequestForm";
@@ -235,9 +236,11 @@ const AppRoutes = () => (
       path="/ai-assistant"
       element={<ProtectedRoute element={<AiAssistantPage />} requiredPermissions={["ai-intelligence.use"]} />}
     />
+    <Route path="/requests/new" element={<ProtectedRoute element={<GuidedRequestPage />} />} />
+    <Route path="/requests/legacy" element={<ProtectedRoute element={<RequestTypeSelector />} />} />
     <Route
       path="/"
-      element={<ProtectedRoute element={<RequestTypeSelector />} />}
+      element={<ProtectedRoute element={<GuidedRequestPage />} />}
     />
     <Route
       path="/requests/stock"

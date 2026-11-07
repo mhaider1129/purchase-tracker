@@ -195,6 +195,19 @@
       "cwd": "purchase-backend",
       "command": ["npm", "run", "test:scop-foundation-postgres"],
       "markers": ["SCOP foundation PostgreSQL scenarios passed:"]
+    },
+    {
+      "id": "guided-requests",
+      "group": "postgres",
+      "cwd": "purchase-backend",
+      "command": [
+        "npm",
+        "run",
+        "test:guided-requests-postgres"
+      ],
+      "markers": [
+        "Guided request PostgreSQL cases passed:"
+      ]
     }
   ]
 }
