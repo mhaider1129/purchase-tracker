@@ -8,12 +8,12 @@ The uploaded catalog is tied to SHA-256 `d669e14e15dfce8244fea9e290b8dc1ecb72b46
 
 The reference and hosted schemas are not byte-identical:
 
-- 613 foreign keys are validated in the hosted database where the reference expects `NOT VALID`. 43 hosted tables have RLS enabled where the reference does not. These controls stay in place.
+- Many hosted foreign keys are already validated; 591 current SCOP1 definitions are exact equivalents after removing only reference `NOT VALID`. Other relationship differences require individual review. 43 hosted tables have RLS enabled where the reference does not. These controls stay in place.
 - All 24 differing existing function bodies match the reference after only CRLF-to-LF conversion and removal of four exact RFID version-marker comment lines. Production function hashes are still checked exactly against the reviewed hosted profile; the gate does not ignore arbitrary function changes.
 - Existing bounded monetary/string types, timestamp types, identity columns and the generated `item_uom.name` remain unchanged. Thirteen operational quantity/conversion columns are widened to canonical `numeric` because the receipt suite reproduced silent rounding of `0.1001` in two-decimal fields; existing numeric values are preserved. No historical conversion, rounding or timezone inference is performed.
 - The financial reconciliation table/function from 066 and the six operational foundation tables/four routines from 072 are missing. The latest approved backend requires them, even when optional business features remain disabled.
 - A hosted legacy trigger on `stock_item_requests` attempts to increment stock on catalog-request approval, outside canonical inventory posting. Recovery disables this trigger; it does not replay, reverse or recalculate past effects.
-- The canonical journal writer omitted required legacy identifier aliases (`journal_number` and `line_number`). The backend now supplies both identifiers for new entries; it does not rewrite old journal data or create a second posting.
+- The hosted schema requires legacy identifier aliases omitted by the canonical journal writer (`journal_number` and `line_number`). Hosted-only BEFORE INSERT compatibility triggers now supply both identifiers from the canonical values for new entries; the canonical writer remains unchanged and works where those legacy aliases do not exist; it does not rewrite old journal data or create a second posting.
 
 ## What the repair changes
 
@@ -176,9 +176,12 @@ See the PR for executed test counts and remaining operator acceptance. Green CI 
 ## Executed local validation
 
 - Hosted recovery PostgreSQL: 15 scenarios, followed by all 43 canonical goods-receipt/inspection/inventory scenarios against the reconstructed hosted schema and restricted runtime pool. Includes fractional `0.1001`, concurrent releases, quarantine, institute/warehouse authorization and audit rollback.
+- Canonical schema compatibility: all 1,872 SQL plans pass with zero failures after the hosted-only identifier trigger correction.
 - Canonical database governance PostgreSQL: all 31 scenarios pass with the default canonical profile.
 - Final backend unit/HTTP regression suite: all 233 suites / 1,982 tests pass, including reproducibility of the checked-in operator SQL and manual-only recovery selection.
 - Release policy: all 29 checks pass. Backend syntax gate passes.
 - Frozen SQL 001–072 and the canonical schema contract are unchanged. No hosted connection or hosted SQL execution was used.
 
 These are disposable fixture results. Production financial/inventory-row acceptance, serial dependency checks, actual restricted-role readiness, worker health and login remain mandatory operator checks.
+
+For the current SCOP1 count, evidence categories and minimum restoration sequence, see [the categorized reconciliation diagnosis](wici-scop1-database-reconciliation.md).

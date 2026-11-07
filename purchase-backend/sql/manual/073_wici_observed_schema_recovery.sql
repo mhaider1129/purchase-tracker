@@ -290,12 +290,32 @@ INSERT INTO public.permissions(code,name,description) VALUES
  ('scop.allocations.view','View operational allocations','Read institute-scoped requirement classification, allocation and canonical progress.'),
  ('scop.allocations.manage','Manage operational allocations','Classify approved requirements and manage fulfillment responsibility; grants no approval, procurement, inventory or financial posting.'),
  ('scop.allocations.override-policy','Override operational sourcing policy','Record evidenced exceptions to source-channel allocation policy; grants no procurement approval or stock/financial posting.') ON CONFLICT(code) DO NOTHING;
--- Normalize only the five reviewed routines installed above. This makes a
+-- Legacy required identifiers are supplied only in the hosted schema. Keep
+-- the canonical writer compatible with schemas that have no legacy aliases.
+CREATE OR REPLACE FUNCTION public.wici_journal_identifier_aliases() RETURNS trigger
+LANGUAGE plpgsql SET search_path=public,pg_catalog AS $$
+BEGIN
+ NEW.journal_number := COALESCE(NEW.journal_number, NEW.journal_reference);
+ RETURN NEW;
+END $$;
+CREATE OR REPLACE FUNCTION public.wici_journal_line_identifier_aliases() RETURNS trigger
+LANGUAGE plpgsql SET search_path=public,pg_catalog AS $$
+BEGIN
+ NEW.line_number := COALESCE(NEW.line_number, NEW.line_no);
+ RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS wici_journal_identifiers ON public.journal_entries;
+CREATE TRIGGER wici_journal_identifiers BEFORE INSERT ON public.journal_entries
+FOR EACH ROW EXECUTE FUNCTION public.wici_journal_identifier_aliases();
+DROP TRIGGER IF EXISTS wici_journal_line_identifiers ON public.journal_entry_lines;
+CREATE TRIGGER wici_journal_line_identifiers BEFORE INSERT ON public.journal_entry_lines
+FOR EACH ROW EXECUTE FUNCTION public.wici_journal_line_identifier_aliases();
+-- Normalize only the seven reviewed routines installed above. This makes a
 -- Windows clipboard CRLF paste equivalent to the repository LF source without
 -- accepting arbitrary changed function bodies or touching pre-existing routines.
 DO $normalize_recovery$ DECLARE routine record; BEGIN
  FOR routine IN SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
- WHERE n.nspname='public' AND p.proname IN ('preserve_contract_financial_reviews','canonical_supply_line_quantity','scop_preserve_evidence','scop_guard_profile','scop_guard_allocation') LOOP
+ WHERE n.nspname='public' AND p.proname IN ('preserve_contract_financial_reviews','canonical_supply_line_quantity','scop_preserve_evidence','scop_guard_profile','scop_guard_allocation','wici_journal_identifier_aliases','wici_journal_line_identifier_aliases') LOOP
   EXECUTE replace(replace(pg_get_functiondef(routine.oid),E'\r\n',E'\n'),E'\r',E'\n');
  END LOOP;
 END $normalize_recovery$;
@@ -376,7 +396,7 @@ DO $$ DECLARE object record; browser text; BEGIN
  END LOOP;
  GRANT SELECT,INSERT,UPDATE,DELETE ON public.contract_financial_reviews TO purchase_backend;
  FOR object IN SELECT p.proname,p.oid::regprocedure AS signature FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind='f' LOOP
-  IF object.proname=ANY(ARRAY['preserve_contract_financial_reviews','canonical_supply_line_quantity','scop_preserve_evidence','scop_guard_profile','scop_guard_allocation','approve_stock_item_request','set_user_registration_requests_updated_at']) THEN
+  IF object.proname=ANY(ARRAY['preserve_contract_financial_reviews','canonical_supply_line_quantity','scop_preserve_evidence','scop_guard_profile','scop_guard_allocation','approve_stock_item_request','set_user_registration_requests_updated_at','wici_journal_identifier_aliases','wici_journal_line_identifier_aliases']) THEN
    EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC',object.signature);
    FOREACH browser IN ARRAY ARRAY['anon','authenticated'] LOOP
     IF EXISTS(SELECT 1 FROM pg_roles WHERE rolname=browser) THEN EXECUTE format('REVOKE ALL ON FUNCTION %s FROM %I',object.signature,browser); END IF;

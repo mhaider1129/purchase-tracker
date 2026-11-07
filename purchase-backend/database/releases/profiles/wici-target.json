@@ -1730,6 +1730,28 @@
             "search_path=pg_catalog, public"
           ],
           "definition_md5": "d03a03bd0fa857283f6f49bd4d2335f0"
+        },
+        {
+          "name": "wici_journal_identifier_aliases",
+          "arguments": "",
+          "result": "trigger",
+          "security_definer": false,
+          "volatility": "v",
+          "config": [
+            "search_path=public, pg_catalog"
+          ],
+          "definition_md5": "3db180e2c397091da507bb563411c15f"
+        },
+        {
+          "name": "wici_journal_line_identifier_aliases",
+          "arguments": "",
+          "result": "trigger",
+          "security_definer": false,
+          "volatility": "v",
+          "config": [
+            "search_path=public, pg_catalog"
+          ],
+          "definition_md5": "f8da6c39c47224b64419a855049cccbb"
         }
       ]
     },
@@ -1747,6 +1769,18 @@
           "name": "contract_financial_reviews_no_truncate",
           "enabled": "O",
           "definition": "CREATE TRIGGER contract_financial_reviews_no_truncate BEFORE TRUNCATE ON contract_financial_reviews FOR EACH STATEMENT EXECUTE FUNCTION preserve_contract_financial_reviews()"
+        },
+        {
+          "relation": "journal_entries",
+          "name": "wici_journal_identifiers",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER wici_journal_identifiers BEFORE INSERT ON journal_entries FOR EACH ROW EXECUTE FUNCTION wici_journal_identifier_aliases()"
+        },
+        {
+          "relation": "journal_entry_lines",
+          "name": "wici_journal_line_identifiers",
+          "enabled": "O",
+          "definition": "CREATE TRIGGER wici_journal_line_identifiers BEFORE INSERT ON journal_entry_lines FOR EACH ROW EXECUTE FUNCTION wici_journal_line_identifier_aliases()"
         },
         {
           "relation": "scop_allocation_commands",
@@ -2046,6 +2080,30 @@
         },
         {
           "name": "set_user_registration_requests_updated_at",
+          "arguments": "",
+          "role": "authenticated",
+          "can_execute": false
+        },
+        {
+          "name": "wici_journal_identifier_aliases",
+          "arguments": "",
+          "role": "anon",
+          "can_execute": false
+        },
+        {
+          "name": "wici_journal_identifier_aliases",
+          "arguments": "",
+          "role": "authenticated",
+          "can_execute": false
+        },
+        {
+          "name": "wici_journal_line_identifier_aliases",
+          "arguments": "",
+          "role": "anon",
+          "can_execute": false
+        },
+        {
+          "name": "wici_journal_line_identifier_aliases",
           "arguments": "",
           "role": "authenticated",
           "can_execute": false

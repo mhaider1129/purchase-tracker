@@ -394,7 +394,7 @@
     },
     {
       "path": "database/releases/profiles/wici-target.json",
-      "sha256": "d9fa00e0800222a4a11a14ac94a6f9beb445d59d6a12a3fc44a79732bea9ae00"
+      "sha256": "43a5456473dc5616b632b50a46c928ea031a5df4e299559f4e2cc1f1dab2e879"
     },
     {
       "path": "database/releases/runtime-modules.json",
@@ -1058,7 +1058,7 @@
     },
     {
       "path": "services/financeCoreService.js",
-      "sha256": "1dad145bf2466e9188274d791d31a66acd12af7e5404e36b7fb401731726ea18"
+      "sha256": "cec5e6730d9e8051a45ac98a1fd8e34360165c5eccfc89f53a357e1557f865b2"
     },
     {
       "path": "services/financeVerificationService.js",
@@ -1797,7 +1797,7 @@
       "sha256": "8671e2d6e417f189858487def2880f0eb553909d8d253ea96a05da96ec53d9f2"
     }
   ],
-  "application_manifest_sha256": "fd09f3a9a8439aa203ba49ad06c9b90da292c40f14c766cf9c073cc011680921",
+  "application_manifest_sha256": "4c723eacd38edd1220a6c604f4950fa93246ca561ffb30cde0cc5275282051a2",
   "highest_manual_number": 73,
   "artifacts": [
     {
@@ -2643,10 +2643,10 @@
       "path": "sql/manual/073_wici_observed_schema_recovery.sql",
       "id": "073",
       "classification": "manual_recovery_migration",
-      "sha256": "871d2e49ed60146838d54e6833c95bd67ae7b2ab75f902cfe2126c8dcb13557d",
-      "bytes": 29114,
+      "sha256": "58122f8c2449dd50d37eaa229d9d622faf7be4e34d56848c999aec5a38285ca2",
+      "bytes": 30368,
       "execution_evidence": "UNVERIFIED",
-      "ddl_statements": 63,
+      "ddl_statements": 69,
       "header": "-- MANUAL DATABASE MIGRATION REQUIRED. Recovery only: DB_RELEASE_SCHEMA_PROFILE=wici-2026-11.\n-- Execute only the generated, checksum-bound bundle after backup and Development review.\n-- A new observed-controls baseline, not fabricated receipts for SQL 069-072.\nBEGIN;\nSET LOCAL lock_timeout='3s';\nSET LOCAL statement_timeout='5min';",
       "profile": "wici-2026-11",
       "observes_prior_controls": [
@@ -2801,10 +2801,10 @@
       "path": "sql/operator-recovery/wici-production-recovery.sql",
       "id": null,
       "classification": "generated_operator_bundle",
-      "sha256": "9700d4c5c6814f73350d27b2ca8b63bc09682110a5d8c55f0858aba647c527ed",
-      "bytes": 4049037,
+      "sha256": "cd6fd4bc29333047eaa1eb369cfb31e8a03a7da945df9c8e86a7f9d720dddd07",
+      "bytes": 4052541,
       "execution_evidence": "UNVERIFIED",
-      "ddl_statements": 1200,
+      "ddl_statements": 1210,
       "header": "-- Generated offline. Review checksum, actor, environment and release before manual SQL Editor execution.\n-- Historical migrations remain UNVERIFIED. This bundle never replays a frozen file.\nBEGIN;\nSET LOCAL lock_timeout='3s';\nSET LOCAL statement_timeout='5min';\nSET LOCAL search_path = public, extensions, pg_catalog;"
     },
     {
