@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const hasBrowserStorage = () =>
-  typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+const hasBrowserStorage = () => {
+  try {
+    return typeof window !== "undefined" && Boolean(window.localStorage);
+  } catch {
+    return false;
+  }
+};
 
 const formatSavedTime = (date) =>
   date instanceof Date && !Number.isNaN(date.getTime())
@@ -22,7 +27,17 @@ const useRequestDraftAutosave = ({
   const [status, setStatus] = useState("idle");
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const hydratedRef = useRef(false);
+  const timerRef = useRef(null);
+  const clearedRef = useRef(false);
   const restoreDraftRef = useRef(restoreDraft);
+  // Depend on the serializable value, not a caller's object identity. Status
+  // updates must not restart a cleared timer or overwrite a storage error.
+  let serializedData;
+  try {
+    serializedData = JSON.stringify(data);
+  } catch {
+    serializedData = null;
+  }
 
   useEffect(() => {
     restoreDraftRef.current = restoreDraft;
@@ -31,7 +46,13 @@ const useRequestDraftAutosave = ({
   useEffect(() => {
     if (!enabled || hydratedRef.current || !hasBrowserStorage()) return;
 
-    const rawDraft = window.localStorage.getItem(storageKey);
+    let rawDraft;
+    try {
+      rawDraft = window.localStorage.getItem(storageKey);
+    } catch {
+      setStatus("error");
+      return;
+    }
     if (rawDraft) {
       try {
         const parsedDraft = JSON.parse(rawDraft);
@@ -48,7 +69,11 @@ const useRequestDraftAutosave = ({
           `Unable to restore request draft from ${storageKey}.`,
           error,
         );
-        window.localStorage.removeItem(storageKey);
+        try {
+          window.localStorage.removeItem(storageKey);
+        } catch {
+          setStatus("error");
+        }
       }
     }
 
@@ -59,13 +84,22 @@ const useRequestDraftAutosave = ({
     if (!enabled || !hydratedRef.current || !hasBrowserStorage())
       return undefined;
 
+    if (!serializedData) {
+      setStatus("error");
+      return undefined;
+    }
     setStatus("saving");
+    clearedRef.current = false;
     const timeoutId = window.setTimeout(() => {
+      if (clearedRef.current) return;
       try {
         const savedAt = new Date();
         window.localStorage.setItem(
           storageKey,
-          JSON.stringify({ ...data, updatedAt: savedAt.toISOString() }),
+          JSON.stringify({
+            ...JSON.parse(serializedData),
+            updatedAt: savedAt.toISOString(),
+          }),
         );
         setLastSavedAt(savedAt);
         setStatus("saved");
@@ -75,18 +109,49 @@ const useRequestDraftAutosave = ({
       }
     }, debounceMs);
 
+    timerRef.current = timeoutId;
     return () => window.clearTimeout(timeoutId);
-  }, [data, debounceMs, enabled, storageKey]);
+  }, [serializedData, debounceMs, enabled, storageKey]);
 
   const clearDraft = useCallback(() => {
+    clearedRef.current = true;
+    window.clearTimeout(timerRef.current);
     if (hasBrowserStorage()) {
-      window.localStorage.removeItem(storageKey);
+      try {
+        window.localStorage.removeItem(storageKey);
+      } catch {
+        setStatus("error");
+      }
     }
     setLastSavedAt(null);
     setStatus("idle");
   }, [storageKey]);
 
+  const saveDraft = useCallback(() => {
+    if (!enabled) return;
+    if (!hasBrowserStorage()) {
+      setStatus("error");
+      return;
+    }
+    window.clearTimeout(timerRef.current);
+    try {
+      const savedAt = new Date();
+      window.localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          ...JSON.parse(serializedData),
+          updatedAt: savedAt.toISOString(),
+        }),
+      );
+      setLastSavedAt(savedAt);
+      setStatus("saved");
+    } catch {
+      setStatus("error");
+    }
+  }, [serializedData, enabled, storageKey]);
+
   return {
+    saveDraft,
     clearDraft,
     isSaving: status === "saving",
     lastSavedAt,

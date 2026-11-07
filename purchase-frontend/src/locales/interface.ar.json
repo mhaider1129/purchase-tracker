@@ -969,5 +969,19 @@
   "Request total cost override": "تعديل إجمالي تكلفة الطلب",
   "Bulk purchase actions": "إجراءات شراء جماعية",
   "Close without further purchasing": "إغلاق دون مشتريات إضافية",
-  "Not available": "غير متاح"
+  "Not available": "غير متاح",
+  "Pending Item Master review": "بانتظار مراجعة دليل المواد",
+  "Search catalog": "البحث في الدليل",
+  "Select item type": "اختر نوع المادة",
+  "Retry category loading": "إعادة تحميل الفئات",
+  "Loading categories…": "جارٍ تحميل الفئات…",
+  "No active categories are available. Ask an Item Master reference maintainer to add categories before submitting this referral.": "لا توجد فئات فعالة. اطلب من مسؤول دليل المواد إضافة فئة قبل إرسال الإحالة.",
+  "Searching Item Master…": "جارٍ البحث في دليل المواد…",
+  "No active Generic Items found. Drafts and legacy items must be governed and activated in Item Master before selection.": "لم يتم العثور على مواد فعالة. يجب اعتماد المواد وتفعيلها في دليل المواد قبل اختيارها.",
+  "Cannot find the item": "لم أجد المادة",
+  "Unable to load categories. Check Item Master view access and retry.": "تعذر تحميل الفئات. تحقق من صلاحية عرض دليل المواد وأعد المحاولة.",
+  "Unable to search Item Master. Please try again.": "تعذر البحث في دليل المواد. أعد المحاولة.",
+  "Proposed generic name": "اسم المادة المقترح",
+  "Why no catalog item is suitable": "لماذا لا تناسبك المواد الموجودة في الدليل",
+  "Search active Generic Items by code, name or description": "ابحث عن المواد الفعالة بالرمز أو الاسم أو الوصف"
 }
