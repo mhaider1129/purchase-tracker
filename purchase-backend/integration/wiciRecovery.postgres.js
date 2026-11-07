@@ -71,7 +71,37 @@ async function run(client, url) {
     VALUES(901,901,'accrual','LEGACY-901','LEGACY-901','USD',40.20,'posted');
    INSERT INTO journal_entry_lines(id,journal_entry_id,line_no,line_number,description,debit_amount,credit_amount) OVERRIDING SYSTEM VALUE
     VALUES(901,901,1,1,'Preserved debit',40.20,0),(902,901,2,2,'Preserved credit',0,40.20);`);
+    await test("SCOP 072 already installed with CRLF and no receipts is preserved by recovery", async () => {
+      const fs = require("node:fs"),
+        path = require("node:path");
+      const body =
+        require("../scripts/lib/databaseRelease/sqlStatements").migrationBody(
+          fs.readFileSync(
+            path.join(
+              __dirname,
+              "../sql/manual/072_scop_operational_foundation.sql",
+            ),
+            "utf8",
+          ),
+        );
+      await client.query(body.replaceAll("\n", "\r\n"));
+      await client.query(
+        "INSERT INTO scop_allocation_commands(institute_id,command_key,actor_id,request_id,fingerprint,response) VALUES(901,'preserved-pre-recovery',901,901,'fixture-source','{\"fixture\":true}')",
+      );
+      assert.equal(
+        (await one("SELECT count(*)::int n FROM database_release_migrations"))
+          .n,
+        0,
+      );
+      assert.equal(
+        (await one("SELECT count(*)::int n FROM permissions")).n,
+        157,
+      );
+    });
     const history = async () => ({
+      operationalHistory: await one(
+        "SELECT md5(row_to_json(c)::text) hash FROM scop_allocation_commands c WHERE command_key='preserved-pre-recovery'",
+      ),
       quantities: await one(
         "SELECT md5(row_to_json(i)::text) hash FROM requested_items i WHERE id=901",
       ),
@@ -153,6 +183,118 @@ async function run(client, url) {
       );
       assert.equal(report.observed_baseline.historical_execution, "UNVERIFIED");
     });
+    await test("reader RLS cannot masquerade as 157 missing permission definitions", async () => {
+      await client.query(
+        "CREATE ROLE wici_fixture_reader LOGIN NOINHERIT PASSWORD 'rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr'; GRANT USAGE ON SCHEMA public,extensions TO wici_fixture_reader; GRANT SELECT ON ALL TABLES IN SCHEMA public TO wici_fixture_reader",
+      );
+      const readerUrl = new URL(ownerUrl);
+      readerUrl.username = "wici_fixture_reader";
+      readerUrl.password = "r".repeat(40);
+      const reader = new (require("pg").Client)({
+        connectionString: readerUrl.toString(),
+      });
+      await reader.connect();
+      try {
+        await reader.query("BEGIN READ ONLY");
+        assert.equal(
+          (await reader.query("SELECT count(*)::int n FROM permissions"))
+            .rows[0].n,
+          0,
+        );
+        const report = await service.verify(reader, options);
+        assert.equal(report.status, "BLOCKED");
+        assert.equal(report.restart_eligible, false);
+        assert.equal(report.observed_schema_sha256, null);
+        assert(
+          report.findings.some(
+            (f) =>
+              f.group === "catalog_visibility" && f.object === "permissions",
+          ),
+        );
+        assert(!report.findings.some((f) => f.group === "permissions"));
+        assert(
+          report.findings.some(
+            (f) =>
+              f.reason ===
+              "attestation_unverifiable_with_incomplete_visibility",
+          ),
+        );
+        await reader.query("ROLLBACK");
+        const oldUrl = process.env.DB_RELEASE_READONLY_URL,
+          oldRole = process.env.DB_RUNTIME_ROLE,
+          oldProfile = process.env.DB_RELEASE_SCHEMA_PROFILE,
+          oldExit = process.exitCode,
+          log = console.log;
+        try {
+          process.env.DB_RELEASE_READONLY_URL = readerUrl.toString();
+          process.env.DB_RUNTIME_ROLE = "purchase_backend";
+          process.env.DB_RELEASE_SCHEMA_PROFILE = "wici-2026-11";
+          console.log = () => {};
+          const diagnostic = await require("../scripts/databaseRelease").main({
+            command: "verify",
+            environment: "disposable",
+            release: releaseRef,
+            "backend-role": "purchase_backend",
+          });
+          assert.equal(diagnostic.verification_mode, "diagnostic");
+          assert.equal(
+            diagnostic.runtime.connection_role,
+            "wici_fixture_reader",
+          );
+          assert.equal(diagnostic.runtime.assessment_mode, "TARGET_ROLE_ONLY");
+          assert.equal(diagnostic.status, "BLOCKED");
+          assert.equal(diagnostic.restart_eligible, false);
+        } finally {
+          console.log = log;
+          process.exitCode = oldExit;
+          for (const [key, value] of [
+            ["DB_RELEASE_READONLY_URL", oldUrl],
+            ["DB_RUNTIME_ROLE", oldRole],
+            ["DB_RELEASE_SCHEMA_PROFILE", oldProfile],
+          ])
+            if (value === undefined) delete process.env[key];
+            else process.env[key] = value;
+        }
+      } finally {
+        await reader.end();
+      }
+      await test("hidden migration ledger is unknown execution rather than a missing receipt", async () => {
+        await client.query(
+          "BEGIN; ALTER TABLE database_release_migrations ENABLE ROW LEVEL SECURITY; SET LOCAL ROLE wici_fixture_reader",
+        );
+        try {
+          const report = await service.verify(client, options);
+          assert.equal(report.status, "BLOCKED");
+          assert.equal(
+            report.receipt_visibility,
+            "UNVERIFIED_INSUFFICIENT_VISIBILITY",
+          );
+          assert(
+            !report.findings.some(
+              (f) => f.reason === "APPLIED_receipt_missing",
+            ),
+          );
+        } finally {
+          await client.query("ROLLBACK");
+        }
+      });
+    });
+    await test("a new baseline never excuses a conflicting historical receipt checksum", async () => {
+      await client.query(
+        "BEGIN; INSERT INTO database_release_migrations(migration_id,filename,content_sha256,execution_environment,execution_status,execution_actor,duration_ms,application_release_ref,evidence) VALUES('069_database_release_governance','sql/manual/069_database_release_governance.sql',repeat('f',64),'disposable','APPLIED','negative-fixture',0,'negative-fixture','{}')",
+      );
+      try {
+        const report = await service.verify(client, options);
+        assert.equal(report.status, "BLOCKED");
+        assert(
+          report.findings.some(
+            (f) => f.group === "ledger" && f.reason === "CHECKSUM_MISMATCH",
+          ),
+        );
+      } finally {
+        await client.query("ROLLBACK");
+      }
+    });
     await test("repeat recovery does not duplicate evidence or rewrite history", async () => {
       await client.query(plan());
       assert.equal(
@@ -165,11 +307,34 @@ async function run(client, url) {
     await test("owner connection remains blocked even with the approved profile", async () => {
       const report = await service.verify(client, { ...options, role: null });
       assert.equal(report.status, "BLOCKED");
+      assert.equal(
+        report.findings.filter((f) =>
+          ["runtime_role", "runtime_privilege"].includes(f.group),
+        ).length,
+        35,
+      );
       assert(
         report.findings.some(
           (f) => f.reason === "persistent_ddl_or_owner_authority",
         ),
       );
+    });
+    await test("postgres-style owner credentials cannot pass by merely setting the backend role", async () => {
+      await client.query("BEGIN; SET LOCAL ROLE purchase_backend");
+      try {
+        const report = await service.verify(client, { ...options, role: null });
+        assert.equal(report.status, "BLOCKED");
+        assert.equal(report.restart_eligible, false);
+        assert(
+          report.findings.some(
+            (f) =>
+              f.group === "connection_principal" &&
+              f.reason === "persistent_ddl_or_owner_authority",
+          ),
+        );
+      } finally {
+        await client.query("ROLLBACK");
+      }
     });
     const { prepare } = require("../scripts/prepareRuntimeIdentity");
     const identity = prepare({

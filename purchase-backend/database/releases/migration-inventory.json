@@ -898,11 +898,11 @@
     },
     {
       "path": "scripts/databaseRelease.js",
-      "sha256": "b4ee9f9d1f2bf75cc40418818ddb4a2235e8e1d86f9749b013ff0751860f2f7a"
+      "sha256": "b04b9f195e5485fb48716756b9ab184c477f1d7982dad54896f37ea884d6d425"
     },
     {
       "path": "scripts/lib/databaseRelease/catalog.js",
-      "sha256": "94aac80f075dda86fae9528b882e94c0bb7bb87e8dcadaf640705f8af516fd24"
+      "sha256": "22fda268a90332626a90edf572e54e440e0f960247e7fbd14d4c7ea5a700a1f7"
     },
     {
       "path": "scripts/lib/databaseRelease/inventory.js",
@@ -1022,7 +1022,7 @@
     },
     {
       "path": "services/databaseReleaseService.js",
-      "sha256": "0b75050b392c2d4cf2de403f94a43f3543a798da8b72a5f87cbbd82b7efda656"
+      "sha256": "744abf62922e5ea7d2416dae3495375ed018e66f44893a44b259176ac4f070c5"
     },
     {
       "path": "services/deliveryInspectionService.js",
@@ -1797,7 +1797,7 @@
       "sha256": "8671e2d6e417f189858487def2880f0eb553909d8d253ea96a05da96ec53d9f2"
     }
   ],
-  "application_manifest_sha256": "4c723eacd38edd1220a6c604f4950fa93246ca561ffb30cde0cc5275282051a2",
+  "application_manifest_sha256": "902f0e5a5581d5f6aa39b3bc319c829a97947756be90ecc5b6603e5ea19c364c",
   "highest_manual_number": 73,
   "artifacts": [
     {
@@ -2801,7 +2801,7 @@
       "path": "sql/operator-recovery/wici-production-recovery.sql",
       "id": null,
       "classification": "generated_operator_bundle",
-      "sha256": "cd6fd4bc29333047eaa1eb369cfb31e8a03a7da945df9c8e86a7f9d720dddd07",
+      "sha256": "a35baa9ebc045a7b89cbec9c330119ad45f75114def2fc932a55d33ceeb50b1b",
       "bytes": 4052541,
       "execution_evidence": "UNVERIFIED",
       "ddl_statements": 1210,
@@ -3025,8 +3025,8 @@
     {
       "path": "integration/wiciRecovery.postgres.js",
       "classification": "test_fixture_or_verification",
-      "ddl_occurrences": 3,
-      "sha256": "e7abbb329784e377aa683a99373d2afac19e321987cfeea6dbc8b5de65b03462"
+      "ddl_occurrences": 4,
+      "sha256": "9202bd473e46cdefd45cf2ccf8fdb78a8de05933bed840c9be2feb45d72f28a2"
     }
   ],
   "note": "Repository existence is not execution evidence. Superseded definitions and optional policy/data patches are not a replay order."

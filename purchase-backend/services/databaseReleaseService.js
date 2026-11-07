@@ -203,16 +203,37 @@ async function verify(
   } = {},
 ) {
   const fileErrors = verifyFiles(inventory),
-    actual = await catalog.snapshot(db),
-    findings = [...fileErrors, ...catalog.compare(contract.catalog, actual)];
+    visibility = await catalog.visibility(db),
+    actual = await catalog.snapshot(db, visibility),
+    observableExpected = Object.fromEntries(
+      Object.entries(contract.catalog).filter(
+        ([group]) => !visibility.unobservableGroups.includes(group),
+      ),
+    ),
+    findings = [
+      ...fileErrors,
+      ...visibility.findings,
+      ...catalog.compare(observableExpected, actual),
+    ];
   const authority = await runtimeAuthority(db, role);
   findings.push(...authority.findings);
-  const observed = await catalog.fingerprint(db, actual),
+  const observed = visibility.complete
+      ? await catalog.fingerprint(db, actual)
+      : null,
     contractDigest = hash(JSON.stringify(contract));
   let receipts = [],
     attestation = null,
     observedBaseline = null;
-  if (actual.relations.some((r) => r.name === "database_release_migrations"))
+  const receiptsObservable = !visibility.unreadableRelations.includes(
+    "database_release_migrations",
+  );
+  const attestationObservable = !visibility.unreadableRelations.includes(
+    "database_release_attestations",
+  );
+  if (
+    receiptsObservable &&
+    actual.relations.some((r) => r.name === "database_release_migrations")
+  )
     receipts = (
       await db.query(
         "SELECT migration_id,filename,content_sha256,execution_environment,execution_status,application_release_ref,evidence FROM public.database_release_migrations ORDER BY id",
@@ -255,6 +276,8 @@ async function verify(
         r.governed_receipt_required ||
         r.id === baselineId,
     )) {
+      // Hidden ledger rows are unknown evidence, never proof of missing execution.
+      if (!receiptsObservable) continue;
       const id = path.basename(entry.path, ".sql");
       const applied = receipts.find(
         (r) =>
@@ -288,6 +311,8 @@ async function verify(
       actual.relations.some(
         (r) => r.name === "database_release_attestations",
       ) &&
+      observed &&
+      attestationObservable &&
       releaseRef &&
       environment
     )
@@ -308,10 +333,14 @@ async function verify(
     if (!attestation)
       findings.push({
         group: "attestation",
-        reason: "current_schema_and_release_not_attested",
+        reason:
+          !observed || !attestationObservable
+            ? "attestation_unverifiable_with_incomplete_visibility"
+            : "current_schema_and_release_not_attested",
       });
   }
   return {
+    restart_eligible: !findings.length && requireEvidence && !role,
     status: findings.length
       ? "BLOCKED"
       : requireEvidence
@@ -325,6 +354,10 @@ async function verify(
     observed_schema_sha256: observed,
     findings,
     runtime: authority,
+    catalog_visibility: visibility,
+    receipt_visibility: receiptsObservable
+      ? "OBSERVABLE"
+      : "UNVERIFIED_INSUFFICIENT_VISIBILITY",
     receipts,
     historical_migrations:
       "UNVERIFIED_UNLESS_SUPPORTED_BY_SEPARATE_TRUSTWORTHY_EVIDENCE",

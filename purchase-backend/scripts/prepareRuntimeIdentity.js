@@ -7,7 +7,7 @@ function prepare({
   ownerUrl,
   role = "wici_purchase_runtime",
   password = crypto.randomBytes(32).toString("base64url"),
-  releaseRef = "wici-recovery-2026-11-07-r1",
+  releaseRef = "wici-recovery-2026-11-07-r2",
 }) {
   if (
     !/^[a-z][a-z0-9_]{2,62}$/.test(role) ||
@@ -69,7 +69,7 @@ if (require.main === module) {
   const result = prepare({
     ownerUrl: env.DATABASE_URL,
     role: value("--role", "wici_purchase_runtime"),
-    releaseRef: value("--release", "wici-recovery-2026-11-07-r1"),
+    releaseRef: value("--release", "wici-recovery-2026-11-07-r2"),
   });
   fs.mkdirSync(dest, { recursive: true, mode: 0o700 });
   fs.writeFileSync(path.join(dest, "runtime-identity.sql"), result.sql, {

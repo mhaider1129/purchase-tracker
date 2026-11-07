@@ -1,5 +1,7 @@
 # WICI SCOP1 database reconciliation diagnosis
 
+For the later 1,357-finding report and exact deployed standalone commit, see [the updated production review](wici-pr105-production-review.md). The 1,247 counts below describe the older uploaded capture, not the newer live summary.
+
 ## Evidence and limits
 
 This report compares the unchanged repository contract `hospital-erp-2026-11-scop1` against the operator-uploaded `wici-full-catalog.json`, SHA-256 `d669e14e15dfce8244fea9e290b8dc1ecb72b4640bd428ff71219f03d2658c2a`. It uses catalog metadata and function definitions, not Production business rows. No live database connection, hosted SQL execution, production mutation or restart was performed.

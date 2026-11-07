@@ -11,7 +11,7 @@ The reference and hosted schemas are not byte-identical:
 - Many hosted foreign keys are already validated; 591 current SCOP1 definitions are exact equivalents after removing only reference `NOT VALID`. Other relationship differences require individual review. 43 hosted tables have RLS enabled where the reference does not. These controls stay in place.
 - All 24 differing existing function bodies match the reference after only CRLF-to-LF conversion and removal of four exact RFID version-marker comment lines. Production function hashes are still checked exactly against the reviewed hosted profile; the gate does not ignore arbitrary function changes.
 - Existing bounded monetary/string types, timestamp types, identity columns and the generated `item_uom.name` remain unchanged. Thirteen operational quantity/conversion columns are widened to canonical `numeric` because the receipt suite reproduced silent rounding of `0.1001` in two-decimal fields; existing numeric values are preserved. No historical conversion, rounding or timezone inference is performed.
-- The financial reconciliation table/function from 066 and the six operational foundation tables/four routines from 072 are missing. The latest approved backend requires them, even when optional business features remain disabled.
+- The original capture lacks financial reconciliation 066 and operational foundation 072. The latest 1,357-finding summary confirms missing `contract_financial_reviews` but is consistent with 072 objects already present. Recovery is tested for both absent and already-installed 072, including preserved pre-existing command history. It records no fictional 072 execution receipt.
 - A hosted legacy trigger on `stock_item_requests` attempts to increment stock on catalog-request approval, outside canonical inventory posting. Recovery disables this trigger; it does not replay, reverse or recalculate past effects.
 - The hosted schema requires legacy identifier aliases omitted by the canonical journal writer (`journal_number` and `line_number`). Hosted-only BEFORE INSERT compatibility triggers now supply both identifiers from the canonical values for new entries; the canonical writer remains unchanged and works where those legacy aliases do not exist; it does not rewrite old journal data or create a second posting.
 
@@ -42,6 +42,12 @@ The bundle checks the observed preflight and complete target schema before inser
 
 `purchase_backend` retains the existing trusted-server BYPASSRLS design. This repair does not turn it into end-user database authorization. Independent server capability and institute checks remain required; the disposable receipt suite exercises foreign institute/warehouse rejection. Retained legacy/public routine permissions and external integrations still need their normal security reviews.
 
+## Latest production review
+
+See [the PR 105 production review](wici-pr105-production-review.md) for deployed backend `70c4ee50bd0c8342eb30f573eacbd95f543a5e88`, the 1,357-finding summary, reader visibility limitations and mandatory go/no-go criteria. Current Production remains NO-GO until those checks are satisfied. R2 is a fresh application release reference; do not reuse an already-bound R1 label for changed source.
+
+The verifier now defaults to diagnostic mode. With `wici_release_reader`, use `--connection-mode diagnostic` (optionally `--backend-role purchase_backend` to inspect that role's grants). This does not SET ROLE, does not certify the real application principal, and deliberately remains BLOCKED with `restart_eligible=false`. RLS-hidden permission/reference rows are reported as insufficient visibility, rather than missing definitions. Do not grant writer privileges or BYPASSRLS to the reader just to make a diagnostic green. Runtime acceptance uses the actual new application URL and explicit `--connection-mode runtime` as below.
+
 ## Manual procedure on Hetzner
 
 ### 1. Preserve the current state
@@ -70,7 +76,7 @@ DB_RELEASE_SCHEMA_PROFILE=wici-2026-11 node scripts/databaseRelease.js plan \
   --migration 073_wici_observed_schema_recovery \
   --environment production \
   --actor 'WICI authorized operator' \
-  --release wici-recovery-2026-11-07-r1 \
+  --release wici-recovery-2026-11-07-r2 \
   --output /tmp/wici-production-recovery.sql
 ```
 
@@ -96,7 +102,7 @@ On Hetzner, from the backend directory:
 ```bash
 node scripts/prepareRuntimeIdentity.js \
   --output-dir /home/deployer/wici-private-recovery \
-  --release wici-recovery-2026-11-07-r1
+  --release wici-recovery-2026-11-07-r2
 ```
 
 This is offline. It reads the existing `.env` connection endpoint and writes two new mode-0600 files in a mode-0700 directory outside Git:
@@ -115,7 +121,7 @@ The key settings are:
 ```dotenv
 DB_RELEASE_SCHEMA_PROFILE=wici-2026-11
 DB_RUNTIME_ROLE=purchase_backend
-APP_RELEASE_REF=wici-recovery-2026-11-07-r1
+APP_RELEASE_REF=wici-recovery-2026-11-07-r2
 DB_RELEASE_ENVIRONMENT=production
 HOST=127.0.0.1
 PORT=5000
@@ -136,13 +142,14 @@ require('dotenv').config({ quiet: true });
 process.env.DB_RELEASE_READONLY_URL = process.env.DATABASE_URL;
 require('./scripts/databaseRelease').main({
   command: 'verify',
+  'connection-mode': 'runtime',
   environment: process.env.DB_RELEASE_ENVIRONMENT,
   release: process.env.APP_RELEASE_REF
 }).catch(error => { console.error(error.code || error.message); process.exitCode = 1; });
 NODE
 ```
 
-The dedicated verifier runs a read-only transaction using the same connection initialization as the application. Require `DATABASE_READY`, `assessment_mode=ACTUAL_RUNTIME_CONNECTION`, `connection_role=purchase_backend` and the new unprivileged login as `connection_principal`. Do not use `--backend-role` to assess only a hypothetical role and call that runtime acceptance. Share only redacted status/findings if help is needed; never share the generated private files or connection URL.
+The dedicated verifier runs a read-only transaction using the same connection initialization as the application. Require `verification_mode=runtime`, `restart_eligible=true`, `catalog_visibility.complete=true`, `DATABASE_READY`, `assessment_mode=ACTUAL_RUNTIME_CONNECTION`, `connection_role=purchase_backend` and the new unprivileged login as `connection_principal`. Do not use `--backend-role` to assess only a hypothetical role and call that runtime acceptance. Share only redacted status/findings if help is needed; never share the generated private files or connection URL.
 
 ### 6. Start and confirm availability
 
@@ -175,11 +182,11 @@ See the PR for executed test counts and remaining operator acceptance. Green CI 
 
 ## Executed local validation
 
-- Hosted recovery PostgreSQL: 15 scenarios, followed by all 43 canonical goods-receipt/inspection/inventory scenarios against the reconstructed hosted schema and restricted runtime pool. Includes fractional `0.1001`, concurrent releases, quarantine, institute/warehouse authorization and audit rollback.
+- Hosted recovery PostgreSQL: 20 scenarios, followed by all 43 canonical goods-receipt/inspection/inventory scenarios against the reconstructed hosted schema and restricted runtime pool. Includes fractional `0.1001`, concurrent releases, quarantine, institute/warehouse authorization and audit rollback.
 - Canonical schema compatibility: all 1,872 SQL plans pass with zero failures after the hosted-only identifier trigger correction.
 - Canonical database governance PostgreSQL: all 31 scenarios pass with the default canonical profile.
-- Final backend unit/HTTP regression suite: all 233 suites / 1,982 tests pass, including reproducibility of the checked-in operator SQL and manual-only recovery selection.
-- Release policy: all 29 checks pass. Backend syntax gate passes.
+- Final backend unit/HTTP regression suite: all 234 suites / 1,989 tests pass, including reproducibility of the checked-in operator SQL and manual-only recovery selection.
+- Release policy: all 29 checks pass. Backend syntax gate passes for 732 files. Reader visibility, hidden ledger evidence, already-installed SCOP, owner SET ROLE rejection and conflicting receipt checks are covered.
 - Frozen SQL 001–072 and the canonical schema contract are unchanged. No hosted connection or hosted SQL execution was used.
 
 These are disposable fixture results. Production financial/inventory-row acceptance, serial dependency checks, actual restricted-role readiness, worker health and login remain mandatory operator checks.
