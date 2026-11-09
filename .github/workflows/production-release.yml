@@ -1,0 +1,30 @@
+name: Production release template (disabled)
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Explicit immutable release candidate SHA
+        required: true
+        type: string
+      artifact_sha256:
+        description: Digest of artifact that passed staging smoke tests and UAT
+        required: true
+        type: string
+      staging_acceptance_id:
+        description: Verified staging acceptance evidence reference
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  production:
+    # HARD STOP: required reviewers are not configured. Never replace this with
+    # an input boolean. An approved future implementation must authenticate CI,
+    # staging/UAT, DB compatibility, backup and immutable artifact provenance.
+    if: ${{ false }}
+    environment: scop-production
+    concurrency: scop-production-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "DISABLED - production execution is not implemented or authorized"

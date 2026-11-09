@@ -1,0 +1,21 @@
+name: Production database release template (disabled)
+on:
+  workflow_dispatch:
+    inputs:
+      reviewed_release_manifest:
+        description: Immutable source, migration, compatibility and backup evidence reference
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  migration:
+    # Separate approval from application deployment; schema reconciliation,
+    # genuine execution evidence and recovery verification are unresolved.
+    if: ${{ false }}
+    environment: scop-production-database
+    concurrency: scop-production-database
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "DISABLED - no migration executor is implemented"

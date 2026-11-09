@@ -158,7 +158,7 @@ test("build files are byte-bound and symlinks are rejected", () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
-test("workflow requires every gate, strict frontend checks, isolated databases and an always-running aggregator", () => {
+test("code CI stays migration-free; manual isolated validation retains every database gate", () => {
   const root = path.resolve(__dirname, "../..");
   const yaml = require(
     require.resolve("js-yaml", {
@@ -177,20 +177,43 @@ test("workflow requires every gate, strict frontend checks, isolated databases a
   assert.equal(workflow.on.pull_request_target, undefined);
   assert.deepEqual(workflow.permissions, { contents: "read" });
   assert.equal(workflow.env.LIVE_ROUTING_ENABLED, "false");
+  const manual = yaml.load(
+    fs.readFileSync(
+      path.join(root, ".github/workflows/isolated-database-validation.yml"),
+      "utf8",
+    ),
+  );
+  assert.equal(workflow.jobs.postgres, undefined);
+  assert.equal(manual.on.pull_request, undefined);
+  assert.equal(manual.on.push, undefined);
+  assert.equal(
+    manual.on.workflow_dispatch.inputs.confirm_disposable_only.default,
+    false,
+  );
+  assert.equal(
+    manual.jobs.postgres.if,
+    "${{ inputs.confirm_disposable_only == true }}",
+  );
   assert.deepEqual(
-    workflow.jobs.postgres.strategy.matrix.gate.slice().sort(),
+    manual.jobs.postgres.strategy.matrix.gate.slice().sort(),
     q.config.gates
       .filter((g) => g.group === "postgres")
       .map((g) => g.id)
       .sort(),
   );
-  assert.equal(workflow.jobs.postgres.strategy["fail-fast"], false);
+  assert.equal(manual.jobs.postgres.strategy["fail-fast"], false);
   const aggregate = workflow.jobs["release-quality-gate"];
   assert.equal(aggregate.if, "always()");
-  assert.deepEqual(aggregate.needs, ["backend", "frontend", "postgres"]);
+  assert.deepEqual(aggregate.needs, [
+    "backend",
+    "frontend",
+    "integrity",
+    "security",
+    "sync-dry-run",
+  ]);
   assert.ok(
     aggregate.steps.some(
-      (s) => s.run?.includes("manifest") && s.if === "always()",
+      (s) => s.run?.includes("code-evidence.cjs") && s.if === "always()",
     ),
   );
   assert.doesNotMatch(

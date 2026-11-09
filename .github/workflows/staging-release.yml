@@ -1,0 +1,24 @@
+name: Staging release template (disabled)
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Approved immutable candidate SHA; execution remains disabled
+        required: true
+        type: string
+      artifact_sha256:
+        description: Previously tested artifact digest
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  staging:
+    # HARD STOP: target, credentials, sanitization, reviewer enforcement and
+    # separate infrastructure authorization must be approved before enablement.
+    if: ${{ false }}
+    environment: scop-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: echo "DISABLED - no staging resources or credentials approved"

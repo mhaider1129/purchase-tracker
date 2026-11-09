@@ -8,3 +8,14 @@ purchase-frontend/node_modules/
 # Generated quality evidence and release artifacts (uploaded by CI).
 /quality-results/
 /release-artifacts/
+
+# Local deployment configuration and generated dry-run inputs; never synchronize.
+.env
+.env.*
+!.env.example
+**/uploads/
+**/logs/
+**/.cache/
+*.log
+/sync-inputs/
+/deploy/staging/staging.env

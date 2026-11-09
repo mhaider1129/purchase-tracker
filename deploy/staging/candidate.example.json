@@ -1,0 +1,11 @@
+{
+  "commit": "REPLACE_WITH_FULL_APPROVED_SHA",
+  "artifactSha256": "REPLACE_WITH_TESTED_ARTIFACT_DIGEST",
+  "ciPassed": false,
+  "disposableDatabaseTestsPassed": false,
+  "stagingSmokePassed": false,
+  "ownerUatAccepted": false,
+  "databaseCompatibilityApproved": false,
+  "backupRecoveryVerified": false,
+  "environmentReviewersVerified": false
+}

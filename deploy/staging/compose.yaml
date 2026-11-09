@@ -1,0 +1,43 @@
+# DEFINITION ONLY. Do not run until the isolated target is explicitly approved.
+name: scop-staging-isolated
+services:
+  postgres:
+    profiles: [owner-approved-staging]
+    image: ${SCOP_POSTGRES_IMAGE:?approved PostgreSQL image digest required}
+    env_file: staging.env
+    restart: "no"
+    volumes:
+      - staging-synthetic-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [staging-data]
+  backend:
+    profiles: [owner-approved-staging]
+    image: ${SCOP_BACKEND_IMAGE:?approved tested backend image digest required}
+    env_file: staging.env
+    restart: "no"
+    ports: [127.0.0.1:15051:15051]
+    read_only: true
+    tmpfs: [/tmp, /app/private-uploads]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [staging-data, staging-app]
+  frontend:
+    profiles: [owner-approved-staging]
+    image: ${SCOP_FRONTEND_IMAGE:?approved tested frontend image digest required}
+    restart: "no"
+    ports: [127.0.0.1:15080:8080]
+    read_only: true
+    tmpfs: [/tmp, /var/cache/nginx, /var/run]
+    networks: [staging-app]
+networks:
+  staging-data:
+    internal: true
+  staging-app:
+    internal: true
+volumes:
+  staging-synthetic-data:

@@ -2,7 +2,7 @@ name: Release quality
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [master, "codex/**", "develop/**"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,7 +31,7 @@ jobs:
         working-directory: purchase-backend
       - run: node scripts/quality/release.cjs group backend
         env:
-          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -54,6 +54,7 @@ jobs:
       - run: npm ci
         working-directory: purchase-frontend
       - run: node scripts/quality/release.cjs group frontend
+      - run: node scripts/devops/security.cjs build
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -68,13 +69,39 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
-  postgres:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  integrity:
     strategy:
       fail-fast: false
       matrix:
-        gate: [schema, p2p, contracts, contract-settlement, contract-finance, reconciliation, request-workspace, device-demos, completion, receipt-reporting, governance, rfid, events, scop-foundation, guided-requests, hosted-recovery]
+        os: [ubuntu-latest, windows-latest]
+        node: ['20', '22']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: purchase-backend/package-lock.json
+      - run: npm ci
+        working-directory: purchase-backend
+      - run: node scripts/devops/integrity.cjs --base-ref refs/remotes/origin/master
+      - run: node --test scripts/devops/automation.test.cjs
+      - run: npm test -- --runInBand --forceExit --json --outputFile=platform-test-results.json databaseReleasePaths.test.js databaseReleaseGovernance.test.js wiciRecoveryProfiles.test.js
+        working-directory: purchase-backend
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: source-integrity-${{ matrix.os }}-node${{ matrix.node }}
+          path: purchase-backend/platform-test-results.json
+          if-no-files-found: error
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -82,49 +109,67 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: purchase-backend/package-lock.json
-      - run: npm ci
-        working-directory: purchase-backend
-      - run: node scripts/quality/release.cjs gate "${{ matrix.gate }}"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: always()
-        with:
-          name: quality-evidence-postgres-${{ matrix.gate }}
-          path: quality-results/
-          if-no-files-found: error
-          retention-days: 14
-  release-quality-gate:
-    name: Release quality gate
-    if: always()
-    needs: [backend, frontend, postgres]
+      - name: Validate workflow definitions with checksum-pinned actionlint
+        run: |
+          curl --fail --location --silent --show-error https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz --output "$RUNNER_TEMP/actionlint.tar.gz"
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum --check --strict
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          # The only intentional lint exception is the three hard-disabled
+          # release templates. Regression tests forbid this guard elsewhere.
+          "$RUNNER_TEMP/actionlint" -ignore 'constant expression "false" in condition' .github/workflows/*.yml
+      - run: node scripts/devops/security.cjs
+  sync-dry-run:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mhaider1129/purchase-backend
+          ref: main
+          path: sync-inputs/backend
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: mhaider1129/purchase-frontend
+          ref: main
+          path: sync-inputs/frontend
+          persist-credentials: false
+          fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - run: node scripts/devops/sync-audit.cjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          pattern: quality-evidence-*
-          path: quality-results/
-          merge-multiple: true
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+          name: synchronization-dry-run
+          path: quality-results/sync/
+          if-no-files-found: error
+  release-quality-gate:
+    name: Code CI gate (not deployment approval)
+    if: always()
+    needs: [backend, frontend, integrity, security, sync-dry-run]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          name: frontend-build
-          path: release-artifacts/frontend-build/
-      - name: Verify complete evidence and bind manifest
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - run: node scripts/devops/code-evidence.cjs quality-results/code-ci-manifest.json
         if: always()
         env:
           REQUIRED_JOB_RESULTS: ${{ toJSON(needs) }}
-        run: node scripts/quality/release.cjs manifest --needs "$REQUIRED_JOB_RESULTS" --build release-artifacts/frontend-build --output release-artifacts/release-manifest.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: release-manifest
-          path: release-artifacts/release-manifest.json
+          name: code-ci-manifest
+          path: quality-results/code-ci-manifest.json
           if-no-files-found: error
-          retention-days: 30
