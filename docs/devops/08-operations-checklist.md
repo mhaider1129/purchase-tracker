@@ -29,3 +29,5 @@
 ## Assignment boundaries
 
 GitHub repository metadata and source trees were accessed read-only for the audit; the combined review branch/PR and its non-production CI are the only intended remote writes. No standalone synchronization PR/write, repository setting change, staging provision, server login, production connection, SQL execution, deployment or merge is authorized here. The database fixture workflow was defined, not executed. Staging and both production workflow templates remain hard disabled. Run-specific test results and unresolved defects are recorded in the PR/completion report rather than assumed green.
+
+Zero-command owner operation and the one-time activation review are specified in [09-zero-command-activation.md](09-zero-command-activation.md). Current activation blockers are intentional; no disabled workflow should be enabled merely by removing its condition.

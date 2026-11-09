@@ -19,3 +19,4 @@ purchase-frontend/node_modules/
 *.log
 /sync-inputs/
 /deploy/staging/staging.env
+/release-selection/

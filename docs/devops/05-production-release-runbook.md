@@ -1,6 +1,6 @@
 # Controlled production release — definitions only
 
-Production execution is hard disabled in `production-release.yml`. The audit found no GitHub environments and unprotected default branches; required reviewers are not currently established. No input boolean or local JSON assertion replaces enforced approval. `release-plan.cjs` is an offline missing-prerequisite checklist and always returns executionEnabled=false / productionDeploymentAuthorized=false, even when every assertion is true.
+The Actions workflow is named **Deploy to Production**. Production execution is hard disabled in `production-release.yml`; its read-only GitHub metadata preflight selects immutable tested artifacts and genuine matching staging/DB evidence before an environment-gated job. The placeholder exits with failure if its hard stop is accidentally removed. The audit found no GitHub environments and unprotected default branches; required reviewers are not currently established. No input boolean or local JSON assertion replaces enforced approval. `release-plan.cjs` is an offline missing-prerequisite checklist and always returns executionEnabled=false / productionDeploymentAuthorized=false, even when every assertion is true.
 
 ## Go/no-go prerequisites
 
@@ -27,3 +27,5 @@ Record deployment actor/approval, source SHA, artifact digest, prior release, DB
 ## Current owner decisions
 
 Approve staging and reviewer enforcement; finish production DB reconciliation; decide the immutable artifact/image builder and registry; select bounded deployment credentials/target allowlists; reconcile standalone recovery branches; verify backup and recovery. No settings, credentials or live services were changed by this implementation.
+
+See [09-zero-command-activation.md](09-zero-command-activation.md) for the owner UI sequence, exact evidence contract and one-time activation checklist. No arbitrary branch/source or URL can be selected. GitHub metadata checks do not replace separately authorized live DB compatibility and backup/recovery acceptance.

@@ -1,30 +1,96 @@
-name: Production release template (disabled)
+name: Deploy to Production
 on:
   workflow_dispatch:
     inputs:
-      commit_sha:
-        description: Explicit immutable release candidate SHA
+      ci_run_id:
+        description: Successful master code CI run ID (not a branch, SHA or URL)
         required: true
         type: string
-      artifact_sha256:
-        description: Digest of artifact that passed staging smoke tests and UAT
-        required: true
-        type: string
-      staging_acceptance_id:
-        description: Verified staging acceptance evidence reference
+      staging_run_id:
+        description: Accepted staging run ID for that exact tested candidate
         required: true
         type: string
 permissions:
   contents: read
+  actions: read
+  deployments: read
+concurrency:
+  group: scop-production-release
+  cancel-in-progress: false
 jobs:
+  verify:
+    name: Verify tested release selection (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      commit_sha: ${{ steps.selection.outputs.commit_sha }}
+      ci_run_id: ${{ steps.selection.outputs.ci_run_id }}
+      backend_artifact_id: ${{ steps.selection.outputs.backend_artifact_id }}
+      backend_artifact_digest: ${{ steps.selection.outputs.backend_artifact_digest }}
+      frontend_artifact_id: ${{ steps.selection.outputs.frontend_artifact_id }}
+      frontend_artifact_digest: ${{ steps.selection.outputs.frontend_artifact_digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Trusted workflow/control-plane revision, never candidate input code.
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Validate GitHub CI, artifacts, staging, DB evidence and approval policy
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELECTED_CI_RUN_ID: ${{ inputs.ci_run_id }}
+          SELECTED_STAGING_RUN_ID: ${{ inputs.staging_run_id }}
+        run: node scripts/devops/verify-production-selection.cjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verified-production-selection
+          path: release-selection/selection.json
+          if-no-files-found: error
   production:
-    # HARD STOP: required reviewers are not configured. Never replace this with
-    # an input boolean. An approved future implementation must authenticate CI,
-    # staging/UAT, DB compatibility, backup and immutable artifact provenance.
+    name: Approve and deploy verified candidate (DISABLED)
+    needs: verify
+    # HARD STOP. Only separately authorized activation may replace this guard
+    # and fail-stop with a reviewed executor consuming the verified IDs/digests.
     if: ${{ false }}
-    environment: scop-production
-    concurrency: scop-production-release
+    environment:
+      name: scop-production
+    env:
+      VERIFIED_COMMIT_SHA: ${{ needs.verify.outputs.commit_sha }}
+      VERIFIED_CI_RUN_ID: ${{ needs.verify.outputs.ci_run_id }}
+      VERIFIED_BACKEND_ARTIFACT_ID: ${{ needs.verify.outputs.backend_artifact_id }}
+      VERIFIED_BACKEND_ARTIFACT_DIGEST: ${{ needs.verify.outputs.backend_artifact_digest }}
+      VERIFIED_FRONTEND_ARTIFACT_ID: ${{ needs.verify.outputs.frontend_artifact_id }}
+      VERIFIED_FRONTEND_ARTIFACT_DIGEST: ${{ needs.verify.outputs.frontend_artifact_digest }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Deployment executor is intentionally unavailable
+        run: |
+          echo "NOT DEPLOYED - production activation and target are not authorized"
+          exit 1
+  result:
+    name: Deployment status and rollback information
+    if: always()
+    needs: [verify, production]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - run: echo "DISABLED - production execution is not implemented or authorized"
+      - name: Publish truthful disabled-state result
+        env:
+          SELECTION_RESULT: ${{ needs.verify.result }}
+          DEPLOYMENT_RESULT: ${{ needs.production.result }}
+        run: |
+          {
+            echo '## Production release is NOT ACTIVATED'
+            echo "Candidate verification: $SELECTION_RESULT"
+            echo "Deployment job: $DEPLOYMENT_RESULT"
+            echo 'No production operation was attempted by this workflow.'
+            echo 'Rollback: none required; the existing recovery service remains untouched.'
+            echo 'Activation checklist: docs/devops/09-zero-command-activation.md'
+          } >> "$GITHUB_STEP_SUMMARY"
+          # A disabled deployment must not appear as a successful release.
+          exit 1
