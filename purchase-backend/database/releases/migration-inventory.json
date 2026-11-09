@@ -2801,7 +2801,7 @@
       "path": "sql/operator-recovery/wici-production-recovery.sql",
       "id": null,
       "classification": "generated_operator_bundle",
-      "sha256": "a35baa9ebc045a7b89cbec9c330119ad45f75114def2fc932a55d33ceeb50b1b",
+      "sha256": "785d3e62c1ddcc814b40983b3f62f15d66739d2ad124296cd3baf41b57380746",
       "bytes": 4052541,
       "execution_evidence": "UNVERIFIED",
       "ddl_statements": 1210,
