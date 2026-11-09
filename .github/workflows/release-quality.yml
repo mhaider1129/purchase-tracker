@@ -105,7 +105,7 @@ jobs:
       - run: npm ci
         working-directory: purchase-backend
       - run: node scripts/devops/integrity.cjs --base-ref refs/remotes/origin/master
-      - run: node --test scripts/devops/automation.test.cjs scripts/devops/release-selection.test.cjs
+      - run: node --test scripts/devops/automation.test.cjs scripts/devops/release-selection.test.cjs scripts/devops/security-regression.test.cjs scripts/devops/artifact-json.test.cjs
       - run: npm test -- --runInBand --forceExit --json --outputFile=platform-test-results.json databaseReleasePaths.test.js databaseReleaseGovernance.test.js wiciRecoveryProfiles.test.js
         working-directory: purchase-backend
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

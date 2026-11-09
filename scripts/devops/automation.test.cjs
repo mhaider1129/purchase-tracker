@@ -364,3 +364,25 @@ test("reviewed synthetic-source exceptions expire on any byte edit and do not su
     false,
   );
 });
+
+test("every isolated database job binds immutable checkout before fixtures and uploads attempt-bound provenance", () => {
+  const workflow = fs.readFileSync(
+    path.resolve(
+      __dirname,
+      "../../.github/workflows/isolated-database-validation.yml",
+    ),
+    "utf8",
+  );
+  assert(workflow.includes("ref: ${{ github.sha }}"));
+  assert(!workflow.includes("ref: ${{ inputs.commit_sha }}"));
+  assert(
+    workflow.indexOf("db-provenance.cjs check") <
+      workflow.indexOf("node scripts/quality/release.cjs gate"),
+  );
+  assert(
+    workflow.includes(
+      "db-provenance-${{ matrix.gate }}-attempt-${{ github.run_attempt }}",
+    ),
+  );
+  assert.equal(require("./db-provenance.cjs").gates.length, 16);
+});

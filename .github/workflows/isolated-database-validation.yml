@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       commit_sha:
-        description: Full immutable commit that passed code CI
+        description: Full dispatch SHA; release selection also requires same-commit successful code CI
         required: true
         type: string
       confirm_disposable_only:
@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.commit_sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -36,16 +36,26 @@ jobs:
       - name: Bind explicit immutable fixture input
         env:
           SELECTED_COMMIT: ${{ inputs.commit_sha }}
-        run: node -e "const cp=require('node:child_process');const s=process.env.SELECTED_COMMIT;if(!/^[a-f0-9]{40}$/.test(s)||cp.execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim()!==s)process.exit(1)"
+        run: node scripts/devops/db-provenance.cjs check
       - run: npm ci
         working-directory: purchase-backend
       - run: node scripts/devops/integrity.cjs --base-ref refs/remotes/origin/master
       # Existing runners create fresh loopback-only disposable databases; no
       # hosted URLs, database secrets or recovery execution inputs are provided.
       - run: node scripts/quality/release.cjs gate "${{ matrix.gate }}"
+      - name: Bind successful gate to actual checkout
+        env:
+          SELECTED_COMMIT: ${{ inputs.commit_sha }}
+        run: node scripts/devops/db-provenance.cjs "${{ matrix.gate }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: db-provenance-${{ matrix.gate }}-attempt-${{ github.run_attempt }}
+          path: quality-results/provenance/${{ matrix.gate }}.json
+          if-no-files-found: error
+          retention-days: 30
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
-          name: manual-postgres-evidence-${{ matrix.gate }}
+          name: manual-postgres-evidence-${{ matrix.gate }}-attempt-${{ github.run_attempt }}
           path: quality-results/
           if-no-files-found: error

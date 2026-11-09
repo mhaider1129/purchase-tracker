@@ -42,6 +42,83 @@ function fixture() {
       workflow_run: { id: 101, head_sha: commit },
     },
   ];
+  artifacts.push({
+    id: 503,
+    name: "code-ci-manifest-attempt-1",
+    digest: "sha256:" + "e".repeat(64),
+    expired: false,
+    workflow_run: { id: 101, head_sha: commit },
+  });
+  const reports = {
+    503: {
+      kind: "scop-code-ci",
+      version: 1,
+      status: "CODE_TEST_READY",
+      gitCommit: commit,
+      ciRunId: "101",
+      ciRunAttempt: "1",
+      dirty: false,
+      liveRoutingEnabled: false,
+      failures: [],
+      artifacts: { backend: "501", frontend: "502" },
+      sourceDigest: "f".repeat(64),
+      gateConfigDigest: "a".repeat(64),
+    },
+  };
+  const dbArtifacts = require("./db-provenance.cjs").gates.map(
+    (gate, index) => {
+      const id = 601 + index;
+      const profile = require("../quality/gates.json").gates.find(
+        (g) => g.id === gate,
+      );
+      reports[id] = require("./db-provenance.cjs").receipt(
+        {
+          SELECTED_COMMIT: commit,
+          GITHUB_SHA: commit,
+          GITHUB_REPOSITORY: p.repo,
+          GITHUB_RUN_ID: "401",
+          GITHUB_RUN_ATTEMPT: "1",
+        },
+        commit,
+        gate,
+        {
+          id: gate,
+          kind: "quality-gate",
+          version: 1,
+          nodeVersion: "v22.0.0",
+          command: profile.command,
+          signal: null,
+          status: "passed",
+          gitCommit: commit,
+          dirty: false,
+          liveRoutingEnabled: false,
+          sourceDigest: "f".repeat(64),
+          gateConfigDigest: "a".repeat(64),
+          exitCode: 0,
+          log: { sha256: "b".repeat(64) },
+          results:
+            gate === "schema"
+              ? { plansPassed: 1, plansFailed: 0, postflightFindings: 0 }
+              : gate === "p2p"
+                ? { passed: 1, failed: 0, skipped: 0 }
+                : {
+                    completionMarkers: profile.markers || [],
+                    scenarioCounts: [1],
+                  },
+          startedAt: new Date().toISOString(),
+          finishedAt: new Date().toISOString(),
+        },
+      );
+      return {
+        id,
+        name: `db-provenance-${gate}-attempt-1`,
+        digest: "sha256:" + "d".repeat(64),
+        expired: false,
+        workflow_run: { id: 401, head_sha: commit },
+      };
+    },
+  );
+  const readArtifact = async (a) => structuredClone(reports[a.id]);
   const env = {
     protection_rules: [
       {
@@ -82,6 +159,7 @@ function fixture() {
     "/actions/runs/101": ci,
     "/actions/runs/201": stage,
     "/actions/runs/401": db,
+    "/actions/runs/401/artifacts?per_page=100": dbArtifacts,
     "/actions/runs/101/jobs?filter=latest&per_page=100": jobs(p.requiredCi),
     "/actions/runs/101/artifacts?per_page=100": artifacts,
     "/actions/runs/201/jobs?filter=latest&per_page=100": jobs(p.requiredStage),
@@ -99,6 +177,9 @@ function fixture() {
     ),
   };
   return {
+    reports,
+    dbArtifacts,
+    readArtifact,
     ci,
     stage,
     db,
@@ -117,7 +198,7 @@ function fixture() {
 }
 test("genuine same-commit CI, stage, DB and policy metadata selects immutable artifacts, never execution", async () => {
   const f = fixture(),
-    r = await p.collect(f.api, "101", "201");
+    r = await p.collect(f.api, "101", "201", f.readArtifact);
   assert.equal(r.commit, f.ci.head_sha);
   assert.equal(r.backend.id, 501);
   assert.equal(r.frontend.id, 502);
@@ -200,7 +281,7 @@ for (const [label, mutate] of [
   test("production selection blocks " + label, async () => {
     const f = fixture();
     mutate(f);
-    await assert.rejects(p.collect(f.api, 101, 201));
+    await assert.rejects(p.collect(f.api, 101, 201, f.readArtifact));
   });
 for (const id of [
   "master",
@@ -322,7 +403,58 @@ test("a retried CI run cannot silently reuse artifacts from its earlier attempt"
   const f = fixture();
   f.ci.run_attempt = 2;
   await assert.rejects(
-    p.collect(f.api, 101, 201),
+    p.collect(f.api, 101, 201, f.readArtifact),
     /MISSING_OR_AMBIGUOUS_TESTED_ARTIFACT/,
   );
+});
+
+test("dispatch A cannot authorize checkout B even when API head_sha says A", async () => {
+  const f = fixture();
+  f.reports[601].testedCommit = "b".repeat(40);
+  await assert.rejects(
+    p.collect(f.api, 101, 201, f.readArtifact),
+    /DATABASE_RECEIPT_PROVENANCE_MISMATCH/,
+  );
+});
+
+for (const [name, mutate] of [
+  ["missing receipt", (f) => f.dbArtifacts.pop()],
+  ["ambiguous receipt", (f) => f.dbArtifacts.push(f.dbArtifacts[0])],
+  ["expired receipt artifact", (f) => (f.dbArtifacts[0].expired = true)],
+  ["previous DB attempt", (f) => (f.db.run_attempt = 2)],
+  [
+    "wrong source digest",
+    (f) => (f.reports[601].report.sourceDigest = "c".repeat(64)),
+  ],
+  ["incomplete gate", (f) => delete f.reports[601].report.results],
+  ["failed gate", (f) => (f.reports[601].report.status = "failed")],
+  [
+    "expired report",
+    (f) => (f.reports[601].report.finishedAt = "2020-01-01T00:00:00Z"),
+  ],
+  [
+    "wrong CI manifest commit",
+    (f) => (f.reports[503].gitCommit = "b".repeat(40)),
+  ],
+])
+  test("rejects " + name, async () => {
+    const f = fixture();
+    mutate(f);
+    await assert.rejects(p.collect(f.api, 101, 201, f.readArtifact));
+  });
+test("producer rejects dispatch A with checkout B or selected B", () => {
+  const { checkout } = require("./db-provenance.cjs"),
+    a = "a".repeat(40),
+    b = "b".repeat(40);
+  assert.throws(() => checkout({ GITHUB_SHA: a, SELECTED_COMMIT: b }, b));
+  assert.throws(() => checkout({ GITHUB_SHA: a, SELECTED_COMMIT: a }, b));
+  assert.equal(checkout({ GITHUB_SHA: a, SELECTED_COMMIT: a }, a), a);
+});
+
+test("missing and skipped database results are rejected", async () => {
+  for (const result of [{}, { passed: 1, failed: 0, skipped: 1 }]) {
+    const f = fixture();
+    f.reports[602].report.results = result;
+    await assert.rejects(p.collect(f.api, 101, 201, f.readArtifact));
+  }
 });

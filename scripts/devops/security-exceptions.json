@@ -18,6 +18,30 @@
       "kind": "database-credential",
       "sha256": "c6af75fbb35200418cbdc16804640b424676c563605f6134c5f4e515abf12353",
       "reason": "Existing synthetic URL validation fixtures; tests reject/inspect targets without connecting"
+    },
+    {
+      "file": "README.md",
+      "kind": "database-credential",
+      "sha256": "cae19b76da0df15699244338621acc68f56eb5e699b174a0c437fce3427675ce",
+      "reason": "Existing documented username/password placeholder on localhost; documentation only"
+    },
+    {
+      "file": "purchase-backend/ReadMe.md",
+      "kind": "database-credential",
+      "sha256": "cfce64c2ba4bc6397205b94b656035f3aca3e189ae509e334f49efe32f86d566",
+      "reason": "Existing documented username/password placeholder on localhost; documentation only"
+    },
+    {
+      "file": "purchase-backend/__tests__/jest.setup.js",
+      "kind": "database-credential",
+      "sha256": "a51f305cd9687255f04bef9f1553923913779511767f95694b136e12619123e6",
+      "reason": "Existing synthetic test:test loopback unit-test URL; no hosted database"
+    },
+    {
+      "file": "purchase-backend/tests/prepareRuntimeIdentity.test.js",
+      "kind": "database-credential",
+      "sha256": "a6d1254c4ac3a31b48707990f1e584caecdec3bb61b97663595c93867d372184",
+      "reason": "Existing synthetic fixture passwords for offline identity-generation unit tests; no connection"
     }
   ]
 }

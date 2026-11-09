@@ -134,7 +134,12 @@ function deploymentEvidence(deployment, status, selection, stageRunId) {
     throw Error("STAGING_DEPLOYMENT_NOT_CURRENTLY_SUCCESSFUL");
   return number(p.database_validation_run_id);
 }
-async function collect(api, ciId, stageId) {
+async function collect(
+  api,
+  ciId,
+  stageId,
+  readArtifact = require("./artifact-json.cjs").read,
+) {
   ciId = number(ciId);
   stageId = number(stageId);
   const ci = await api(`/actions/runs/${ciId}`),
@@ -144,6 +149,35 @@ async function collect(api, ciId, stageId) {
     await api(`/actions/runs/${ciId}/jobs?filter=latest&per_page=100`, "jobs"),
     await api(`/actions/runs/${ciId}/artifacts?per_page=100`, "artifacts"),
   );
+  const ciArtifacts = await api(
+    `/actions/runs/${ciId}/artifacts?per_page=100`,
+    "artifacts",
+  );
+  const manifestArtifact = artifactEvidence(
+    ciArtifacts,
+    `code-ci-manifest-attempt-${selection.attempt}`,
+    ci,
+  );
+  const manifest = await readArtifact(
+    manifestArtifact,
+    "code-ci-manifest.json",
+  );
+  if (
+    manifest.kind !== "scop-code-ci" ||
+    manifest.version !== 1 ||
+    manifest.status !== "CODE_TEST_READY" ||
+    manifest.gitCommit !== selection.commit ||
+    manifest.ciRunId !== String(ci.id) ||
+    manifest.ciRunAttempt !== String(selection.attempt) ||
+    manifest.dirty !== false ||
+    manifest.liveRoutingEnabled !== false ||
+    manifest.failures?.length !== 0 ||
+    manifest.artifacts?.backend !== String(selection.backend.id) ||
+    manifest.artifacts?.frontend !== String(selection.frontend.id) ||
+    !/^[a-f0-9]{64}$/.test(manifest.sourceDigest || "") ||
+    !/^[a-f0-9]{64}$/.test(manifest.gateConfigDigest || "")
+  )
+    throw Error("CI_MANIFEST_PROVENANCE_INVALID");
   stageEvidence(
     stage,
     await api(
@@ -185,6 +219,28 @@ async function collect(api, ciId, stageId) {
     await api(`/actions/runs/${dbId}/jobs?filter=latest&per_page=100`, "jobs"),
     gates,
   );
+  const provenance = require("./db-provenance.cjs");
+  const dbArtifacts = await api(
+    `/actions/runs/${dbId}/artifacts?per_page=100`,
+    "artifacts",
+  );
+  const sourceBindings = new Set();
+  const receipts = [];
+  for (const gate of provenance.gates) {
+    const a = artifactEvidence(
+      dbArtifacts,
+      `db-provenance-${gate}-attempt-${number(db.run_attempt)}`,
+      db,
+    );
+    const r = await readArtifact(a, `${gate}.json`);
+    sourceBindings.add(provenance.verify(r, db, gate, selection.commit));
+    receipts.push(a);
+  }
+  if (
+    sourceBindings.size !== 1 ||
+    !sourceBindings.has(manifest.sourceDigest + ":" + manifest.gateConfigDigest)
+  )
+    throw Error("DATABASE_GATE_SOURCE_BINDINGS_INCONSISTENT");
   return {
     kind: "verified-production-selection",
     version: 1,
@@ -192,6 +248,7 @@ async function collect(api, ciId, stageId) {
     stagingRunId: stageId,
     stagingDeploymentId: deployment.id,
     databaseValidationRunId: dbId,
+    databaseProvenance: receipts,
     environment: "scop-production",
     status: "AWAITING_PRODUCTION_ENVIRONMENT_APPROVAL",
     operationalAcceptance:
