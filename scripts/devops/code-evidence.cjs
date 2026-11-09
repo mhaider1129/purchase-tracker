@@ -24,6 +24,8 @@ function evidence(needs) {
   if (current.dirty) failures.push("uncommitted inputs");
   return {
     kind: "scop-code-ci",
+    ciRunId: process.env.GITHUB_RUN_ID || null,
+    ciRunAttempt: process.env.GITHUB_RUN_ATTEMPT || null,
     version: 1,
     ...current,
     artifacts,
@@ -43,6 +45,11 @@ if (require.main === module) {
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, JSON.stringify(r, null, 2) + "\n");
     console.log(r.status);
+    if (process.env.GITHUB_STEP_SUMMARY)
+      fs.appendFileSync(
+        process.env.GITHUB_STEP_SUMMARY,
+        `## ${r.status}\n\nCode CI run ID: ${r.ciRunId} (attempt ${r.ciRunAttempt})\n\nCommit: ${r.gitCommit}\n\nBackend artifact ID: ${r.artifacts.backend || "missing"}\n\nFrontend artifact ID: ${r.artifacts.frontend || "missing"}\n\nProduction is not activated; this is code evidence only.\n`,
+      );
     if (r.status === "BLOCKED") process.exitCode = 1;
   } catch (e) {
     console.error(e.message);

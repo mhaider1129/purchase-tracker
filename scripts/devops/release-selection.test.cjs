@@ -11,6 +11,7 @@ function fixture() {
   const commit = "a".repeat(40),
     run = (id, file, event) => ({
       id,
+      run_attempt: 1,
       head_sha: commit,
       head_branch: "master",
       repository: { full_name: p.repo },
@@ -28,14 +29,14 @@ function fixture() {
   const artifacts = [
     {
       id: 501,
-      name: "backend-release",
+      name: "backend-release-attempt-1",
       digest: "sha256:" + "b".repeat(64),
       expired: false,
       workflow_run: { id: 101, head_sha: commit },
     },
     {
       id: 502,
-      name: "frontend-build",
+      name: "frontend-build-attempt-1",
       digest: "sha256:" + "c".repeat(64),
       expired: false,
       workflow_run: { id: 101, head_sha: commit },
@@ -315,4 +316,13 @@ test("Deploy to Production accepts only evidence IDs, uses trusted verifier code
   assert.equal(w.permissions.actions, "read");
   assert.equal(w.permissions.deployments, "read");
   assert(w.jobs.production.steps[0].run.includes("exit 1"));
+});
+
+test("a retried CI run cannot silently reuse artifacts from its earlier attempt", async () => {
+  const f = fixture();
+  f.ci.run_attempt = 2;
+  await assert.rejects(
+    p.collect(f.api, 101, 201),
+    /MISSING_OR_AMBIGUOUS_TESTED_ARTIFACT/,
+  );
 });

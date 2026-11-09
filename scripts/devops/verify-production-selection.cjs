@@ -83,11 +83,21 @@ function environmentEvidence(environment) {
 function ciEvidence(run, jobs, artifacts) {
   runEvidence(run, ".github/workflows/release-quality.yml", ["push"]);
   jobsEvidence(jobs, requiredCi);
+  const attempt = number(run.run_attempt);
   return {
     runId: run.id,
+    attempt,
     commit: run.head_sha,
-    backend: artifactEvidence(artifacts, "backend-release", run),
-    frontend: artifactEvidence(artifacts, "frontend-build", run),
+    backend: artifactEvidence(
+      artifacts,
+      `backend-release-attempt-${attempt}`,
+      run,
+    ),
+    frontend: artifactEvidence(
+      artifacts,
+      `frontend-build-attempt-${attempt}`,
+      run,
+    ),
   };
 }
 function stageEvidence(stage, jobs, selection) {
