@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "enabled": false,
+  "bootstrapApproval": "PENDING_SEPARATE_REVIEW",
+  "appSlug": null,
+  "targets": {
+    "backend": {
+      "repository": "mhaider1129/purchase-backend",
+      "branch": "main",
+      "requiredCheck": "Backend synchronization gate",
+      "baseline": null,
+      "approvedBootstrap": null
+    },
+    "frontend": {
+      "repository": "mhaider1129/purchase-frontend",
+      "branch": "main",
+      "requiredCheck": "Frontend synchronization gate",
+      "baseline": null,
+      "approvedBootstrap": null
+    }
+  },
+  "approvedDeletions": []
+}

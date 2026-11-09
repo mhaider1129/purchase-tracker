@@ -20,10 +20,13 @@ function safePath(p) {
 function excluded(p) {
   safePath(p);
   return (
-    /(?:^|\/)(?:\.git|\.github|node_modules|private-uploads|uploads|logs|cache|\.cache|coverage|build|dist)(?:\/|$)/i.test(
+    /(?:^|\/)(?:\.git|\.github|node_modules|private-uploads|uploads|logs|cache|\.cache|coverage|build|dist|secrets|credentials|\.ssh|\.aws)(?:\/|$)/i.test(
       p,
     ) ||
     /(?:^|\/)\.env(?:\.|$)/i.test(p) ||
+    /(?:^|\/)(?:CODEOWNERS|\.npmrc|\.netrc|\.gitconfig|\.pypirc|\.yarnrc(?:\.[^/]*)?|credentials(?:\.[^/]*)?|service-account[^/]*\.json)$/i.test(
+      p,
+    ) ||
     /\.(?:log|pem|key|p12|pfx|sqlite|dump|bak)$/i.test(p)
   );
 }

@@ -1,0 +1,1605 @@
+{
+  "kind": "proposed-sync-bootstrap",
+  "version": 1,
+  "status": "BLOCKED",
+  "approval": "PENDING_SEPARATE_REVIEW",
+  "sourceRepository": "mhaider1129/purchase-tracker",
+  "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+  "remoteWrites": 0,
+  "migrationExecution": "NOT_PERFORMED",
+  "targets": {
+    "backend": {
+      "repository": "mhaider1129/purchase-backend",
+      "plan": {
+        "kind": "sync-dry-run",
+        "version": 1,
+        "app": "backend",
+        "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+        "destinationSha": "70c4ee50bd0c8342eb30f573eacbd95f543a5e88",
+        "previousSourceSha": null,
+        "previousDestinationSha": null,
+        "changeSet": [
+          {
+            "path": ".gitattributes",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "a8099484434c808fb4db138ef0e35ca87b491441",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "config/db.js",
+            "action": "update",
+            "before": {
+              "blob": "04f3e73a37ee6ebe82c84017e1384d143a0a2356",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "34aa8a73943bb095116f0e20f8607b40a7172502",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "database/releases/migration-inventory.json",
+            "action": "update",
+            "before": {
+              "blob": "e3a5b19c27ec7da810a58896b77c28e69919087a",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "1dc18593f5c73af99b9112775524235e3406d26e",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "database/releases/profiles/wici-observed.json",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "cea62c4eb1a470de563c3b458c2a7a6c8594c1e0",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "database/releases/profiles/wici-target.json",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "b8179f236b82b690ab0e923bf7c12a260cace4a5",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "docs/database-release-governance-7a.md",
+            "action": "update",
+            "before": {
+              "blob": "aed3cad1d6b9a4ef699a5bd9b01ee56862e83590",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "2124a408657949527dbcdc1dc3d387776dbb8873",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "docs/rfid-crash-recovery-7b.md",
+            "action": "update",
+            "before": {
+              "blob": "3531d86e450c221852f33d25c17edea45924e0ef",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "56f37608e44c07f071a8232acdacf98021d40688",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "docs/transactional-event-reliability-7c.md",
+            "action": "update",
+            "before": {
+              "blob": "45293e569a05765a3cab644424092a0a3616d444",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "833c89862eb9cd517f10d55d2a478d080ffc348c",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "integration/fixtures/wici-function-styles.json",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "05d27aabc92dd29eb1c2ccdfd7ff68619a50a108",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "integration/wiciObservedFixture.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "6c3e73ee132e3fde8c793a8ac18638e1fb16806b",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "integration/wiciRecovery.postgres.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "47ca20eaa463b623eb7f338509fe8d33a50f7d25",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "package.json",
+            "action": "update",
+            "before": {
+              "blob": "bc122dae1285e3d6015f11313fd1204626c89a2a",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "0e882e3b8d1cc1aaefd3954bab7e639f5fad65a3",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "scripts/databaseRelease.js",
+            "action": "update",
+            "before": {
+              "blob": "722fbc2828c017330a252919d9ef3aceb2cf9ee5",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "1d0f0ac66166b52f32a11d7339310261f3ddf527",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "scripts/lib/databaseRelease/catalog.js",
+            "action": "update",
+            "before": {
+              "blob": "8666667736bc105d9c4cee301a11f77293d6b517",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "de32360dd04474d7a7c9742cb4e1601a8e39d338",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "scripts/lib/databaseRelease/inventory.js",
+            "action": "update",
+            "before": {
+              "blob": "22d366615960a1207dab103eb6e95185e4d95942",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "0e9ff7f319bde9e3e7a96e878e9dba8851689efa",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "scripts/lib/databaseRelease/planner.js",
+            "action": "update",
+            "before": {
+              "blob": "85acafe2a593a3b42663a23c2e80730571b7b11e",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "dd5ca806ba498fe4ce70442e1ea6762dd754a913",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "scripts/lib/databaseRelease/profiles.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "b6bdde1fdaf9546118b3dfbd89a0cb935e5bc7aa",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "scripts/prepareRuntimeIdentity.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "bfc4ff9c433216fc9ad5f1886f6d186665c3eba0",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "scripts/testBackendContractRefresh.js",
+            "action": "update",
+            "before": {
+              "blob": "5bf55f8f8569a1670feeb42d30ee8c047fee55fd",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "1b7366171bcedb8c793acc542ba97b0c8ff3cdf9",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "services/databaseReleaseService.js",
+            "action": "update",
+            "before": {
+              "blob": "e4c44643b1388d50cc03e7aef9a739655a6c8df1",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "e6a84845285a8e917a529bf13714cc9c8fafdba1",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "sql/manual/073_wici_observed_schema_recovery.sql",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "4b401d4fba6705c3f1ab470fc45a8f5f8be885ba",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "sql/operator-recovery/wici-production-recovery.sql",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "9fa30dfb41e8bdd86f6b9835430fd8fba5017a96",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "tests/databaseReleaseGovernance.test.js",
+            "action": "update",
+            "before": {
+              "blob": "c7e1bef9e22383824a3dba6231432a499f191e13",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "32f189b89a2d32f4723ed817b677b8230d956bde",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "tests/databaseReleasePaths.test.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "c65afa5f70f7d19f3f4b1f8f48d31a90e7e4fc55",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "tests/databaseReleaseVisibility.test.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "189658e1561f2898acfd0418ce1380bd3e65fcc5",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "tests/prepareRuntimeIdentity.test.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "27d9c9cd43219756f4c27cbd3faf1e7b786d611d",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "tests/runtimeDatabaseIdentity.test.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "d6a471c018e12767c637c55046a2f4899055f984",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "tests/wiciRecoveryProfiles.test.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "5a5ac5e7eac427d8b90f1545cbb921c7b3759ebe",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "utils/runtimeDatabaseIdentity.js",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "7c46432b6d68d8f2834ae543a0bea23d2a0069cc",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          }
+        ],
+        "conflicts": 13,
+        "status": "REQUIRES_RECONCILIATION",
+        "writesPerformed": false,
+        "destinationCIRequired": true,
+        "autoMergeEnabled": false,
+        "publishEnabled": false,
+        "workingTreesUsed": false,
+        "planSha256": "0daba92966a5e58cbe3894ce5e82deab9cff167565f6cda2cf416347b6e5ded7"
+      },
+      "sourceTreeSha256": "1a060be742fd4e15f745ba9890b70af8da96b62fe7b24baad7f1ba53b14107e4",
+      "changeSetSha256": "9938988ac091e24a796c35a00aca87109bdfd54cbe8a5d39263b549d205975bc",
+      "decisions": [
+        {
+          "path": "config/db.js",
+          "before": {
+            "blob": "04f3e73a37ee6ebe82c84017e1384d143a0a2356",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "34aa8a73943bb095116f0e20f8607b40a7172502",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "database/releases/migration-inventory.json",
+          "before": {
+            "blob": "e3a5b19c27ec7da810a58896b77c28e69919087a",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "1dc18593f5c73af99b9112775524235e3406d26e",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "docs/database-release-governance-7a.md",
+          "before": {
+            "blob": "aed3cad1d6b9a4ef699a5bd9b01ee56862e83590",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "2124a408657949527dbcdc1dc3d387776dbb8873",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "docs/rfid-crash-recovery-7b.md",
+          "before": {
+            "blob": "3531d86e450c221852f33d25c17edea45924e0ef",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "56f37608e44c07f071a8232acdacf98021d40688",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "docs/transactional-event-reliability-7c.md",
+          "before": {
+            "blob": "45293e569a05765a3cab644424092a0a3616d444",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "833c89862eb9cd517f10d55d2a478d080ffc348c",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "package.json",
+          "before": {
+            "blob": "bc122dae1285e3d6015f11313fd1204626c89a2a",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "0e882e3b8d1cc1aaefd3954bab7e639f5fad65a3",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "scripts/databaseRelease.js",
+          "before": {
+            "blob": "722fbc2828c017330a252919d9ef3aceb2cf9ee5",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "1d0f0ac66166b52f32a11d7339310261f3ddf527",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "scripts/lib/databaseRelease/catalog.js",
+          "before": {
+            "blob": "8666667736bc105d9c4cee301a11f77293d6b517",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "de32360dd04474d7a7c9742cb4e1601a8e39d338",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "scripts/lib/databaseRelease/inventory.js",
+          "before": {
+            "blob": "22d366615960a1207dab103eb6e95185e4d95942",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "0e9ff7f319bde9e3e7a96e878e9dba8851689efa",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "scripts/lib/databaseRelease/planner.js",
+          "before": {
+            "blob": "85acafe2a593a3b42663a23c2e80730571b7b11e",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "dd5ca806ba498fe4ce70442e1ea6762dd754a913",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "scripts/testBackendContractRefresh.js",
+          "before": {
+            "blob": "5bf55f8f8569a1670feeb42d30ee8c047fee55fd",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "1b7366171bcedb8c793acc542ba97b0c8ff3cdf9",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "services/databaseReleaseService.js",
+          "before": {
+            "blob": "e4c44643b1388d50cc03e7aef9a739655a6c8df1",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "e6a84845285a8e917a529bf13714cc9c8fafdba1",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "tests/databaseReleaseGovernance.test.js",
+          "before": {
+            "blob": "c7e1bef9e22383824a3dba6231432a499f191e13",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "32f189b89a2d32f4723ed817b677b8230d956bde",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "approved": false
+        }
+      ],
+      "historicalSql": [
+        {
+          "path": "integration/fixtures/p2p.sql",
+          "destinationBlob": "d6a5fdbb37bbf32a986174b69ec01e43a50c5e0f",
+          "sourceBlob": "d6a5fdbb37bbf32a986174b69ec01e43a50c5e0f",
+          "unchanged": true
+        },
+        {
+          "path": "sql/20260313_procure_to_pay_document_flow.sql",
+          "destinationBlob": "e49ebc3152037a685817d2b9f284d737f2cdcf75",
+          "sourceBlob": "e49ebc3152037a685817d2b9f284d737f2cdcf75",
+          "unchanged": true
+        },
+        {
+          "path": "sql/20260907_expand_custody_form.sql",
+          "destinationBlob": "d2a24f8900e007c82907cdb95acd53da01c070aa",
+          "sourceBlob": "d2a24f8900e007c82907cdb95acd53da01c070aa",
+          "unchanged": true
+        },
+        {
+          "path": "sql/UI_resource_permissions.sql",
+          "destinationBlob": "2374fe2abe328d5b1752c823289094cec440fa78",
+          "sourceBlob": "2374fe2abe328d5b1752c823289094cec440fa78",
+          "unchanged": true
+        },
+        {
+          "path": "sql/View_Supabase_SQL.sql",
+          "destinationBlob": "076c40659393cc0cd4b759cc4ccc6f013846f255",
+          "sourceBlob": "076c40659393cc0cd4b759cc4ccc6f013846f255",
+          "unchanged": true
+        },
+        {
+          "path": "sql/approval_route_rules.sql",
+          "destinationBlob": "f6cb6ce9e0bd4db5aa629ed974b58d55c025c660",
+          "sourceBlob": "f6cb6ce9e0bd4db5aa629ed974b58d55c025c660",
+          "unchanged": true
+        },
+        {
+          "path": "sql/approval_routes.sql",
+          "destinationBlob": "df37d25704da64b9f884c818bf767f3daf1eee90",
+          "sourceBlob": "df37d25704da64b9f884c818bf767f3daf1eee90",
+          "unchanged": true
+        },
+        {
+          "path": "sql/development/20261005_01_requested_item_identity.sql",
+          "destinationBlob": "3b137ff48e1c82f03b10a1b3aa5e9750ff36d588",
+          "sourceBlob": "3b137ff48e1c82f03b10a1b3aa5e9750ff36d588",
+          "unchanged": true
+        },
+        {
+          "path": "sql/development/20261005_02_employee_tasks.sql",
+          "destinationBlob": "ebbc18cbabb9ecc7707f45235508346d9ea8a90e",
+          "sourceBlob": "ebbc18cbabb9ecc7707f45235508346d9ea8a90e",
+          "unchanged": true
+        },
+        {
+          "path": "sql/development/20261005_03_procurement_identity_policy.sql",
+          "destinationBlob": "79972b7c93520ef33a1f1077ce22f8d3b57b095b",
+          "sourceBlob": "79972b7c93520ef33a1f1077ce22f8d3b57b095b",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/003_request_reclassification_and_uom.sql",
+          "destinationBlob": "474326843feac35197192e755b9a1fc54f655c40",
+          "sourceBlob": "474326843feac35197192e755b9a1fc54f655c40",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/004_inventory_transaction_engine.sql",
+          "destinationBlob": "5bca4898c49643bd8536e95b5ac80c1822b174d5",
+          "sourceBlob": "5bca4898c49643bd8536e95b5ac80c1822b174d5",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/005_inventory_operations.sql",
+          "destinationBlob": "cf1b76928b674fc43f46f41527546987677c3bcd",
+          "sourceBlob": "cf1b76928b674fc43f46f41527546987677c3bcd",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/006_connected_procure_to_pay.sql",
+          "destinationBlob": "c3763060cf5f95b7e153064077ed98c2da3e83be",
+          "sourceBlob": "c3763060cf5f95b7e153064077ed98c2da3e83be",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/007_phase5a_item_master_diagnostics.sql",
+          "destinationBlob": "c28945b7ee8c97a3f7c4b3dc2793b92d9e62de59",
+          "sourceBlob": "c28945b7ee8c97a3f7c4b3dc2793b92d9e62de59",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/008_phase5a1_reference_master_baseline.sql",
+          "destinationBlob": "90e05ca00c063cf08f14f0a27ccebef586575fd2",
+          "sourceBlob": "90e05ca00c063cf08f14f0a27ccebef586575fd2",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/009_phase5a2_uom_authority.sql",
+          "destinationBlob": "f7fdf56a007e88bb3b2577bda0b1f96c4c862f66",
+          "sourceBlob": "f7fdf56a007e88bb3b2577bda0b1f96c4c862f66",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/010_supply_chain_performance_foundation.sql",
+          "destinationBlob": "11718493fd50a8226ddf4f9c0280148ee2850934",
+          "sourceBlob": "11718493fd50a8226ddf4f9c0280148ee2850934",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/011_central_supply_tracking.sql",
+          "destinationBlob": "aa705ef5532d6e11b60c3e9e5718a16577196694",
+          "sourceBlob": "aa705ef5532d6e11b60c3e9e5718a16577196694",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/012_procurement_priority_foundation.sql",
+          "destinationBlob": "5bc0246857c31e77e98c518fab55007f488be341",
+          "sourceBlob": "5bc0246857c31e77e98c518fab55007f488be341",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/013_approved_spare_parts_foundation.sql",
+          "destinationBlob": "5e49e6c3a2d0197906a51a3369c8482334305daf",
+          "sourceBlob": "5e49e6c3a2d0197906a51a3369c8482334305daf",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/014_organization_hierarchy.sql",
+          "destinationBlob": "20defa37c3ccaef240eb8ee790bf32517405e0aa",
+          "sourceBlob": "20defa37c3ccaef240eb8ee790bf32517405e0aa",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/015_approval_policy_engine_foundation.sql",
+          "destinationBlob": "4fcf4f20a2b169db29f50daa4edc7777da72658f",
+          "sourceBlob": "4fcf4f20a2b169db29f50daa4edc7777da72658f",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/016_organization_hierarchy_cutover_readiness.sql",
+          "destinationBlob": "b67f0e18a9ddf706fdf8f5176c4adb13ed2aa74d",
+          "sourceBlob": "b67f0e18a9ddf706fdf8f5176c4adb13ed2aa74d",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/017_fixed_assets_rfid_core.sql",
+          "destinationBlob": "cb4f562b3c82ef2090ba7bb22aac62b338b8a426",
+          "sourceBlob": "cb4f562b3c82ef2090ba7bb22aac62b338b8a426",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/018_fixed_assets_rfid_post_deployment_hardening.sql",
+          "destinationBlob": "b40b77ada95e88bebf5e6415655ecf750743dbd0",
+          "sourceBlob": "b40b77ada95e88bebf5e6415655ecf750743dbd0",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/019_asset_equipment_integration.sql",
+          "destinationBlob": "b6971093edd9f1a78ebf93299d55b8319e170537",
+          "sourceBlob": "b6971093edd9f1a78ebf93299d55b8319e170537",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/020_asset_equipment_canonical_identity.sql",
+          "destinationBlob": "19f9a03f80d0dffceba371fcd1a35948d40b54c1",
+          "sourceBlob": "19f9a03f80d0dffceba371fcd1a35948d40b54c1",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/021_contract_equipment_coverage.sql",
+          "destinationBlob": "9addb99d23e71c941d24ab39d9b3d5cc4e86081e",
+          "sourceBlob": "9addb99d23e71c941d24ab39d9b3d5cc4e86081e",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/022_contract_item_master_identity.sql",
+          "destinationBlob": "fef354d90f9f806472c6269407f8289c0c55c594",
+          "sourceBlob": "fef354d90f9f806472c6269407f8289c0c55c594",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/023_spare_part_stock_item_integration.sql",
+          "destinationBlob": "ad4acacc1d545e8fbcd58edbc35b149fe400f6df",
+          "sourceBlob": "ad4acacc1d545e8fbcd58edbc35b149fe400f6df",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/024_maintenance_work_orders.sql",
+          "destinationBlob": "07c09f3b6370ef6f5be44c1c61db0e47fd2630ad",
+          "sourceBlob": "07c09f3b6370ef6f5be44c1c61db0e47fd2630ad",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/025_maintenance_inventory_execution.sql",
+          "destinationBlob": "02fcf7c7612da79ec7b963493ebd078f9dea54a2",
+          "sourceBlob": "02fcf7c7612da79ec7b963493ebd078f9dea54a2",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/026_rfid_portal_enable_scope_index.sql",
+          "destinationBlob": "037b245befa495b639eab51624907a833d9812c8",
+          "sourceBlob": "037b245befa495b639eab51624907a833d9812c8",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/027_rfid_configuration_mutation_guards.sql",
+          "destinationBlob": "ce85e3285e075862fde699134dbf08bf386533ea",
+          "sourceBlob": "ce85e3285e075862fde699134dbf08bf386533ea",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/028_asset_movement_operational_hardening.sql",
+          "destinationBlob": "366485a3aba6e2d3fb3a2660153b2967013cc5c7",
+          "sourceBlob": "366485a3aba6e2d3fb3a2660153b2967013cc5c7",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/029_fixed_asset_deployment_valuation.sql",
+          "destinationBlob": "fa475e661e1ccc4e25787d0a23051edc0e561a1a",
+          "sourceBlob": "fa475e661e1ccc4e25787d0a23051edc0e561a1a",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/030_fixed_asset_physical_inventory.sql",
+          "destinationBlob": "f15d5f3d03b09c17a1a9d585073d69c2c3da9ff2",
+          "sourceBlob": "f15d5f3d03b09c17a1a9d585073d69c2c3da9ff2",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/031_p2p_batch1_authority_hardening.sql",
+          "destinationBlob": "2b166114ba00083c8eb7f84b2008cb6455b62b21",
+          "sourceBlob": "2b166114ba00083c8eb7f84b2008cb6455b62b21",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/032_approval_engine_operationalization_phase1.sql",
+          "destinationBlob": "587913d22bbef1724a4d34de0a2d63ac93652001",
+          "sourceBlob": "587913d22bbef1724a4d34de0a2d63ac93652001",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/033_ai_intelligence_foundation.sql",
+          "destinationBlob": "db560709c0e9b610ef4544b76666c189aaac7200",
+          "sourceBlob": "db560709c0e9b610ef4544b76666c189aaac7200",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/034_ai_provider_audit_metadata.sql",
+          "destinationBlob": "669495e8c2107e649681b86f904f6ce360d05550",
+          "sourceBlob": "669495e8c2107e649681b86f904f6ce360d05550",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/035_backend_schema_reconciliation.sql",
+          "destinationBlob": "e2f71da2ef67b09fd8e4b71353ea60a4abba7067",
+          "sourceBlob": "e2f71da2ef67b09fd8e4b71353ea60a4abba7067",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/035_backend_schema_reconciliation_verify.sql",
+          "destinationBlob": "fa96bff119b9c2ecf11def0dd5d3ac9382f9407c",
+          "sourceBlob": "fa96bff119b9c2ecf11def0dd5d3ac9382f9407c",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/036_permission_catalog_reconciliation.sql",
+          "destinationBlob": "4f26962f18ac19ee3198de43d988372f6a286b8e",
+          "sourceBlob": "4f26962f18ac19ee3198de43d988372f6a286b8e",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/037_ui_resource_reconciliation.sql",
+          "destinationBlob": "489ac86e64fe20bc1ac7078263b2bb1b13cac710",
+          "sourceBlob": "489ac86e64fe20bc1ac7078263b2bb1b13cac710",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/038_evaluation_result_timestamp_compatibility.sql",
+          "destinationBlob": "bb60907526c343735f63823bdc0f775e26f102fc",
+          "sourceBlob": "bb60907526c343735f63823bdc0f775e26f102fc",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/039_evaluation_offer_model_compatibility.sql",
+          "destinationBlob": "e73d2e00c9ca77e4a8ffd24d8c6f965753be0040",
+          "sourceBlob": "e73d2e00c9ca77e4a8ffd24d8c6f965753be0040",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/040_evaluation_cost_quantity_compatibility.sql",
+          "destinationBlob": "99dddfe7f4df67ece7a0ce5f14d430400d385d5e",
+          "sourceBlob": "99dddfe7f4df67ece7a0ce5f14d430400d385d5e",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/041_evaluation_criteria_timestamp_compatibility.sql",
+          "destinationBlob": "7b69f25f056e879bd7c7fca664246790e3538a02",
+          "sourceBlob": "7b69f25f056e879bd7c7fca664246790e3538a02",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/042_evaluation_stability_metadata_compatibility.sql",
+          "destinationBlob": "b316b687d3f4b7372f85d883ed9b7ce267bea3a1",
+          "sourceBlob": "b316b687d3f4b7372f85d883ed9b7ce267bea3a1",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/043_evaluation_alternative_metadata_compatibility.sql",
+          "destinationBlob": "4506c93f6cdff0f024e8bc33964fa839e08c2adb",
+          "sourceBlob": "4506c93f6cdff0f024e8bc33964fa839e08c2adb",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/044_item_master_reference_starter_data.sql",
+          "destinationBlob": "5c755da34c73fb1eb773e66188e2bd08d5dfb426",
+          "sourceBlob": "5c755da34c73fb1eb773e66188e2bd08d5dfb426",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/045_approval_activation_timestamps.sql",
+          "destinationBlob": "50d446a79170f8d65636850a8382cc0dd04263ad",
+          "sourceBlob": "50d446a79170f8d65636850a8382cc0dd04263ad",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/046_maintenance_approval_reporting_policy.sql",
+          "destinationBlob": "602957bcd6ce3039dd597abcbb4c61becca6f4e4",
+          "sourceBlob": "602957bcd6ce3039dd597abcbb4c61becca6f4e4",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/047_whole_request_priorities.sql",
+          "destinationBlob": "ee9251b896981bab61bfe296df247f01bef4174c",
+          "sourceBlob": "ee9251b896981bab61bfe296df247f01bef4174c",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/048_approval_hold_adjusted_timing.sql",
+          "destinationBlob": "186a04d0c7cfcb266abf2ccf23874460884c3024",
+          "sourceBlob": "186a04d0c7cfcb266abf2ccf23874460884c3024",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/049_preprocurement_technical_reviews.sql",
+          "destinationBlob": "eeb94cf3306d3bf4f4a3fcd7ef645fc271b28955",
+          "sourceBlob": "eeb94cf3306d3bf4f4a3fcd7ef645fc271b28955",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/050_device_demo_workspaces.sql",
+          "destinationBlob": "fa6c216f10abd8ee16a0808e0df40dd7ea9d9790",
+          "sourceBlob": "fa6c216f10abd8ee16a0808e0df40dd7ea9d9790",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/051_surgical_consignment.sql",
+          "destinationBlob": "88f0df9f4b9ddd7795790bdcdf11124ac6814271",
+          "sourceBlob": "88f0df9f4b9ddd7795790bdcdf11124ac6814271",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/052_surgical_consignment_supplier_scope_compatibility.sql",
+          "destinationBlob": "ef5b50a95c1748f40f15a0f2cc8aa4a61bd98a02",
+          "sourceBlob": "ef5b50a95c1748f40f15a0f2cc8aa4a61bd98a02",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/053_surgical_consignment_department_routing.sql",
+          "destinationBlob": "28f883219bfc9ee86de3c0614a8250101c848bd4",
+          "sourceBlob": "28f883219bfc9ee86de3c0614a8250101c848bd4",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/054_technical_review_and_delivery_workflow.sql",
+          "destinationBlob": "24640a1893e7d11755c6118b3b53036a80948793",
+          "sourceBlob": "24640a1893e7d11755c6118b3b53036a80948793",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/055_technical_proposal_scope_compatibility.sql",
+          "destinationBlob": "f87e00219324c2d7d1ff887cbff75501242524b1",
+          "sourceBlob": "f87e00219324c2d7d1ff887cbff75501242524b1",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/056_planning_authorization_scope.sql",
+          "destinationBlob": "2bab9f440514daf67a7cf2a510ffaf05418b37ad",
+          "sourceBlob": "2bab9f440514daf67a7cf2a510ffaf05418b37ad",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/057_autoassignment_authorization_scope.sql",
+          "destinationBlob": "3bd596964221d8955b34e2a299b93ebd0c637367",
+          "sourceBlob": "3bd596964221d8955b34e2a299b93ebd0c637367",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/058_financial_budget_authorization.sql",
+          "destinationBlob": "25407783defa9df7fab07382f0509d0124218e22",
+          "sourceBlob": "25407783defa9df7fab07382f0509d0124218e22",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/059_backend_contract_refresh.sql",
+          "destinationBlob": "0180942084deb338ad8e837840c2c9da845d1078",
+          "sourceBlob": "0180942084deb338ad8e837840c2c9da845d1078",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/060_permission_catalog_refresh.sql",
+          "destinationBlob": "6a6b78395ac770e0f32da27352fb09b45f9fdb11",
+          "sourceBlob": "6a6b78395ac770e0f32da27352fb09b45f9fdb11",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/061_ui_resource_catalog_refresh.sql",
+          "destinationBlob": "35775180e4b1b41fc0f0a028e30eaa940502d914",
+          "sourceBlob": "35775180e4b1b41fc0f0a028e30eaa940502d914",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/062_demand_planning_ui_policy_alignment.sql",
+          "destinationBlob": "5abf2a3d74d0e91567ec3059cfc266ffba36001b",
+          "sourceBlob": "5abf2a3d74d0e91567ec3059cfc266ffba36001b",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/063_backend_contract_verify.sql",
+          "destinationBlob": "fd7493d6d83bf3005284fe5e2d89eecc93c14377",
+          "sourceBlob": "fd7493d6d83bf3005284fe5e2d89eecc93c14377",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/064_contract_authorization_scope.sql",
+          "destinationBlob": "e49e6c8a95e793ac4348e0fee91d174b6ce401cf",
+          "sourceBlob": "e49e6c8a95e793ac4348e0fee91d174b6ce401cf",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/065_canonical_contract_finance.sql",
+          "destinationBlob": "cde9c3fb5abc0b76b2b43f11dd0297fb7a2bfb41",
+          "sourceBlob": "cde9c3fb5abc0b76b2b43f11dd0297fb7a2bfb41",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/066_contract_financial_reconciliation.sql",
+          "destinationBlob": "1e024dc2b48cdca66a7a1e8f5fcc18a411041192",
+          "sourceBlob": "1e024dc2b48cdca66a7a1e8f5fcc18a411041192",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/067_canonical_procurement_completion.sql",
+          "destinationBlob": "479cff7719c48ff5f868a57f0f96900e986478b1",
+          "sourceBlob": "479cff7719c48ff5f868a57f0f96900e986478b1",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/068_goods_receipt_acceptance_integration.sql",
+          "destinationBlob": "68b243474b32040ce26929d8628871b96883ef96",
+          "sourceBlob": "68b243474b32040ce26929d8628871b96883ef96",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/069_database_release_governance.sql",
+          "destinationBlob": "c46e465dd4a9b0208bce899cf519fc3efefa7af5",
+          "sourceBlob": "c46e465dd4a9b0208bce899cf519fc3efefa7af5",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/070_rfid_processing_recovery.sql",
+          "destinationBlob": "d8f55f316d8a3bacb8b773586967ebe0bf2e4b15",
+          "sourceBlob": "d8f55f316d8a3bacb8b773586967ebe0bf2e4b15",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/071_transactional_event_reliability.sql",
+          "destinationBlob": "3aec202aa28dbd43463dbc28368adbd8d860017b",
+          "sourceBlob": "3aec202aa28dbd43463dbc28368adbd8d860017b",
+          "unchanged": true
+        },
+        {
+          "path": "sql/manual/072_scop_operational_foundation.sql",
+          "destinationBlob": "6a8a85dfdb99570cc968f9c7813e7942fe8c3d8b",
+          "sourceBlob": "6a8a85dfdb99570cc968f9c7813e7942fe8c3d8b",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20260312_procure_to_pay.sql",
+          "destinationBlob": "6debdf0864f8fe494661b6b580d1abcb0ccc8b7b",
+          "sourceBlob": "6debdf0864f8fe494661b6b580d1abcb0ccc8b7b",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20260516_audit_registry_permissions.sql",
+          "destinationBlob": "11883d17553b6430460bc2582e8d388190ab476f",
+          "sourceBlob": "11883d17553b6430460bc2582e8d388190ab476f",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20260608_procurement_item_events.sql",
+          "destinationBlob": "b02aa66c89afdb65b2f3e9ac5797c0b3112cda78",
+          "sourceBlob": "b02aa66c89afdb65b2f3e9ac5797c0b3112cda78",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20260608_supplier_classification_principals.sql",
+          "destinationBlob": "31a42392042d393e502e792507c61da74b3878b8",
+          "sourceBlob": "31a42392042d393e502e792507c61da74b3878b8",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20260727_item_master_foundation.sql",
+          "destinationBlob": "1256c039eaf612be7ce6ce8c1785463ed7910d51",
+          "sourceBlob": "1256c039eaf612be7ce6ce8c1785463ed7910d51",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20260814_phase5a1_permissions.sql",
+          "destinationBlob": "c051ae78bbc36ca4764d2bd5073afe18d5ce10ec",
+          "sourceBlob": "c051ae78bbc36ca4764d2bd5073afe18d5ce10ec",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20260929_document_branding.sql",
+          "destinationBlob": "3fac378536723616c7f86e79750ea663bec8416c",
+          "sourceBlob": "3fac378536723616c7f86e79750ea663bec8416c",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/20261003_procurement_event_overage_decisions.sql",
+          "destinationBlob": "4c77ac911a25b0e79869935f71813af01b8eedcb",
+          "sourceBlob": "4c77ac911a25b0e79869935f71813af01b8eedcb",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/phase1b/01_stock_item_identity_columns.sql",
+          "destinationBlob": "31181c4356180271b59c59d910e010563343bd74",
+          "sourceBlob": "31181c4356180271b59c59d910e010563343bd74",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/phase1b/02_stock_item_mapping_tables.sql",
+          "destinationBlob": "c14f4cc46f6db4789e76e2483838f01518e054a4",
+          "sourceBlob": "c14f4cc46f6db4789e76e2483838f01518e054a4",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/phase1b/03_mapping_constraints_and_indexes.sql",
+          "destinationBlob": "d9e30a2d837acbd94ed3d11a97d7b403870a82fa",
+          "sourceBlob": "d9e30a2d837acbd94ed3d11a97d7b403870a82fa",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/phase1b/04_rls_and_permissions.sql",
+          "destinationBlob": "ca4f6ae824dacdc9e79c7952b03e97e9ba376494",
+          "sourceBlob": "ca4f6ae824dacdc9e79c7952b03e97e9ba376494",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/phase1b/05_reporting_views.sql",
+          "destinationBlob": "58572384ea8b4d3d34a8b84d469a2053c05abb99",
+          "sourceBlob": "58572384ea8b4d3d34a8b84d469a2053c05abb99",
+          "unchanged": true
+        },
+        {
+          "path": "sql/migrations/purchase-backend/sql/migrations/20260727_item_master_foundation_verify.sql",
+          "destinationBlob": "888248a9449fc4d8ede3ab9a176774870efbf5b4",
+          "sourceBlob": "888248a9449fc4d8ede3ab9a176774870efbf5b4",
+          "unchanged": true
+        },
+        {
+          "path": "sql/permissions_Table.sql",
+          "destinationBlob": "6d18d365e7453c5ada42ba462348557d2f3f485e",
+          "sourceBlob": "6d18d365e7453c5ada42ba462348557d2f3f485e",
+          "unchanged": true
+        },
+        {
+          "path": "sql/reports/aud001_phase5a_reconciliation.sql",
+          "destinationBlob": "9faf5b9e514464a536e6f7fc5b74e31928d31f57",
+          "sourceBlob": "9faf5b9e514464a536e6f7fc5b74e31928d31f57",
+          "unchanged": true
+        },
+        {
+          "path": "sql/stock_item_requests.sql",
+          "destinationBlob": "b58bb8b9b0580da8678d954c95b71f33c2640fca",
+          "sourceBlob": "b58bb8b9b0580da8678d954c95b71f33c2640fca",
+          "unchanged": true
+        },
+        {
+          "path": "sql/verification/031_p2p_batch1_supplier_backfill.sql",
+          "destinationBlob": "87d318870be2fe4335c9a8e0f4f69945840c9266",
+          "sourceBlob": "87d318870be2fe4335c9a8e0f4f69945840c9266",
+          "unchanged": true
+        },
+        {
+          "path": "sql/verification/20261005_development_stock_catalog_provenance.sql",
+          "destinationBlob": "0ec35eb65cff14cb8f08c2b88ded319aee099a65",
+          "sourceBlob": "0ec35eb65cff14cb8f08c2b88ded319aee099a65",
+          "unchanged": true
+        },
+        {
+          "path": "sql/verification/phase1b_post_migration.sql",
+          "destinationBlob": "c8de1dcc137ab0d2de2a326fdf01aee91e35afc6",
+          "sourceBlob": "c8de1dcc137ab0d2de2a326fdf01aee91e35afc6",
+          "unchanged": true
+        },
+        {
+          "path": "sql/verification/phase1b_pre_migration.sql",
+          "destinationBlob": "12ccd7c2cb63ab509cf8b56567a5612bab2bce72",
+          "sourceBlob": "12ccd7c2cb63ab509cf8b56567a5612bab2bce72",
+          "unchanged": true
+        },
+        {
+          "path": "sql/warehouses.sql",
+          "destinationBlob": "9004b87f7b9a19b02cbd59e566e1decd0a60d3ad",
+          "sourceBlob": "9004b87f7b9a19b02cbd59e566e1decd0a60d3ad",
+          "unchanged": true
+        }
+      ],
+      "independentBranches": [
+        {
+          "branch": "recovery/wici-database-20261107",
+          "sha": "2c2a4651a10a54a20a1f74dfade66260b8a1e46e",
+          "preservationRequired": true,
+          "comparison": {
+            "kind": "sync-dry-run",
+            "version": 1,
+            "app": "backend",
+            "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+            "destinationSha": "2c2a4651a10a54a20a1f74dfade66260b8a1e46e",
+            "previousSourceSha": null,
+            "previousDestinationSha": null,
+            "changeSet": [
+              {
+                "path": "database/releases/migration-inventory.json",
+                "action": "update",
+                "before": {
+                  "blob": "f2be4c7e19441a81564f935b8fb662937c587ba0",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "1dc18593f5c73af99b9112775524235e3406d26e",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "docs/database-inventory-path-compatibility.md",
+                "action": "delete",
+                "before": {
+                  "blob": "e24b03cb652e9dabb39de931a57f26d57fa28b83",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "docs/database-release-source-attestation-r3.json",
+                "action": "delete",
+                "before": {
+                  "blob": "f97d0b3830d9f2afdf6990cb8134029903b92e23",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "docs/database-release-source-attestation-r3.md",
+                "action": "delete",
+                "before": {
+                  "blob": "5b944f6c6c624a6cb5e1896973c19cfee238c33f",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "scripts/lib/databaseRelease/inventory.js",
+                "action": "update",
+                "before": {
+                  "blob": "24d56a6db1c7b3b43f251de2c9cd9696e42316f2",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "0e9ff7f319bde9e3e7a96e878e9dba8851689efa",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "sql/operator-recovery/wici-production-recovery.sql",
+                "action": "update",
+                "before": {
+                  "blob": "5d033b6cbfc0d271ab44704a39ebc279041f4221",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "9fa30dfb41e8bdd86f6b9835430fd8fba5017a96",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "tests/databaseReleaseGovernance.test.js",
+                "action": "update",
+                "before": {
+                  "blob": "b2c872eec41b54c36a9cacd5c81c927dd3c07815",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "32f189b89a2d32f4723ed817b677b8230d956bde",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "tests/databaseReleasePaths.test.js",
+                "action": "add",
+                "before": null,
+                "after": {
+                  "blob": "c65afa5f70f7d19f3f4b1f8f48d31a90e7e4fc55",
+                  "mode": "100644"
+                },
+                "conflict": null,
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "tests/wiciRecoveryProfiles.test.js",
+                "action": "update",
+                "before": {
+                  "blob": "631143f980f9750b4f83a479a593287579a21ded",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "5a5ac5e7eac427d8b90f1545cbb921c7b3759ebe",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              }
+            ],
+            "conflicts": 8,
+            "status": "REQUIRES_RECONCILIATION",
+            "writesPerformed": false,
+            "destinationCIRequired": true,
+            "autoMergeEnabled": false,
+            "publishEnabled": false,
+            "workingTreesUsed": false,
+            "planSha256": "feacfdb5f3620901f666742ae41625b06bf35064d1a784154acd0bb11d5c7239"
+          }
+        },
+        {
+          "branch": "codex/pg17-release-diagnostics",
+          "sha": "1541dd727e95700111f62ea93a30f1e6774f0fe5",
+          "preservationRequired": true,
+          "comparison": {
+            "kind": "sync-dry-run",
+            "version": 1,
+            "app": "backend",
+            "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+            "destinationSha": "1541dd727e95700111f62ea93a30f1e6774f0fe5",
+            "previousSourceSha": null,
+            "previousDestinationSha": null,
+            "changeSet": [
+              {
+                "path": "database/releases/migration-inventory.json",
+                "action": "update",
+                "before": {
+                  "blob": "95238399dff0c899d2d92d0639b1be0785a48349",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "1dc18593f5c73af99b9112775524235e3406d26e",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "docs/database-inventory-path-compatibility.md",
+                "action": "delete",
+                "before": {
+                  "blob": "e24b03cb652e9dabb39de931a57f26d57fa28b83",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "docs/database-release-source-attestation-r3.json",
+                "action": "delete",
+                "before": {
+                  "blob": "f97d0b3830d9f2afdf6990cb8134029903b92e23",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "docs/database-release-source-attestation-r3.md",
+                "action": "delete",
+                "before": {
+                  "blob": "5b944f6c6c624a6cb5e1896973c19cfee238c33f",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "docs/isolated-pg17-release-verification.md",
+                "action": "delete",
+                "before": {
+                  "blob": "791bf537e9d9cef6377e66c4c94683c7d51a3516",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "docs/isolated-pg17-source-binding.json",
+                "action": "delete",
+                "before": {
+                  "blob": "33781e979a01d3b5746cae3a8714d5cba38a77da",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "integration/releaseRoutineCatalog.postgres.js",
+                "action": "delete",
+                "before": {
+                  "blob": "bb6702f6b5dff9e4e6a9cbed3afdabb101ee08c5",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "scripts/captureIsolatedReleaseDiagnostic.js",
+                "action": "delete",
+                "before": {
+                  "blob": "5a755a60c2f2a949370301a9459059ad60a6bc03",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "scripts/lib/databaseRelease/catalog.js",
+                "action": "update",
+                "before": {
+                  "blob": "e99a252dc3917c18c0466bce0d321423e4aa6e5b",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "de32360dd04474d7a7c9742cb4e1601a8e39d338",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "scripts/lib/databaseRelease/inventory.js",
+                "action": "update",
+                "before": {
+                  "blob": "24d56a6db1c7b3b43f251de2c9cd9696e42316f2",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "0e9ff7f319bde9e3e7a96e878e9dba8851689efa",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "scripts/testReleaseRoutineCatalog.js",
+                "action": "delete",
+                "before": {
+                  "blob": "36838cb251291eea239066ba99c51180f986de12",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "services/databaseReleaseService.js",
+                "action": "update",
+                "before": {
+                  "blob": "93f4fbd5dcb1723ba79e3e0a7283d90e65b16eae",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "e6a84845285a8e917a529bf13714cc9c8fafdba1",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "sql/operator-recovery/wici-production-recovery.sql",
+                "action": "update",
+                "before": {
+                  "blob": "3d0e2e85afc7c0db3f79226d86b3482fcadf05d8",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "9fa30dfb41e8bdd86f6b9835430fd8fba5017a96",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "tests/databaseReleaseGovernance.test.js",
+                "action": "update",
+                "before": {
+                  "blob": "b2c872eec41b54c36a9cacd5c81c927dd3c07815",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "32f189b89a2d32f4723ed817b677b8230d956bde",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "tests/databaseReleasePaths.test.js",
+                "action": "add",
+                "before": null,
+                "after": {
+                  "blob": "c65afa5f70f7d19f3f4b1f8f48d31a90e7e4fc55",
+                  "mode": "100644"
+                },
+                "conflict": null,
+                "deletionRequiresExplicitReview": false
+              },
+              {
+                "path": "tests/databaseReleaseRoutines.test.js",
+                "action": "delete",
+                "before": {
+                  "blob": "3d88c63ba60677116fbabfbb470f838a45cacc23",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "tests/databaseReleaseVersions.test.js",
+                "action": "delete",
+                "before": {
+                  "blob": "767cae9b6e143c491dfd7ddbddfc43bd3d4e2d8f",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "tests/isolatedReleaseDiagnostic.test.js",
+                "action": "delete",
+                "before": {
+                  "blob": "fac98fcb8e118be052b8e56a935593ce30d069c7",
+                  "mode": "100644"
+                },
+                "after": null,
+                "conflict": "UNMANAGED_DESTINATION_FILE",
+                "deletionRequiresExplicitReview": true
+              },
+              {
+                "path": "tests/wiciRecoveryProfiles.test.js",
+                "action": "update",
+                "before": {
+                  "blob": "e55a7593bce4e54a43130d7cc1866a522a9d205b",
+                  "mode": "100644"
+                },
+                "after": {
+                  "blob": "5a5ac5e7eac427d8b90f1545cbb921c7b3759ebe",
+                  "mode": "100644"
+                },
+                "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+                "deletionRequiresExplicitReview": false
+              }
+            ],
+            "conflicts": 18,
+            "status": "REQUIRES_RECONCILIATION",
+            "writesPerformed": false,
+            "destinationCIRequired": true,
+            "autoMergeEnabled": false,
+            "publishEnabled": false,
+            "workingTreesUsed": false,
+            "planSha256": "cdeb153b212083d1af279e91639e8b0b6605c47eede671fd08673f1672cb0692"
+          }
+        }
+      ]
+    },
+    "frontend": {
+      "repository": "mhaider1129/purchase-frontend",
+      "plan": {
+        "kind": "sync-dry-run",
+        "version": 1,
+        "app": "frontend",
+        "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+        "destinationSha": "8a4ac51a52d30877c21e7300af9d4a1d5d410d6e",
+        "previousSourceSha": null,
+        "previousDestinationSha": null,
+        "changeSet": [],
+        "conflicts": 0,
+        "status": "NO_CHANGES",
+        "writesPerformed": false,
+        "destinationCIRequired": true,
+        "autoMergeEnabled": false,
+        "publishEnabled": false,
+        "workingTreesUsed": false,
+        "planSha256": "2f49ca17553fea6c774282b6b64e1903d5d1dcd33b448df3b60aeb6033abb864"
+      },
+      "sourceTreeSha256": "84c04dac7a381c9e59852fda2d8e7d1e957a8591d72802d2387fade2c9033a4f",
+      "changeSetSha256": "634aa73d7bb3e436920a915c6ecb97a17cf3a3c0003f1df3c124a86089396bc6",
+      "decisions": [],
+      "historicalSql": []
+    }
+  },
+  "proposalSha256": "5011ca9b02692a5d4888bf98a46bd53246897a083c03fc032f58fd02d08bf3ca"
+}

@@ -326,6 +326,7 @@ test("unreviewed symbolic-link Git modes cannot enter a synchronization plan", (
 test("ordinary workflow changes cannot introduce a hidden constant-false check", () => {
   const dir = path.resolve(__dirname, "../../.github/workflows");
   const allowed = new Set([
+    "repository-sync.yml", // Only its separately authorized publisher is disabled.
     "production-release.yml",
     "production-database-release.yml",
     "staging-release.yml",
