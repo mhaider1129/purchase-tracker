@@ -4,6 +4,8 @@ const fs = require("fs"),
   crypto = require("crypto");
 const root = path.resolve(__dirname, "../../..");
 const hash = (s) => crypto.createHash("sha256").update(s).digest("hex");
+// Manifest identities use POSIX separators; filesystem paths remain native.
+const repositoryPath = (file) => path.relative(root, file).replace(/\\/g, "/");
 function files(dir) {
   return fs
     .readdirSync(dir, { withFileTypes: true })
@@ -20,7 +22,7 @@ function inventory() {
     .filter((f) => f.endsWith(".sql"))
     .map((f) => {
       const content = fs.readFileSync(f, "utf8"),
-        name = path.relative(root, f),
+        name = repositoryPath(f),
         number = /sql\/manual\/(\d+)_/.exec(name)?.[1];
       const verification = /verify|verification|diagnostic|(?:^|\/)007_/i.test(
         name,
@@ -59,7 +61,7 @@ function inventory() {
     ...files(path.join(root, "integration/fixtures"))
       .filter((f) => f.endsWith(".sql"))
       .map((f) => ({
-        path: path.relative(root, f),
+        path: repositoryPath(f),
         id: null,
         classification: "test_fixture",
         sha256: hash(fs.readFileSync(f)),
@@ -151,8 +153,8 @@ function inventory() {
         ),
       ];
       return {
-        path: path.relative(root, f),
-        classification: /^(scripts|integration)\//.test(path.relative(root, f))
+        path: repositoryPath(f),
+        classification: /^(scripts|integration)\//.test(repositoryPath(f))
           ? "test_fixture_or_verification"
           : "runtime_compatibility_initialization",
         ddl_occurrences: matches.length,
@@ -167,14 +169,14 @@ function inventory() {
     "scripts/databaseRelease.js",
     "database/releases/runtime-modules.json",
     ...files(path.join(root, "database/releases/profiles")).map((f) =>
-      path.relative(root, f),
+      repositoryPath(f),
     ),
     ...files(path.join(root, "database/releases/prerequisites")).map((f) =>
-      path.relative(root, f),
+      repositoryPath(f),
     ),
     ...files(path.join(root, "scripts/lib/databaseRelease"))
       .filter((f) => f.endsWith(".js"))
-      .map((f) => path.relative(root, f)),
+      .map((f) => repositoryPath(f)),
     ...[
       "jobs",
       "constants",
@@ -193,7 +195,7 @@ function inventory() {
     ].flatMap((d) =>
       files(path.join(root, d))
         .filter((f) => /\.(js|json)$/.test(f))
-        .map((f) => path.relative(root, f)),
+        .map((f) => repositoryPath(f)),
     ),
   ]
     .sort()
