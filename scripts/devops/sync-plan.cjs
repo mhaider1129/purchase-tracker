@@ -4,6 +4,7 @@
 const path = require("node:path"),
   crypto = require("node:crypto"),
   { execFileSync } = require("node:child_process");
+const complete = require("./sync-tree.cjs");
 const sha = (value) => crypto.createHash("sha256").update(value).digest("hex");
 function safePath(p) {
   if (
@@ -12,7 +13,7 @@ function safePath(p) {
     /[\0\r\n]/.test(p) ||
     p.startsWith("/") ||
     /^[A-Za-z]:/.test(p) ||
-    p.split("/").some((x) => x === "." || x === "..")
+    p.split("/").some((x) => !x || x === "." || x === "..")
   )
     throw Error("NONCANONICAL_REPOSITORY_PATH");
   return p;
@@ -20,10 +21,13 @@ function safePath(p) {
 function excluded(p) {
   safePath(p);
   return (
-    /(?:^|\/)(?:\.git|\.github|node_modules|private-uploads|uploads|logs|cache|\.cache|coverage|build|dist)(?:\/|$)/i.test(
+    /(?:^|\/)(?:\.git|\.github|node_modules|private-uploads|uploads|logs|cache|\.cache|coverage|build|dist|secrets|credentials|\.ssh|\.aws)(?:\/|$)/i.test(
       p,
     ) ||
     /(?:^|\/)\.env(?:\.|$)/i.test(p) ||
+    /(?:^|\/)(?:CODEOWNERS|\.npmrc|\.netrc|\.gitconfig|\.pypirc|\.yarnrc(?:\.[^/]*)?|credentials(?:\.[^/]*)?|service-account[^/]*\.json)$/i.test(
+      p,
+    ) ||
     /\.(?:log|pem|key|p12|pfx|sqlite|dump|bak)$/i.test(p)
   );
 }
@@ -41,34 +45,52 @@ function commit(repo, ref) {
   if (resolved !== ref) throw Error("COMMIT_BINDING_MISMATCH");
   return resolved;
 }
-function tree(repo, ref, prefix = "") {
+function fullTree(repo, ref, prefix = "") {
   commit(repo, ref);
   const rows = git(
     repo,
     "ls-tree",
     "-r",
+    "-t",
     "-z",
-    ref,
-    ...(prefix ? ["--", prefix] : []),
+    prefix ? `${ref}:${prefix.replace(/\/$/, "")}` : ref,
   )
     .split("\0")
-    .filter(Boolean);
-  const result = new Map(),
-    seen = new Map();
-  for (const row of rows) {
-    const at = row.indexOf("\t"),
-      [mode, type, id] = row.slice(0, at).split(" ");
-    const p = safePath(row.slice(at + 1).slice(prefix.length));
+    .filter(Boolean)
+    .map((row) => {
+      const at = row.indexOf("\t"),
+        [mode, type, id] = row.slice(0, at).split(" ");
+      return { path: row.slice(at + 1), mode, type, sha: id };
+    });
+  const expected = git(
+    repo,
+    "rev-parse",
+    prefix ? `${ref}:${prefix.replace(/\/$/, "")}` : `${ref}^{tree}`,
+  ).trim();
+  return complete.parse(rows, safePath, expected);
+}
+function managed(full) {
+  const result = new Map();
+  for (const [p, row] of full) {
     if (excluded(p)) continue;
-    if ((mode !== "100644" && mode !== "100755") || type !== "blob")
+    if (!["100644", "100755"].includes(row.mode) || row.type !== "blob")
       throw Error("SUBMODULE_OR_SYMLINK_REQUIRES_REVIEW");
-    const folded = p.toLowerCase();
-    if (seen.has(folded) && seen.get(folded) !== p)
-      throw Error("CASE_COLLISION_REQUIRES_REVIEW");
-    seen.set(folded, p);
-    result.set(p, { blob: id, mode });
+    result.set(p, { blob: row.blob, mode: row.mode });
   }
   return result;
+}
+function tree(repo, ref, prefix = "") {
+  return managed(fullTree(repo, ref, prefix));
+}
+// Read-only analysis may describe SQL differences; prepare blocks those rows
+// and publish independently reprojects with immutable-SQL enforcement.
+function projection(options, changeSet) {
+  return complete.project(
+    fullTree(options.sourceRepo, options.sourceSha, `purchase-${options.app}/`),
+    fullTree(options.destinationRepo, options.destinationSha),
+    changeSet,
+    { safePath, excluded, preserveSql: false },
+  );
 }
 const same = (a, b) => JSON.stringify(a || null) === JSON.stringify(b || null);
 function changes(source, destination, oldSource, oldDestination) {
@@ -151,6 +173,10 @@ function plan({
     priorDest = tree(destinationRepo, previousDestinationSha);
   }
   const changeSet = changes(source, dest, priorSource, priorDest);
+  projection(
+    { sourceRepo, destinationRepo, sourceSha, destinationSha, app },
+    changeSet,
+  );
   const result = {
     kind: "sync-dry-run",
     version: 1,
@@ -216,4 +242,13 @@ if (require.main === module) {
     process.exitCode = 1;
   }
 }
-module.exports = { safePath, excluded, tree, changes, plan, args };
+module.exports = {
+  safePath,
+  excluded,
+  tree,
+  fullTree,
+  projection,
+  changes,
+  plan,
+  args,
+};
