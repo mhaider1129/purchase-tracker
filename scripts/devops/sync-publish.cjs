@@ -6,6 +6,7 @@ const cp = require("node:child_process"),
   fs = require("node:fs"),
   os = require("node:os"),
   path = require("node:path");
+const complete = require("./sync-tree.cjs");
 const planner = require("./sync-plan.cjs"),
   security = require("./security.cjs");
 const repositories = {
@@ -139,6 +140,7 @@ function prepare(options, policy, ci) {
     plan,
     ci,
     sourceTreeSha256,
+    projection: planner.projection(options, plan.changeSet).summary,
     policySha256: digest(policy),
   };
   return {
@@ -278,6 +280,7 @@ async function publish(
       plan: prepared.plan,
       ci: prepared.ci,
       sourceTreeSha256: prepared.sourceTreeSha256,
+      projection: prepared.projection,
       policySha256: prepared.policySha256,
     }) !== prepared.publicationSha256
   )
@@ -325,7 +328,30 @@ async function publish(
     "GET",
     `${prefix}/git/commits/${plan.destinationSha}`,
   );
-  const tree = [];
+  const sourceFull = planner.fullTree(
+    sourceRepo,
+    plan.sourceSha,
+    `purchase-${app}/`,
+  );
+  const destinationFull = complete.remote(
+    await api("GET", `${prefix}/git/trees/${parent.tree.sha}?recursive=1`),
+    parent.tree.sha,
+    planner.safePath,
+  );
+  const projected = complete.project(
+    sourceFull,
+    destinationFull,
+    plan.changeSet,
+    {
+      safePath: planner.safePath,
+      excluded: planner.excluded,
+      preserveSql: true,
+    },
+  );
+  if (!same(projected.summary, prepared.projection))
+    throw Error("PUBLICATION_FULL_TREE_BINDING_MISMATCH");
+  // Upload changed source blobs only. Rebuild the final tree from its complete
+  // verified leaf manifest; no implicit base-tree replacements/deletions.
   for (const { row, data } of files) {
     if (data) {
       const b = await api("POST", `${prefix}/git/blobs`, {
@@ -335,17 +361,20 @@ async function publish(
       if (b.sha !== row.after.blob)
         throw Error("UPLOADED_BLOB_IDENTITY_MISMATCH");
     }
-    tree.push({
-      path: row.path,
-      mode: (row.after || row.before).mode,
-      type: "blob",
-      sha: row.after?.blob || null,
-    });
   }
-  const t = await api("POST", `${prefix}/git/trees`, {
-    base_tree: parent.tree.sha,
-    tree,
-  });
+  const tree = complete
+    .ordered(projected.entries)
+    .map(([path, e]) => ({ path, mode: e.mode, type: e.type, sha: e.blob }));
+  const t = await api("POST", `${prefix}/git/trees`, { tree });
+  if (t.sha !== projected.summary.gitTreeSha)
+    throw Error("GENERATED_GIT_TREE_IDENTITY_MISMATCH");
+  const generated = complete.remote(
+    await api("GET", `${prefix}/git/trees/${t.sha}?recursive=1`),
+    t.sha,
+    planner.safePath,
+  );
+  if (!same(complete.ordered(generated), complete.ordered(projected.entries)))
+    throw Error("GENERATED_GIT_TREE_CONTENT_MISMATCH");
   const proof = {
     repository: "mhaider1129/purchase-tracker",
     app,

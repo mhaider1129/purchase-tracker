@@ -102,7 +102,7 @@ function fixture(app = "backend") {
               {
                 name: policy.targets[app].requiredCheck,
                 app: { slug: "github-actions" },
-                head_sha: d0,
+                head_sha: state.head,
                 status: "completed",
                 conclusion: "success",
               },
@@ -117,6 +117,19 @@ function fixture(app = "backend") {
         message: git(dest, ["show", "-s", "--format=%B", sha]),
       };
     }
+    if (method === "GET" && p.startsWith("/git/trees/")) {
+      const sha = p.slice("/git/trees/".length).split("?")[0];
+      const rows = git(dest, ["ls-tree", "-r", "-t", "-z", sha])
+        .split("\0")
+        .filter(Boolean)
+        .map((row) => {
+          const at = row.indexOf("\t"),
+            [mode, type, id] = row.slice(0, at).split(" ");
+          return { path: row.slice(at + 1), mode, type, sha: id };
+        });
+      const response = { sha, truncated: false, tree: rows };
+      return state.treeResponse ? state.treeResponse(response) : response;
+    }
     if (method === "POST" && p === "/git/blobs")
       return {
         sha: git(
@@ -127,8 +140,17 @@ function fixture(app = "backend") {
       };
     if (method === "POST" && p === "/git/trees") {
       const env = { GIT_INDEX_FILE: path.join(dir, "temporary-index") };
-      git(dest, ["read-tree", body.base_tree], undefined, env);
-      for (const row of body.tree)
+      git(
+        dest,
+        body.base_tree
+          ? ["read-tree", body.base_tree]
+          : ["read-tree", "--empty"],
+        undefined,
+        env,
+      );
+      for (const row of [...body.tree].sort(
+        (a, b) => Number(!!a.sha) - Number(!!b.sha),
+      ))
         if (row.sha)
           git(
             dest,
@@ -674,5 +696,383 @@ test("checked-in bootstrap is deterministic metadata with no approved conflict o
   for (const row of proposal.targets.backend.historicalSql) {
     assert(row.unchanged);
     assert.equal(tree.get(row.path).blob, row.destinationBlob);
+  }
+});
+
+test("P1: directory replacements cannot remove config/.env or docs/CODEOWNERS", () => {
+  const f = fixture();
+  try {
+    f.write(f.dest, "config/.env", "SYNTHETIC_ONLY=preserve\n");
+    f.write(f.dest, "docs/CODEOWNERS", "* @synthetic-reviewer\n");
+    const d = f.commit(f.dest);
+    f.options.destinationSha = d;
+    f.options.previousDestinationSha = d;
+    f.write(f.source, "purchase-backend/config", "replacement\n");
+    f.write(f.source, "purchase-backend/docs", "replacement\n");
+    f.options.sourceSha = f.commit(f.source);
+    f.ci.commit = f.options.sourceSha;
+    assert.throws(() => f.prepare(), /PROTECTED|TREE/);
+    assert.equal(f.state.calls.length, 0);
+  } finally {
+    f.close();
+  }
+});
+
+for (const [oldPath, newPath] of [
+  ["runtime/shared/deep/.env", "runtime/shared"],
+  ["nested/.github/workflows/check.yml", "nested"],
+  ["local/CODEOWNERS", "local/CODEOWNERS/child.js"],
+  ["tls/client.pem", "tls/client.pem/readme.txt"],
+])
+  test("P1: complete tree rejects structural replacement of " + oldPath, () => {
+    const f = fixture();
+    try {
+      f.write(f.dest, oldPath, "synthetic protected content\n");
+      const d = f.commit(f.dest);
+      f.options.previousDestinationSha = d;
+      f.options.destinationSha = d;
+      f.write(f.source, "purchase-backend/" + newPath, "source addition\n");
+      f.options.sourceSha = f.commit(f.source);
+      f.ci.commit = f.options.sourceSha;
+      assert.throws(() => f.prepare(), /PROTECTED|TREE/);
+      assert.equal(f.state.calls.length, 0);
+    } finally {
+      f.close();
+    }
+  });
+test("P1: ordinary bootstrap/deletion approvals cannot authorize removal of protected entries", () => {
+  const f = fixture();
+  try {
+    f.write(f.dest, "config/.env", "synthetic protected\n");
+    const d = f.commit(f.dest);
+    f.options.destinationSha = d;
+    f.options.previousDestinationSha = d;
+    f.write(f.source, "purchase-backend/config", "replacement\n");
+    f.options.sourceSha = f.commit(f.source);
+    f.ci.commit = f.options.sourceSha;
+    const before = planner.fullTree(f.dest, d).get("config/.env");
+    f.policy.approvedDeletions = [
+      {
+        app: "backend",
+        path: "config/.env",
+        sourceTreeSha256: pub.digest([
+          ...planner.tree(f.source, f.options.sourceSha, "purchase-backend/"),
+        ]),
+        destinationSha: d,
+        before: { blob: before.blob, mode: before.mode },
+      },
+    ];
+    f.policy.targets.backend.approvedBootstrap = {
+      decisions: [
+        { path: "config/.env", decision: "adopt-source", before, after: null },
+      ],
+    };
+    assert.throws(() => f.prepare(), /PROTECTED|TREE/);
+    const full = require("./sync-tree.cjs");
+    assert.throws(
+      () =>
+        full.project(
+          planner.fullTree(f.source, f.options.sourceSha, "purchase-backend/"),
+          planner.fullTree(f.dest, d),
+          [
+            {
+              path: "config/.env",
+              before: { blob: before.blob, mode: before.mode },
+              after: null,
+            },
+          ],
+          planner,
+        ),
+      /PROTECTED_TREE_OPERATION/,
+    );
+  } finally {
+    f.close();
+  }
+});
+test("P1: legitimate sibling changes retain all protected entries in the generated full Git tree", async () => {
+  const f = fixture();
+  try {
+    for (const p of [
+      "config/.env",
+      "docs/CODEOWNERS",
+      ".github/workflows/check.yml",
+      "private-uploads/recovery.txt",
+    ]) {
+      f.write(f.dest, p, "protected fixture\n");
+    }
+    const d = f.commit(f.dest);
+    f.options.destinationSha = d;
+    f.options.previousDestinationSha = d;
+    f.state.head = d;
+    const before = planner.fullTree(f.dest, d);
+    f.write(f.source, "purchase-backend/config/new.js", "legitimate sibling\n");
+    f.options.sourceSha = f.commit(f.source);
+    f.ci.commit = f.options.sourceSha;
+    const p = f.prepare(),
+      r = await pub.publish(f.api, p, f.source, f.policy, p.publicationSha256);
+    const after = planner.fullTree(f.dest, r.commit);
+    for (const [name, row] of before)
+      if (require("./sync-tree.cjs").protectedPath(name, planner.excluded))
+        assert.deepEqual(after.get(name), row);
+    assert.equal(
+      f.git(f.dest, ["rev-parse", r.commit + "^{tree}"]),
+      p.projection.gitTreeSha,
+    );
+    assert.equal(
+      f.state.calls.filter(
+        (c) => c.method === "GET" && c.route.includes("/git/trees/"),
+      ).length,
+      2,
+    );
+  } finally {
+    f.close();
+  }
+});
+for (const [name, mutate] of [
+  [
+    "truncated",
+    (r) => {
+      r.truncated = true;
+    },
+  ],
+  [
+    "omitted protected entry",
+    (r) => {
+      r.tree = r.tree.filter((e) => e.path !== ".env");
+    },
+  ],
+  [
+    "duplicate path",
+    (r) => {
+      r.tree.push(r.tree[0]);
+    },
+  ],
+  [
+    "wrong root identity",
+    (r) => {
+      r.sha = "f".repeat(40);
+    },
+  ],
+  [
+    "unknown entry mode",
+    (r) => {
+      r.tree[0].mode = "100600";
+    },
+  ],
+])
+  test(
+    "P1: remote full tree " + name + " blocks before any write",
+    async () => {
+      const f = fixture();
+      try {
+        f.state.treeResponse = (r) => {
+          mutate(r);
+          return r;
+        };
+        const p = f.prepare();
+        await assert.rejects(
+          pub.publish(f.api, p, f.source, f.policy, p.publicationSha256),
+        );
+        assert(!f.state.calls.some((c) => c.method !== "GET"));
+      } finally {
+        f.close();
+      }
+    },
+  );
+test("P1: unexpected generated Git tree identity blocks commits and branch creation", async () => {
+  const f = fixture();
+  try {
+    const p = f.prepare(),
+      api = async (...args) => {
+        const r = await f.api(...args);
+        return args[0] === "POST" && args[1].endsWith("/git/trees")
+          ? { sha: "f".repeat(40) }
+          : r;
+      };
+    await assert.rejects(
+      pub.publish(api, p, f.source, f.policy, p.publicationSha256),
+      /GENERATED_GIT_TREE_IDENTITY_MISMATCH/,
+    );
+    assert(
+      !f.state.calls.some(
+        (c) => c.method === "POST" && /\/(?:commits|refs|pulls)$/.test(c.route),
+      ),
+    );
+  } finally {
+    f.close();
+  }
+});
+test("P1: generated tree metadata must retain protected entries before commit creation", async () => {
+  const f = fixture();
+  try {
+    let reads = 0;
+    f.state.treeResponse = (r) => {
+      if (++reads === 2) r.tree = r.tree.filter((e) => e.path !== ".env");
+      return r;
+    };
+    const p = f.prepare();
+    await assert.rejects(
+      pub.publish(f.api, p, f.source, f.policy, p.publicationSha256),
+      /FULL_TREE/,
+    );
+    assert(
+      !f.state.calls.some(
+        (c) => c.method === "POST" && /\/(?:commits|refs|pulls)$/.test(c.route),
+      ),
+    );
+  } finally {
+    f.close();
+  }
+});
+test("P1: implicit changes to destination-only descendants cannot hide in a partial change list", () => {
+  const f = fixture();
+  try {
+    f.write(f.dest, "independent/recovery.js", "preserve\n");
+    const d = f.commit(f.dest);
+    f.write(f.source, "purchase-backend/independent", "replacement\n");
+    const s = f.commit(f.source),
+      after = planner.tree(f.source, s, "purchase-backend/").get("independent");
+    assert.throws(
+      () =>
+        require("./sync-tree.cjs").project(
+          planner.fullTree(f.source, s, "purchase-backend/"),
+          planner.fullTree(f.dest, d),
+          [{ path: "independent", before: null, after }],
+          planner,
+        ),
+      /IMPLICIT_TREE_REPLACEMENT/,
+    );
+  } finally {
+    f.close();
+  }
+});
+for (const direction of ["directory-to-file", "file-to-directory"])
+  test(
+    "P1: fully reviewed managed " +
+      direction +
+      " changes preserve protected siblings",
+    async () => {
+      const f = fixture();
+      try {
+        const old =
+            direction === "directory-to-file" ? "manual/old.txt" : "manual",
+          next =
+            direction === "directory-to-file" ? "manual" : "manual/new.txt";
+        f.write(f.source, "purchase-backend/" + old, "old managed\n");
+        const s0 = f.commit(f.source);
+        f.write(f.dest, "app.js", "enhancement\n");
+        f.write(f.dest, old, "old managed\n");
+        const d0 = f.commit(f.dest);
+        fs.rmSync(path.join(f.source, "purchase-backend/manual"), {
+          recursive: true,
+          force: true,
+        });
+        f.write(f.source, "purchase-backend/" + next, "new managed\n");
+        const s1 = f.commit(f.source);
+        Object.assign(f.options, {
+          sourceSha: s1,
+          destinationSha: d0,
+          previousSourceSha: s0,
+          previousDestinationSha: d0,
+        });
+        f.ci.commit = s1;
+        f.state.head = d0;
+        const raw = planner.plan(f.options),
+          sourceTreeSha256 = pub.digest([
+            ...planner.tree(f.source, s1, "purchase-backend/"),
+          ]);
+        f.policy.approvedDeletions = raw.changeSet
+          .filter((r) => !r.after)
+          .map((r) => ({
+            app: "backend",
+            path: r.path,
+            before: r.before,
+            sourceTreeSha256,
+            destinationSha: d0,
+          }));
+        const p = f.prepare(),
+          r = await pub.publish(
+            f.api,
+            p,
+            f.source,
+            f.policy,
+            p.publicationSha256,
+          );
+        assert.equal(
+          f.git(f.dest, ["show", r.commit + ":" + next]),
+          "new managed",
+        );
+        assert.equal(
+          f.git(f.dest, ["show", r.commit + ":.env"]),
+          "PRESERVE_DESTINATION=synthetic",
+        );
+      } finally {
+        f.close();
+      }
+    },
+  );
+
+test("P1: excluded symlinks and Gitlinks remain opaque and unchanged", async () => {
+  const f = fixture();
+  try {
+    f.write(f.dest, "private-uploads/link", "opaque-symlink-target\n");
+    f.git(f.dest, ["add", "private-uploads/link"]);
+    const blob = f.git(f.dest, ["rev-parse", ":private-uploads/link"]);
+    f.git(f.dest, [
+      "update-index",
+      "--cacheinfo",
+      "120000",
+      blob,
+      "private-uploads/link",
+    ]);
+    f.git(f.dest, [
+      "update-index",
+      "--add",
+      "--cacheinfo",
+      "160000",
+      f.d0,
+      ".github/opaque-submodule",
+    ]);
+    f.git(f.dest, [
+      "commit",
+      "--quiet",
+      "-m",
+      "synthetic opaque protected entries",
+    ]);
+    const d = f.git(f.dest, ["rev-parse", "HEAD"]);
+    f.options.previousDestinationSha = d;
+    f.options.destinationSha = d;
+    f.state.head = d;
+    const before = planner.fullTree(f.dest, d),
+      p = f.prepare(),
+      r = await pub.publish(f.api, p, f.source, f.policy, p.publicationSha256),
+      after = planner.fullTree(f.dest, r.commit);
+    for (const name of ["private-uploads/link", ".github/opaque-submodule"])
+      assert.deepEqual(after.get(name), before.get(name));
+  } finally {
+    f.close();
+  }
+});
+test("P1: projected tree hashes match Git for directory sort boundaries and UTF-8 paths", async () => {
+  const f = fixture();
+  try {
+    f.write(f.source, "purchase-backend/assets/data.txt", "data\n");
+    f.write(f.source, "purchase-backend/assets.txt", "sibling\n");
+    f.write(f.source, "purchase-backend/ملف.txt", "UTF-8 fixture\n");
+    f.options.sourceSha = f.commit(f.source);
+    f.ci.commit = f.options.sourceSha;
+    const p = f.prepare(),
+      r = await pub.publish(f.api, p, f.source, f.policy, p.publicationSha256);
+    assert.equal(
+      f.git(f.dest, ["rev-parse", r.commit + "^{tree}"]),
+      p.projection.gitTreeSha,
+    );
+    const request = f.state.calls.find(
+      (c) => c.method === "POST" && c.route.endsWith("/git/trees"),
+    );
+    assert.equal(request.body.base_tree, undefined);
+    assert(request.body.tree.some((e) => e.path === ".env"));
+  } finally {
+    f.close();
   }
 });
