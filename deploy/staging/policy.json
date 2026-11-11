@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "externalStagingEnabled": false,
+  "productionEnabled": false,
+  "syntheticOnly": true,
+  "nodeImage": "node:22-bookworm-slim@sha256:5ec23b7c622b00547753bc6ffd78085dd868a68aeb41c8e0a1418f033e13d96d",
+  "postgresImages": {
+    "16": "postgres:16-bookworm@sha256:efedf3595f1d6f415c08568ba171029bf54052e754cc9f030e3f2412b21f3d67",
+    "17": "postgres:17-bookworm@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994"
+  },
+  "requiredContract": "hospital-erp-2026-11-scop1",
+  "maxArtifactAgeDays": 14,
+  "manualOnly": ["073_wici_observed_schema_recovery"],
+  "activation": "Separate reviewed authorization, isolated infrastructure and protected environments required"
+}
