@@ -213,6 +213,9 @@ async function run({ input, major = "16", local = false }) {
     await db.query(
       "INSERT INTO institutes(id,name) VALUES(74002,'Foreign synthetic'); INSERT INTO departments(id,name,type,institute_id) VALUES(74002,'Foreign synthetic','Medical',74002); INSERT INTO users(id,name,email,password,role,institute_id,department_id,is_active) VALUES(74002,'Foreign synthetic','foreign-staging@example.invalid','no-login-fixture','requester',74002,74002,true); INSERT INTO requests(id,request_type,status,requester_id,department_id,institute_id) VALUES(74002,'Non-Stock','Approved',74002,74002,74002)",
     );
+    await db.query(
+      "INSERT INTO requests(id,request_type,status,requester_id,department_id,institute_id) VALUES(74001,'Non-Stock','Approved',74001,74001,74001)",
+    );
     await db.end();
     db = null;
     docker("network", "disconnect", "bridge", pg);
@@ -350,9 +353,11 @@ async function run({ input, major = "16", local = false }) {
     await check("/api/auth/me", 200, {
       headers: { Authorization: `Bearer ${session.token}` },
     });
-    // Existing request object authorization must reject a foreign institute ID.
-    // The route's established policy returns 403 rather than exposing payloads.
-    await check("/api/requests/74002/full-details", 403, {
+    // First prove the real route works, then prove it hides the foreign object.
+    await check("/api/requests/74001/full-details", 200, {
+      headers: { Authorization: `Bearer ${session.token}` },
+    });
+    await check("/api/requests/74002/full-details", 404, {
       headers: { Authorization: `Bearer ${session.token}` },
     });
     report.checks.push("foreign_institute_request_denied");
