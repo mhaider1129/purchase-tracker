@@ -12,7 +12,7 @@ const json = (p) => JSON.parse(read(p));
 const git = (...args) =>
   execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 const relevant = (p) =>
-  /^(?:purchase-backend\/|purchase-frontend\/|scripts\/(?:quality|devops)\/|deploy\/|docs\/devops\/|\.gitattributes$|\.gitignore$|\.github\/workflows\/)/.test(
+  /^(?:purchase-backend\/|purchase-frontend\/|scripts\/(?:quality|devops|staging)\/|deploy\/|docs\/devops\/|\.gitattributes$|\.gitignore$|\.github\/workflows\/)/.test(
     p,
   );
 function parseStatus(status) {
@@ -269,7 +269,7 @@ function syntax() {
   )
     .split("\0")
     .filter((p) =>
-      /^(purchase-backend\/|scripts\/(?:quality|devops)\/).*\.(js|cjs)$/.test(
+      /^(purchase-backend\/|scripts\/(?:quality|devops|staging)\/).*\.(js|cjs)$/.test(
         p,
       ),
     );

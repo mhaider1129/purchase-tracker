@@ -1,0 +1,119 @@
+name: Isolated staging rehearsal
+on:
+  workflow_run:
+    workflows: [Release quality]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Successful master-push Release quality run for this exact dispatch commit
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: isolated-rehearsal-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: false
+jobs:
+  runtime:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository) }}
+    strategy:
+      fail-fast: false
+      matrix:
+        postgres: ["16", "17"]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Authenticate immutable CI artifacts and actual checkout
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_CI_RUN: ${{ github.event.workflow_run.id || inputs.ci_run_id }}
+        run: node scripts/staging/prepare.cjs "$SOURCE_CI_RUN"
+      - run: npm ci
+        working-directory: purchase-backend
+      - run: node scripts/devops/integrity.cjs --base-ref refs/remotes/origin/master
+      - run: node scripts/staging/migration-review.cjs
+      - name: Disposable database, real startup, same-origin HTTP smoke and rollback rehearsal
+        run: node scripts/staging/rehearse.cjs "${{ matrix.postgres }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: isolated-runtime-pg${{ matrix.postgres }}-attempt-${{ github.run_attempt }}
+          path: quality-results/staging/
+          if-no-files-found: error
+          retention-days: 30
+  transactions:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        gate:
+          [
+            schema,
+            p2p,
+            contracts,
+            contract-settlement,
+            contract-finance,
+            reconciliation,
+            request-workspace,
+            device-demos,
+            completion,
+            receipt-reporting,
+            governance,
+            rfid,
+            events,
+            scop-foundation,
+            guided-requests,
+            hosted-recovery,
+          ]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Verify successful source CI and matching artifact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_CI_RUN: ${{ github.event.workflow_run.id || inputs.ci_run_id }}
+        run: node scripts/staging/prepare.cjs "$SOURCE_CI_RUN"
+      - run: npm ci
+        working-directory: purchase-backend
+      - run: node scripts/devops/integrity.cjs --base-ref refs/remotes/origin/master
+      - run: node scripts/quality/release.cjs gate "${{ matrix.gate }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: staging-transactions-${{ matrix.gate }}-attempt-${{ github.run_attempt }}
+          path: quality-results/
+          if-no-files-found: error
+          retention-days: 30
+  readiness:
+    if: always()
+    needs: [runtime, transactions]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail closed on partial, skipped or failed rehearsal
+        env:
+          RUNTIME: ${{ needs.runtime.result }}
+          TRANSACTIONS: ${{ needs.transactions.result }}
+        run: |
+          test "$RUNTIME" = success
+          test "$TRANSACTIONS" = success
+          echo 'Disposable rehearsal passed. External staging, UAT and production remain unauthorized.' >> "$GITHUB_STEP_SUMMARY"
