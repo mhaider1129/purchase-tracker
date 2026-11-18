@@ -1,0 +1,120 @@
+{
+  "terraform": {
+    "required_version": ">= 1.6.0, < 2.0.0",
+    "required_providers": {
+      "hcloud": { "source": "hetznercloud/hcloud", "version": "~> 1.50.0" }
+    }
+  },
+  "variable": {
+    "staging_hcloud_token": { "type": "string", "sensitive": true },
+    "activation_authorized": { "type": "bool", "default": false },
+    "location": { "type": "string", "default": "fsn1" },
+    "server_type": { "type": "string", "default": "cx32" },
+    "admin_cidrs": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.admin_cidrs) > 0 && alltrue([for c in var.admin_cidrs : can(cidrhost(c, 0)) && c != \"0.0.0.0/0\" && c != \"::/0\"])}",
+        "error_message": "Explicit restricted administrator CIDRs required."
+      }
+    },
+    "staff_cidrs": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.staff_cidrs) > 0 && alltrue([for c in var.staff_cidrs : can(cidrhost(c, 0)) && c != \"0.0.0.0/0\" && c != \"::/0\"])}",
+        "error_message": "Hospital/VPN CIDRs required; no unrestricted staging access."
+      }
+    },
+    "admin_ssh_keys": { "type": "list(string)" },
+    "volume_size_gb": { "type": "number", "default": 40 }
+  },
+  "provider": { "hcloud": { "token": "${var.staging_hcloud_token}" } },
+  "resource": {
+    "hcloud_firewall": {
+      "staging": {
+        "name": "wici-isolated-staging",
+        "rule": [
+          {
+            "direction": "in",
+            "protocol": "tcp",
+            "port": "22",
+            "source_ips": "${var.admin_cidrs}"
+          },
+          {
+            "direction": "in",
+            "protocol": "tcp",
+            "port": "443",
+            "source_ips": "${var.staff_cidrs}"
+          },
+          {
+            "direction": "out",
+            "protocol": "tcp",
+            "port": "443",
+            "destination_ips": ["0.0.0.0/0"]
+          },
+          {
+            "direction": "out",
+            "protocol": "udp",
+            "port": "53",
+            "destination_ips": ["0.0.0.0/0"]
+          }
+        ],
+        "lifecycle": {
+          "precondition": [
+            {
+              "condition": "${var.activation_authorized}",
+              "error_message": "Separate staging provisioning authorization required."
+            }
+          ]
+        }
+      }
+    },
+    "hcloud_volume": {
+      "staging": {
+        "name": "wici-staging-synthetic-only",
+        "size": "${var.volume_size_gb}",
+        "location": "${var.location}",
+        "format": "ext4",
+        "labels": { "purpose": "wici-isolated-staging-v1" },
+        "lifecycle": {
+          "prevent_destroy": true,
+          "precondition": [
+            {
+              "condition": "${var.activation_authorized}",
+              "error_message": "Separate staging volume authorization required."
+            }
+          ]
+        }
+      }
+    },
+    "hcloud_server": {
+      "staging": {
+        "name": "wici-isolated-staging",
+        "server_type": "${var.server_type}",
+        "location": "${var.location}",
+        "image": "ubuntu-24.04",
+        "ssh_keys": "${var.admin_ssh_keys}",
+        "firewall_ids": ["${hcloud_firewall.staging.id}"],
+        "public_net": [{ "ipv4_enabled": true, "ipv6_enabled": false }],
+        "labels": {
+          "purpose": "wici-isolated-staging-v1",
+          "production": "false"
+        },
+        "user_data": "${file(\"${path.module}/../cloud-init.yaml\")}",
+        "lifecycle": { "prevent_destroy": true }
+      }
+    },
+    "hcloud_volume_attachment": {
+      "staging": {
+        "volume_id": "${hcloud_volume.staging.id}",
+        "server_id": "${hcloud_server.staging.id}",
+        "automount": false
+      }
+    }
+  },
+  "output": {
+    "staging_ipv4": { "value": "${hcloud_server.staging.ipv4_address}" },
+    "persistent_volume_device": {
+      "value": "${hcloud_volume.staging.linux_device}"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+[Unit]
+Description=Isolated SCOP staging control plane (activation requires separate approval)
+Requires=docker.service scop-staging-infra.service
+After=docker.service scop-staging-infra.service network-online.target
+RequiresMountsFor=/var/lib/scop-staging
+ConditionPathExists=/etc/scop-staging/ACTIVATION_APPROVED
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/scop-staging
+EnvironmentFile=/etc/scop-staging/compose.env
+ExecStart=/usr/bin/docker compose --profile separately-approved-agent up --no-deps --abort-on-container-exit agent
+ExecStop=/usr/bin/docker compose stop agent
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

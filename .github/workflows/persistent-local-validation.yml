@@ -1,0 +1,47 @@
+name: Persistent staging local integration
+on:
+  pull_request:
+  push:
+    branches: [master, "codex/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: persistent-local-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - run: npm ci
+        working-directory: purchase-backend
+      - run: npm ci
+        working-directory: purchase-frontend
+      - run: node scripts/quality/release.cjs gate frontend-build
+      # Disposable containers only. No host URL, environment, deployment key
+      # or external database is available to this synthetic integration test.
+      - run: node scripts/persistent/gateway.integration.cjs
+      - run: node scripts/persistent/build-agent.cjs
+      - run: node scripts/persistent/control.integration.cjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: persistent-local-gateway-attempt-${{ github.run_attempt }}
+          path: quality-results/persistent/local-gateway.json
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: persistent-local-diagnostics-attempt-${{ github.run_attempt }}
+          path: quality-results/staging/
+          if-no-files-found: error
+          retention-days: 14

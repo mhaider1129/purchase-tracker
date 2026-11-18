@@ -56,7 +56,7 @@ async function transactionalSwitch(candidate, previous, health, stop) {
     });
   }
 }
-async function run({ input, major = "16", local = false }) {
+async function run({ input, major = "16", local = false, onVerified }) {
   safety.stopped();
   assert(policy.postgresImages[major], "UNREVIEWED_POSTGRES_VERSION");
   if (!local && !process.env.GITHUB_ACTIONS)
@@ -119,7 +119,14 @@ async function run({ input, major = "16", local = false }) {
   };
   let db;
   try {
-    docker("network", "create", "--internal", name);
+    docker(
+      "network",
+      "create",
+      "--internal",
+      "--label",
+      `wici.scop.rehearsal=${token}`,
+      name,
+    );
     resources.push(["network", "rm", name]);
     const database = `p2p_disposable_${token}`;
     const envFile = path.join(dir, "postgres.env");
@@ -134,6 +141,8 @@ async function run({ input, major = "16", local = false }) {
       "--detach",
       "--name",
       pg,
+      "--label",
+      `wici.scop.rehearsal=${token}`,
       "--network",
       "bridge",
       ...proxyOff,
@@ -232,6 +241,8 @@ async function run({ input, major = "16", local = false }) {
     const build = (image, dockerfile, context) => {
       const args = [
         "build",
+        "--label",
+        `wici.scop.rehearsal=${token}`,
         "--build-arg",
         `NODE_IMAGE=${policy.nodeImage}`,
         "--file",
@@ -271,6 +282,8 @@ async function run({ input, major = "16", local = false }) {
       { mode: 0o600 },
     );
     const locked = [
+      "--label",
+      `wici.scop.rehearsal=${token}`,
       "--read-only",
       "--cap-drop=ALL",
       "--security-opt",
@@ -427,7 +440,20 @@ async function run({ input, major = "16", local = false }) {
     assert.equal(rollback.active, fe);
     report.rollback = rollback.rollback;
     report.status = "DISPOSABLE_REHEARSAL_PASSED_NOT_ACTIVATION_APPROVAL";
+    // Trusted in-process packager only; the CLI accepts no hook/module input.
+    // Export the exact smoke-tested image IDs before normal finally cleanup.
+    if (onVerified)
+      await onVerified(report, {
+        network: name,
+        backend: be,
+        frontend: fe,
+        database: pg,
+        owner: token,
+        runtimeEnv,
+        login: { email: "staging@example.invalid", password: authPassword },
+      });
   } catch (e) {
+    report.status = "BLOCKED";
     report.failure = {
       code: e.code || e.name,
       message: e.message
@@ -460,12 +486,28 @@ async function run({ input, major = "16", local = false }) {
     report.cleanupFailures = [];
     for (const args of resources.reverse())
       try {
+        const info = JSON.parse(
+          args[0] === "network"
+            ? docker("network", "inspect", args.at(-1))
+            : docker("inspect", args.at(-1)),
+        )[0];
+        assert.equal(
+          (info.Config?.Labels || info.Labels)?.["wici.scop.rehearsal"],
+          token,
+          "FOREIGN_REHEARSAL_RESOURCE_REFUSED",
+        );
         docker(...args);
       } catch {
         report.cleanupFailures.push(args[0]);
       }
     for (const image of images.reverse())
       try {
+        const info = JSON.parse(docker("image", "inspect", image))[0];
+        assert.equal(
+          info.Config.Labels?.["wici.scop.rehearsal"],
+          token,
+          "FOREIGN_REHEARSAL_IMAGE_REFUSED",
+        );
         docker("image", "rm", image);
       } catch {
         report.cleanupFailures.push("image");

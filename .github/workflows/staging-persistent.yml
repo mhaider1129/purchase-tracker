@@ -1,0 +1,70 @@
+name: Request persistent staging (activation disabled)
+on:
+  workflow_run:
+    workflows: [Isolated staging rehearsal]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Deploy, rollback to the preserved release, or reviewed crash recovery
+        type: choice
+        options: [deploy, rollback, recover]
+        default: deploy
+      ci_run_id:
+        description: Successful master-push Release quality run for this exact commit (deploy only)
+        type: string
+      rehearsal_run_id:
+        description: Successful same-commit PG16/17 and sixteen-suite rehearsal (deploy only)
+        type: string
+      previous_commit:
+        description: Exact preserved previous SHA (rollback/recover only)
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: persistent-staging-requests
+  cancel-in-progress: false
+jobs:
+  package:
+    # Separate activation PR + owner authorization required. No provisioning.
+    if: ${{ false }}
+    environment: scop-staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - name: Select upstream CI identity from authenticated rehearsal metadata
+        id: selection
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REHEARSAL: ${{ github.event.workflow_run.id || inputs.rehearsal_run_id }}
+          MANUAL_CI: ${{ inputs.ci_run_id }}
+          OPERATION: ${{ inputs.operation || 'deploy' }}
+        run: node scripts/persistent/select.cjs
+      - run: npm ci
+        working-directory: purchase-backend
+      - name: Export the exact smoke-tested images; never deploy from this runner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_CI_RUN: ${{ steps.selection.outputs.ci_run_id }}
+          REHEARSAL_RUN: ${{ github.event.workflow_run.id || inputs.rehearsal_run_id }}
+          STAGING_OPERATION: ${{ inputs.operation || 'deploy' }}
+          PREVIOUS_COMMIT: ${{ inputs.previous_commit }}
+        run: node scripts/persistent/package.cjs
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: persistent-staging-request-attempt-${{ github.run_attempt }}
+          path: release-artifacts/persistent-request/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+      - run: echo 'Approved request packaged. Host deployment status and hospital UAT are separate; production is disabled.' >> "$GITHUB_STEP_SUMMARY"

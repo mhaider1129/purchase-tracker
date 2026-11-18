@@ -330,6 +330,7 @@ test("ordinary workflow changes cannot introduce a hidden constant-false check",
     "production-release.yml",
     "production-database-release.yml",
     "staging-release.yml",
+    "staging-persistent.yml", // Separately authorized persistent-staging request only.
   ]);
   for (const f of fs.readdirSync(dir)) {
     const text = fs.readFileSync(path.join(dir, f), "utf8");

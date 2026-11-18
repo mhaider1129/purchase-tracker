@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "enabled": false,
+  "purpose": "wici-isolated-staging-v1",
+  "instance": "hospital-test",
+  "hostname": "staging.example.invalid",
+  "stateDirectory": "/var/lib/scop-staging",
+  "database": "scop_staging_synthetic",
+  "databasePrepared": false,
+  "isolationApprovalSha256": "OWNER_PROVIDED_SHA256_OF_VERIFIED_ISOLATION_RECORD",
+  "githubAppId": "OWNER_PROVIDED_STAGING_APP_ID",
+  "githubInstallationId": "OWNER_PROVIDED_INSTALLATION_ID",
+  "githubAppKeyFile": "/etc/scop-staging/github-app.pem",
+  "runtimeSecretsFile": "/etc/scop-staging/runtime.json",
+  "pollSeconds": 60
+}
