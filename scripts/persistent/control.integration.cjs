@@ -109,6 +109,10 @@ async function main() {
       },
       images = {};
     for (const [role, source] of Object.entries(sources)) {
+      // BuildKit's image cache is not the Docker daemon image store. Fetch
+      // the digest-pinned fixture explicitly on clean CI runners.
+      assert.match(source, /@sha256:[a-f0-9]{64}$/);
+      docker("pull", source);
       images[role] = docker("image", "inspect", "--format", "{{.Id}}", source);
       const tag = `scop-capsule-${role}:${commit}`;
       docker("tag", images[role], tag);
