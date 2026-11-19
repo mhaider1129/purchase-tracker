@@ -28,9 +28,9 @@ jobs:
       - run: node scripts/quality/release.cjs gate frontend-build
       # Disposable containers only. No host URL, environment, deployment key
       # or external database is available to this synthetic integration test.
-      - run: node scripts/persistent/gateway.integration.cjs
       - run: node scripts/persistent/build-agent.cjs
       - run: node scripts/persistent/control.integration.cjs
+      - run: node scripts/persistent/gateway.integration.cjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

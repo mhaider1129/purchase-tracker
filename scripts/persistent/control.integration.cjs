@@ -136,6 +136,25 @@ async function main() {
     }
     docker("save", "-o", path.join(dir, "images.tar"), ...tags);
     execFileSync("gzip", ["-n", path.join(dir, "images.tar")]);
+    // Only public image identity metadata, never config bodies or credentials.
+    console.log(
+      JSON.stringify({
+        dockerVersion: docker("version", "--format", "{{.Server.Version}}"),
+        driver: docker("info", "--format", "{{json .DriverStatus}}"),
+        expectedConfigIds: images,
+        archiveConfigs: JSON.parse(
+          execFileSync(
+            "python3",
+            [
+              "-c",
+              "import tarfile,json,sys;t=tarfile.open(sys.argv[1]);print(json.dumps([{ 'tags':x['RepoTags'],'config':x['Config']} for x in json.load(t.extractfile('manifest.json'))]))",
+              path.join(dir, "images.tar.gz"),
+            ],
+            { encoding: "utf8" },
+          ),
+        ),
+      }),
+    );
     fs.writeFileSync(
       path.join(dir, "capsule.json"),
       JSON.stringify({ commit, images }),
