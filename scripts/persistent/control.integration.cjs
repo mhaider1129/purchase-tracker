@@ -113,10 +113,26 @@ async function main() {
       // the digest-pinned fixture explicitly on clean CI runners.
       assert.match(source, /@sha256:[a-f0-9]{64}$/);
       docker("pull", source);
-      images[role] = docker("image", "inspect", "--format", "{{.Id}}", source);
       const tag = `scop-capsule-${role}:${commit}`;
-      docker("tag", images[role], tag);
+      // Pulled multi-platform references may identify an OCI index on newer
+      // Docker stores. They are not runtime config IDs and must NOT be accepted
+      // by the strict extractor. Exercise the real capsule producer's locally
+      // built-image path instead; the nonce also gives each role its own config.
+      const context = path.join(dir, role);
+      fs.mkdirSync(context);
+      fs.writeFileSync(path.join(context, "Dockerfile"), `FROM ${source}\n`);
+      docker(
+        "build",
+        "--label",
+        `wici.scop.control-test=${owner}`,
+        "--label",
+        `wici.scop.fixture-role=${role}`,
+        "-t",
+        tag,
+        context,
+      );
       tags.push(tag);
+      images[role] = docker("image", "inspect", "--format", "{{.Id}}", tag);
     }
     docker("save", "-o", path.join(dir, "images.tar"), ...tags);
     execFileSync("gzip", ["-n", path.join(dir, "images.tar")]);
@@ -152,7 +168,11 @@ async function main() {
       assert.equal(v.Config.Labels["wici.scop.control-test"], owner);
       docker("rm", "--force", name);
     }
-    for (const tag of tags) docker("image", "rm", tag);
+    for (const tag of tags) {
+      const info = JSON.parse(docker("image", "inspect", tag))[0];
+      assert.equal(info.Config.Labels["wici.scop.control-test"], owner);
+      docker("image", "rm", tag);
+    }
     fs.rmSync(dir, { recursive: true, force: true });
   }
   fs.mkdirSync(path.join(root, "quality-results/persistent"), {
