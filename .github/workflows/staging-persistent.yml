@@ -50,6 +50,8 @@ jobs:
           MANUAL_CI: ${{ inputs.ci_run_id }}
           OPERATION: ${{ inputs.operation || 'deploy' }}
         run: node scripts/persistent/select.cjs
+      - name: Verify canonical config-ID store on this disposable CI runner
+        run: node scripts/persistent/ci-docker-store.cjs
       - run: npm ci
         working-directory: purchase-backend
       - name: Export the exact smoke-tested images; never deploy from this runner

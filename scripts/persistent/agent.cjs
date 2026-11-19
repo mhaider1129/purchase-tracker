@@ -199,6 +199,7 @@ async function once(c, dependencies = {}) {
       hash.digest("hex") === m.archiveSha256,
       "IMAGE_ARCHIVE_CHECKSUM_MISMATCH",
     );
+    runtime.requireCanonicalImageStore();
     runtime.docker("load", "--input", path.join(extracted, "images.tar.gz"));
   } else
     core.assert(

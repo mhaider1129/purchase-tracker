@@ -22,7 +22,8 @@ function context(out) {
         else if (
           /\.(?:cjs|json|py)$/.test(file) &&
           !file.endsWith(".test.cjs") &&
-          !file.endsWith(".integration.cjs")
+          !file.endsWith(".integration.cjs") &&
+          !file.endsWith("/ci-docker-store.cjs")
         ) {
           fs.mkdirSync(path.dirname(path.join(out, file)), { recursive: true });
           fs.copyFileSync(path.join(root, file), path.join(out, file));

@@ -253,6 +253,7 @@ function adapter(c, paths = {}) {
   }
   return {
     async preflight(r) {
+      requireCanonicalImageStore();
       const n = safeRelease(r);
       const data = JSON.parse(docker("network", "inspect", n.data))[0];
       assert(data.Internal === true, "INTERNAL_DATABASE_NETWORK_REQUIRED");
@@ -548,6 +549,12 @@ async function verifyGateway(
   }
 }
 
+function requireCanonicalImageStore() {
+  return require("./image-store.cjs").requireCanonicalStore(
+    JSON.parse(docker("info", "--format", "{{json .}}")),
+  );
+}
+
 module.exports = {
   docker,
   names,
@@ -559,5 +566,6 @@ module.exports = {
   assertOwned,
   cleanupOwned,
   verifyGateway,
+  requireCanonicalImageStore,
   inspectOptional,
 };

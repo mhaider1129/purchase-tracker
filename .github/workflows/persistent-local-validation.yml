@@ -21,6 +21,8 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
+      - name: Verify canonical config-ID store on this disposable CI runner
+        run: node scripts/persistent/ci-docker-store.cjs
       - run: npm ci
         working-directory: purchase-backend
       - run: npm ci
