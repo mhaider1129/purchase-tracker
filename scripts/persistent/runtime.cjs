@@ -19,6 +19,7 @@ function docker(...args) {
       encoding: "utf8",
       env: { PATH: process.env.PATH, HOME: process.env.HOME },
       maxBuffer: 2 * 1024 * 1024,
+      timeout: 120000,
       stdio: ["ignore", "pipe", "pipe"],
     },
   ).trim();
@@ -29,6 +30,7 @@ function names(c, r) {
     be: "scb-" + identity.dns,
     fe: "scf-" + identity.dns,
     network: "scn-" + identity.dns,
+    probe: "scp-" + identity.dns,
     data: `scop-${c.instance}-data`,
     ingress: `scop-${c.instance}-ingress`,
     gateway: `scop-${c.instance}-gateway`,
@@ -163,12 +165,12 @@ function route(c, r) {
   const marker = r ? r.commit : "maintenance";
   return `https://${c.hostname} {\n tls /certs/tls.crt /certs/tls.key {\n client_auth {\n mode require_and_verify\n trust_pool file {\n pem_file /access/client-ca.pem\n }\n }\n }\n ${body}\n}\nhttp://127.0.0.1:8081 {\n respond /__release "${marker}"\n respond /__release-id "${r ? resourceIdentity(c, r).key : "maintenance"}"\n}\n`;
 }
-function secrets(c, r) {
+function secrets(c, r, read = fs.readFileSync) {
   assert(
     c.runtimeSecretsFile === "/etc/scop-staging/runtime.json",
     "FIXED_RUNTIME_SECRET_FILE_REQUIRED",
   );
-  const p = JSON.parse(fs.readFileSync(c.runtimeSecretsFile));
+  const p = JSON.parse(read(c.runtimeSecretsFile));
   assert(
     /^[A-Za-z0-9_-]{32,}$/.test(p.databasePassword || "") &&
       /^[A-Za-z0-9_-]{32,}$/.test(p.jwtSecret || ""),
@@ -184,8 +186,11 @@ function secrets(c, r) {
   u.password = p.databasePassword;
   return `DATABASE_URL=${u}\nDB_RELEASE_READONLY_URL=${u}\nJWT_SECRET=${p.jwtSecret}\nNODE_ENV=staging\nHOST=0.0.0.0\nPORT=15051\nDB_RELEASE_ENVIRONMENT=staging\nAPP_RELEASE_REF=${r.commit}\nDB_RELEASE_SCHEMA_PROFILE=canonical\nLIVE_ROUTING_ENABLED=false\nSCOP_FOUNDATION_ENABLED=false\nGUIDED_REQUESTS_ENABLED=false\nEMAIL_DRY_RUN=true\nSMTP_DRY_RUN=true\n`;
 }
-function adapter(c) {
-  const dir = c.stateDirectory;
+function adapter(c, paths = {}) {
+  // In-process integration supplies temporary paths; the agent exposes no CLI,
+  // request or configuration switch for overriding these production defaults.
+  const dir = paths.stateDirectory || c.stateDirectory;
+  const probeDirectory = paths.probeDirectory || "/etc/scop-staging/probe";
   function own(container, release) {
     const v = JSON.parse(docker("inspect", container))[0];
     assert(
@@ -264,7 +269,9 @@ function adapter(c) {
           "LOADED_IMAGE_ID_MISMATCH",
         );
       fs.mkdirSync(path.dirname(envFile(r)), { recursive: true, mode: 0o700 });
-      fs.writeFileSync(envFile(r), secrets(c, r), { mode: 0o600 });
+      fs.writeFileSync(envFile(r), secrets(c, r, paths.readSecrets), {
+        mode: 0o600,
+      });
       // Canonical CLI establishes a READ ONLY transaction; no runtime role override.
       docker(
         "run",
@@ -395,7 +402,7 @@ function adapter(c) {
         );
       }
       const script =
-        "Promise.all([fetch('http://127.0.0.1:8080/health'),fetch('http://127.0.0.1:8080/api/auth/me')]).then(async r=>{if(r[0].status!==200||r[1].status!==401)process.exit(1)}).catch(()=>process.exit(1))";
+        "Promise.all([fetch('http://127.0.0.1:8080/health',{signal:AbortSignal.timeout(4000)}),fetch('http://127.0.0.1:8080/api/auth/me',{signal:AbortSignal.timeout(4000)})]).then(async r=>{if(r[0].status!==200||r[1].status!==401)process.exit(1)}).catch(()=>process.exit(1))";
       let ok = false;
       for (let i = 0; i < 60; i++) {
         try {
@@ -407,6 +414,18 @@ function adapter(c) {
         }
       }
       assert(ok, "PERSISTENT_HTTP_SMOKE_FAILED");
+    },
+    async maintenanceStatus() {
+      own(`scop-${c.instance}-gateway`);
+      return (
+        docker(
+          "exec",
+          `scop-${c.instance}-gateway`,
+          "wget",
+          "-qO-",
+          "http://127.0.0.1:8081/__release",
+        ) === "maintenance"
+      );
     },
     async maintenance() {
       switchRoute(null);
@@ -437,9 +456,98 @@ function adapter(c) {
         ) === resourceIdentity(c, r).key,
         "GATEWAY_REQUEST_MARKER_MISMATCH",
       );
+      await verifyGateway(c, r, { probeDirectory });
     },
   };
 }
+async function verifyGateway(
+  c,
+  r,
+  {
+    probeDirectory = "/etc/scop-staging/probe",
+    run = docker,
+    exec = execFileSync,
+  } = {},
+) {
+  const n = names(c, r),
+    existing = inspectOptional("container", n.probe, run);
+  const remove = () => {
+    const value = inspectOptional("container", n.probe, run);
+    if (!value) return;
+    assertOwned(value, c, r, n.probe);
+    assert(
+      value.Image === r.images.frontend &&
+        value.Config.Labels["wici.scop.purpose"] === "gateway-probe",
+      "FOREIGN_PROBE_REFUSED",
+    );
+    // Terminating this isolated probe cannot stop a business worker. A lost
+    // client/runner may leave one behind; validate full ownership before removal.
+    run("rm", "--force", n.probe);
+  };
+  if (existing) remove();
+  const settings = {
+    gateway: n.gateway,
+    hostname: c.hostname,
+    commit: r.commit,
+    release: resourceIdentity(c, r).key,
+    ca: fs.readFileSync(path.join(probeDirectory, "server-ca.pem"), "utf8"),
+    cert: fs.readFileSync(path.join(probeDirectory, "client.crt"), "utf8"),
+    key: fs.readFileSync(path.join(probeDirectory, "client.key"), "utf8"),
+  };
+  const script = `(${require("./gateway-probe.cjs").gatewayProbe.toString()})(JSON.parse(require('node:fs').readFileSync(0,'utf8'))).then(r=>console.log(JSON.stringify(r))).catch(()=>{console.error('GATEWAY_HTTPS_VERIFICATION_FAILED');process.exit(1)});`;
+  try {
+    const output = exec(
+      "docker",
+      [
+        "--host=unix:///var/run/docker.sock",
+        "run",
+        "--name",
+        n.probe,
+        ...Object.entries(labels(c, r)).flatMap(([k, v]) => [
+          "--label",
+          `${k}=${v}`,
+        ]),
+        "--label",
+        "wici.scop.purpose=gateway-probe",
+        "--network",
+        n.ingress,
+        "--read-only",
+        "--cap-drop=ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--pids-limit",
+        "32",
+        "--memory",
+        "128m",
+        "-i",
+        ...noProxy,
+        r.images.frontend,
+        "node",
+        "-e",
+        script,
+      ],
+      {
+        input: JSON.stringify(settings),
+        encoding: "utf8",
+        env: { PATH: process.env.PATH, HOME: process.env.HOME },
+        timeout: 15000,
+        maxBuffer: 1024 * 1024,
+        stdio: ["pipe", "pipe", "pipe"],
+      },
+    );
+    const receipt = JSON.parse(String(output));
+    assert(
+      receipt.status === "GATEWAY_HTTPS_MTLS_VERIFIED" &&
+        receipt.commit === r.commit &&
+        receipt.release === settings.release,
+      "GATEWAY_RECEIPT_MISMATCH",
+    );
+    return receipt;
+  } finally {
+    remove();
+  }
+}
+
 module.exports = {
   docker,
   names,
@@ -450,5 +558,6 @@ module.exports = {
   labels,
   assertOwned,
   cleanupOwned,
+  verifyGateway,
   inspectOptional,
 };

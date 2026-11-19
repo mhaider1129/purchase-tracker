@@ -83,6 +83,7 @@ services:
       - /etc/scop-staging/config.json:/etc/scop-staging/config.json:ro
       - /etc/scop-staging/github-app.pem:/etc/scop-staging/github-app.pem:ro
       - /etc/scop-staging/runtime.json:/etc/scop-staging/runtime.json:ro
+      - /etc/scop-staging/probe:/etc/scop-staging/probe:ro
     tmpfs: [/tmp]
     networks: [control]
   egress:

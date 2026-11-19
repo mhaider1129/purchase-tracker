@@ -123,15 +123,11 @@ function atomic(file, value) {
   // Persistent host is Linux. Windows runs portability tests; Windows does not
   // support opening/fsyncing a directory through Node's ordinary file API.
   if (process.platform !== "win32") {
-    // Persistent hosts are Linux. Windows unit tests validate replacement bytes;
-    // opening/fsyncing a directory is not supported by Windows Node.
-    if (process.platform !== "win32") {
-      const dir = fs.openSync(path.dirname(file), "r");
-      try {
-        fs.fsyncSync(dir);
-      } finally {
-        fs.closeSync(dir);
-      }
+    const dir = fs.openSync(path.dirname(file), "r");
+    try {
+      fs.fsyncSync(dir);
+    } finally {
+      fs.closeSync(dir);
     }
   }
 }
@@ -272,6 +268,198 @@ async function recover({ config, commit, store, io }) {
   journal(store, "REVIEWED_RECOVERY_SUCCEEDED", { commit });
   return { status: "RECOVERED" };
 }
+function operationIdentity(manifest, provenance) {
+  const request = manifest.request;
+  for (const value of [
+    request?.runId,
+    request?.attempt,
+    provenance?.deploymentId,
+    provenance?.artifactId,
+  ])
+    assert(
+      /^[1-9][0-9]*$/.test(String(value)) &&
+        Number.isSafeInteger(Number(value)),
+      "EXACT_OPERATION_PROVENANCE_REQUIRED",
+    );
+  assert(
+    /^[a-f0-9]{40}$/.test(request.workflowCommit) &&
+      /^[a-f0-9]{40}$/.test(manifest.commit),
+    "IMMUTABLE_OPERATION_REQUIRED",
+  );
+  assert(
+    ["deploy", "rollback", "recover"].includes(manifest.operation),
+    "UNSUPPORTED_REQUEST_OPERATION",
+  );
+  assert(
+    /^sha256:[a-f0-9]{64}$/.test(provenance.artifactDigest),
+    "AUTHENTICATED_REQUEST_DIGEST_REQUIRED",
+  );
+  const identity = {
+    runId: String(request.runId),
+    attempt: String(request.attempt),
+    operation: manifest.operation,
+    commit: manifest.commit,
+    workflowCommit: request.workflowCommit,
+    artifactId: String(provenance.artifactId),
+    artifactDigest: provenance.artifactDigest,
+  };
+  return {
+    key: `${identity.runId}:${identity.attempt}`,
+    identity,
+    digest: sha(JSON.stringify(identity)),
+  };
+}
+// The deployment and command ledger share ONE fsynced atomic state replacement.
+// Docker effects cannot be transacted with a file: an interrupted effect is
+// deliberately uncertain, never blindly repeated. Only a fresh approved recover
+// can supersede it. External status delivery is at-least-once, not exactly-once.
+async function operation({ config, manifest, provenance, store, io }) {
+  const id = operationIdentity(manifest, provenance);
+  let control = store.control();
+  const recorded = control.operations[id.key];
+  if (recorded) {
+    assert(recorded.digest === id.digest, "OPERATION_IDENTITY_REUSED");
+    assert(
+      ["SUCCEEDED", "FAILED"].includes(recorded.status),
+      "INTERRUPTED_OPERATION_REQUIRES_REVIEWED_RECOVERY",
+    );
+    return recorded;
+  }
+  if (control.activeOperation) {
+    assert(
+      manifest.operation === "recover",
+      "PREVIOUS_OPERATION_REQUIRES_REVIEWED_RECOVERY",
+    );
+    assert(
+      control.operations[control.activeOperation],
+      "CORRUPT_OPERATION_LEDGER",
+    );
+  }
+  const timestamp = () => new Date().toISOString();
+  const previousOperation = control.activeOperation;
+  const record = {
+    ...id,
+    status: "RUNNING",
+    stage: "CLAIMED",
+    deploymentId: provenance.deploymentId,
+    createdAt: timestamp(),
+    transitions: [],
+    acknowledgmentPending: true,
+  };
+  control = structuredClone(control);
+  if (previousOperation) {
+    control.operations[previousOperation].status = "UNCERTAIN";
+    control.operations[previousOperation].supersededBy = id.key;
+  }
+  control.operations[id.key] = record;
+  control.activeOperation = id.key;
+  // Must succeed before preflight, prepare, maintenance or container operations.
+  store.commit(control);
+  let storageFault = false,
+    effectUncertain = false;
+  const transition = (stage, deployment) => {
+    assert(
+      !storageFault && !effectUncertain,
+      "OPERATION_EFFECT_OR_STORAGE_UNCERTAIN",
+    );
+    control = store.control();
+    const next = structuredClone(control);
+    if (deployment !== undefined) next.deployment = deployment;
+    const r = next.operations[id.key];
+    r.stage = stage;
+    r.transitions.push({ stage, at: timestamp() });
+    try {
+      store.commit(next);
+    } catch (e) {
+      storageFault = true;
+      throw e;
+    }
+  };
+  const guarded = Object.fromEntries(
+    Object.entries(io).map(([name, fn]) => [
+      name,
+      async (...args) => {
+        transition(`BEFORE_${name}`);
+        let result;
+        try {
+          result = await fn(...args);
+        } catch (error) {
+          // Killing/timing out the Docker CLI does not prove the daemon aborted
+          // a mutating request. Never restart another worker generation while
+          // such an effect may still be in flight.
+          if (
+            ["prepare", "maintenance", "stop", "start", "route"].includes(
+              name,
+            ) &&
+            (error.code === "ETIMEDOUT" || error.signal || error.killed)
+          )
+            effectUncertain = true;
+          throw error;
+        }
+        transition(`AFTER_${name}`);
+        return result;
+      },
+    ]),
+  );
+  const businessStore = {
+    read: () => store.read(),
+    write: (value) => transition(value?.phase || "EMPTY", value),
+    append: (row) => store.append({ ...row, operationKey: id.key }),
+  };
+  let result, error;
+  try {
+    if (manifest.operation === "recover") {
+      result = await recover({
+        config,
+        commit: manifest.commit,
+        store: businessStore,
+        io: guarded,
+      });
+    } else {
+      let selected = manifest;
+      if (manifest.operation === "rollback") {
+        const old = store.read();
+        assert(
+          old?.phase === "ACTIVE" && old.previous?.commit === manifest.commit,
+          "ROLLBACK_MUST_SELECT_PRESERVED_PREVIOUS_RELEASE",
+        );
+        selected = old.previous.manifest;
+      }
+      result = await deploy({
+        config,
+        manifest: selected,
+        store: businessStore,
+        io: guarded,
+      });
+    }
+  } catch (e) {
+    error = e;
+  }
+  // A failed state write, abrupt interruption or unresolved handoff cannot be
+  // converted into a known failure/success. Keep the durable claim fenced.
+  if (storageFault || effectUncertain || error?.simulatedCrash)
+    throw Error("OPERATION_OUTCOME_UNCERTAIN_REVIEW_REQUIRED");
+  control = store.control();
+  const next = structuredClone(control),
+    terminal = next.operations[id.key];
+  terminal.status = error
+    ? next.deployment && next.deployment.phase !== "ACTIVE"
+      ? "UNCERTAIN"
+      : "FAILED"
+    : "SUCCEEDED";
+  terminal.stage = terminal.status;
+  terminal.outcome = result?.status || "OPERATION_FAILED_REVIEW_JOURNAL";
+  terminal.completedAt = timestamp();
+  terminal.transitions.push({
+    stage: terminal.status,
+    at: terminal.completedAt,
+  });
+  next.activeOperation = terminal.status === "UNCERTAIN" ? id.key : null;
+  // This commit precedes the handled-file cache and GitHub acknowledgment. A
+  // crash on either side never permits a second execution of this identity.
+  store.commit(next);
+  return terminal;
+}
 module.exports = {
   assert,
   sha,
@@ -281,4 +469,6 @@ module.exports = {
   journal,
   deploy,
   recover,
+  operationIdentity,
+  operation,
 };

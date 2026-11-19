@@ -40,274 +40,344 @@ async function eventually(fn) {
   throw error;
 }
 async function check(report, original) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scop-gateway-")),
-    cfg = {
-      instance: "review-" + crypto.randomBytes(8).toString("hex"),
-      hostname: "staging.example.invalid",
-    };
-  const nonce = crypto.randomBytes(8).toString("hex"),
-    gateway = "scop-gateway-test-" + nonce,
-    client = original.frontend;
-  const release = (attempt) => ({
-      commit: report.commit,
-      images: report.images,
-      request: { runId: 123456789, attempt },
-    }),
-    a = release(1),
-    b = release(2),
-    bad = release(3),
-    unattested = release(4);
+  const core = require("./core.cjs"),
+    agent = require("./agent.cjs");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "scop-gateway-"));
+  const nonce = crypto.randomBytes(8).toString("hex");
+  const cfg = {
+    ...require("../../deploy/persistent/config.example.json"),
+    instance: original.persistentInstance,
+    database: `scop_staging_${nonce}`,
+  };
+  const data = `scop-${cfg.instance}-data`,
+    ingress = `scop-${cfg.instance}-ingress`,
+    gateway = `scop-${cfg.instance}-gateway`,
+    database = `scop-${cfg.instance}-database`;
   const local = [],
+    ephemeral = [],
     releases = [],
-    checks = [];
-  let gatewayRunning = false;
-  const testOwner = (name) => {
-    const v = JSON.parse(docker("inspect", name))[0];
-    assert.equal(v.Config.Labels["wici.scop.gateway-test"], nonce);
-    return v;
-  };
-  const owned = (r) => {
-    const n = runtime.names(cfg, r);
-    for (const name of [n.be, n.fe])
-      runtime.assertOwned(JSON.parse(docker("inspect", name))[0], cfg, r, name);
-    return n;
-  };
-  const labelArgs = (r) =>
-    Object.entries(runtime.labels(cfg, r)).flatMap(([k, v]) => [
-      "--label",
-      `${k}=${v}`,
-    ]);
-  const command = (container, script) =>
-    execFileSync(
-      "docker",
-      ["--host=unix:///var/run/docker.sock", "exec", "-i", container, "node"],
-      {
-        input: script,
-        env: safe.environment(),
-        encoding: "utf8",
-        timeout: 15000,
-        stdio: ["pipe", "pipe", "pipe"],
+    checks = [],
+    images = [];
+  const state = path.join(dir, "state"),
+    probeDirectory = path.join(dir, "probe");
+  let renamed = false,
+    moved = false,
+    createdGateway = false;
+  const readEnv = Object.fromEntries(
+    fs
+      .readFileSync(original.runtimeEnv, "utf8")
+      .trim()
+      .split("\n")
+      .map((x) => {
+        const i = x.indexOf("=");
+        return [x.slice(0, i), x.slice(i + 1)];
+      }),
+  );
+  const runtimeUrl = new URL(readEnv.DATABASE_URL);
+  const secretBytes = JSON.stringify({
+    purpose: cfg.purpose,
+    instance: cfg.instance,
+    databasePassword: runtimeUrl.password,
+    jwtSecret: readEnv.JWT_SECRET,
+  });
+  const io = runtime.adapter(cfg, {
+    stateDirectory: state,
+    probeDirectory,
+    readSecrets: () => secretBytes,
+  });
+  const store = agent.store({ ...cfg, stateDirectory: state });
+  const fixtureManifest = (commit, run, fixtureImages = report.images) => {
+    // Synthetic protocol fixtures in this private disposable test only. They
+    // are never exported as deployment authority; the real agent stays disabled
+    // and independently requires authenticated GitHub metadata before execution.
+    const sourceCi = { commit, runId: 1 };
+    return {
+      kind: "wici-staging-capsule",
+      version: 1,
+      operation: "deploy",
+      commit,
+      images: fixtureImages,
+      sourceCi,
+      gateway: {
+        commit,
+        attempt: 1,
+        runId: 2,
+        artifact: { id: 3, digest: "sha256:" + "f".repeat(64) },
       },
-    );
-
+      request: { runId: run, attempt: 1, workflowCommit: report.commit },
+      archiveSha256: "a".repeat(64),
+      databaseContract: "hospital-erp-2026-11-scop1",
+      syntheticOnly: true,
+      productionAuthorized: false,
+      runtimeVerified: {
+        commit,
+        images: fixtureImages,
+        sourceCi,
+        status: "DISPOSABLE_REHEARSAL_PASSED_NOT_ACTIVATION_APPROVAL",
+        scope: "AUTHENTICATED_CI_ARTIFACT_REHEARSAL",
+        source: { gitCommit: commit, dirty: false },
+        database: { status: "DATABASE_READY", findings: [] },
+        cleanupFailures: [],
+      },
+    };
+  };
+  const release = (m) => ({
+    commit: m.commit,
+    images: m.images,
+    request: m.request,
+    manifest: m,
+  });
+  const a = fixtureManifest(report.commit, 1001),
+    b = fixtureManifest(crypto.randomBytes(20).toString("hex"), 1002);
+  const provenance = {
+    deploymentId: 1,
+    artifactId: 2,
+    artifactDigest: "sha256:" + "f".repeat(64),
+  };
+  const execute = (m, adapter = io) =>
+    agent.execute(cfg, m, store, provenance, adapter);
   const request = async (p, opts = {}, auth = true) => {
     const settings = {
       host: gateway,
       port: 443,
       servername: cfg.hostname,
-      ca: fs.readFileSync(path.join(dir, "certs/tls.crt"), "utf8"),
+      ca: fs.readFileSync(path.join(dir, "tls/tls.crt"), "utf8"),
       method: opts.method || "GET",
       path: p,
+      headers: { Host: cfg.hostname, ...opts.headers },
       ...(auth
         ? {
-            cert: fs.readFileSync(path.join(dir, "client.crt"), "utf8"),
-            key: fs.readFileSync(path.join(dir, "client.key"), "utf8"),
+            cert: fs.readFileSync(
+              path.join(probeDirectory, "client.crt"),
+              "utf8",
+            ),
+            key: fs.readFileSync(
+              path.join(probeDirectory, "client.key"),
+              "utf8",
+            ),
           }
         : {}),
-      headers: { Host: cfg.hostname, ...opts.headers },
     };
-    // mTLS leaves Authorization free for the canonical Bearer JWT.
-    const script = `const https=require('https');const r=https.request(${JSON.stringify(settings)},s=>{let b='';s.on('data',c=>b+=c);s.on('end',()=>console.log(JSON.stringify({status:s.statusCode,body:b,headers:s.headers})));});r.on('error',()=>process.exit(1));r.setTimeout(10000,()=>r.destroy());r.end(${JSON.stringify(opts.body || "")});`;
-    return JSON.parse(command(client, script));
-  };
-  const switchTo = (r, legacy) => {
-    let text = runtime.route(cfg, r);
-    if (legacy)
-      text = text.replace(
-        `reverse_proxy ${runtime.names(cfg, r).fe}:8080`,
-        `reverse_proxy ${legacy}:8080`,
-      );
-    const target = path.join(dir, "routes/Caddyfile"),
-      next = target + ".next";
-    fs.writeFileSync(next, text, { mode: 0o600 });
-    if (gatewayRunning) {
-      testOwner(gateway);
-      docker(
-        "exec",
-        gateway,
-        "caddy",
-        "validate",
-        "--config",
-        "/routes/Caddyfile.next",
-        "--adapter",
-        "caddyfile",
-      );
-    }
-    fs.renameSync(next, target);
-    if (gatewayRunning)
-      docker(
-        "exec",
-        gateway,
-        "caddy",
-        "reload",
-        "--config",
-        "/routes/Caddyfile",
-        "--adapter",
-        "caddyfile",
-      );
-  };
-  const prepare = (r, kind) => {
-    const n = runtime.names(cfg, r);
-    for (const value of Object.values(n)) assert(value.length <= 63);
-    docker("network", "create", "--internal", ...labelArgs(r), n.network);
-    releases.push(r);
-    docker(
-      "create",
-      "--name",
-      n.be,
-      "--network",
-      n.network,
-      "--network-alias",
-      "backend",
-      ...labelArgs(r),
-      ...noProxy,
-      "--read-only",
-      "--env-file",
-      original.runtimeEnv,
-      ...(kind === "unattested"
-        ? ["--env", "APP_RELEASE_REF=unattested-local-gateway-test"]
-        : []),
-      "--tmpfs",
-      "/tmp:rw,noexec,nosuid,size=64m",
-      "--tmpfs",
-      "/app/uploads:rw,uid=1000,gid=1000",
-      "--tmpfs",
-      "/app/private-uploads:rw,uid=1000,gid=1000",
-      r.images.backend,
-      ...(kind === "failed" ? ["node", "-e", "process.exit(7)"] : []),
+    const script = `const https=require('https');const r=https.request(${JSON.stringify(settings)},s=>{let b='';s.on('data',c=>b+=c);s.on('end',()=>console.log(JSON.stringify({status:s.statusCode,body:b,headers:s.headers})));});r.on('error',()=>process.exit(1));r.setTimeout(5000,()=>r.destroy());r.end(${JSON.stringify(opts.body || "")});`;
+    return JSON.parse(
+      execFileSync(
+        "docker",
+        [
+          "--host=unix:///var/run/docker.sock",
+          "exec",
+          "-i",
+          original.frontend,
+          "node",
+        ],
+        {
+          input: script,
+          env: safe.environment(),
+          encoding: "utf8",
+          timeout: 10000,
+          stdio: "pipe",
+        },
+      ),
     );
-    docker("network", "connect", original.network, n.be);
+  };
+  const rawRoute = (text) => {
+    fs.writeFileSync(path.join(state, "gateway/Caddyfile"), text, {
+      mode: 0o600,
+    });
     docker(
-      "create",
-      "--name",
-      n.fe,
-      "--network",
-      n.network,
-      ...labelArgs(r),
-      ...noProxy,
-      "--read-only",
-      r.images.frontend,
+      "exec",
+      gateway,
+      "caddy",
+      "reload",
+      "--config",
+      "/routes/Caddyfile",
+      "--adapter",
+      "caddyfile",
     );
-    docker("network", "connect", original.network, n.fe);
-  };
-  const stop = (r) => {
-    const n = owned(r);
-    for (const name of [n.fe, n.be]) {
-      if (JSON.parse(docker("inspect", name))[0].State.Running)
-        docker("stop", "--time", "20", name);
-    }
-  };
-  const start = (r) => {
-    const n = owned(r);
-    for (const name of [n.be, n.fe]) docker("start", name);
   };
   try {
-    for (const sub of ["certs", "access", "routes"])
-      fs.mkdirSync(path.join(dir, sub));
-    execFileSync(
-      "openssl",
-      [
-        "req",
-        "-x509",
-        "-nodes",
-        "-newkey",
-        "rsa:2048",
-        "-keyout",
-        path.join(dir, "certs/tls.key"),
-        "-out",
-        path.join(dir, "certs/tls.crt"),
-        "-days",
-        "1",
-        "-subj",
-        "/CN=" + cfg.hostname,
-        "-addext",
-        "subjectAltName=DNS:" + cfg.hostname,
-      ],
-      { stdio: "pipe" },
+    for (const sub of [
+      "tls",
+      "probe",
+      "access",
+      "state/gateway",
+      "state/uploads",
+      "state/private",
+    ])
+      fs.mkdirSync(path.join(dir, sub), { recursive: true });
+    fs.chmodSync(path.join(state, "uploads"), 0o777);
+    fs.chmodSync(path.join(state, "private"), 0o777);
+    const ssl = (...args) =>
+      execFileSync("openssl", args, { cwd: dir, stdio: "pipe" });
+    ssl(
+      "req",
+      "-x509",
+      "-nodes",
+      "-newkey",
+      "rsa:2048",
+      "-keyout",
+      "tls/tls.key",
+      "-out",
+      "tls/tls.crt",
+      "-days",
+      "1",
+      "-subj",
+      "/CN=" + cfg.hostname,
+      "-addext",
+      "subjectAltName=DNS:" + cfg.hostname,
     );
     fs.copyFileSync(
-      path.join(dir, "certs/tls.crt"),
+      path.join(dir, "tls/tls.crt"),
       path.join(dir, "access/client-ca.pem"),
     );
-    execFileSync(
-      "openssl",
-      [
-        "req",
-        "-new",
-        "-nodes",
-        "-newkey",
-        "rsa:2048",
-        "-keyout",
-        path.join(dir, "client.key"),
-        "-out",
-        path.join(dir, "client.csr"),
-        "-subj",
-        "/CN=synthetic-test-client",
-      ],
-      { stdio: "pipe" },
+    fs.copyFileSync(
+      path.join(dir, "tls/tls.crt"),
+      path.join(probeDirectory, "server-ca.pem"),
+    );
+    ssl(
+      "req",
+      "-new",
+      "-nodes",
+      "-newkey",
+      "rsa:2048",
+      "-keyout",
+      "probe/client.key",
+      "-out",
+      "client.csr",
+      "-subj",
+      "/CN=synthetic-runtime-probe",
     );
     fs.writeFileSync(
       path.join(dir, "client.ext"),
-      "extendedKeyUsage=clientAuth\n",
+      "extendedKeyUsage=clientAuth",
     );
-    execFileSync(
-      "openssl",
-      [
-        "x509",
-        "-req",
-        "-in",
-        path.join(dir, "client.csr"),
-        "-CA",
-        path.join(dir, "certs/tls.crt"),
-        "-CAkey",
-        path.join(dir, "certs/tls.key"),
-        "-CAcreateserial",
-        "-out",
-        path.join(dir, "client.crt"),
-        "-days",
-        "1",
-        "-extfile",
-        path.join(dir, "client.ext"),
-      ],
-      { stdio: "pipe" },
+    ssl(
+      "x509",
+      "-req",
+      "-in",
+      "client.csr",
+      "-CA",
+      "tls/tls.crt",
+      "-CAkey",
+      "tls/tls.key",
+      "-CAcreateserial",
+      "-out",
+      "probe/client.crt",
+      "-days",
+      "1",
+      "-extfile",
+      "client.ext",
     );
-    const legacy = `scop-${cfg.instance}-${a.commit}-fe`;
-    assert(legacy.length > 63);
+    docker("stop", "--time", "20", original.backend);
+    const pgInfo = JSON.parse(docker("inspect", original.database))[0];
+    assert.equal(pgInfo.Config.Labels["wici.scop.rehearsal"], original.owner);
+    assert.equal(pgInfo.Config.Labels["wici.scop.instance"], cfg.instance);
+    // Only this newly generated synthetic database/container is renamed. No
+    // hosted connection, production dump, frozen SQL edit or historical receipt
+    // fabrication is involved. The genuine governance bundle executes locally.
+    const oldDb = `p2p_disposable_${original.owner}`;
     docker(
-      "run",
-      "--detach",
-      "--name",
-      legacy,
-      "--network",
-      original.network,
+      "exec",
+      original.database,
+      "psql",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-U",
+      "p2p_test",
+      "-d",
+      "postgres",
+      "-c",
+      `ALTER DATABASE ${oldDb} RENAME TO ${cfg.database}`,
+    );
+    docker("rename", original.database, database);
+    renamed = true;
+    docker(
+      "network",
+      "create",
+      "--internal",
       "--label",
       `wici.scop.gateway-test=${nonce}`,
-      ...noProxy,
-      "--read-only",
-      report.images.frontend,
+      data,
     );
-    local.push(legacy);
-    await eventually(() =>
-      assert.equal(
-        JSON.parse(
-          command(
-            legacy,
-            "fetch('http://127.0.0.1:8080/health').then(async r=>console.log(JSON.stringify({status:r.status}))).catch(()=>process.exit(1))",
-          ),
-        ).status,
-        200,
-      ),
+    local.push(["network", data]);
+    docker(
+      "network",
+      "create",
+      "--internal",
+      "--label",
+      `wici.scop.gateway-test=${nonce}`,
+      ingress,
     );
-    switchTo(a, legacy);
+    local.push(["network", ingress]);
+    docker("network", "connect", "--alias", "database", data, database);
+    docker("network", "disconnect", original.network, database);
+    moved = true;
+    const backend = path.join(root, "purchase-backend");
+    for (const m of [a, b]) {
+      const bundle = require(
+        path.join(backend, "scripts/lib/databaseRelease/planner"),
+      ).bundle({
+        inventory: require(
+          path.join(backend, "services/databaseReleaseService"),
+        ).loadInventory(),
+        contract: require(
+          path.join(backend, "services/databaseReleaseService"),
+        ).loadContract(),
+        environment: "staging",
+        actor: "local-synthetic-adapter-test",
+        releaseRef: m.commit,
+      });
+      execFileSync(
+        "docker",
+        [
+          "--host=unix:///var/run/docker.sock",
+          "exec",
+          "-i",
+          database,
+          "psql",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-U",
+          "p2p_test",
+          "-d",
+          cfg.database,
+        ],
+        {
+          input: bundle,
+          env: safe.environment(),
+          stdio: "pipe",
+          maxBuffer: 3 * 1024 * 1024,
+        },
+      );
+    }
+    docker(
+      "exec",
+      database,
+      "psql",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-U",
+      "p2p_test",
+      "-d",
+      cfg.database,
+      "-c",
+      "UPDATE users SET is_active=true WHERE id=74001",
+    );
+    fs.writeFileSync(
+      path.join(state, "gateway/Caddyfile"),
+      runtime.route(cfg, null),
+      { mode: 0o600 },
+    );
     docker(
       "run",
       "--detach",
       "--name",
       gateway,
-      "--network",
-      original.network,
+      "--label",
+      `wici.scop.instance=${cfg.instance}`,
       "--label",
       `wici.scop.gateway-test=${nonce}`,
+      "--network",
+      ingress,
       ...noProxy,
       "--read-only",
       "--tmpfs",
@@ -315,11 +385,11 @@ async function check(report, original) {
       "--tmpfs",
       "/config",
       "-v",
-      `${dir}/certs:/certs:ro`,
+      `${dir}/tls:/certs:ro`,
       "-v",
       `${dir}/access:/access:ro`,
       "-v",
-      `${dir}/routes:/routes:ro`,
+      `${state}/gateway:/routes:ro`,
       caddy,
       "caddy",
       "run",
@@ -328,52 +398,13 @@ async function check(report, original) {
       "--adapter",
       "caddyfile",
     );
-    local.push(gateway);
-    gatewayRunning = true;
-    await eventually(async () =>
-      assert.equal((await request("/health")).status, 502),
-    );
-    const logs = require("node:child_process").spawnSync(
-      "docker",
-      ["--host=unix:///var/run/docker.sock", "logs", gateway],
-      { env: safe.environment(), encoding: "utf8" },
-    );
-    assert(
-      /lookup|DNS|domain|no such host|name too long/i.test(
-        (logs.stdout || "") + (logs.stderr || ""),
-      ),
-      "LEGACY_DNS_FAILURE_NOT_CONFIRMED",
-    );
-    checks.push(
-      "legacy_overlong_dns_gateway_502_reproduced_with_healthy_upstream",
-    );
-    switchTo(null);
-    assert.equal((await request("/health")).status, 503);
-    for (const name of [original.backend]) {
-      const v = JSON.parse(docker("inspect", name))[0];
-      assert.equal(v.Config.Labels["wici.scop.rehearsal"], original.owner);
-      docker("stop", "--time", "20", name);
-    }
-    docker(
-      "exec",
-      original.database,
-      "psql",
-      "-U",
-      "p2p_test",
-      "-d",
-      `p2p_disposable_${original.owner}`,
-      "-c",
-      "UPDATE users SET is_active=true WHERE id=74001",
-    );
-    prepare(a);
-    start(a);
-    switchTo(a);
-    await eventually(async () =>
-      assert.equal((await request("/health")).status, 200),
-    );
-    const html = await request("/");
-    assert.equal(html.status, 200);
-    assert(/<html/i.test(html.body));
+    createdGateway = true;
+    docker("network", "connect", ingress, original.frontend);
+    await eventually(() => io.maintenanceStatus().then((x) => assert(x)));
+    releases.push(release(a));
+    assert.equal((await execute(a)).status, "SUCCEEDED");
+    assert.equal((await request("/")).status, 200);
+    assert.equal((await request("/health")).status, 200);
     await assert.rejects(() => request("/health", {}, false));
     const login = await request("/api/auth/login", {
       method: "POST",
@@ -383,10 +414,14 @@ async function check(report, original) {
     assert.equal(login.status, 200);
     const token = JSON.parse(login.body).token;
     assert(token);
-    const identity = await request("/api/auth/me", {
-      headers: { Authorization: "Bearer " + token },
-    });
-    assert.equal(identity.status, 200);
+    assert.equal(
+      (
+        await request("/api/auth/me", {
+          headers: { Authorization: "Bearer " + token },
+        })
+      ).status,
+      200,
+    );
     assert.equal(
       (
         await request("/api/requests/74001/full-details", {
@@ -404,101 +439,186 @@ async function check(report, original) {
       404,
     );
     checks.push(
-      "real_frontend_tls_perimeter_login_jwt_same_origin_health_and_institute_scope",
+      "production_adapter_controller_https_mtls_login_jwt_and_institute_scope",
     );
-    prepare(b);
-    switchTo(null);
-    stop(a);
-    start(b);
-    switchTo(b);
-    await eventually(async () =>
-      assert.equal((await request("/health")).status, 200),
+    const legacy = `scop-review-12345678-${a.commit}-fe`;
+    assert(legacy.length > 63);
+    docker(
+      "run",
+      "--detach",
+      "--name",
+      legacy,
+      "--network",
+      runtime.names(cfg, release(a)).network,
+      "--label",
+      `wici.scop.gateway-test=${nonce}`,
+      ...noProxy,
+      "--read-only",
+      report.images.frontend,
+    );
+    ephemeral.push(legacy);
+    docker("network", "connect", ingress, legacy);
+    await eventually(() =>
+      assert.equal(
+        docker(
+          "exec",
+          legacy,
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8080/health').then(r=>{if(r.status!==200)process.exit(1)})",
+        ),
+        "",
+      ),
+    );
+    // Local marker remains correct while actual TLS reverse-proxy traffic fails.
+    rawRoute(
+      runtime
+        .route(cfg, release(a))
+        .replace(
+          `reverse_proxy ${runtime.names(cfg, release(a)).fe}:8080`,
+          `reverse_proxy ${legacy}:8080`,
+        ),
     );
     assert.equal(
-      (await request("/health")).headers["x-scop-release"],
-      runtime.resourceIdentity(cfg, b).key,
+      docker(
+        "exec",
+        gateway,
+        "wget",
+        "-qO-",
+        "http://127.0.0.1:8081/__release",
+      ),
+      a.commit,
     );
-    assertOwnedPreserved(a);
+    assert.equal((await request("/health")).status, 502);
+    await assert.rejects(io.routeHealth(release(a)));
+    await io.route(release(a));
+    await io.routeHealth(release(a));
+    checks.push("correct_local_markers_cannot_hide_overlong_dns_502");
+    // Real ingress failure after route reload must fail candidate verification
+    // and exercise the controller's existing previous-release recovery path.
+    releases.push(release(b));
+    let injected = false;
+    const badEdge = {
+      ...io,
+      route: async (r) => {
+        await io.route(r);
+        if (r.commit === b.commit && !injected) {
+          docker("network", "disconnect", ingress, gateway);
+          injected = true;
+        } else if (
+          !JSON.parse(docker("inspect", gateway))[0].NetworkSettings.Networks[
+            ingress
+          ]
+        )
+          docker("network", "connect", ingress, gateway);
+      },
+    };
+    assert.equal((await execute(b, badEdge)).status, "FAILED");
+    assert.equal(store.read().release.commit, a.commit);
+    assert.equal((await request("/health")).status, 200);
+    checks.push("broken_ingress_candidate_recovers_real_previous_release");
+    const b2 = { ...b, request: { ...b.request, runId: 1003 } };
+    releases.push(release(b2));
+    assert.equal((await execute(b2)).status, "SUCCEEDED");
+    assert.equal(store.read().previous.commit, a.commit);
+    const rollback = {
+      kind: "wici-staging-request",
+      operation: "rollback",
+      commit: a.commit,
+      productionAuthorized: false,
+      request: { runId: 1004, attempt: 1, workflowCommit: report.commit },
+    };
+    assert.equal((await execute(rollback)).status, "SUCCEEDED");
+    // Delete the cache (if any): the authoritative command outcome is sufficient.
+    const before = JSON.stringify(store.control());
+    const startedAt = () =>
+      JSON.parse(docker("inspect", runtime.names(cfg, release(a)).be))[0].State
+        .StartedAt;
+    const rollbackStart = startedAt();
+    await execute(rollback);
+    assert.equal(JSON.stringify(store.control()), before);
+    assert.equal(
+      startedAt(),
+      rollbackStart,
+      "completed rollback cannot restart the backend",
+    );
+    assert.equal((await request("/health")).headers["x-scop-commit"], a.commit);
     checks.push(
-      "same_commit_different_attempt_successful_handoff_preserves_previous",
+      "actual_adapter_rollback_and_duplicate_command_preserve_previous_without_restart",
     );
-    prepare(bad, "failed");
-    switchTo(null);
-    stop(b);
-    start(bad);
-    await eventually(() =>
-      assert.equal(
-        JSON.parse(docker("inspect", runtime.names(cfg, bad).be))[0].State
-          .Status,
-        "exited",
-      ),
+    // Local monitoring uses the real adapter, even without a GitHub client.
+    docker("stop", "--time", "20", runtime.names(cfg, release(a)).fe);
+    const monitored = await agent.reconcileLocal(
+      { ...cfg, stateDirectory: state },
+      { store, io },
     );
-    stop(bad);
-    start(a);
-    switchTo(a);
-    await eventually(async () =>
-      assert.equal((await request("/health")).status, 200),
-    );
+    assert.equal(monitored.status, "unhealthy");
+    assert.equal((await request("/health")).status, 503);
     assert.equal(
-      (await request("/health")).headers["x-scop-release"],
-      runtime.resourceIdentity(cfg, a).key,
+      JSON.parse(docker("inspect", runtime.names(cfg, release(a)).fe))[0].State
+        .Running,
+      false,
     );
-    checks.push("failed_candidate_real_previous_service_and_gateway_recovery");
-    assert.throws(() => runtime.cleanupOwned(cfg, a, [a, b]), /PRESERVED/);
-    assertOwnedPreserved(b);
-    prepare(unattested, "unattested");
-    switchTo(null);
-    stop(a);
-    start(unattested);
-    await eventually(() =>
-      assert.equal(
-        JSON.parse(docker("inspect", runtime.names(cfg, unattested).be))[0]
-          .State.Status,
-        "exited",
-      ),
+    const recover = {
+      kind: "wici-staging-request",
+      operation: "recover",
+      commit: a.commit,
+      productionAuthorized: false,
+      request: { runId: 1006, attempt: 1, workflowCommit: report.commit },
+    };
+    assert.equal((await execute(recover)).status, "SUCCEEDED");
+    const recoveryStart = startedAt();
+    await execute(recover);
+    assert.equal(
+      startedAt(),
+      recoveryStart,
+      "completed recovery cannot restart the backend",
     );
-    const failure = require("node:child_process").spawnSync(
-      "docker",
-      [
-        "--host=unix:///var/run/docker.sock",
-        "logs",
-        runtime.names(cfg, unattested).be,
-      ],
-      { env: safe.environment(), encoding: "utf8" },
+    assert.equal((await request("/health")).status, 200);
+    checks.push(
+      "real_local_monitoring_maintenance_and_reviewed_recovery_no_duplicate_backend_start",
     );
-    assert(
-      ((failure.stdout || "") + (failure.stderr || "")).includes(
-        "database_release_startup_blocked",
-      ),
+    const unattested = fixtureManifest(
+      crypto.randomBytes(20).toString("hex"),
+      1005,
     );
-    stop(unattested);
-    start(a);
-    switchTo(a);
-    await eventually(async () =>
-      assert.equal((await request("/health")).status, 200),
+    assert.equal((await execute(unattested)).status, "FAILED");
+    assert.equal((await request("/health")).status, 200);
+    checks.push(
+      "canonical_runtime_preflight_rejects_missing_release_attestation_before_handoff",
     );
-    checks.push("real_startup_refuses_missing_release_attestation");
+    runtime.assertOwned(
+      JSON.parse(docker("inspect", runtime.names(cfg, release(a)).be))[0],
+      cfg,
+      release(a),
+      runtime.names(cfg, release(a)).be,
+    );
+    assert.throws(
+      () => runtime.cleanupOwned(cfg, release(a), [release(a), release(b2)]),
+      /PRESERVED/,
+    );
     return {
       scope: "LOCAL_DISPOSABLE_GATEWAY_TEST",
       externalActivated: false,
       checks,
-      legacyDnsLength: legacy.length,
       gatewayStatus: 200,
     };
-    function assertOwnedPreserved(r) {
-      owned(r);
-      for (const image of Object.values(r.images))
-        assert.equal(
-          docker("image", "inspect", "--format", "{{.Id}}", image),
-          image,
-        );
-    }
   } finally {
     const errors = [];
-    for (const r of releases.reverse()) {
+    for (const name of ephemeral.reverse())
       try {
-        const n = runtime.names(cfg, r);
-        for (const name of [n.fe, n.be]) {
+        const info = JSON.parse(docker("inspect", name))[0];
+        assert.equal(info.Config.Labels["wici.scop.gateway-test"], nonce);
+        docker("rm", "--force", name);
+      } catch (e) {
+        errors.push(e.message);
+      }
+    for (const r of releases.reverse())
+      try {
+        for (const name of [
+          runtime.names(cfg, r).fe,
+          runtime.names(cfg, r).be,
+        ]) {
           const info = runtime.inspectOptional("container", name);
           if (info) {
             runtime.assertOwned(info, cfg, r, name);
@@ -509,20 +629,48 @@ async function check(report, original) {
       } catch (e) {
         errors.push(e.message);
       }
-    }
-    for (const name of local.reverse()) {
+    if (createdGateway)
       try {
-        testOwner(name);
-        docker("rm", "--force", name);
+        const v = JSON.parse(docker("inspect", gateway))[0];
+        assert.equal(v.Config.Labels["wici.scop.gateway-test"], nonce);
+        docker("rm", "--force", gateway);
       } catch (e) {
         errors.push(e.message);
       }
-    }
+    try {
+      docker("network", "disconnect", ingress, original.frontend);
+    } catch {}
+    if (renamed)
+      try {
+        if (moved) {
+          docker(
+            "network",
+            "connect",
+            "--alias",
+            "database",
+            original.network,
+            database,
+          );
+          docker("network", "disconnect", data, database);
+        }
+        docker("rename", database, original.database);
+      } catch (e) {
+        errors.push(e.message);
+      }
+    for (const [kind, name] of local.reverse())
+      try {
+        const v = JSON.parse(docker("network", "inspect", name))[0];
+        assert.equal(v.Labels["wici.scop.gateway-test"], nonce);
+        docker(kind, "rm", name);
+      } catch (e) {
+        errors.push(e.message);
+      }
     fs.rmSync(dir, { recursive: true, force: true });
     if (errors.length)
-      throw Error("LOCAL_GATEWAY_OWNED_CLEANUP_FAILED: " + errors.join(";"));
+      throw Error("LOCAL_OWNED_CLEANUP_FAILED: " + errors.join(";"));
   }
 }
+
 async function main() {
   const commit = execFileSync("git", ["rev-parse", "HEAD"], {
       cwd: root,

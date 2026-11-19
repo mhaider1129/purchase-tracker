@@ -143,6 +143,8 @@ async function run({ input, major = "16", local = false, onVerified }) {
       pg,
       "--label",
       `wici.scop.rehearsal=${token}`,
+      "--label",
+      `wici.scop.instance=r-${token}`,
       "--network",
       "bridge",
       ...proxyOff,
@@ -449,6 +451,7 @@ async function run({ input, major = "16", local = false, onVerified }) {
         frontend: fe,
         database: pg,
         owner: token,
+        persistentInstance: `r-${token}`,
         runtimeEnv,
         login: { email: "staging@example.invalid", password: authPassword },
       });

@@ -9,18 +9,38 @@ const core = require("./core.cjs"),
   runtime = require("./runtime.cjs");
 function store(c) {
   const file = path.join(c.stateDirectory, "state.json");
+  const control = () => {
+    const value = fs.existsSync(file)
+      ? JSON.parse(fs.readFileSync(file))
+      : null;
+    if (value?.version === 2) {
+      core.assert(
+        value.operations && typeof value.operations === "object",
+        "CORRUPT_OPERATION_LEDGER",
+      );
+      return value;
+    }
+    // Read legacy disabled-infrastructure state without discarding a release.
+    return {
+      version: 2,
+      deployment: value,
+      operations: {},
+      activeOperation: null,
+    };
+  };
   return {
-    read: () =>
-      fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : null,
-    write: (v) => core.atomic(file, v),
-    append: (r) => {
+    control,
+    commit: (value) => core.atomic(file, value),
+    read: () => control().deployment,
+    write: (value) => core.atomic(file, { ...control(), deployment: value }),
+    append: (row) => {
       const fd = fs.openSync(
         path.join(c.stateDirectory, "audit.jsonl"),
         "a",
         0o600,
       );
       try {
-        fs.writeSync(fd, JSON.stringify(r) + "\n");
+        fs.writeSync(fd, JSON.stringify(row) + "\n");
         fs.fsyncSync(fd);
       } finally {
         fs.closeSync(fd);
@@ -28,32 +48,41 @@ function store(c) {
     },
   };
 }
-async function execute(config, manifest, s) {
-  const io = runtime.adapter(config);
-  if (manifest.operation === "rollback") {
-    const old = s.read();
-    core.assert(
-      old?.phase === "ACTIVE" && old.previous?.commit === manifest.commit,
-      "ROLLBACK_MUST_SELECT_PRESERVED_PREVIOUS_RELEASE",
-    );
-    return core.deploy({
-      config,
-      manifest: old.previous.manifest,
-      store: s,
-      io,
-    });
-  }
-  if (manifest.operation === "recover") {
-    return core.recover({ config, commit: manifest.commit, store: s, io });
-  }
-  core.assert(manifest.operation === "deploy", "UNSUPPORTED_REQUEST_OPERATION");
-  return core.deploy({ config, manifest, store: s, io });
+async function execute(
+  config,
+  manifest,
+  s,
+  provenance,
+  io = runtime.adapter(config),
+) {
+  return core.operation({ config, manifest, provenance, store: s, io });
 }
-async function once(c) {
+function outcomeCache(c, record) {
+  const file = path.join(
+    c.stateDirectory,
+    `handled-${record.identity.runId}-${record.identity.attempt}.json`,
+  );
+  core.atomic(file, {
+    operationKey: record.key,
+    status:
+      record.status === "SUCCEEDED"
+        ? "success"
+        : record.status === "FAILED"
+          ? "failure"
+          : "error",
+    commit: record.identity.commit,
+    outcome: record.outcome || "APPROVED_RECOVERY_REQUIRED",
+    deploymentId: record.deploymentId,
+    statusPending: record.acknowledgmentPending,
+  });
+  return file;
+}
+
+async function once(c, dependencies = {}) {
   core.configuration(c);
-  const s = store(c),
-    token = await gh.appToken(c),
-    api = gh.transport(token);
+  const s = dependencies.store || store(c),
+    token = dependencies.token || (await gh.appToken(c)),
+    api = dependencies.api || gh.transport(token);
   const data = await api(
     "/actions/workflows/staging-persistent.yml/runs?status=success&branch=master&per_page=20",
   );
@@ -65,7 +94,21 @@ async function once(c) {
     c.stateDirectory,
     `handled-${run.id}-${run.run_attempt}.json`,
   );
-  if (fs.existsSync(handled)) return; // failed business execution is never replayed silently
+  const key = `${run.id}:${run.run_attempt}`;
+  const recorded = s.control().operations[key];
+  if (recorded) {
+    // The authoritative ledger survives loss of the handled-file cache. Never
+    // download artifacts or call execute again for a claimed request.
+    if (recorded.acknowledgmentPending) {
+      const cache = outcomeCache(c, recorded);
+      await acknowledge(c, api, cache, run.html_url, s);
+    }
+    return;
+  }
+  core.assert(
+    !fs.existsSync(handled),
+    "UNBOUND_LEGACY_HANDLED_RECORD_REQUIRES_REVIEW",
+  );
   const a = (
     await api(`/actions/runs/${run.id}/artifacts?per_page=100`)
   ).artifacts.filter(
@@ -165,7 +208,6 @@ async function once(c) {
       "INVALID_RECOVERY_REQUEST",
     );
   // A durable request journal is written before any application mutation.
-  const key = `${run.id}:${run.run_attempt}`;
   const existing = (
     await api(`/deployments?environment=scop-staging&per_page=100`)
   ).filter((d) => d.payload?.requestKey === key);
@@ -188,33 +230,23 @@ async function once(c) {
         instance: c.instance,
       },
     }));
-  let outcome;
-  try {
-    await api(`/deployments/${deployment.id}/statuses`, {
-      state: "in_progress",
-      log_url: run.html_url,
-    });
-    outcome = await execute(c, m, s);
-    core.atomic(handled, {
-      status: "success",
-      commit: m.commit,
-      outcome: outcome.status,
-      deploymentId: deployment.id,
-      statusPending: true,
-    });
-  } catch {
-    core.atomic(handled, {
-      status: "failure",
-      commit: m.commit,
-      deploymentId: deployment.id,
-      statusPending: true,
-    });
-  }
-  // A failed acknowledgment retries status only, never the business mutation.
-  await acknowledge(c, api, handled, run.html_url);
+  await api(`/deployments/${deployment.id}/statuses`, {
+    state: "in_progress",
+    log_url: run.html_url,
+  });
+  const record = await execute(c, m, s, {
+    deploymentId: deployment.id,
+    artifactId: a[0].id,
+    artifactDigest: a[0].digest,
+  });
+  // Cache/ack failures are outside business execution. They cannot turn a
+  // durable success into failure or cause deployment effects to run again.
+  outcomeCache(c, record);
+  await acknowledge(c, api, handled, run.html_url, s);
   fs.rmSync(pending, { recursive: true, force: true });
 }
-async function acknowledge(c, api, file, url) {
+
+async function acknowledge(c, api, file, url, s = store(c)) {
   const r = JSON.parse(fs.readFileSync(file));
   if (!r.statusPending) return;
   await api(`/deployments/${r.deploymentId}/statuses`, {
@@ -223,9 +255,124 @@ async function acknowledge(c, api, file, url) {
     description:
       r.status === "success"
         ? "Synthetic staging available; hospital UAT required"
-        : "Staging operation failed; review recovery journal",
+        : r.status === "error"
+          ? "Staging outcome uncertain; independently approved recovery required"
+          : "Staging operation failed; review recovery journal",
   });
+  if (r.operationKey) {
+    const control = s.control(),
+      operation = control.operations[r.operationKey];
+    core.assert(
+      operation && operation.deploymentId === r.deploymentId,
+      "ACKNOWLEDGMENT_OPERATION_MISMATCH",
+    );
+    operation.acknowledgmentPending = false;
+    s.commit(control);
+  }
   core.atomic(file, { ...r, statusPending: false });
+}
+async function reconcileLocal(c, dependencies = {}) {
+  const s = dependencies.store || store(c),
+    io = dependencies.io || runtime.adapter(c);
+  let control = { activeOperation: "UNREADABLE", deployment: null },
+    current,
+    stateReadable = false;
+  const file = path.join(c.stateDirectory, "health.json");
+  let status = "healthy",
+    action = "NONE",
+    maintenance = false;
+  try {
+    control = s.control();
+    current = control.deployment;
+    stateReadable = true;
+    core.assert(
+      !control.activeOperation && current?.phase === "ACTIVE",
+      "INCOMPLETE_OPERATION_OR_NO_ACTIVE_RELEASE",
+    );
+    await io.health(current.release);
+    await io.routeHealth(current.release);
+  } catch {
+    status = "unhealthy";
+    action = stateReadable
+      ? "APPROVED_RECOVERY_REQUIRED"
+      : "MANUAL_STATE_JOURNAL_REVIEW_REQUIRED";
+    // Recheck the loaded gateway marker each time; a persisted boolean cannot
+    // establish whether maintenance survived a gateway/host restart.
+    try {
+      if (!(await io.maintenanceStatus())) await io.maintenance();
+      maintenance = await io.maintenanceStatus();
+      core.assert(maintenance, "MAINTENANCE_NOT_VERIFIED");
+    } catch {
+      action = "MANUAL_GATEWAY_INTERVENTION_REQUIRED";
+    }
+  }
+  let old = null;
+  try {
+    if (fs.existsSync(file)) old = JSON.parse(fs.readFileSync(file));
+  } catch {
+    /* Regenerate diagnostic state only; never edit the operation ledger. */
+  }
+  const value = {
+    status,
+    action,
+    maintenance,
+    commit: current?.release?.commit || null,
+    phase: current?.phase || "EMPTY",
+    operationKey: control.activeOperation,
+    firstObservedAt:
+      old?.status === status && old?.action === action
+        ? old.firstObservedAt
+        : new Date().toISOString(),
+    checkedAt: new Date().toISOString(),
+  };
+  core.atomic(file, value);
+  if (status !== old?.status || action !== old?.action)
+    s.append({ event: "LOCAL_HEALTH_CHANGED", ...value });
+  return value;
+}
+async function tick(c, dependencies = {}) {
+  const s = dependencies.store || store(c);
+  const reconcile = () => reconcileLocal(c, { store: s, io: dependencies.io });
+  // Local reconciliation runs before network work and again in finally. No
+  // GitHub token, acknowledgment, download or API failure can suppress it.
+  try {
+    await reconcile();
+  } catch {
+    console.error("LOCAL_HEALTH_JOURNAL_FAILED_MANUAL_REVIEW_REQUIRED");
+  }
+  let polling = "success";
+  try {
+    const token = await (dependencies.appToken || gh.appToken)(c),
+      api = dependencies.api || gh.transport(token);
+    for (const record of Object.values(s.control().operations)) {
+      if (!record.acknowledgmentPending) continue;
+      const file = outcomeCache(c, record);
+      await acknowledge(
+        c,
+        api,
+        file,
+        "https://github.com/" + policy.repository + "/actions",
+        s,
+      );
+    }
+    await (dependencies.once || once)(c, { store: s, token, api });
+  } catch {
+    polling = "blocked";
+  } finally {
+    try {
+      await reconcile();
+    } catch {
+      console.error("LOCAL_HEALTH_JOURNAL_FAILED_MANUAL_REVIEW_REQUIRED");
+    }
+    core.atomic(path.join(c.stateDirectory, "poll.json"), {
+      status: polling,
+      at: new Date().toISOString(),
+      action:
+        polling === "blocked"
+          ? "CHECK_GITHUB_AND_REQUEST_JOURNAL_LOCAL_MONITORING_CONTINUES"
+          : "NONE",
+    });
+  }
 }
 async function main() {
   const c = JSON.parse(fs.readFileSync("/etc/scop-staging/config.json"));
@@ -237,50 +384,25 @@ async function main() {
   fs.mkdirSync(c.stateDirectory, { recursive: true, mode: 0o700 });
   for (;;) {
     try {
-      const token = await gh.appToken(c),
-        api = gh.transport(token);
-      for (const f of fs
-        .readdirSync(c.stateDirectory)
-        .filter((n) => /^handled-\d+-\d+\.json$/.test(n)))
-        await acknowledge(
-          c,
-          api,
-          path.join(c.stateDirectory, f),
-          "https://github.com/" + policy.repository + "/actions",
-        );
-      await once(c);
-      const current = store(c).read();
-      if (current?.phase === "ACTIVE") {
-        const io = runtime.adapter(c),
-          healthFile = path.join(c.stateDirectory, "health.json");
-        try {
-          await io.health(current.release);
-          await io.routeHealth(current.release);
-          core.atomic(healthFile, {
-            status: "healthy",
-            commit: current.release.commit,
-            at: new Date().toISOString(),
-          });
-        } catch {
-          await io.maintenance();
-          core.atomic(healthFile, {
-            status: "unhealthy",
-            commit: current.release.commit,
-            at: new Date().toISOString(),
-            action: "APPROVED_RECOVERY_REQUIRED",
-          });
-          console.error("STAGING_HEALTH_FAILED_APPROVED_RECOVERY_REQUIRED");
-        }
-      } else if (current) await runtime.adapter(c).maintenance();
+      await tick(c);
     } catch {
-      console.error("STAGING_AGENT_BLOCKED_REVIEW_LOCAL_JOURNAL");
+      console.error("STAGING_AGENT_LOCAL_STORAGE_REQUIRES_REVIEW");
     }
     await new Promise((r) => setTimeout(r, c.pollSeconds * 1000));
   }
 }
+
 if (require.main === module)
   main().catch(() => {
     console.error("STAGING_AGENT_NOT_ACTIVATED");
     process.exitCode = 1;
   });
-module.exports = { store, execute, once, acknowledge };
+module.exports = {
+  store,
+  execute,
+  once,
+  acknowledge,
+  outcomeCache,
+  reconcileLocal,
+  tick,
+};
