@@ -263,7 +263,12 @@ async function recover({ config, commit, store, io }) {
   store.write({
     phase: "ACTIVE",
     release: target,
-    previous: old.phase === "ACTIVE" ? old.previous : null,
+    previous:
+      old.phase === "ACTIVE"
+        ? target.commit === old.release.commit
+          ? old.previous
+          : old.release
+        : null,
   });
   journal(store, "REVIEWED_RECOVERY_SUCCEEDED", { commit });
   return { status: "RECOVERED" };

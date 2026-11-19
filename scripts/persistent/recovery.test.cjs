@@ -456,3 +456,13 @@ for (const kind of ["rollback", "recover"])
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
+test("reviewed recovery to the preserved previous release retains the formerly active release for rollback", async () => {
+  const f = fixture("recover");
+  f.m = { ...manifest("a", 3, "recover"), kind: "wici-staging-request" };
+  assert.equal((await run(f)).status, "SUCCEEDED");
+  assert.equal(f.store.read().release.commit, "a".repeat(40));
+  assert.equal(f.store.read().previous.commit, "c".repeat(40));
+  const effects = f.effects.length;
+  await run(f);
+  assert.equal(f.effects.length, effects);
+});
