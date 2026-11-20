@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 # No database/application secrets or deployment environments are available here.
 env:
-  CI: 'true'
-  LIVE_ROUTING_ENABLED: 'false'
+  CI: "true"
+  LIVE_ROUTING_ENABLED: "false"
 jobs:
   backend:
     outputs:
@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: purchase-backend/package-lock.json
       - run: npm ci
@@ -62,7 +62,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '22'
+          node-version: "22"
           cache: npm
           cache-dependency-path: purchase-frontend/package-lock.json
       - run: npm ci
@@ -89,7 +89,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        node: ['20', '22']
+        node: ["20", "22"]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
@@ -105,7 +105,7 @@ jobs:
       - run: npm ci
         working-directory: purchase-backend
       - run: node scripts/devops/integrity.cjs --base-ref refs/remotes/origin/master
-      - run: node --test scripts/devops/automation.test.cjs scripts/devops/release-selection.test.cjs scripts/devops/security-regression.test.cjs scripts/devops/artifact-json.test.cjs scripts/devops/sync-publish.test.cjs scripts/devops/sync-evidence.test.cjs scripts/staging/staging.test.cjs
+      - run: node --test scripts/devops/automation.test.cjs scripts/devops/release-selection.test.cjs scripts/devops/security-regression.test.cjs scripts/devops/artifact-json.test.cjs scripts/devops/sync-publish.test.cjs scripts/devops/sync-evidence.test.cjs scripts/staging/staging.test.cjs scripts/persistent/persistent.test.cjs scripts/persistent/naming.test.cjs scripts/persistent/recovery.test.cjs scripts/persistent/gateway-probe.test.cjs scripts/persistent/image-store.test.cjs
       - run: npm test -- --runInBand --forceExit --json --outputFile=platform-test-results.json databaseReleasePaths.test.js databaseReleaseGovernance.test.js wiciRecoveryProfiles.test.js
         working-directory: purchase-backend
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -123,7 +123,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '22'
+          node-version: "22"
       - name: Validate workflow definitions with checksum-pinned actionlint
         run: |
           curl --fail --location --silent --show-error https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz --output "$RUNNER_TEMP/actionlint.tar.gz"
@@ -133,6 +133,15 @@ jobs:
           # release templates. Regression tests forbid this guard elsewhere.
           "$RUNNER_TEMP/actionlint" -ignore 'constant expression "false" in condition' .github/workflows/*.yml
       - run: node scripts/devops/security.cjs
+      - name: Validate persistent staging IaC without cloud access
+        run: |
+          mkdir -p "$RUNNER_TEMP/scop-tf"
+          curl --fail --location --silent --show-error https://releases.hashicorp.com/terraform/1.10.5/terraform_1.10.5_linux_amd64.zip --output "$RUNNER_TEMP/scop-tf/terraform.zip"
+          echo "0566a24f5332098b15716ebc394be503f4094acba5ba529bf5eb0698ed5e2a90  $RUNNER_TEMP/scop-tf/terraform.zip" | sha256sum --check --strict
+          unzip -q "$RUNNER_TEMP/scop-tf/terraform.zip" -d "$RUNNER_TEMP/scop-tf"
+          export TF_DATA_DIR="$RUNNER_TEMP/scop-tf/data"
+          "$RUNNER_TEMP/scop-tf/terraform" -chdir=deploy/persistent/terraform init -backend=false -input=false -lockfile=readonly
+          "$RUNNER_TEMP/scop-tf/terraform" -chdir=deploy/persistent/terraform validate
   sync-dry-run:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -157,7 +166,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '22'
+          node-version: "22"
       - run: node scripts/devops/sync-audit.cjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -177,7 +186,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '22'
+          node-version: "22"
       - run: node scripts/devops/code-evidence.cjs quality-results/code-ci-manifest.json
         if: always()
         env:

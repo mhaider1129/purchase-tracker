@@ -1,0 +1,20 @@
+#cloud-config
+# Staging-only base OS preparation. No repository clone, secrets, deployment,
+# SQL, production routes or automatic service activation.
+package_update: true
+packages: [docker.io, docker-compose-v2, ca-certificates, iptables]
+ssh_pwauth: false
+disable_root: true
+write_files:
+  - path: /etc/scop-staging/host-purpose
+    permissions: "0444"
+    content: wici-isolated-staging-v1
+  - path: /etc/scop-staging/ACTIVATION_PENDING
+    permissions: "0400"
+    content: |
+      Approved IaC provisioning does not activate the staging agent.
+      Mount the dedicated volume, configure TLS/access, initialize the synthetic
+      database under separate approval, verify isolation and install a reviewed
+      pinned control-plane image before authorizing service activation.
+runcmd:
+  - [install, -d, -m, "0700", /etc/scop-staging]

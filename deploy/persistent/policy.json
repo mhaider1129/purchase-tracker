@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "externalActivationEnabled": false,
+  "productionEnabled": false,
+  "repository": "mhaider1129/purchase-tracker",
+  "requestWorkflow": ".github/workflows/staging-persistent.yml",
+  "environment": "scop-staging",
+  "maxAgeHours": 24,
+  "maxCapsuleBytes": 1073741824,
+  "databaseContract": "hospital-erp-2026-11-scop1",
+  "maintenanceHandoffRequired": true
+}

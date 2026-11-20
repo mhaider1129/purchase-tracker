@@ -20,3 +20,9 @@ purchase-frontend/node_modules/
 /sync-inputs/
 /deploy/staging/staging.env
 /release-selection/
+
+# Persistent-staging operator material must never enter source control.
+/deploy/persistent/terraform/.terraform/
+/deploy/persistent/terraform/*.tfstate*
+/deploy/persistent/terraform/*.tfvars*
+/deploy/persistent/terraform/*.tfplan
