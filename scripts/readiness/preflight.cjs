@@ -711,7 +711,7 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
   const unitFields = (value) => {
     const section = value.split("[Unit]")[1]?.split(/\n\[/)[0] || "";
     const fields = {};
-    for (const line of section.split("\n")) {
+    for (const line of section.split("\n").map((line) => line.trim())) {
       const m = line.match(/^([A-Za-z]+)=(.*)$/);
       if (!m) continue;
       fail(

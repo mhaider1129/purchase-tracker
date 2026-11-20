@@ -531,3 +531,13 @@ for (const [name, mutate] of [
     const s = { ...base, "deploy/persistent/compose.yaml": yaml.dump(v) };
     assert.throws(() => audit(s), /COMPOSE/);
   });
+test("LF and CRLF unit files preserve the same declared startup dependencies", () => {
+  assert.equal(control(audit(), "START-03").result, "PASS");
+  const s = { ...base };
+  for (const f of [
+    "deploy/persistent/scop-staging.service",
+    "deploy/persistent/scop-staging-infra.service",
+  ])
+    s[f] = s[f].replace(/\n/g, "\r\n");
+  assert.equal(control(audit(s), "START-03").result, "PASS");
+});
