@@ -84,6 +84,7 @@ async function check(report, original) {
     stateDirectory: state,
     probeDirectory,
     readSecrets: () => secretBytes,
+    executionEpochFile: "/proc/sys/kernel/random/boot_id",
   });
   const store = agent.store({ ...cfg, stateDirectory: state });
   const fixtureManifest = (commit, run, fixtureImages = report.images) => {

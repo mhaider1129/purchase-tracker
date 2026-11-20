@@ -417,6 +417,16 @@ test("status acknowledgement retry never calls deployment again", async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+function reviewedRecovery(commit) {
+  return core.operationIdentity(
+    { ...manifest(commit[0]), operation: "recover" },
+    {
+      deploymentId: 7,
+      artifactId: 8,
+      artifactDigest: "sha256:" + "f".repeat(64),
+    },
+  );
+}
 test("reviewed reboot recovery can restart the exact recorded active release", async () => {
   const f = fixture();
   f.running.clear();
@@ -425,6 +435,8 @@ test("reviewed reboot recovery can restart the exact recorded active release", a
     commit: f.prev.commit,
     store: f.store,
     io: f.io,
+    recoveryOperation: reviewedRecovery(f.prev.commit),
+    quiescence: async () => ({ method: "isolated-test" }),
   });
   assert.equal(result.status, "RECOVERED");
   assert.equal(f.state.release.commit, f.prev.commit);
@@ -445,6 +457,8 @@ test("reviewed interrupted recovery selects only recorded prior release", async 
         commit: "f".repeat(40),
         store: f.store,
         io: f.io,
+        recoveryOperation: reviewedRecovery("f".repeat(40)),
+        quiescence: async () => ({ method: "isolated-test" }),
       }),
     /EXACT_RECORDED/,
   );
@@ -453,6 +467,8 @@ test("reviewed interrupted recovery selects only recorded prior release", async 
     commit: f.prev.commit,
     store: f.store,
     io: f.io,
+    recoveryOperation: reviewedRecovery(f.prev.commit),
+    quiescence: async () => ({ method: "isolated-test" }),
   });
   assert.equal(f.state.release.commit, f.prev.commit);
   assert.equal(f.state.phase, "ACTIVE");

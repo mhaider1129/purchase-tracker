@@ -272,6 +272,46 @@ async function acknowledge(c, api, file, url, s = store(c)) {
   }
   core.atomic(file, { ...r, statusPending: false });
 }
+// Maintenance reloads also cross the Docker/disk boundary. A lost reply must
+// not become an untracked route change that can outlive reviewed recovery.
+async function localMaintenance(s, io, stateReadable) {
+  if (!stateReadable) return io.maintenance(); // corrupt authority stays unusable
+  const epoch = core.validEpoch(await io.executionEpoch()),
+    key = `local-maintenance:${require("node:crypto").randomUUID()}`,
+    control = s.control(),
+    identity = { operation: "local-maintenance", key, executionEpoch: epoch },
+    record = {
+      key,
+      identity,
+      digest: core.sha(JSON.stringify(identity)),
+      status: "RUNNING",
+      executionProtocol: 2,
+      executionEpoch: epoch,
+      pendingEffect: { name: "maintenance", executionEpoch: epoch },
+      fenceRequired: true,
+      acknowledgmentPending: false,
+      createdAt: new Date().toISOString(),
+    };
+  control.operations[key] = record;
+  s.commit(control); // claim before the reload; never repeat an unknown effect
+  await io.maintenance();
+  core.assert(
+    core.validEpoch(await io.executionEpoch()) === epoch,
+    "HOST_EXECUTION_EPOCH_CHANGED_DURING_OPERATION",
+  );
+  const next = s.control();
+  core.assert(
+    next.operations[key]?.digest === record.digest,
+    "MAINTENANCE_OWNERSHIP_CHANGED",
+  );
+  Object.assign(next.operations[key], {
+    status: "SUCCEEDED",
+    pendingEffect: null,
+    fenceRequired: false,
+    completedAt: new Date().toISOString(),
+  });
+  s.commit(next);
+}
 async function reconcileLocal(c, dependencies = {}) {
   const s = dependencies.store || store(c),
     io = dependencies.io || runtime.adapter(c);
@@ -287,7 +327,7 @@ async function reconcileLocal(c, dependencies = {}) {
     current = control.deployment;
     stateReadable = true;
     core.assert(
-      !control.activeOperation && current?.phase === "ACTIVE",
+      !core.recoveryRequired(control) && current?.phase === "ACTIVE",
       "INCOMPLETE_OPERATION_OR_NO_ACTIVE_RELEASE",
     );
     await io.health(current.release);
@@ -300,7 +340,20 @@ async function reconcileLocal(c, dependencies = {}) {
     // Recheck the loaded gateway marker each time; a persisted boolean cannot
     // establish whether maintenance survived a gateway/host restart.
     try {
-      if (!(await io.maintenanceStatus())) await io.maintenance();
+      if (!(await io.maintenanceStatus())) {
+        // An unacknowledged maintenance call is never automatically replayed.
+        const blocked =
+          stateReadable &&
+          core
+            .unresolvedOperations(s.control())
+            .some(
+              (key) =>
+                s.control().operations[key].pendingEffect?.name ===
+                "maintenance",
+            );
+        core.assert(!blocked, "PENDING_MAINTENANCE_REQUIRES_REVIEWED_RECOVERY");
+        await localMaintenance(s, io, stateReadable);
+      }
       maintenance = await io.maintenanceStatus();
       core.assert(maintenance, "MAINTENANCE_NOT_VERIFIED");
     } catch {
@@ -320,6 +373,13 @@ async function reconcileLocal(c, dependencies = {}) {
     commit: current?.release?.commit || null,
     phase: current?.phase || "EMPTY",
     operationKey: control.activeOperation,
+    unresolvedOperations: (() => {
+      try {
+        return core.unresolvedOperations(s.control());
+      } catch {
+        return ["UNREADABLE"];
+      }
+    })(),
     firstObservedAt:
       old?.status === status && old?.action === action
         ? old.firstObservedAt

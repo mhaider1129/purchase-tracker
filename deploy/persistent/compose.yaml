@@ -79,6 +79,7 @@ services:
       all_proxy: ""
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - /proc/sys/kernel/random/boot_id:/run/scop-host-boot-id:ro
       - /var/lib/scop-staging:/var/lib/scop-staging
       - /etc/scop-staging/config.json:/etc/scop-staging/config.json:ro
       - /etc/scop-staging/github-app.pem:/etc/scop-staging/github-app.pem:ro

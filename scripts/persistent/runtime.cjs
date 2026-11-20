@@ -252,6 +252,16 @@ function adapter(c, paths = {}) {
     );
   }
   return {
+    async executionEpoch() {
+      return require("./core.cjs").validEpoch(
+        fs
+          .readFileSync(
+            paths.executionEpochFile || "/run/scop-host-boot-id",
+            "utf8",
+          )
+          .trim(),
+      );
+    },
     async preflight(r) {
       requireCanonicalImageStore();
       const n = safeRelease(r);

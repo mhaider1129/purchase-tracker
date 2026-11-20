@@ -154,7 +154,7 @@ async function deploy({ config, manifest, store, io }) {
       request: manifest.request,
       manifest,
     };
-  if (old?.phase !== "ACTIVE" && old !== null)
+  if (old?.recoveryContext || (old?.phase !== "ACTIVE" && old !== null))
     throw Error("INTERRUPTED_OPERATION_REQUIRES_REVIEWED_RECOVERY");
   if (old?.release.commit === release.commit) {
     assert(
@@ -233,30 +233,138 @@ async function deploy({ config, manifest, store, io }) {
     throw Error("CANDIDATE_FAILED_PREVIOUS_RELEASE_RECOVERED");
   }
 }
-async function recover({ config, commit, store, io }) {
+function unresolvedOperations(control) {
+  const entries = Object.entries(control.operations || {});
+  return entries
+    .filter(([key, r]) => {
+      assert(r && r.key === key, "CORRUPT_OPERATION_LEDGER");
+      return (
+        !r.resolvedBy &&
+        (r.fenceRequired === true ||
+          ["RUNNING", "UNCERTAIN"].includes(r.status))
+      );
+    })
+    .map(([key]) => key);
+}
+function recoveryRequired(control) {
+  return Boolean(
+    control.activeOperation ||
+      control.deployment?.recoveryContext ||
+      unresolvedOperations(control).length,
+  );
+}
+function validEpoch(value) {
+  assert(
+    typeof value === "string" &&
+      /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(value),
+    "VERIFIED_HOST_EXECUTION_EPOCH_REQUIRED",
+  );
+  return value;
+}
+function recoveryOrigin(state) {
+  const context = state?.recoveryContext;
+  if (context) {
+    assert(
+      context.version === 1 &&
+        context.origin &&
+        context.originDigest === sha(JSON.stringify(context.origin)),
+      "RECOVERY_CONTEXT_INTEGRITY_FAILED",
+    );
+    return context.origin;
+  }
+  assert(state?.release, "EXACT_RECORDED_RECOVERY_TARGET_REQUIRED");
+  return {
+    phase: state.phase,
+    release: state.release,
+    previous: state.previous || null,
+  };
+}
+async function recover({
+  config,
+  commit,
+  store,
+  io,
+  recoveryOperation,
+  quiescence,
+}) {
   configuration(config, false);
-  const old = store.read();
+  assert(
+    recoveryOperation?.identity?.operation === "recover" &&
+      recoveryOperation.identity.commit === commit &&
+      recoveryOperation.key ===
+        `${recoveryOperation.identity.runId}:${recoveryOperation.identity.attempt}` &&
+      recoveryOperation.digest ===
+        sha(JSON.stringify(recoveryOperation.identity)),
+    "BOUND_RECOVERY_OPERATION_REQUIRED",
+  );
+  const old = store.read(),
+    origin = recoveryOrigin(old);
   const target =
-    old?.phase === "ACTIVE" && old.release.commit === commit
-      ? old.release
-      : old?.previous?.commit === commit
-        ? old.previous
+    origin.phase === "ACTIVE" && origin.release.commit === commit
+      ? origin.release
+      : origin.previous?.commit === commit
+        ? origin.previous
         : null;
   assert(target, "EXACT_RECORDED_RECOVERY_TARGET_REQUIRED");
   capsule(target.manifest);
-  journal(store, "RECOVERY_REQUEST_VERIFIED", { commit });
+  assert(typeof quiescence === "function", "VERIFIED_QUIESCENCE_REQUIRED");
+  let context = {
+    version: 1,
+    origin: structuredClone(origin),
+    originDigest: sha(JSON.stringify(origin)),
+    originalActive: origin.phase === "ACTIVE" ? origin.release : null,
+    originalPrevious: origin.previous,
+    selectedTarget: target,
+    operation: structuredClone(recoveryOperation),
+    stage: "PREFLIGHT",
+    uncertainty: { status: "UNRESOLVED" },
+    attempts: [
+      ...(old.recoveryContext?.attempts || []),
+      {
+        operation: structuredClone(recoveryOperation),
+        target: target.commit,
+        stage: "PREFLIGHT",
+      },
+    ],
+  };
+  const checkpoint = (stage, update = {}) => {
+    // Retain both original references and the target until the terminal ledger
+    // commit resolves the entire inherited fence. Never use previous as scratch.
+    context = { ...context, stage, ...update };
+    context.attempts.at(-1).stage = stage;
+    store.write({ ...store.read(), recoveryContext: structuredClone(context) });
+  };
+  checkpoint("PREFLIGHT");
+  journal(store, "RECOVERY_REQUEST_VERIFIED", {
+    commit,
+    operationKey: recoveryOperation.key,
+  });
   await io.preflight(target);
+  const proof = await quiescence();
+  checkpoint("QUIESCENT", { quiescence: proof });
   await io.maintenance();
   store.write({
+    ...store.read(),
     phase: "RECOVERY_REQUIRED",
-    release: old.release,
-    previous: target,
+    recoveryContext: { ...context, stage: "HANDOFF" },
   });
+  // Context may outlive several interrupted attempts. Stop every recorded
+  // generation, not just whichever references happened to survive the last one.
   const stop = new Map(
-    [old.release, old.previous].filter(Boolean).map((r) => [r.commit, r]),
+    [old.release, old.previous, origin.release, origin.previous, target]
+      .filter(Boolean)
+      .map((r) => [
+        sha(JSON.stringify([r.commit, r.images, r.manifest.request])),
+        r,
+      ]),
   );
-  for (const release of stop.values()) await io.stop(release);
+  for (const release of stop.values()) {
+    checkpoint("STOPPING");
+    await io.stop(release);
+  }
+  checkpoint("STARTING");
   await io.start(target);
+  checkpoint("VERIFYING");
   await io.health(target);
   await io.route(target);
   await io.routeHealth(target);
@@ -264,15 +372,17 @@ async function recover({ config, commit, store, io }) {
     phase: "ACTIVE",
     release: target,
     previous:
-      old.phase === "ACTIVE"
-        ? target.commit === old.release.commit
-          ? old.previous
-          : old.release
+      origin.phase === "ACTIVE"
+        ? target.commit === origin.release.commit
+          ? origin.previous
+          : origin.release
         : null,
+    recoveryContext: { ...context, stage: "VERIFIED_AWAITING_TERMINAL_COMMIT" },
   });
   journal(store, "REVIEWED_RECOVERY_SUCCEEDED", { commit });
-  return { status: "RECOVERED" };
+  return { status: "RECOVERED", quiescence: proof };
 }
+
 function operationIdentity(manifest, provenance) {
   const request = manifest.request;
   for (const value of [
@@ -330,31 +440,43 @@ async function operation({ config, manifest, provenance, store, io }) {
     );
     return recorded;
   }
-  if (control.activeOperation) {
+  const inherited = unresolvedOperations(control);
+  if (recoveryRequired(control)) {
     assert(
       manifest.operation === "recover",
       "PREVIOUS_OPERATION_REQUIRES_REVIEWED_RECOVERY",
     );
-    assert(
-      control.operations[control.activeOperation],
-      "CORRUPT_OPERATION_LEDGER",
-    );
+    if (control.activeOperation)
+      assert(
+        control.operations[control.activeOperation],
+        "CORRUPT_OPERATION_LEDGER",
+      );
   }
+  assert(
+    typeof io.executionEpoch === "function",
+    "VERIFIED_HOST_EXECUTION_EPOCH_REQUIRED",
+  );
+  const executionEpoch = validEpoch(await io.executionEpoch());
   const timestamp = () => new Date().toISOString();
-  const previousOperation = control.activeOperation;
   const record = {
     ...id,
     status: "RUNNING",
     stage: "CLAIMED",
     deploymentId: provenance.deploymentId,
+    executionProtocol: 2,
+    executionEpoch,
+    pendingEffect: null,
+    fenceRequired: true,
+    inheritedUncertainty: inherited,
     createdAt: timestamp(),
     transitions: [],
     acknowledgmentPending: true,
   };
   control = structuredClone(control);
-  if (previousOperation) {
-    control.operations[previousOperation].status = "UNCERTAIN";
-    control.operations[previousOperation].supersededBy = id.key;
+  for (const key of inherited) {
+    const prior = control.operations[key];
+    if (prior.status === "RUNNING") prior.status = "UNCERTAIN";
+    prior.recoveryAttempts = [...(prior.recoveryAttempts || []), id.key];
   }
   control.operations[id.key] = record;
   control.activeOperation = id.key;
@@ -362,16 +484,23 @@ async function operation({ config, manifest, provenance, store, io }) {
   store.commit(control);
   let storageFault = false,
     effectUncertain = false;
-  const transition = (stage, deployment) => {
+  const transition = (stage, deployment, pendingUpdate) => {
     assert(
       !storageFault && !effectUncertain,
       "OPERATION_EFFECT_OR_STORAGE_UNCERTAIN",
     );
     control = store.control();
+    assert(control.activeOperation === id.key, "OPERATION_OWNERSHIP_CHANGED");
     const next = structuredClone(control);
     if (deployment !== undefined) next.deployment = deployment;
     const r = next.operations[id.key];
     r.stage = stage;
+    if (pendingUpdate !== undefined) r.pendingEffect = pendingUpdate;
+    if (
+      deployment === undefined &&
+      next.deployment?.recoveryContext?.operation.key === id.key
+    )
+      next.deployment.recoveryContext.stage = stage;
     r.transitions.push({ stage, at: timestamp() });
     try {
       store.commit(next);
@@ -384,32 +513,124 @@ async function operation({ config, manifest, provenance, store, io }) {
     Object.entries(io).map(([name, fn]) => [
       name,
       async (...args) => {
-        transition(`BEFORE_${name}`);
+        const mutating = [
+          "prepare",
+          "maintenance",
+          "stop",
+          "start",
+          "route",
+        ].includes(name);
+        transition(
+          `BEFORE_${name}`,
+          undefined,
+          mutating ? { name, executionEpoch, at: timestamp() } : undefined,
+        );
         let result;
         try {
           result = await fn(...args);
         } catch (error) {
-          // Killing/timing out the Docker CLI does not prove the daemon aborted
-          // a mutating request. Never restart another worker generation while
-          // such an effect may still be in flight.
-          if (
-            ["prepare", "maintenance", "stop", "start", "route"].includes(
-              name,
-            ) &&
-            (error.code === "ETIMEDOUT" || error.signal || error.killed)
-          )
-            effectUncertain = true;
+          // An error/closed connection is not a cancellation acknowledgment.
+          // Preserve pendingEffect until a different verified host boot proves
+          // old Docker processes/requests cannot run after reviewed recovery.
+          if (mutating) effectUncertain = true;
           throw error;
         }
-        transition(`AFTER_${name}`);
+        transition(`AFTER_${name}`, undefined, mutating ? null : undefined);
         return result;
       },
     ]),
   );
   const businessStore = {
     read: () => store.read(),
-    write: (value) => transition(value?.phase || "EMPTY", value),
+    write: (value) =>
+      transition(
+        value?.recoveryContext
+          ? `RECOVERY_${value.recoveryContext.stage}`
+          : value?.phase || "EMPTY",
+        value,
+      ),
     append: (row) => store.append({ ...row, operationKey: id.key }),
+  };
+  const proveQuiescence = async () => {
+    const observedEpoch = validEpoch(await guarded.executionEpoch());
+    assert(
+      observedEpoch === executionEpoch,
+      "HOST_EXECUTION_EPOCH_CHANGED_DURING_OPERATION",
+    );
+    let observed = store.control(),
+      needsRestart = false;
+    const proof = {
+      version: 1,
+      recoveryOperation: id.key,
+      recoveryDigest: id.digest,
+      observedEpoch,
+      operations: [],
+    };
+    for (const key of inherited) {
+      const prior = observed.operations[key];
+      assert(
+        prior &&
+          !prior.resolvedBy &&
+          prior.digest === sha(JSON.stringify(prior.identity)),
+        "UNCERTAINTY_HISTORY_CHANGED",
+      );
+      if (
+        prior.executionProtocol === 2 &&
+        Object.hasOwn(prior, "pendingEffect") &&
+        prior.executionEpoch
+      ) {
+        validEpoch(prior.executionEpoch);
+        assert(
+          prior.pendingEffect === null ||
+            (prior.pendingEffect &&
+              typeof prior.pendingEffect === "object" &&
+              ["prepare", "maintenance", "stop", "start", "route"].includes(
+                prior.pendingEffect.name,
+              )),
+          "CORRUPT_PENDING_EFFECT",
+        );
+        if (prior.pendingEffect) {
+          assert(
+            prior.pendingEffect.executionEpoch === prior.executionEpoch,
+            "CORRUPT_PENDING_EFFECT",
+          );
+          if (prior.executionEpoch === observedEpoch) needsRestart = true;
+        }
+        proof.operations.push({
+          key,
+          digest: prior.digest,
+          method: prior.pendingEffect
+            ? "HOST_BOOT_CHANGED"
+            : "DURABLY_ACKNOWLEDGED_EFFECTS",
+          sourceEpoch: prior.executionEpoch,
+        });
+      } else {
+        // Legacy records never receive invented execution evidence. Observe a
+        // barrier now, then require a separately authorized cold host restart.
+        observed.quiescenceBarriers ||= {};
+        let barrier = observed.quiescenceBarriers[key];
+        if (!barrier || barrier.digest !== prior.digest) {
+          barrier = { digest: prior.digest, observedEpoch, at: timestamp() };
+          observed.quiescenceBarriers[key] = barrier;
+          try {
+            store.commit(observed);
+          } catch (error) {
+            storageFault = true;
+            throw error;
+          }
+        }
+        validEpoch(barrier.observedEpoch);
+        if (barrier.observedEpoch === observedEpoch) needsRestart = true;
+        proof.operations.push({
+          key,
+          digest: prior.digest,
+          method: "REVIEW_BARRIER_HOST_BOOT_CHANGED",
+          sourceEpoch: barrier.observedEpoch,
+        });
+      }
+    }
+    assert(!needsRestart, "REVIEWED_HOST_RESTART_REQUIRED_TO_QUIESCE_DOCKER");
+    return proof;
   };
   let result, error;
   try {
@@ -419,6 +640,8 @@ async function operation({ config, manifest, provenance, store, io }) {
         commit: manifest.commit,
         store: businessStore,
         io: guarded,
+        recoveryOperation: id,
+        quiescence: proveQuiescence,
       });
     } else {
       let selected = manifest;
@@ -444,7 +667,14 @@ async function operation({ config, manifest, provenance, store, io }) {
   // converted into a known failure/success. Keep the durable claim fenced.
   if (storageFault || effectUncertain || error?.simulatedCrash)
     throw Error("OPERATION_OUTCOME_UNCERTAIN_REVIEW_REQUIRED");
+  if (!error) {
+    assert(
+      validEpoch(await io.executionEpoch()) === executionEpoch,
+      "HOST_EXECUTION_EPOCH_CHANGED_DURING_OPERATION",
+    );
+  }
   control = store.control();
+  assert(control.activeOperation === id.key, "OPERATION_OWNERSHIP_CHANGED");
   const next = structuredClone(control),
     terminal = next.operations[id.key];
   terminal.status = error
@@ -455,11 +685,48 @@ async function operation({ config, manifest, provenance, store, io }) {
   terminal.stage = terminal.status;
   terminal.outcome = result?.status || "OPERATION_FAILED_REVIEW_JOURNAL";
   terminal.completedAt = timestamp();
+  terminal.fenceRequired =
+    !!error &&
+    (manifest.operation === "recover" || terminal.status === "UNCERTAIN");
   terminal.transitions.push({
     stage: terminal.status,
     at: terminal.completedAt,
   });
-  next.activeOperation = terminal.status === "UNCERTAIN" ? id.key : null;
+  if (!error && manifest.operation === "recover") {
+    const proof = result.quiescence;
+    assert(
+      next.deployment?.phase === "ACTIVE" &&
+        next.deployment.recoveryContext?.operation.digest === id.digest,
+      "RECOVERY_CONTEXT_INTEGRITY_FAILED",
+    );
+    assert(
+      proof?.recoveryOperation === id.key &&
+        proof.recoveryDigest === id.digest &&
+        proof.observedEpoch === executionEpoch,
+      "VERIFIED_QUIESCENCE_REQUIRED",
+    );
+    assert(
+      JSON.stringify(proof.operations.map((r) => r.key)) ===
+        JSON.stringify(inherited),
+      "INCOMPLETE_QUIESCENCE_PROOF",
+    );
+    for (const key of inherited) {
+      const prior = next.operations[key];
+      prior.resolvedBy = id.key;
+      prior.supersededBy = id.key;
+      prior.resolution = { at: terminal.completedAt, proof };
+    }
+    terminal.recoveryContext = {
+      ...next.deployment.recoveryContext,
+      stage: "RESOLVED",
+      uncertainty: { status: "RESOLVED" },
+      resolvedAt: terminal.completedAt,
+      quiescence: proof,
+    };
+    delete next.deployment.recoveryContext;
+  }
+  const remaining = unresolvedOperations(next);
+  next.activeOperation = remaining.at(-1) || null;
   // This commit precedes the handled-file cache and GitHub acknowledgment. A
   // crash on either side never permits a second execution of this identity.
   store.commit(next);
@@ -476,4 +743,7 @@ module.exports = {
   recover,
   operationIdentity,
   operation,
+  unresolvedOperations,
+  recoveryRequired,
+  validEpoch,
 };
