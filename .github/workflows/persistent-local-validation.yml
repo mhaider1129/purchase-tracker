@@ -1,8 +1,21 @@
 name: Persistent staging local integration
 on:
   pull_request:
+    # Preparation/control-wiring-only source cannot produce deployment evidence.
+    # Runtime paths stay outside this list and retain the real SQL rehearsal.
+    # A skipped run is NOT accepted by the unchanged same-commit release gate.
+    paths-ignore:
+      - 'docs/**'
+      - 'scripts/readiness/**'
+      - '.github/workflows/release-quality.yml'
+      - '.github/workflows/persistent-local-validation.yml'
   push:
     branches: [master, "codex/**"]
+    paths-ignore:
+      - 'docs/**'
+      - 'scripts/readiness/**'
+      - '.github/workflows/release-quality.yml'
+      - '.github/workflows/persistent-local-validation.yml'
   workflow_dispatch:
 permissions:
   contents: read
