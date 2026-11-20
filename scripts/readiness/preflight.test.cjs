@@ -225,7 +225,7 @@ test("offline render wrapper uses a nonexistent socket, fresh empty env and no i
           !options.env.DOCKER_HOST &&
           !options.env.COMPOSE_PROFILES,
       );
-      if (args.includes("version")) return "2.synthetic";
+      if (args.includes("version")) return "2.40.3";
       assert(args.includes("config") && args.includes("--no-env-resolution"));
       assert(
         !args.includes("up") && !args.includes("pull") && !args.includes("run"),
@@ -275,7 +275,7 @@ test("offline render wrapper uses a nonexistent socket, fresh empty env and no i
 test("failed Compose rendering is a FAIL and never converted into accepted evidence", () => {
   const e = p.renderProfiles(fixture, {
     run: (bin, args) => {
-      if (args.includes("version")) return "2.synthetic";
+      if (args.includes("version")) return "2.40.3";
       throw Error("synthetic render failure");
     },
   });
@@ -540,4 +540,45 @@ test("LF and CRLF unit files preserve the same declared startup dependencies", (
   ])
     s[f] = s[f].replace(/\n/g, "\r\n");
   assert.equal(control(audit(s), "START-03").result, "PASS");
+});
+test("the exact CI Compose5.1.3 parser supports the bounded config-only interface", () => {
+  const e = p.renderProfiles(fixture, {
+    run: (bin, args) => {
+      assert.equal(args[0], "--host=unix:///nonexistent-scop-preflight.sock");
+      if (args.includes("version")) return "5.1.3";
+      const services = {};
+      for (let i = 0; i < args.length; i++)
+        if (args[i] === "--profile")
+          services[args[i + 1].replace("separately-approved-", "")] = {};
+      return JSON.stringify({ services });
+    },
+  });
+  const r = audit(base, fixture, e);
+  assert.equal(control(r, "CMP-04").result, "PASS");
+  assert.equal(p.reportCode(r), 0);
+  assert.equal(p.exitCode(r), 1);
+});
+for (const version of ["1.29.2", "3.0.0", "5.1.4", "6.0.0", "malformed"])
+  test(`unsupported Compose parser remains fail-closed: ${version}`, () =>
+    assert.throws(
+      () =>
+        p.renderProfiles(fixture, {
+          run: (bin, args) => {
+            assert(args.includes("version"));
+            return version;
+          },
+        }),
+      /SUPPORTED_COMPOSE_PARSER_REQUIRED/,
+    ));
+test("real offline rendering failures fail report-generation status while preserving the blocked assessment", () => {
+  const e = p.renderProfiles(fixture, {
+      run: (bin, args) => {
+        if (args.includes("version")) return "2.40.3";
+        throw Error("synthetic render failure");
+      },
+    }),
+    r = audit(base, fixture, e);
+  assert.equal(r.activation_allowed, false);
+  assert.equal(p.reportCode(r), 1);
+  assert.equal(p.reportCode(audit()), 0);
 });

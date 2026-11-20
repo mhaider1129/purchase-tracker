@@ -991,7 +991,11 @@ function renderProfiles(config, { run = execFileSync } = {}) {
     const version = exec(["version", "--short"]),
       projections = [],
       failures = [];
-    fail(/^v?2\./.test(version), "COMPOSE_V2_REQUIRED");
+    fail(
+      /^v?2\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/.test(version) ||
+        /^v?5\.1\.3$/.test(version),
+      "SUPPORTED_COMPOSE_PARSER_REQUIRED",
+    );
     const names = ["database", "gateway", "agent", "egress"];
     for (let mask = 0; mask < 16; mask++) {
       const profiles = names
@@ -1048,6 +1052,15 @@ function renderProfiles(config, { run = execFileSync } = {}) {
 function exitCode(report) {
   return report.counts.FAIL ? 1 : 2;
 } // this phase can NEVER authorize activation
+function reportCode(report) {
+  // Existing source gaps remain visible in a successfully generated report.
+  // An attempted offline tool check that actually fails must also fail CI.
+  return report.controls.some(
+    (c) => c.control_id === "CMP-04" && c.result === "FAIL",
+  )
+    ? 1
+    : 0;
+}
 function writeReport(report, outputRoot = root) {
   const segments = ["quality-results", "persistent", "preflight"];
   let dir = outputRoot;
@@ -1104,7 +1117,7 @@ function main(args = process.argv.slice(2)) {
   });
   if (args[0] === "report") writeReport(report);
   process.stdout.write(JSON.stringify(report, null, 2) + "\n");
-  return args[0] === "check" ? exitCode(report) : 0;
+  return args[0] === "check" ? exitCode(report) : reportCode(report);
 }
 if (require.main === module) {
   try {
@@ -1134,5 +1147,6 @@ module.exports = {
   renderProfiles,
   writeReport,
   exitCode,
+  reportCode,
   main,
 };
