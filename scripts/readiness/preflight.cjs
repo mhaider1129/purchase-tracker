@@ -275,11 +275,11 @@ const hardeningIdentities = {
   "deploy/persistent/docker-staging.conf":
     "fdb96712c5ad503765a94aa28e4767a9f98685727da5547859388624ca73e7f5",
   "deploy/persistent/cloud-init.yaml":
-    "68fc904f9f6ce6c568f20657185362d087ee1b0f340548fcdb327a51c9b89081",
+    "f195385081b090a3f03fd40358d5c7304a9ad39da2457c6ed25ce52000de1925",
   "deploy/persistent/firewall.sh":
     "f8d9189eaf66ac9b838667104842f8b350d680db3eb8c25993a57e6303ea5e0b",
   "deploy/persistent/host-policy.py":
-    "8413f85178e1ee5523ed3d00e6c3ba2bd1991c6ff34cb35dae0b6591c3a1d745",
+    "fb2321406d0fb2a6dc98eb5a7694e0a6e4eb65a888c4fb06df98048758b550eb",
   "deploy/persistent/terraform/main.tf.json":
     "b4a60cb93be3e069df4145cb5ed3bae1c55ce4ec3ee8b3d2b03102a846730bb8",
   "scripts/persistent/runtime.cjs":

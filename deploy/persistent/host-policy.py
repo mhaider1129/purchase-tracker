@@ -166,6 +166,11 @@ def protected_text(file):
     return file.read_text(encoding="utf-8", errors="strict")
 
 
+def stock_firewall_mask(file):
+    s = file.lstat()
+    require(stat.S_ISLNK(s.st_mode) and s.st_uid == 0 and str(file.readlink()) == "/dev/null", "STOCK_NFT_SERVICE_MUST_REMAIN_MASKED")
+
+
 def main(args):
     require(args in (["firewall"], ["ownership", "existing"], ["ownership", "required"]), "UNSUPPORTED_HOST_OPERATION")
     base = Path("/etc/scop-staging")
@@ -177,6 +182,9 @@ def main(args):
     config = document(protected_text(base / "config.json"))
     require(config.get("purpose") == PURPOSE and config.get("instance") == policy["instance"], "HOST_INSTANCE_MISMATCH")
     if args == ["firewall"]:
+        # The distro's default unit/config may flush the global ruleset. It must
+        # never race/reload after our owned table, including across host reboots.
+        stock_firewall_mask(Path("/etc/systemd/system/nftables.service"))
         import fcntl  # Linux host only; pure functions remain portable in tests.
         with open("/run/scop-staging-firewall.lock", "a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)

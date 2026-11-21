@@ -20,6 +20,14 @@ class NetworkPolicy(unittest.TestCase):
         with self.assertRaises(ValueError):
             policy.document('{"instance":"foreign","instance":"hospital-test"}')
 
+    def test_stock_global_flusher_must_be_permanently_masked(self):
+        good = SimpleNamespace(lstat=lambda: SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_uid=0), readlink=lambda: "/dev/null")
+        policy.stock_firewall_mask(good)
+        for mode, uid, target in ((stat.S_IFREG | 0o644, 0, "/dev/null"), (stat.S_IFLNK | 0o777, 1000, "/dev/null"), (stat.S_IFLNK | 0o777, 0, "/unreviewed/unit")):
+            bad = SimpleNamespace(lstat=lambda: SimpleNamespace(st_mode=mode, st_uid=uid), readlink=lambda: Path(target))
+            with self.assertRaises(ValueError):
+                policy.stock_firewall_mask(bad)
+
     def test_synthetic_config_and_bounded_render(self):
         self.assertEqual(policy.validate(BASE), BASE)
         batch = policy.render(BASE)
