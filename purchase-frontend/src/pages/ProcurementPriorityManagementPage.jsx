@@ -20,6 +20,8 @@ import {
   updatePriorityAssessment,
   updatePriorityGroup,
 } from "../api/procurementPriority";
+import PriorityAssessmentDialog from "../components/priority/PriorityAssessmentDialog";
+import RequestViewModeToggle from "../components/requests/RequestViewModeToggle";
 import PriorityTierBadge from "../components/priority/PriorityTierBadge";
 import usePriorityQueueRefresh from "../hooks/usePriorityQueueRefresh";
 import {
@@ -98,14 +100,17 @@ export const toCanonicalAssessmentDto = (form) => ({
   approved_initiative_id: form.approved_initiative_id || null,
   p0_justification: form.p0_justification,
 });
-function AssessmentForm({ profile, onSaved }) {
+function AssessmentForm({ profile, onSaved, onDraftChange, onSavingChange }) {
   const uiText = useUiTranslation();
   const [form, setForm] = useState({});
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(null);
-  const set = (name, value) => setForm((old) => ({ ...old, [name]: value }));
+  const set = (name, value) => {
+    onDraftChange(true);
+    setForm((old) => ({ ...old, [name]: value }));
+  };
   useEffect(
     () =>
       setForm({
@@ -129,7 +134,11 @@ function AssessmentForm({ profile, onSaved }) {
     [profile],
   );
   useEffect(() => {
-    if (form.scm_assessment === "" || !form.scm_reason) return;
+    let active = true;
+    if (form.scm_assessment === "" || !form.scm_reason?.trim()) {
+      setPreview(null);
+      return;
+    }
     const timer = setTimeout(
       () =>
         previewPriorityAssessment(
@@ -137,24 +146,34 @@ function AssessmentForm({ profile, onSaved }) {
           toCanonicalAssessmentDto(form),
         )
           .then((x) => {
+            if (!active) return;
             setPreview(x.data);
             setError("");
           })
-          .catch((e) =>
-            setError(
-              e.response?.data?.message ||
-                "Unable to calculate projected priority.",
-            ),
+          .catch(
+            (e) =>
+              active &&
+              setError(
+                e.response?.data?.message ||
+                  "Unable to calculate projected priority.",
+              ),
           ),
       300,
     );
-    return () => clearTimeout(timer);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
   }, [form, profile.procurement_case_id]);
   const submit = async (e) => {
     e.preventDefault();
+    if (saving) return;
+    if (!form.scm_reason?.trim())
+      return setError("A nonblank SCM reason is required.");
     if (preview?.p0JustificationRequired && !form.p0_justification.trim())
       return setError("P0 justification is required.");
     setSaving(true);
+    onSavingChange(true);
     setError("");
     setSuccess("");
     try {
@@ -162,6 +181,7 @@ function AssessmentForm({ profile, onSaved }) {
         profile.procurement_case_id,
         toCanonicalAssessmentDto(form),
       );
+      onDraftChange(false);
       setSuccess("Assessment saved successfully.");
       await onSaved();
     } catch (e) {
@@ -173,18 +193,29 @@ function AssessmentForm({ profile, onSaved }) {
             : e.response?.data?.message || "Unable to save assessment.",
       );
     } finally {
+      onSavingChange(false);
       setSaving(false);
     }
   };
   const input = (label, name, props = {}) => (
     <label className="block text-sm font-medium">
       {label}
-      <input
-        {...props}
-        value={form[name] ?? ""}
-        onChange={(e) => set(name, e.target.value)}
-        className="mt-1 w-full rounded border p-2"
-      />
+      {props.type ? (
+        <input
+          {...props}
+          value={form[name] ?? ""}
+          onChange={(e) => set(name, e.target.value)}
+          className="mt-1 w-full rounded border p-2"
+        />
+      ) : (
+        <textarea
+          {...props}
+          rows={3}
+          value={form[name] ?? ""}
+          onChange={(e) => set(name, e.target.value)}
+          className="mt-1 w-full rounded border p-2"
+        />
+      )}
     </label>
   );
   const select = (label, name) => (
@@ -204,8 +235,30 @@ function AssessmentForm({ profile, onSaved }) {
     </label>
   );
   return (
-    <form onSubmit={submit} className="space-y-3">
-      <h3 className="text-lg font-semibold">SCM Assessment</h3>
+    <form
+      id="priority-assessment-form"
+      onSubmit={submit}
+      className="priority-assessment-form"
+    >
+      <nav
+        className="priority-assessment-jumps"
+        aria-label="Assessment sections"
+      >
+        {[
+          ["scm", "SCM assessment"],
+          ["impact", "Impact and risk"],
+          ["deadline", "Deadlines"],
+          ["context", "Dependencies and compliance"],
+        ].map(([id, title]) => (
+          <a key={id} href={`#assessment-${id}`}>
+            {title}
+          </a>
+        ))}
+      </nav>
+      <p className="priority-help">
+        Assess the selected item. The server calculates its score and tier;
+        mandatory reasons remain required.
+      </p>
       {error && (
         <p role="alert" className="text-red-700">
           {error}
@@ -216,44 +269,79 @@ function AssessmentForm({ profile, onSaved }) {
           {success}
         </p>
       )}
-      {input("SCM assessment (0–100)", "scm_assessment", {
-        type: "number",
-        min: 0,
-        max: 100,
-        required: true,
-      })}
-      {input("Mandatory SCM reason", "scm_reason", { required: true })}
-      {select("Impact", "impact_level")}
-      {input("Impact reason", "impact_reason")}
-      {select("Service / stockout risk", "service_risk_level")}
-      {input("Service risk override reason", "service_risk_override_reason")}
-      {select("Deadline classification", "deadline_type")}
-      {input("Deadline date", "deadline_at", { type: "date" })}
-      {input("Deadline consequence", "deadline_consequence")}
-      {select("Dependency", "dependency_level")}
-      {input("Dependency reason", "dependency_reason")}
-      {select("Regulatory / contractual consequence", "regulatory_level")}
-      {input("Regulatory reason", "regulatory_reason")}
-      <p className="rounded bg-slate-100 p-2 text-sm">
-        Strategic initiative:{" "}
-        {profile.strategic_initiative_title ||
-          "Not supplied by governed source"}{" "}
-        (read-only)
-      </p>
-      {preview && (
-        <p className="rounded bg-blue-50 p-2">
-          <b>Projected Score:</b> {preview.score} · <b>Projected Tier:</b>{" "}
-          {preview.tier}
+      <fieldset disabled={saving} className="priority-assessment-fields">
+        <section id="assessment-scm">
+          <h3>1. SCM assessment</h3>
+          <p className="priority-help">
+            Enter a score from 0 to 100 and explain your assessment.
+          </p>
+          <div className="priority-assessment-grid">
+            {input("SCM assessment (0–100)", "scm_assessment", {
+              type: "number",
+              min: 0,
+              max: 100,
+              required: true,
+            })}
+            {input("Mandatory SCM reason", "scm_reason", { required: true })}
+          </div>
+        </section>
+        <section id="assessment-impact">
+          <h3>2. Impact and service risk</h3>
+          <div className="priority-assessment-grid">
+            {select("Impact", "impact_level")}
+            {input("Impact reason", "impact_reason")}
+            {select("Service / stockout risk", "service_risk_level")}
+            {input(
+              "Service risk override reason",
+              "service_risk_override_reason",
+            )}
+          </div>
+        </section>
+        <section id="assessment-deadline">
+          <h3>3. Deadline and consequence</h3>
+          <div className="priority-assessment-grid">
+            {select("Deadline classification", "deadline_type")}
+            {input("Deadline date", "deadline_at", { type: "date" })}
+            {input("Deadline consequence", "deadline_consequence")}
+          </div>
+        </section>
+        <section id="assessment-context">
+          <h3>4. Dependencies and compliance</h3>
+          <div className="priority-assessment-grid">
+            {select("Dependency", "dependency_level")}
+            {input("Dependency reason", "dependency_reason")}
+            {select("Regulatory / contractual consequence", "regulatory_level")}
+            {input("Regulatory reason", "regulatory_reason")}
+          </div>
+        </section>
+        <p className="rounded bg-slate-100 p-2 text-sm">
+          Strategic initiative:{" "}
+          {profile.strategic_initiative_title ||
+            "Not supplied by governed source"}{" "}
+          (read-only)
         </p>
-      )}
-      {preview?.p0JustificationRequired &&
-        input("P0 justification", "p0_justification", { required: true })}
-      <button
-        disabled={saving}
-        className="priority-primary rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
-      >
-        {saving ? uiText("Saving…") : "Save assessment"}
-      </button>
+        {preview && (
+          <p className="rounded bg-blue-50 p-2">
+            <b>Projected Score:</b> {preview.score} · <b>Projected Tier:</b>{" "}
+            {preview.tier}
+          </p>
+        )}
+        {preview?.p0JustificationRequired &&
+          input("P0 justification", "p0_justification", { required: true })}
+      </fieldset>
+      <footer className="priority-assessment-save">
+        <p role="status">
+          {preview
+            ? `Projected score: ${preview.score} · Tier: ${preview.tier}`
+            : "Save applies to this item only."}
+        </p>
+        <button
+          disabled={saving}
+          className="priority-primary rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
+        >
+          {saving ? uiText("Saving…") : "Save assessment"}
+        </button>
+      </footer>
     </form>
   );
 }
@@ -496,7 +584,9 @@ function GroupManager({ cases }) {
                         member_case_ids: group.member_case_ids || [],
                       });
                     }}
-                  >{uiText("Edit")}</button>{" "}
+                  >
+                    {uiText("Edit")}
+                  </button>{" "}
                   <button
                     onClick={async () => {
                       try {
@@ -530,6 +620,24 @@ export default function ProcurementPriorityManagementPage() {
     "procurement-priority.manage-groups",
   );
   const canOverride = hasPermission(user, "procurement-priority.override");
+  const canAssess = hasPermission(user, "procurement-priority.manage");
+  const warningRef = useRef(null);
+  const [queueView, setQueueView] = useState("summary");
+  const [assessmentDirty, setAssessmentDirty] = useState(false);
+  const [assessmentSaving, setAssessmentSaving] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [detailTab, setDetailTab] = useState("assessment");
+  useEffect(() => {
+    if (pendingNavigation) {
+      warningRef.current?.focus();
+      warningRef.current?.scrollIntoView?.({ block: "nearest" });
+    }
+  }, [pendingNavigation]);
+  const navigateAssessment = (action) => {
+    if (assessmentSaving) return;
+    if (assessmentDirty) setPendingNavigation(() => action);
+    else action();
+  };
   const [rows, setRows] = useState([]);
   const [filters, setFilters] = useState(emptyFilters);
   const [state, setState] = useState("loading");
@@ -575,13 +683,17 @@ export default function ProcurementPriorityManagementPage() {
   usePriorityQueueRefresh(() => load(true), editing.current);
   const open = async (row) => {
     const member = row.members ? row.members[0] : row;
-    if (row.members) setDetailRequest(row);
+    if (row.members) {
+      setDetailRequest(row);
+      setDetailTab("assessment");
+    }
     setOrderError("");
     try {
       const [p, h] = await Promise.all([
         getPriorityProfile(member.procurement_case_id),
         getPriorityHistory(member.procurement_case_id),
       ]);
+      setAssessmentDirty(false);
       setSelected(p.data);
       setHistory(h.data || []);
     } catch {
@@ -710,11 +822,15 @@ export default function ProcurementPriorityManagementPage() {
             </p>
           </div>
           {filtersActive && (
-            <button type="button" onClick={() => setFilters(emptyFilters)}>{uiText("Clear filters")}</button>
+            <button type="button" onClick={() => setFilters(emptyFilters)}>
+              {uiText("Clear filters")}
+            </button>
           )}
         </div>
         <div className="priority-filters grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-          <label>{uiText("Search")}<input
+          <label>
+            {uiText("Search")}
+            <input
               aria-label="Search priorities"
               placeholder="Search request or title"
               className="rounded border p-2"
@@ -761,7 +877,10 @@ export default function ProcurementPriorityManagementPage() {
             </label>
           ))}
         </div>
-        <p role="status" className="priority-help">{uiText("Showing")}{" "}{shown.length}{" "}{uiText("of")}{" "}{rows.length}{" "}{uiText("requests")}</p>
+        <p role="status" className="priority-help">
+          {uiText("Showing")} {shown.length} {uiText("of")} {rows.length}{" "}
+          {uiText("requests")}
+        </p>
       </section>
       <section
         id="priority-queue"
@@ -781,14 +900,20 @@ export default function ProcurementPriorityManagementPage() {
         <p id="priority-scroll-hint" className="priority-scroll-hint">
           Scroll across the table to review scores and ordering controls.
         </p>
+        <RequestViewModeToggle
+          value={queueView}
+          onChange={setQueueView}
+          description="Summary keeps ranks, request details and actions in view. Detailed adds all assessment factors."
+        />
         <div
-          className="priority-table-scroll"
+          className="priority-table-scroll priority-queue-view"
+          data-view={queueView}
           role="region"
           aria-label="Institutional priority queue table"
           aria-describedby="priority-scroll-hint"
           tabIndex={0}
         >
-          <table className="min-w-[1450px] text-sm">
+          <table className="text-sm">
             <thead>
               <tr>
                 {[
@@ -985,73 +1110,135 @@ export default function ProcurementPriorityManagementPage() {
         <GroupManager cases={rows.flatMap((row) => row.members || [])} />
       )}
       {selected && (
-        <aside
-          role="dialog"
-          aria-label="Priority details"
-          className="fixed inset-y-0 right-0 z-50 w-full max-w-2xl overflow-y-auto border-l bg-white p-6 shadow-2xl"
+        <PriorityAssessmentDialog
+          onClose={() => navigateAssessment(() => setSelected(null))}
+          saving={assessmentSaving}
+          title={`Request ${detailRequest?.request_reference || detailRequest?.request_id || ""}`}
         >
-          <button onClick={() => setSelected(null)} className="float-right">
-            Close
-          </button>
-          <h2 className="text-xl font-bold">{uiText("Request")}{" "}
-            {detailRequest?.request_reference || detailRequest?.request_id}
-          </h2>
-          <p>
-            One request position · {detailRequest?.item_count} active items.
-            Assessments below apply to the selected item.
-          </p>
-          <label>
-            Item assessment
-            <select
-              aria-label="Item assessment"
-              value={selected.procurement_case_id}
-              onChange={(event) =>
-                open(
-                  detailRequest.members.find(
-                    (row) =>
-                      String(row.procurement_case_id) === event.target.value,
-                  ),
-                )
-              }
+          {pendingNavigation && (
+            <div
+              className="priority-unsaved-warning"
+              role="alert"
+              tabIndex={-1}
+              ref={warningRef}
             >
-              {(detailRequest?.members || []).map((member) => (
-                <option
-                  key={member.procurement_case_id}
-                  value={member.procurement_case_id}
-                >
-                  {member.public_title}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="my-4 grid grid-cols-2 gap-2 rounded bg-slate-50 p-3 text-sm">
-            <b>System Score</b>
-            <span>{selected.system_score}</span>
-            <b>System Suggested Rank</b>
-            <span>{detailRequest?.system_suggested_rank ?? "—"}</span>
-            <b>{uiText("Institutional Rank")}</b>
-            <span>{detailRequest?.institutional_rank ?? "—"}</span>
-            <b>{uiText("Department Rank")}</b>
-            <span>{detailRequest?.department_rank ?? "—"}</span>
+              <p>
+                You have unsaved assessment changes. Discard them to continue?
+              </p>
+              <button
+                disabled={assessmentSaving}
+                onClick={() => setPendingNavigation(null)}
+              >
+                Keep editing
+              </button>
+              <button
+                disabled={assessmentSaving}
+                onClick={() => {
+                  const next = pendingNavigation;
+                  setPendingNavigation(null);
+                  setAssessmentDirty(false);
+                  next();
+                }}
+              >
+                Discard changes
+              </button>
+            </div>
+          )}
+          <div className="priority-assessment-context">
+            <p>
+              One request position · {detailRequest?.item_count} active items.
+              Assessments apply to the selected item.
+            </p>
+            <label>
+              Item assessment
+              <select
+                aria-label="Item assessment"
+                value={selected.procurement_case_id}
+                onChange={(event) => {
+                  const id = event.target.value;
+                  navigateAssessment(() =>
+                    open(
+                      detailRequest.members.find(
+                        (row) => String(row.procurement_case_id) === id,
+                      ),
+                    ),
+                  );
+                }}
+                disabled={assessmentSaving}
+              >
+                {(detailRequest?.members || []).map((member) => (
+                  <option
+                    key={member.procurement_case_id}
+                    value={member.procurement_case_id}
+                  >
+                    {member.public_title}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
-          <PriorityFactorBreakdown
-            breakdown={selected.factor_breakdown || selected.breakdown}
-            score={selected.system_score}
-            tier={selected.system_tier}
-          />
-          <hr className="my-6" />
-          <AssessmentForm
-            key={selected.procurement_case_id}
-            profile={selected}
-            onSaved={async () => {
-              const p = await getPriorityProfile(selected.procurement_case_id);
-              setSelected(p.data);
-              load();
-            }}
-          />
-          <hr className="my-6" />
-          <PriorityHistory entries={history} />
-        </aside>
+          <nav
+            className="priority-detail-tabs"
+            aria-label="Priority detail views"
+          >
+            {[
+              ["assessment", "Assessment"],
+              ["score", "Score breakdown"],
+              ["history", "History"],
+            ].map(([id, title]) => (
+              <button
+                type="button"
+                key={id}
+                aria-pressed={detailTab === id}
+                onClick={() => setDetailTab(id)}
+              >
+                {title}
+              </button>
+            ))}
+          </nav>
+          <div hidden={detailTab !== "score"}>
+            <div className="my-4 grid grid-cols-2 gap-2 rounded bg-slate-50 p-3 text-sm">
+              <b>System Score</b>
+              <span>{selected.system_score}</span>
+              <b>System Suggested Rank</b>
+              <span>{detailRequest?.system_suggested_rank ?? "—"}</span>
+              <b>{uiText("Institutional Rank")}</b>
+              <span>{detailRequest?.institutional_rank ?? "—"}</span>
+              <b>{uiText("Department Rank")}</b>
+              <span>{detailRequest?.department_rank ?? "—"}</span>
+            </div>
+            <PriorityFactorBreakdown
+              breakdown={selected.factor_breakdown || selected.breakdown}
+              score={selected.system_score}
+              tier={selected.system_tier}
+            />
+          </div>
+          <div hidden={detailTab !== "assessment"}>
+            {canAssess ? (
+              <AssessmentForm
+                key={selected.procurement_case_id}
+                profile={selected}
+                onDraftChange={setAssessmentDirty}
+                onSavingChange={setAssessmentSaving}
+                onSaved={async () => {
+                  const p = await getPriorityProfile(
+                    selected.procurement_case_id,
+                  );
+                  setSelected(p.data);
+                  load();
+                }}
+              />
+            ) : (
+              <p className="priority-help">
+                You can review scores and history. Assessment changes require
+                priority management permission.
+              </p>
+            )}
+          </div>
+          <div hidden={detailTab !== "history"}>
+            <PriorityHistory entries={history} />
+          </div>
+        </PriorityAssessmentDialog>
       )}
     </main>
   );

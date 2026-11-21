@@ -347,3 +347,271 @@
     z-index: 1;
   }
 }
+
+/* Compact queue keeps the request and ordering actions within the workspace. */
+.priority-queue-panel .request-view-toolbar {
+  margin: 0 20px 18px;
+}
+.priority-queue-view[data-view="summary"] table {
+  min-width: 900px;
+  width: 100%;
+}
+.priority-queue-view[data-view="detailed"] table {
+  min-width: 1450px;
+  width: 100%;
+}
+.priority-queue-view[data-view="summary"]
+  :is(th, td):is(
+    :nth-child(3),
+    :nth-child(7),
+    :nth-child(8),
+    :nth-child(9),
+    :nth-child(10),
+    :nth-child(11),
+    :nth-child(13)
+  ) {
+  display: none;
+}
+.priority-queue-panel .priority-assess-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 400px;
+  text-align: start;
+}
+.priority-queue-panel td:nth-child(2) {
+  width: 32%;
+  min-width: 200px;
+}
+.priority-queue-panel td:last-child {
+  white-space: nowrap;
+}
+.priority-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 10, 24, 0.65);
+  backdrop-filter: blur(3px);
+}
+.priority-assessment-dialog {
+  width: min(1120px, 100%);
+  height: min(900px, calc(100dvh - 48px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-border-default, #cbd5e1);
+  border-radius: 18px;
+  background: var(--color-bg-canvas, #f6f8fc);
+  color: var(--color-text-primary, #172033);
+  box-shadow: 0 25px 80px #0005;
+}
+.priority-dialog-heading {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 26px;
+  background: var(--color-bg-surface, #fff);
+  border-bottom: 1px solid var(--color-border-default, #dbe3ef);
+}
+.priority-dialog-heading p {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-accent, #2563eb);
+}
+.priority-dialog-heading h2 {
+  margin-top: 4px;
+  font-size: 22px;
+  font-weight: 750;
+}
+.priority-dialog-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 22px 26px 0;
+}
+.priority-assessment-context {
+  padding: 16px;
+  background: var(--color-bg-surface, #fff);
+  border: 1px solid var(--color-border-default, #dbe3ef);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.priority-assessment-context p {
+  color: var(--color-text-muted, #64748b);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.priority-assessment-dialog label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+}
+.priority-assessment-dialog :is(input, select, textarea) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--color-border-default, #cbd5e1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--color-bg-canvas, #f6f8fc);
+  color: var(--color-text-primary, #172033);
+  font: inherit;
+  font-weight: 400;
+}
+.priority-assessment-dialog textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+.priority-assessment-dialog
+  :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid var(--color-focus, #3b82f6);
+  outline-offset: 3px;
+}
+.priority-assessment-dialog button {
+  border: 1px solid var(--color-border-default, #cbd5e1);
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--color-bg-surface, #fff);
+  color: var(--color-text-primary, #172033);
+}
+.priority-assessment-dialog button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.priority-detail-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.priority-detail-tabs button[aria-pressed="true"] {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.priority-assessment-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-bg-canvas, #f6f8fc);
+}
+.priority-assessment-jumps a {
+  display: block;
+  padding: 7px 11px;
+  font-size: 12px;
+  color: var(--color-accent, #2563eb);
+  border: 1px solid var(--color-border-default, #dbe3ef);
+  border-radius: 20px;
+  background: var(--color-bg-surface, #fff);
+}
+.priority-assessment-fields {
+  min-width: 0;
+}
+.priority-assessment-fields section {
+  border: 1px solid var(--color-border-default, #dbe3ef);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+  background: var(--color-bg-surface, #fff);
+  scroll-margin-top: 100px;
+}
+.priority-assessment-fields h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+.priority-assessment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.priority-assessment-dialog .priority-help {
+  font-size: 13px;
+  color: var(--color-text-muted, #64748b);
+  margin-bottom: 12px;
+}
+.priority-assessment-save {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  margin-top: 18px;
+  border-top: 1px solid var(--color-border-default, #dbe3ef);
+  background: var(--color-bg-canvas, #f6f8fc);
+  z-index: 3;
+}
+.priority-assessment-save p {
+  font-size: 13px;
+  color: var(--color-text-muted, #64748b);
+}
+.priority-assessment-dialog .priority-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+  white-space: nowrap;
+}
+.priority-unsaved-warning {
+  padding: 14px;
+  margin-bottom: 16px;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fdba74;
+  border-radius: 10px;
+}
+.priority-unsaved-warning button {
+  margin-top: 10px;
+  margin-inline-end: 8px;
+}
+@media (max-width: 700px) {
+  .priority-modal-overlay {
+    padding: 8px;
+  }
+  .priority-assessment-dialog {
+    height: calc(100dvh - 16px);
+    border-radius: 12px;
+  }
+  .priority-dialog-heading {
+    padding: 16px;
+  }
+  .priority-dialog-body {
+    padding: 14px 14px 0;
+  }
+  .priority-assessment-grid {
+    grid-template-columns: 1fr;
+  }
+  .priority-assessment-fields section {
+    padding: 16px;
+    scroll-margin-top: 150px;
+  }
+  .priority-assessment-save {
+    align-items: start;
+  }
+  .priority-assessment-save p {
+    max-width: 50%;
+  }
+}
+.priority-assessment-grid {
+  align-items: start;
+}
