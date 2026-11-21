@@ -11,6 +11,7 @@ root_device=$(findmnt --noheadings --raw --output MAJ:MIN --mountpoint /) || exi
 for identity in "$device" "$root_device"; do
   case "$identity" in ''|*[!0-9:]*|:*|*:|*:*:*) exit 1;; esac
   case "$identity" in *:*) ;; *) exit 1;; esac
+  printf '%s\n' "$identity" | LC_ALL=C grep -Eq '^(0|[1-9][0-9]*):(0|[1-9][0-9]*)$' || exit 1
 done
 test "$device" != "$root_device" || exit 1
 expected_uuid=$(cat /etc/scop-staging/volume-uuid) || exit 1

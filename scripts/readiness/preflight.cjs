@@ -265,7 +265,7 @@ function validateComposeDocument(value) {
 // inventory evidence always retains original bytes. Unknown revisions fail.
 const hardeningIdentities = {
   "deploy/persistent/verify-storage.sh":
-    "42ffc83172c9e2fdc22f0f3df61e41b015217eeca68f29360413c557cff355f2",
+    "fab99f37016b8eb15e0e8f66a8a655790e543861024daf8a3bf5457bf2914034",
   "deploy/persistent/scop-staging-infra.service":
     "82b281d89ef63deb92ea8e6f12d5e66aa118b9bcf0270f819d2c4a125babac69",
   "deploy/persistent/scop-staging.service":
