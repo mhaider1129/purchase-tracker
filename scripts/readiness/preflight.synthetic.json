@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "purpose": "wici-phase3c-offline-preflight",
+  "syntheticOnly": true,
+  "enabled": false,
+  "databasePrepared": false,
+  "activationAuthorized": false,
+  "instance": "synthetic-review",
+  "hostname": "staging.example.invalid",
+  "database": "scop_staging_synthetic",
+  "agentImage": "example.invalid/scop-agent@sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+  "adminCidrs": ["192.0.2.0/28"],
+  "staffCidrs": ["198.51.100.0/24"],
+  "dnsResolvers": ["192.0.2.53"]
+}
