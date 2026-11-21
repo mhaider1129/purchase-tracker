@@ -45,6 +45,8 @@ These defects are retained and exposed as FAIL controls; this assessment does no
 
 The control descriptions identify static checks, not a formal shell interpreter or network proof. Regex/source observations must not substitute for reviewing arbitrary future firewall rewrites. A new implementation changing these mechanisms needs review and external validation even if a syntactic check becomes PASS.
 
+STO-01 specifically uses full reviewed verifier and enforced pre-start-unit source identities, not a substring/regex heuristic. The original P2 was reproduced before correction: appending only `# TODO: add exact mountpoint validation` changed FAIL to PASS without changing executable behavior. That reproduction now remains FAIL. Comments, quoted/unused text, no-ops, unreachable/ignored checks, root/containing lookups, altered paths and missing UUID/root checks cannot satisfy the known identities. A positive constrained fixture and synthetic execution failures are tested without installing it or changing the authoritative verifier. See document17 for identity hashes and review boundaries. This correction changes assessment accuracy; it does not remediate the existing storage implementation or reduce the six FAIL controls.
+
 ## Missing preparation and external evidence
 
 - **NET-05 BLOCKED:** no reviewed trusted-time path, base-image preload/update path or patching procedure under restricted egress. Initial cloud-init package transport may also conflict with provider egress. Do not solve this by granting unrestricted web access.

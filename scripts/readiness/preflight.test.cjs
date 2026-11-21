@@ -582,3 +582,257 @@ test("real offline rendering failures fail report-generation status while preser
   assert.equal(p.reportCode(r), 1);
   assert.equal(p.reportCode(audit()), 0);
 });
+
+// Source-identity fixture only: never install or invoke this against the host.
+// Runtime tests below rewrite both fixed paths into a synthetic temporary tree
+// and replace findmnt with an explicit fixture. No mount/host probe is made.
+const reviewedStorageFixture = `#!/bin/sh
+set -eu
+test -f /etc/scop-staging/ACTIVATION_APPROVED
+test "$(cat /etc/scop-staging/host-purpose)" = wici-isolated-staging-v1
+mount=/var/lib/scop-staging
+target=$(findmnt --noheadings --raw --output TARGET --mountpoint "$mount") || exit 1
+test "$target" = "$mount" || exit 1
+device=$(findmnt --noheadings --raw --output MAJ:MIN --mountpoint "$mount") || exit 1
+root_device=$(findmnt --noheadings --raw --output MAJ:MIN --mountpoint /) || exit 1
+for identity in "$device" "$root_device"; do
+  case "$identity" in ''|*[!0-9:]*|:*|*:|*:*:*) exit 1;; esac
+  case "$identity" in *:*) ;; *) exit 1;; esac
+done
+test "$device" != "$root_device" || exit 1
+expected_uuid=$(cat /etc/scop-staging/volume-uuid) || exit 1
+test "\${#expected_uuid}" -eq 36 || exit 1
+printf '%s\\n' "$expected_uuid" | LC_ALL=C grep -Eq '^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$' || exit 1
+actual_uuid=$(findmnt --noheadings --raw --output UUID --mountpoint "$mount") || exit 1
+test "$actual_uuid" = "$expected_uuid" || exit 1
+test -s /var/lib/scop-staging/postgres/PG_VERSION
+`;
+const storagePath = "deploy/persistent/verify-storage.sh";
+function storageAudit(
+  script,
+  unit = base["deploy/persistent/scop-staging-infra.service"],
+) {
+  return audit({
+    ...base,
+    [storagePath]: script,
+    "deploy/persistent/scop-staging-infra.service": unit,
+  });
+}
+for (const [name, script] of [
+  ["original containing-filesystem lookup", base[storagePath]],
+  [
+    "comment mentioning mountpoint",
+    base[storagePath] + "\n# TODO: add exact mountpoint validation\n",
+  ],
+  [
+    "comment mentioning findmnt --mountpoint",
+    base[storagePath] + "\n# findmnt --mountpoint /var/lib/scop-staging\n",
+  ],
+  [
+    "unused variable",
+    base[storagePath] + "\nhint='findmnt --mountpoint /var/lib/scop-staging'\n",
+  ],
+  [
+    "echo",
+    base[storagePath] + "\necho 'findmnt --mountpoint /var/lib/scop-staging'\n",
+  ],
+  [
+    "unreachable branch",
+    base[storagePath] +
+      "\nif false; then mountpoint -q /var/lib/scop-staging; fi\n",
+  ],
+  [
+    "ignored failure",
+    base[storagePath] + "\nmountpoint -q /var/lib/scop-staging || true\n",
+  ],
+  [
+    "quoted no-op",
+    base[storagePath] + "\n: 'findmnt --mountpoint /var/lib/scop-staging'\n",
+  ],
+  [
+    "safe-looking checks after exit",
+    "#!/bin/sh\nexit 0\n" + reviewedStorageFixture,
+  ],
+  [
+    "wrong dedicated path",
+    reviewedStorageFixture.replaceAll(
+      "/var/lib/scop-staging",
+      "/var/lib/other",
+    ),
+  ],
+  [
+    "root-only lookup",
+    reviewedStorageFixture.replace("mount=/var/lib/scop-staging", "mount=/"),
+  ],
+  [
+    "containing-filesystem lookup retained",
+    reviewedStorageFixture.replaceAll(
+      '--mountpoint "$mount"',
+      '--target "$mount"',
+    ),
+  ],
+  [
+    "root comparison removed",
+    reviewedStorageFixture.replace(
+      'test "$device" != "$root_device" || exit 1\n',
+      "",
+    ),
+  ],
+  [
+    "UUID comparison ignored",
+    reviewedStorageFixture.replace(
+      'test "$actual_uuid" = "$expected_uuid" || exit 1',
+      'test "$actual_uuid" = "$expected_uuid" || true',
+    ),
+  ],
+  [
+    "missing lookup failure ignored",
+    reviewedStorageFixture.replaceAll(") || exit 1", ") || true"),
+  ],
+  ["unfamiliar executable addition", reviewedStorageFixture + "true\n"],
+  ["CRLF shell bytes", reviewedStorageFixture.replaceAll("\n", "\r\n")],
+])
+  test(`STO-01 rejects insufficient or unreviewed storage evidence: ${name}`, () =>
+    assert.notEqual(control(storageAudit(script), "STO-01").result, "PASS"));
+test("STO-01 recognizes only the constrained source identity and enforced pre-start unit", () => {
+  for (const unit of [
+    base["deploy/persistent/scop-staging-infra.service"],
+    base["deploy/persistent/scop-staging-infra.service"].replace(
+      /\r?\n/g,
+      "\r\n",
+    ),
+  ]) {
+    const r = storageAudit(reviewedStorageFixture, unit);
+    assert.equal(control(r, "STO-01").result, "PASS");
+    assert.equal(
+      control(r, "EXT-STORAGE").result,
+      "EXTERNAL_VALIDATION_REQUIRED",
+    );
+    assert.equal(r.activation_allowed, false);
+    assert.notEqual(p.exitCode(r), 0);
+  }
+  const unit = base["deploy/persistent/scop-staging-infra.service"];
+  for (const changed of [
+    unit.replace(
+      "ExecStartPre=/bin/sh /opt/scop-staging/verify-storage.sh",
+      "ExecStartPost=/bin/sh /opt/scop-staging/verify-storage.sh",
+    ),
+    unit.replace("ExecStartPre=/bin/sh", "ExecStartPre=-/bin/sh"),
+    unit.replace("Type=oneshot", "Type=simple"),
+    unit.replace(
+      "ExecStartPre=/bin/sh /opt/scop-staging/verify-storage.sh",
+      "",
+    ),
+  ])
+    assert.notEqual(
+      control(storageAudit(reviewedStorageFixture, changed), "STO-01").result,
+      "PASS",
+    );
+});
+
+test("recognized storage fixture enforces invalid mount failures in a synthetic filesystem", () => {
+  const os = require("node:os"),
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "scop-storage-fixture-"));
+  const unix = (v) =>
+    process.platform === "win32"
+      ? v
+          .replaceAll("\\", "/")
+          .replace(/^([A-Za-z]):/, (_, d) => "/" + d.toLowerCase())
+      : v;
+  const shell =
+    process.platform === "win32"
+      ? path.join(
+          process.env.ProgramFiles || "C:\\Program Files",
+          "Git/bin/bash.exe",
+        )
+      : "/bin/sh";
+  try {
+    const etc = path.join(dir, "etc"),
+      mount = path.join(dir, "data"),
+      bin = path.join(dir, "bin");
+    for (const d of [etc, path.join(mount, "postgres"), bin])
+      fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(etc, "ACTIVATION_APPROVED"), "synthetic-only");
+    fs.writeFileSync(
+      path.join(etc, "host-purpose"),
+      "wici-isolated-staging-v1\n",
+    );
+    fs.writeFileSync(path.join(mount, "postgres/PG_VERSION"), "16\n");
+    const uuid = "11111111-2222-4333-8444-555555555555";
+    fs.writeFileSync(path.join(etc, "volume-uuid"), uuid + "\n");
+    fs.writeFileSync(
+      path.join(bin, "findmnt"),
+      `#!/bin/sh
+printf '%s\\n' "$*" >> "$SYNTHETIC_CALLS"
+test "$SYNTHETIC_LOOKUP_FAIL" = 0 || exit 1
+case "$*" in
+  "--noheadings --raw --output TARGET --mountpoint $SYNTHETIC_MOUNT") printf '%s\\n' "$SYNTHETIC_TARGET";;
+  "--noheadings --raw --output MAJ:MIN --mountpoint $SYNTHETIC_MOUNT") printf '%s\\n' "$SYNTHETIC_DEVICE";;
+  "--noheadings --raw --output MAJ:MIN --mountpoint /") printf '%s\\n' "$SYNTHETIC_ROOT_DEVICE";;
+  "--noheadings --raw --output UUID --mountpoint $SYNTHETIC_MOUNT") printf '%s\\n' "$SYNTHETIC_UUID";;
+  *) exit 90;;
+esac
+`,
+      { mode: 0o700 },
+    );
+    const script = path.join(dir, "verify.sh"),
+      calls = path.join(dir, "calls");
+    fs.writeFileSync(
+      script,
+      reviewedStorageFixture
+        .replaceAll("/etc/scop-staging", unix(etc))
+        .replaceAll("/var/lib/scop-staging", unix(mount)),
+    );
+    const env = {
+      ...(process.env.SYSTEMROOT ? { SYSTEMROOT: process.env.SYSTEMROOT } : {}),
+      PATH: unix(bin) + ":/usr/bin:/bin",
+      HOME: unix(dir),
+      SYNTHETIC_MOUNT: unix(mount),
+      SYNTHETIC_TARGET: unix(mount),
+      SYNTHETIC_DEVICE: "8:16",
+      SYNTHETIC_ROOT_DEVICE: "8:1",
+      SYNTHETIC_UUID: uuid,
+      SYNTHETIC_LOOKUP_FAIL: "0",
+      SYNTHETIC_CALLS: unix(calls),
+    };
+    function run(changes = {}) {
+      return require("node:child_process").spawnSync(shell, [unix(script)], {
+        env: { ...env, ...changes },
+        encoding: "utf8",
+      });
+    }
+    const positive = run();
+    assert.equal(positive.status, 0, positive.stderr || String(positive.error));
+    assert.equal(
+      fs.readFileSync(calls, "utf8").trim().split(/\r?\n/).length,
+      4,
+    );
+    for (const change of [
+      { SYNTHETIC_TARGET: "" },
+      { SYNTHETIC_TARGET: "/" },
+      { SYNTHETIC_DEVICE: "8:1" },
+      { SYNTHETIC_DEVICE: "" },
+      { SYNTHETIC_DEVICE: "8:16\ninvalid" },
+      { SYNTHETIC_DEVICE: "8::16" },
+      { SYNTHETIC_ROOT_DEVICE: "" },
+      { SYNTHETIC_ROOT_DEVICE: "invalid" },
+      { SYNTHETIC_UUID: "" },
+      { SYNTHETIC_UUID: uuid + "\ninvalid" },
+      { SYNTHETIC_UUID: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee" },
+      { SYNTHETIC_LOOKUP_FAIL: "1" },
+    ])
+      assert.equal(run(change).status, 1, JSON.stringify(change));
+    for (const invalid of ["", "not-a-uuid", uuid + "\ninvalid"]) {
+      fs.writeFileSync(path.join(etc, "volume-uuid"), invalid);
+      assert.equal(run().status, 1, "invalid expected UUID must fail");
+    }
+    fs.writeFileSync(path.join(etc, "volume-uuid"), uuid + "\n");
+    fs.writeFileSync(path.join(mount, "postgres/PG_VERSION"), "");
+    assert.equal(run().status, 1, "missing initialized data marker must fail");
+    fs.writeFileSync(path.join(mount, "postgres/PG_VERSION"), "16\n");
+    fs.unlinkSync(path.join(etc, "ACTIVATION_APPROVED"));
+    assert.equal(run().status, 1, "missing approval must fail");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

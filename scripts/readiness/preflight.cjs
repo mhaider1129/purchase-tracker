@@ -256,6 +256,24 @@ function validateComposeDocument(value) {
   }
   return value;
 }
+function reviewedStorageValidation(storage, infra) {
+  // This is source recognition, not a shell security analyzer. The full known
+  // fixture is in preflight.test.cjs and is exercised only in a synthetic tree
+  // with mocked mount information. Changes require semantic review, new tests
+  // and an explicit identity update; comments/extra commands are not ignored.
+  // Shell bytes must match exactly: CRLF can make /bin/sh scripts fail to run.
+  // Only the unit's config line endings are normalized for Windows checkouts.
+  // Report evidence still hashes actual bytes for both sources.
+  return (
+    sha(storage) ===
+      "20559354222d710b2de419ffccefe51f92afa86df9fc74668859391d1506ac3f" &&
+    // Reviewed oneshot unit: the non-ignored ExecStartPre storage verifier must
+    // succeed before Compose starts. This identity does NOT approve its known
+    // firewall/startup defects, which remain separate FAIL/BLOCKED controls.
+    sha(infra.replace(/\r\n/g, "\n")) ===
+      "362ac92ffc31f4439db31a46995c776767427a9034547d9c16ed1a8185d07fa2"
+  );
+}
 function assess({ sources, config, composeEvidence = null, source = null }) {
   validateConfig(config);
   disabled(sources);
@@ -664,12 +682,12 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
   );
   check(
     "STO-01",
-    "Storage verifier declares an exact mountpoint check beyond a containing-filesystem lookup",
-    /mountpoint|--mountpoint/.test(storage),
+    "Storage verifier and enforced pre-start unit match the reviewed exact-mount, non-root and UUID validation identities",
+    reviewedStorageValidation(storage, infra),
     "high",
-    [storeFile],
-    "findmnt --target can return the root/containing filesystem. Matching an operator-supplied UUID plus PG_VERSION does not prove a dedicated mount.",
-    "Add exact mountpoint/device/non-root checks and fail-closed tests before activation; preserve and independently verify the approved volume identity.",
+    [storeFile, infraFile],
+    "The current findmnt --target implementation is not the constrained source-identity fixture: a root/containing filesystem can satisfy its UUID check. Unknown implementations, including suggestive text or ineffective checks, remain FAIL.",
+    "Independently review exact mount target, non-root device identity, valid expected UUID, missing-information failure and enforced pre-start behavior. Only an explicitly reviewed full source identity may pass; do not edit the authoritative script to improve this metric. Actual volume identity/durability still requires external evidence.",
     "Storage operator",
     ["EXT-STORAGE"],
   );

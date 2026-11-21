@@ -100,6 +100,16 @@ Backend/frontend, runtime, infrastructure, staging, deployment and governance in
 
 Existing master-only PG16/17 and transaction rehearsal workflows are unchanged. A later owner-approved merge may trigger those existing master workflows; that is outside this unmerged preparation task and must be considered in the owner's merge authorization. No such workflow is dispatched here.
 
+### STO-01 source recognition and review boundary
+
+The former substring predicate could mark storage PASS after adding only a comment containing `mountpoint`. STO-01 now recognizes a single constrained verifier fixture and the exact reviewed infrastructure unit by SHA-256. Shell bytes must match exactly; CRLF scripts are rejected because they can fail to execute under `/bin/sh`. Only unit configuration line endings normalize CRLF to LF for Windows checkouts. It does not search for security-related words or infer shell behavior. Any unknown implementation, comment addition, quoted mention, unreachable code, ignored failure, path change or altered pre-start enforcement remains FAIL until independently reviewed and explicitly registered. The authoritative `deploy/persistent/verify-storage.sh` is unchanged and still FAILs; all six baseline failures remain visible.
+
+The source-only positive fixture is embedded in `scripts/readiness/preflight.test.cjs`, **not an installable operator script or deployment approval**. It requires an exact `/var/lib/scop-staging` mount target, valid device identities distinct from the root filesystem, a valid expected UUID matching the exact mount, and failure on missing/invalid information. The unit identity requires a non-ignored storage `ExecStartPre` before Compose. The test executes a path-rewritten copy only in a temporary synthetic filesystem with a mocked `findmnt`; it never queries real mounts. Negative execution cases verify failures are enforced. Unit recognition is scoped to storage ordering and does not waive its separately reported firewall/startup gaps.
+
+Recognized LF verifier SHA-256: `20559354222d710b2de419ffccefe51f92afa86df9fc74668859391d1506ac3f`.
+Recognized LF infrastructure-unit SHA-256: `362ac92ffc31f4439db31a46995c776767427a9034547d9c16ed1a8185d07fa2`.
+Actual source evidence continues to hash the original bytes. Updating either recognition identity requires semantic review and regression evidence; never recalculate it automatically to make a changed implementation pass. Even a recognized fixture leaves EXT-STORAGE **EXTERNAL_VALIDATION_REQUIRED**, with activation/provisioning/production false.
+
 ### Offline parser compatibility
 
 The GitHub Ubuntu26 runner image `ubuntu26/20261116.202` ships Compose5.1.3. The initial v2-only preflight correctly failed rather than silently skipping rendering. The auditor now supports the existing v2 CLI family (actual local check2.40.3) and the explicitly tested5.1.3 parser. All other majors/unknown5.x versions remain rejected pending review. Actual offline profile checks are required even for an accepted version; a rendering failure makes report generation exit1. This changes neither the host's `docker-compose-v2` package target nor Docker image-store/config-ID security. Offline parsing on either version does not establish real host/runtime compatibility.
