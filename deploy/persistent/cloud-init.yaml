@@ -2,7 +2,11 @@
 # Staging-only base OS preparation. No repository clone, secrets, deployment,
 # SQL, production routes or automatic service activation.
 package_update: true
-packages: [docker.io, docker-compose-v2, ca-certificates, iptables]
+# Quarantine both Docker entry points before package installation, once only.
+# Operators may unmask only after the reviewed firewall/drop-ins/config exist.
+bootcmd:
+  - [cloud-init-per, once, scop-docker-quarantine, systemctl, mask, --now, docker.service, docker.socket]
+packages: [docker.io, docker-compose-v2, ca-certificates, nftables, python3]
 ssh_pwauth: false
 disable_root: true
 write_files:

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "purpose": "wici-isolated-staging-v1",
+  "instance": "hospital-test",
+  "adminCidrs": [
+    "192.0.2.0/28"
+  ],
+  "staffCidrs": [
+    "198.51.100.0/24"
+  ],
+  "dnsResolvers": [
+    "192.0.2.53"
+  ],
+  "timeServers": [
+    "192.0.2.123"
+  ],
+  "httpsCidrs": [
+    "203.0.113.0/24"
+  ]
+}

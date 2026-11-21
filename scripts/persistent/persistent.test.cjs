@@ -519,8 +519,12 @@ test("IAC/config templates contain no activation, production targets or unpinned
   assert(compose.includes("internal: true"));
   assert(!compose.includes("restart: unless-stopped"));
   const firewall = fs.readFileSync(path.join(root, "firewall.sh"), "utf8");
-  assert(firewall.includes("ACTIVATION_APPROVED"));
-  assert(firewall.includes("-s 172.30.60.20 -p tcp --dport 443"));
+  assert(firewall.includes("host-policy.py firewall"));
+  const hostPolicy = fs.readFileSync(path.join(root, "host-policy.py"), "utf8");
+  assert(hostPolicy.includes("ACTIVATION_APPROVED"));
+  assert(
+    hostPolicy.includes("ip saddr 172.30.60.20 ip daddr @https tcp dport 443"),
+  );
   const proxy = fs.readFileSync(path.join(root, "squid.conf"), "utf8");
   assert(proxy.includes("http_access deny all"));
   assert(!proxy.includes("supabase"));

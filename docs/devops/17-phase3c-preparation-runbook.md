@@ -1,5 +1,7 @@
 # Phase3C-01 — external staging preparation
 
+Phase3C-02 supersedes the six source-gap observations and recognition identities below; use [document19](19-phase3c02-infrastructure-hardening.md) for current source controls, installation prerequisites and remaining external blockers. This document retains the original pre-remediation/P2 audit history.
+
 Starting master: `e0b72af812cfa430e43f373e9f1a8db3e62a2cd6`. Phase3B documents 12–16 and `deploy/persistent/` remain authoritative. This phase inventories and tests those definitions; it neither replaces the pull-agent architecture nor authorizes provisioning, service startup, SQL, settings changes or external activation.
 
 ## Scope and machine-readable evidence

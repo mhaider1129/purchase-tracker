@@ -181,19 +181,17 @@ test("source gaps remain visible rather than being passed by synthetic host obse
   const r = audit();
   assert.equal(control(r, "NET-05").result, "BLOCKED");
   assert.equal(control(r, "DB-02").result, "BLOCKED");
+  const unit = "deploy/persistent/scop-staging-infra.service";
   const s = {
     ...base,
-    "deploy/persistent/scop-staging-infra.service": base[
-      "deploy/persistent/scop-staging-infra.service"
-    ]
-      .replace(
-        "ExecStartPre=/bin/sh /opt/scop-staging/verify-storage.sh",
-        "ExecStartPre=/bin/sh /opt/scop-staging/verify-storage.sh\nExecStartPre=/bin/sh /opt/scop-staging/firewall.sh",
-      )
-      .replace("ExecStartPost=/bin/sh /opt/scop-staging/firewall.sh\n", ""),
+    [unit]:
+      base[unit].replace(
+        "Requires=docker.service scop-staging-firewall.service",
+        "Requires=docker.service",
+      ) + "\n# firewall-before-start\n",
   };
-  assert.equal(control(audit(s), "START-01").result, "PASS");
-  assert.equal(control(audit(), "START-01").result, "FAIL");
+  assert.equal(control(audit(s), "START-01").result, "FAIL");
+  assert.equal(control(audit(), "START-01").result, "PASS");
   // A source-only ordering correction can never turn host/network verification
   // into a PASS, regardless of rendering or modeled health.
   assert.equal(
@@ -478,7 +476,7 @@ for (const [file, before] of [
   ],
   [
     "deploy/persistent/scop-staging.service",
-    "After=docker.service scop-staging-infra.service network-online.target",
+    "After=docker.service scop-staging-infra.service scop-staging-firewall.service network-online.target",
   ],
   [
     "deploy/persistent/scop-staging.service",
@@ -490,10 +488,7 @@ for (const [file, before] of [
     assert.equal(control(audit(s), "START-03").result, "FAIL");
   });
 test("instance ownership labels must agree after both existing agent and egress gaps are corrected", () => {
-  const fixed = mutate("deploy/persistent/compose.yaml", (v) => {
-    for (const name of ["agent", "egress"])
-      v.services[name].labels = { "wici.scop.instance": "${SCOP_INSTANCE}" };
-  });
+  const fixed = { ...base };
   assert.equal(control(audit(fixed), "CMP-03").result, "PASS");
   for (const svc of ["database", "gateway", "agent", "egress"]) {
     const s = { ...fixed },
@@ -556,7 +551,7 @@ test("the exact CI Compose5.1.3 parser supports the bounded config-only interfac
   const r = audit(base, fixture, e);
   assert.equal(control(r, "CMP-04").result, "PASS");
   assert.equal(p.reportCode(r), 0);
-  assert.equal(p.exitCode(r), 1);
+  assert.equal(p.exitCode(r), 2);
 });
 for (const version of ["1.29.2", "3.0.0", "5.1.4", "6.0.0", "malformed"])
   test(`unsupported Compose parser remains fail-closed: ${version}`, () =>
@@ -591,6 +586,7 @@ set -eu
 test -f /etc/scop-staging/ACTIVATION_APPROVED
 test "$(cat /etc/scop-staging/host-purpose)" = wici-isolated-staging-v1
 mount=/var/lib/scop-staging
+test ! -L "$mount" || exit 1
 target=$(findmnt --noheadings --raw --output TARGET --mountpoint "$mount") || exit 1
 test "$target" = "$mount" || exit 1
 device=$(findmnt --noheadings --raw --output MAJ:MIN --mountpoint "$mount") || exit 1
@@ -605,6 +601,10 @@ test "\${#expected_uuid}" -eq 36 || exit 1
 printf '%s\\n' "$expected_uuid" | LC_ALL=C grep -Eq '^[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}$' || exit 1
 actual_uuid=$(findmnt --noheadings --raw --output UUID --mountpoint "$mount") || exit 1
 test "$actual_uuid" = "$expected_uuid" || exit 1
+test ! -L "$mount/postgres" || exit 1
+test ! -L "$mount/postgres/PG_VERSION" || exit 1
+data_target=$(findmnt --noheadings --raw --output TARGET --target "$mount/postgres") || exit 1
+test "$data_target" = "$mount" || exit 1
 test -s /var/lib/scop-staging/postgres/PG_VERSION
 `;
 const storagePath = "deploy/persistent/verify-storage.sh";
@@ -619,7 +619,10 @@ function storageAudit(
   });
 }
 for (const [name, script] of [
-  ["original containing-filesystem lookup", base[storagePath]],
+  [
+    "original containing-filesystem lookup",
+    '#!/bin/sh\nset -eu\ntest "$(findmnt -n -o UUID --target /var/lib/scop-staging)" = "$(cat /etc/scop-staging/volume-uuid)"\ntest -s /var/lib/scop-staging/postgres/PG_VERSION\n',
+  ],
   [
     "comment mentioning mountpoint",
     base[storagePath] + "\n# TODO: add exact mountpoint validation\n",
@@ -695,6 +698,11 @@ for (const [name, script] of [
   test(`STO-01 rejects insufficient or unreviewed storage evidence: ${name}`, () =>
     assert.notEqual(control(storageAudit(script), "STO-01").result, "PASS"));
 test("STO-01 recognizes only the constrained source identity and enforced pre-start unit", () => {
+  assert.equal(
+    base[storagePath],
+    reviewedStorageFixture,
+    "actual storage implementation must match the separately exercised fixture",
+  );
   for (const unit of [
     base["deploy/persistent/scop-staging-infra.service"],
     base["deploy/persistent/scop-staging-infra.service"].replace(
@@ -770,6 +778,7 @@ case "$*" in
   "--noheadings --raw --output MAJ:MIN --mountpoint $SYNTHETIC_MOUNT") printf '%s\\n' "$SYNTHETIC_DEVICE";;
   "--noheadings --raw --output MAJ:MIN --mountpoint /") printf '%s\\n' "$SYNTHETIC_ROOT_DEVICE";;
   "--noheadings --raw --output UUID --mountpoint $SYNTHETIC_MOUNT") printf '%s\\n' "$SYNTHETIC_UUID";;
+  "--noheadings --raw --output TARGET --target $SYNTHETIC_MOUNT/postgres") printf '%s\\n' "$SYNTHETIC_DATA_TARGET";;
   *) exit 90;;
 esac
 `,
@@ -789,6 +798,7 @@ esac
       HOME: unix(dir),
       SYNTHETIC_MOUNT: unix(mount),
       SYNTHETIC_TARGET: unix(mount),
+      SYNTHETIC_DATA_TARGET: unix(mount),
       SYNTHETIC_DEVICE: "8:16",
       SYNTHETIC_ROOT_DEVICE: "8:1",
       SYNTHETIC_UUID: uuid,
@@ -805,11 +815,12 @@ esac
     assert.equal(positive.status, 0, positive.stderr || String(positive.error));
     assert.equal(
       fs.readFileSync(calls, "utf8").trim().split(/\r?\n/).length,
-      4,
+      5,
     );
     for (const change of [
       { SYNTHETIC_TARGET: "" },
       { SYNTHETIC_TARGET: "/" },
+      { SYNTHETIC_DATA_TARGET: "/" },
       { SYNTHETIC_DEVICE: "8:1" },
       { SYNTHETIC_DEVICE: "" },
       { SYNTHETIC_DEVICE: "8:16\ninvalid" },
@@ -835,4 +846,89 @@ esac
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("host-policy synthetic transaction, input and ownership regressions", () => {
+  const python = process.platform === "win32" ? "python" : "python3";
+  const result = execFileSync(
+    python,
+    [path.join(__dirname, "host-policy.test.py")],
+    {
+      env: {
+        PATH: process.env.PATH,
+        SYSTEMROOT: process.env.SYSTEMROOT,
+        PYTHONDONTWRITEBYTECODE: "1",
+      },
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      timeout: 30000,
+    },
+  );
+  assert.equal(typeof result, "string");
+});
+test("nft syntax helper refuses ordinary hosts before any firewall command", () => {
+  const python = process.platform === "win32" ? "python" : "python3";
+  const result = require("node:child_process").spawnSync(
+    python,
+    [path.join(__dirname, "nft-validate.py")],
+    {
+      env: {
+        PATH: process.env.PATH,
+        SYSTEMROOT: process.env.SYSTEMROOT,
+        PYTHONDONTWRITEBYTECODE: "1",
+      },
+      encoding: "utf8",
+      timeout: 30000,
+    },
+  );
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /ISOLATED_HOSTED_CI_NAMESPACE_REQUIRED/);
+});
+for (const [file, ids] of [
+  ["deploy/persistent/host-policy.py", ["NET-03", "NET-04", "CMP-03"]],
+  ["deploy/persistent/firewall.sh", ["NET-03", "START-01"]],
+  ["deploy/persistent/docker-staging.conf", ["START-01"]],
+  ["deploy/persistent/scop-staging-firewall.service", ["START-01", "NET-03"]],
+  ["deploy/persistent/terraform/main.tf.json", ["TF-04", "NET-04"]],
+])
+  test(`unreviewed hardening source cannot obtain static acceptance: ${file}`, () => {
+    const changed = {
+      ...base,
+      [file]:
+        base[file] +
+        (file.endsWith(".json") ? "\n" : "\n# suggestive policy comment\n"),
+    };
+    for (const id of ids)
+      assert.equal(control(audit(changed), id).result, "FAIL");
+  });
+test("all six source controls pass without converting external acceptance or activation", () => {
+  const r = audit();
+  for (const id of [
+    "TF-04",
+    "CMP-03",
+    "START-01",
+    "NET-03",
+    "NET-04",
+    "STO-01",
+  ])
+    assert.equal(control(r, id).result, "PASS", id);
+  assert.equal(r.counts.EXTERNAL_VALIDATION_REQUIRED, 9);
+  assert.equal(r.counts.FAIL, 0);
+  assert.equal(p.exitCode(r), 2);
+  assert.equal(r.activation_allowed, false);
+});
+test("early firewall avoids the basic/sockets/Docker dependency cycle and never removes policy on stop", () => {
+  const unit = base["deploy/persistent/scop-staging-firewall.service"];
+  assert.match(unit, /^DefaultDependencies=no$/m);
+  assert.match(unit, /^After=local-fs.target systemd-sysctl.service$/m);
+  assert.match(unit, /^Before=.*docker\.service docker\.socket/m);
+  assert(!/^ExecStop=/m.test(unit));
+  const changed = {
+    ...base,
+    "deploy/persistent/scop-staging-firewall.service": unit.replace(
+      "DefaultDependencies=no",
+      "DefaultDependencies=yes",
+    ),
+  };
+  assert.equal(control(audit(changed), "START-01").result, "FAIL");
 });

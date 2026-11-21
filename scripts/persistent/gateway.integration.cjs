@@ -297,6 +297,12 @@ async function check(report, original) {
       "--internal",
       "--label",
       `wici.scop.gateway-test=${nonce}`,
+      "--label",
+      `wici.scop.instance=${cfg.instance}`,
+      "--label",
+      "wici.scop.purpose=wici-isolated-staging-v1",
+      "--label",
+      "wici.scop.role=data",
       data,
     );
     local.push(["network", data]);
@@ -306,6 +312,12 @@ async function check(report, original) {
       "--internal",
       "--label",
       `wici.scop.gateway-test=${nonce}`,
+      "--label",
+      `wici.scop.instance=${cfg.instance}`,
+      "--label",
+      "wici.scop.purpose=wici-isolated-staging-v1",
+      "--label",
+      "wici.scop.role=ingress",
       ingress,
     );
     local.push(["network", ingress]);
@@ -375,6 +387,10 @@ async function check(report, original) {
       gateway,
       "--label",
       `wici.scop.instance=${cfg.instance}`,
+      "--label",
+      "wici.scop.purpose=wici-isolated-staging-v1",
+      "--label",
+      "wici.scop.role=gateway",
       "--label",
       `wici.scop.gateway-test=${nonce}`,
       "--network",

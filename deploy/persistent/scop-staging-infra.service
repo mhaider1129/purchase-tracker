@@ -1,7 +1,7 @@
 [Unit]
 Description=Approved isolated staging database and HTTPS gateway
-Requires=docker.service
-After=docker.service network-online.target
+Requires=docker.service scop-staging-firewall.service
+After=docker.service scop-staging-firewall.service network-online.target
 RequiresMountsFor=/var/lib/scop-staging
 ConditionPathExists=/etc/scop-staging/ACTIVATION_APPROVED
 
@@ -11,8 +11,9 @@ RemainAfterExit=yes
 WorkingDirectory=/opt/scop-staging
 EnvironmentFile=/etc/scop-staging/compose.env
 ExecStartPre=/bin/sh /opt/scop-staging/verify-storage.sh
+ExecStartPre=/usr/bin/python3 /opt/scop-staging/host-policy.py ownership existing
 ExecStart=/usr/bin/docker compose --profile separately-approved-database --profile separately-approved-gateway --profile separately-approved-egress up -d database gateway egress
-ExecStartPost=/bin/sh /opt/scop-staging/firewall.sh
+ExecStartPost=/usr/bin/python3 /opt/scop-staging/host-policy.py ownership required
 ExecStop=/usr/bin/docker compose stop gateway database egress
 
 [Install]

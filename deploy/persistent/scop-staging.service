@@ -1,7 +1,7 @@
 [Unit]
 Description=Isolated SCOP staging control plane (activation requires separate approval)
-Requires=docker.service scop-staging-infra.service
-After=docker.service scop-staging-infra.service network-online.target
+Requires=docker.service scop-staging-infra.service scop-staging-firewall.service
+After=docker.service scop-staging-infra.service scop-staging-firewall.service network-online.target
 RequiresMountsFor=/var/lib/scop-staging
 ConditionPathExists=/etc/scop-staging/ACTIVATION_APPROVED
 
@@ -9,6 +9,7 @@ ConditionPathExists=/etc/scop-staging/ACTIVATION_APPROVED
 Type=simple
 WorkingDirectory=/opt/scop-staging
 EnvironmentFile=/etc/scop-staging/compose.env
+ExecStartPre=/usr/bin/python3 /opt/scop-staging/host-policy.py ownership required
 ExecStart=/usr/bin/docker compose --profile separately-approved-agent up --no-deps --abort-on-container-exit agent
 ExecStop=/usr/bin/docker compose stop agent
 Restart=on-failure
