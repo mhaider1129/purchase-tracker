@@ -279,7 +279,7 @@ const hardeningIdentities = {
   "deploy/persistent/firewall.sh":
     "f8d9189eaf66ac9b838667104842f8b350d680db3eb8c25993a57e6303ea5e0b",
   "deploy/persistent/host-policy.py":
-    "4cd382d9a5c22eef9e49afeb75fc34bc8f001292fcd7b2c06dee59b3dcb3bab0",
+    "8413f85178e1ee5523ed3d00e6c3ba2bd1991c6ff34cb35dae0b6591c3a1d745",
   "deploy/persistent/terraform/main.tf.json":
     "b4a60cb93be3e069df4145cb5ed3bae1c55ce4ec3ee8b3d2b03102a846730bb8",
   "scripts/persistent/runtime.cjs":

@@ -2,6 +2,7 @@
 import copy
 import importlib.util
 import json
+import re
 from pathlib import Path
 import stat
 from types import SimpleNamespace
@@ -25,9 +26,12 @@ class NetworkPolicy(unittest.TestCase):
         self.assertEqual(batch.count("policy drop;"), 3)
         self.assertNotIn("flush ruleset", batch)
         self.assertNotIn("0.0.0.0/0", batch)
-        for text in ('ip daddr @dns tcp dport 53', 'ip daddr @dns udp dport 53', 'ip daddr @time udp dport 123', 'ip daddr @https tcp dport 443', 'ip saddr @admins tcp dport 22', 'meta nfproto ipv6 drop'):
+        # The real kernel parser rejected the former reserved identifier time.
+        self.assertEqual(len(re.findall(r"^set scop_[a-z]+ \{", batch, re.M)), 5)
+        self.assertNotRegex(batch, r"(?m)^set (time|https|dns) \{")
+        for text in ('ip daddr @scop_dns tcp dport 53', 'ip daddr @scop_dns udp dport 53', 'ip daddr @scop_time udp dport 123', 'ip daddr @scop_https tcp dport 443', 'ip saddr @scop_admins tcp dport 22', 'meta nfproto ipv6 drop'):
             self.assertIn(text, batch)
-        self.assertNotIn('ct state established,related accept\nip saddr @staff', batch)
+        self.assertNotIn('ct state established,related accept\nip saddr @scop_staff', batch)
 
     def test_incomplete_enabled_or_foreign_inputs(self):
         changes = [{"purpose": "production"}, {"instance": "host-"}, {"instance": "../x"}, {"instance": "x" * 26}, {"instance": "host; accept"}, {"version": True}, {"enabled": True}]

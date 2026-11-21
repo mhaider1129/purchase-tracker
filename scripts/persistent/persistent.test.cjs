@@ -523,7 +523,9 @@ test("IAC/config templates contain no activation, production targets or unpinned
   const hostPolicy = fs.readFileSync(path.join(root, "host-policy.py"), "utf8");
   assert(hostPolicy.includes("ACTIVATION_APPROVED"));
   assert(
-    hostPolicy.includes("ip saddr 172.30.60.20 ip daddr @https tcp dport 443"),
+    hostPolicy.includes(
+      "ip saddr 172.30.60.20 ip daddr @scop_https tcp dport 443",
+    ),
   );
   const proxy = fs.readFileSync(path.join(root, "squid.conf"), "utf8");
   assert(proxy.includes("http_access deny all"));

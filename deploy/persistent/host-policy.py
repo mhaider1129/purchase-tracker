@@ -64,7 +64,7 @@ def validate(value):
 def render(value, replace=False):
     p = validate(value)
     sets = []
-    for name, key, cidr in (("admins", "adminCidrs", True), ("staff", "staffCidrs", True), ("dns", "dnsResolvers", False), ("time", "timeServers", False), ("https", "httpsCidrs", True)):
+    for name, key, cidr in (("scop_admins", "adminCidrs", True), ("scop_staff", "staffCidrs", True), ("scop_dns", "dnsResolvers", False), ("scop_time", "timeServers", False), ("scop_https", "httpsCidrs", True)):
         sets.append("set %s { type ipv4_addr; flags interval; elements = { %s }; }" % (name, ", ".join(addresses(p[key], cidr))))
     return ("delete table inet wici_scop\n" if replace else "") + """table inet wici_scop {
 comment "%s:%s"
@@ -75,17 +75,17 @@ iifname "lo" accept
 meta nfproto ipv6 drop
 ct state invalid drop
 ct state established,related accept
-ip saddr @admins tcp dport 22 accept
+ip saddr @scop_admins tcp dport 22 accept
 }
 chain output {
 type filter hook output priority -10; policy drop;
 oifname "lo" accept
 meta nfproto ipv6 drop
 ct state invalid drop
-ip daddr @admins tcp sport 22 ct state established accept
-ip daddr @dns udp dport 53 accept
-ip daddr @dns tcp dport 53 accept
-ip daddr @time udp dport 123 accept
+ip daddr @scop_admins tcp sport 22 ct state established accept
+ip daddr @scop_dns udp dport 53 accept
+ip daddr @scop_dns tcp dport 53 accept
+ip daddr @scop_time udp dport 123 accept
 ip daddr 172.30.60.20 tcp dport 3128 accept
 ip protocol icmp ct state related accept
 }
@@ -93,14 +93,14 @@ chain forward {
 type filter hook forward priority -10; policy drop;
 meta nfproto ipv6 drop
 ct state invalid drop
-ip saddr @staff ip daddr 172.30.60.10 tcp dport 443 accept
-ip saddr 172.30.60.10 ip daddr @staff tcp sport 443 ct state established,related accept
-ip saddr 172.30.60.20 ip daddr @https tcp dport 443 accept
-ip saddr @https ip daddr 172.30.60.20 tcp sport 443 ct state established,related accept
-ip saddr 172.30.60.20 ip daddr @dns udp dport 53 accept
-ip saddr 172.30.60.20 ip daddr @dns tcp dport 53 accept
-ip saddr @dns ip daddr 172.30.60.20 udp sport 53 ct state established,related accept
-ip saddr @dns ip daddr 172.30.60.20 tcp sport 53 ct state established,related accept
+ip saddr @scop_staff ip daddr 172.30.60.10 tcp dport 443 accept
+ip saddr 172.30.60.10 ip daddr @scop_staff tcp sport 443 ct state established,related accept
+ip saddr 172.30.60.20 ip daddr @scop_https tcp dport 443 accept
+ip saddr @scop_https ip daddr 172.30.60.20 tcp sport 443 ct state established,related accept
+ip saddr 172.30.60.20 ip daddr @scop_dns udp dport 53 accept
+ip saddr 172.30.60.20 ip daddr @scop_dns tcp dport 53 accept
+ip saddr @scop_dns ip daddr 172.30.60.20 udp sport 53 ct state established,related accept
+ip saddr @scop_dns ip daddr 172.30.60.20 tcp sport 53 ct state established,related accept
 # Docker's later filter/isolation chains still decide bridge-to-bridge traffic.
 iifname "br-*" oifname "br-*" accept
 }

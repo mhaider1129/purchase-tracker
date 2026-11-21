@@ -109,7 +109,12 @@ jobs:
       - name: Validate synthetic firewall syntax in empty network namespace
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 22 }}
         run: |
-          if ! command -v nft >/dev/null; then sudo apt-get update && sudo apt-get install --no-install-recommends -y nftables; fi
+          if ! command -v nft >/dev/null; then
+            # CLI installation must not auto-start a firewall on the CI host.
+            sudo systemctl mask --runtime nftables.service
+            sudo apt-get update
+            sudo apt-get install --no-install-recommends -y nftables
+          fi
           sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT unshare --net env PYTHONDONTWRITEBYTECODE=1 python3 scripts/readiness/nft-validate.py
       - name: Validate locked Terraform schema and provider-free input predicates
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 22 }}
