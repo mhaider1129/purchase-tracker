@@ -212,7 +212,14 @@ async function verify(
     ),
     findings = [
       ...fileErrors,
-      ...visibility.findings,
+      ...visibility.findings.filter(
+        (f) =>
+          requireEvidence ||
+          ![
+            "database_release_migrations",
+            "database_release_attestations",
+          ].includes(f.object),
+      ),
       ...catalog.compare(observableExpected, actual),
     ];
   const authority = await runtimeAuthority(db, role);
@@ -231,6 +238,7 @@ async function verify(
     "database_release_attestations",
   );
   if (
+    requireEvidence &&
     receiptsObservable &&
     actual.relations.some((r) => r.name === "database_release_migrations")
   )
@@ -380,6 +388,26 @@ async function assertReady(db, options) {
     );
   return report;
 }
+// Routine application deployment needs live compatibility, not a new operator
+// certification for every source commit. The explicit release verifier above
+// remains available for migration/audit certification and is unchanged.
+async function assertRuntimeCompatible(db, options) {
+  const report = await verify(db, { ...options, requireEvidence: false });
+  if (report.status !== "SCHEMA_VERIFIED_UNATTESTED")
+    throw Object.assign(
+      new Error(
+        "Runtime database compatibility or security check failed; deployment must retain the previous service",
+      ),
+      {
+        code: "DATABASE_RELEASE_INCOMPATIBLE",
+        statusCode: 503,
+        findings: report.findings,
+      },
+    );
+  report.startup_eligible = true;
+  report.readiness_mode = "AUTOMATIC_RUNTIME_COMPATIBILITY";
+  return report;
+}
 async function startWhenReady(db, options, onReady) {
   if (options?.role)
     throw Object.assign(new Error("Runtime role override is not permitted"), {
@@ -395,7 +423,7 @@ async function startWhenReady(db, options, onReady) {
       await client.query(
         "BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
       );
-    report = await assertReady(client, options);
+    report = await assertRuntimeCompatible(client, options);
     if (borrowed) await client.query("COMMIT");
   } catch (error) {
     if (borrowed) await client.query("ROLLBACK");
@@ -408,6 +436,7 @@ async function startWhenReady(db, options, onReady) {
 }
 
 module.exports = {
+  assertRuntimeCompatible,
   startWhenReady,
   CONTRACT_VERSION,
   loadContract,

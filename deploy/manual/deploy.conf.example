@@ -1,0 +1,17 @@
+# Optional: install as ~/.config/wici-deploy.conf owned by deployer, mode 600.
+# Defaults match the supplied server layout; no per-release certification settings required.
+# This is trusted shell configuration; no database passwords belong here.
+ROOT=/var/www/wici-procurement
+# Omit for strict discovery from nginx -T. Set only if discovery cannot identify exactly one file.
+# NGINX_SITE=/etc/nginx/sites-available/ACTUAL_SITE
+BACKEND_ENV=/var/www/wici-procurement/backend/.env
+PUBLIC_URL=https://wici-procurement.org
+BACKEND_BRANCH=main
+FRONTEND_BRANCH=main
+COMBINED_BRANCH=master
+CANDIDATE_PORT=5001
+READY_SECONDS=120
+SHARED_UPLOADS=/var/www/wici-procurement/backend/uploads
+# Original backend and frontend_repo repositories are never reset, cleaned or npm-installed.
+# Recovery's links into backend/.env and backend/node_modules remain unchanged.
+# Frontend builds deliberately use REACT_APP_API_BASE_URL=/api (same-origin).

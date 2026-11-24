@@ -34,6 +34,8 @@ jobs:
       - run: node scripts/quality/release.cjs group backend
         env:
           QUALITY_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      - name: Manual deployment and synchronization regressions (local fixtures only)
+        run: node --test scripts/devops/manual-deployment.test.cjs scripts/devops/manual-sync.test.cjs
       - run: node scripts/devops/backend-artifact.cjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         id: backend_release

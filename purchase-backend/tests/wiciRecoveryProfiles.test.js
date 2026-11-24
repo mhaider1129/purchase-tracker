@@ -118,7 +118,7 @@ test("checked-in operator SQL is reproducible from the final source-bound plan",
       ids: ["073_wici_observed_schema_recovery"],
       environment: "production",
       actor: "WICI authorized operator",
-      releaseRef: "wici-recovery-2026-11-09-r3",
+      releaseRef: "wici-runtime-deployment-2026-11-24-r1",
     }),
   );
   expect(() =>

@@ -2,7 +2,7 @@
   "application_sources": [
     {
       "path": "app.js",
-      "sha256": "204b4f10cd161f2f254fbbbeab0a4d100946727262800e67d38b17f343b5a079"
+      "sha256": "51996eb7feb1ed786ee8b479d278a7657b4575c2d5849c9a8f2ba6aa3f0e55e3"
     },
     {
       "path": "config/capabilityMatrix.js",
@@ -1022,7 +1022,7 @@
     },
     {
       "path": "services/databaseReleaseService.js",
-      "sha256": "744abf62922e5ea7d2416dae3495375ed018e66f44893a44b259176ac4f070c5"
+      "sha256": "109d94cd7db47c1b5860fc37c78271b948c7bf9f02e91ad4b5f5472c4071aabf"
     },
     {
       "path": "services/deliveryInspectionService.js",
@@ -1797,7 +1797,7 @@
       "sha256": "8671e2d6e417f189858487def2880f0eb553909d8d253ea96a05da96ec53d9f2"
     }
   ],
-  "application_manifest_sha256": "a081d9611bd8aa364c68734749169f6d8456bf507e646a0ac958ecea03505760",
+  "application_manifest_sha256": "c7d6fe0dabaff8c04c8a30ad0c36c1e8f6fb73688fe5036c304eb72eb5b48f99",
   "highest_manual_number": 73,
   "artifacts": [
     {
@@ -2801,8 +2801,8 @@
       "path": "sql/operator-recovery/wici-production-recovery.sql",
       "id": null,
       "classification": "generated_operator_bundle",
-      "sha256": "785d3e62c1ddcc814b40983b3f62f15d66739d2ad124296cd3baf41b57380746",
-      "bytes": 4052541,
+      "sha256": "fbdd79c445fbb1f91de85f7df5851a1f0ff582e25609df63fe48dc4e7fcdff60",
+      "bytes": 4052571,
       "execution_evidence": "UNVERIFIED",
       "ddl_statements": 1210,
       "header": "-- Generated offline. Review checksum, actor, environment and release before manual SQL Editor execution.\n-- Historical migrations remain UNVERIFIED. This bundle never replays a frozen file.\nBEGIN;\nSET LOCAL lock_timeout='3s';\nSET LOCAL statement_timeout='5min';\nSET LOCAL search_path = public, extensions, pg_catalog;"
