@@ -106,6 +106,28 @@ jobs:
         working-directory: purchase-backend
       - run: node scripts/devops/integrity.cjs --base-ref refs/remotes/origin/master
       - run: node --test scripts/devops/automation.test.cjs scripts/devops/release-selection.test.cjs scripts/devops/security-regression.test.cjs scripts/devops/artifact-json.test.cjs scripts/devops/sync-publish.test.cjs scripts/devops/sync-evidence.test.cjs scripts/staging/staging.test.cjs scripts/persistent/persistent.test.cjs scripts/persistent/naming.test.cjs scripts/persistent/recovery.test.cjs scripts/persistent/gateway-probe.test.cjs scripts/persistent/image-store.test.cjs scripts/readiness/preflight.test.cjs
+      - name: Validate synthetic firewall syntax in empty network namespace
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 22 }}
+        run: |
+          if ! command -v nft >/dev/null; then
+            # CLI installation must not auto-start a firewall on the CI host.
+            sudo systemctl mask --runtime nftables.service
+            sudo apt-get update
+            sudo apt-get install --no-install-recommends -y nftables
+          fi
+          sudo --preserve-env=GITHUB_ACTIONS,RUNNER_ENVIRONMENT unshare --net env PYTHONDONTWRITEBYTECODE=1 python3 scripts/readiness/nft-validate.py
+      - name: Validate locked Terraform schema and provider-free input predicates
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 22 }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/scop-terraform"
+          curl -fsSL https://releases.hashicorp.com/terraform/1.10.5/terraform_1.10.5_linux_amd64.zip -o "$RUNNER_TEMP/scop-terraform/terraform.zip"
+          printf '%s  %s\n' 0566a24f5332098b15716ebc394be503f4094acba5ba529bf5eb0698ed5e2a90 "$RUNNER_TEMP/scop-terraform/terraform.zip" | sha256sum -c -
+          unzip -qo "$RUNNER_TEMP/scop-terraform/terraform.zip" -d "$RUNNER_TEMP/scop-terraform"
+          touch "$RUNNER_TEMP/scop-terraform/empty.rc"
+          export TF_DATA_DIR="$RUNNER_TEMP/scop-terraform/data" TF_CLI_CONFIG_FILE="$RUNNER_TEMP/scop-terraform/empty.rc" TF_IN_AUTOMATION=1
+          "$RUNNER_TEMP/scop-terraform/terraform" -chdir=deploy/persistent/terraform init -backend=false -input=false -lockfile=readonly
+          "$RUNNER_TEMP/scop-terraform/terraform" -chdir=deploy/persistent/terraform validate -json
+          PYTHONDONTWRITEBYTECODE=1 python3 scripts/readiness/terraform-inputs.test.py --terraform "$RUNNER_TEMP/scop-terraform/terraform"
       - name: Generate offline Phase3C assessment (not activation approval)
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node == 22 }}
         run: |

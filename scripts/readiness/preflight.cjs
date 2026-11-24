@@ -8,7 +8,7 @@ const fs = require("node:fs"),
   net = require("node:net"),
   { execFileSync } = require("node:child_process");
 const root = path.resolve(__dirname, "../..");
-const baseline = "e0b72af812cfa430e43f373e9f1a8db3e62a2cd6";
+const baseline = "f852b6add8596f61d389cb00f5f652ac75cd6cf5";
 const sha = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
 const fail = (ok, code) => {
   if (!ok) throw Error(code);
@@ -40,6 +40,10 @@ function loadSources(directory = root) {
     "deploy/persistent/config.example.json",
     "deploy/persistent/policy.json",
     "deploy/persistent/firewall.sh",
+    "deploy/persistent/host-policy.py",
+    "deploy/persistent/network-policy.example.json",
+    "deploy/persistent/docker-staging.conf",
+    "deploy/persistent/scop-staging-firewall.service",
     "deploy/persistent/verify-storage.sh",
     "deploy/persistent/squid.conf",
     "deploy/persistent/agent.Dockerfile",
@@ -65,7 +69,7 @@ function loadSources(directory = root) {
           /\.(cjs|py)$/.test(e.name)) ||
         (sub === ".github/workflows" && /\.ya?ml$/.test(e.name)) ||
         (sub === "docs/devops" &&
-          /^(12|13|14|15|16|17|18)-.*\.md$/.test(e.name))
+          /^(12|13|14|15|16|17|18|19)-.*\.md$/.test(e.name))
       ) {
         fail(e.isFile() && !e.isSymbolicLink(), "UNSCANNABLE_PREFLIGHT_SOURCE");
         files.push(`${sub}/${e.name}`);
@@ -256,23 +260,39 @@ function validateComposeDocument(value) {
   }
   return value;
 }
-function reviewedStorageValidation(storage, infra) {
-  // This is source recognition, not a shell security analyzer. The full known
-  // fixture is in preflight.test.cjs and is exercised only in a synthetic tree
-  // with mocked mount information. Changes require semantic review, new tests
-  // and an explicit identity update; comments/extra commands are not ignored.
-  // Shell bytes must match exactly: CRLF can make /bin/sh scripts fail to run.
-  // Only the unit's config line endings are normalized for Windows checkouts.
-  // Report evidence still hashes actual bytes for both sources.
-  return (
-    sha(storage) ===
-      "20559354222d710b2de419ffccefe51f92afa86df9fc74668859391d1506ac3f" &&
-    // Reviewed oneshot unit: the non-ignored ExecStartPre storage verifier must
-    // succeed before Compose starts. This identity does NOT approve its known
-    // firewall/startup defects, which remain separate FAIL/BLOCKED controls.
-    sha(infra.replace(/\r\n/g, "\n")) ===
-      "362ac92ffc31f4439db31a46995c776767427a9034547d9c16ed1a8185d07fa2"
-  );
+// Explicit reviewed source identities, not shell/security substring heuristics.
+// Shell bytes are exact. Config/code CRLF normalization is safe for their parsers;
+// inventory evidence always retains original bytes. Unknown revisions fail.
+const hardeningIdentities = {
+  "deploy/persistent/verify-storage.sh":
+    "fab99f37016b8eb15e0e8f66a8a655790e543861024daf8a3bf5457bf2914034",
+  "deploy/persistent/scop-staging-infra.service":
+    "82b281d89ef63deb92ea8e6f12d5e66aa118b9bcf0270f819d2c4a125babac69",
+  "deploy/persistent/scop-staging.service":
+    "2e01bbf1b91fc5658b2cef0c78fcf95862472a65a0e1c03e3ffe5d8b65045147",
+  "deploy/persistent/scop-staging-firewall.service":
+    "ef57766df99780991c8ab1f6b56623100b63db8387837ef415c72e1281b9463e",
+  "deploy/persistent/docker-staging.conf":
+    "fdb96712c5ad503765a94aa28e4767a9f98685727da5547859388624ca73e7f5",
+  "deploy/persistent/cloud-init.yaml":
+    "f195385081b090a3f03fd40358d5c7304a9ad39da2457c6ed25ce52000de1925",
+  "deploy/persistent/firewall.sh":
+    "f8d9189eaf66ac9b838667104842f8b350d680db3eb8c25993a57e6303ea5e0b",
+  "deploy/persistent/host-policy.py":
+    "fb2321406d0fb2a6dc98eb5a7694e0a6e4eb65a888c4fb06df98048758b550eb",
+  "deploy/persistent/terraform/main.tf.json":
+    "b4a60cb93be3e069df4145cb5ed3bae1c55ce4ec3ee8b3d2b03102a846730bb8",
+  "scripts/persistent/runtime.cjs":
+    "8bd104c29d1ee82a4c6ebd65db8d203caae29d8ba18422fbe18dce0db956707f",
+};
+function reviewed(sources, files) {
+  return files.every((file) => {
+    const value = document(sources, file);
+    return (
+      sha(file.endsWith(".sh") ? value : value.replace(/\r\n/g, "\n")) ===
+      hardeningIdentities[file]
+    );
+  });
 }
 function assess({ sources, config, composeEvidence = null, source = null }) {
   validateConfig(config);
@@ -281,7 +301,20 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
     tfFile = "deploy/persistent/terraform/main.tf.json",
     firewallFile = "deploy/persistent/firewall.sh",
     infraFile = "deploy/persistent/scop-staging-infra.service",
-    storeFile = "deploy/persistent/verify-storage.sh";
+    storeFile = "deploy/persistent/verify-storage.sh",
+    hostFile = "deploy/persistent/host-policy.py",
+    networkUnit = "deploy/persistent/scop-staging-firewall.service",
+    dropinFile = "deploy/persistent/docker-staging.conf";
+  const networkFiles = [
+    hostFile,
+    firewallFile,
+    networkUnit,
+    dropinFile,
+    infraFile,
+    tfFile,
+    "deploy/persistent/scop-staging.service",
+    "deploy/persistent/cloud-init.yaml",
+  ];
   const compose = validateComposeDocument(parse(sources, composeFile)),
     tf = parse(sources, tfFile),
     firewall = document(sources, firewallFile),
@@ -424,14 +457,11 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
   );
   check(
     "TF-04",
-    "SSH-key and storage inputs declare explicit Terraform validation blocks",
-    Boolean(
-      tf.variable.admin_ssh_keys.validation &&
-        tf.variable.volume_size_gb.validation,
-    ),
+    "Reviewed Terraform enforces bounded SSH IDs, volume, staging identity and canonical restricted IPv4 inputs",
+    reviewed(sources, [tfFile]),
     "medium",
     [tfFile],
-    "CIDR syntax/world-open checks exist, but admin_ssh_keys may be empty and volume_size_gb has no reviewed bound in the authoritative template.",
+    "Source identity includes nonempty unique SSH IDs, integer40-200GB volumes, staging-only names, bounded canonical public IPv4 CIDRs/resolvers and explicit endpoints. Real key/project ownership and endpoint authorization remain external requirements.",
     "Add reviewed nonempty SSH-key and bounded storage validation before provisioning; verify actual CIDR/key ownership externally.",
     "Platform engineer",
     ["EXT-PROVIDER"],
@@ -475,13 +505,24 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
   );
   check(
     "CMP-03",
-    "Every infrastructure service carries a matching instance label",
-    Object.values(compose.services).every(
-      (v) => v.labels?.["wici.scop.instance"] === "${SCOP_INSTANCE}",
-    ),
+    "All infrastructure services/networks retain instance, purpose and role ownership and enforced checks",
+    [compose.services, compose.networks].every((group) =>
+      Object.entries(group).every(
+        ([role, value]) =>
+          value.labels?.["wici.scop.instance"] === "${SCOP_INSTANCE}" &&
+          value.labels?.["wici.scop.purpose"] === "wici-isolated-staging-v1" &&
+          value.labels?.["wici.scop.role"] === role,
+      ),
+    ) &&
+      reviewed(sources, [
+        hostFile,
+        infraFile,
+        "deploy/persistent/scop-staging.service",
+        "scripts/persistent/runtime.cjs",
+      ]),
     "medium",
     [composeFile],
-    "Database/gateway have instance labels; the existing agent and egress services lack them.",
+    "Explicit service/network ownership; host pre/post-start inspection refuses missing/foreign labels, controller validates shared network/gateway/DB ownership, and full release provenance protects recovery cleanup. Bind storage uses mount/UUID identity rather than fictitious Docker volume labels.",
     "Add/verify staging instance ownership for agent and egress before external lifecycle changes or acceptance; do not adopt unknown containers.",
     "Platform engineer",
   );
@@ -525,6 +566,7 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
     "Cloud-init prepares the OS only and leaves explicit activation pending",
     Object.keys(cloud).every((k) =>
       [
+        "bootcmd",
         "package_update",
         "packages",
         "ssh_pwauth",
@@ -537,7 +579,8 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
         "docker.io",
         "docker-compose-v2",
         "ca-certificates",
-        "iptables",
+        "nftables",
+        "python3",
       ]) &&
       cloud.write_files.length === 2 &&
       cloud.write_files.every((f) =>
@@ -552,11 +595,12 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
         (f) => f.path === "/etc/scop-staging/ACTIVATION_PENDING",
       ) &&
       !cloud.write_files.some((f) => f.path.endsWith("/ACTIVATION_APPROVED")) &&
+      reviewed(sources, ["deploy/persistent/cloud-init.yaml"]) &&
       JSON.stringify(cloud.runcmd) ===
         JSON.stringify([["install", "-d", "-m", "0700", "/etc/scop-staging"]]),
     "critical",
     ["deploy/persistent/cloud-init.yaml"],
-    "Parsed user-data contains no repository clone, secrets, SQL or service start. Package repository transport/availability under the provider egress policy still needs review.",
+    "Reviewed one-time bootcmd masks Docker service/socket before package installation; no app activation, clone, secrets or SQL. First-boot package transport and actual quarantine behavior still need external evidence.",
     "Keep initial user-data non-activating; separately review any initializer or service command.",
     "Platform engineer",
     ["EXT-PROVIDER", "EXT-BOOT"],
@@ -634,37 +678,33 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
   );
   check(
     "START-01",
-    "Host firewall is installed before services obtain external connectivity",
-    infra.includes("ExecStartPre=/bin/sh /opt/scop-staging/firewall.sh") &&
-      !infra.includes("ExecStartPost=/bin/sh /opt/scop-staging/firewall.sh"),
+    "Reviewed dependencies gate Docker and application startup on restrictive policy",
+    reviewed(sources, networkFiles),
     "high",
-    [infraFile, firewallFile],
-    "Current infra unit starts database/gateway/egress first and installs firewall in ExecStartPost, leaving an ordering window.",
+    networkFiles,
+    "Docker service/socket require the fail-closed firewall unit; initial Docker quarantine and dependency-ordered infrastructure prevent application startup after policy failure. Provider egress is bounded at creation; real boot behavior remains external.",
     "Review a firewall-before-connectivity startup sequence, preload images and test failure behavior before enabling units.",
     "Platform engineer",
     ["EXT-BOOT", "EXT-IMAGES"],
   );
   check(
     "NET-03",
-    "Firewall source avoids the recognized live-chain flush pattern",
-    !/iptables -F WICI_SCOP_(?:EDGE|HOST)/.test(firewall),
+    "Reviewed firewall uses owned atomic nftables replacement with no permissive fallback",
+    reviewed(sources, networkFiles),
     "high",
-    [firewallFile],
-    "Current script flushes live chains and adds rules individually; errors/reapplication can leave partial rules. It is reapplied through the infra unit, not an independently persistent firewall unit.",
+    networkFiles,
+    "Validated bounded inputs and ownership precede nft --check and one atomic nft -f transaction under flock. Failed replacement retains the old policy; first-load failure blocks Docker/socket. No ExecStop removes the table. Packet enforcement/reboot persistence remain external.",
     "Review atomic/staged rule installation and reboot/Docker-restart persistence; prove denial before connectivity and retain a management recovery path.",
     "Security reviewer",
     ["EXT-NETWORK", "EXT-BOOT"],
   );
   check(
     "NET-04",
-    "DNS policy supports approved resolver validation and TCP fallback",
-    /-p tcp --dport 53/.test(firewall) &&
-      tf.resource.hcloud_firewall.staging.rule.some(
-        (r) => r.direction === "out" && r.protocol === "tcp" && r.port === "53",
-      ),
+    "Reviewed source validates bounded IPv4 resolvers and host/provider TCP/UDP53 policy",
+    reviewed(sources, [hostFile, tfFile]),
     "medium",
-    [firewallFile, tfFile],
-    "Host and provider templates permit UDP53 only. The shell resolver check restricts characters but does not validate an IPv4 address.",
+    [hostFile, tfFile],
+    "Strict bounded IPv4 resolver identities and TCP/UDP53 rules exist in host/proxy and provider policies. No unrestricted resolver/web egress is added. Actual approved endpoint mapping and DNS behavior remain external.",
     "Approve resolver identities, strict IP validation and bounded TCP/UDP DNS policy; test truncation/TCP fallback without widening general egress.",
     "Network engineer",
     ["EXT-NETWORK"],
@@ -675,7 +715,7 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
     "BLOCKED",
     "high",
     [firewallFile, tfFile, "deploy/persistent/cloud-init.yaml"],
-    "No NTP path is defined; host OUTPUT is limited to loopback, replies, approved UDP DNS and the GitHub proxy. Image/package retrieval after filtering is not defined by these templates.",
+    "Bounded DNS TCP/UDP53, NTP UDP123 and explicit HTTPS CIDRs are defined, but actual approved time/mirror/CDN endpoints, OS resolver/clock configuration, offline image delivery, bootstrap transport and patch acceptance are unverified. No generic host web egress is allowed.",
     "Approve clock discipline, offline base-image delivery and patching sequence; do not open general outbound access to make bootstrap work.",
     "Platform engineer",
     ["EXT-IMAGES", "EXT-BOOT"],
@@ -683,10 +723,10 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
   check(
     "STO-01",
     "Storage verifier and enforced pre-start unit match the reviewed exact-mount, non-root and UUID validation identities",
-    reviewedStorageValidation(storage, infra),
+    reviewed(sources, [storeFile, infraFile]),
     "high",
     [storeFile, infraFile],
-    "The current findmnt --target implementation is not the constrained source-identity fixture: a root/containing filesystem can satisfy its UUID check. Unknown implementations, including suggestive text or ineffective checks, remain FAIL.",
+    "Full source identities require exact dedicated mount target, non-root device/UUID identity, rejected missing/malformed information and symlink/nested-mount checks, enforced before Compose. Unknown scripts/units remain FAIL. This is not actual volume acceptance.",
     "Independently review exact mount target, non-root device identity, valid expected UUID, missing-information failure and enforced pre-start behavior. Only an explicitly reviewed full source identity may pass; do not edit the authoritative script to improve this metric. Actual volume identity/durability still requires external evidence.",
     "Storage operator",
     ["EXT-STORAGE"],
@@ -752,10 +792,12 @@ function assess({ sources, config, composeEvidence = null, source = null }) {
     ) &&
       sameStrings((infraFields.Requires || "").split(" "), [
         "docker.service",
+        "scop-staging-firewall.service",
       ]) &&
       sameStrings((agentFields.Requires || "").split(" "), [
         "docker.service",
         "scop-staging-infra.service",
+        "scop-staging-firewall.service",
       ]) &&
       ["docker.service", "network-online.target"].every((x) =>
         (infraFields.After || "").split(" ").includes(x),

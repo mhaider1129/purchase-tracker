@@ -8,6 +8,7 @@ const {
   labels,
   assertOwned,
   cleanupOwned,
+  assertInfrastructure,
 } = require("./runtime.cjs");
 const config = { instance: "a".repeat(24) };
 const release = {
@@ -18,6 +19,53 @@ const release = {
     frontend: "sha256:" + "b".repeat(64),
   },
 };
+test("shared infrastructure refuses absent, inconsistent and foreign instance/purpose/role labels", () => {
+  for (const role of [
+    "database",
+    "gateway",
+    "agent",
+    "egress",
+    "data",
+    "ingress",
+    "control",
+    "edge",
+  ]) {
+    const metadata = {
+      "wici.scop.instance": config.instance,
+      "wici.scop.purpose": "wici-isolated-staging-v1",
+      "wici.scop.role": role,
+    };
+    const good = { Name: `scop-${config.instance}-${role}`, Labels: metadata };
+    assertInfrastructure(good, config, role);
+    for (const key of Object.keys(metadata)) {
+      const missing = structuredClone(good);
+      delete missing.Labels[key];
+      assert.throws(
+        () => assertInfrastructure(missing, config, role),
+        /FOREIGN/,
+      );
+      const foreign = structuredClone(good);
+      foreign.Labels[key] = "foreign";
+      assert.throws(
+        () => assertInfrastructure(foreign, config, role),
+        /FOREIGN/,
+      );
+    }
+    assert.throws(
+      () =>
+        assertInfrastructure(
+          { ...good, Name: "scop-foreign-" + role },
+          config,
+          role,
+        ),
+      /NAME/,
+    );
+  }
+  assert.throws(
+    () => assertInfrastructure({}, config, "production"),
+    /UNKNOWN/,
+  );
+});
 test("legacy valid instance creates an overlong DNS label; every corrected name is DNS-safe", () => {
   assert(`scop-review-12345678-${release.commit}-fe`.length > 63);
   for (const value of Object.values(names(config, release)))

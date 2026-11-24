@@ -2,36 +2,96 @@
   "terraform": {
     "required_version": ">= 1.6.0, < 2.0.0",
     "required_providers": {
-      "hcloud": { "source": "hetznercloud/hcloud", "version": "~> 1.50.0" }
+      "hcloud": {
+        "source": "hetznercloud/hcloud",
+        "version": "~> 1.50.0"
+      }
     }
   },
   "variable": {
-    "staging_hcloud_token": { "type": "string", "sensitive": true },
-    "activation_authorized": { "type": "bool", "default": false },
-    "location": { "type": "string", "default": "fsn1" },
-    "server_type": { "type": "string", "default": "cx32" },
+    "staging_hcloud_token": {
+      "type": "string",
+      "sensitive": true
+    },
+    "activation_authorized": {
+      "type": "bool",
+      "default": false
+    },
+    "location": {
+      "type": "string",
+      "default": "fsn1"
+    },
+    "server_type": {
+      "type": "string",
+      "default": "cx32"
+    },
     "admin_cidrs": {
       "type": "list(string)",
       "validation": {
-        "condition": "${length(var.admin_cidrs) > 0 && alltrue([for c in var.admin_cidrs : can(cidrhost(c, 0)) && c != \"0.0.0.0/0\" && c != \"::/0\"])}",
-        "error_message": "Explicit restricted administrator CIDRs required."
+        "condition": "${length(var.admin_cidrs) > 0 && length(var.admin_cidrs) <= 16 && length(distinct(var.admin_cidrs)) == length(var.admin_cidrs) && alltrue([for c in var.admin_cidrs : try(can(regex(\"^([0-9]{1,3}\\\\.){3}[0-9]{1,3}/(2[4-9]|3[0-2])$\", c)) && cidrhost(c, 0) == split(\"/\", c)[0] && !can(regex(\"^(0\\\\.|10\\\\.|100\\\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\\\.|127\\\\.|169\\\\.254\\\\.|172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.|192\\\\.(0\\\\.0|88\\\\.99|168)\\\\.|198\\\\.(18|19)\\\\.|(22[4-9]|23[0-9]|24[0-9]|25[0-5])\\\\.)\", c)), false)])}",
+        "error_message": "Explicit unique canonical public IPv4 CIDRs /24 through /32 required; ownership needs separate approval."
       }
     },
     "staff_cidrs": {
       "type": "list(string)",
       "validation": {
-        "condition": "${length(var.staff_cidrs) > 0 && alltrue([for c in var.staff_cidrs : can(cidrhost(c, 0)) && c != \"0.0.0.0/0\" && c != \"::/0\"])}",
-        "error_message": "Hospital/VPN CIDRs required; no unrestricted staging access."
+        "condition": "${length(var.staff_cidrs) > 0 && length(var.staff_cidrs) <= 16 && length(distinct(var.staff_cidrs)) == length(var.staff_cidrs) && alltrue([for c in var.staff_cidrs : try(can(regex(\"^([0-9]{1,3}\\\\.){3}[0-9]{1,3}/(2[4-9]|3[0-2])$\", c)) && cidrhost(c, 0) == split(\"/\", c)[0] && !can(regex(\"^(0\\\\.|10\\\\.|100\\\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\\\.|127\\\\.|169\\\\.254\\\\.|172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.|192\\\\.(0\\\\.0|88\\\\.99|168)\\\\.|198\\\\.(18|19)\\\\.|(22[4-9]|23[0-9]|24[0-9]|25[0-5])\\\\.)\", c)), false)])}",
+        "error_message": "Explicit unique canonical public IPv4 CIDRs /24 through /32 required; ownership needs separate approval."
       }
     },
-    "admin_ssh_keys": { "type": "list(string)" },
-    "volume_size_gb": { "type": "number", "default": 40 }
+    "admin_ssh_keys": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.admin_ssh_keys) > 0 && length(var.admin_ssh_keys) <= 16 && length(distinct(var.admin_ssh_keys)) == length(var.admin_ssh_keys) && alltrue([for k in var.admin_ssh_keys : can(regex(\"^[1-9][0-9]{0,15}$\", k))])}",
+        "error_message": "Require 1-16 unique positive SSH-key IDs independently approved for the staging project."
+      }
+    },
+    "volume_size_gb": {
+      "type": "number",
+      "default": 40,
+      "validation": {
+        "condition": "${var.volume_size_gb >= 40 && var.volume_size_gb <= 200 && floor(var.volume_size_gb) == var.volume_size_gb}",
+        "error_message": "Require an integer volume size from 40 through 200 GB; existing volumes must never be shrunk."
+      }
+    },
+    "https_cidrs": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.https_cidrs) > 0 && length(var.https_cidrs) <= 16 && length(distinct(var.https_cidrs)) == length(var.https_cidrs) && alltrue([for c in var.https_cidrs : try(can(regex(\"^([0-9]{1,3}\\\\.){3}[0-9]{1,3}/(2[4-9]|3[0-2])$\", c)) && cidrhost(c, 0) == split(\"/\", c)[0] && !can(regex(\"^(0\\\\.|10\\\\.|100\\\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\\\.|127\\\\.|169\\\\.254\\\\.|172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.|192\\\\.(0\\\\.0|88\\\\.99|168)\\\\.|198\\\\.(18|19)\\\\.|(22[4-9]|23[0-9]|24[0-9]|25[0-5])\\\\.)\", c)), false)])}",
+        "error_message": "Explicit unique canonical public IPv4 CIDRs /24 through /32 required; ownership needs separate approval."
+      }
+    },
+    "dns_resolvers": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.dns_resolvers) > 0 && length(var.dns_resolvers) <= 4 && length(distinct(var.dns_resolvers)) == length(var.dns_resolvers) && alltrue([for ip in var.dns_resolvers : try(can(regex(\"^([0-9]{1,3}\\\\.){3}[0-9]{1,3}$\", ip)) && cidrhost(\"${ip}/32\", 0) == ip && !can(regex(\"^(0\\\\.|10\\\\.|100\\\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\\\.|127\\\\.|169\\\\.254\\\\.|172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.|192\\\\.(0\\\\.0|88\\\\.99|168)\\\\.|198\\\\.(18|19)\\\\.|(22[4-9]|23[0-9]|24[0-9]|25[0-5])\\\\.)\", ip)), false)])}",
+        "error_message": "Explicit unique canonical public IPv4 resolver/time-server identities required."
+      }
+    },
+    "time_servers": {
+      "type": "list(string)",
+      "validation": {
+        "condition": "${length(var.time_servers) > 0 && length(var.time_servers) <= 4 && length(distinct(var.time_servers)) == length(var.time_servers) && alltrue([for ip in var.time_servers : try(can(regex(\"^([0-9]{1,3}\\\\.){3}[0-9]{1,3}$\", ip)) && cidrhost(\"${ip}/32\", 0) == ip && !can(regex(\"^(0\\\\.|10\\\\.|100\\\\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\\\\.|127\\\\.|169\\\\.254\\\\.|172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.|192\\\\.(0\\\\.0|88\\\\.99|168)\\\\.|198\\\\.(18|19)\\\\.|(22[4-9]|23[0-9]|24[0-9]|25[0-5])\\\\.)\", ip)), false)])}",
+        "error_message": "Explicit unique canonical public IPv4 resolver/time-server identities required."
+      }
+    },
+    "instance": {
+      "type": "string",
+      "validation": {
+        "condition": "${can(regex(\"^[a-z][a-z0-9-]{1,23}[a-z0-9]$\", var.instance))}",
+        "error_message": "Staging instance must be 3-25 lowercase DNS-safe characters, starting with a letter and ending alphanumeric."
+      }
+    }
   },
-  "provider": { "hcloud": { "token": "${var.staging_hcloud_token}" } },
+  "provider": {
+    "hcloud": {
+      "token": "${var.staging_hcloud_token}"
+    }
+  },
   "resource": {
     "hcloud_firewall": {
       "staging": {
-        "name": "wici-isolated-staging",
+        "name": "scop-staging-${var.instance}-firewall",
         "rule": [
           {
             "direction": "in",
@@ -49,13 +109,25 @@
             "direction": "out",
             "protocol": "tcp",
             "port": "443",
-            "destination_ips": ["0.0.0.0/0"]
+            "destination_ips": "${var.https_cidrs}"
           },
           {
             "direction": "out",
             "protocol": "udp",
             "port": "53",
-            "destination_ips": ["0.0.0.0/0"]
+            "destination_ips": "${[for ip in var.dns_resolvers : \"${ip}/32\"]}"
+          },
+          {
+            "direction": "out",
+            "protocol": "tcp",
+            "port": "53",
+            "destination_ips": "${[for ip in var.dns_resolvers : \"${ip}/32\"]}"
+          },
+          {
+            "direction": "out",
+            "protocol": "udp",
+            "port": "123",
+            "destination_ips": "${[for ip in var.time_servers : \"${ip}/32\"]}"
           }
         ],
         "lifecycle": {
@@ -65,16 +137,25 @@
               "error_message": "Separate staging provisioning authorization required."
             }
           ]
+        },
+        "labels": {
+          "purpose": "wici-isolated-staging-v1",
+          "production": "false",
+          "instance": "${var.instance}"
         }
       }
     },
     "hcloud_volume": {
       "staging": {
-        "name": "wici-staging-synthetic-only",
+        "name": "scop-staging-${var.instance}-synthetic-data",
         "size": "${var.volume_size_gb}",
         "location": "${var.location}",
         "format": "ext4",
-        "labels": { "purpose": "wici-isolated-staging-v1" },
+        "labels": {
+          "purpose": "wici-isolated-staging-v1",
+          "production": "false",
+          "instance": "${var.instance}"
+        },
         "lifecycle": {
           "prevent_destroy": true,
           "precondition": [
@@ -88,31 +169,57 @@
     },
     "hcloud_server": {
       "staging": {
-        "name": "wici-isolated-staging",
+        "name": "scop-staging-${var.instance}-host",
         "server_type": "${var.server_type}",
         "location": "${var.location}",
         "image": "ubuntu-24.04",
         "ssh_keys": "${var.admin_ssh_keys}",
-        "firewall_ids": ["${hcloud_firewall.staging.id}"],
-        "public_net": [{ "ipv4_enabled": true, "ipv6_enabled": false }],
+        "firewall_ids": [
+          "${hcloud_firewall.staging.id}"
+        ],
+        "public_net": [
+          {
+            "ipv4_enabled": true,
+            "ipv6_enabled": false
+          }
+        ],
         "labels": {
           "purpose": "wici-isolated-staging-v1",
-          "production": "false"
+          "production": "false",
+          "instance": "${var.instance}"
         },
         "user_data": "${file(\"${path.module}/../cloud-init.yaml\")}",
-        "lifecycle": { "prevent_destroy": true }
+        "lifecycle": {
+          "prevent_destroy": true,
+          "precondition": [
+            {
+              "condition": "${var.activation_authorized}",
+              "error_message": "Separate dedicated staging infrastructure authorization required."
+            }
+          ]
+        }
       }
     },
     "hcloud_volume_attachment": {
       "staging": {
         "volume_id": "${hcloud_volume.staging.id}",
         "server_id": "${hcloud_server.staging.id}",
-        "automount": false
+        "automount": false,
+        "lifecycle": {
+          "precondition": [
+            {
+              "condition": "${var.activation_authorized}",
+              "error_message": "Separate dedicated staging infrastructure authorization required."
+            }
+          ]
+        }
       }
     }
   },
   "output": {
-    "staging_ipv4": { "value": "${hcloud_server.staging.ipv4_address}" },
+    "staging_ipv4": {
+      "value": "${hcloud_server.staging.ipv4_address}"
+    },
     "persistent_volume_device": {
       "value": "${hcloud_volume.staging.linux_device}"
     }

@@ -1,5 +1,7 @@
 # Phase3C-01 — infrastructure inventory and gaps
 
+This records the Phase3C-01 historical baseline. Phase3C-02 source remediation and the current before/after matrix are in [document19](19-phase3c02-infrastructure-hardening.md). External validation is still required; the historical six FAILs are not a statement that hardened source passed a real host test.
+
 Authoritative baseline: master `e0b72af812cfa430e43f373e9f1a8db3e62a2cd6`, containing the reviewed Phase3B recovery correction. No competing deployment design is introduced. Source inspection is evidence of template intent; it is not proof of external behavior.
 
 ## Existing source inventory and ownership

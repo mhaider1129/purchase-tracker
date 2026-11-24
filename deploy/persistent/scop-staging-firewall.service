@@ -1,0 +1,18 @@
+[Unit]
+Description=Fail-closed dedicated staging network policy
+DefaultDependencies=no
+After=local-fs.target systemd-sysctl.service
+Wants=network-pre.target
+Before=network-pre.target docker.service docker.socket scop-staging-infra.service
+Before=shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/sh /opt/scop-staging/firewall.sh
+ExecReload=/bin/sh /opt/scop-staging/firewall.sh
+# No ExecStop: stopping/restarting a service must never remove the policy.
+
+[Install]
+WantedBy=multi-user.target

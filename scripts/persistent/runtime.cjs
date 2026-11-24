@@ -115,6 +115,33 @@ function assertOwned(info, c, r, name) {
     assert(metadata[key] === value, "FOREIGN_RELEASE_RESOURCE_REFUSED");
   return info;
 }
+function assertInfrastructure(info, c, role) {
+  assert(
+    [
+      "database",
+      "gateway",
+      "agent",
+      "egress",
+      "data",
+      "ingress",
+      "control",
+      "edge",
+    ].includes(role),
+    "UNKNOWN_INFRASTRUCTURE_ROLE",
+  );
+  const metadata = info?.Config?.Labels || info?.Labels || {};
+  assert(
+    info?.Name?.replace(/^\//, "") === `scop-${c.instance}-${role}`,
+    "INFRASTRUCTURE_NAME_MISMATCH",
+  );
+  for (const [key, value] of Object.entries({
+    "wici.scop.instance": c.instance,
+    "wici.scop.purpose": "wici-isolated-staging-v1",
+    "wici.scop.role": role,
+  }))
+    assert(metadata[key] === value, "FOREIGN_INFRASTRUCTURE_REFUSED");
+  return info;
+}
 function inspectOptional(kind, name, run = docker) {
   try {
     const rows = JSON.parse(
@@ -193,11 +220,13 @@ function adapter(c, paths = {}) {
   const probeDirectory = paths.probeDirectory || "/etc/scop-staging/probe";
   function own(container, release) {
     const v = JSON.parse(docker("inspect", container))[0];
-    assert(
-      v.Config.Labels?.["wici.scop.instance"] === c.instance,
-      "FOREIGN_CONTAINER_REFUSED",
-    );
-    return release ? assertOwned(v, c, release, container) : v;
+    return release
+      ? assertOwned(v, c, release, container)
+      : assertInfrastructure(
+          v,
+          c,
+          container.slice(`scop-${c.instance}-`.length),
+        );
   }
   function safeRelease(r) {
     capsule(r.manifest);
@@ -266,7 +295,15 @@ function adapter(c, paths = {}) {
       requireCanonicalImageStore();
       const n = safeRelease(r);
       const data = JSON.parse(docker("network", "inspect", n.data))[0];
+      assertInfrastructure(data, c, "data");
       assert(data.Internal === true, "INTERNAL_DATABASE_NETWORK_REQUIRED");
+      const ingress = assertInfrastructure(
+        JSON.parse(docker("network", "inspect", n.ingress))[0],
+        c,
+        "ingress",
+      );
+      assert(ingress.Internal === true, "INTERNAL_INGRESS_NETWORK_REQUIRED");
+      own(n.gateway);
       const db = own(`scop-${c.instance}-database`);
       assert(
         db.State.Running &&
@@ -447,6 +484,7 @@ function adapter(c, paths = {}) {
     },
     async routeHealth(r) {
       const n = safeRelease(r);
+      own(n.gateway);
       assert(
         docker(
           "exec",
@@ -574,6 +612,7 @@ module.exports = {
   resourceIdentity,
   labels,
   assertOwned,
+  assertInfrastructure,
   cleanupOwned,
   verifyGateway,
   requireCanonicalImageStore,
