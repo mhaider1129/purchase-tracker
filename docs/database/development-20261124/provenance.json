@@ -1,0 +1,27 @@
+{
+  "kind": "operator-supplied-development-exports",
+  "observedCommit": "7a896cbe23c3708fb2e183f65df96389151eaffc",
+  "mergedBaseline": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
+  "liveDatabaseAccess": "NOT_PERFORMED",
+  "historicalChecksumsModified": false,
+  "files": [
+    {
+      "originalPath": "purchase-backend/sql/View_Supabase_SQL.sql",
+      "observedPath": "docs/database/development-20261124/observed/View_Supabase_SQL.sql",
+      "observedSha256": "9e53ae6320772ce35d378b2349fa93be18fcb994ff805b50a0df81d436d55aec",
+      "restoredHistoricalSha256": "39dd3bd59f59fd009b3f9f5132f5a33276f2551495d6a5c0cbaeab900bd6f262"
+    },
+    {
+      "originalPath": "purchase-backend/sql/permissions_Table.sql",
+      "observedPath": "docs/database/development-20261124/observed/permissions_Table.sql",
+      "observedSha256": "1b934145b0101c6479da0d76f9c6bbc3ddc7c5c96b0d6569d997665c6cc77ac5",
+      "restoredHistoricalSha256": "7fca52fc22a6b0a7ebb0e508c578ce06ad93cf41506ebfd0aec2e1f46ac448bf"
+    },
+    {
+      "originalPath": "purchase-backend/sql/UI_resource_permissions.sql",
+      "observedPath": "docs/database/development-20261124/observed/UI_resource_permissions.sql",
+      "observedSha256": "4dc6f4b2bf6134b0d295d8236e0775a25f6d498b34d4c4101933c497f7ff3b9b",
+      "restoredHistoricalSha256": "214fd411f12ab326c27f0bf7de5c04d55b55c44c7259ee5f7812489fbe1385bf"
+    }
+  ]
+}

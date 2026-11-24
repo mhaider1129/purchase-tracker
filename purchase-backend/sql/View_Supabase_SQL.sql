@@ -457,14 +457,12 @@ CREATE TABLE public.contracts (
   main_technical_department_id integer,
   secondary_technical_reviews jsonb NOT NULL DEFAULT '[]'::jsonb,
   is_historical_contract boolean NOT NULL DEFAULT false,
-  institute_id integer,
   CONSTRAINT contracts_pkey PRIMARY KEY (id),
   CONSTRAINT contracts_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id),
   CONSTRAINT contracts_end_user_department_id_fkey FOREIGN KEY (end_user_department_id) REFERENCES public.departments(id),
   CONSTRAINT contracts_contract_manager_id_fkey FOREIGN KEY (contract_manager_id) REFERENCES public.users(id),
   CONSTRAINT contracts_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES public.suppliers(id),
-  CONSTRAINT contracts_source_request_id_fkey FOREIGN KEY (source_request_id) REFERENCES public.requests(id),
-  CONSTRAINT contracts_institute_scope_fkey FOREIGN KEY (institute_id) REFERENCES public.institutes(id)
+  CONSTRAINT contracts_source_request_id_fkey FOREIGN KEY (source_request_id) REFERENCES public.requests(id)
 );
 CREATE TABLE public.item_recalls (
   id integer NOT NULL DEFAULT nextval('item_recalls_id_seq'::regclass),
@@ -1021,8 +1019,7 @@ CREATE TABLE public.purchase_orders (
   CONSTRAINT purchase_orders_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.users(id),
   CONSTRAINT purchase_orders_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.users(id),
   CONSTRAINT purchase_orders_issued_by_fkey FOREIGN KEY (issued_by) REFERENCES public.users(id),
-  CONSTRAINT purchase_orders_contract_id_fkey FOREIGN KEY (contract_id) REFERENCES public.contracts(id),
-  CONSTRAINT purchase_orders_contract_source_fkey FOREIGN KEY (contract_id) REFERENCES public.contracts(id)
+  CONSTRAINT purchase_orders_contract_id_fkey FOREIGN KEY (contract_id) REFERENCES public.contracts(id)
 );
 CREATE TABLE public.requested_item_financials (
   id integer NOT NULL DEFAULT nextval('requested_item_financials_id_seq'::regclass),
