@@ -431,4 +431,35 @@ if (process.platform === "linux") {
           .includes("pm2 delete " + candidate.name),
       );
     }));
+  test("existing authenticated checkout origins are reused without resetting either original repository", () =>
+    withFixture((f) => {
+      for (const [component, folder] of [
+        ["backend", "backend"],
+        ["frontend", "frontend_repo"],
+      ]) {
+        git(path.join(f.live, folder), "init", "-b", "main");
+        git(
+          path.join(f.live, folder),
+          "remote",
+          "add",
+          "origin",
+          f.repos[component],
+        );
+      }
+      const c = fs
+        .readFileSync(f.config, "utf8")
+        .replace(/^(?:BACKEND_REPO|FRONTEND_REPO)=.*\n/gm, "");
+      fs.writeFileSync(f.config, c);
+      good(f.run());
+      good(f.run(["--rollback"]));
+      oldService(f);
+      assert.equal(
+        git(path.join(f.live, "backend"), "remote", "get-url", "origin"),
+        f.repos.backend,
+      );
+      assert.equal(
+        git(path.join(f.live, "frontend_repo"), "remote", "get-url", "origin"),
+        f.repos.frontend,
+      );
+    }));
 }

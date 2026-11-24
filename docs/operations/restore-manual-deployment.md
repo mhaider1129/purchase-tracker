@@ -31,6 +31,8 @@ New directories are ordinary release/cache/private-journal directories on the sa
 
 From your local combined checkout, after the PR has been merged:
 
+For the first run, complete the one-time script installation below **before invoking the SSH deployment command**. Publishing the two source repositories does not itself install `/home/deployer/deploy.sh`.
+
 ```bash
 git switch master
 git pull --ff-only origin master
@@ -45,6 +47,8 @@ The manual sync helper uses the same `git subtree split` approach previously use
 If destination-only recovery changes diverge, the plan blocks both writes. Reconcile those changes through review into the combined repository and standalone history first; do not force-push an export over them or bypass the tree checks. The previous independent recovery worktree is never accessed by this helper. After backend publication but frontend failure, the helper reports partial/uncertain completion; rerun the plan. The already-published component becomes NO_CHANGES, and the remaining fast-forward can be published. There is no unsafe attempt to rewind remote history. Deployment itself refuses a mixed pair.
 
 The server fetches immutable backend/frontend main commits and one combined master commit into private Git caches, verifies both standalone root trees exactly match that combined commit's subtrees, and archives those exact commits. Branch movement after selection does not change the release. A mixed or divergent pair fails before touching live services. Read access to the combined repository is required for this identity check and the existing frontend credential scanner. Use existing authorized Git credentials; no token is placed in this script or config.
+
+Backend/frontend URLs are read from their existing checkout origins, preserving the original SSH transport and deploy-key configuration. The combined URL defaults to the same owner/transport as the backend; set `COMBINED_REPO` in optional config if combined access needs a different SSH host alias/read key. A key scoped to a standalone repository does not automatically grant combined-repository read access. This is a one-time Git access prerequisite, not a database certification step.
 
 ## One-time installation — commands for the owner, not executed by Codex
 
@@ -105,3 +109,5 @@ Backend regression tests prove: no attestation required for compatible routine s
 Shell tests run the real Bash script and real disposable Git repositories with fake PM2/Nginx/sudo/curl/npm programs. They validate the supplied layout, unchanged recovery symlink targets, paired commits, frontend publication, non-overlapping workers, candidate/build/proxy failures, repeated deployments, rollback, source divergence, stale process rejection, active-site discovery and a controlled SIGKILL of the owned test subprocess. They do not validate a real production Nginx reload, real PM2 worker shutdown, the hosted database or external traffic. Exact final local counts and CI are reported in the PR.
 
 Production PM2 restarts use bounded exponential backoff; the probe disables autorestart. Cleanup verifies process ownership explicitly even while rollback continues after errors. A foreign process is never deleted merely because its name resembles a deployment process; an unresolved ownership error keeps the journal fenced for investigation.
+
+Final local verification on Node20.20.2: all 2,009 backend tests/236 suites and all backend quality gates passed; 575 infrastructure/security tests passed before the final Git-origin-only correction. After that correction, all 17 deployment/manual-sync tests and all24 startup/Express HTTP tests passed again. The complete infrastructure rerun for the final commit is recorded in the PR. Historical source locks and generated SQL-body comparison also pass. CI state must be checked on the current PR head; earlier-head CI success does not certify a later commit or authorize deployment.

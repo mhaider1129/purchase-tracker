@@ -9,6 +9,9 @@ PUBLIC_URL=https://wici-procurement.org
 BACKEND_BRANCH=main
 FRONTEND_BRANCH=main
 COMBINED_BRANCH=master
+# Repository URLs default to the existing backend/frontend_repo origins.
+# Combined URL reuses the backend URL's transport; override if it uses a different deploy key:
+# COMBINED_REPO=git@github.com:mhaider1129/purchase-tracker.git
 CANDIDATE_PORT=5001
 READY_SECONDS=120
 SHARED_UPLOADS=/var/www/wici-procurement/backend/uploads

@@ -19,9 +19,16 @@ source "$CONFIG"
 fi
 : "${ROOT:=/var/www/wici-procurement}"
 : "${BACKEND_BRANCH:=main}" "${FRONTEND_BRANCH:=main}" "${COMBINED_BRANCH:=master}"
-: "${BACKEND_REPO:=https://github.com/mhaider1129/purchase-backend.git}"
-: "${FRONTEND_REPO:=https://github.com/mhaider1129/purchase-frontend.git}"
-: "${COMBINED_REPO:=https://github.com/mhaider1129/purchase-tracker.git}"
+# Preserve the original server's authenticated Git transport/deploy keys.
+: "${BACKEND_REPO:=$(git -C "$ROOT/backend" remote get-url origin)}"
+: "${FRONTEND_REPO:=$(git -C "$ROOT/frontend_repo" remote get-url origin)}"
+if [[ -z ${COMBINED_REPO:-} ]]; then
+  case "$BACKEND_REPO" in
+    *mhaider1129/purchase-backend.git) COMBINED_REPO="${BACKEND_REPO%purchase-backend.git}purchase-tracker.git" ;;
+    *mhaider1129/purchase-backend) COMBINED_REPO="${BACKEND_REPO%purchase-backend}purchase-tracker" ;;
+    *) echo 'Set COMBINED_REPO to the authenticated combined repository URL' >&2; exit 2 ;;
+  esac
+fi
 : "${PUBLIC_URL:=https://wici-procurement.org}"
 : "${NGINX_SITE:=}"
 : "${BACKEND_ENV:=$ROOT/backend/.env}"
