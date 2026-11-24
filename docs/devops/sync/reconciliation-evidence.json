@@ -1,0 +1,1470 @@
+{
+  "kind": "reconciliation-evidence",
+  "version": 1,
+  "sourceSha": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
+  "auditedSourceSha": "f852b6add8596f61d389cb00f5f652ac75cd6cf5",
+  "remoteWrites": 0,
+  "approval": "PENDING_SEPARATE_REVIEW",
+  "backendBaseline": null,
+  "backendDisposition": "BLOCKED_PENDING_UPSTREAM_PG17_AND_RECOVERY_RECONCILIATION",
+  "frontendProposedBaseline": {
+    "sourceSha": "f852b6add8596f61d389cb00f5f652ac75cd6cf5",
+    "destinationSha": "8a4ac51a52d30877c21e7300af9d4a1d5d410d6e",
+    "approved": false,
+    "equalPlan": {
+      "kind": "sync-dry-run",
+      "version": 1,
+      "app": "frontend",
+      "sourceSha": "f852b6add8596f61d389cb00f5f652ac75cd6cf5",
+      "destinationSha": "8a4ac51a52d30877c21e7300af9d4a1d5d410d6e",
+      "previousSourceSha": null,
+      "previousDestinationSha": null,
+      "changeSet": [],
+      "conflicts": 0,
+      "status": "NO_CHANGES",
+      "writesPerformed": false,
+      "destinationCIRequired": true,
+      "autoMergeEnabled": false,
+      "publishEnabled": false,
+      "workingTreesUsed": false,
+      "planSha256": "830f9f564717032cee7c8eb02263ae05700a372755561a5e3558035d2233d205"
+    },
+    "incrementalPlan": {
+      "kind": "sync-dry-run",
+      "version": 1,
+      "app": "frontend",
+      "sourceSha": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
+      "destinationSha": "8a4ac51a52d30877c21e7300af9d4a1d5d410d6e",
+      "previousSourceSha": "f852b6add8596f61d389cb00f5f652ac75cd6cf5",
+      "previousDestinationSha": "8a4ac51a52d30877c21e7300af9d4a1d5d410d6e",
+      "changeSet": [
+        {
+          "path": "src/components/priority/PriorityAssessmentDialog.jsx",
+          "action": "add",
+          "before": null,
+          "after": {
+            "blob": "a2f4075308911fc226b9060673327b5bad6ea57f",
+            "mode": "100644"
+          },
+          "conflict": null,
+          "deletionRequiresExplicitReview": false
+        },
+        {
+          "path": "src/pages/ProcurementPriorityManagementPage.css",
+          "action": "update",
+          "before": {
+            "blob": "a52e08148ca0c105a3a79e9ae2d3dbb41d4327fb",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "586920b76d23e021e920debd77d363af8fe86bc0",
+            "mode": "100644"
+          },
+          "conflict": null,
+          "deletionRequiresExplicitReview": false
+        },
+        {
+          "path": "src/pages/ProcurementPriorityManagementPage.jsx",
+          "action": "update",
+          "before": {
+            "blob": "a779ff0bb6ccfc2d19e5bc96f49b32464e948ec8",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "35c079809199e8b97cf974a2d0e83cb5f45d9438",
+            "mode": "100644"
+          },
+          "conflict": null,
+          "deletionRequiresExplicitReview": false
+        },
+        {
+          "path": "src/pages/ProcurementPriorityManagementPage.workspace.test.jsx",
+          "action": "add",
+          "before": null,
+          "after": {
+            "blob": "953ef5c5a277656bd3997b4399787369f019a313",
+            "mode": "100644"
+          },
+          "conflict": null,
+          "deletionRequiresExplicitReview": false
+        }
+      ],
+      "conflicts": 0,
+      "status": "REVIEWABLE_CHANGE_SET",
+      "writesPerformed": false,
+      "destinationCIRequired": true,
+      "autoMergeEnabled": false,
+      "publishEnabled": false,
+      "workingTreesUsed": false,
+      "planSha256": "c321c967c0b667a2b3e279377e71441c80c2062261fdae8ac458359c1b19c8fa"
+    }
+  },
+  "historicalSql": [
+    {
+      "path": "integration/fixtures/p2p.sql",
+      "destinationBlob": "d6a5fdbb37bbf32a986174b69ec01e43a50c5e0f",
+      "sourceBlob": "d6a5fdbb37bbf32a986174b69ec01e43a50c5e0f",
+      "unchanged": true,
+      "sha256": "e27f37738855618516c5dd73196420d0e25dd9d9f93aaac4d7e33f78e18dbdc2"
+    },
+    {
+      "path": "sql/20260313_procure_to_pay_document_flow.sql",
+      "destinationBlob": "e49ebc3152037a685817d2b9f284d737f2cdcf75",
+      "sourceBlob": "e49ebc3152037a685817d2b9f284d737f2cdcf75",
+      "unchanged": true,
+      "sha256": "ca5700d6931008d1bd70d0fe24fa90536ed8e0ad9f469ae9954c48b755ca4bd5"
+    },
+    {
+      "path": "sql/20260907_expand_custody_form.sql",
+      "destinationBlob": "d2a24f8900e007c82907cdb95acd53da01c070aa",
+      "sourceBlob": "d2a24f8900e007c82907cdb95acd53da01c070aa",
+      "unchanged": true,
+      "sha256": "8c707dc771e9ffd163409ef91ce8a145934798018018bf64a9f6fec35005e666"
+    },
+    {
+      "path": "sql/UI_resource_permissions.sql",
+      "destinationBlob": "2374fe2abe328d5b1752c823289094cec440fa78",
+      "sourceBlob": "2374fe2abe328d5b1752c823289094cec440fa78",
+      "unchanged": true,
+      "sha256": "214fd411f12ab326c27f0bf7de5c04d55b55c44c7259ee5f7812489fbe1385bf"
+    },
+    {
+      "path": "sql/View_Supabase_SQL.sql",
+      "destinationBlob": "076c40659393cc0cd4b759cc4ccc6f013846f255",
+      "sourceBlob": "076c40659393cc0cd4b759cc4ccc6f013846f255",
+      "unchanged": true,
+      "sha256": "39dd3bd59f59fd009b3f9f5132f5a33276f2551495d6a5c0cbaeab900bd6f262"
+    },
+    {
+      "path": "sql/approval_route_rules.sql",
+      "destinationBlob": "f6cb6ce9e0bd4db5aa629ed974b58d55c025c660",
+      "sourceBlob": "f6cb6ce9e0bd4db5aa629ed974b58d55c025c660",
+      "unchanged": true,
+      "sha256": "ae202d7576a17b827debef29c3044e8c4a1dac705f91c0d82972302e773538db"
+    },
+    {
+      "path": "sql/approval_routes.sql",
+      "destinationBlob": "df37d25704da64b9f884c818bf767f3daf1eee90",
+      "sourceBlob": "df37d25704da64b9f884c818bf767f3daf1eee90",
+      "unchanged": true,
+      "sha256": "28eae1f9a306b5ebd3909d639d9b02b50abcec27639263a436bb3e3074bc2570"
+    },
+    {
+      "path": "sql/development/20261005_01_requested_item_identity.sql",
+      "destinationBlob": "3b137ff48e1c82f03b10a1b3aa5e9750ff36d588",
+      "sourceBlob": "3b137ff48e1c82f03b10a1b3aa5e9750ff36d588",
+      "unchanged": true,
+      "sha256": "f90daa1382420c61c71e19567e98ce67602ebad24b9d16dd9b4d2c4c0803b0cf"
+    },
+    {
+      "path": "sql/development/20261005_02_employee_tasks.sql",
+      "destinationBlob": "ebbc18cbabb9ecc7707f45235508346d9ea8a90e",
+      "sourceBlob": "ebbc18cbabb9ecc7707f45235508346d9ea8a90e",
+      "unchanged": true,
+      "sha256": "1314baff116dd49970f0e090ee91c57950b49d16114e0c5e818058c28ccd3fde"
+    },
+    {
+      "path": "sql/development/20261005_03_procurement_identity_policy.sql",
+      "destinationBlob": "79972b7c93520ef33a1f1077ce22f8d3b57b095b",
+      "sourceBlob": "79972b7c93520ef33a1f1077ce22f8d3b57b095b",
+      "unchanged": true,
+      "sha256": "a0069a36d693077b4794f3f11c2a43f97634ec9f5b7aeb02f483c628ae642ada"
+    },
+    {
+      "path": "sql/manual/003_request_reclassification_and_uom.sql",
+      "destinationBlob": "474326843feac35197192e755b9a1fc54f655c40",
+      "sourceBlob": "474326843feac35197192e755b9a1fc54f655c40",
+      "unchanged": true,
+      "sha256": "55433b07c579e8f924502f0d7b6d526874e70e3cb8ec0bb98d6bbf89ecc06fd4"
+    },
+    {
+      "path": "sql/manual/004_inventory_transaction_engine.sql",
+      "destinationBlob": "5bca4898c49643bd8536e95b5ac80c1822b174d5",
+      "sourceBlob": "5bca4898c49643bd8536e95b5ac80c1822b174d5",
+      "unchanged": true,
+      "sha256": "152f4d89921bc1d2570cf4c184e3d62bdf192f2bd1fda5665952832e107f979c"
+    },
+    {
+      "path": "sql/manual/005_inventory_operations.sql",
+      "destinationBlob": "cf1b76928b674fc43f46f41527546987677c3bcd",
+      "sourceBlob": "cf1b76928b674fc43f46f41527546987677c3bcd",
+      "unchanged": true,
+      "sha256": "a05f13a4269ac282bfab9088d3b6c184939158df0541117290db84d269ea4ecd"
+    },
+    {
+      "path": "sql/manual/006_connected_procure_to_pay.sql",
+      "destinationBlob": "c3763060cf5f95b7e153064077ed98c2da3e83be",
+      "sourceBlob": "c3763060cf5f95b7e153064077ed98c2da3e83be",
+      "unchanged": true,
+      "sha256": "cc2c6ea0608b8fd450c4d15bfe949e6fbfde8ce9276e40a904d22966ead2621e"
+    },
+    {
+      "path": "sql/manual/007_phase5a_item_master_diagnostics.sql",
+      "destinationBlob": "c28945b7ee8c97a3f7c4b3dc2793b92d9e62de59",
+      "sourceBlob": "c28945b7ee8c97a3f7c4b3dc2793b92d9e62de59",
+      "unchanged": true,
+      "sha256": "36e77b382e6f7ae96f59f5409bc8570ed979ef2e0b6a855ba23aaf78e1ffb867"
+    },
+    {
+      "path": "sql/manual/008_phase5a1_reference_master_baseline.sql",
+      "destinationBlob": "90e05ca00c063cf08f14f0a27ccebef586575fd2",
+      "sourceBlob": "90e05ca00c063cf08f14f0a27ccebef586575fd2",
+      "unchanged": true,
+      "sha256": "4be182050bb50dfd1bb69859a0cb3ea005474bf963aa496971b50dbe4d886730"
+    },
+    {
+      "path": "sql/manual/009_phase5a2_uom_authority.sql",
+      "destinationBlob": "f7fdf56a007e88bb3b2577bda0b1f96c4c862f66",
+      "sourceBlob": "f7fdf56a007e88bb3b2577bda0b1f96c4c862f66",
+      "unchanged": true,
+      "sha256": "8daf2eb3ac6a07b591991c77ecedf90da9fb25bd4d9a2f56a2d336d40e9ca004"
+    },
+    {
+      "path": "sql/manual/010_supply_chain_performance_foundation.sql",
+      "destinationBlob": "11718493fd50a8226ddf4f9c0280148ee2850934",
+      "sourceBlob": "11718493fd50a8226ddf4f9c0280148ee2850934",
+      "unchanged": true,
+      "sha256": "2df51f0da700b7f301428bcb5378cbf0f40609544e55db947a4eb7ea749c4938"
+    },
+    {
+      "path": "sql/manual/011_central_supply_tracking.sql",
+      "destinationBlob": "aa705ef5532d6e11b60c3e9e5718a16577196694",
+      "sourceBlob": "aa705ef5532d6e11b60c3e9e5718a16577196694",
+      "unchanged": true,
+      "sha256": "4df59a7f714f030cee5d5f87249e36a018a008f749d284d8218628a01ac3bc82"
+    },
+    {
+      "path": "sql/manual/012_procurement_priority_foundation.sql",
+      "destinationBlob": "5bc0246857c31e77e98c518fab55007f488be341",
+      "sourceBlob": "5bc0246857c31e77e98c518fab55007f488be341",
+      "unchanged": true,
+      "sha256": "e34c3e3eaf6afcafc696e6fe2f1511d1eaf173fa4dd9d6c176079d0c8a917263"
+    },
+    {
+      "path": "sql/manual/013_approved_spare_parts_foundation.sql",
+      "destinationBlob": "5e49e6c3a2d0197906a51a3369c8482334305daf",
+      "sourceBlob": "5e49e6c3a2d0197906a51a3369c8482334305daf",
+      "unchanged": true,
+      "sha256": "fd847808a97cedc5cbc7be5d69a8cac266b44d4b1488bb8ec9c12d30519abd41"
+    },
+    {
+      "path": "sql/manual/014_organization_hierarchy.sql",
+      "destinationBlob": "20defa37c3ccaef240eb8ee790bf32517405e0aa",
+      "sourceBlob": "20defa37c3ccaef240eb8ee790bf32517405e0aa",
+      "unchanged": true,
+      "sha256": "2a92caa566fb8f75565ccb8ee59b0283b492cfa008cfc36f2e508cc42c46f315"
+    },
+    {
+      "path": "sql/manual/015_approval_policy_engine_foundation.sql",
+      "destinationBlob": "4fcf4f20a2b169db29f50daa4edc7777da72658f",
+      "sourceBlob": "4fcf4f20a2b169db29f50daa4edc7777da72658f",
+      "unchanged": true,
+      "sha256": "fc579e8590b397597f54ca3888af726693f334653497953423cd3c467327ff9c"
+    },
+    {
+      "path": "sql/manual/016_organization_hierarchy_cutover_readiness.sql",
+      "destinationBlob": "b67f0e18a9ddf706fdf8f5176c4adb13ed2aa74d",
+      "sourceBlob": "b67f0e18a9ddf706fdf8f5176c4adb13ed2aa74d",
+      "unchanged": true,
+      "sha256": "b022c4655ad8c3cd277a0668cc89e0da5df3a61c387f810c40ab8cb5848ec89d"
+    },
+    {
+      "path": "sql/manual/017_fixed_assets_rfid_core.sql",
+      "destinationBlob": "cb4f562b3c82ef2090ba7bb22aac62b338b8a426",
+      "sourceBlob": "cb4f562b3c82ef2090ba7bb22aac62b338b8a426",
+      "unchanged": true,
+      "sha256": "366f6c861f8aff0d6a196b454c92b521a09cd6e03e5751f0dcec0617ac80c637"
+    },
+    {
+      "path": "sql/manual/018_fixed_assets_rfid_post_deployment_hardening.sql",
+      "destinationBlob": "b40b77ada95e88bebf5e6415655ecf750743dbd0",
+      "sourceBlob": "b40b77ada95e88bebf5e6415655ecf750743dbd0",
+      "unchanged": true,
+      "sha256": "c7067a322284b31737d2bf7f24585360318e62a62c79030f2b4ee224052114ae"
+    },
+    {
+      "path": "sql/manual/019_asset_equipment_integration.sql",
+      "destinationBlob": "b6971093edd9f1a78ebf93299d55b8319e170537",
+      "sourceBlob": "b6971093edd9f1a78ebf93299d55b8319e170537",
+      "unchanged": true,
+      "sha256": "44018d3fab2cc93dcd2b0b500ab9f59caba1c7b1ef44faef99ec58bfa3d706e4"
+    },
+    {
+      "path": "sql/manual/020_asset_equipment_canonical_identity.sql",
+      "destinationBlob": "19f9a03f80d0dffceba371fcd1a35948d40b54c1",
+      "sourceBlob": "19f9a03f80d0dffceba371fcd1a35948d40b54c1",
+      "unchanged": true,
+      "sha256": "2f1583db32503a69a79f08a0c330249d841ee119561d5615922dd157b824d5a5"
+    },
+    {
+      "path": "sql/manual/021_contract_equipment_coverage.sql",
+      "destinationBlob": "9addb99d23e71c941d24ab39d9b3d5cc4e86081e",
+      "sourceBlob": "9addb99d23e71c941d24ab39d9b3d5cc4e86081e",
+      "unchanged": true,
+      "sha256": "04dd241384ee9abc39aed9912b6ca0b504e2a6e000df19678ce20a869f1f91a1"
+    },
+    {
+      "path": "sql/manual/022_contract_item_master_identity.sql",
+      "destinationBlob": "fef354d90f9f806472c6269407f8289c0c55c594",
+      "sourceBlob": "fef354d90f9f806472c6269407f8289c0c55c594",
+      "unchanged": true,
+      "sha256": "4d100b05953e088b47d99f9b1cf8ec93e06bc2713636765118e562a652602db9"
+    },
+    {
+      "path": "sql/manual/023_spare_part_stock_item_integration.sql",
+      "destinationBlob": "ad4acacc1d545e8fbcd58edbc35b149fe400f6df",
+      "sourceBlob": "ad4acacc1d545e8fbcd58edbc35b149fe400f6df",
+      "unchanged": true,
+      "sha256": "50aae039af66e6fee152726b5789587f152c0b1c7da76763347e5852365d7e9e"
+    },
+    {
+      "path": "sql/manual/024_maintenance_work_orders.sql",
+      "destinationBlob": "07c09f3b6370ef6f5be44c1c61db0e47fd2630ad",
+      "sourceBlob": "07c09f3b6370ef6f5be44c1c61db0e47fd2630ad",
+      "unchanged": true,
+      "sha256": "83c71f9b1f5d2e4c01c70c68580bf687ec3e05ecacfcdc4f9ca27bbb5d6a80c3"
+    },
+    {
+      "path": "sql/manual/025_maintenance_inventory_execution.sql",
+      "destinationBlob": "02fcf7c7612da79ec7b963493ebd078f9dea54a2",
+      "sourceBlob": "02fcf7c7612da79ec7b963493ebd078f9dea54a2",
+      "unchanged": true,
+      "sha256": "b1487b3684f2524f62595a2c126e7b60488ab419c98011453730c0dd0bf81da4"
+    },
+    {
+      "path": "sql/manual/026_rfid_portal_enable_scope_index.sql",
+      "destinationBlob": "037b245befa495b639eab51624907a833d9812c8",
+      "sourceBlob": "037b245befa495b639eab51624907a833d9812c8",
+      "unchanged": true,
+      "sha256": "7b7d617a22c720393963632923db4faf0aa653c0056114ff5c276861ff157835"
+    },
+    {
+      "path": "sql/manual/027_rfid_configuration_mutation_guards.sql",
+      "destinationBlob": "ce85e3285e075862fde699134dbf08bf386533ea",
+      "sourceBlob": "ce85e3285e075862fde699134dbf08bf386533ea",
+      "unchanged": true,
+      "sha256": "d33667001f7c5a4ffeb725d2f4e2e2fda4914c014ed956fbe76a0efb7d27c990"
+    },
+    {
+      "path": "sql/manual/028_asset_movement_operational_hardening.sql",
+      "destinationBlob": "366485a3aba6e2d3fb3a2660153b2967013cc5c7",
+      "sourceBlob": "366485a3aba6e2d3fb3a2660153b2967013cc5c7",
+      "unchanged": true,
+      "sha256": "32c68c1e55aa693468e45143c225240f7e2a449e32358cdfacbeb442c7ca275c"
+    },
+    {
+      "path": "sql/manual/029_fixed_asset_deployment_valuation.sql",
+      "destinationBlob": "fa475e661e1ccc4e25787d0a23051edc0e561a1a",
+      "sourceBlob": "fa475e661e1ccc4e25787d0a23051edc0e561a1a",
+      "unchanged": true,
+      "sha256": "e4404c8d7ce8da972021ffb62ce1954293955f1b5eaeb89a1df9cf1ef7efda8a"
+    },
+    {
+      "path": "sql/manual/030_fixed_asset_physical_inventory.sql",
+      "destinationBlob": "f15d5f3d03b09c17a1a9d585073d69c2c3da9ff2",
+      "sourceBlob": "f15d5f3d03b09c17a1a9d585073d69c2c3da9ff2",
+      "unchanged": true,
+      "sha256": "5097d4d2409da762b8700aec9dbc3aa3391665936f49edff490873080612dc28"
+    },
+    {
+      "path": "sql/manual/031_p2p_batch1_authority_hardening.sql",
+      "destinationBlob": "2b166114ba00083c8eb7f84b2008cb6455b62b21",
+      "sourceBlob": "2b166114ba00083c8eb7f84b2008cb6455b62b21",
+      "unchanged": true,
+      "sha256": "fdf46fde5330306e416fc19223ed103d74877bad861ddf72ff9aeaaa6715ad88"
+    },
+    {
+      "path": "sql/manual/032_approval_engine_operationalization_phase1.sql",
+      "destinationBlob": "587913d22bbef1724a4d34de0a2d63ac93652001",
+      "sourceBlob": "587913d22bbef1724a4d34de0a2d63ac93652001",
+      "unchanged": true,
+      "sha256": "bcfd4c7579f0a5ecc4cbe23b1c2d4ce951e75617dc78b13a19f6637d7faa670e"
+    },
+    {
+      "path": "sql/manual/033_ai_intelligence_foundation.sql",
+      "destinationBlob": "db560709c0e9b610ef4544b76666c189aaac7200",
+      "sourceBlob": "db560709c0e9b610ef4544b76666c189aaac7200",
+      "unchanged": true,
+      "sha256": "0b8a19af3ffe596542212e6835166f523f782f2d20b0b6044a7b9e394c0d7f0f"
+    },
+    {
+      "path": "sql/manual/034_ai_provider_audit_metadata.sql",
+      "destinationBlob": "669495e8c2107e649681b86f904f6ce360d05550",
+      "sourceBlob": "669495e8c2107e649681b86f904f6ce360d05550",
+      "unchanged": true,
+      "sha256": "47aadecbcde6323fb33b1e3fe036c74465162c2d32c6b3dd145d4cde413a1998"
+    },
+    {
+      "path": "sql/manual/035_backend_schema_reconciliation.sql",
+      "destinationBlob": "e2f71da2ef67b09fd8e4b71353ea60a4abba7067",
+      "sourceBlob": "e2f71da2ef67b09fd8e4b71353ea60a4abba7067",
+      "unchanged": true,
+      "sha256": "f72c614776469e71dbbb67268565a2a26cd1e30b56d18cd3af26605fbd2561e0"
+    },
+    {
+      "path": "sql/manual/035_backend_schema_reconciliation_verify.sql",
+      "destinationBlob": "fa96bff119b9c2ecf11def0dd5d3ac9382f9407c",
+      "sourceBlob": "fa96bff119b9c2ecf11def0dd5d3ac9382f9407c",
+      "unchanged": true,
+      "sha256": "ab9dd92177e5a3c69c4be31ce129e582301ddb78f5f273b4d5861d7bf81c8743"
+    },
+    {
+      "path": "sql/manual/036_permission_catalog_reconciliation.sql",
+      "destinationBlob": "4f26962f18ac19ee3198de43d988372f6a286b8e",
+      "sourceBlob": "4f26962f18ac19ee3198de43d988372f6a286b8e",
+      "unchanged": true,
+      "sha256": "c7a702ccbd9f864519bd3873f3db51ff3bc79510adcc158c09be47e3fcb9de50"
+    },
+    {
+      "path": "sql/manual/037_ui_resource_reconciliation.sql",
+      "destinationBlob": "489ac86e64fe20bc1ac7078263b2bb1b13cac710",
+      "sourceBlob": "489ac86e64fe20bc1ac7078263b2bb1b13cac710",
+      "unchanged": true,
+      "sha256": "aad7b75ee0097bfd209ef2dd83ee6a5e4a1c3827c0a1c8af22fb4db926b6b667"
+    },
+    {
+      "path": "sql/manual/038_evaluation_result_timestamp_compatibility.sql",
+      "destinationBlob": "bb60907526c343735f63823bdc0f775e26f102fc",
+      "sourceBlob": "bb60907526c343735f63823bdc0f775e26f102fc",
+      "unchanged": true,
+      "sha256": "18f913bc11d8f918f6c163d3e7b85dfd0cc43657bf24dd22fbe6a5221e054adb"
+    },
+    {
+      "path": "sql/manual/039_evaluation_offer_model_compatibility.sql",
+      "destinationBlob": "e73d2e00c9ca77e4a8ffd24d8c6f965753be0040",
+      "sourceBlob": "e73d2e00c9ca77e4a8ffd24d8c6f965753be0040",
+      "unchanged": true,
+      "sha256": "f943fd26afffd9809a3257ac861b19d4ae2819274bf074f62d5edb3c3981b4d7"
+    },
+    {
+      "path": "sql/manual/040_evaluation_cost_quantity_compatibility.sql",
+      "destinationBlob": "99dddfe7f4df67ece7a0ce5f14d430400d385d5e",
+      "sourceBlob": "99dddfe7f4df67ece7a0ce5f14d430400d385d5e",
+      "unchanged": true,
+      "sha256": "3545463a2062a76c7d608373e675af050bd70a7333796db2169a7f888dc62ae8"
+    },
+    {
+      "path": "sql/manual/041_evaluation_criteria_timestamp_compatibility.sql",
+      "destinationBlob": "7b69f25f056e879bd7c7fca664246790e3538a02",
+      "sourceBlob": "7b69f25f056e879bd7c7fca664246790e3538a02",
+      "unchanged": true,
+      "sha256": "037f8b6dd3191efcd1ba3bd26a8fba96f11c66206d1e60dc5a3af962898c1da9"
+    },
+    {
+      "path": "sql/manual/042_evaluation_stability_metadata_compatibility.sql",
+      "destinationBlob": "b316b687d3f4b7372f85d883ed9b7ce267bea3a1",
+      "sourceBlob": "b316b687d3f4b7372f85d883ed9b7ce267bea3a1",
+      "unchanged": true,
+      "sha256": "ccf3f42f4738f17458f7cb1e60f23e014cb179b70c4e50c6aabe9c2d68545f9e"
+    },
+    {
+      "path": "sql/manual/043_evaluation_alternative_metadata_compatibility.sql",
+      "destinationBlob": "4506c93f6cdff0f024e8bc33964fa839e08c2adb",
+      "sourceBlob": "4506c93f6cdff0f024e8bc33964fa839e08c2adb",
+      "unchanged": true,
+      "sha256": "00155cb4c6183dde904cfcc06d8666275ce56f99369e8885b332f6d3cc088325"
+    },
+    {
+      "path": "sql/manual/044_item_master_reference_starter_data.sql",
+      "destinationBlob": "5c755da34c73fb1eb773e66188e2bd08d5dfb426",
+      "sourceBlob": "5c755da34c73fb1eb773e66188e2bd08d5dfb426",
+      "unchanged": true,
+      "sha256": "c11899b74f1af2b22052003b23ee7a190fc153efbd83f2f9594b199679bcdd97"
+    },
+    {
+      "path": "sql/manual/045_approval_activation_timestamps.sql",
+      "destinationBlob": "50d446a79170f8d65636850a8382cc0dd04263ad",
+      "sourceBlob": "50d446a79170f8d65636850a8382cc0dd04263ad",
+      "unchanged": true,
+      "sha256": "3c2360acb387bf0fc1148562fcbc69eaf73baf146eeeaa591921432b76aae69d"
+    },
+    {
+      "path": "sql/manual/046_maintenance_approval_reporting_policy.sql",
+      "destinationBlob": "602957bcd6ce3039dd597abcbb4c61becca6f4e4",
+      "sourceBlob": "602957bcd6ce3039dd597abcbb4c61becca6f4e4",
+      "unchanged": true,
+      "sha256": "74bf1428dd84b170d6c890c6a1a8bb28345203512e2adfe1c6a60b1db458e370"
+    },
+    {
+      "path": "sql/manual/047_whole_request_priorities.sql",
+      "destinationBlob": "ee9251b896981bab61bfe296df247f01bef4174c",
+      "sourceBlob": "ee9251b896981bab61bfe296df247f01bef4174c",
+      "unchanged": true,
+      "sha256": "8a0790461fbc31e9115ae28b0a80bbc190941793756c0ff592399e26073f3bc6"
+    },
+    {
+      "path": "sql/manual/048_approval_hold_adjusted_timing.sql",
+      "destinationBlob": "186a04d0c7cfcb266abf2ccf23874460884c3024",
+      "sourceBlob": "186a04d0c7cfcb266abf2ccf23874460884c3024",
+      "unchanged": true,
+      "sha256": "5ed2ac449e2d0bf838fa09545bb63200a87311249797b37af442ba6bd4f9aedf"
+    },
+    {
+      "path": "sql/manual/049_preprocurement_technical_reviews.sql",
+      "destinationBlob": "eeb94cf3306d3bf4f4a3fcd7ef645fc271b28955",
+      "sourceBlob": "eeb94cf3306d3bf4f4a3fcd7ef645fc271b28955",
+      "unchanged": true,
+      "sha256": "c451deb660cf4e99f693ef88abfaf4ca8c1a67f0ff7d4e8be44b7445960d91d0"
+    },
+    {
+      "path": "sql/manual/050_device_demo_workspaces.sql",
+      "destinationBlob": "fa6c216f10abd8ee16a0808e0df40dd7ea9d9790",
+      "sourceBlob": "fa6c216f10abd8ee16a0808e0df40dd7ea9d9790",
+      "unchanged": true,
+      "sha256": "98a8ba6f91d81cbbb3f688f9d209307355235f8b37548b67f6e686dc8e95969a"
+    },
+    {
+      "path": "sql/manual/051_surgical_consignment.sql",
+      "destinationBlob": "88f0df9f4b9ddd7795790bdcdf11124ac6814271",
+      "sourceBlob": "88f0df9f4b9ddd7795790bdcdf11124ac6814271",
+      "unchanged": true,
+      "sha256": "b5f286aaf0f0a872a7a6f640ca2a00a68e4f608f7632cb0fa0df27d749e20271"
+    },
+    {
+      "path": "sql/manual/052_surgical_consignment_supplier_scope_compatibility.sql",
+      "destinationBlob": "ef5b50a95c1748f40f15a0f2cc8aa4a61bd98a02",
+      "sourceBlob": "ef5b50a95c1748f40f15a0f2cc8aa4a61bd98a02",
+      "unchanged": true,
+      "sha256": "82b408b5832f2d120ba600bee8ed0cbc4f8369496f8cfe4d779ac460643c5409"
+    },
+    {
+      "path": "sql/manual/053_surgical_consignment_department_routing.sql",
+      "destinationBlob": "28f883219bfc9ee86de3c0614a8250101c848bd4",
+      "sourceBlob": "28f883219bfc9ee86de3c0614a8250101c848bd4",
+      "unchanged": true,
+      "sha256": "f921924cca11066748c6599682faf497f476849a1e76ebef58a8d64fc4abeed7"
+    },
+    {
+      "path": "sql/manual/054_technical_review_and_delivery_workflow.sql",
+      "destinationBlob": "24640a1893e7d11755c6118b3b53036a80948793",
+      "sourceBlob": "24640a1893e7d11755c6118b3b53036a80948793",
+      "unchanged": true,
+      "sha256": "608c7eac5d9c20d9d93ecc3cfd64d8852f635550e7c353d3393889a1cc8c712e"
+    },
+    {
+      "path": "sql/manual/055_technical_proposal_scope_compatibility.sql",
+      "destinationBlob": "f87e00219324c2d7d1ff887cbff75501242524b1",
+      "sourceBlob": "f87e00219324c2d7d1ff887cbff75501242524b1",
+      "unchanged": true,
+      "sha256": "08a22d8ab4032e8813e49c5cbfe4f1cf9b19e3f5b9841f5a532c7e0bfea5906e"
+    },
+    {
+      "path": "sql/manual/056_planning_authorization_scope.sql",
+      "destinationBlob": "2bab9f440514daf67a7cf2a510ffaf05418b37ad",
+      "sourceBlob": "2bab9f440514daf67a7cf2a510ffaf05418b37ad",
+      "unchanged": true,
+      "sha256": "166fab004da70fbe64f0b096946a0063add9176ccd4947ae036792b7ba62e9a5"
+    },
+    {
+      "path": "sql/manual/057_autoassignment_authorization_scope.sql",
+      "destinationBlob": "3bd596964221d8955b34e2a299b93ebd0c637367",
+      "sourceBlob": "3bd596964221d8955b34e2a299b93ebd0c637367",
+      "unchanged": true,
+      "sha256": "adaf82aa48a42e3d29d197dcebecb10c47aa9dc24b2797399e9ade039be7016b"
+    },
+    {
+      "path": "sql/manual/058_financial_budget_authorization.sql",
+      "destinationBlob": "25407783defa9df7fab07382f0509d0124218e22",
+      "sourceBlob": "25407783defa9df7fab07382f0509d0124218e22",
+      "unchanged": true,
+      "sha256": "84f7892905ad2373a0e4cecb3371d9856bd155a94460d684f2ccfad56e70c91a"
+    },
+    {
+      "path": "sql/manual/059_backend_contract_refresh.sql",
+      "destinationBlob": "0180942084deb338ad8e837840c2c9da845d1078",
+      "sourceBlob": "0180942084deb338ad8e837840c2c9da845d1078",
+      "unchanged": true,
+      "sha256": "f976728fe12f558c355b9b370d81a799a5f769077f548e70e19610e8bd315be4"
+    },
+    {
+      "path": "sql/manual/060_permission_catalog_refresh.sql",
+      "destinationBlob": "6a6b78395ac770e0f32da27352fb09b45f9fdb11",
+      "sourceBlob": "6a6b78395ac770e0f32da27352fb09b45f9fdb11",
+      "unchanged": true,
+      "sha256": "e364f91aff72b19cd836d6d0297c57078cd8b4eb0f5d075fa6921350d5015068"
+    },
+    {
+      "path": "sql/manual/061_ui_resource_catalog_refresh.sql",
+      "destinationBlob": "35775180e4b1b41fc0f0a028e30eaa940502d914",
+      "sourceBlob": "35775180e4b1b41fc0f0a028e30eaa940502d914",
+      "unchanged": true,
+      "sha256": "8e5b15a9105d658a1a011ef4e89b3539612c839db445da7c2a9670a246fb8639"
+    },
+    {
+      "path": "sql/manual/062_demand_planning_ui_policy_alignment.sql",
+      "destinationBlob": "5abf2a3d74d0e91567ec3059cfc266ffba36001b",
+      "sourceBlob": "5abf2a3d74d0e91567ec3059cfc266ffba36001b",
+      "unchanged": true,
+      "sha256": "9e3e6ebe899643917a9f303a4c540fce6d6ecf2fb0da851dd414eb502d2d2bd5"
+    },
+    {
+      "path": "sql/manual/063_backend_contract_verify.sql",
+      "destinationBlob": "fd7493d6d83bf3005284fe5e2d89eecc93c14377",
+      "sourceBlob": "fd7493d6d83bf3005284fe5e2d89eecc93c14377",
+      "unchanged": true,
+      "sha256": "079f4d3e0d68ab21a136701b42aba3af5e7de8acedc3fc6a0cfdd7c659196d31"
+    },
+    {
+      "path": "sql/manual/064_contract_authorization_scope.sql",
+      "destinationBlob": "e49e6c8a95e793ac4348e0fee91d174b6ce401cf",
+      "sourceBlob": "e49e6c8a95e793ac4348e0fee91d174b6ce401cf",
+      "unchanged": true,
+      "sha256": "d76e695d963a1e76c202dda2c1f4e3d69d27c86624e4e45fd1335f954e66c044"
+    },
+    {
+      "path": "sql/manual/065_canonical_contract_finance.sql",
+      "destinationBlob": "cde9c3fb5abc0b76b2b43f11dd0297fb7a2bfb41",
+      "sourceBlob": "cde9c3fb5abc0b76b2b43f11dd0297fb7a2bfb41",
+      "unchanged": true,
+      "sha256": "436049f4d16929532aaa03e8d16db7ced311aac517f08993a850f3ecfad2e189"
+    },
+    {
+      "path": "sql/manual/066_contract_financial_reconciliation.sql",
+      "destinationBlob": "1e024dc2b48cdca66a7a1e8f5fcc18a411041192",
+      "sourceBlob": "1e024dc2b48cdca66a7a1e8f5fcc18a411041192",
+      "unchanged": true,
+      "sha256": "800a06f7119887b113422bc5a3f9d680a4b36e5ff42e568e003535ee4a3124a0"
+    },
+    {
+      "path": "sql/manual/067_canonical_procurement_completion.sql",
+      "destinationBlob": "479cff7719c48ff5f868a57f0f96900e986478b1",
+      "sourceBlob": "479cff7719c48ff5f868a57f0f96900e986478b1",
+      "unchanged": true,
+      "sha256": "cef759d4793a11ef3e45299c966d22461462928a30276741885b4b9420c523dc"
+    },
+    {
+      "path": "sql/manual/068_goods_receipt_acceptance_integration.sql",
+      "destinationBlob": "68b243474b32040ce26929d8628871b96883ef96",
+      "sourceBlob": "68b243474b32040ce26929d8628871b96883ef96",
+      "unchanged": true,
+      "sha256": "53bd846349d9aae4941c1e1c5f86392a4405cd5a860867fb3695d9733b1b81c4"
+    },
+    {
+      "path": "sql/manual/069_database_release_governance.sql",
+      "destinationBlob": "c46e465dd4a9b0208bce899cf519fc3efefa7af5",
+      "sourceBlob": "c46e465dd4a9b0208bce899cf519fc3efefa7af5",
+      "unchanged": true,
+      "sha256": "4a60c71b7565085e187a0fb44d946108d857cc0f8bd32868e805916ea8c2ec5a"
+    },
+    {
+      "path": "sql/manual/070_rfid_processing_recovery.sql",
+      "destinationBlob": "d8f55f316d8a3bacb8b773586967ebe0bf2e4b15",
+      "sourceBlob": "d8f55f316d8a3bacb8b773586967ebe0bf2e4b15",
+      "unchanged": true,
+      "sha256": "acef7ca703623adbacedd4a27c53042f310d120052d598c7b8113496210af41a"
+    },
+    {
+      "path": "sql/manual/071_transactional_event_reliability.sql",
+      "destinationBlob": "3aec202aa28dbd43463dbc28368adbd8d860017b",
+      "sourceBlob": "3aec202aa28dbd43463dbc28368adbd8d860017b",
+      "unchanged": true,
+      "sha256": "ab4ee222691aab9945ecd7318215a99a55dec06fb025c70477f11ce98eb56021"
+    },
+    {
+      "path": "sql/manual/072_scop_operational_foundation.sql",
+      "destinationBlob": "6a8a85dfdb99570cc968f9c7813e7942fe8c3d8b",
+      "sourceBlob": "6a8a85dfdb99570cc968f9c7813e7942fe8c3d8b",
+      "unchanged": true,
+      "sha256": "0696d96493d00ab49283f770ca50ddf7ab0312bfb1d7482400ddc099904a6ff6"
+    },
+    {
+      "path": "sql/migrations/20260312_procure_to_pay.sql",
+      "destinationBlob": "6debdf0864f8fe494661b6b580d1abcb0ccc8b7b",
+      "sourceBlob": "6debdf0864f8fe494661b6b580d1abcb0ccc8b7b",
+      "unchanged": true,
+      "sha256": "164b519c4e7c00c79239025c94899d9e3e32301a971231b992a1c02c6db58233"
+    },
+    {
+      "path": "sql/migrations/20260516_audit_registry_permissions.sql",
+      "destinationBlob": "11883d17553b6430460bc2582e8d388190ab476f",
+      "sourceBlob": "11883d17553b6430460bc2582e8d388190ab476f",
+      "unchanged": true,
+      "sha256": "f0d24eb7ac4aa23f871e0f40a61a6fcfee050a6bc62d9a7736aa8e5dfc98c3d3"
+    },
+    {
+      "path": "sql/migrations/20260608_procurement_item_events.sql",
+      "destinationBlob": "b02aa66c89afdb65b2f3e9ac5797c0b3112cda78",
+      "sourceBlob": "b02aa66c89afdb65b2f3e9ac5797c0b3112cda78",
+      "unchanged": true,
+      "sha256": "81171c4b10b2ad9715e85b15ce8fb3da3d22c0beba11c607b185046b99ae1ee9"
+    },
+    {
+      "path": "sql/migrations/20260608_supplier_classification_principals.sql",
+      "destinationBlob": "31a42392042d393e502e792507c61da74b3878b8",
+      "sourceBlob": "31a42392042d393e502e792507c61da74b3878b8",
+      "unchanged": true,
+      "sha256": "bdf09aae3b7eb9c2c7f63d745205c35f84b49fcdd683a8c4c95addd8fa991327"
+    },
+    {
+      "path": "sql/migrations/20260727_item_master_foundation.sql",
+      "destinationBlob": "1256c039eaf612be7ce6ce8c1785463ed7910d51",
+      "sourceBlob": "1256c039eaf612be7ce6ce8c1785463ed7910d51",
+      "unchanged": true,
+      "sha256": "f2ca517b02387d24c621ae8c09b02faa244cdb2e3f628add21d59fe3772d2673"
+    },
+    {
+      "path": "sql/migrations/20260814_phase5a1_permissions.sql",
+      "destinationBlob": "c051ae78bbc36ca4764d2bd5073afe18d5ce10ec",
+      "sourceBlob": "c051ae78bbc36ca4764d2bd5073afe18d5ce10ec",
+      "unchanged": true,
+      "sha256": "bd92f6952e2919608f742151b8269af9e6fa0707adb94010179989356e0f0eb8"
+    },
+    {
+      "path": "sql/migrations/20260929_document_branding.sql",
+      "destinationBlob": "3fac378536723616c7f86e79750ea663bec8416c",
+      "sourceBlob": "3fac378536723616c7f86e79750ea663bec8416c",
+      "unchanged": true,
+      "sha256": "85c4c0e94d9fd14170f2b1c3be4b89389f05f17eb64f0daeddc4024482a10ff8"
+    },
+    {
+      "path": "sql/migrations/20261003_procurement_event_overage_decisions.sql",
+      "destinationBlob": "4c77ac911a25b0e79869935f71813af01b8eedcb",
+      "sourceBlob": "4c77ac911a25b0e79869935f71813af01b8eedcb",
+      "unchanged": true,
+      "sha256": "fb5bffdf7127463e0ca92decdff78b7a341e06207bbad24e00f7c5ded47cb764"
+    },
+    {
+      "path": "sql/migrations/phase1b/01_stock_item_identity_columns.sql",
+      "destinationBlob": "31181c4356180271b59c59d910e010563343bd74",
+      "sourceBlob": "31181c4356180271b59c59d910e010563343bd74",
+      "unchanged": true,
+      "sha256": "e989c6e3d754777b9afa60ffeca9345f3b64267f6e321c66f92e80f719140b7c"
+    },
+    {
+      "path": "sql/migrations/phase1b/02_stock_item_mapping_tables.sql",
+      "destinationBlob": "c14f4cc46f6db4789e76e2483838f01518e054a4",
+      "sourceBlob": "c14f4cc46f6db4789e76e2483838f01518e054a4",
+      "unchanged": true,
+      "sha256": "9b5b745420e80cc9d9ec15905d6dffe773588d1dcfe480789bb3f5b216bd3b08"
+    },
+    {
+      "path": "sql/migrations/phase1b/03_mapping_constraints_and_indexes.sql",
+      "destinationBlob": "d9e30a2d837acbd94ed3d11a97d7b403870a82fa",
+      "sourceBlob": "d9e30a2d837acbd94ed3d11a97d7b403870a82fa",
+      "unchanged": true,
+      "sha256": "a3d7bc6e2f71ec9055f084e52328d18f88c716a71b0f9fb714c0408db60045f7"
+    },
+    {
+      "path": "sql/migrations/phase1b/04_rls_and_permissions.sql",
+      "destinationBlob": "ca4f6ae824dacdc9e79c7952b03e97e9ba376494",
+      "sourceBlob": "ca4f6ae824dacdc9e79c7952b03e97e9ba376494",
+      "unchanged": true,
+      "sha256": "e3cd676eae48e8f82db65d6121de8dd3f21733984e9e595a6484c2325201b8bf"
+    },
+    {
+      "path": "sql/migrations/phase1b/05_reporting_views.sql",
+      "destinationBlob": "58572384ea8b4d3d34a8b84d469a2053c05abb99",
+      "sourceBlob": "58572384ea8b4d3d34a8b84d469a2053c05abb99",
+      "unchanged": true,
+      "sha256": "499aa4754219473d555b9c9ea73382bbaf8f16576cc5eeeb68fad88bd20306cf"
+    },
+    {
+      "path": "sql/migrations/purchase-backend/sql/migrations/20260727_item_master_foundation_verify.sql",
+      "destinationBlob": "888248a9449fc4d8ede3ab9a176774870efbf5b4",
+      "sourceBlob": "888248a9449fc4d8ede3ab9a176774870efbf5b4",
+      "unchanged": true,
+      "sha256": "b904e8f27d6fbe61af79db5272f5823f2de9d90480eb7b2457b9c655cd884659"
+    },
+    {
+      "path": "sql/permissions_Table.sql",
+      "destinationBlob": "6d18d365e7453c5ada42ba462348557d2f3f485e",
+      "sourceBlob": "6d18d365e7453c5ada42ba462348557d2f3f485e",
+      "unchanged": true,
+      "sha256": "7fca52fc22a6b0a7ebb0e508c578ce06ad93cf41506ebfd0aec2e1f46ac448bf"
+    },
+    {
+      "path": "sql/reports/aud001_phase5a_reconciliation.sql",
+      "destinationBlob": "9faf5b9e514464a536e6f7fc5b74e31928d31f57",
+      "sourceBlob": "9faf5b9e514464a536e6f7fc5b74e31928d31f57",
+      "unchanged": true,
+      "sha256": "639dea56e07e51d829dbcfeb14c809a7564f16cd3f420dbc80479318a1da1958"
+    },
+    {
+      "path": "sql/stock_item_requests.sql",
+      "destinationBlob": "b58bb8b9b0580da8678d954c95b71f33c2640fca",
+      "sourceBlob": "b58bb8b9b0580da8678d954c95b71f33c2640fca",
+      "unchanged": true,
+      "sha256": "962ce726363143a33eac50ca49a55bd67fce0c16a291bf79e0aeac2d0dae235d"
+    },
+    {
+      "path": "sql/verification/031_p2p_batch1_supplier_backfill.sql",
+      "destinationBlob": "87d318870be2fe4335c9a8e0f4f69945840c9266",
+      "sourceBlob": "87d318870be2fe4335c9a8e0f4f69945840c9266",
+      "unchanged": true,
+      "sha256": "822c81de6bf318111aee4a7d7ea69d42e75500ff6421b8b326d9e6d1a6197d25"
+    },
+    {
+      "path": "sql/verification/20261005_development_stock_catalog_provenance.sql",
+      "destinationBlob": "0ec35eb65cff14cb8f08c2b88ded319aee099a65",
+      "sourceBlob": "0ec35eb65cff14cb8f08c2b88ded319aee099a65",
+      "unchanged": true,
+      "sha256": "8777f4fef06e0081490bfdf25c82f0668c61187d3d51b45f7370c0ee3e98b111"
+    },
+    {
+      "path": "sql/verification/phase1b_post_migration.sql",
+      "destinationBlob": "c8de1dcc137ab0d2de2a326fdf01aee91e35afc6",
+      "sourceBlob": "c8de1dcc137ab0d2de2a326fdf01aee91e35afc6",
+      "unchanged": true,
+      "sha256": "0b9180c24b6eee8aaabde5838b7b39f855226930be9dd58f414a588147bd43f8"
+    },
+    {
+      "path": "sql/verification/phase1b_pre_migration.sql",
+      "destinationBlob": "12ccd7c2cb63ab509cf8b56567a5612bab2bce72",
+      "sourceBlob": "12ccd7c2cb63ab509cf8b56567a5612bab2bce72",
+      "unchanged": true,
+      "sha256": "f250c222219ff192920f63ad92c9263128cf1967ac383575580fdc35d85f00a4"
+    },
+    {
+      "path": "sql/warehouses.sql",
+      "destinationBlob": "9004b87f7b9a19b02cbd59e566e1decd0a60d3ad",
+      "sourceBlob": "9004b87f7b9a19b02cbd59e566e1decd0a60d3ad",
+      "unchanged": true,
+      "sha256": "50a5889bab7aab873077ec74078a905495a2d325f3158d6dd83b42958626fe62"
+    }
+  ],
+  "lockedArtifacts": [
+    {
+      "path": "sql/20260313_procure_to_pay_document_flow.sql",
+      "sha256": "ca5700d6931008d1bd70d0fe24fa90536ed8e0ad9f469ae9954c48b755ca4bd5",
+      "actualSha256": "ca5700d6931008d1bd70d0fe24fa90536ed8e0ad9f469ae9954c48b755ca4bd5",
+      "classification": "unused_or_uncertain"
+    },
+    {
+      "path": "sql/20260907_expand_custody_form.sql",
+      "sha256": "8c707dc771e9ffd163409ef91ce8a145934798018018bf64a9f6fec35005e666",
+      "actualSha256": "8c707dc771e9ffd163409ef91ce8a145934798018018bf64a9f6fec35005e666",
+      "classification": "unused_or_uncertain"
+    },
+    {
+      "path": "sql/UI_resource_permissions.sql",
+      "sha256": "214fd411f12ab326c27f0bf7de5c04d55b55c44c7259ee5f7812489fbe1385bf",
+      "actualSha256": "214fd411f12ab326c27f0bf7de5c04d55b55c44c7259ee5f7812489fbe1385bf",
+      "classification": "export_snapshot"
+    },
+    {
+      "path": "sql/View_Supabase_SQL.sql",
+      "sha256": "39dd3bd59f59fd009b3f9f5132f5a33276f2551495d6a5c0cbaeab900bd6f262",
+      "actualSha256": "39dd3bd59f59fd009b3f9f5132f5a33276f2551495d6a5c0cbaeab900bd6f262",
+      "classification": "export_snapshot"
+    },
+    {
+      "path": "sql/approval_route_rules.sql",
+      "sha256": "ae202d7576a17b827debef29c3044e8c4a1dac705f91c0d82972302e773538db",
+      "actualSha256": "ae202d7576a17b827debef29c3044e8c4a1dac705f91c0d82972302e773538db",
+      "classification": "unused_or_uncertain"
+    },
+    {
+      "path": "sql/approval_routes.sql",
+      "sha256": "28eae1f9a306b5ebd3909d639d9b02b50abcec27639263a436bb3e3074bc2570",
+      "actualSha256": "28eae1f9a306b5ebd3909d639d9b02b50abcec27639263a436bb3e3074bc2570",
+      "classification": "unused_or_uncertain"
+    },
+    {
+      "path": "sql/development/20261005_01_requested_item_identity.sql",
+      "sha256": "f90daa1382420c61c71e19567e98ce67602ebad24b9d16dd9b4d2c4c0803b0cf",
+      "actualSha256": "f90daa1382420c61c71e19567e98ce67602ebad24b9d16dd9b4d2c4c0803b0cf",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/development/20261005_02_employee_tasks.sql",
+      "sha256": "1314baff116dd49970f0e090ee91c57950b49d16114e0c5e818058c28ccd3fde",
+      "actualSha256": "1314baff116dd49970f0e090ee91c57950b49d16114e0c5e818058c28ccd3fde",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/development/20261005_03_procurement_identity_policy.sql",
+      "sha256": "a0069a36d693077b4794f3f11c2a43f97634ec9f5b7aeb02f483c628ae642ada",
+      "actualSha256": "a0069a36d693077b4794f3f11c2a43f97634ec9f5b7aeb02f483c628ae642ada",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/003_request_reclassification_and_uom.sql",
+      "sha256": "55433b07c579e8f924502f0d7b6d526874e70e3cb8ec0bb98d6bbf89ecc06fd4",
+      "actualSha256": "55433b07c579e8f924502f0d7b6d526874e70e3cb8ec0bb98d6bbf89ecc06fd4",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/004_inventory_transaction_engine.sql",
+      "sha256": "152f4d89921bc1d2570cf4c184e3d62bdf192f2bd1fda5665952832e107f979c",
+      "actualSha256": "152f4d89921bc1d2570cf4c184e3d62bdf192f2bd1fda5665952832e107f979c",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/005_inventory_operations.sql",
+      "sha256": "a05f13a4269ac282bfab9088d3b6c184939158df0541117290db84d269ea4ecd",
+      "actualSha256": "a05f13a4269ac282bfab9088d3b6c184939158df0541117290db84d269ea4ecd",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/006_connected_procure_to_pay.sql",
+      "sha256": "cc2c6ea0608b8fd450c4d15bfe949e6fbfde8ce9276e40a904d22966ead2621e",
+      "actualSha256": "cc2c6ea0608b8fd450c4d15bfe949e6fbfde8ce9276e40a904d22966ead2621e",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/007_phase5a_item_master_diagnostics.sql",
+      "sha256": "36e77b382e6f7ae96f59f5409bc8570ed979ef2e0b6a855ba23aaf78e1ffb867",
+      "actualSha256": "36e77b382e6f7ae96f59f5409bc8570ed979ef2e0b6a855ba23aaf78e1ffb867",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/manual/008_phase5a1_reference_master_baseline.sql",
+      "sha256": "4be182050bb50dfd1bb69859a0cb3ea005474bf963aa496971b50dbe4d886730",
+      "actualSha256": "4be182050bb50dfd1bb69859a0cb3ea005474bf963aa496971b50dbe4d886730",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/009_phase5a2_uom_authority.sql",
+      "sha256": "8daf2eb3ac6a07b591991c77ecedf90da9fb25bd4d9a2f56a2d336d40e9ca004",
+      "actualSha256": "8daf2eb3ac6a07b591991c77ecedf90da9fb25bd4d9a2f56a2d336d40e9ca004",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/010_supply_chain_performance_foundation.sql",
+      "sha256": "2df51f0da700b7f301428bcb5378cbf0f40609544e55db947a4eb7ea749c4938",
+      "actualSha256": "2df51f0da700b7f301428bcb5378cbf0f40609544e55db947a4eb7ea749c4938",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/011_central_supply_tracking.sql",
+      "sha256": "4df59a7f714f030cee5d5f87249e36a018a008f749d284d8218628a01ac3bc82",
+      "actualSha256": "4df59a7f714f030cee5d5f87249e36a018a008f749d284d8218628a01ac3bc82",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/012_procurement_priority_foundation.sql",
+      "sha256": "e34c3e3eaf6afcafc696e6fe2f1511d1eaf173fa4dd9d6c176079d0c8a917263",
+      "actualSha256": "e34c3e3eaf6afcafc696e6fe2f1511d1eaf173fa4dd9d6c176079d0c8a917263",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/013_approved_spare_parts_foundation.sql",
+      "sha256": "fd847808a97cedc5cbc7be5d69a8cac266b44d4b1488bb8ec9c12d30519abd41",
+      "actualSha256": "fd847808a97cedc5cbc7be5d69a8cac266b44d4b1488bb8ec9c12d30519abd41",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/014_organization_hierarchy.sql",
+      "sha256": "2a92caa566fb8f75565ccb8ee59b0283b492cfa008cfc36f2e508cc42c46f315",
+      "actualSha256": "2a92caa566fb8f75565ccb8ee59b0283b492cfa008cfc36f2e508cc42c46f315",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/015_approval_policy_engine_foundation.sql",
+      "sha256": "fc579e8590b397597f54ca3888af726693f334653497953423cd3c467327ff9c",
+      "actualSha256": "fc579e8590b397597f54ca3888af726693f334653497953423cd3c467327ff9c",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/016_organization_hierarchy_cutover_readiness.sql",
+      "sha256": "b022c4655ad8c3cd277a0668cc89e0da5df3a61c387f810c40ab8cb5848ec89d",
+      "actualSha256": "b022c4655ad8c3cd277a0668cc89e0da5df3a61c387f810c40ab8cb5848ec89d",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/017_fixed_assets_rfid_core.sql",
+      "sha256": "366f6c861f8aff0d6a196b454c92b521a09cd6e03e5751f0dcec0617ac80c637",
+      "actualSha256": "366f6c861f8aff0d6a196b454c92b521a09cd6e03e5751f0dcec0617ac80c637",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/018_fixed_assets_rfid_post_deployment_hardening.sql",
+      "sha256": "c7067a322284b31737d2bf7f24585360318e62a62c79030f2b4ee224052114ae",
+      "actualSha256": "c7067a322284b31737d2bf7f24585360318e62a62c79030f2b4ee224052114ae",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/019_asset_equipment_integration.sql",
+      "sha256": "44018d3fab2cc93dcd2b0b500ab9f59caba1c7b1ef44faef99ec58bfa3d706e4",
+      "actualSha256": "44018d3fab2cc93dcd2b0b500ab9f59caba1c7b1ef44faef99ec58bfa3d706e4",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/020_asset_equipment_canonical_identity.sql",
+      "sha256": "2f1583db32503a69a79f08a0c330249d841ee119561d5615922dd157b824d5a5",
+      "actualSha256": "2f1583db32503a69a79f08a0c330249d841ee119561d5615922dd157b824d5a5",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/021_contract_equipment_coverage.sql",
+      "sha256": "04dd241384ee9abc39aed9912b6ca0b504e2a6e000df19678ce20a869f1f91a1",
+      "actualSha256": "04dd241384ee9abc39aed9912b6ca0b504e2a6e000df19678ce20a869f1f91a1",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/022_contract_item_master_identity.sql",
+      "sha256": "4d100b05953e088b47d99f9b1cf8ec93e06bc2713636765118e562a652602db9",
+      "actualSha256": "4d100b05953e088b47d99f9b1cf8ec93e06bc2713636765118e562a652602db9",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/023_spare_part_stock_item_integration.sql",
+      "sha256": "50aae039af66e6fee152726b5789587f152c0b1c7da76763347e5852365d7e9e",
+      "actualSha256": "50aae039af66e6fee152726b5789587f152c0b1c7da76763347e5852365d7e9e",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/024_maintenance_work_orders.sql",
+      "sha256": "83c71f9b1f5d2e4c01c70c68580bf687ec3e05ecacfcdc4f9ca27bbb5d6a80c3",
+      "actualSha256": "83c71f9b1f5d2e4c01c70c68580bf687ec3e05ecacfcdc4f9ca27bbb5d6a80c3",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/025_maintenance_inventory_execution.sql",
+      "sha256": "b1487b3684f2524f62595a2c126e7b60488ab419c98011453730c0dd0bf81da4",
+      "actualSha256": "b1487b3684f2524f62595a2c126e7b60488ab419c98011453730c0dd0bf81da4",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/026_rfid_portal_enable_scope_index.sql",
+      "sha256": "7b7d617a22c720393963632923db4faf0aa653c0056114ff5c276861ff157835",
+      "actualSha256": "7b7d617a22c720393963632923db4faf0aa653c0056114ff5c276861ff157835",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/027_rfid_configuration_mutation_guards.sql",
+      "sha256": "d33667001f7c5a4ffeb725d2f4e2e2fda4914c014ed956fbe76a0efb7d27c990",
+      "actualSha256": "d33667001f7c5a4ffeb725d2f4e2e2fda4914c014ed956fbe76a0efb7d27c990",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/028_asset_movement_operational_hardening.sql",
+      "sha256": "32c68c1e55aa693468e45143c225240f7e2a449e32358cdfacbeb442c7ca275c",
+      "actualSha256": "32c68c1e55aa693468e45143c225240f7e2a449e32358cdfacbeb442c7ca275c",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/029_fixed_asset_deployment_valuation.sql",
+      "sha256": "e4404c8d7ce8da972021ffb62ce1954293955f1b5eaeb89a1df9cf1ef7efda8a",
+      "actualSha256": "e4404c8d7ce8da972021ffb62ce1954293955f1b5eaeb89a1df9cf1ef7efda8a",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/030_fixed_asset_physical_inventory.sql",
+      "sha256": "5097d4d2409da762b8700aec9dbc3aa3391665936f49edff490873080612dc28",
+      "actualSha256": "5097d4d2409da762b8700aec9dbc3aa3391665936f49edff490873080612dc28",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/031_p2p_batch1_authority_hardening.sql",
+      "sha256": "fdf46fde5330306e416fc19223ed103d74877bad861ddf72ff9aeaaa6715ad88",
+      "actualSha256": "fdf46fde5330306e416fc19223ed103d74877bad861ddf72ff9aeaaa6715ad88",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/032_approval_engine_operationalization_phase1.sql",
+      "sha256": "bcfd4c7579f0a5ecc4cbe23b1c2d4ce951e75617dc78b13a19f6637d7faa670e",
+      "actualSha256": "bcfd4c7579f0a5ecc4cbe23b1c2d4ce951e75617dc78b13a19f6637d7faa670e",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/033_ai_intelligence_foundation.sql",
+      "sha256": "0b8a19af3ffe596542212e6835166f523f782f2d20b0b6044a7b9e394c0d7f0f",
+      "actualSha256": "0b8a19af3ffe596542212e6835166f523f782f2d20b0b6044a7b9e394c0d7f0f",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/034_ai_provider_audit_metadata.sql",
+      "sha256": "47aadecbcde6323fb33b1e3fe036c74465162c2d32c6b3dd145d4cde413a1998",
+      "actualSha256": "47aadecbcde6323fb33b1e3fe036c74465162c2d32c6b3dd145d4cde413a1998",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/035_backend_schema_reconciliation.sql",
+      "sha256": "f72c614776469e71dbbb67268565a2a26cd1e30b56d18cd3af26605fbd2561e0",
+      "actualSha256": "f72c614776469e71dbbb67268565a2a26cd1e30b56d18cd3af26605fbd2561e0",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/035_backend_schema_reconciliation_verify.sql",
+      "sha256": "ab9dd92177e5a3c69c4be31ce129e582301ddb78f5f273b4d5861d7bf81c8743",
+      "actualSha256": "ab9dd92177e5a3c69c4be31ce129e582301ddb78f5f273b4d5861d7bf81c8743",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/manual/036_permission_catalog_reconciliation.sql",
+      "sha256": "c7a702ccbd9f864519bd3873f3db51ff3bc79510adcc158c09be47e3fcb9de50",
+      "actualSha256": "c7a702ccbd9f864519bd3873f3db51ff3bc79510adcc158c09be47e3fcb9de50",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/037_ui_resource_reconciliation.sql",
+      "sha256": "aad7b75ee0097bfd209ef2dd83ee6a5e4a1c3827c0a1c8af22fb4db926b6b667",
+      "actualSha256": "aad7b75ee0097bfd209ef2dd83ee6a5e4a1c3827c0a1c8af22fb4db926b6b667",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/038_evaluation_result_timestamp_compatibility.sql",
+      "sha256": "18f913bc11d8f918f6c163d3e7b85dfd0cc43657bf24dd22fbe6a5221e054adb",
+      "actualSha256": "18f913bc11d8f918f6c163d3e7b85dfd0cc43657bf24dd22fbe6a5221e054adb",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/039_evaluation_offer_model_compatibility.sql",
+      "sha256": "f943fd26afffd9809a3257ac861b19d4ae2819274bf074f62d5edb3c3981b4d7",
+      "actualSha256": "f943fd26afffd9809a3257ac861b19d4ae2819274bf074f62d5edb3c3981b4d7",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/040_evaluation_cost_quantity_compatibility.sql",
+      "sha256": "3545463a2062a76c7d608373e675af050bd70a7333796db2169a7f888dc62ae8",
+      "actualSha256": "3545463a2062a76c7d608373e675af050bd70a7333796db2169a7f888dc62ae8",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/041_evaluation_criteria_timestamp_compatibility.sql",
+      "sha256": "037f8b6dd3191efcd1ba3bd26a8fba96f11c66206d1e60dc5a3af962898c1da9",
+      "actualSha256": "037f8b6dd3191efcd1ba3bd26a8fba96f11c66206d1e60dc5a3af962898c1da9",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/042_evaluation_stability_metadata_compatibility.sql",
+      "sha256": "ccf3f42f4738f17458f7cb1e60f23e014cb179b70c4e50c6aabe9c2d68545f9e",
+      "actualSha256": "ccf3f42f4738f17458f7cb1e60f23e014cb179b70c4e50c6aabe9c2d68545f9e",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/043_evaluation_alternative_metadata_compatibility.sql",
+      "sha256": "00155cb4c6183dde904cfcc06d8666275ce56f99369e8885b332f6d3cc088325",
+      "actualSha256": "00155cb4c6183dde904cfcc06d8666275ce56f99369e8885b332f6d3cc088325",
+      "classification": "superseded_migration"
+    },
+    {
+      "path": "sql/manual/044_item_master_reference_starter_data.sql",
+      "sha256": "c11899b74f1af2b22052003b23ee7a190fc153efbd83f2f9594b199679bcdd97",
+      "actualSha256": "c11899b74f1af2b22052003b23ee7a190fc153efbd83f2f9594b199679bcdd97",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/045_approval_activation_timestamps.sql",
+      "sha256": "3c2360acb387bf0fc1148562fcbc69eaf73baf146eeeaa591921432b76aae69d",
+      "actualSha256": "3c2360acb387bf0fc1148562fcbc69eaf73baf146eeeaa591921432b76aae69d",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/046_maintenance_approval_reporting_policy.sql",
+      "sha256": "74bf1428dd84b170d6c890c6a1a8bb28345203512e2adfe1c6a60b1db458e370",
+      "actualSha256": "74bf1428dd84b170d6c890c6a1a8bb28345203512e2adfe1c6a60b1db458e370",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/047_whole_request_priorities.sql",
+      "sha256": "8a0790461fbc31e9115ae28b0a80bbc190941793756c0ff592399e26073f3bc6",
+      "actualSha256": "8a0790461fbc31e9115ae28b0a80bbc190941793756c0ff592399e26073f3bc6",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/048_approval_hold_adjusted_timing.sql",
+      "sha256": "5ed2ac449e2d0bf838fa09545bb63200a87311249797b37af442ba6bd4f9aedf",
+      "actualSha256": "5ed2ac449e2d0bf838fa09545bb63200a87311249797b37af442ba6bd4f9aedf",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/049_preprocurement_technical_reviews.sql",
+      "sha256": "c451deb660cf4e99f693ef88abfaf4ca8c1a67f0ff7d4e8be44b7445960d91d0",
+      "actualSha256": "c451deb660cf4e99f693ef88abfaf4ca8c1a67f0ff7d4e8be44b7445960d91d0",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/050_device_demo_workspaces.sql",
+      "sha256": "98a8ba6f91d81cbbb3f688f9d209307355235f8b37548b67f6e686dc8e95969a",
+      "actualSha256": "98a8ba6f91d81cbbb3f688f9d209307355235f8b37548b67f6e686dc8e95969a",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/051_surgical_consignment.sql",
+      "sha256": "b5f286aaf0f0a872a7a6f640ca2a00a68e4f608f7632cb0fa0df27d749e20271",
+      "actualSha256": "b5f286aaf0f0a872a7a6f640ca2a00a68e4f608f7632cb0fa0df27d749e20271",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/052_surgical_consignment_supplier_scope_compatibility.sql",
+      "sha256": "82b408b5832f2d120ba600bee8ed0cbc4f8369496f8cfe4d779ac460643c5409",
+      "actualSha256": "82b408b5832f2d120ba600bee8ed0cbc4f8369496f8cfe4d779ac460643c5409",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/053_surgical_consignment_department_routing.sql",
+      "sha256": "f921924cca11066748c6599682faf497f476849a1e76ebef58a8d64fc4abeed7",
+      "actualSha256": "f921924cca11066748c6599682faf497f476849a1e76ebef58a8d64fc4abeed7",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/054_technical_review_and_delivery_workflow.sql",
+      "sha256": "608c7eac5d9c20d9d93ecc3cfd64d8852f635550e7c353d3393889a1cc8c712e",
+      "actualSha256": "608c7eac5d9c20d9d93ecc3cfd64d8852f635550e7c353d3393889a1cc8c712e",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/055_technical_proposal_scope_compatibility.sql",
+      "sha256": "08a22d8ab4032e8813e49c5cbfe4f1cf9b19e3f5b9841f5a532c7e0bfea5906e",
+      "actualSha256": "08a22d8ab4032e8813e49c5cbfe4f1cf9b19e3f5b9841f5a532c7e0bfea5906e",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/056_planning_authorization_scope.sql",
+      "sha256": "166fab004da70fbe64f0b096946a0063add9176ccd4947ae036792b7ba62e9a5",
+      "actualSha256": "166fab004da70fbe64f0b096946a0063add9176ccd4947ae036792b7ba62e9a5",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/057_autoassignment_authorization_scope.sql",
+      "sha256": "adaf82aa48a42e3d29d197dcebecb10c47aa9dc24b2797399e9ade039be7016b",
+      "actualSha256": "adaf82aa48a42e3d29d197dcebecb10c47aa9dc24b2797399e9ade039be7016b",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/058_financial_budget_authorization.sql",
+      "sha256": "84f7892905ad2373a0e4cecb3371d9856bd155a94460d684f2ccfad56e70c91a",
+      "actualSha256": "84f7892905ad2373a0e4cecb3371d9856bd155a94460d684f2ccfad56e70c91a",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/059_backend_contract_refresh.sql",
+      "sha256": "f976728fe12f558c355b9b370d81a799a5f769077f548e70e19610e8bd315be4",
+      "actualSha256": "f976728fe12f558c355b9b370d81a799a5f769077f548e70e19610e8bd315be4",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/060_permission_catalog_refresh.sql",
+      "sha256": "e364f91aff72b19cd836d6d0297c57078cd8b4eb0f5d075fa6921350d5015068",
+      "actualSha256": "e364f91aff72b19cd836d6d0297c57078cd8b4eb0f5d075fa6921350d5015068",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/061_ui_resource_catalog_refresh.sql",
+      "sha256": "8e5b15a9105d658a1a011ef4e89b3539612c839db445da7c2a9670a246fb8639",
+      "actualSha256": "8e5b15a9105d658a1a011ef4e89b3539612c839db445da7c2a9670a246fb8639",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/062_demand_planning_ui_policy_alignment.sql",
+      "sha256": "9e3e6ebe899643917a9f303a4c540fce6d6ecf2fb0da851dd414eb502d2d2bd5",
+      "actualSha256": "9e3e6ebe899643917a9f303a4c540fce6d6ecf2fb0da851dd414eb502d2d2bd5",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/063_backend_contract_verify.sql",
+      "sha256": "079f4d3e0d68ab21a136701b42aba3af5e7de8acedc3fc6a0cfdd7c659196d31",
+      "actualSha256": "079f4d3e0d68ab21a136701b42aba3af5e7de8acedc3fc6a0cfdd7c659196d31",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/manual/064_contract_authorization_scope.sql",
+      "sha256": "d76e695d963a1e76c202dda2c1f4e3d69d27c86624e4e45fd1335f954e66c044",
+      "actualSha256": "d76e695d963a1e76c202dda2c1f4e3d69d27c86624e4e45fd1335f954e66c044",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/065_canonical_contract_finance.sql",
+      "sha256": "436049f4d16929532aaa03e8d16db7ced311aac517f08993a850f3ecfad2e189",
+      "actualSha256": "436049f4d16929532aaa03e8d16db7ced311aac517f08993a850f3ecfad2e189",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/066_contract_financial_reconciliation.sql",
+      "sha256": "800a06f7119887b113422bc5a3f9d680a4b36e5ff42e568e003535ee4a3124a0",
+      "actualSha256": "800a06f7119887b113422bc5a3f9d680a4b36e5ff42e568e003535ee4a3124a0",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/067_canonical_procurement_completion.sql",
+      "sha256": "cef759d4793a11ef3e45299c966d22461462928a30276741885b4b9420c523dc",
+      "actualSha256": "cef759d4793a11ef3e45299c966d22461462928a30276741885b4b9420c523dc",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/068_goods_receipt_acceptance_integration.sql",
+      "sha256": "53bd846349d9aae4941c1e1c5f86392a4405cd5a860867fb3695d9733b1b81c4",
+      "actualSha256": "53bd846349d9aae4941c1e1c5f86392a4405cd5a860867fb3695d9733b1b81c4",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/069_database_release_governance.sql",
+      "sha256": "4a60c71b7565085e187a0fb44d946108d857cc0f8bd32868e805916ea8c2ec5a",
+      "actualSha256": "4a60c71b7565085e187a0fb44d946108d857cc0f8bd32868e805916ea8c2ec5a",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/070_rfid_processing_recovery.sql",
+      "sha256": "acef7ca703623adbacedd4a27c53042f310d120052d598c7b8113496210af41a",
+      "actualSha256": "acef7ca703623adbacedd4a27c53042f310d120052d598c7b8113496210af41a",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/071_transactional_event_reliability.sql",
+      "sha256": "ab4ee222691aab9945ecd7318215a99a55dec06fb025c70477f11ce98eb56021",
+      "actualSha256": "ab4ee222691aab9945ecd7318215a99a55dec06fb025c70477f11ce98eb56021",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/manual/072_scop_operational_foundation.sql",
+      "sha256": "0696d96493d00ab49283f770ca50ddf7ab0312bfb1d7482400ddc099904a6ff6",
+      "actualSha256": "0696d96493d00ab49283f770ca50ddf7ab0312bfb1d7482400ddc099904a6ff6",
+      "classification": "active_forward_migration"
+    },
+    {
+      "path": "sql/manual/073_wici_observed_schema_recovery.sql",
+      "sha256": "58122f8c2449dd50d37eaa229d9d622faf7be4e34d56848c999aec5a38285ca2",
+      "actualSha256": "58122f8c2449dd50d37eaa229d9d622faf7be4e34d56848c999aec5a38285ca2",
+      "classification": "manual_recovery_migration"
+    },
+    {
+      "path": "sql/migrations/20260312_procure_to_pay.sql",
+      "sha256": "164b519c4e7c00c79239025c94899d9e3e32301a971231b992a1c02c6db58233",
+      "actualSha256": "164b519c4e7c00c79239025c94899d9e3e32301a971231b992a1c02c6db58233",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/20260516_audit_registry_permissions.sql",
+      "sha256": "f0d24eb7ac4aa23f871e0f40a61a6fcfee050a6bc62d9a7736aa8e5dfc98c3d3",
+      "actualSha256": "f0d24eb7ac4aa23f871e0f40a61a6fcfee050a6bc62d9a7736aa8e5dfc98c3d3",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/20260608_procurement_item_events.sql",
+      "sha256": "81171c4b10b2ad9715e85b15ce8fb3da3d22c0beba11c607b185046b99ae1ee9",
+      "actualSha256": "81171c4b10b2ad9715e85b15ce8fb3da3d22c0beba11c607b185046b99ae1ee9",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/20260608_supplier_classification_principals.sql",
+      "sha256": "bdf09aae3b7eb9c2c7f63d745205c35f84b49fcdd683a8c4c95addd8fa991327",
+      "actualSha256": "bdf09aae3b7eb9c2c7f63d745205c35f84b49fcdd683a8c4c95addd8fa991327",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/20260727_item_master_foundation.sql",
+      "sha256": "f2ca517b02387d24c621ae8c09b02faa244cdb2e3f628add21d59fe3772d2673",
+      "actualSha256": "f2ca517b02387d24c621ae8c09b02faa244cdb2e3f628add21d59fe3772d2673",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/20260814_phase5a1_permissions.sql",
+      "sha256": "bd92f6952e2919608f742151b8269af9e6fa0707adb94010179989356e0f0eb8",
+      "actualSha256": "bd92f6952e2919608f742151b8269af9e6fa0707adb94010179989356e0f0eb8",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/20260929_document_branding.sql",
+      "sha256": "85c4c0e94d9fd14170f2b1c3be4b89389f05f17eb64f0daeddc4024482a10ff8",
+      "actualSha256": "85c4c0e94d9fd14170f2b1c3be4b89389f05f17eb64f0daeddc4024482a10ff8",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/20261003_procurement_event_overage_decisions.sql",
+      "sha256": "fb5bffdf7127463e0ca92decdff78b7a341e06207bbad24e00f7c5ded47cb764",
+      "actualSha256": "fb5bffdf7127463e0ca92decdff78b7a341e06207bbad24e00f7c5ded47cb764",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/phase1b/01_stock_item_identity_columns.sql",
+      "sha256": "e989c6e3d754777b9afa60ffeca9345f3b64267f6e321c66f92e80f719140b7c",
+      "actualSha256": "e989c6e3d754777b9afa60ffeca9345f3b64267f6e321c66f92e80f719140b7c",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/phase1b/02_stock_item_mapping_tables.sql",
+      "sha256": "9b5b745420e80cc9d9ec15905d6dffe773588d1dcfe480789bb3f5b216bd3b08",
+      "actualSha256": "9b5b745420e80cc9d9ec15905d6dffe773588d1dcfe480789bb3f5b216bd3b08",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/phase1b/03_mapping_constraints_and_indexes.sql",
+      "sha256": "a3d7bc6e2f71ec9055f084e52328d18f88c716a71b0f9fb714c0408db60045f7",
+      "actualSha256": "a3d7bc6e2f71ec9055f084e52328d18f88c716a71b0f9fb714c0408db60045f7",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/phase1b/04_rls_and_permissions.sql",
+      "sha256": "e3cd676eae48e8f82db65d6121de8dd3f21733984e9e595a6484c2325201b8bf",
+      "actualSha256": "e3cd676eae48e8f82db65d6121de8dd3f21733984e9e595a6484c2325201b8bf",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/phase1b/05_reporting_views.sql",
+      "sha256": "499aa4754219473d555b9c9ea73382bbaf8f16576cc5eeeb68fad88bd20306cf",
+      "actualSha256": "499aa4754219473d555b9c9ea73382bbaf8f16576cc5eeeb68fad88bd20306cf",
+      "classification": "frozen_historical_migration"
+    },
+    {
+      "path": "sql/migrations/purchase-backend/sql/migrations/20260727_item_master_foundation_verify.sql",
+      "sha256": "b904e8f27d6fbe61af79db5272f5823f2de9d90480eb7b2457b9c655cd884659",
+      "actualSha256": "b904e8f27d6fbe61af79db5272f5823f2de9d90480eb7b2457b9c655cd884659",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/operator-recovery/wici-production-recovery.sql",
+      "sha256": "785d3e62c1ddcc814b40983b3f62f15d66739d2ad124296cd3baf41b57380746",
+      "actualSha256": "785d3e62c1ddcc814b40983b3f62f15d66739d2ad124296cd3baf41b57380746",
+      "classification": "generated_operator_bundle"
+    },
+    {
+      "path": "sql/permissions_Table.sql",
+      "sha256": "7fca52fc22a6b0a7ebb0e508c578ce06ad93cf41506ebfd0aec2e1f46ac448bf",
+      "actualSha256": "7fca52fc22a6b0a7ebb0e508c578ce06ad93cf41506ebfd0aec2e1f46ac448bf",
+      "classification": "export_snapshot"
+    },
+    {
+      "path": "sql/reports/aud001_phase5a_reconciliation.sql",
+      "sha256": "639dea56e07e51d829dbcfeb14c809a7564f16cd3f420dbc80479318a1da1958",
+      "actualSha256": "639dea56e07e51d829dbcfeb14c809a7564f16cd3f420dbc80479318a1da1958",
+      "classification": "unused_or_uncertain"
+    },
+    {
+      "path": "sql/stock_item_requests.sql",
+      "sha256": "962ce726363143a33eac50ca49a55bd67fce0c16a291bf79e0aeac2d0dae235d",
+      "actualSha256": "962ce726363143a33eac50ca49a55bd67fce0c16a291bf79e0aeac2d0dae235d",
+      "classification": "unused_or_uncertain"
+    },
+    {
+      "path": "sql/verification/031_p2p_batch1_supplier_backfill.sql",
+      "sha256": "822c81de6bf318111aee4a7d7ea69d42e75500ff6421b8b326d9e6d1a6197d25",
+      "actualSha256": "822c81de6bf318111aee4a7d7ea69d42e75500ff6421b8b326d9e6d1a6197d25",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/verification/20261005_development_stock_catalog_provenance.sql",
+      "sha256": "8777f4fef06e0081490bfdf25c82f0668c61187d3d51b45f7370c0ee3e98b111",
+      "actualSha256": "8777f4fef06e0081490bfdf25c82f0668c61187d3d51b45f7370c0ee3e98b111",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/verification/phase1b_post_migration.sql",
+      "sha256": "0b9180c24b6eee8aaabde5838b7b39f855226930be9dd58f414a588147bd43f8",
+      "actualSha256": "0b9180c24b6eee8aaabde5838b7b39f855226930be9dd58f414a588147bd43f8",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/verification/phase1b_pre_migration.sql",
+      "sha256": "f250c222219ff192920f63ad92c9263128cf1967ac383575580fdc35d85f00a4",
+      "actualSha256": "f250c222219ff192920f63ad92c9263128cf1967ac383575580fdc35d85f00a4",
+      "classification": "read_only_verification"
+    },
+    {
+      "path": "sql/warehouses.sql",
+      "sha256": "50a5889bab7aab873077ec74078a905495a2d325f3158d6dd83b42958626fe62",
+      "actualSha256": "50a5889bab7aab873077ec74078a905495a2d325f3158d6dd83b42958626fe62",
+      "classification": "unused_or_uncertain"
+    },
+    {
+      "path": "integration/fixtures/p2p.sql",
+      "sha256": "e27f37738855618516c5dd73196420d0e25dd9d9f93aaac4d7e33f78e18dbdc2",
+      "actualSha256": "e27f37738855618516c5dd73196420d0e25dd9d9f93aaac4d7e33f78e18dbdc2",
+      "classification": "test_fixture"
+    }
+  ],
+  "manifestFindings": [],
+  "metadata": {
+    "branchesProtected": {
+      "combined": false,
+      "backend": false,
+      "frontend": false
+    },
+    "backendRequiredCheckObserved": false,
+    "frontendRequiredCheckObserved": false,
+    "appInstallationAndSecretReadiness": "UNVERIFIED_NOT_PROVISIONED"
+  },
+  "externalState": "NOT_ACCESSED",
+  "evidenceSha256": "25b0a11dede395b5a8e6cb72bface72a245409dc0b54415bbfa795bddf1d6a6b"
+}

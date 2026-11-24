@@ -2,24 +2,28 @@
 
 **Verdict: BLOCKED FOR ACTIVATION.** The code and local Git/API fixture tests implement the publishing path; no destination write or credential provisioning is authorized by this PR. Review this plan and publishing permissions separately. Merging this infrastructure PR enables only the publishing-credential-free audit job after successful combined-master CI. Staging, production, SQL execution and the recovery service are unrelated and remain untouched.
 
-## Current verified state (9 November 2026, Baghdad)
+## Current reconciliation
+
+See [the 24 November reconciliation](reconciliation.md), [source-bound evidence](reconciliation-evidence.json), [local Windows workflow](local-development.md), and the refreshed unapproved bootstrap proposal. Publishing remains hard-disabled. The snapshot below is historical; its frontend zero-difference result must not be applied to newer source commits.
+
+## Historical verified state (9 November 2026, Baghdad)
 
 Authoritative source: `purchase-tracker/master` at `3d5d236c94300ad8551eca5f1731660a07b2b05c` (PR #106 merge).
 
 | Destination | Observed main | Managed comparison | Protection and CI |
 | --- | --- | --- | --- |
-| purchase-backend | `70c4ee50bd0c8342eb30f573eacbd95f543a5e88` | 29 changes: 13 conflicting updates, 16 additions | main unprotected; one recovery-path workflow, no verified full Backend synchronization gate |
+| purchase-backend | `70c4ee50bd0c8342eb30f573eacbd95f543a5e88` | 29 changes: 13 initial-review updates, 16 additions | main unprotected; one recovery-path workflow, no verified full Backend synchronization gate |
 | purchase-frontend | `8a4ac51a52d30877c21e7300af9d4a1d5d410d6e` | NO_CHANGES | main unprotected; no workflow |
 
 Combined master is also reported unprotected. These observations are metadata reads, not configuration changes. No publishing credentials were provisioned or read. Existing App installations/secrets are not asserted absent; the checked-in policy deliberately specifies no App identity or approval.
 
-[bootstrap-proposal.json](bootstrap-proposal.json) is the deterministic, unapproved Git-object proposal. It includes complete before/after blob IDs and modes, all sixteen additions, all thirteen explicit `REQUIRES_UPSTREAM_REVIEW` decisions, existing SQL preservation evidence, and comparisons against both independent remote branches. Its proposal digest binds the whole document. No timestamp, fabricated synchronization receipt, migration receipt or claimed financial/database acceptance is generated. Regenerate offline from fresh disposable clones with `node scripts/devops/sync-bootstrap.cjs <full-source-sha>`; do not use or alter the recovery worktree.
+[bootstrap-proposal.json](bootstrap-proposal.json) is the deterministic, unapproved Git-object proposal. It includes complete before/after blob IDs and modes, all sixteen additions, all initial-review updates (the refreshed proposal now records all29 changes as `REQUIRES_CONTENT_REVIEW`), existing SQL preservation evidence, and comparisons against both independent remote branches. Its proposal digest binds the whole document. No timestamp, fabricated synchronization receipt, migration receipt or claimed financial/database acceptance is generated. Regenerate offline from fresh disposable clones with `node scripts/devops/sync-bootstrap.cjs <full-source-sha>`; do not use or alter the recovery worktree.
 
 All **103 SQL files already in destination main** match the canonical source's Git blobs. SQL 073 and the generated operator artifact are additions against that main, never executions. Recovery branch `2c2a4651a10a54a20a1f74dfade66260b8a1e46e` and PG17 branch `1541dd727e95700111f62ea93a30f1e6774f0fe5` have independent content and remain unchanged. Their generated recovery SQL has different bindings from combined source: preserve both existing histories/artifacts during upstream reconciliation; do not relabel an older artifact with a newer checksum.
 
 ## Initial reconciliation decisions requiring approval
 
-The thirteen conflicts mean different real Git blobs plus no accepted synchronization baseline. They are not whitespace guesses or merge-conflict markers.
+The thirteen initial-review markers mean different real Git blobs plus no accepted synchronization baseline. They are not whitespace guesses or merge-conflict markers.
 
 | Path | Verified difference and recommended review unit |
 | --- | --- |
