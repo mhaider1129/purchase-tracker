@@ -2,6 +2,8 @@
 
 Status: **REVIEW CANDIDATES ONLY; DATABASE COMPATIBILITY NOT CERTIFIED.** No database was contacted and no SQL was executed. Do not apply this package to Production.
 
+Continuation: [startup-triage.md](startup-triage.md) uses newly supplied required-object/release-ledger results: two missing relations, 38 missing columns, empty ledgers. The full catalog remains unavailable. It separates these operator-reported findings from the earlier incomplete export, confirmed code/contract conflicts and reproduced comparator behavior. No unconditional mutation approval is made.
+
 The application baseline is merged master `180ea21c2d8bf233457a6ef6c6ede4bfceea0886`. The observed input is commit `7a896cbe23c3708fb2e183f65df96389151eaffc` on `review/development-schema-20261124`. Pending draft PR #113 at `9c1bbb7ef43be8f1c2a5a3b9eb9c0c1a7e94520e` was reviewed for development diagnostics, project identity and release-governance proposals. It is **unmerged**, supplies no execution evidence, and is not promoted into the merged application requirements here.
 
 ## Evidence and governance
@@ -22,6 +24,8 @@ node scripts/devops/integrity.cjs --base 180ea21c2d8bf233457a6ef6c6ede4bfceea088
 Regeneration must produce an identical report and SQL. The report digest excludes its own digest field. It is source evidence, not a database release attestation.
 
 ## Findings
+
+The table below describes the **original context export**, not the later required-object results. Those later results supersede its existence assertions; in particular `maintenance_stock` and 38 columns are reported missing. Use [startup-triage.md](startup-triage.md) and `evidence/` for the current findings and partial, individually guarded candidates. Do not treat this historical export analysis as current live compatibility evidence.
 
 For the complete human-readable list of unexported required relations, see [missing-relations.md](missing-relations.md), including backend query references and registered CREATE sources where resolved. [required-object-check.sql](required-object-check.sql) can be pasted unchanged into the independently confirmed Development SQL Editor: it checks all 268 required relations and 3,604 column identities, not merely the latest migration. It is read-only; empty results do not certify types, permissions, RLS or release readiness.
 
