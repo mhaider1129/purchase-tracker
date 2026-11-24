@@ -23,6 +23,8 @@ Regeneration must produce an identical report and SQL. The report digest exclude
 
 ## Findings
 
+For the complete human-readable list of unexported required relations, see [missing-relations.md](missing-relations.md), including backend query references and registered CREATE sources where resolved. [required-object-check.sql](required-object-check.sql) can be pasted unchanged into the independently confirmed Development SQL Editor: it checks all 268 required relations and 3,604 column identities, not merely the latest migration. It is read-only; empty results do not certify types, permissions, RLS or release readiness.
+
 | Area | Verified from supplied bytes / merged code | Safe response |
 | --- | --- | --- |
 | Schema coverage | 100 exported tables versus 268 canonical relations and 3,604 columns. 168 relations are absent from the export. No missing canonical columns or nullability differences within the 100 supplied tables. | Absence from this file does not prove absence from the database. Obtain read-only metadata before considering creation. |

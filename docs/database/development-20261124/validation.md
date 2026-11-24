@@ -12,6 +12,7 @@ Executed 24 November 2026 on Linux with Node 22.21.1. Runtime source is exactly 
 | `node scripts/devops/integrity.cjs --base 180ea21c2d8bf233457a6ef6c6ede4bfceea0886` | PASSED, 105 locked artifacts, highest manual number 73, zero findings, no database connection |
 | `node scripts/devops/security.cjs` and `node scripts/devops/security.cjs build` | PASSED; committed/staged source and generated frontend assets scanned, zero credential findings |
 | Python `pglast==7.25` `parse_sql` and `parse_plpgsql` | All five candidate files parse: SQL statement counts 5/11/10/9/5; DO-block counts 0/3/2/2/1. **Grammar only, no SQL or dynamic DDL execution.** |
+| Follow-up `required-object-check.sql` | pglast grammar parsing confirms only read-only transaction/settings/SELECT/rollback statements. Embedded JSON matches all 268 relation names/kinds and 3,604 column identities from the locked contract exactly. Eight offline reconciliation tests and all 105 artifact checks pass again. No query execution. |
 | `git diff --check`; historical SQL/releases/fixture comparison against baseline | Clean; historical paths match baseline byte-for-byte. No SQL migration or stored historical digest modified. |
 
 The dated auditor deliberately refuses to recertify this report against different runtime sources. It is an explicit offline review tool/test, not a permanent CI requirement to freeze future application development. Later application changes need a new dated evidence review, not rewriting this historical report. No workflow or deployment controls were changed for this task.
