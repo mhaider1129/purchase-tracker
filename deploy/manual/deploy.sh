@@ -153,7 +153,11 @@ rollback() (
     fi
     restore_path "$BACKEND_LIVE" "$OLD_BACKEND" "$TXN/legacy-backend" "$OLD_BACKEND_ID" || failed=1
     restore_path "$FRONTEND_LIVE" "$OLD_FRONTEND" "$TXN/legacy-frontend" "$OLD_FRONTEND_ID" || failed=1
-    sudo -n cp --preserve=mode,ownership "$TXN/nginx.before" "$NGINX_SITE" || failed=1
+    if [[ "$OLD_PORT" == 5051 ]]; then
+      sudo -n /usr/local/sbin/wici-nginx-control recovery || failed=1
+    else
+      sudo -n /usr/local/sbin/wici-nginx-control production || failed=1
+    fi
     # Restart only the original application; never resurrect unrelated PM2 processes.
     if [[ "$OLD_ACTIVE" == wici-recovery ]]; then
       pm2 restart wici-recovery >/dev/null || failed=1
@@ -263,9 +267,9 @@ import json,sys
 json.dump({'release':sys.argv[2]},open(sys.argv[1],'w'))
 PY
 chmod 644 "$RELEASE/frontend/build/release.json"
-sudo -n cp --preserve=mode,ownership "$NGINX_SITE" "$TXN/nginx.before"
+sudo -n /usr/local/sbin/wici-nginx-control read > "$TXN/nginx.before"
 # Validate the actual existing integration; do not replace an entire server block blindly.
-sudo -n cat "$NGINX_SITE" > "$TXN/nginx.input"
+sudo -n /usr/local/sbin/wici-nginx-control read > "$TXN/nginx.input"
 python3 - "$TXN" "$FRONTEND_LIVE" "$OLD_PORT" <<'PY'
 import pathlib,re,sys
 p=pathlib.Path(sys.argv[1]); s=(p/'nginx.input').read_text()
@@ -306,7 +310,7 @@ link_to "$FRONTEND_LIVE" "$RELEASE/frontend/build"
 NODE_ENV=production HOST=127.0.0.1 PORT=5000 APP_RELEASE_REF="$SOURCE_SHA" DB_RELEASE_ENVIRONMENT=production RUNTIME_BACKGROUND_WORKERS_ENABLED=true \
   pm2 start "$RELEASE/backend/app.js" --cwd "$RELEASE/backend" --name purchase-backend --interpreter "$(command -v node)" --exp-backoff-restart-delay 1000 --max-restarts 10 --min-uptime 10000 --kill-timeout 15000 >/dev/null
 health http://127.0.0.1:5000 "$SOURCE_SHA" true
-sudo -n cp "$TXN/nginx.after" "$NGINX_SITE"
+sudo -n /usr/local/sbin/wici-nginx-control production
 sudo -n nginx -t
 sudo -n systemctl reload nginx
 health "$PUBLIC_URL/api" "$SOURCE_SHA" true
