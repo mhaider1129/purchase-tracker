@@ -107,6 +107,13 @@ function fixture(t, { fail = false, wrongIdentity = false } = {}) {
   }
   const dependencies = {
     Client,
+    sourceBinding: { gitCommit: "a".repeat(40), dirty: false },
+    profiles: {},
+    collectEvidence: async () => ({
+      complete: true,
+      failures: [],
+      sections: {},
+    }),
     contract: { version: "synthetic", catalog: {} },
     service: {
       async verify(db, o) {
@@ -208,4 +215,51 @@ test("local startup binds storage and database to Development and requires dry-r
   assert.throws(() =>
     localConfiguration({ ...env, SUPABASE_URL: "", SUPABASE_KEY: "synthetic" }),
   );
+});
+
+test("incomplete supplemental evidence blocks runtime even when canonical verification reports ready", async (t) => {
+  const f = fixture(t);
+  f.options.mode = "runtime";
+  f.dependencies.collectEvidence = async () => ({
+    complete: false,
+    failures: [
+      {
+        group: "diagnostic_capture",
+        object: "roles",
+        reason: "supplemental_evidence_unavailable",
+      },
+    ],
+  });
+  const r = await capture(f.options, f.env, f.dependencies);
+  assert.equal(r.status, "BLOCKED");
+  assert.equal(r.restart_eligible, false);
+  assert.equal(r.verification.restart_eligible, false);
+  assert.equal(r.canonicalVerificationStatus, "DATABASE_READY");
+  assert.equal(r.canonicalFindingCount, 0);
+  assert.equal(r.supplementalFindingCount, 1);
+  assert.equal(r.findingCount, 1);
+  assert.equal(r.classificationCounts.assessment_visibility, 1);
+});
+test("diagnostic accepts proposed role names but refuses unsafe names and never changes role automatically", () => {
+  const base = [
+    "--release",
+    "fixture",
+    "--profile",
+    "canonical",
+    "--mode",
+    "diagnostic",
+    "--output",
+    "/tmp/report.json",
+  ];
+  assert.equal(
+    args([
+      ...base,
+      "--runtime-login",
+      "wici_development_runtime",
+      "--verification-login",
+      "wici_development_reader",
+    ])["runtime-login"],
+    "wici_development_runtime",
+  );
+  assert.throws(() => args([...base, "--runtime-login", "unsafe;role"]));
 });

@@ -1,5 +1,7 @@
 # Local development and review (Windows Git Bash)
 
+**Development startup is on hold.** The follow-up [repository assessment](../../development/database-assessment.md) found application-pool TLS defaults and unconditional startup jobs that require review in addition to schema reconciliation. Use the [consolidated PowerShell diagnostic handoff](../../development/database-handoff.md) first. The startup examples below are conditional future instructions, not authorization to start the current incompatible database.
+
 Use the combined repository for application development. Standalone repositories are downstream review destinations, not alternate working sources. Node **22 LTS**/npm10 is recommended; CI also tests Node20. Do not infer support for every newer Node major from a permissive package engine range.
 
 ## Update the local source and dependencies

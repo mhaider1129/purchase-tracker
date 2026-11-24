@@ -89,7 +89,15 @@ function localConfiguration(env) {
 }
 function args(argv) {
   const options = {},
-    names = new Set(["release", "profile", "mode", "runtime-role", "output"]);
+    names = new Set([
+      "release",
+      "profile",
+      "mode",
+      "runtime-role",
+      "runtime-login",
+      "verification-login",
+      "output",
+    ]);
   for (let i = 0; i < argv.length; i++) {
     const key = argv[i].slice(2);
     if (
@@ -107,6 +115,9 @@ function args(argv) {
     !["canonical", "wici-2026-11"].includes(options.profile) ||
     !["diagnostic", "runtime"].includes(options.mode) ||
     !options.output ||
+    ["runtime-login", "verification-login"].some(
+      (key) => options[key] && !/^[a-z_][a-z0-9_]{0,62}$/.test(options[key]),
+    ) ||
     (options["runtime-role"] &&
       (options.mode !== "runtime" ||
         options["runtime-role"] !== "purchase_backend"))
@@ -180,7 +191,7 @@ async function capture(options, env = process.env, dependencies = {}) {
     await db.query("SET LOCAL search_path=public,extensions,pg_catalog");
     const identity = (
       await db.query(
-        "SELECT current_database() AS database, current_user AS actor, session_user AS login, current_setting('transaction_read_only') AS read_only, current_setting('server_version_num') AS server_version",
+        "SELECT current_database() AS database, current_user AS actor, session_user AS login, current_setting('transaction_read_only') AS read_only, current_setting('server_version_num') AS server_version, current_setting('server_version') AS server_version_label",
       )
     ).rows[0];
     const expectedLogin = config.user.split(".")[0];
@@ -198,7 +209,54 @@ async function capture(options, env = process.env, dependencies = {}) {
     });
     const visibility = await catalog.visibility(db),
       actual = await catalog.snapshot(db, visibility);
-    const findings = verification.findings.map((f) => ({
+    const evidence = require("./development-db-evidence.cjs");
+    const inventory = service.loadInventory
+      ? service.loadInventory()
+      : require("../../purchase-backend/database/releases/migration-inventory.json");
+    const profiles = dependencies.profiles || {
+      canonical: require("../../purchase-backend/database/releases/schema-contract.json"),
+      "wici-observed":
+        require("../../purchase-backend/scripts/lib/databaseRelease/profiles").loadProfile(
+          "wici-2026-11",
+          "observed",
+        ),
+      "wici-target":
+        require("../../purchase-backend/scripts/lib/databaseRelease/profiles").loadProfile(
+          "wici-2026-11",
+        ),
+      ...Object.fromEntries(
+        ["069", "070", "071"].map((id) => [
+          "prerequisite-" + id,
+          JSON.parse(
+            fs.readFileSync(
+              path.join(
+                __dirname,
+                "../../purchase-backend/database/releases/prerequisites/" +
+                  id +
+                  "-schema-contract.json",
+              ),
+              "utf8",
+            ),
+          ),
+        ]),
+      ),
+    };
+    const supplemental = await (
+      dependencies.collectEvidence || evidence.collect
+    )(db, {
+      catalog,
+      service,
+      actual,
+      visibility,
+      identity,
+      options,
+      profiles,
+      inventory,
+    });
+    const findings = [
+      ...verification.findings,
+      ...(supplemental.failures || []),
+    ].map((f) => ({
       ...f,
       expected: (contract.catalog[f.group] || []).find(
         (r) => catalog.key(f.group, r) === f.object,
@@ -207,29 +265,58 @@ async function capture(options, env = process.env, dependencies = {}) {
         (r) => catalog.key(f.group, r) === f.object,
       ),
     }));
+    const classified = evidence.classify(findings);
     const summary = {};
-    for (const f of findings) summary[f.group] = (summary[f.group] || 0) + 1;
+    for (const f of classified.findings)
+      summary[f.group] = (summary[f.group] || 0) + 1;
     const report = {
       kind: "development-database-reconciliation",
+      version: 2,
       project,
       environment: "development",
       projectIdentityEvidence:
         "ALLOWLISTED_TLS_HOST_AND_POOLER_USERNAME_NOT_AN_INDEPENDENT_CLOUD_API_ATTESTATION",
       verification_mode: options.mode,
+      runtimeAssessmentScope:
+        options.mode === "runtime"
+          ? "ACTUAL_RUNTIME_CONNECTION"
+          : "DIAGNOSTIC_CONNECTION_NOT_APPLICATION_RUNTIME",
       identity,
       sourceContract: contract.version,
-      status: options.mode === "runtime" ? verification.status : "BLOCKED",
+      selectedProfile: options.profile,
+      ambientProfileUsed: false,
+      sourceBinding:
+        dependencies.sourceBinding ||
+        require("../quality/release.cjs").provenance(),
+      contractVersionMetadata: {
+        selected: contract.version,
+        exportedLabel: service.CONTRACT_VERSION || null,
+        labelIsNotContractSelection: true,
+      },
+      status:
+        options.mode === "runtime" && supplemental.complete
+          ? verification.status
+          : "BLOCKED",
       restart_eligible:
-        options.mode === "runtime" && verification.restart_eligible === true,
+        options.mode === "runtime" &&
+        supplemental.complete &&
+        verification.restart_eligible === true,
       diagnosticOnly: options.mode !== "runtime",
       approval: "NO_DATABASE_CHANGES_AUTHORIZED",
       findingCount: findings.length,
+      canonicalFindingCount: verification.findings.length,
+      supplementalFindingCount: (supplemental.failures || []).length,
+      canonicalVerificationStatus: verification.status,
       summary,
       verification,
-      findings,
+      findings: classified.findings,
+      classificationCounts: classified.classificationCounts,
+      potentialVerifierFalsePositives:
+        classified.potentialVerifierFalsePositives,
+      supplemental,
       catalog: actual,
     };
-    if (options.mode !== "runtime") {
+    if (options.mode !== "runtime" || !supplemental.complete) {
       report.verification = {
         ...verification,
         status: "BLOCKED",
@@ -255,7 +342,10 @@ if (require.main === module) {
           project,
           mode: report.verification_mode,
           findingCount: report.findingCount,
+          canonicalFindingCount: report.canonicalFindingCount,
+          supplementalComplete: report.supplemental.complete,
           summary: report.summary,
+          classificationCounts: report.classificationCounts,
           restart_eligible: report.restart_eligible,
         }),
       );
