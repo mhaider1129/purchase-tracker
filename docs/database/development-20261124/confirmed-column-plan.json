@@ -1,0 +1,694 @@
+{
+  "source_evidence_sha256": "8e674e088f91f44e5c6e2b57df95295c49001c7a788f579da8f0e7f9b44f3cc4",
+  "columns": [
+    {
+      "relation": "ap_vouchers",
+      "name": "contract_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "approval_route_rules",
+      "name": "approver_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "commitment_ledger",
+      "name": "journal_entry_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "contract_evaluations",
+      "name": "total_score",
+      "type": "numeric",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "generic_items",
+      "name": "institute_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "gl_postings",
+      "name": "journal_entry_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "item_uom",
+      "name": "name",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "currency",
+      "type": "text",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'USD'::text"
+    },
+    {
+      "relation": "journal_entries",
+      "name": "journal_reference",
+      "type": "text",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "journal_type",
+      "type": "text",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "posted_by",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "total_amount",
+      "type": "numeric(14,2)",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "cost_center_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "line_no",
+      "type": "integer",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_criteria",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "alternative_group",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "annual_quantity",
+      "type": "numeric(20,6)",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "dependency_group",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "element_type",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "onboard_stability_days",
+      "type": "numeric(20,6)",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "quantity",
+      "type": "numeric(20,6)",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "contract_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "package_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "risk_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "scenario_metadata",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "service_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "technical_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_results",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "procurement_evaluation_results",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "dependency_risk",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "is_alternative",
+      "type": "boolean",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "false"
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "unit",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "stock_items",
+      "name": "category_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "stock_items",
+      "name": "institute_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "stock_items",
+      "name": "manufacturer_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "users",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "warehouses",
+      "name": "is_active",
+      "type": "boolean",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "true"
+    }
+  ],
+  "nullable_candidates": [
+    {
+      "relation": "ap_vouchers",
+      "name": "contract_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "approval_route_rules",
+      "name": "approver_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "commitment_ledger",
+      "name": "journal_entry_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "contract_evaluations",
+      "name": "total_score",
+      "type": "numeric",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "generic_items",
+      "name": "institute_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "gl_postings",
+      "name": "journal_entry_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "posted_by",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "cost_center_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "alternative_group",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "annual_quantity",
+      "type": "numeric(20,6)",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "dependency_group",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "element_type",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "onboard_stability_days",
+      "type": "numeric(20,6)",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "quantity",
+      "type": "numeric(20,6)",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "contract_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "package_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "risk_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "scenario_metadata",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "service_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "technical_model",
+      "type": "jsonb",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'{}'::jsonb"
+    },
+    {
+      "relation": "procurement_evaluation_results",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "procurement_evaluation_results",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "dependency_risk",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "is_alternative",
+      "type": "boolean",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": "false"
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "unit",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "stock_items",
+      "name": "category_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "stock_items",
+      "name": "institute_id",
+      "type": "integer",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "stock_items",
+      "name": "manufacturer_id",
+      "type": "bigint",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "users",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    }
+  ],
+  "blocked_for_semantic_or_historical_review": [
+    {
+      "relation": "item_uom",
+      "name": "name",
+      "type": "text",
+      "not_null": false,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "currency",
+      "type": "text",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "'USD'::text"
+    },
+    {
+      "relation": "journal_entries",
+      "name": "journal_reference",
+      "type": "text",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "journal_type",
+      "type": "text",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "journal_entries",
+      "name": "total_amount",
+      "type": "numeric(14,2)",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "0"
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "line_no",
+      "type": "integer",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": null
+    },
+    {
+      "relation": "procurement_evaluation_criteria",
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "now()"
+    },
+    {
+      "relation": "warehouses",
+      "name": "is_active",
+      "type": "boolean",
+      "not_null": true,
+      "identity": "",
+      "generated": "",
+      "default_expression": "true"
+    }
+  ],
+  "compatibility": "NOT_CERTIFIED"
+}

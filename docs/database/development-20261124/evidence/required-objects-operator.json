@@ -1,0 +1,173 @@
+{
+  "evidence_source": "Operator-pasted SQL Editor CSV result, decoded/transcribed; no independent database connection",
+  "project_identity_verified_by_sql": false,
+  "expected_project_for_independent_operator_confirmation": "bcvfosxcyvarieiinovo",
+  "actor": "postgres",
+  "server_version": "17.6",
+  "missing_relations": [
+    {
+      "name": "contract_financial_reviews",
+      "required_kind": "r"
+    },
+    {
+      "name": "maintenance_stock",
+      "required_kind": "r"
+    }
+  ],
+  "relation_kind_differences": [],
+  "missing_columns_on_present_relations": [
+    {
+      "relation": "ap_vouchers",
+      "name": "contract_id"
+    },
+    {
+      "relation": "approval_route_rules",
+      "name": "approver_id"
+    },
+    {
+      "relation": "commitment_ledger",
+      "name": "journal_entry_id"
+    },
+    {
+      "relation": "contract_evaluations",
+      "name": "total_score"
+    },
+    {
+      "relation": "generic_items",
+      "name": "institute_id"
+    },
+    {
+      "relation": "gl_postings",
+      "name": "journal_entry_id"
+    },
+    {
+      "relation": "item_uom",
+      "name": "name"
+    },
+    {
+      "relation": "journal_entries",
+      "name": "currency"
+    },
+    {
+      "relation": "journal_entries",
+      "name": "journal_reference"
+    },
+    {
+      "relation": "journal_entries",
+      "name": "journal_type"
+    },
+    {
+      "relation": "journal_entries",
+      "name": "posted_by"
+    },
+    {
+      "relation": "journal_entries",
+      "name": "total_amount"
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "cost_center_id"
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "created_at"
+    },
+    {
+      "relation": "journal_entry_lines",
+      "name": "line_no"
+    },
+    {
+      "relation": "procurement_evaluation_criteria",
+      "name": "updated_at"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "alternative_group"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "annual_quantity"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "dependency_group"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "element_type"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "onboard_stability_days"
+    },
+    {
+      "relation": "procurement_evaluation_offer_test_costs",
+      "name": "quantity"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "contract_model"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "package_model"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "risk_model"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "scenario_metadata"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "service_model"
+    },
+    {
+      "relation": "procurement_evaluation_offers",
+      "name": "technical_model"
+    },
+    {
+      "relation": "procurement_evaluation_results",
+      "name": "created_at"
+    },
+    {
+      "relation": "procurement_evaluation_results",
+      "name": "updated_at"
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "dependency_risk"
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "is_alternative"
+    },
+    {
+      "relation": "procurement_evaluation_tests",
+      "name": "unit"
+    },
+    {
+      "relation": "stock_items",
+      "name": "category_id"
+    },
+    {
+      "relation": "stock_items",
+      "name": "institute_id"
+    },
+    {
+      "relation": "stock_items",
+      "name": "manufacturer_id"
+    },
+    {
+      "relation": "users",
+      "name": "updated_at"
+    },
+    {
+      "relation": "warehouses",
+      "name": "is_active"
+    }
+  ],
+  "unverified": "Types, constraints, indexes, functions, triggers, RLS, grants, permission assignments, migration receipts, attestations and application acceptance"
+}

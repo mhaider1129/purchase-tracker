@@ -1,0 +1,31 @@
+-- DEVELOPMENT metadata only. One SELECT, no trailing ROLLBACK or transaction commands.
+-- Independently confirm Development project bcvfosxcyvarieiinovo in the dashboard.
+-- Run this whole file with no text selection; open Results and export its JSON cell.
+-- No database changes; no passwords, business rows or raw function bodies.
+SELECT jsonb_build_object('server_version',current_setting('server_version'),'database',current_database(),
+ 'actor',current_user,'session_user',session_user,'read_only',current_setting('transaction_read_only'),
+ 'expected_project_for_operator_confirmation','bcvfosxcyvarieiinovo','project_identity_independently_verified_by_sql',false,
+ 'catalog',jsonb_build_object('relations',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT c.relname name,c.relkind::text kind,c.relrowsecurity rls,c.relforcerowsecurity force_rls FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m') ORDER BY 1) r),
+'columns',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT c.relname relation,a.attname name,format_type(a.atttypid,a.atttypmod) type,a.attnotnull not_null,a.attidentity::text identity,a.attgenerated::text generated,pg_get_expr(d.adbin,d.adrelid) default_expression FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace JOIN pg_attribute a ON a.attrelid=c.oid LEFT JOIN pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m') AND a.attnum>0 AND NOT a.attisdropped ORDER BY 1,2) r),
+'constraints',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT c.relname relation,k.conname name,k.contype::text type,k.convalidated validated,k.condeferrable deferrable,k.condeferred deferred,pg_get_constraintdef(k.oid,true) definition FROM pg_constraint k JOIN pg_class c ON c.oid=k.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' ORDER BY 1,2) r),
+'indexes',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT t.relname relation,c.relname name,i.indisunique unique_index,i.indisprimary primary_index,i.indisvalid valid,i.indisready ready,i.indimmediate immediate,i.indnullsnotdistinct nulls_not_distinct,pg_get_indexdef(i.indexrelid,0,true) definition FROM pg_index i JOIN pg_class c ON c.oid=i.indexrelid JOIN pg_class t ON t.oid=i.indrelid JOIN pg_namespace n ON n.oid=t.relnamespace WHERE n.nspname='public' ORDER BY 1,2) r),
+'functions',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT p.proname name,pg_get_function_identity_arguments(p.oid) arguments,pg_get_function_result(p.oid) result,p.prosecdef security_definer,p.provolatile::text volatility,p.proconfig config,md5(pg_get_functiondef(p.oid)) definition_md5 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND p.prokind IN ('f','p') ORDER BY 1,2) r),
+'triggers',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT c.relname relation,t.tgname name,t.tgenabled::text enabled,pg_get_triggerdef(t.oid,true) definition FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND NOT t.tgisinternal ORDER BY 1,2) r),
+'policies',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT tablename relation,policyname name,permissive,roles::text[] roles,cmd,qual,with_check FROM pg_policies WHERE schemaname='public' ORDER BY 1,2) r),
+'browser_table_grants',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT c.relname relation,r.rolname role,has_table_privilege(r.oid,c.oid,'SELECT') can_select,has_table_privilege(r.oid,c.oid,'INSERT') can_insert,has_table_privilege(r.oid,c.oid,'UPDATE') can_update,has_table_privilege(r.oid,c.oid,'DELETE') can_delete FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace CROSS JOIN pg_roles r WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m') AND r.rolname IN ('anon','authenticated') ORDER BY 1,2) r),
+'browser_function_grants',
+(SELECT COALESCE(jsonb_agg(to_jsonb(r)),'[]'::jsonb) FROM (SELECT p.proname name,pg_get_function_identity_arguments(p.oid) arguments,r.rolname role,has_function_privilege(r.oid,p.oid,'EXECUTE') can_execute FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace CROSS JOIN pg_roles r WHERE n.nspname='public' AND p.prokind='f' AND r.rolname IN ('anon','authenticated') ORDER BY 1,2,3) r)),
+ 'roles',(SELECT COALESCE(jsonb_agg(jsonb_build_object('name',rolname,'login',rolcanlogin,'superuser',rolsuper,'bypass_rls',rolbypassrls,'create_database',rolcreatedb,'create_role',rolcreaterole)),'[]'::jsonb) FROM pg_roles),
+ 'role_memberships',(SELECT COALESCE(jsonb_agg(jsonb_build_object('role',r.rolname,'member',m.rolname,'admin',a.admin_option)),'[]'::jsonb) FROM pg_auth_members a JOIN pg_roles r ON r.oid=a.roleid JOIN pg_roles m ON m.oid=a.member),
+ 'object_acl',(SELECT COALESCE(jsonb_agg(jsonb_build_object('name',c.relname,'kind',c.relkind,'owner',pg_get_userbyid(c.relowner),'acl',c.relacl)),'[]'::jsonb) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relkind IN ('r','p','v','m','S')),
+ 'extensions',(SELECT COALESCE(jsonb_agg(jsonb_build_object('name',e.extname,'version',e.extversion,'schema',n.nspname)),'[]'::jsonb) FROM pg_extension e JOIN pg_namespace n ON n.oid=e.extnamespace),
+ 'sequences',(SELECT COALESCE(jsonb_agg(to_jsonb(s)),'[]'::jsonb) FROM pg_sequences s WHERE schemaname='public'),
+ 'release_tables',(SELECT COALESCE(jsonb_agg(jsonb_build_object('name',c.relname,'select_allowed',has_table_privilege(current_user,c.oid,'SELECT'),'rls_active',row_security_active(c.oid))),'[]'::jsonb) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname IN ('database_release_migrations','database_release_attestations'))) AS private_development_catalog;
