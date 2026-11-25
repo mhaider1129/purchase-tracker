@@ -681,10 +681,21 @@ test("checked-in bootstrap is deterministic metadata with no approved conflict o
   assert.equal(proposal.approval, "PENDING_SEPARATE_REVIEW");
   assert.equal(proposal.remoteWrites, 0);
   assert.equal(proposal.targets.backend.plan.conflicts, 13);
-  assert.equal(proposal.targets.frontend.plan.changeSet.length, 0);
+  const evidence = require("../../docs/devops/sync/reconciliation-evidence.json"),
+    evidenceCopy = structuredClone(evidence);
+  delete evidenceCopy.evidenceSha256;
+  assert.equal(pub.digest(evidenceCopy), evidence.evidenceSha256);
+  assert.equal(evidence.sourceSha, proposal.sourceSha);
+  assert.equal(proposal.targets.frontend.plan.changeSet.length, 4);
+  assert.equal(evidence.frontendProposedBaseline.equalPlan.changeSet.length, 0);
+  assert.equal(evidence.frontendProposedBaseline.incrementalPlan.conflicts, 0);
+  assert.equal(evidence.frontendProposedBaseline.approved, false);
+  assert.equal(evidence.backendBaseline, null);
+  assert.equal(evidence.lockedArtifacts.length, 105);
+  assert(evidence.lockedArtifacts.every((r) => r.sha256 === r.actualSha256));
   assert(
     proposal.targets.backend.decisions.every(
-      (x) => !x.approved && x.decision === "REQUIRES_UPSTREAM_REVIEW",
+      (x) => !x.approved && x.decision === "REQUIRES_CONTENT_REVIEW",
     ),
   );
   const root = path.resolve(__dirname, "../.."),

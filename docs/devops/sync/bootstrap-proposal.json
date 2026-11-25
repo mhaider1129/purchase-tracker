@@ -4,7 +4,7 @@
   "status": "BLOCKED",
   "approval": "PENDING_SEPARATE_REVIEW",
   "sourceRepository": "mhaider1129/purchase-tracker",
-  "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+  "sourceSha": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
   "remoteWrites": 0,
   "migrationExecution": "NOT_PERFORMED",
   "targets": {
@@ -14,7 +14,7 @@
         "kind": "sync-dry-run",
         "version": 1,
         "app": "backend",
-        "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+        "sourceSha": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
         "destinationSha": "70c4ee50bd0c8342eb30f573eacbd95f543a5e88",
         "previousSourceSha": null,
         "previousDestinationSha": null,
@@ -385,11 +385,26 @@
         "autoMergeEnabled": false,
         "publishEnabled": false,
         "workingTreesUsed": false,
-        "planSha256": "0daba92966a5e58cbe3894ce5e82deab9cff167565f6cda2cf416347b6e5ded7"
+        "planSha256": "21e17aedaec7850042a8475f99bd0a3d1698b0190176759d666ec44ac5871805"
       },
       "sourceTreeSha256": "1a060be742fd4e15f745ba9890b70af8da96b62fe7b24baad7f1ba53b14107e4",
+      "destinationTreeSha256": "1d66902d4481cfefbba1aa77a3c90b164556ae3b4b4e4d846c8f5ed235394646",
+      "sourceFullTreeSha256": "9a72ef6ed916343e6e1d728481d788f09f3bb26348761c1fad838afff3f42875",
+      "destinationFullTreeSha256": "f88f69048d6c0715450814c64ee43040c8d66d9736bc7d5ddeb6e9a668255f93",
+      "requiredCheck": "Backend synchronization gate",
       "changeSetSha256": "9938988ac091e24a796c35a00aca87109bdfd54cbe8a5d39263b549d205975bc",
       "decisions": [
+        {
+          "path": ".gitattributes",
+          "before": null,
+          "after": {
+            "blob": "a8099484434c808fb4db138ef0e35ca87b491441",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
         {
           "path": "config/db.js",
           "before": {
@@ -400,7 +415,8 @@
             "blob": "34aa8a73943bb095116f0e20f8607b40a7172502",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -413,7 +429,30 @@
             "blob": "1dc18593f5c73af99b9112775524235e3406d26e",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "database/releases/profiles/wici-observed.json",
+          "before": null,
+          "after": {
+            "blob": "cea62c4eb1a470de563c3b458c2a7a6c8594c1e0",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "database/releases/profiles/wici-target.json",
+          "before": null,
+          "after": {
+            "blob": "b8179f236b82b690ab0e923bf7c12a260cace4a5",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
           "approved": false
         },
         {
@@ -426,7 +465,8 @@
             "blob": "2124a408657949527dbcdc1dc3d387776dbb8873",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -439,7 +479,8 @@
             "blob": "56f37608e44c07f071a8232acdacf98021d40688",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -452,7 +493,41 @@
             "blob": "833c89862eb9cd517f10d55d2a478d080ffc348c",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "integration/fixtures/wici-function-styles.json",
+          "before": null,
+          "after": {
+            "blob": "05d27aabc92dd29eb1c2ccdfd7ff68619a50a108",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "integration/wiciObservedFixture.js",
+          "before": null,
+          "after": {
+            "blob": "6c3e73ee132e3fde8c793a8ac18638e1fb16806b",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "integration/wiciRecovery.postgres.js",
+          "before": null,
+          "after": {
+            "blob": "47ca20eaa463b623eb7f338509fe8d33a50f7d25",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
           "approved": false
         },
         {
@@ -465,7 +540,8 @@
             "blob": "0e882e3b8d1cc1aaefd3954bab7e639f5fad65a3",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -478,7 +554,8 @@
             "blob": "1d0f0ac66166b52f32a11d7339310261f3ddf527",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -491,7 +568,8 @@
             "blob": "de32360dd04474d7a7c9742cb4e1601a8e39d338",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -504,7 +582,8 @@
             "blob": "0e9ff7f319bde9e3e7a96e878e9dba8851689efa",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -517,7 +596,30 @@
             "blob": "dd5ca806ba498fe4ce70442e1ea6762dd754a913",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "scripts/lib/databaseRelease/profiles.js",
+          "before": null,
+          "after": {
+            "blob": "b6bdde1fdaf9546118b3dfbd89a0cb935e5bc7aa",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "scripts/prepareRuntimeIdentity.js",
+          "before": null,
+          "after": {
+            "blob": "bfc4ff9c433216fc9ad5f1886f6d186665c3eba0",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
           "approved": false
         },
         {
@@ -530,7 +632,8 @@
             "blob": "1b7366171bcedb8c793acc542ba97b0c8ff3cdf9",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
           "approved": false
         },
         {
@@ -543,7 +646,30 @@
             "blob": "e6a84845285a8e917a529bf13714cc9c8fafdba1",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "sql/manual/073_wici_observed_schema_recovery.sql",
+          "before": null,
+          "after": {
+            "blob": "4b401d4fba6705c3f1ab470fc45a8f5f8be885ba",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "sql/operator-recovery/wici-production-recovery.sql",
+          "before": null,
+          "after": {
+            "blob": "9fa30dfb41e8bdd86f6b9835430fd8fba5017a96",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
           "approved": false
         },
         {
@@ -556,7 +682,74 @@
             "blob": "32f189b89a2d32f4723ed817b677b8230d956bde",
             "mode": "100644"
           },
-          "decision": "REQUIRES_UPSTREAM_REVIEW",
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "tests/databaseReleasePaths.test.js",
+          "before": null,
+          "after": {
+            "blob": "c65afa5f70f7d19f3f4b1f8f48d31a90e7e4fc55",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "tests/databaseReleaseVisibility.test.js",
+          "before": null,
+          "after": {
+            "blob": "189658e1561f2898acfd0418ce1380bd3e65fcc5",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "tests/prepareRuntimeIdentity.test.js",
+          "before": null,
+          "after": {
+            "blob": "27d9c9cd43219756f4c27cbd3faf1e7b786d611d",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "tests/runtimeDatabaseIdentity.test.js",
+          "before": null,
+          "after": {
+            "blob": "d6a471c018e12767c637c55046a2f4899055f984",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "tests/wiciRecoveryProfiles.test.js",
+          "before": null,
+          "after": {
+            "blob": "5a5ac5e7eac427d8b90f1545cbb921c7b3759ebe",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "utils/runtimeDatabaseIdentity.js",
+          "before": null,
+          "after": {
+            "blob": "7c46432b6d68d8f2834ae543a0bea23d2a0069cc",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
           "approved": false
         }
       ],
@@ -1189,7 +1382,7 @@
             "kind": "sync-dry-run",
             "version": 1,
             "app": "backend",
-            "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+            "sourceSha": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
             "destinationSha": "2c2a4651a10a54a20a1f74dfade66260b8a1e46e",
             "previousSourceSha": null,
             "previousDestinationSha": null,
@@ -1316,7 +1509,7 @@
             "autoMergeEnabled": false,
             "publishEnabled": false,
             "workingTreesUsed": false,
-            "planSha256": "feacfdb5f3620901f666742ae41625b06bf35064d1a784154acd0bb11d5c7239"
+            "planSha256": "ef9743072862f111a982023d5cb055b90f1710b6d0a00c33381d8d788decc3c5"
           }
         },
         {
@@ -1327,7 +1520,7 @@
             "kind": "sync-dry-run",
             "version": 1,
             "app": "backend",
-            "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+            "sourceSha": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
             "destinationSha": "1541dd727e95700111f62ea93a30f1e6774f0fe5",
             "previousSourceSha": null,
             "previousDestinationSha": null,
@@ -1570,7 +1763,7 @@
             "autoMergeEnabled": false,
             "publishEnabled": false,
             "workingTreesUsed": false,
-            "planSha256": "cdeb153b212083d1af279e91639e8b0b6605c47eede671fd08673f1672cb0692"
+            "planSha256": "6ba3910e2bdaa435c638259dc486e81895492bc7c39f73699301c1dec0a366a2"
           }
         }
       ]
@@ -1581,25 +1774,131 @@
         "kind": "sync-dry-run",
         "version": 1,
         "app": "frontend",
-        "sourceSha": "3d5d236c94300ad8551eca5f1731660a07b2b05c",
+        "sourceSha": "180ea21c2d8bf233457a6ef6c6ede4bfceea0886",
         "destinationSha": "8a4ac51a52d30877c21e7300af9d4a1d5d410d6e",
         "previousSourceSha": null,
         "previousDestinationSha": null,
-        "changeSet": [],
-        "conflicts": 0,
-        "status": "NO_CHANGES",
+        "changeSet": [
+          {
+            "path": "src/components/priority/PriorityAssessmentDialog.jsx",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "a2f4075308911fc226b9060673327b5bad6ea57f",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "src/pages/ProcurementPriorityManagementPage.css",
+            "action": "update",
+            "before": {
+              "blob": "a52e08148ca0c105a3a79e9ae2d3dbb41d4327fb",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "586920b76d23e021e920debd77d363af8fe86bc0",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "src/pages/ProcurementPriorityManagementPage.jsx",
+            "action": "update",
+            "before": {
+              "blob": "a779ff0bb6ccfc2d19e5bc96f49b32464e948ec8",
+              "mode": "100644"
+            },
+            "after": {
+              "blob": "35c079809199e8b97cf974a2d0e83cb5f45d9438",
+              "mode": "100644"
+            },
+            "conflict": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+            "deletionRequiresExplicitReview": false
+          },
+          {
+            "path": "src/pages/ProcurementPriorityManagementPage.workspace.test.jsx",
+            "action": "add",
+            "before": null,
+            "after": {
+              "blob": "953ef5c5a277656bd3997b4399787369f019a313",
+              "mode": "100644"
+            },
+            "conflict": null,
+            "deletionRequiresExplicitReview": false
+          }
+        ],
+        "conflicts": 2,
+        "status": "REQUIRES_RECONCILIATION",
         "writesPerformed": false,
         "destinationCIRequired": true,
         "autoMergeEnabled": false,
         "publishEnabled": false,
         "workingTreesUsed": false,
-        "planSha256": "2f49ca17553fea6c774282b6b64e1903d5d1dcd33b448df3b60aeb6033abb864"
+        "planSha256": "96d44d48c6edf48061ec4336a9a881d4c70385b8fb90deef584e252f478f81d8"
       },
-      "sourceTreeSha256": "84c04dac7a381c9e59852fda2d8e7d1e957a8591d72802d2387fade2c9033a4f",
-      "changeSetSha256": "634aa73d7bb3e436920a915c6ecb97a17cf3a3c0003f1df3c124a86089396bc6",
-      "decisions": [],
+      "sourceTreeSha256": "f09d6bf055b554c88ebcb2c2b274d4489026b325c03b3cd32a3b3d5f337d0a98",
+      "destinationTreeSha256": "84c04dac7a381c9e59852fda2d8e7d1e957a8591d72802d2387fade2c9033a4f",
+      "sourceFullTreeSha256": "997041f1cc156b5f4d017cb09afd24f2f19158bb8aca553d4e94a93968719078",
+      "destinationFullTreeSha256": "f605d63bc030c0ce88610a7aba5844caaf2332bf4df07a2cb22ecba8ac83ccd3",
+      "requiredCheck": "Frontend synchronization gate",
+      "changeSetSha256": "a203d54c2ca06d62dc3f3293405b070193a2549a4de0fa4868e2dca992326ea0",
+      "decisions": [
+        {
+          "path": "src/components/priority/PriorityAssessmentDialog.jsx",
+          "before": null,
+          "after": {
+            "blob": "a2f4075308911fc226b9060673327b5bad6ea57f",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        },
+        {
+          "path": "src/pages/ProcurementPriorityManagementPage.css",
+          "before": {
+            "blob": "a52e08148ca0c105a3a79e9ae2d3dbb41d4327fb",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "586920b76d23e021e920debd77d363af8fe86bc0",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "src/pages/ProcurementPriorityManagementPage.jsx",
+          "before": {
+            "blob": "a779ff0bb6ccfc2d19e5bc96f49b32464e948ec8",
+            "mode": "100644"
+          },
+          "after": {
+            "blob": "35c079809199e8b97cf974a2d0e83cb5f45d9438",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": "INITIAL_DIFFERENCE_REQUIRES_REVIEW",
+          "approved": false
+        },
+        {
+          "path": "src/pages/ProcurementPriorityManagementPage.workspace.test.jsx",
+          "before": null,
+          "after": {
+            "blob": "953ef5c5a277656bd3997b4399787369f019a313",
+            "mode": "100644"
+          },
+          "decision": "REQUIRES_CONTENT_REVIEW",
+          "plannerMarker": null,
+          "approved": false
+        }
+      ],
       "historicalSql": []
     }
   },
-  "proposalSha256": "5011ca9b02692a5d4888bf98a46bd53246897a083c03fc032f58fd02d08bf3ca"
+  "proposalSha256": "baaf231fcf77caca202f48181b5e5f6ec2e13a34f83425314f7775b552202e6c"
 }
