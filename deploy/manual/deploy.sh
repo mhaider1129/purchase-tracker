@@ -308,7 +308,7 @@ rm "$RELEASE/backend/uploads"; ln -s "$UPLOADS_AFTER" "$RELEASE/backend/uploads"
 link_to "$BACKEND_LIVE" "$RELEASE/backend"
 link_to "$FRONTEND_LIVE" "$RELEASE/frontend/build"
 NODE_ENV=production HOST=127.0.0.1 PORT=5000 APP_RELEASE_REF="$SOURCE_SHA" DB_RELEASE_ENVIRONMENT=production RUNTIME_BACKGROUND_WORKERS_ENABLED=true \
-  pm2 start "$RELEASE/backend/app.js" --cwd "$RELEASE/backend" --name purchase-backend --interpreter "$(command -v node)" --exp-backoff-restart-delay 1000 --max-restarts 10 --min-uptime 10000 --kill-timeout 15000 >/dev/null
+  pm2 start "$RELEASE/backend/app.js" --cwd "$RELEASE/backend" --name purchase-backend --interpreter "$(command -v node)" --exp-backoff-restart-delay 1000 --max-restarts 10 --kill-timeout 15000 >/dev/null
 health http://127.0.0.1:5000 "$SOURCE_SHA" true
 sudo -n /usr/local/sbin/wici-nginx-control production
 sudo -n nginx -t
