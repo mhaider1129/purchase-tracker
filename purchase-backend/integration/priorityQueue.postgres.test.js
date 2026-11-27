@@ -114,7 +114,7 @@ test("management query preserves results and evaluates completion once per scope
       0,
     );
     assert(oldCalls > currentCalls);
-    assert.equal(currentCalls, 8);
+    assert.equal(currentCalls, 6);
     console.log(
       JSON.stringify({
         syntheticCompletionEvaluations: {
