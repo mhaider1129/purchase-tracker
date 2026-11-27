@@ -98,12 +98,16 @@ test("fractional operational quantities widen while monetary precision stays unc
     "numeric(14,2)",
   );
 });
-test("checked-in operator SQL is reproducible from the final source-bound plan", () => {
+test("archived operator SQL is reproducible for its original source-bound release", () => {
   const {
     bundle,
     selectMigrations,
   } = require("../scripts/lib/databaseRelease/planner");
   const inventory = service.loadInventory();
+  // This operator artifact belongs to wici-runtime-deployment-2026-11-24-r1
+  // (source inventory at 29a1562c), not to every subsequent application release.
+  // Never rebind an archived production release reference to changed code.
+  const archivedApplicationDigest = "edda51c09a30b5dbc9f212ac63029551235a0acf78c6a42a92438da3a843f3c1";
   const actual = fs.readFileSync(
     path.join(
       __dirname,
@@ -119,7 +123,7 @@ test("checked-in operator SQL is reproducible from the final source-bound plan",
       environment: "production",
       actor: "WICI authorized operator",
       releaseRef: "wici-runtime-deployment-2026-11-24-r1",
-    }),
+    }).replaceAll(inventory.application_manifest_sha256, archivedApplicationDigest),
   );
   expect(() =>
     selectMigrations(inventory, ["wici-production-recovery"], "wici-2026-11"),
