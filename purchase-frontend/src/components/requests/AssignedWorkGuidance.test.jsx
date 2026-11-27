@@ -19,7 +19,7 @@ const requests = [
     status: "Approved",
     estimated_cost: 0,
     justification: "Ready workstation",
-    completion: {can_complete:true,fulfillment_complete:true},
+    completion: { can_complete: true, fulfillment_complete: true },
     status_summary: {
       total_items: 2,
       purchased_count: 2,
@@ -201,24 +201,29 @@ test("registration is the primary item action and advanced actions start collaps
     name: "Register procurement",
   });
   fireEvent.click(actions[1]);
-  expect(await screen.findByText("Clinical chair")).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "Mark all as purchased" }),
-  ).not.toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Register Procurement" }));
-  expect(
-    screen.getByRole("form", {
-      name: "Register procurement for Clinical chair",
-    }),
+    await screen.findByRole("form", { name: "Record request purchases" }),
   ).toBeInTheDocument();
-  expect(screen.getByLabelText("Quantity purchased")).toHaveValue(6);
+  expect(
+    screen.getByLabelText("Quantity purchased for Clinical chair"),
+  ).toHaveValue(6);
+  expect(screen.getByLabelText("Unit cost for Clinical chair")).toBeRequired();
   expect(api.post).not.toHaveBeenCalled();
 });
 
 // A finalized purchase counter is never canonical fulfillment evidence.
-test('legacy counters cannot make a request ready without canonical completion',async()=>{
- api.get.mockResolvedValue({data:{data:requests.map(({completion,...request})=>request)}});
- renderPage();await screen.findByText('Ready workstation');
- expect(screen.getAllByRole('button',{name:'Mark Request as Completed'}).every(button=>button.disabled)).toBe(true);
- expect(screen.getByRole('button',{name:'Ready to complete 0'})).toBeInTheDocument();
+test("legacy counters cannot make a request ready without canonical completion", async () => {
+  api.get.mockResolvedValue({
+    data: { data: requests.map(({ completion, ...request }) => request) },
+  });
+  renderPage();
+  await screen.findByText("Ready workstation");
+  expect(
+    screen
+      .getAllByRole("button", { name: "Mark Request as Completed" })
+      .every((button) => button.disabled),
+  ).toBe(true);
+  expect(
+    screen.getByRole("button", { name: "Ready to complete 0" }),
+  ).toBeInTheDocument();
 });

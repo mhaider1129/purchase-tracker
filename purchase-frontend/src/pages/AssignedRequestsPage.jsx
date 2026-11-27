@@ -1,4 +1,4 @@
-import {CompletionBadge} from '../components/CompletionReportingSummary';
+import { CompletionBadge } from "../components/CompletionReportingSummary";
 import useUiTranslation from "../utils/useUiTranslation";
 import PaginationControls from "../components/ui/PaginationControls";
 import useRequestListPagination from "../hooks/useRequestListPagination";
@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import axios from "../api/axios";
 import { printRequest } from "../api/requests";
+import AssignedPurchaseEntry from "../components/AssignedPurchaseEntry";
 import ProcurementItemStatusPanel from "../components/ProcurementItemStatusPanel";
 import PageShell from "../components/layout/PageShell";
 import ApprovalTimeline from "../components/ApprovalTimeline";
@@ -152,7 +153,12 @@ const summaryToneClasses = {
 };
 
 const evaluateCompletionState = (request = {}, itemsOverride = null) => {
-  if(request.completion)return {canComplete:request.completion.can_complete===true,missingCost:false,incompleteItems:!request.completion.fulfillment_complete};
+  if (request.completion)
+    return {
+      canComplete: request.completion.can_complete === true,
+      missingCost: false,
+      incompleteItems: !request.completion.fulfillment_complete,
+    };
   const summary = request.status_summary || {};
   const itemsList = Array.isArray(itemsOverride) ? itemsOverride : null;
 
@@ -310,7 +316,6 @@ const AssignedRequestsPage = () => {
   const [attachments, setAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState(null);
-  const [bulkUpdatingRequestId, setBulkUpdatingRequestId] = useState(null);
   const [printingRequestId, setPrintingRequestId] = useState(null);
   const [completionStates, setCompletionStates] = useState({});
   const [manualStatusItem, setManualStatusItem] = useState(null);
@@ -415,6 +420,7 @@ const AssignedRequestsPage = () => {
     } catch (err) {
       console.error(`❌ Error fetching items for request ${requestId}:`, err);
       alert(tr("alerts.itemsLoadFailed", "Failed to load request items"));
+      setItems([]);
       setGroupedItems(createEmptyGroups());
     } finally {
       setLoadingItems(false);
@@ -992,99 +998,6 @@ const AssignedRequestsPage = () => {
     }
   };
 
-  const handleAutoPurchaseAll = async (requestId) => {
-    if (expandedRequestId !== requestId) {
-      return;
-    }
-
-    if (!items.length) {
-      alert(
-        tr(
-          "alerts.noItemsForBulkUpdate",
-          "No items available to update for this request.",
-        ),
-      );
-      return;
-    }
-
-    const updatableItems = items.filter((item) => {
-      const requestedQty = Number(item.quantity ?? 0);
-      return (
-        item.supports_procurement_events !== false &&
-        item.id &&
-        !Number.isNaN(requestedQty) &&
-        requestedQty > 0
-      );
-    });
-
-    if (updatableItems.length === 0) {
-      alert(
-        tr(
-          "alerts.invalidBulkItems",
-          "Items must have a requested quantity greater than zero to be auto-filled.",
-        ),
-      );
-      return;
-    }
-
-    const shouldProceed = window.confirm(
-      tr(
-        "confirm.bulkPurchase",
-        "This will copy the requested quantity into the purchased quantity and mark every item as purchased. Continue?",
-      ),
-    );
-
-    if (!shouldProceed) {
-      return;
-    }
-
-    setBulkUpdatingRequestId(requestId);
-    try {
-      for (const item of updatableItems) {
-        const requestedQty = Number(item.quantity ?? 0);
-        const purchasedQty = Number(item.purchased_quantity ?? 0);
-        const remainingQty = Number(
-          item.remaining_quantity ?? Math.max(requestedQty - purchasedQty, 0),
-        );
-
-        if (remainingQty <= 0) {
-          continue;
-        }
-
-        await axios.post(
-          `/requests/${requestId}/items/${item.id}/procurement-events`,
-          {
-            event_quantity: remainingQty,
-            unit_cost: item.unit_cost ?? null,
-            procurement_note: tr(
-              "items.bulkFill.procurementEntryNote",
-              "Auto-filled remaining procurement quantity.",
-            ),
-          },
-        );
-      }
-
-      await fetchItems(requestId);
-      alert(
-        tr(
-          "alerts.bulkPurchaseSuccess",
-          "All items were marked as purchased using their requested quantities.",
-        ),
-      );
-    } catch (err) {
-      console.error("❌ Error performing bulk purchase update:", err);
-      alert(
-        tr(
-          "alerts.bulkPurchaseFailed",
-
-          "Failed to update all items. Some items may not have been updated.",
-        ),
-      );
-    } finally {
-      setBulkUpdatingRequestId(null);
-    }
-  };
-
   const filterOptions = useMemo(() => {
     const buildOptions = (key) =>
       Array.from(
@@ -1562,7 +1475,7 @@ const AssignedRequestsPage = () => {
                     className={`h-1.5 ${isUrgent ? "bg-rose-500" : completionState.canComplete ? "bg-emerald-500" : "bg-blue-600"}`}
                     aria-hidden="true"
                   />
-                  <CompletionBadge completion={request.completion}/>
+                  <CompletionBadge completion={request.completion} />
                   <div className="p-5 sm:p-6">
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0 flex-1">
@@ -1793,16 +1706,17 @@ const AssignedRequestsPage = () => {
                         id={`assigned-procurement-${request.id}`}
                         className="mt-6 border-t border-slate-200 pt-6"
                       >
-                        <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                          <h3 className="font-semibold">
-                            {uiText("Register purchases by item")}
-                          </h3>
-                          <p>
-                            {uiText(
-                              "Choose Register Procurement on an item, enter the quantity purchased, and record the purchase. Partial quantities stay open; complete the request after all items are finalized.",
-                            )}
-                          </p>
-                        </div>
+                        {!loadingItems && (
+                          <AssignedPurchaseEntry
+                            key={request.id}
+                            requestId={request.id}
+                            items={items}
+                            onUpdate={async () => {
+                              await fetchItems(request.id);
+                              await fetchAssignedRequests();
+                            }}
+                          />
+                        )}
                         <details className="mb-4 rounded-lg border border-slate-200 p-3">
                           <summary className="cursor-pointer text-sm font-semibold">
                             {uiText("Request total cost override")}
@@ -1871,195 +1785,153 @@ const AssignedRequestsPage = () => {
                           </p>
                         ) : (
                           <>
-                            {items.some(
-                              (item) =>
-                                item.supports_procurement_events !== false,
-                            ) && (
-                              <details className="mb-4 rounded-lg border border-slate-200 p-3">
-                                <summary className="cursor-pointer text-sm font-semibold">
-                                  {uiText("Bulk purchase actions")}
-                                </summary>
-                                <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                    <div>
-                                      <h3 className="text-sm font-semibold text-emerald-900">
-                                        {tr(
-                                          "items.bulkFill.title",
-                                          "Auto-fill purchased quantities",
-                                        )}
-                                      </h3>
-                                      <p className="text-sm text-emerald-800">
-                                        {tr(
-                                          "items.bulkFill.description",
-                                          "Adds a procurement entry for each remaining quantity and marks fully procured items as purchased.",
-                                        )}
-                                      </p>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleAutoPurchaseAll(request.id)
-                                      }
-                                      disabled={
-                                        bulkUpdatingRequestId === request.id
-                                      }
-                                      className={`inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-semibold text-white transition ${
-                                        bulkUpdatingRequestId === request.id
-                                          ? "bg-emerald-400 cursor-wait"
-                                          : "bg-emerald-600 hover:bg-emerald-700"
-                                      }`}
-                                    >
-                                      {bulkUpdatingRequestId === request.id
-                                        ? tr(
-                                            "items.bulkFill.updating",
-                                            "Updating items…",
-                                          )
-                                        : tr(
-                                            "items.bulkFill.cta",
-                                            "Mark all as purchased",
-                                          )}
-                                    </button>
-                                  </div>
-                                </div>
-                              </details>
-                            )}
-                            <div className="mb-4 flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                              <div>
-                                <h3 className="text-sm font-semibold text-slate-800">
-                                  {tr("items.sort.title", "Item order")}
-                                </h3>
-                                <p className="text-xs text-slate-500">
-                                  {tr(
-                                    "items.sort.helper",
-                                    "Sorting only changes this view and does not update the saved request.",
-                                  )}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSortItemsAlphabetically((prev) => !prev)
-                                }
-                                disabled={items.length < 2}
-                                className="self-start rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
-                              >
-                                {sortItemsAlphabetically
-                                  ? tr("items.sort.original", "Original order")
-                                  : tr("items.sort.alphabetical", "Sort A-Z")}
-                              </button>
-                            </div>
-                            {itemSections.map(
-                              ({ key, title, description, tone, empty }) => {
-                                const sectionItems = getDisplayItems(
-                                  groupedItems[key] || [],
-                                  sortItemsAlphabetically,
-                                );
-                                if (
-                                  key === "other" &&
-                                  sectionItems.length === 0
-                                ) {
-                                  return null;
-                                }
-
-                                return (
-                                  <div key={key} className="mt-6">
-                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                      <div>
-                                        <h3 className="text-lg font-semibold text-slate-800">
-                                          {title}
-                                        </h3>
-                                        <p className="text-sm text-gray-500">
-                                          {description}
-                                        </p>
-                                      </div>
-                                      <span
-                                        className={`text-xs font-medium px-3 py-1 rounded-full ${
-                                          summaryToneClasses[tone] ||
-                                          summaryToneClasses.default
-                                        }`}
-                                      >
-                                        {tr(
-                                          "sections.count",
-                                          "{{count}} item",
-                                          { count: sectionItems.length },
-                                        )}
-                                      </span>
-                                    </div>
-                                    {sectionItems.length === 0 ? (
-                                      <p className="mt-3 text-sm italic text-gray-500">
-                                        {empty}
-                                      </p>
-                                    ) : (
-                                      sectionItems.map((item, idx) => {
-                                        const itemWithRequest = {
-                                          ...item,
-                                          request_id:
-                                            item.request_id || request.id,
-                                        };
-                                        const itemStatus = String(
-                                          item.procurement_status || "",
-                                        )
-                                          .trim()
-                                          .toLowerCase();
-                                        const canManuallyClose = ![
-                                          "purchased",
-                                          "completed",
-                                          "not_procured",
-                                          "canceled",
-                                        ].includes(itemStatus);
-
-                                        return (
-                                          <div
-                                            key={item.id || idx}
-                                            className="mb-3 rounded-xl border border-slate-200 bg-white"
-                                          >
-                                            {canManuallyClose && (
-                                              <details className="p-3">
-                                                <summary className="cursor-pointer text-xs font-semibold">
-                                                  {uiText(
-                                                    "Close without further purchasing",
-                                                  )}
-                                                </summary>
-                                                <div className="flex flex-col gap-2 border-b border-slate-100 bg-amber-50/70 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                                                  <p className="text-amber-900">
-                                                    {tr(
-                                                      "items.manualClose.helper",
-                                                      "If no more procurement will happen for this item, close the remaining quantity manually.",
-                                                    )}
-                                                  </p>
-                                                  <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                      openManualStatusModal(
-                                                        itemWithRequest,
-                                                        "completed",
-                                                      )
-                                                    }
-                                                    className="self-start rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:self-auto"
-                                                  >
-                                                    {tr(
-                                                      "items.manualClose.cta",
-                                                      "Close as Completed",
-                                                    )}
-                                                  </button>
-                                                </div>
-                                              </details>
-                                            )}
-                                            <ProcurementItemStatusPanel
-                                              inlineRegistration
-                                              item={itemWithRequest}
-                                              onUpdate={() =>
-                                                fetchItems(request.id)
-                                              }
-                                            />
-                                          </div>
-                                        );
-                                      })
+                            <details>
+                              <summary className="cursor-pointer text-sm font-semibold">
+                                {uiText(
+                                  "Item history, attachments and manual closure",
+                                )}
+                              </summary>
+                              <div className="mb-4 flex flex-col gap-2 rounded-lg border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <h3 className="text-sm font-semibold text-slate-800">
+                                    {tr("items.sort.title", "Item order")}
+                                  </h3>
+                                  <p className="text-xs text-slate-500">
+                                    {tr(
+                                      "items.sort.helper",
+                                      "Sorting only changes this view and does not update the saved request.",
                                     )}
-                                  </div>
-                                );
-                              },
-                            )}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setSortItemsAlphabetically((prev) => !prev)
+                                  }
+                                  disabled={items.length < 2}
+                                  className="self-start rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+                                >
+                                  {sortItemsAlphabetically
+                                    ? tr(
+                                        "items.sort.original",
+                                        "Original order",
+                                      )
+                                    : tr("items.sort.alphabetical", "Sort A-Z")}
+                                </button>
+                              </div>
+                              {itemSections.map(
+                                ({ key, title, description, tone, empty }) => {
+                                  const sectionItems = getDisplayItems(
+                                    groupedItems[key] || [],
+                                    sortItemsAlphabetically,
+                                  );
+                                  if (
+                                    key === "other" &&
+                                    sectionItems.length === 0
+                                  ) {
+                                    return null;
+                                  }
+
+                                  return (
+                                    <div key={key} className="mt-6">
+                                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                          <h3 className="text-lg font-semibold text-slate-800">
+                                            {title}
+                                          </h3>
+                                          <p className="text-sm text-gray-500">
+                                            {description}
+                                          </p>
+                                        </div>
+                                        <span
+                                          className={`text-xs font-medium px-3 py-1 rounded-full ${
+                                            summaryToneClasses[tone] ||
+                                            summaryToneClasses.default
+                                          }`}
+                                        >
+                                          {tr(
+                                            "sections.count",
+                                            "{{count}} item",
+                                            { count: sectionItems.length },
+                                          )}
+                                        </span>
+                                      </div>
+                                      {sectionItems.length === 0 ? (
+                                        <p className="mt-3 text-sm italic text-gray-500">
+                                          {empty}
+                                        </p>
+                                      ) : (
+                                        sectionItems.map((item, idx) => {
+                                          const itemWithRequest = {
+                                            ...item,
+                                            request_id:
+                                              item.request_id || request.id,
+                                          };
+                                          const itemStatus = String(
+                                            item.procurement_status || "",
+                                          )
+                                            .trim()
+                                            .toLowerCase();
+                                          const canManuallyClose = ![
+                                            "purchased",
+                                            "completed",
+                                            "not_procured",
+                                            "canceled",
+                                          ].includes(itemStatus);
+
+                                          return (
+                                            <div
+                                              key={item.id || idx}
+                                              className="mb-3 rounded-xl border border-slate-200 bg-white"
+                                            >
+                                              {canManuallyClose && (
+                                                <details className="p-3">
+                                                  <summary className="cursor-pointer text-xs font-semibold">
+                                                    {uiText(
+                                                      "Close without further purchasing",
+                                                    )}
+                                                  </summary>
+                                                  <div className="flex flex-col gap-2 border-b border-slate-100 bg-amber-50/70 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+                                                    <p className="text-amber-900">
+                                                      {tr(
+                                                        "items.manualClose.helper",
+                                                        "If no more procurement will happen for this item, close the remaining quantity manually.",
+                                                      )}
+                                                    </p>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        openManualStatusModal(
+                                                          itemWithRequest,
+                                                          "completed",
+                                                        )
+                                                      }
+                                                      className="self-start rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:self-auto"
+                                                    >
+                                                      {tr(
+                                                        "items.manualClose.cta",
+                                                        "Close as Completed",
+                                                      )}
+                                                    </button>
+                                                  </div>
+                                                </details>
+                                              )}
+                                              <ProcurementItemStatusPanel
+                                                inlineRegistration
+                                                item={itemWithRequest}
+                                                onUpdate={() =>
+                                                  fetchItems(request.id)
+                                                }
+                                              />
+                                            </div>
+                                          );
+                                        })
+                                      )}
+                                    </div>
+                                  );
+                                },
+                              )}
+                            </details>
                           </>
                         )}
 

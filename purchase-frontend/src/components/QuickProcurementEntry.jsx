@@ -29,7 +29,7 @@ export default function QuickProcurementEntry({
     form.unit_cost === "" || form.unit_cost == null
       ? null
       : Number(form.unit_cost);
-  const validCost = cost === null || (Number.isFinite(cost) && cost >= 0);
+  const validCost = cost !== null && Number.isFinite(cost) && cost >= 0;
   return (
     <form
       className="quick-procurement"
@@ -71,12 +71,13 @@ export default function QuickProcurementEntry({
             />
           </label>
           <label htmlFor={`${id}-cost`}>
-            {uiText("Unit cost (optional)")}
+            {uiText("Unit cost (required)")}
             <AmountInput
               id={`${id}-cost`}
+              required
               value={form.unit_cost}
               onChange={change("unit_cost")}
-              placeholder={uiText("Leave blank if unknown")}
+              placeholder={uiText("Enter unit cost")}
             />
           </label>
           <button

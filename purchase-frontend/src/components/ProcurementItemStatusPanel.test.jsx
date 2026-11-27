@@ -36,7 +36,7 @@ test("assigned inline entry records a partial purchase with the existing event p
   expect(screen.getByText(/will remain open/)).toHaveTextContent(
     "2 to record · 4 will remain open",
   );
-  fireEvent.change(screen.getByLabelText("Unit cost (optional)"), {
+  fireEvent.change(screen.getByLabelText("Unit cost (required)"), {
     target: { value: "30" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Record purchase" }));
@@ -82,8 +82,8 @@ test("invalid quantities and costs do not submit; remaining shortcut and optiona
     screen.getByRole("button", { name: "Use remaining quantity" }),
   );
   expect(screen.getByLabelText("Quantity purchased")).toHaveValue(6);
-  fireEvent.change(screen.getByLabelText("Unit cost (optional)"), {
-    target: { value: "" },
+  fireEvent.change(screen.getByLabelText("Unit cost (required)"), {
+    target: { value: "0" },
   });
   fireEvent.click(screen.getByText("Supplier, purchase date and note"));
   fireEvent.change(screen.getByLabelText("Supplier (optional)"), {
@@ -101,7 +101,7 @@ test("invalid quantities and costs do not submit; remaining shortcut and optiona
       expect.any(String),
       expect.objectContaining({
         event_quantity: 6,
-        unit_cost: null,
+        unit_cost: 0,
         supplier_id: "9",
         procurement_date: "2026-11-03",
         procurement_note: "Delivery confirmed",
