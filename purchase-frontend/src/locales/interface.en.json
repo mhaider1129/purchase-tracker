@@ -984,5 +984,8 @@
   "Proposed generic name": "Proposed generic name",
   "Why no catalog item is suitable": "Why no catalog item is suitable",
   "Search active Generic Items by code, name or description": "Search active Generic Items by code, name or description",
-  "Priority Management took too long to respond. Try again.": "Priority Management took too long to respond. Try again."
+  "Priority Management took too long to respond. Try again.": "Priority Management took too long to respond. Try again.",
+  "Unit cost (required)": "Unit cost (required)",
+  "Enter unit cost": "Enter unit cost",
+  "Item history, attachments and manual closure": "Item history, attachments and manual closure"
 }

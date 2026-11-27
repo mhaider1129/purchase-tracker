@@ -704,8 +704,9 @@ const ProcurementItemStatusPanel = ({
     }
 
     if (
-      numericUnitCost !== null &&
-      (!Number.isFinite(numericUnitCost) || numericUnitCost < 0)
+      numericUnitCost === null ||
+      !Number.isFinite(numericUnitCost) ||
+      numericUnitCost < 0
     ) {
       setMessage({
         type: "error",
@@ -1066,9 +1067,10 @@ const ProcurementItemStatusPanel = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700">
-                    {uiText("Unit cost")}
+                    {uiText("Unit cost (required)")}
                   </label>
                   <AmountInput
+                    required
                     min={0}
                     step="0.01"
                     value={entryForm.unit_cost}

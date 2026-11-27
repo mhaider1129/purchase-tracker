@@ -1,0 +1,153 @@
+.assigned-purchase-entry {
+  margin-bottom: 24px;
+  border: 1px solid var(--color-border-default, #dbe3ef);
+  border-radius: 12px;
+  background: var(--color-bg-surface, #fff);
+  color: var(--color-text-primary, #172033);
+  padding: 20px;
+}
+.assigned-purchase-entry h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+.assigned-purchase-entry header p {
+  margin: 8px 0 18px;
+  font-size: 13px;
+  color: var(--color-text-muted, #64748b);
+}
+.assigned-purchase-scroll {
+  overflow: auto;
+}
+.assigned-purchase-entry table {
+  width: 100%;
+  min-width: 650px;
+  font-size: 13px;
+  text-align: start;
+}
+.assigned-purchase-entry :is(th, td) {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border-default, #dbe3ef);
+  text-align: start;
+}
+.assigned-purchase-entry small {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-text-muted, #64748b);
+}
+.assigned-purchase-entry :is(input:not([type="checkbox"]), textarea) {
+  width: 100%;
+  min-width: 110px;
+  border: 1px solid var(--color-border-default, #cbd5e1);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--color-bg-canvas, #f6f8fc);
+  color: var(--color-text-primary, #172033);
+}
+.assigned-purchase-entry details {
+  margin-top: 16px;
+  font-size: 13px;
+}
+.assigned-purchase-entry summary {
+  cursor: pointer;
+  color: var(--color-accent, #2563eb);
+  font-weight: 600;
+}
+.assigned-purchase-entry label {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+.assigned-purchase-entry footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 18px;
+  font-size: 13px;
+}
+.assigned-purchase-entry button {
+  padding: 11px 16px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.assigned-purchase-entry :disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.assigned-purchase-entry [role="status"] {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--color-bg-subtle, #eff6ff);
+}
+.assigned-purchase-entry :is(input, textarea, button, summary):focus-visible {
+  outline: 3px solid var(--color-focus, #3b82f6);
+  outline-offset: 3px;
+}
+.assigned-purchase-entry ul {
+  margin-top: 12px;
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .assigned-purchase-entry {
+    padding: 14px;
+  }
+  .assigned-purchase-entry footer button {
+    width: 100%;
+  }
+}
+.assigned-purchase-entry fieldset {
+  min-width: 0;
+}
+.assigned-purchase-scroll {
+  max-width: 100%;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .assigned-purchase-entry table {
+    display: block;
+    min-width: 0;
+  }
+  .assigned-purchase-entry thead {
+    display: none;
+  }
+  .assigned-purchase-entry tbody {
+    display: grid;
+    gap: 14px;
+  }
+  .assigned-purchase-entry tr {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    border: 1px solid var(--color-border-default, #dbe3ef);
+    border-radius: 10px;
+    padding: 8px;
+  }
+  .assigned-purchase-entry td {
+    border: 0;
+    min-width: 0;
+    padding: 8px;
+  }
+  .assigned-purchase-entry td:nth-child(n + 3) {
+    grid-column: 1/-1;
+  }
+  .assigned-purchase-entry td:nth-child(3)::before {
+    content: "Quantity purchased";
+  }
+  .assigned-purchase-entry td:nth-child(4)::before {
+    content: "Unit cost (required)";
+  }
+  .assigned-purchase-entry td:nth-child(5)::before {
+    content: "Entry total";
+  }
+  .assigned-purchase-entry td:nth-child(n + 3)::before {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted, #64748b);
+  }
+}

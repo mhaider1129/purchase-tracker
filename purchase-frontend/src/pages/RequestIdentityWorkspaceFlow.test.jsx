@@ -93,6 +93,7 @@ test('Arabic workspace translates procurement controls without changing original
  expect(screen.getByText('تسجيل حركة شراء')).toBeInTheDocument();
  expect(screen.getByText('وحدة قياس الشراء')).toBeInTheDocument();
  fireEvent.change(screen.getByLabelText('الكمية المشتراة'),{target:{value:'2'}});
+ fireEvent.change(screen.getByLabelText('تكلفة وحدة الشراء'),{target:{value:'25'}});
  fireEvent.click(screen.getByRole('button',{name:'حفظ الحركة'}));
  await waitFor(()=>expect(api.post).toHaveBeenCalledWith('/requests/90/items/12/procurement-events',expect.objectContaining({procurement_quantity:2,procurement_unit_of_measure:'Piece',units_per_package:1})));
  await act(async()=>{await i18n.changeLanguage('en');});
