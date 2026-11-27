@@ -139,6 +139,14 @@ if name=='npm':
  sys.exit(0)
 if name=='sudo':
  assert args.pop(0)=='-n'
+ if args[0]=='/usr/local/sbin/wici-nginx-control':
+  assert len(args)==2 and args[1] in ['read','production','recovery']
+  site=d/'nginx/site'
+  if args[1]=='read': sys.stdout.write(site.read_text())
+  else:
+   port='5000' if args[1]=='production' else '5051'
+   site.write_text(re.sub(r'(proxy_pass http://127[.]0[.]0[.]1:)\\d+',lambda m:m.group(1)+port,site.read_text()))
+  sys.exit(0)
  if args[0]=='cp':
   assert str(d) in args[-1] or str(d) in args[-2]
   sys.exit(subprocess.call(['/bin/cp']+args[1:]))
