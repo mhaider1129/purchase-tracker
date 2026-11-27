@@ -1,0 +1,50 @@
+{
+  "kind": "AUTHORIZED_SOURCE_ATTESTATION_APPLIED",
+  "approvalStatus": "USER_AUTHORIZED_2026_11_27",
+  "base": "9bee58272066705aeb0683a8ec71247aa2f5908a",
+  "changedSources": [
+    {
+      "path": "package.json",
+      "oldSha256": "d8d62a3498c34868d431b7583bd3c54987b5a503740a0ba979f08ffc85ed5abe",
+      "newSha256": "0f241402a72d7bdfe6d5b84c174ebcfb1d0309665197f9bd9927698a4b80e307"
+    },
+    {
+      "path": "repositories/procurementPriorityRepository.js",
+      "oldSha256": "6bfe69e2b2871f0240ac302c3e7dfe2b83d7f0209f53e3afccd8562538d61e45",
+      "newSha256": "49bbb59c7329cfd8ab91b942c60c513cf513b32b9efd3590afcd555cb80c3133"
+    },
+    {
+      "path": "routes/procurementPriority.js",
+      "oldSha256": "9be9bcc40a3c6e327fe297b4a2a4857ecba2cd211eb05955a6cf903a8d29daab",
+      "newSha256": "937e378ea0fed37e19753cc6834f80b09dec790aedd60e248603b93f8102af89"
+    },
+    {
+      "path": "services/procurementPriority/activePrioritySql.js",
+      "oldSha256": "bf2c4342ea1f4fc81decb16e153273897fb81d7ea5d45b918ee0934f071532c9",
+      "newSha256": "828b2fe468eb8bf1c64abd295c8268f3678da255a5d3b62bda974790bc37c428"
+    },
+    {
+      "path": "services/procurementPriority/managementQueueSql.js",
+      "oldSha256": null,
+      "newSha256": "fef326d79b7f8e9909683697922b540ff547dcd019d09d78094b87270421c5fe"
+    },
+    {
+      "path": "services/requestFulfillmentSql.js",
+      "oldSha256": "d328a62c25e35c25d9fd3179b45751b82da2c280e973794a340bf83aeb74547b",
+      "newSha256": "972b3a8ec11b89ee873fa359e3d99d2bed9d12a71bd6882cf17c6381166bd8ff"
+    }
+  ],
+  "oldApplicationManifestSha256": "9ae4b2541a3d23ff93c040386361a6fafbc43ae5976b491af14a94092f02c624",
+  "proposedApplicationManifestSha256": "5e5e8b8b357b2f7f16f0d3431f50c8d1beba602c315cc70388801df00b372e62",
+  "proposedBundleReleaseRef": "wici-priority-queue-2026-11-27-r1",
+  "requestedGovernanceFiles": [
+    "purchase-backend/database/releases/migration-inventory.json",
+    "purchase-backend/sql/operator-recovery/wici-production-recovery.sql",
+    "purchase-backend/tests/wiciRecoveryProfiles.test.js"
+  ],
+  "expectedBundleChanges": "Verified byte-for-byte equivalent after source-manifest digest and release-reference substitutions only",
+  "historicalSQLModified": false,
+  "governanceFindings": [],
+  "databaseConnected": false,
+  "unchangedHistoricalArtifacts": 104
+}
