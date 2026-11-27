@@ -5,6 +5,7 @@ import {
   fireEvent,
   waitFor,
   within,
+  act,
 } from "@testing-library/react";
 import Page from "./ProcurementPriorityManagementPage";
 import * as api from "../api/procurementPriority";
@@ -44,6 +45,72 @@ beforeEach(() => {
     data: { score: 64, tier: "P2" },
   });
   api.updatePriorityAssessment.mockResolvedValue({ data: {} });
+});
+test("initial load and focus/visibility refresh share one pending queue request", async () => {
+  let complete;
+  api.getPriorityManagementQueue.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      }),
+  );
+  render(<Page />);
+  await waitFor(() =>
+    expect(api.getPriorityManagementQueue).toHaveBeenCalledTimes(1),
+  );
+  fireEvent.focus(window);
+  fireEvent(document, new Event("visibilitychange"));
+  fireEvent.focus(window);
+  expect(api.getPriorityManagementQueue).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    complete({ data: [row] });
+  });
+  expect(
+    await screen.findByRole("button", { name: "Monitor and cable" }),
+  ).toBeInTheDocument();
+});
+test("timeout is recoverable by an explicit retry without increasing the API timeout", async () => {
+  api.getPriorityManagementQueue.mockRejectedValueOnce({
+    code: "ECONNABORTED",
+  });
+  render(<Page />);
+  expect(await screen.findByRole("alert")).toHaveTextContent("took too long");
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  expect(
+    await screen.findByRole("button", { name: "Monitor and cable" }),
+  ).toBeInTheDocument();
+  expect(api.getPriorityManagementQueue).toHaveBeenCalledTimes(2);
+});
+test("unmount aborts the pending load and a late response cannot replace another page", async () => {
+  let complete;
+  api.getPriorityManagementQueue.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      }),
+  );
+  const view = render(<Page />);
+  await waitFor(() =>
+    expect(api.getPriorityManagementQueue).toHaveBeenCalledTimes(1),
+  );
+  const signal = api.getPriorityManagementQueue.mock.calls[0][1].signal;
+  view.unmount();
+  expect(signal.aborted).toBe(true);
+  await act(async () => {
+    complete({ data: [row] });
+  });
+  expect(screen.queryByText("Monitor and cable")).not.toBeInTheDocument();
+});
+test("StrictMode cleanup does not strand or duplicate the initial network load", async () => {
+  render(
+    <React.StrictMode>
+      <Page />
+    </React.StrictMode>,
+  );
+  expect(
+    await screen.findByRole("button", { name: "Monitor and cable" }),
+  ).toBeInTheDocument();
+  expect(api.getPriorityManagementQueue).toHaveBeenCalledTimes(1);
 });
 async function open() {
   render(<Page />);
@@ -188,4 +255,36 @@ test("saving locks item changes and close until the server responds", async () =
     expect(screen.getByRole("button", { name: "Close" })).toBeEnabled(),
   );
   expect(api.updatePriorityAssessment).toHaveBeenCalledTimes(1);
+});
+test("saving assessment invalidates an older background read and fetches a post-save snapshot", async () => {
+  let complete;
+  render(<Page />);
+  const opener = await screen.findByRole("button", {
+    name: "Monitor and cable",
+  });
+  api.getPriorityManagementQueue.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        complete = resolve;
+      }),
+  );
+  fireEvent.focus(window);
+  await waitFor(() =>
+    expect(api.getPriorityManagementQueue).toHaveBeenCalledTimes(2),
+  );
+  const signal = api.getPriorityManagementQueue.mock.calls[1][1].signal;
+  fireEvent.click(opener);
+  await screen.findByRole("dialog", { name: "Priority details" });
+  fireEvent.change(screen.getByLabelText("Mandatory SCM reason"), {
+    target: { value: "Reviewed clinical need" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save assessment" }));
+  await waitFor(() =>
+    expect(api.getPriorityManagementQueue).toHaveBeenCalledTimes(3),
+  );
+  expect(signal.aborted).toBe(true);
+  await act(async () => {
+    complete({ data: [{ ...row, public_title: "Stale queue" }] });
+  });
+  expect(screen.queryByText("Stale queue")).not.toBeInTheDocument();
 });

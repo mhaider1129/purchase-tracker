@@ -983,5 +983,6 @@
   "Unable to search Item Master. Please try again.": "تعذر البحث في دليل المواد. أعد المحاولة.",
   "Proposed generic name": "اسم المادة المقترح",
   "Why no catalog item is suitable": "لماذا لا تناسبك المواد الموجودة في الدليل",
-  "Search active Generic Items by code, name or description": "ابحث عن المواد الفعالة بالرمز أو الاسم أو الوصف"
+  "Search active Generic Items by code, name or description": "ابحث عن المواد الفعالة بالرمز أو الاسم أو الوصف",
+  "Priority Management took too long to respond. Try again.": "استغرقت إدارة الأولويات وقتاً طويلاً للاستجابة. حاول مرة أخرى."
 }

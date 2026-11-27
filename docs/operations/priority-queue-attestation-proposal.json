@@ -1,0 +1,74 @@
+{
+  "kind": "PROPOSAL_ONLY_NOT_APPLIED",
+  "approvalStatus": "SEPARATE_APPROVAL_REQUIRED",
+  "base": "29a1562c614349ce3b1409b7c91b5fe2760ed942",
+  "changedSources": [
+    {
+      "path": "package.json",
+      "oldSha256": "d8d62a3498c34868d431b7583bd3c54987b5a503740a0ba979f08ffc85ed5abe",
+      "newSha256": "0f241402a72d7bdfe6d5b84c174ebcfb1d0309665197f9bd9927698a4b80e307"
+    },
+    {
+      "path": "repositories/procurementPriorityRepository.js",
+      "oldSha256": "6bfe69e2b2871f0240ac302c3e7dfe2b83d7f0209f53e3afccd8562538d61e45",
+      "newSha256": "49bbb59c7329cfd8ab91b942c60c513cf513b32b9efd3590afcd555cb80c3133"
+    },
+    {
+      "path": "routes/procurementPriority.js",
+      "oldSha256": "9be9bcc40a3c6e327fe297b4a2a4857ecba2cd211eb05955a6cf903a8d29daab",
+      "newSha256": "937e378ea0fed37e19753cc6834f80b09dec790aedd60e248603b93f8102af89"
+    },
+    {
+      "path": "services/procurementPriority/activePrioritySql.js",
+      "oldSha256": "bf2c4342ea1f4fc81decb16e153273897fb81d7ea5d45b918ee0934f071532c9",
+      "newSha256": "828b2fe468eb8bf1c64abd295c8268f3678da255a5d3b62bda974790bc37c428"
+    },
+    {
+      "path": "services/procurementPriority/managementQueueSql.js",
+      "oldSha256": null,
+      "newSha256": "fef326d79b7f8e9909683697922b540ff547dcd019d09d78094b87270421c5fe"
+    },
+    {
+      "path": "services/requestFulfillmentSql.js",
+      "oldSha256": "d328a62c25e35c25d9fd3179b45751b82da2c280e973794a340bf83aeb74547b",
+      "newSha256": "972b3a8ec11b89ee873fa359e3d99d2bed9d12a71bd6882cf17c6381166bd8ff"
+    }
+  ],
+  "oldApplicationManifestSha256": "edda51c09a30b5dbc9f212ac63029551235a0acf78c6a42a92438da3a843f3c1",
+  "proposedApplicationManifestSha256": "91e26669dd14fa97037ac5f4db5626327da90cf05966bedc216357bdab71bad5",
+  "proposedBundleReleaseRef": "wici-priority-queue-2026-11-27-r1",
+  "requestedGovernanceFiles": [
+    "purchase-backend/database/releases/migration-inventory.json",
+    "purchase-backend/sql/operator-recovery/wici-production-recovery.sql",
+    "purchase-backend/tests/wiciRecoveryProfiles.test.js"
+  ],
+  "expectedBundleChanges": "source-manifest digest and release-reference bindings only; generation/comparison pending authorization",
+  "historicalSQLModified": false,
+  "governanceFindings": [
+    {
+      "file": "package.json",
+      "reason": "CHECKSUM_MISMATCH"
+    },
+    {
+      "file": "repositories/procurementPriorityRepository.js",
+      "reason": "CHECKSUM_MISMATCH"
+    },
+    {
+      "file": "routes/procurementPriority.js",
+      "reason": "CHECKSUM_MISMATCH"
+    },
+    {
+      "file": "services/procurementPriority/activePrioritySql.js",
+      "reason": "CHECKSUM_MISMATCH"
+    },
+    {
+      "file": "services/requestFulfillmentSql.js",
+      "reason": "CHECKSUM_MISMATCH"
+    },
+    {
+      "file": "services/procurementPriority/managementQueueSql.js",
+      "reason": "UNREGISTERED_RELEASE_ARTIFACT"
+    }
+  ],
+  "databaseConnected": false
+}

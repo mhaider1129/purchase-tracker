@@ -16,8 +16,8 @@ export const previewPriorityAssessment = (id, input) =>
   data(axios.post(`/procurement-priority/cases/${id}/preview`, input));
 export const createPriorityGroup = (input) =>
   data(axios.post("/procurement-priority/groups", input));
-export const getPriorityManagementQueue = (params) =>
-  data(axios.get("/procurement-priority/requests/manage", { params }));
+export const getPriorityManagementQueue = (params, { signal } = {}) =>
+  data(axios.get("/procurement-priority/requests/manage", { params, signal }));
 export const reorderInstitutionalPriorities = (ordered_request_ids, snapshots, reason) =>
   data(axios.put('/procurement-priority/requests/institutional-order', { ordered_request_ids, snapshots, reason }));
 export const getPriorityGroups = () =>

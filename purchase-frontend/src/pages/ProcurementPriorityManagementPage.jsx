@@ -641,6 +641,9 @@ export default function ProcurementPriorityManagementPage() {
   const [rows, setRows] = useState([]);
   const [filters, setFilters] = useState(emptyFilters);
   const [state, setState] = useState("loading");
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+  const pendingLoad = useRef(null);
+  const loadController = useRef(null);
   const [selected, setSelected] = useState(null);
   const [history, setHistory] = useState([]);
   const [detailRequest, setDetailRequest] = useState(null);
@@ -651,27 +654,61 @@ export default function ProcurementPriorityManagementPage() {
   const [orderError, setOrderError] = useState("");
   const [orderSaved, setOrderSaved] = useState(false);
   const load = useCallback((quiet = false) => {
+    if (pendingLoad.current) return pendingLoad.current;
+    const controller = new AbortController();
+    loadController.current = controller;
     if (!quiet) setState("loading");
-    getPriorityManagementQueue()
+    const pending = Promise.resolve()
+      .then(() =>
+        controller.signal.aborted
+          ? undefined
+          : getPriorityManagementQueue(undefined, {
+              signal: controller.signal,
+            }),
+      )
       .then((x) => {
+        if (controller.signal.aborted) return;
         if (quiet && editing.current) return;
         const data = x.data || [];
         setRows(data);
         setOrder(data);
         setState("ready");
+        setLoadTimedOut(false);
         setOrderError("");
       })
       .catch((e) => {
+        if (controller.signal.aborted) return;
         if (quiet && editing.current) return;
+        setLoadTimedOut(
+          e.code === "ECONNABORTED" ||
+            e.code === "ETIMEDOUT" ||
+            e.response?.status === 504,
+        );
         setState(
           e.response?.status === 404 || e.response?.status === 503
             ? "unavailable"
             : "error",
         );
+      })
+      .finally(() => {
+        if (pendingLoad.current === pending) pendingLoad.current = null;
       });
+    pendingLoad.current = pending;
+    return pending;
   }, []);
+  // A write or explicit conflict reload needs a post-write snapshot, not a
+  // background read that may have started before the mutation committed.
+  const reloadQueue = useCallback(() => {
+    loadController.current?.abort();
+    pendingLoad.current = null;
+    return load();
+  }, [load]);
   useEffect(() => {
     load();
+    return () => {
+      loadController.current?.abort();
+      pendingLoad.current = null;
+    };
   }, [load]);
   const orderDirty =
     order.map((row) => row.request_id).join(",") !==
@@ -745,7 +782,7 @@ export default function ProcurementPriorityManagementPage() {
         reason.trim(),
       );
       setReason("");
-      load();
+      reloadQueue();
       setOrderSaved(true);
     } catch (error) {
       setOrderError(
@@ -767,8 +804,17 @@ export default function ProcurementPriorityManagementPage() {
             ? "Loading priority management…"
             : state === "unavailable"
               ? "Procurement Priority management is not configured yet."
-              : "Unable to load priority management."}
+              : loadTimedOut
+                ? uiText(
+                    "Priority Management took too long to respond. Try again.",
+                  )
+                : "Unable to load priority management."}
         </p>
+        {state !== "loading" && (
+          <button type="button" onClick={() => load()}>
+            {uiText("Retry")}
+          </button>
+        )}
       </main>
     );
   return (
@@ -1074,7 +1120,7 @@ export default function ProcurementPriorityManagementPage() {
               {orderError}
               <button
                 disabled={savingOrder}
-                onClick={() => load()}
+                onClick={reloadQueue}
                 className="ml-3 underline"
               >
                 Reload latest queue
@@ -1225,7 +1271,7 @@ export default function ProcurementPriorityManagementPage() {
                     selected.procurement_case_id,
                   );
                   setSelected(p.data);
-                  load();
+                  reloadQueue();
                 }}
               />
             ) : (
