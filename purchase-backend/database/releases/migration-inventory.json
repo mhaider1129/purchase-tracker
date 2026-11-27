@@ -234,7 +234,7 @@
     },
     {
       "path": "controllers/requests/procurementItemEventsController.js",
-      "sha256": "335876c13c6d4fc9763121c17bb0fcd6ad9f76c02e4f86ed8e75230d3a5f698e"
+      "sha256": "d4f22a79a07755633224528eeef3163a6a5dadd1c47a4489a873518f3f6f3dde"
     },
     {
       "path": "controllers/requests/requestWorkspaceController.js",
@@ -1801,7 +1801,7 @@
       "sha256": "8671e2d6e417f189858487def2880f0eb553909d8d253ea96a05da96ec53d9f2"
     }
   ],
-  "application_manifest_sha256": "edda51c09a30b5dbc9f212ac63029551235a0acf78c6a42a92438da3a843f3c1",
+  "application_manifest_sha256": "9ae4b2541a3d23ff93c040386361a6fafbc43ae5976b491af14a94092f02c624",
   "highest_manual_number": 73,
   "artifacts": [
     {
