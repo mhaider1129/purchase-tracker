@@ -13,7 +13,6 @@ import {
   History,
   Laptop,
   LifeBuoy,
-  Printer,
   Package,
   Pill,
   Search,
@@ -183,15 +182,6 @@ const ACTION_GROUPS = [
         icon: FileBox,
       },
 
-      {
-        labelKey: "requestTypeSelector.actions.itPrintService.label",
-        ariaLabelKey: "requestTypeSelector.actions.itPrintService.aria",
-        descriptionKey:
-          "requestTypeSelector.actions.itPrintService.description",
-        path: "/print-service-requests",
-        buttonClassName: "bg-sky-600 hover:bg-sky-700 focus:ring-sky-400",
-        icon: Printer,
-      },
       {
         labelKey: "requestTypeSelector.actions.itRequest.label",
         ariaLabelKey: "requestTypeSelector.actions.itRequest.aria",
