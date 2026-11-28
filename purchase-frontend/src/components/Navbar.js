@@ -398,12 +398,6 @@ const Navbar = () => {
           ),
           createItem(
             true,
-            t("navbar.itPrintServiceRequests"),
-            "/print-service-requests",
-            "text-cyan-700",
-          ),
-          createItem(
-            true,
             t("navbar.closedRequests"),
             "/closed-requests",
             "text-gray-600",

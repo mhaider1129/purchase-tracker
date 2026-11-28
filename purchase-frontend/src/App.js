@@ -26,7 +26,6 @@ import WarehouseSupplyRequestForm from "./pages/requests/WarehouseSupplyRequestF
 import MaintenanceWarehouseSupplyRequestForm from "./pages/requests/MaintenanceWarehouseSupplyRequestForm";
 import MedicationRequestForm from "./pages/requests/MedicationRequestForm";
 import ProcurementLogbookRequestForm from "./pages/requests/ProcurementLogbookRequestForm";
-import PrintServiceRequestsPage from "./pages/PrintServiceRequestsPage";
 import SupplyItemsPage from "./pages/requests/SupplyItemsPage";
 import WarehouseSupplyRequestsPage from "./pages/WarehouseSupplyRequestsPage";
 import CustodyIssueForm from "./pages/custody/CustodyIssueForm";
@@ -278,7 +277,7 @@ const AppRoutes = () => (
     />
     <Route
       path="/print-service-requests"
-      element={<ProtectedRoute element={<PrintServiceRequestsPage />} />}
+      element={<ProtectedRoute element={<Navigate to="/requests/new" replace />} />}
     />
     <Route
       path="/requests/historical"
